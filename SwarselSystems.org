@@ -1,10 +1,11 @@
-#+title: SwarselSystems: NixOS + Emacs Configurationo
+#+title: SwarselSystems: NixOS + Emacs Configuration
 #+PROPERTY: header-args:emacs-lisp :tangle files/emacs/init.el :mkdirp yes
 #+PROPERTY: header-args:nix :mkdirp yes
 #+PROPERTY: header-args:nix-ts :mkdirp yes
 #+PROPERTY: header-args:shell :mkdirp yes
 #+EXPORT_FILE_NAME: index.html
-#+OPTIONS: toc:6
+#+OPTIONS: toc:6 author:nil creator:nil timestamp:nil validate:nil html-postamble:nil html-preamble:nil broken-links:mark
+#+HTML_HEAD: <link rel="stylesheet" href="style.css">
 #+macro: revision-date (eval (format-time-string "%F %T %z"))
 #+macro: count-words (eval (count-words (point-min) (point-max)))
 #+macro: count-lines (eval (count-lines (point-min) (point-max)))
@@ -117,6 +118,129 @@ window.addEventListener('load', addDarkmodeWidget);
 </script>
 #+end_export
 
+#+begin_export html
+<script>
+(function() {
+  // Create pinned panel if it doesn't exist
+  let pinnedPanel = document.getElementById('pinned-panel');
+  if (!pinnedPanel) {
+    pinnedPanel = document.createElement('aside');
+    pinnedPanel.id = 'pinned-panel';
+    pinnedPanel.innerHTML = `
+      <div id="pinned-panel-header">
+        <h2>Pinned</h2>
+        <button id="toggle-pinned-btn" type="button" title="Hide pinned panel">✕</button>
+      </div>
+      <ul id="pinned-list"></ul>
+    `;
+    document.body.appendChild(pinnedPanel);
+  }
+
+  // Create show button (visible when panel is hidden)
+  let showBtn = document.getElementById('show-pinned-btn');
+  if (!showBtn) {
+    showBtn = document.createElement('button');
+    showBtn.id = 'show-pinned-btn';
+    showBtn.type = 'button';
+    showBtn.textContent = 'Show Pinned';
+    document.body.appendChild(showBtn);
+  }
+
+  const content = document.getElementById('content');
+  const pinnedList = document.getElementById('pinned-list');
+  const toggleBtn = document.getElementById('toggle-pinned-btn');
+  const pinnedItems = new Map(); // href -> { li: <li>, btn: <button> }
+
+  // Toggle panel visibility
+  function hidePinnedPanel() {
+    pinnedPanel.classList.add('hidden');
+    content.classList.add('pinned-hidden');
+    showBtn.classList.add('visible');
+  }
+
+  function showPinnedPanel() {
+    pinnedPanel.classList.remove('hidden');
+    content.classList.remove('pinned-hidden');
+    showBtn.classList.remove('visible');
+  }
+
+  toggleBtn.addEventListener('click', hidePinnedPanel);
+  showBtn.addEventListener('click', showPinnedPanel);
+
+  // Add pin buttons to all TOC links
+  const tocLinks = document.querySelectorAll('#text-table-of-contents a');
+
+  tocLinks.forEach(link => {
+    // If this link is already wrapped, skip
+    if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
+      return;
+    }
+
+    const li = link.closest('li');
+    if (!li) return;
+
+    // Wrap link in a container span to manage hover
+    const wrapper = document.createElement('span');
+    wrapper.className = 'toc-entry';
+
+    // Move link into wrapper
+    li.insertBefore(wrapper, link);
+    wrapper.appendChild(link);
+
+    // Create pin button
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'toc-pin-btn';
+    pinBtn.type = 'button';
+    pinBtn.textContent = '📌';
+    wrapper.appendChild(pinBtn);
+
+    pinBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const href = link.getAttribute('href');
+      const text = link.textContent.trim();
+
+      // Toggle behavior
+      if (pinnedItems.has(href)) {
+        // Already pinned -> unpin
+        const { li: existingLi } = pinnedItems.get(href);
+        if (existingLi && existingLi.parentElement) {
+          existingLi.parentElement.removeChild(existingLi);
+        }
+        pinnedItems.delete(href);
+        pinBtn.textContent = '📌';
+        return;
+      }
+
+      // Not pinned -> pin it
+      const pinnedLi = document.createElement('li');
+
+      const pinnedLink = document.createElement('a');
+      pinnedLink.href = href;
+      pinnedLink.textContent = text;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'pin-remove';
+      removeBtn.type = 'button';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        pinnedItems.delete(href);
+        pinnedLi.remove();
+        pinBtn.textContent = '📌';
+      });
+
+      pinnedLi.appendChild(pinnedLink);
+      pinnedLi.appendChild(removeBtn);
+      pinnedList.appendChild(pinnedLi);
+
+      pinnedItems.set(href, { li: pinnedLi, btn: pinBtn });
+      pinBtn.textContent = '[unpin]';
+    });
+  });
+})();
+</script>
+#+end_export
 
   This section hold code that can be templated at other parts of the configuration. This is mostly used for the NixOS side of the configuration where I define my host systems that usually have a lot in common.
 
@@ -167,7 +291,7 @@ The structure of this flake as seen many revisions, however lately I have settle
 
   These <hosttype> folders hold on the first level a folder describing the machine archetype (=x86_64-linux= or =aarch64-linux= for linux, =x86_64-darwin= or =aarch64-darwin= for macs). Those folders then hold a number of <hostname> folders, the actual configurations. At this time, the files stored in this folder are:
     - default.nix:
-      This file holds the abstracted configuration of the host. This should mostly be enabling [[#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc][Profiles]] as well as setting some [[#h:f4f22166-e345-43e6-b15f-b7f5bb886554][Shared Configuration Options]].
+      This file holds the abstracted configuration of the host. This should mostly be enabling [[#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc][Profiles]] as well as setting some [[#h:79f7150f-b162-4f57-abdf-07f40dffd932][Configuration options]].
     - hardware-config.nix:
       It is not clearly defined what I hold in this file. Mostly it is just the attributes that nix originally sets when setting up the system for the first time (although at this time modified by me!), bar any filesystem configuration. This makes my deployment in [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] a little bit simpler.
     - disk-config.nix
@@ -462,13 +586,13 @@ In this section I am creating some attributes that define general concepts of my
 - =packages= holds packages that I am building myself. These are mostly shell scripts, but also a few others such as AppImages and firefox addons.
 - =devShells= provides a development shell that can be used as a bootstrap for new installs using =nix develop= while inside the flake directory. It received an overhaul in =0a6cf0e feat: add checks to devShell=, since when it is handled using =forAllSystems= and now including pre-commit-hook checks.
 - =formatter= provides the formatter that is to be used on =.nix= files. It can be called by using =nix fmt=.
-- =check= provides the pre-commit-hook checks that I have explained in [[#h:cbd5002c-e0fa-434a-951b-e05b179e4e3f][Pre-commit-hooks (Checks)]].
+- =check= provides the pre-commit-hook checks that I have explained in [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks)]].
 - =overlays= imports a few community overlays (such as the emacs-overlay) and also three overlays of my own:
   1) =additions= holds derivations that I am adding myself to nixpkgs - i.e. this is where the packages defined in =/pkgs= get added to nixpkgs.
   2) =modifications= holds derivations that I have performed overrides on. The list of interesting attribute overrides can be found by looking at the source code of a derivation and looking at the start of the file for lines of the form =<name> ? <val>=. But this can also be used to, for example, fetch a different version of a package instead.
   3) =nixpkgs-stable= holds the newest version of stable nixpkgs. I only use this on packages that seem broken on unstable, which are not many.
   4) =zjstatus= holds some options for =zellij=, but I have stopped using it since I prefer =tmux=.
-  They are defined in [[#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab][Overlays (additions, overrides, nixpkgs-stable)]]. The way this is handled was simplified in =647a2ae feat: simplify overlay structure=; however, the old structure might be easier to understand as a reference.
+  They are defined in [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. The way this is handled was simplified in =647a2ae feat: simplify overlay structure=; however, the old structure might be easier to understand as a reference.
 
 Here we define inputs and outputs of the flake. First, the following list is for the outputs of the flake.
 
@@ -546,6 +670,8 @@ A short overview over each input and what it does:
   This adds a module that basically sets up a full mailserver stack. Apart of DNS records and a few extra steps for e.g. a web client, this is one-stop solution that has been working greatly for me.
 - [[https://github.com/NixOS/hydra][hydra]]
   The hydra module already exists in nixpkgs - however, because, I am also using [[https://github.com/shlevy/nix-plugins][nix-plugins]], I need to build all tools that are using nix against a specific nix version (this is also why I pull in =nix-eval-jobs= as a flake input).
+- [[https://github.com/thelegy/nixos-nftables-firewall][nixos-nftables-firewall]]
+  This flake introduces a module that allows for more structurized nftables config.
 
 #+begin_src nix :noweb yes :tangle flake.nix
   {
@@ -624,6 +750,7 @@ A short overview over each input and what it does:
       dns.url = "github:kirelagin/dns.nix";
       nix-minecraft.url = "github:Infinidoge/nix-minecraft";
       simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
+      nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     };
 
     outputs =
@@ -764,7 +891,7 @@ A breakdown for the functions that have a non-obvious purpose:
   - uses [[#h:94690fcb-e039-49da-9bd3-610fa80fa08b][nixpkgs.lib.genAttrs]]
   - Also, in that function I am defining the =pkgs= that should be used when I reference =pkgs= in the actual configuration. I want to make sure that the correct system is used (keep in mind this is for home-manager configurations, which need that info! As a remark, you would not set this for a NixOS host), that I load my [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]] (extra packages and modifications that I add to =pkgs=), as well as a setting that allows me to install unfree software. As a base package set I choose =nixpkgs= from my inputs (and so does nearly every configuration out there. Keep in mind however that you could use any package set here! =nixpkgs= however also comes with a lot of useful =lib= functions (that are not =builtins= to the nix language!))
 - =mkTrueOption=: Defines a nixos module option that is by default enables (as opposed to =mkEnableOption= which are per default disabled).
-  - uses [[#h:3ce2e7ef-0f6c-4137-a978-ba190b26dcac][nixpkgs.lib.mkOption]] to create the defaulted option.
+  - uses lib.mkOption to create the defaulted option.
 - =mkStrong=:
   - An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 60), which is higher than setting an option normally (i.e. =option = value=; which has priority 100), but being of lower priority than using [[#h:16599d68-0ca5-40fa-810e-76b5c739b2b1][nixpkgs.lib.mkForce]], which has priority 50 (lower priority takes precedence). For completeness' sake, the priority set when using [[#h:41180e6c-2a13-4b46-89b2-791562b4b816][nixpkgs.lib.mkDefault]] is 1000 (a very low value).
 - =forEachLinuxSystem=: performs the =pkgsFor= function for a set of =systems= (here: =x86_64-linux= and =aarch64-linux=). I need to use this in the [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] section in order to avoid trying to build those packages for darwin systems.
@@ -1036,6 +1163,7 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
               hosts
               user
               root
+              general
               ;
           };
       };
@@ -1051,6 +1179,9 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
 Here I define my hosts. Earlier (in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton]]), I told you how I used to use noweb-ref blocks to achieve this task. You see, a single =nixosConfiguration= uses =nixpkgs.lib.nixosSystem=, passing modules and arguments to define itself. I have automated this process by reading all directories in the =hosts/= directory and then applying =nixpkgs.lib.nixosSystem= as a function on these returns. I also provide a =nixosConfigurationsMinimal= output which is ingested by the flake in =install/flake.nix= to be used during the initial deployment of a new system (it basically just disables most modules).
 
 Note that the =config= top-level module attribute [[https://flake.parts/module-arguments.html?highlight=modulewith#config][includes the entire flake config]] (this is not the same behaviour as for =perSystem=).
+
+There are a few interesting =specialArgs= to be noted:
+- we pass =withHomeManager= for all normal hosts (all hosts that are discovered) to keep compatibility with configurations that do not use home-manager.
 
 - =mkNixosHost=: Very much akin to a simple call of =nixpkgs.lib.nixosSystem=, I simply define =specialArgs= and =modules= that I want to use for every configuration. Here, I load all the extra modules from my other input flakes. Also, I add the =globals= output from [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] and the =nodes= output that I define right here (it simply mirrors all "full" configurations - nixOS and darwin. I like to refer to home-manager only and nix-on-droid as a "half" configurations). It is also here that I set the node name for the configuration (I prefer this explicit call over referencing =networking.hostName= or such) and the directory that should be used for secrets of a configuration.
 - =mkDarwinHost= works in the same way but for darwin machines.
@@ -1087,6 +1218,8 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
               inherit (config) nodes;
               globals = config.globals.${arch};
               type = "nixos";
+              withHomeManager = true;
+              extraModules = [ "${self}/modules/nixos/common/globals.nix" ];
             };
             modules = [
               inputs.disko.nixosModules.disko
@@ -1103,6 +1236,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
               inputs.sops.nixosModules.sops
               inputs.stylix.nixosModules.stylix
               inputs.swarsel-nix.nixosModules.default
+              inputs.nixos-nftables-firewall.nixosModules.default
               (inputs.nixos-extra-modules + "/modules/guests")
               (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
               "${self}/hosts/nixos/${arch}/${configName}"
@@ -1120,6 +1254,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
                   arch = lib.mkForce arch;
                   type = lib.mkForce "nixos";
                   secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
+                  configDir = ../hosts/nixos/${arch}/${configName};
                   lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
                 };
 
@@ -1143,6 +1278,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
             specialArgs = {
               inherit inputs lib outputs self minimal configName;
               inherit (config) nodes;
+              withHomeManager = true;
               globals = config.globals.${arch};
             };
             modules = [
@@ -1254,7 +1390,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
 
         guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
           _: node:
-            lib.flip lib.mapAttrs' (node.config.microvm.vms or { }) (
+            lib.flip lib.mapAttrs' (node.config.guests or { }) (
               guestName: guestDef:
                 lib.nameValuePair guestDef.nodeName node.config.microvm.vms.${guestName}.config
             )
@@ -2359,6 +2495,11 @@ My work machine. Built for more security, this is the gold standard of my config
     swarselprofiles = {
       personal = true;
     };
+
+    networking.nftables = {
+      enable = lib.mkForce false;
+      firewall.enable = lib.mkForce false;
+    };
   }
 
 #+end_src
@@ -3237,7 +3378,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:624b3c6a-6e31-4734-a6ea-7c5b461a3429
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/default.nix
-  { self, lib, minimal,  ... }:
+  { self, config, lib, minimal, confLib, ... }:
   {
 
     imports = [
@@ -3245,6 +3386,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       ./disk-config.nix
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      "${self}/modules/nixos/optional/systemd-networkd-vlan.nix"
     ];
 
     topology.self = {
@@ -3258,6 +3400,8 @@ This is my main server that I run at home. It handles most tasks that require bi
       };
     };
 
+    globals.general.homeProxy = config.node.name;
+
     swarselsystems = {
       info = "HUNSN RM02, 8GB RAM";
       flakePath = "/root/.dotfiles";
@@ -3270,6 +3414,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       rootDisk = "/dev/sda";
       swapSize = "8G";
       networkKernelModules = [ "igb" ];
+      withMicroVMs = true;
       server = {
         wireguard.interfaces = {
           wgHome = {
@@ -3286,7 +3431,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselprofiles = {
       server = true;
-      router = false;
+      router = true;
     };
 
     swarselmodules = {
@@ -3294,6 +3439,11 @@ This is my main server that I run at home. It handles most tasks that require bi
         wireguard = true;
       };
     };
+
+    guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+        { }
+        // confLib.mkMicrovm "adguardhome"
+      );
 
   }
 
@@ -3454,6 +3604,36 @@ This is my main server that I run at home. It handles most tasks that require bi
     fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
   }
 #+end_src
+***** Guests
+****** Adguardhome
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/guests/adguardhome.nix
+  { self, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+    };
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 1;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+  }
+
+#+end_src
+
 **** machpizza (MacBook Pro)
 :PROPERTIES:
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
@@ -3723,7 +3903,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
       minecraft = true;
       restic = true;
       diskEncryption = lib.mkForce false;
-      dns-hostrecord = true;
     };
   }
 
@@ -3957,7 +4136,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
       attic = true;
       garage = true;
       hydra = false;
-      dns-hostrecord = true;
     };
 
   }
@@ -4125,7 +4303,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/default.nix
-  { self, lib, minimal, ... }:
+  { self, config, lib, minimal, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -4152,6 +4330,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
       isCloud = true;
       isBastionTarget = true;
     };
+
+    globals.general.dnsServer = config.node.name;
   } // lib.optionalAttrs (!minimal) {
     swarselprofiles = {
       server = true;
@@ -4159,8 +4339,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
     swarselmodules.server = {
       nsd = true;
-      dns-hostrecord = true;
     };
+
+    networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
   }
 
 #+end_src
@@ -4361,7 +4542,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
     swarselmodules.server = {
       bastion = true;
-      dns-hostrecord = true;
       # ssh = false;
     };
 
@@ -4532,7 +4712,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/twothreetunnel/default.nix
-  { self, lib, minimal, ... }:
+  { self, config, lib, minimal, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -4545,6 +4725,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
     topology.self = {
       icon = "devices.cloud-server";
     };
+
+    globals.general.webProxy = config.node.name;
 
     swarselsystems = {
       flakePath = "/root/.dotfiles";
@@ -4561,7 +4743,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
       server = {
         wireguard.interfaces = {
           wgProxy = {
-            # ifName = "wg";
             isServer = true;
             peers = [
               "moonside"
@@ -4581,9 +4762,17 @@ This machine mainly acts as my proxy server to stand before my local machines.
     swarselmodules.server = {
       nginx = true;
       oauth2-proxy = true;
-      dns-hostrecord = true;
       wireguard = true;
+      firezone = true;
     };
+
+    networking.nftables = {
+      firewall.zones.untrusted.interfaces = [ "lan" ];
+      chains.forward.dnat = {
+        after = [ "conntrack" ];
+        rules = [ "ct status dnat accept" ];
+      };
+  };
 
   }
 
@@ -4793,7 +4982,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
     swarselmodules.server = {
       mailserver = true;
-      dns-hostrecord = true;
       postgresql = true;
       nginx = true;
       wireguard = true;
@@ -4802,6 +4990,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
     swarselprofiles = {
       server = true;
     };
+
+    networking.nftables.firewall.zones.untrusted.interfaces = [ "wan" ];
 
   }
 
@@ -5691,6 +5881,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 Here we have NixOS options. All options are split into smaller files that are loaded by the general =default.nix=. Common files are used by all user hosts equally, optionals need to be added to the machine's =default.nix= on a case-by-case basis.
 
 #+begin_src nix-ts :tangle modules/nixos/default.nix
+  # @ future me: dont panic, optionals and darwin are not read in  by readNix
   { lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/nixos";
@@ -5728,14 +5919,14 @@ in
 
 #+end_src
 
-**** Share configuration between nodes (automatically active)
+**** Share configuration between nodes (distributed config, automatically active)
 :PROPERTIES:
 :CUSTOM_ID: h:5c3027b4-ba66-445e-9c5f-c27e332c90e5
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/common/nodes.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
-  { config, lib, outputs, ... }:
+  { config, lib, nodes, ... }:
   let
     nodeName = config.node.name;
     mkForwardedOption =
@@ -5759,23 +5950,18 @@ in
         '';
       };
 
+    expandOptions = basePath: optionNames: map (option: basePath ++ [ option ]) optionNames;
+    splitPath = path: lib.splitString "." path;
+
     forwardedOptions = [
-      [
-        "services"
-        "nginx"
-        "upstreams"
-      ]
-      [
-        "services"
-        "nginx"
-        "virtualHosts"
-      ]
-      [
-        "swarselsystems"
-        "server"
-        "dns"
-      ]
-    ];
+      (splitPath "sops.secrets")
+      (splitPath "swarselsystems.server.dns")
+      (splitPath "services.kanidm.provision.groups")
+      (splitPath "services.kanidm.provision.systems.oauth2")
+    ]
+    ++ expandOptions (splitPath "services.nginx") [ "upstreams" "virtualHosts" ]
+    ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" ]
+    ;
 
     attrsForEachOption =
       f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;
@@ -5796,10 +5982,10 @@ in
         getConfig =
           path: otherNode:
           let
-            cfg = outputs.nixosConfigurations.${otherNode}.config.nodes.${nodeName} or null;
+            cfg = nodes.${otherNode}.config.nodes.${nodeName} or null;
           in
           lib.optionals (cfg != null) (lib.getAttrFromPath path cfg);
-        mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames outputs.nixosConfigurations));
+        mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames nodes));
       in
       attrsForEachOption mergeConfigFromOthers;
   }
@@ -5837,6 +6023,55 @@ in
         description = "The CIDRv6 of this network";
         default = null;
       };
+
+      firewallRuleForAll = mkOption {
+        default = { };
+        description = ''
+          If this is a wireguard network: Allows you to set specific firewall rules for traffic originating from any participant in this
+          wireguard network. A corresponding rule `<network-name>-to-<local-zone-name>` will be created to easily expose
+          services to the network.
+        '';
+        type = types.submodule {
+          options = {
+            allowedTCPPorts = mkOption {
+              type = types.listOf types.port;
+              default = [ ];
+              description = "Convenience option to open specific TCP ports for traffic from the network.";
+            };
+            allowedUDPPorts = mkOption {
+              type = types.listOf types.port;
+              default = [ ];
+              description = "Convenience option to open specific UDP ports for traffic from the network.";
+            };
+          };
+        };
+      };
+
+      firewallRuleForNode = mkOption {
+        default = { };
+        description = ''
+          If this is a wireguard network: Allows you to set specific firewall rules just for traffic originating from another network node.
+          A corresponding rule `<network-name>-node-<node-name>-to-<local-zone-name>` will be created to easily expose
+          services to that node.
+        '';
+        type = types.attrsOf (
+          types.submodule {
+            options = {
+              allowedTCPPorts = mkOption {
+                type = types.listOf types.port;
+                default = [ ];
+                description = "Convenience option to open specific TCP ports for traffic from another node.";
+              };
+              allowedUDPPorts = mkOption {
+                type = types.listOf types.port;
+                default = [ ];
+                description = "Convenience option to open specific UDP ports for traffic from another node.";
+              };
+            };
+          }
+        );
+      };
+
 
       hosts = mkOption {
         default = { };
@@ -5895,7 +6130,7 @@ in
                   if netSubmod.config.cidrv6 == null then
                     null
                   else
-                    # if we use the /32 wan address as local address directly, do not use the network address in ipv6
+                  # if we use the /32 wan address as local address directly, do not use the network address in ipv6
                     lib.net.cidr.hostCidr (if hostSubmod.config.id == 0 then 1 else hostSubmod.config.id) netSubmod.config.cidrv6;
               };
             };
@@ -5951,6 +6186,10 @@ in
                       type = types.nullOr types.str;
                       default = null;
                     };
+                    isHome = mkOption {
+                      type = types.bool;
+                      default = false;
+                    };
                   };
                 })
               );
@@ -6001,6 +6240,9 @@ in
                     wanAddress6 = mkOption {
                       type = types.nullOr types.net.ipv6;
                     };
+                    isHome = mkOption {
+                      type = types.bool;
+                    };
                   };
                 }
               );
@@ -6016,11 +6258,13 @@ in
               };
             };
 
-
+            general = lib.mkOption {
+              type = types.submodule {
+                freeformType = types.unspecified;
+              };
+            };
 
           };
-
-
 
         };
       };
@@ -6041,49 +6285,51 @@ in
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager-secrets.nix
-  { self, lib, config, globals, ... }:
+  { self, lib, config, globals, withHomeManager, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
     inherit (config.repo.secrets.common.emacs) radicaleUser;
-    modules = config.home-manager.users.${mainUser}.swarselmodules;
 
     certsSopsFile = self + /secrets/repo/certs.yaml;
   in
   {
-    config = lib.mkIf config.swarselsystems.withHomeManager {
-      sops = {
-        secrets = (lib.optionalAttrs modules.mail
+    config = { } // lib.optionalAttrs withHomeManager {
+      sops =
+        let
+          modules = config.home-manager.users.${mainUser}.swarselmodules;
+        in
           {
+          secrets = (lib.optionalAttrs modules.mail {
             address1-token = { owner = mainUser; };
             address2-token = { owner = mainUser; };
             address3-token = { owner = mainUser; };
             address4-token = { owner = mainUser; };
           }) // (lib.optionalAttrs modules.waybar {
-          github-notifications-token = { owner = mainUser; };
-        }) // (lib.optionalAttrs modules.emacs {
-          fever-pw = { path = "${homeDir}/.emacs.d/.fever"; owner = mainUser; };
-        }) // (lib.optionalAttrs modules.zsh {
-          croc-password = { owner = mainUser; };
-          github-nixpkgs-review-token = { owner = mainUser; };
-        }) // (lib.optionalAttrs modules.emacs {
-          emacs-radicale-pw = { owner = mainUser; };
-          github-forge-token = { owner = mainUser; };
-        }) // (lib.optionalAttrs (modules ? optional-work) {
-          harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
-        }) // (lib.optionalAttrs modules.anki {
-          anki-user = { owner = mainUser; };
-          anki-pw = { owner = mainUser; };
-        });
-        templates = {
-          authinfo = lib.mkIf modules.emacs {
-            path = "${homeDir}/.emacs.d/.authinfo";
-            content = ''
-              machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
-            '';
-            owner = mainUser;
+            github-notifications-token = { owner = mainUser; };
+          }) // (lib.optionalAttrs modules.emacs {
+            fever-pw = { path = "${homeDir}/.emacs.d/.fever"; owner = mainUser; };
+          }) // (lib.optionalAttrs modules.zsh {
+            croc-password = { owner = mainUser; };
+            github-nixpkgs-review-token = { owner = mainUser; };
+          }) // (lib.optionalAttrs modules.emacs {
+            emacs-radicale-pw = { owner = mainUser; };
+            github-forge-token = { owner = mainUser; };
+          }) // (lib.optionalAttrs (modules ? optional-work) {
+            harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
+          }) // (lib.optionalAttrs modules.anki {
+            anki-user = { owner = mainUser; };
+            anki-pw = { owner = mainUser; };
+          });
+          templates = {
+            authinfo = lib.mkIf modules.emacs {
+              path = "${homeDir}/.emacs.d/.authinfo";
+              content = ''
+                machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+              '';
+              owner = mainUser;
+            };
           };
         };
-      };
     };
   }
 #+end_src
@@ -6142,149 +6388,150 @@ A breakdown of the flags being set:
 - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
 
 #+begin_src nix-ts :tangle modules/nixos/common/settings.nix
-  { self, lib, pkgs, config, outputs, inputs, minimal, globals, ... }:
-     let
-       inherit (config.swarselsystems) mainUser;
-       inherit (config.repo.secrets.common) atticPublicKey;
-       settings = if minimal then { } else {
-         environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
-           assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
-           { }
-         '';
+  { self, lib, pkgs, config, outputs, inputs, minimal, globals, withHomeManager, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+    inherit (config.repo.secrets.common) atticPublicKey;
+    settings = if minimal then { } else {
+      environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
+        assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
+        { }
+      '';
 
-         nix =
-           let
-             flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-           in
-           {
-             settings = {
-               connect-timeout = 5;
-               bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-               bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
-               fallback = true;
-               min-free = 128000000;
-               max-free = 1000000000;
-               flake-registry = "";
-               auto-optimise-store = true;
-               warn-dirty = false;
-               max-jobs = 1;
-               use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
-             };
-             gc = {
-               automatic = true;
-               dates = "weekly";
-               options = "--delete-older-than 10d";
-             };
-             optimise = {
-               automatic = true;
-               dates = "weekly";
-             };
-             channel.enable = false;
-             registry = rec {
-               nixpkgs.flake = inputs.nixpkgs;
-               # swarsel.flake = inputs.swarsel;
-               swarsel.flake = self;
-               n = nixpkgs;
-               s = swarsel;
-             };
-             nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-           };
+      nix =
+        let
+          flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+        in
+        {
+          settings = {
+            connect-timeout = 5;
+            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+            fallback = true;
+            min-free = 128000000;
+            max-free = 1000000000;
+            flake-registry = "";
+            auto-optimise-store = true;
+            warn-dirty = false;
+            max-jobs = 1;
+            use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+          };
+          gc = {
+            automatic = true;
+            dates = "weekly";
+            options = "--delete-older-than 10d";
+          };
+          optimise = {
+            automatic = true;
+            dates = "weekly";
+          };
+          channel.enable = false;
+          registry = rec {
+            nixpkgs.flake = inputs.nixpkgs;
+            # swarsel.flake = inputs.swarsel;
+            swarsel.flake = self;
+            n = nixpkgs;
+            s = swarsel;
+          };
+          nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+        };
 
-         services.dbus.implementation = "broker";
+      services.dbus.implementation = "broker";
 
-         systemd.services.nix-daemon = {
-           environment.TMPDIR = "/var/tmp";
-         };
+      systemd.services.nix-daemon = {
+        environment.TMPDIR = "/var/tmp";
+      };
 
-       };
-     in
-     {
-       options.swarselmodules.general = lib.mkEnableOption "general nix settings";
-       config = lib.mkIf config.swarselmodules.general
-         (lib.recursiveUpdate
-           {
-             sops.secrets = lib.mkIf (!minimal) {
-               github-api-token = { owner = mainUser; };
-             };
+    };
+  in
+  {
+    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+    config = lib.mkIf config.swarselmodules.general
+      (lib.recursiveUpdate
+        {
+          sops.secrets = lib.mkIf (!minimal) {
+            github-api-token = { owner = mainUser; };
+          };
 
-             nix =
-               let
-                 nix-version = "2_30";
-               in
-               {
-                 package = pkgs.nixVersions."nix_${nix-version}";
-                 settings = {
-                   experimental-features = [
-                     "nix-command"
-                     "flakes"
-                     "ca-derivations"
-                     "cgroups"
-                     "pipe-operators"
-                   ];
-                   substituters = [
-                     "https://${globals.services.attic.domain}/${mainUser}"
-                   ];
-                   trusted-public-keys = [
-                     atticPublicKey
-                   ];
-                   trusted-users = [
-                     "@wheel"
-                     "${config.swarselsystems.mainUser}"
-                     (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
-                   ];
-                 };
-                 # extraOptions = ''
-                 #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-                 #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                 # '' + lib.optionalString (!minimal) ''
-                 #   !include ${config.sops.secrets.github-api-token.path}
-                 # '';
-                 # extraOptions = ''
-                 #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-                 #     buildInputs = [config.nix.package pkgs.boost];
-                 #     patches = o.patches or [];
-                 #   })}/lib/nix/plugins
-                 #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                 # '';
+          nix =
+            let
+              nix-version = "2_30";
+            in
+            {
+              package = pkgs.nixVersions."nix_${nix-version}";
+              settings = {
+                experimental-features = [
+                  "nix-command"
+                  "flakes"
+                  "ca-derivations"
+                  "cgroups"
+                  "pipe-operators"
+                ];
+                substituters = [
+                  "https://${globals.services.attic.domain}/${mainUser}"
+                ];
+                trusted-public-keys = [
+                  atticPublicKey
+                ];
+                trusted-users = [
+                  "@wheel"
+                  "${config.swarselsystems.mainUser}"
+                  (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+                ];
+              };
+              # extraOptions = ''
+              #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              # '' + lib.optionalString (!minimal) ''
+              #   !include ${config.sops.secrets.github-api-token.path}
+              # '';
+              # extraOptions = ''
+              #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+              #     buildInputs = [config.nix.package pkgs.boost];
+              #     patches = o.patches or [];
+              #   })}/lib/nix/plugins
+              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              # '';
 
-                 extraOptions =
-                   let
-                     nix-plugins = pkgs.nix-plugins.override {
-                       nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
-                     };
-                   in
-                   ''
-                     plugin-files = ${nix-plugins}/lib/nix/plugins
-                     extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                   '' + lib.optionalString (!minimal) ''
-                     !include ${config.sops.secrets.github-api-token.path}
-                   '';
-               };
+              extraOptions =
+                let
+                  nix-plugins = pkgs.nix-plugins.override {
+                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                  };
+                in
+                ''
+                  plugin-files = ${nix-plugins}/lib/nix/plugins
+                  extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                '' + lib.optionalString (!minimal) ''
+                  !include ${config.sops.secrets.github-api-token.path}
+                '';
+            };
 
-             system.stateVersion = lib.mkDefault "23.05";
+          system.stateVersion = lib.mkDefault "23.05";
 
-             nixpkgs = {
-               overlays = [
-                 outputs.overlays.default
-                 (final: prev:
-                   let
-                     additions = final: _: import "${self}/pkgs/config" {
-                       inherit self config lib;
-                       pkgs = final;
-                       homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
-                     };
-                   in
-                   additions final prev
-                 )
-               ];
-               config = {
-                 allowUnfree = true;
-               };
-             };
+          nixpkgs = {
+            overlays = [
+              outputs.overlays.default
+            ] ++ lib.optionals withHomeManager [
+              (final: prev:
+                let
+                  additions = final: _: import "${self}/pkgs/config" {
+                    inherit self config lib;
+                    pkgs = final;
+                    homeConfig = config.home-manager.users.${config.swarselsystems.mainUser} or { };
+                  };
+                in
+                additions final prev
+              )
+            ];
+            config = lib.mkIf (!config.swarselsystems.isMicroVM) {
+              allowUnfree = true;
+            };
+          };
 
-           }
-           settings);
-     }
+        }
+        settings);
+  }
 #+end_src
 
 **** Setup home-manager base
@@ -6295,11 +6542,11 @@ A breakdown of the flags being set:
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, ... }:
+  { self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, withHomeManager, ... }:
   {
     options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
     config = lib.mkIf config.swarselmodules.home-manager {
-      home-manager = lib.mkIf config.swarselsystems.withHomeManager {
+      home-manager = lib.mkIf withHomeManager {
         useGlobalPkgs = true;
         useUserPackages = true;
         verbose = true;
@@ -6365,7 +6612,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
             description = "Leon S";
             password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
             hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
-            extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+            extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
           };
         };
@@ -7096,7 +7343,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
       };
 
       networking = {
-        inherit (config.swarselsystems) hostName;
+        hostName = config.node.name;
         hosts = {
           "${globals.networks.home-lan.hosts.winters.ipv4}" = [ globals.services.transmission.domain ];
         };
@@ -7482,10 +7729,10 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :END:
 
 By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
-=theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
+=theme= is defined in [[#h:2e9b84d7-cb18-4e74-83f8-65ada11a8911][stylix color scheme]].
 
 #+begin_src nix-ts :noweb yes :tangle modules/nixos/client/stylix.nix
-  { self, lib, config, vars, ... }:
+  { self, lib, config, vars, withHomeManager, ... }:
   {
     options.swarselmodules.stylix = lib.mkEnableOption "stylix config";
     config = {
@@ -7499,6 +7746,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
             image = config.swarselsystems.wallpaper;
           }
           vars.stylix);
+    } // lib.optionalAttrs withHomeManager {
       home-manager.users."${config.swarselsystems.mainUser}" = {
         stylix = {
           targets = vars.stylixHomeTargets;
@@ -8143,23 +8391,24 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the =package= attribute will be =null= for such an host, using the systems derivation instead.
 
 #+begin_src nix-ts :tangle modules/nixos/client/sway.nix
-  { lib, config, pkgs, ... }:
+  { lib, config, pkgs, withHomeManager, ... }:
   let
     inherit (config.swarselsystems) mainUser;
   in
   {
     options.swarselmodules.sway = lib.mkEnableOption "sway config";
-    config = lib.mkIf config.swarselmodules.sway {
-      programs.sway = {
-        enable = true;
-        package = pkgs.swayfx;
-        wrapperFeatures = {
-          base = true;
-          gtk = true;
+    config = lib.mkIf config.swarselmodules.sway
+      {
+        programs.sway = {
+          enable = true;
+          package = pkgs.swayfx;
+          wrapperFeatures = {
+            base = true;
+            gtk = true;
+          };
         };
-
-        inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
-      };
+      } // lib.optionalAttrs withHomeManager {
+      inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
     };
   }
 #+end_src
@@ -8443,17 +8692,19 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         }
         config.swarselsystems.shellAliases;
 
-      nixpkgs.config.permittedInsecurePackages = [
-        # matrix
-        "olm-3.2.16"
-        # sonarr
-        "aspnetcore-runtime-wrapped-6.0.36"
-        "aspnetcore-runtime-6.0.36"
-        "dotnet-sdk-wrapped-6.0.428"
-        "dotnet-sdk-6.0.428"
-        #
-        "SDL_ttf-2.0.11"
-      ];
+      nixpkgs.config = lib.mkIf (!config.swarselsystems.isMicroVM) {
+        permittedInsecurePackages = [
+          # matrix
+          "olm-3.2.16"
+          # sonarr
+          "aspnetcore-runtime-wrapped-6.0.36"
+          "aspnetcore-runtime-6.0.36"
+          "dotnet-sdk-wrapped-6.0.428"
+          "dotnet-sdk-6.0.428"
+          #
+          "SDL_ttf-2.0.11"
+        ];
+      };
     };
   }
 #+end_src
@@ -8463,8 +8714,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:6f2967d9-7e32-4605-bb5c-5e27770bec0f
 :END:
 
+This is a collection of packages that are useful for server-type hosts that do not really fit into other modules; the optional part of the list is for packages that are built as part of [[#h:c01a91b8-b751-4978-b987-733de63c8211][Packages (config)]]; systems that are not built with home-manager will not be able to pass the required parameters to build these packages, hence we cannot build them here. This mostly applies to microvms.
+
 #+begin_src nix-ts :tangle modules/nixos/server/packages.nix
-  { lib, config, pkgs, ... }:
+  { lib, config, pkgs, withHomeManager, ... }:
   {
     options.swarselmodules.server.packages = lib.mkEnableOption "enable packages on server";
     config = lib.mkIf config.swarselmodules.server.packages {
@@ -8480,6 +8733,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         tmux
         busybox
         swarsel-deploy
+      ] ++ lib.optionals withHomeManager [
         swarsel-gens
         swarsel-switch
       ];
@@ -8776,7 +9030,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 Here I am forcing =startWhenNeeded= to false so that the value will not be set to true in containers = this would be a problem because it would delay ssh host key generation.
 
 #+begin_src nix-ts :tangle modules/nixos/server/ssh.nix
-  { self, lib, config, ... }:
+  { self, lib, config, withHomeManager, ... }:
   {
     options.swarselmodules.server.ssh = lib.mkEnableOption "enable ssh on server";
     config = lib.mkIf config.swarselmodules.server.ssh {
@@ -8799,16 +9053,18 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           }
         ];
       };
-      users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
-        (self + /secrets/public/ssh/yubikey.pub)
-        (self + /secrets/public/ssh/magicant.pub)
-        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
-      ];
-      users.users.root.openssh.authorizedKeys.keyFiles = [
-        (self + /secrets/public/ssh/yubikey.pub)
-        (self + /secrets/public/ssh/magicant.pub)
-        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
-      ];
+      users.users = {
+        "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
+          (self + /secrets/public/ssh/yubikey.pub)
+          (self + /secrets/public/ssh/magicant.pub)
+          # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+        ];
+        root.openssh.authorizedKeys.keyFiles = [
+          (self + /secrets/public/ssh/yubikey.pub)
+          (self + /secrets/public/ssh/magicant.pub)
+          # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+        ];
+      };
       security.sudo.extraConfig = ''
         Defaults    env_keep+=SSH_AUTH_SOCK
       '';
@@ -8822,10 +9078,10 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/bastion.nix
-  { self, lib, config, ... }:
+  { self, lib, config, withHomeManager, ... }:
   {
     options.swarselmodules.server.bastion = lib.mkEnableOption "enable bastion on server";
-    config = lib.mkIf config.swarselmodules.server.bastion {
+    config = lib.mkIf config.swarselmodules.server.bastion ({
 
       users = {
         groups = {
@@ -8874,6 +9130,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           }
         ];
       };
+    } // lib.optionalAttrs withHomeManager {
 
       home-manager.users.jump.config = {
         home.stateVersion = lib.mkDefault "23.05";
@@ -8887,7 +9144,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           } // config.repo.secrets.local.ssh.hosts;
         };
       };
-    };
+    });
   }
 #+end_src
 
@@ -9002,6 +9259,7 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
         inherit (config.repo.secrets.local.networking) defaultGateway4;
         wanAddress4 = netConfig.wanAddress4 or null;
         wanAddress6 = netConfig.wanAddress6 or null;
+        isHome = if (netPrefix == "home") then true else false;
       };
 
       networking = {
@@ -9230,15 +9488,17 @@ In order to define a new wireguard interface, I have to:
         lib.mkEnableOption "enable ${serviceName} settings";
 
       swarselsystems.server.wireguard = {
-        interfaces = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.submodule ({ name, config, ... }: {
+        interfaces = let
+          topConfig = config;
+        in lib.mkOption {
+          type = lib.types.attrsOf (lib.types.submodule ({ config, name, ... }: {
             options = {
               isServer = lib.mkEnableOption "set this interface as a wireguard server";
               isClient = lib.mkEnableOption "set this interface as a wireguard client";
 
               serverName = lib.mkOption {
                 type = lib.types.str;
-                default = "";
+                default = if config.isServer then topConfig.node.name else "";
                 description = "Hostname of the WireGuard server this interface connects to (when isClient = true).";
               };
 
@@ -9261,10 +9521,16 @@ In order to define a new wireguard interface, I have to:
                 description = "Name of the WireGuard interface.";
               };
 
+              port = lib.mkOption {
+                type = lib.types.int;
+                default = servicePort;
+                description = "Port of the WireGuard interface.";
+              };
+
               peers = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
-                default = [ ];
-                description = "WireGuard peer config names (clients when this host is server, or additional peers).";
+                default = lib.attrNames (lib.filterAttrs (name: _: name != topConfig.node.name) globals.networks."${config.serverNetConfigPrefix}-${config.ifName}".hosts);
+                description = "WireGuard peer config names of this wireguardinterface.";
               };
             };
           }));
@@ -9276,6 +9542,25 @@ In order to define a new wireguard interface, I have to:
 
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+      assertions = lib.concatLists (
+        lib.flip lib.mapAttrsToList interfaces (
+          ifName: ifCfg:
+            let
+              assertionPrefix = "While evaluating the wireguard network ${ifName}:";
+            in
+            [
+              {
+                assertion = ifCfg.isServer || (ifCfg.isClient && ifCfg.serverName != "");
+                message = "${assertionPrefix}: This node must either be a server for the wireguard network or a client with serverName set.";
+              }
+              {
+                assertion = lib.stringLength ifName < 16;
+                message = "${assertionPrefix}: The specified linkName '${ifName}' is too long (must be max 15 characters).";
+              }
+            ]
+        )
+      );
+
       environment.systemPackages = with pkgs; [
         wireguard-tools
       ];
@@ -9284,7 +9569,6 @@ In order to define a new wireguard interface, I have to:
         lib.mkMerge (
           [
             {
-              # shared host private key
               wireguard-private-key = {
                 inherit sopsFile;
                 owner = serviceUser;
@@ -9295,8 +9579,8 @@ In order to define a new wireguard interface, I have to:
           ] ++ (map
             (i:
               let
-                simpleClientSecrets =
-                  lib.optionalAttrs (i.isClient && i.peers == [ ]) {
+                clientSecrets =
+                  lib.optionalAttrs i.isClient {
                     "wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey" = {
                       sopsFile = wgSopsFile;
                       owner = serviceUser;
@@ -9305,8 +9589,8 @@ In order to define a new wireguard interface, I have to:
                     };
                   };
 
-                multiPeerSecrets =
-                  lib.optionalAttrs (i.peers != [ ]) (builtins.listToAttrs (map
+                serverSecrets =
+                  lib.optionalAttrs i.isServer (builtins.listToAttrs (map
                     (clientName: {
                       name = "wireguard-${config.node.name}-${clientName}-${i.ifName}-presharedKey";
                       value = {
@@ -9318,17 +9602,72 @@ In order to define a new wireguard interface, I have to:
                     })
                     i.peers));
               in
-              simpleClientSecrets // multiPeerSecrets
+              clientSecrets // serverSecrets
             )
             ifaceList)
         );
 
-      networking = {
-        firewall.checkReversePath =
-          lib.mkIf (lib.any (i: i.isClient) ifaceList) "loose";
+      networking.firewall = {
+        checkReversePath = lib.mkIf (lib.any (i: i.isClient) ifaceList) "loose";
+        allowedUDPPorts = lib.mkMerge (
+          lib.flip lib.mapAttrsToList interfaces (
+            _: ifCfg:
+              lib.optional ifCfg.isServer ifCfg.port
+          )
+        );
+      };
 
-        firewall.allowedUDPPorts =
-          lib.mkIf (lib.any (i: i.isServer) ifaceList) [ servicePort ];
+      networking.nftables.firewall = {
+        zones = lib.mkMerge
+          (
+            lib.flip lib.mapAttrsToList interfaces (
+              ifName: ifCfg:
+                {
+                  ${ifName}.interfaces = [ ifName ];
+                }
+                // lib.listToAttrs (map
+                  (peer:
+                    let
+                      peerNet = globals.networks."${ifCfg.serverNetConfigPrefix}-${ifName}".hosts.${peer};
+                    in
+                    lib.nameValuePair "${ifName}-node-${peer}" {
+                      parent = ifName;
+                      ipv4Addresses = lib.optional (peerNet.ipv4 != null) peerNet.ipv4;
+                      ipv6Addresses = lib.optional (peerNet.ipv6 != null) peerNet.ipv6;
+                    }
+                  )
+                  ifCfg.peers)
+            )
+          );
+        rules = lib.mkMerge (
+          lib.flip lib.mapAttrsToList interfaces (
+            ifName: ifCfg:
+              let
+                inherit (config.networking.nftables.firewall) localZoneName;
+                netCfg = globals.networks."${ifCfg.serverNetConfigPrefix}-${ifName}";
+              in
+              {
+                "${ifName}-to-${localZoneName}" = {
+                  inherit (netCfg.firewallRuleForAll) allowedTCPPorts allowedUDPPorts;
+                  from = [ ifName ];
+                  to = [ localZoneName ];
+                  ignoreEmptyRule = true;
+                };
+              }
+              // lib.listToAttrs (map
+                (peer:
+                  lib.nameValuePair "${ifName}-node-${peer}-to-${localZoneName}" (
+                    lib.mkIf (netCfg.firewallRuleForNode ? ${peer}) {
+                      inherit (netCfg.firewallRuleForNode.${peer}) allowedTCPPorts allowedUDPPorts;
+                      from = [ "${ifName}-node-${peer}" ];
+                      to = [ localZoneName ];
+                      ignoreEmptyRule = true;
+                    }
+                  )
+                )
+                ifCfg.peers)
+          )
+        );
       };
 
       systemd.network = {
@@ -9346,14 +9685,10 @@ In order to define a new wireguard interface, I have to:
                   MTUBytes = 1408; # TODO: figure out where we lose those 12 bits (8 from pppoe maybe + ???)
                 };
 
-                address =
-                  if i.isServer then [
-                    globals.networks."${config.swarselsystems.server.netConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv4
-                    globals.networks."${config.swarselsystems.server.netConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv6
-                  ] else [
-                    globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv4
-                    globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv6
-                  ];
+                address = [
+                  globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv4
+                  globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv6
+                ];
               };
             })
           ifaceList);
@@ -9406,12 +9741,12 @@ In order to define a new wireguard interface, I have to:
                         builtins.readFile "${self}/secrets/public/wg/${clientName}.pub";
 
                       PresharedKeyFile =
-                        config.sops.secrets."wireguard-${config.node.name}-${clientName}-${i.ifName}-presharedKey".path;
+                        config.sops.secrets."wireguard-${i.serverName}-${clientName}-${i.ifName}-presharedKey".path;
 
                       AllowedIPs =
                         let
                           clientInWgNetwork =
-                            globals.networks."${config.swarselsystems.server.netConfigPrefix}-${i.ifName}".hosts.${clientName};
+                            globals.networks."${i.serverNetConfigPrefix}-${i.ifName}".hosts.${clientName};
                         in
                         (lib.optional (clientInWgNetwork.ipv4 != null)
                           (lib.net.cidr.make 32 clientInWgNetwork.ipv4))
@@ -9449,62 +9784,150 @@ In order to define a new wireguard interface, I have to:
 :CUSTOM_ID: h:b54f2bbb-0088-46b2-957d-fd8234b772c3
 :END:
 
+This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]] act as the router for my internal network. This is not a reusable module and highly adapted to its hardware.
+
 #+begin_src nix-ts :tangle modules/nixos/server/router.nix
-  { lib, config, ... }:
+  { lib, config, globals, ... }:
   let
     serviceName = "router";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    config = lib.mkIf config.swarselmodules.server.${serviceName}
+      {
+        services.avahi.reflector = true;
 
-      systemd.network = {
-        wait-online.anyInterface = true;
-        networks = {
-          "30-lan0" = {
-            matchConfig.Name = "lan0";
-            linkConfig.RequiredForOnline = "enslaved";
-            networkConfig = {
-              ConfigureWithoutCarrier = true;
+        networking.nftables = {
+          firewall = {
+            zones = {
+              untrusted.interfaces = [ "lan" ];
+              wgHome.interfaces = [ "wgHome" ];
+              adguardhome.ipv4Addresses = [ globals.networks.home-lan.vlans.services.hosts.hintbooth-adguardhome.ipv4 ];
+              adguardhome.ipv6Addresses = [ globals.networks.home-lan.vlans.services.hosts.hintbooth-adguardhome.ipv6 ];
+            }
+            // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
+              vlanName: _: {
+                "vlan-${vlanName}".interfaces = [ "me-${vlanName}" ];
+              }
+            );
+
+            rules = {
+              masquerade-internet = {
+                from = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+                to = [ "untrusted" ];
+                # masquerade = true; NOTE: custom rule below for ip4 + ip6
+                late = true; # Only accept after any rejects have been processed
+                verdict = "accept";
+              };
+
+              # Allow access to the AdGuardHome DNS server from any VLAN that has internet access
+              access-adguardhome-dns = {
+                from = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+                to = [ "adguardhome" ];
+                verdict = "accept";
+              };
+
+              # Allow devices in the home VLAN to talk to any of the services or home devices.
+              access-services = {
+                from = [ "vlan-home" ];
+                to = [
+                  "vlan-services"
+                  "vlan-devices"
+                ];
+                late = true;
+                verdict = "accept";
+              };
+
+              # Allow the services VLAN to talk to our wireguard server
+              services-to-local = {
+                from = [ "vlan-services" ];
+                to = [ "local" ];
+                allowedUDPPorts = [ 52829 ];
+              };
+
+              # Forward traffic between wireguard participants
+              forward-proxy-home-vpn-traffic = {
+                from = [ "wgHome" ];
+                to = [ "wgHome" ];
+                verdict = "accept";
+              };
             };
           };
-          "30-lan1" = {
-            matchConfig.Name = "lan1";
-            linkConfig.RequiredForOnline = "enslaved";
-            networkConfig = {
-              ConfigureWithoutCarrier = true;
+
+          chains.postrouting = {
+            masquerade-internet = {
+              after = [ "hook" ];
+              late = true;
+              rules =
+                lib.forEach
+                  (map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans))
+                  (
+                    zone:
+                    lib.concatStringsSep " " [
+                      "meta protocol { ip, ip6 }"
+                      (lib.head config.networking.nftables.firewall.zones.${zone}.ingressExpression)
+                      (lib.head config.networking.nftables.firewall.zones.untrusted.egressExpression)
+                      "masquerade random"
+                    ]
+                  );
             };
           };
-          "30-lan2" = {
-            matchConfig.Name = "lan2";
-            linkConfig.RequiredForOnline = "enslaved";
-            networkConfig = {
-              ConfigureWithoutCarrier = true;
+        };
+
+        boot.kernel.sysctl = {
+          "net.ipv4.ip_forward" = 1;
+          "net.ipv4.conf.all.forwarding" = true;
+          "net.ipv6.conf.all.forwarding" = true;
+        };
+
+        systemd.network = {
+          wait-online.anyInterface = true;
+          networks = {
+            "30-lan1" = {
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan1.mac;
+              linkConfig.RequiredForOnline = "enslaved";
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            "30-lan2" = {
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
+              linkConfig.RequiredForOnline = "enslaved";
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            "30-lan3" = {
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan3.mac;
+              linkConfig.RequiredForOnline = "enslaved";
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            "30-lan4" = {
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
+              linkConfig.RequiredForOnline = "enslaved";
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            "30-lan5" = {
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan5.mac;
+              linkConfig.RequiredForOnline = "enslaved";
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
             };
           };
-          "30-lan3" = {
-            matchConfig.Name = "lan3";
-            linkConfig.RequiredForOnline = "enslaved";
-            networkConfig = {
-              ConfigureWithoutCarrier = true;
-            };
-          };
-          "10-wan" = {
-            matchConfig.Name = "wan";
-            networkConfig = {
-              # start a DHCP Client for IPv4 Addressing/Routing
-              DHCP = "ipv4";
-              DNSOverTLS = true;
-              DNSSEC = true;
-              IPv6PrivacyExtensions = false;
-              IPForward = true;
-            };
-            # make routing on this interface a dependency for network-online.target
-            linkConfig.RequiredForOnline = "routable";
+        };
+
+
       };
-    };
-  };
-    };
   }
 #+end_src
 
@@ -9518,7 +9941,7 @@ In order to define a new wireguard interface, I have to:
   let
     inherit (config.swarselsystems) sopsFile;
 
-    inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -9547,7 +9970,7 @@ In order to define a new wireguard interface, I have to:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -9595,7 +10018,7 @@ In order to define a new wireguard interface, I have to:
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -9627,7 +10050,7 @@ In order to define a new wireguard interface, I have to:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -9674,7 +10097,7 @@ In order to define a new wireguard interface, I have to:
 #+begin_src nix-ts :tangle modules/nixos/server/navidrome.nix
   { pkgs, config, lib, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -9715,7 +10138,7 @@ In order to define a new wireguard interface, I have to:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.snapserver = {
@@ -10030,7 +10453,7 @@ In order to define a new wireguard interface, I have to:
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     federationPort = 8448;
     whatsappPort = 29318;
@@ -10122,7 +10545,7 @@ In order to define a new wireguard interface, I have to:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services = {
@@ -10391,7 +10814,7 @@ In order to define a new wireguard interface, I have to:
   let
     inherit (config.repo.secrets.local.nextcloud) adminuser;
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     nextcloudVersion = "32";
   in
@@ -10410,7 +10833,7 @@ In order to define a new wireguard interface, I have to:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services = {
@@ -10476,7 +10899,7 @@ In order to define a new wireguard interface, I have to:
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
   { lib, pkgs, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10494,7 +10917,7 @@ In order to define a new wireguard interface, I have to:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -10564,7 +10987,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   { lib, pkgs, config, dns, globals, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     tikaPort = 9998;
     gotenbergPort = 3002;
@@ -10591,7 +11014,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services = {
@@ -10704,7 +11127,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 #+begin_src nix-ts :tangle modules/nixos/server/transmission.nix
   { self, pkgs, lib, config, confLib, ... }:
   let
-    inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
+    inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain isHome;
 
     lidarrUser = "lidarr";
     lidarrGroup = lidarrUser;
@@ -10790,7 +11213,10 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         prowlarr.info = "https://${serviceDomain}/prowlarr";
       };
 
-      globals.services.transmission.domain = serviceDomain;
+      globals.services.transmission = {
+        domain = serviceDomain;
+        inherit isHome;
+      };
 
       services = {
         radarr = {
@@ -10893,7 +11319,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems.syncthing) serviceDomain;
-    inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     specificServiceName = "${serviceName}-${config.node.name}";
 
@@ -10950,7 +11376,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
       globals.services.${specificServiceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = rec {
@@ -11118,7 +11544,7 @@ This section exposes several metrics that I use to check the health of my server
 #+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     prometheusPort = 9090;
     prometheusUser = "prometheus";
@@ -11180,7 +11606,7 @@ This section exposes several metrics that I use to check the health of my server
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services = {
@@ -11381,7 +11807,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 #+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -11393,7 +11819,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.jenkins = {
@@ -11480,7 +11906,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 #+begin_src nix-ts :tangle modules/nixos/server/freshrss.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     inherit (config.swarselsystems) sopsFile;
   in
@@ -11535,7 +11961,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} =
@@ -11598,7 +12024,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     kanidmDomain = globals.services.kanidm.domain;
   in
@@ -11625,7 +12051,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -11766,7 +12192,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   { self, lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "ankisync"; port = 27701; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "ankisync"; port = 27701; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     ankiUser = globals.user.name;
   in
@@ -11790,7 +12216,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.anki-sync-server = {
@@ -11859,7 +12285,7 @@ kanidm person credential create-reset-token <user>
   let
     certsSopsFile = self + /secrets/repo/certs.yaml;
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     oauth2ProxyDomain = globals.services.oauth2-proxy.domain;
     immichDomain = globals.services.immich.domain;
@@ -11919,8 +12345,9 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
+      globals.general.idmServer = config.node.name;
 
       environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
         files = [
@@ -12275,7 +12702,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     kanidmDomain = globals.services.kanidm.domain;
     mainDomain = globals.domains.main;
@@ -12421,7 +12848,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services = {
@@ -12511,7 +12938,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/firefly-iii.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     nginxGroup = "nginx";
 
@@ -12549,7 +12976,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services = {
@@ -12635,7 +13062,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/koillection.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
     serviceDB = "koillection";
 
     postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
@@ -12665,7 +13092,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       virtualisation.oci-containers.containers = {
@@ -12781,7 +13208,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/atuin.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "atuin"; port = 8888; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "atuin"; port = 8888; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -12795,7 +13222,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -12845,7 +13272,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/radicale.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
     # sopsFile = config.node.secretsDir + "/secrets2.yaml";
     inherit (config.swarselsystems) sopsFile;
 
@@ -12882,7 +13309,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -12976,7 +13403,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/croc.nix
   { self, lib, config, pkgs, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6 isHome;
     servicePorts = [
       9009
       9010
@@ -13020,7 +13447,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -13058,7 +13485,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/microbin.nix
   { self, lib, config, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     inherit (config.swarselsystems) sopsFile;
 
@@ -13110,7 +13537,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -13204,7 +13631,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/shlink.nix
   { self, lib, config, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink";}) servicePort serviceName serviceDomain serviceDir serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink";}) servicePort serviceName serviceDomain serviceDir serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
@@ -13288,7 +13715,7 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       nodes.${serviceProxy}.services.nginx = {
@@ -13329,7 +13756,7 @@ Deployment notes:
 #+begin_src nix-ts :tangle modules/nixos/server/slink.nix
   { self, lib, config, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink";}) servicePort serviceName serviceDomain serviceDir serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink";}) servicePort serviceName serviceDomain serviceDir serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
   in
@@ -13390,7 +13817,7 @@ Deployment notes:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       nodes.${serviceProxy}.services.nginx = {
@@ -13434,7 +13861,7 @@ Deployment notes:
 #+begin_src nix-ts :tangle modules/nixos/server/snipe-it.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
     # sopsFile = config.node.secretsDir + "/secrets2.yaml";
     inherit (config.swarselsystems) sopsFile;
 
@@ -13460,7 +13887,7 @@ Deployment notes:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.snipe-it = {
@@ -13516,7 +13943,7 @@ Deployment notes:
 #+begin_src nix-ts :tangle modules/nixos/server/homebox.nix
   { lib, pkgs, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -13530,7 +13957,7 @@ Deployment notes:
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       services.${serviceName} = {
@@ -13644,7 +14071,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
       name = "garage";
       port = 3900;
       domain = config.repo.secrets.common.services.domains."garage-${config.node.name}";
-    }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
 
     cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
     inherit (config.swarselsystems) sopsFile mainUser;
@@ -13743,7 +14170,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 
       globals.services.${specificServiceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
 
@@ -14027,7 +14454,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
   in
   {
     options. swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    config = lib.mkIf (config.swarselmodules.server.${serviceName} && config.swarselsystems.isCloud) {
 
       nodes.stoicclub.swarselsystems.server.dns.${globals.domains.main}.subdomainRecords = {
         "server.${config.node.name}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -14133,7 +14560,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     };
   }
 #+end_src
-**** nsd (dns) - site1
+***** nsd (dns) - site1
 :PROPERTIES:
 :CUSTOM_ID: h:dc1dbc54-46f7-406d-a551-527e97439614
 :END:
@@ -14144,7 +14571,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2025122204; # update this on changes for secondary dns
+      serial = 2025122401; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -14265,7 +14692,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 #+begin_src nix-ts :tangle modules/nixos/server/minecraft/default.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6 isHome;
     inherit (config.swarselsystems) mainUser;
     worldName = "${mainUser}craft";
   in
@@ -14281,7 +14708,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -14319,12 +14746,14 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :CUSTOM_ID: h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2
 :END:
 
+When changing the hashed passwords, =dovecot= needs to be restarted manually, it will not happen upon rebuild.
+
 #+begin_src nix-ts :tangle modules/nixos/server/mailserver.nix
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
-    inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 user3;
+    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
     baseDomain = globals.domains.main;
 
     roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
@@ -14350,7 +14779,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         };
         roundcube = {
           domain = roundcubeDomain;
-          inherit proxyAddress4 proxyAddress6;
+          inherit proxyAddress4 proxyAddress6 isHome;
         };
       };
 
@@ -14382,6 +14811,9 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         openFirewall = true;
         certificateScheme = "acme";
         dmarcReporting.enable = true;
+        enableSubmission = true;
+        enableSubmissionSsl = true;
+        enableImapSsl = true;
 
         loginAccounts = {
           "${user1}@${baseDomain}" = {
@@ -14398,6 +14830,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
             aliases = [
               "${alias2_1}@${baseDomain}"
               "${alias2_2}@${baseDomain}"
+              "${alias2_3}@${baseDomain}"
             ];
             sendOnly = true;
           };
@@ -14466,6 +14899,8 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
                 proxyPass = "https://${serviceName}";
                 extraConfig = ''
                   client_max_body_size    0;
+                  proxy_ssl_server_name on;
+                  proxy_ssl_name ${roundcubeDomain};
                 '';
               };
             };
@@ -14493,7 +14928,7 @@ $ attic cache create hello
 #+begin_src nix-ts :tangle modules/nixos/server/attic.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6 isHome;
     inherit (config.swarselsystems) mainUser isPublic sopsFile;
     serviceDB = "atticd";
   in
@@ -14509,7 +14944,7 @@ $ attic cache create hello
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
 
       sops = lib.mkIf (!isPublic) {
@@ -14664,7 +15099,7 @@ $ hydra-create-user alice --full-name 'Alice Q. User' \
 #+begin_src nix-ts :tangle modules/nixos/server/hydra.nix
   { inputs, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6 isHome;
     inherit (config.swarselsystems) sopsFile;
   in
     {
@@ -14679,7 +15114,7 @@ $ hydra-create-user alice --full-name 'Alice Q. User' \
 
         globals.services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6;
+          inherit proxyAddress4 proxyAddress6 isHome;
         };
 
         sops = {
@@ -14796,6 +15231,469 @@ $ hydra-create-user alice --full-name 'Alice Q. User' \
       };
     }
 #+end_src
+**** Kea DHCP
+
+This is the dhcp config that runs on my router.
+
+#+begin_src nix-ts :tangle modules/nixos/server/kea.nix
+  { lib, config, globals, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "kea"; dir = "/var/lib/private/kea"; }) serviceName serviceDir;
+  in
+    {
+      options = {
+        swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      };
+      config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+          { directory = serviceDir; mode = "0700"; }
+        ];
+
+        services.kea.dhcp4 = {
+          enable = true;
+          settings = {
+            lease-database = {
+              name = "/var/lib/kea/dhcp4.leases";
+              persist = true;
+              type = "memfile";
+            };
+            valid-lifetime = 86400;
+            renew-timer = 3600;
+            interfaces-config = {
+              # XXX: BUG: why does this bind other macvtaps?
+              interfaces = map (name: "me-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+              service-sockets-max-retries = -1;
+            };
+            subnet4 = lib.flip lib.mapAttrsToList globals.networks.home-lan.vlans (
+              vlanName: vlanCfg: {
+                inherit (vlanCfg) id;
+                interface = "me-${vlanName}";
+                subnet = vlanCfg.cidrv4;
+                pools = [
+                  {
+                    pool = "${lib.net.cidr.host 20 vlanCfg.cidrv4} - ${lib.net.cidr.host (-6) vlanCfg.cidrv4}";
+                  }
+                ];
+                option-data =
+                  [
+                    {
+                      name = "routers";
+                      data = vlanCfg.hosts.hintbooth.ipv4; # FIXME: how to advertise v6 address also?
+                    }
+                  ];
+                # Advertise DNS server for VLANS that have internet access
+                # ++
+                # lib.optional
+                #   (lib.elem vlanName [
+                #     "services"
+                #     "home"
+                #     "devices"
+                #     "guests"
+                #   ])
+                #   {
+                #     name = "domain-name-servers";
+                #     data = globals.networks.home-lan.vlans.services.hosts.hintbooth-adguardhome.ipv4;
+                #   };
+                reservations = lib.concatLists (
+                  lib.forEach (builtins.attrValues vlanCfg.hosts) (
+                    hostCfg:
+                    lib.optional (hostCfg.mac != null) {
+                      hw-address = hostCfg.mac;
+                      ip-address = hostCfg.ipv4;
+                    }
+                  )
+                );
+              }
+            );
+          };
+        };
+
+
+      };
+    }
+#+end_src
+**** nftables (firewall)
+
+This is the dhcp config that runs on my router.
+
+#+begin_src nix-ts :tangle modules/nixos/server/nftables.nix
+  { lib, config, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "nftables"; }) serviceName;
+  in
+  {
+    options = {
+      swarselmodules.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    };
+    config = lib.mkIf config.swarselmodules.${serviceName} {
+
+      networking.nftables = {
+        stopRuleset = lib.mkDefault ''
+          table inet filter {
+            chain input {
+              type filter hook input priority filter; policy drop;
+              ct state invalid drop
+              ct state {established, related} accept
+
+              iifname lo accept
+              meta l4proto ipv6-icmp accept
+              meta l4proto icmp accept
+              ip protocol igmp accept
+              tcp dport ${toString (lib.head config.services.openssh.ports)} accept
+            }
+            chain forward {
+              type filter hook forward priority filter; policy drop;
+            }
+            chain output {
+              type filter hook output priority filter; policy accept;
+            }
+          }
+        '';
+
+        firewall = {
+          enable = true;
+          localZoneName = "local";
+          snippets = {
+            nnf-common.enable = false;
+            nnf-conntrack.enable = true;
+            nnf-drop.enable = true;
+            nnf-loopback.enable = true;
+            nnf-ssh.enable = true;
+          };
+
+          rules.untrusted-to-local = {
+            from = [ "untrusted" ];
+            to = [ "local" ];
+
+            inherit (config.networking.firewall)
+              allowedTCPPorts
+              allowedTCPPortRanges
+              allowedUDPPorts
+              allowedUDPPortRanges
+              ;
+          };
+
+          rules.icmp-and-igmp = {
+            after = [
+              "ct"
+              "ssh"
+            ];
+            from = "all";
+            to = [ "local" ];
+            extraLines = [
+              "meta l4proto ipv6-icmp accept"
+              "meta l4proto icmp accept"
+              "ip protocol igmp accept"
+            ];
+          };
+        };
+      };
+
+    };
+  }
+#+end_src
+**** Firezone
+
+This is the dhcp config that runs on my router.
+
+#+begin_src nix-ts :tangle modules/nixos/server/firezone.nix
+  { lib, pkgs, config, globals, confLib, dns, nodes, ... }:
+  let
+    inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceUser serviceGroup serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome homeProxy webProxy idmServer dnsServer;
+    inherit (config.swarselsystems) sopsFile;
+
+    cfg = config.services.firezone.server;
+
+    homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
+    homeDomains = map (name: globals.services.${name}.domain) homeServices;
+    allow = group: resource: {
+      "${group}@${resource}" = {
+        inherit group resource;
+        description = "Allow ${group} access to ${resource}";
+      };
+    };
+  in
+  {
+    options = {
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    };
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+      globals.services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
+
+      sops = {
+        secrets = {
+          kanidm-firezone-client = { inherit sopsFile; mode = "0400"; };
+          firezone-relay-token = { inherit sopsFile; mode = "0400"; };
+          firezone-smtp-password = { inherit sopsFile; mode = "0440"; };
+          firezone-adapter-config = { inherit sopsFile; mode = "0440"; };
+        };
+      };
+
+      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        { directory = serviceDir; mode = "0700"; }
+      ];
+
+      services.firezone = {
+        server = {
+          enable = true;
+          enableLocalDB = true;
+          settings = {
+            LOG_LEVEL = "debug";
+            # OUTBOUND_EMAIL_ADAPTER = "Elixir.Swoosh.Adapters.SMTP";
+            # OUTBOUND_EMAIL_FROM = config.repo.secrets.local.firezone.mail.from;
+          };
+          settingsSecret = {
+            # OUTBOUND_EMAIL_ADAPTER_OPTS = config.sops.secrets.firezone-adapter-config.path;
+          };
+
+          # smtp.configureManually = true;
+          smtp= {
+            inherit (config.repo.secrets.local.firezone.mail) from username;
+            host = globals.services.mailserver.domain;
+            port = 465;
+            implicitTls = true;
+            passwordFile = config.sops.secrets.firezone-smtp-password.path;
+          };
+
+          provision = {
+            enable = true;
+            accounts.main = {
+              name = "Home";
+              relayGroups.relays.name = "Relays";
+              gatewayGroups.home.name = "Home";
+              actors.admin = {
+                type = "account_admin_user";
+                name = "Admin";
+                email = "admin@${globals.domains.main}";
+              };
+
+              # auth.oidc =
+              #   let
+              #     client_id = "firezone";
+              #   in
+              #   {
+              #     name = "Kanidm";
+              #     adapter = "openid_connect";
+              #     adapter_config = {
+              #       scope = "openid email profile";
+              #       response_type = "code";
+              #       inherit client_id;
+              #       discovery_document_uri = "https://${globals.services.kanidm.domain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+              #       clientSecretFile = config.sops.secrets.kanidm-firezone-client.path;
+              #     };
+              #   };
+
+              resources =
+                lib.genAttrs homeDomains
+                  (domain: {
+                    type = "dns";
+                    name = domain;
+                    address = domain;
+                    gatewayGroups = [ "home" ];
+                    filters = [
+                      { protocol = "icmp"; }
+                      {
+                        protocol = "tcp";
+                        ports = [
+                          443
+                          80
+                        ];
+                      }
+                      {
+                        protocol = "udp";
+                        ports = [ 443 ];
+                      }
+                    ];
+                  })
+                // {
+                  "home.vlan-services.v4" = {
+                    type = "cidr";
+                    name = "home.vlan-services.v4";
+                    address = globals.networks.home-lan.vlans.services.cidrv4;
+                    gatewayGroups = [ "home" ];
+                  };
+                  "home.vlan-services.v6" = {
+                    type = "cidr";
+                    name = "home.vlan-services.v6";
+                    address = globals.networks.home-lan.vlans.services.cidrv6;
+                    gatewayGroups = [ "home" ];
+                  };
+                };
+
+              policies =
+                { }
+                // allow "everyone" "home.vlan-services.v4"
+                // allow "everyone" "home.vlan-services.v6"
+                // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains);
+            };
+          };
+
+          domain = {
+            settings.ERLANG_DISTRIBUTION_PORT = 9003;
+            package = pkgs.dev.firezone-server-domain;
+          };
+          api = {
+            externalUrl = "https://${serviceDomain}/api/";
+            port = 8081;
+            package = pkgs.dev.firezone-server-api;
+          };
+          web = {
+            externalUrl = "https://${serviceDomain}/";
+            port = 8080;
+            package = pkgs.dev.firezone-server-web;
+          };
+        };
+
+        # relay = {
+        #   enable = true;
+        #   port = 3478;
+        #   inherit (config.node) name;
+        #   apiUrl = "wss://${serviceDomain}/api/";
+        #   tokenFile = config.sops.secrets.firezone-relay-token.path;
+        #   publicIpv4 = proxyAddress4;
+        #   publicIpv6 = proxyAddress6;
+        #   openFirewall = true;
+        #   package = pkgs.dev.firezone-relay;
+        # };
+      };
+      systemd.services.firezone-initialize =
+        let
+          generateSecrets =
+            let
+              requiredSecrets = lib.filterAttrs (_: v: v == null) cfg.settingsSecret;
+            in
+            ''
+              mkdir -p secrets
+              chmod 700 secrets
+            ''
+            + lib.concatLines (
+              lib.forEach (builtins.attrNames requiredSecrets) (secret: ''
+                if [[ ! -e secrets/${secret} ]]; then
+                  echo "Generating ${secret}"
+                  # Some secrets like TOKENS_KEY_BASE require a value >=64 bytes.
+                  head -c 64 /dev/urandom | base64 -w 0 > secrets/${secret}
+                  chmod 600 secrets/${secret}
+                fi
+              '')
+            );
+          loadSecretEnvironment =
+            component:
+            let
+              relevantSecrets = lib.subtractLists (builtins.attrNames cfg.${component}.settings) (
+                builtins.attrNames cfg.settingsSecret
+              );
+            in
+            lib.concatLines (
+              lib.forEach relevantSecrets (
+                secret:
+                ''export ${secret}=$(< ${
+              if cfg.settingsSecret.${secret} == null then
+                "secrets/${secret}"
+              else
+                "\"$CREDENTIALS_DIRECTORY/${secret}\""
+            })''
+              )
+            );
+        in
+        {
+          script = lib.mkForce ''
+            mkdir -p "$TZDATA_DIR"
+
+            # Generate and load secrets
+            ${generateSecrets}
+            ${loadSecretEnvironment "domain"}
+
+            echo "Running migrations"
+            ${lib.getExe cfg.domain.package} eval "Domain.Release.migrate(manual: true)"
+          '';
+        };
+
+
+      nodes = {
+        ${homeProxy} =
+          let
+            nodeCfg = nodes.${homeProxy}.config;
+          in
+          {
+            sops.secrets.firezone-gateway-token = { inherit sopsFile; mode = "0400"; };
+            services.firezone.gateway = {
+              enable = true;
+              inherit (nodeCfg.node) name;
+              apiUrl = "wss://${globals.services.firezone.domain}/api/";
+              tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
+              package = pkgs.dev.firezone-gateway;
+            };
+          };
+        ${idmServer} =
+          let
+            nodeCfg = nodes.${idmServer}.config;
+          in
+          {
+            sops.secrets.kanidm-firezone = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            services.kanidm.provision = {
+              groups."firezone.access" = { };
+              systems.oauth2.firezone = {
+                displayName = "Firezone VPN";
+                # NOTE: state: both uuids are runtime values
+                originUrl = [
+                  "https://${globals.services.firezone.domain}/50e16678-6e95-49e2-b59e-d70d0e658843/sign_in/providers/fc8afaa3-ce60-4073-9cae-81dec9453a2d/handle_callback"
+                  "https://${globals.services.firezone.domain}/50e16678-6e95-49e2-b59e-d70d0e658843/settings/identity_providers/openid_connect/fc8afaa3-ce60-4073-9cae-81dec9453a2d/handle_callback"
+                ];
+                originLanding = "https://${globals.services.firezone.domain}/";
+                basicSecretFile = nodeCfg.sops.secrets.kanidm-firezone.path;
+                preferShortUsername = true;
+                scopeMaps."firezone.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+
+            };
+          };
+        ${webProxy} = {
+          services.nginx = {
+            upstreams = {
+              ${serviceName} = {
+                servers."127.0.0.1:${toString config.services.firezone.server.web.port}" = { };
+              };
+              "${serviceName}-api" = {
+                servers."${serviceAddress}:${toString config.services.firezone.server.api.port}" = { };
+              };
+            };
+            virtualHosts = {
+              ${serviceDomain} = {
+                useACMEHost = globals.domains.main;
+                forceSSL = true;
+                acmeRoot = null;
+                locations."/" = {
+                  # The trailing slash is important to strip the location prefix from the request
+                  proxyPass = "http://${serviceName}/";
+                  proxyWebsockets = true;
+                };
+                locations."/api/" = {
+                  # The trailing slash is important to strip the location prefix from the request
+                  proxyPass = "http://${serviceName}-api/";
+                  proxyWebsockets = true;
+                };
+              };
+            };
+          };
+        };
+      };
+
+    };
+  }
+#+end_src
 *** Darwin
 :PROPERTIES:
 :CUSTOM_ID: h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47
@@ -14811,30 +15709,32 @@ This section is to be used for darwin modules, in case I can ever be bothered to
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix-ts :tangle modules/nixos/darwin/default.nix
-  { self, lib, config, outputs, globals, ... }:
+  { self, lib, config, outputs, globals, withHomeManager, ... }:
   let
     macUser = globals.user.work;
   in
-  {
+    {
     imports = [
     ];
 
     options.swarselmodules.optional.darwin = lib.mkEnableOption "optional darwin settings";
-    config = lib.mkIf config.swarselmodules.optional.darwin {
-      nix.settings.experimental-features = "nix-command flakes";
-      nixpkgs = {
-        hostPlatform = "x86_64-darwin";
-        overlays = [ outputs.overlays.default ];
-        config = {
-          allowUnfree = true;
+    config = lib.mkIf config.swarselmodules.optional.darwin
+      {
+        nix.settings.experimental-features = "nix-command flakes";
+        nixpkgs = {
+          hostPlatform = "x86_64-darwin";
+          overlays = [ outputs.overlays.default ];
+          config = {
+            allowUnfree = true;
+          };
         };
-      };
 
+        system.stateVersion = 4;
+      } // lib.optionalAttrs withHomeManager {
       home-manager.users."${macUser}".imports = [
         "${self}/modules/home/darwin"
       ];
 
-      system.stateVersion = 4;
     };
   }
 #+end_src
@@ -14855,6 +15755,7 @@ These sets of configuration do not need to be deployed on every host, for a mult
 TODO: evaluate whether I should keep using this structure.
 
   #+begin_src nix-ts :tangle modules/nixos/optional/default.nix
+    # @ future me: dont panic, this file is not read in by readNix
     { lib, ... }:
     let
       importNames = lib.swarselsystems.readNix "modules/nixos/optional";
@@ -14915,52 +15816,52 @@ Auto login for the initial session.
 This opens a few gaming ports and installs the steam configuration suite for gaming. There are more options in [[#h:84fd7029-ecb6-4131-9333-289982f24ffa][Gaming]] (home-manager side).
 
 #+begin_src nix-ts :tangle modules/nixos/optional/gaming.nix
-  { self, pkgs, config, ... }:
-  {
-    config = {
+{ self, lib, pkgs, config, withHomeManager, ... }:
+{
+  config = {
 
-      home-manager.users."${config.swarselsystems.mainUser}" = {
-        imports = [
-          "${self}/modules/home/optional/gaming.nix"
-        ];
-      };
-
-      programs.steam = {
-        enable = true;
-        package = pkgs.steam;
-        extraCompatPackages = [
-          pkgs.proton-ge-bin
-        ];
-      };
-      # specialisation = {
-      #   gaming.configuration = {
-      #     networking = {
-      #       firewall.enable = lib.mkForce false;
-      #       firewall = {
-      #         allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
-      #         allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-      #         allowedTCPPortRanges = [
-      #           { from = 27015; to = 27030; } # barotrauma
-      #           { from = 27036; to = 27037; } # barotrauma
-      #         ];
-      #         allowedUDPPortRanges = [
-      #           { from = 27000; to = 27031; } # barotrauma
-      #           { from = 58962; to = 58964; } # barotrauma
-      #         ];
-      #       };
-      #     };
-
-
-      #     hardware.xone.enable = true;
-
-      #     environment.systemPackages = [
-      #       pkgs.linuxKernel.packages.linux_6_12.xone
-      #     ];
-      #   };
-      # };
+    programs.steam = {
+      enable = true;
+      package = pkgs.steam;
+      extraCompatPackages = [
+        pkgs.proton-ge-bin
+      ];
     };
+    # specialisation = {
+    #   gaming.configuration = {
+    #     networking = {
+    #       firewall.enable = lib.mkForce false;
+    #       firewall = {
+    #         allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
+    #         allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+    #         allowedTCPPortRanges = [
+    #           { from = 27015; to = 27030; } # barotrauma
+    #           { from = 27036; to = 27037; } # barotrauma
+    #         ];
+    #         allowedUDPPortRanges = [
+    #           { from = 27000; to = 27031; } # barotrauma
+    #           { from = 58962; to = 58964; } # barotrauma
+    #         ];
+    #       };
+    #     };
 
-  }
+
+    #     hardware.xone.enable = true;
+
+    #     environment.systemPackages = [
+    #       pkgs.linuxKernel.packages.linux_6_12.xone
+    #     ];
+    #   };
+    # };
+  } // lib.optionalAttrs withHomeManager {
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${self}/modules/home/optional/gaming.nix"
+      ];
+    };
+  };
+
+}
 
 
 #+end_src
@@ -15059,15 +15960,10 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 This holds configuration that is specific to framework laptops.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/framework.nix
-  { self, config, ... }:
+  { self, lib, config, withHomeManager, ... }:
   {
     config = {
 
-      home-manager.users."${config.swarselsystems.mainUser}" = {
-        imports = [
-          "${self}/modules/home/optional/framework.nix"
-        ];
-      };
 
       services = {
         fwupd = {
@@ -15089,6 +15985,12 @@ This holds configuration that is specific to framework laptops.
         config = {
           defaultStrategy = "lazy";
         };
+      };
+    } // lib.optionalAttrs withHomeManager {
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        imports = [
+          "${self}/modules/home/optional/framework.nix"
+        ];
       };
     };
   }
@@ -15188,7 +16090,7 @@ When setting up a new machine:
 #+end_src
 
 #+begin_src nix-ts :tangle modules/nixos/optional/work.nix
-  { self, lib, pkgs, config, ... }:
+  { self, lib, pkgs, config, withHomeManager, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
     iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -15207,12 +16109,6 @@ When setting up a new machine:
       };
     };
     config = {
-
-      home-manager.users."${config.swarselsystems.mainUser}" = {
-        imports = [
-          "${self}/modules/home/optional/work.nix"
-        ];
-      };
 
       sops =
         let
@@ -15388,7 +16284,7 @@ When setting up a new machine:
         openssh = {
           enable = true;
           extraConfig = ''
-          '';
+              '';
         };
 
         syncthing = {
@@ -15426,6 +16322,13 @@ When setting up a new machine:
       #     ];
       #   };
       # };
+    } // lib.optionalAttrs withHomeManager {
+
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        imports = [
+          "${self}/modules/home/optional/work.nix"
+        ];
+      };
     };
 
   }
@@ -15437,9 +16340,9 @@ When setting up a new machine:
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/optional/uni.nix :noweb yes
-  { self, config, ... }:
+  { self, config, withHomeManager, ... }:
   {
-    config = {
+    config = {} // lib.optionalAttrs withHomeManager {
 
       home-manager.users."${config.swarselsystems.mainUser}" = {
         imports = [
@@ -15482,14 +16385,33 @@ Some standard options that should be set for every microvm host.
 Some standard options that should be set vor every microvm guest. We set the default
 
 #+begin_src nix-ts :tangle modules/nixos/optional/microvm-guest.nix
-  _:
+  { self, inputs, ... }:
   {
-    # imports = [
-    #   inputs.microvm.nixosModules.microvm
-    # ];
+    imports = [
+      inputs.disko.nixosModules.disko
+      inputs.home-manager.nixosModules.home-manager
+      inputs.impermanence.nixosModules.impermanence
+      inputs.lanzaboote.nixosModules.lanzaboote
+      inputs.microvm.nixosModules.host
+      inputs.microvm.nixosModules.microvm
+      inputs.nix-index-database.nixosModules.nix-index
+      inputs.nix-minecraft.nixosModules.minecraft-servers
+      inputs.nix-topology.nixosModules.default
+      inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+      inputs.simple-nixos-mailserver.nixosModules.default
+      inputs.sops.nixosModules.sops
+      inputs.stylix.nixosModules.stylix
+      inputs.swarsel-nix.nixosModules.default
+      inputs.nixos-nftables-firewall.nixosModules.default
 
-    config =
-      { };
+      (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+
+      "${self}/modules/shared/meta.nix"
+    ];
+
+    config = {
+        system.stateVersion = "23.05";
+    };
   }
 
 #+end_src
@@ -15555,6 +16477,136 @@ Some standard options that should be set vor every microvm guest. We set the def
 
 #+end_src
 
+**** systemd-networkd (vlans/microvms)
+
+This sets up the networking framework that is needed for a server that hosts microvms.
+
+The general idea is as follows:
+- A host has =n= physical interfaces, which bind to the =br= bridge. Also bound to the bridge is the =veth= interfaces that the vlans are applied to. This makes it so that the macvlan interfaces still get an IP even if the physical interfaces have no carrier.
+- For each VLAN defined in globals we create a VLAN here - we also create a macvlan interface for the hosts which is bound to the respective VLAN interface; also binding to that VLAN interface are the macvtap devices that are being created by the microvm module.
+  - normally, a guest using macvtap is not reachable by the host unless using a switch that supports hairpin-mode. However, consumers of the same VLAN can still communicate, which is realized using the macvlan interface.
+  - even then, the kernel will only route requests when the underlying interface is up. In the case that no physical ports are used, this means that the bridge interface would effectively not work (even when administratively set to UP using =activationPolicy=) - the aforementioned =veth= takes care of that problem.
+
+#+begin_src nix-ts :tangle modules/nixos/optional/systemd-networkd-vlan.nix
+  { lib, config, globals, ... }:
+  {
+
+    systemd.network = {
+      wait-online.anyInterface = true;
+      netdevs = {
+        "10-veth" = {
+          netdevConfig = {
+            Kind = "veth";
+            Name = "veth-br";
+          };
+          peerConfig = {
+            Name = "veth-int";
+          };
+        };
+        "20-br" = {
+          netdevConfig = {
+            Kind = "bridge";
+            Name = "br";
+          };
+        };
+      } // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
+        vlanName: vlanCfg: {
+          "30-vlan-${vlanName}" = {
+            netdevConfig = {
+              Kind = "vlan";
+              Name = "vlan-${vlanName}";
+            };
+            vlanConfig.Id = vlanCfg.id;
+          };
+          "40-me-${vlanName}" = {
+            netdevConfig = {
+              Name = "me-${vlanName}";
+              Kind = "macvlan";
+            };
+            extraConfig = ''
+              [MACVLAN]
+              Mode=bridge
+            '';
+          };
+        }
+      );
+      networks = {
+        "40-br" = {
+          matchConfig.Name = "br";
+          bridgeConfig = { };
+          linkConfig = {
+            ActivationPolicy = "always-up";
+            RequiredForOnline = "no";
+          };
+          networkConfig = {
+            ConfigureWithoutCarrier = true;
+            LinkLocalAddressing = "no";
+          };
+        };
+        "15-veth-br" = {
+          matchConfig.Name = "veth-br";
+
+          linkConfig = {
+            RequiredForOnline = "no";
+          };
+
+          networkConfig = {
+            Bridge = "br";
+          };
+        };
+        "15-veth-int" = {
+          matchConfig.Name = "veth-int";
+
+          linkConfig = {
+            ActivationPolicy = "always-up";
+            RequiredForOnline = "no";
+          };
+
+          networkConfig = {
+            ConfigureWithoutCarrier = true;
+            LinkLocalAddressing = "no";
+          };
+
+          vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+        };
+        "90-macvtap-ignore" = {
+          matchConfig.Kind = "macvtap";
+          linkConfig.ActivationPolicy = "manual";
+          linkConfig.Unmanaged = "yes";
+        };
+      } // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
+        vlanName: vlanCfg: {
+          "30-vlan-${vlanName}" = {
+            matchConfig.Name = "vlan-${vlanName}";
+            networkConfig.LinkLocalAddressing = "no";
+            networkConfig.MACVLAN = "me-${vlanName}";
+            linkConfig.RequiredForOnline = "no";
+          };
+          "40-me-${vlanName}" = {
+            address = [
+              vlanCfg.hosts.${config.node.name}.cidrv4
+              vlanCfg.hosts.${config.node.name}.cidrv6
+            ];
+            matchConfig.Name = "me-${vlanName}";
+            networkConfig = {
+              IPv4Forwarding = "yes";
+              IPv6PrivacyExtensions = "yes";
+              IPv6SendRA = true;
+              IPv6AcceptRA = false;
+            };
+            ipv6Prefixes = [
+              { Prefix = vlanCfg.cidrv6; }
+            ];
+            linkConfig.RequiredForOnline = "routable";
+          };
+        }
+      );
+    };
+
+  }
+
+#+end_src
+
 **** nix-topology node config
 
 Hold standard options for nix-topology per config
@@ -15585,6 +16637,7 @@ Hold standard options for nix-topology per config
 The general structure here is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20d70b3][NixOS]] section.
 
 #+begin_src nix-ts :tangle modules/home/default.nix
+    # @ future me: dont panic, this file is not read in by readNix
   { lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/home";
@@ -15914,7 +16967,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         nix-visualize
         nix-init
         nix-inspect
-        nixpkgs-review
+        (nixpkgs-review.override { nix = config.nix.package; })
         manix
 
         # shellscripts
@@ -16209,7 +17262,7 @@ These section allows home-manager to allow theme settings, and handles some othe
 
 This section has been notably empty ever since switching to stylix. Only Emacs is not allowed to be styled by it, because it becomes more ugly compared to my handcrafted setup.
 
-=theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
+=theme= is defined in [[#h:2e9b84d7-cb18-4e74-83f8-65ada11a8911][stylix color scheme]].
 
 #+begin_src nix-ts :noweb yes :tangle modules/home/common/stylix.nix
   { self, lib, config, vars, ... }:
@@ -22325,9 +23378,9 @@ TODO: check which of these can be replaced but builtin functions.
         type = lib.types.bool;
         default = config.swarselsystems.isLaptop;
       };
-      withHomeManager = lib.mkOption {
+      isMicroVM = lib.mkOption {
         type = lib.types.bool;
-        default = true;
+        default = false;
       };
       isSwap = lib.mkOption {
         type = lib.types.bool;
@@ -22664,6 +23717,11 @@ In short, the options defined here are passed to the modules systems using =_mod
           type = lib.types.path;
           default = ./.;
         };
+        configDir = lib.mkOption {
+          description = "Path to the base directory for this node.";
+          type = lib.types.path;
+          default = ./.;
+        };
         name = lib.mkOption {
           type = lib.types.str;
         };
@@ -22687,7 +23745,7 @@ In short, the options defined here are passed to the modules systems using =_mod
 :CUSTOM_ID: h:a33322d5-014a-4072-a4a5-91bc71c343b8
 :END:
 #+begin_src nix-ts :noweb yes :tangle modules/shared/config-lib.nix
-  { config, lib, globals, nixosConfig ? null, ... }:
+  { self, config, lib, globals, inputs, outputs, minimal, nixosConfig ? null, ... }:
   {
     _module.args = {
       confLib = rec {
@@ -22724,7 +23782,43 @@ In short, the options defined here are passed to the modules systems using =_mod
           serviceProxy = proxy;
           proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
           proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
+          inherit (globals.hosts.${config.node.name}) isHome;
+          inherit (globals.general) homeProxy webProxy dnsServer idmServer;
         };
+
+        mkMicrovm = if config.swarselsystems.withMicroVMs then (guestName: {
+          ${guestName} = {
+            backend = "microvm";
+            autostart = true;
+            modules = [
+              (config.node.configDir + /guests/${guestName}.nix)
+              {
+                node.secretsDir =  config.node.configDir + /secrets/${guestName};
+                node.configDir =  config.node.configDir + /guests/${guestName};
+                networking.nftables.firewall = {
+                  zones.untrusted.interfaces = lib.mkIf (
+                    lib.length config.guests.${guestName}.networking.links == 1
+                  ) config.guests.${guestName}.networking.links;
+                };
+              }
+              "${self}/modules/nixos/optional/microvm-guest.nix"
+            ];
+            microvm = {
+              system = config.node.arch;
+              baseMac = config.repo.secrets.local.networking.networks.lan.mac;
+              interfaces.vlan-services = { };
+            };
+            extraSpecialArgs = {
+              inherit (outputs) nodes;
+              inherit (inputs.self.pkgs.${config.node.arch}) lib;
+              inherit inputs outputs minimal;
+              inherit (inputs) self;
+              withHomeManager = false;
+              globals = outputs.globals.${config.node.arch};
+            };
+          };
+        }) else (_: {_ = {};});
+
       };
     };
   }
@@ -22739,7 +23833,7 @@ This is the central station for self-defined packages. These are all referenced 
 
 Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
 
-*** Packages (flake)
+**** Packages (flake)
 :PROPERTIES:
 :CUSTOM_ID: h:2803e3ab-b746-46c0-bcc4-051a23185bc3
 :END:
@@ -22760,7 +23854,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 
 #+end_src
 
-**** pass-fuzzel
+***** pass-fuzzel
 :PROPERTIES:
 :CUSTOM_ID: h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3
 :END:
@@ -22831,7 +23925,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 
 #+end_src
 
-**** quickpass
+***** quickpass
 :PROPERTIES:
 :CUSTOM_ID: h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9
 :END:
@@ -22860,7 +23954,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 
 #+end_src
 
-**** cura5
+***** cura5
 :PROPERTIES:
 :CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
 :END:
@@ -22901,7 +23995,7 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
 
 #+end_src
 
-**** hm-specialisation
+***** hm-specialisation
 :PROPERTIES:
 :CUSTOM_ID: h:e6612cff-0804-47ef-9f2b-d2cc6d81a896
 :END:
@@ -22925,7 +24019,7 @@ This script allows for quick git home-manager specialisation switching.
 
 #+end_src
 
-**** cdw
+***** cdw
 :PROPERTIES:
 :CUSTOM_ID: h:73b14c7a-5444-4fed-b7ac-d65542cdeda3
 :END:
@@ -22947,7 +24041,7 @@ This script allows for quick git worktree switching.
 
 #+end_src
 
-**** cdb
+***** cdb
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
@@ -22967,7 +24061,7 @@ This script allows for quick git branch switching.
 
 #+end_src
 
-**** prstatus
+***** prstatus
 :PROPERTIES:
 :CUSTOM_ID: h:bc5be0e7-2dab-4185-9a52-eb98afe3159f
 :END:
@@ -22987,7 +24081,7 @@ This script allows for quick checking of nixpkgs PR statuses.
 
 #+end_src
 
-**** bak
+***** bak
 :PROPERTIES:
 :CUSTOM_ID: h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3
 :END:
@@ -23008,7 +24102,7 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 
 #+end_src
 
-**** timer
+***** timer
 :PROPERTIES:
 :CUSTOM_ID: h:3c72d263-411c-44f0-90ff-55f14d4d9d49
 :END:
@@ -23029,7 +24123,7 @@ This app starts a configuratble timer and uses TTS to say something once the tim
 
 #+end_src
 
-**** e
+***** e
 :PROPERTIES:
 :CUSTOM_ID: h:1834df06-9238-4efa-9af6-851dafe66c68
 :END:
@@ -23072,7 +24166,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 
 #+end_src
 
-**** command-not-found
+***** command-not-found
 :PROPERTIES:
 :CUSTOM_ID: h:10268005-a9cd-4a00-967c-cbe975c552fa
 :END:
@@ -23116,7 +24210,7 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
   }
 #+end_src
 
-**** swarselcheck
+***** swarselcheck
 :PROPERTIES:
 :CUSTOM_ID: h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d
 :END:
@@ -23198,7 +24292,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 #+end_src
 
-**** swarselcheck-niri
+***** swarselcheck-niri
 :PROPERTIES:
 :CUSTOM_ID: h:96da8360-2d23-4e86-9602-415fbdb972af
 :END:
@@ -23252,7 +24346,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 #+end_src
 
-**** swarselzellij
+***** swarselzellij
 :PROPERTIES:
 :CUSTOM_ID: h:564c102c-e335-4f17-a613-c5a436bb4864
 :END:
@@ -23278,7 +24372,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 #+end_src
 
-**** waybarupdate
+***** waybarupdate
 :PROPERTIES:
 :CUSTOM_ID: h:f93f66f9-6b8b-478e-b139-b2f382c1f25e
 :END:
@@ -23322,7 +24416,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 
 #+end_src
 
-**** opacitytoggle
+***** opacitytoggle
 :PROPERTIES:
 :CUSTOM_ID: h:a1d94db2-837a-40c4-bbd8-81ce847440ee
 :END:
@@ -23346,7 +24440,7 @@ This app quickly toggles between 5% and 0% transparency.
   }
 #+end_src
 
-**** fs-diff
+***** fs-diff
 :PROPERTIES:
 :CUSTOM_ID: h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0
 :END:
@@ -23384,7 +24478,7 @@ This utility is used to compare the current state of the root directory with the
   }
 #+end_src
 
-**** github-notifications
+***** github-notifications
 :PROPERTIES:
 :CUSTOM_ID: h:a9398c4e-4d3b-4942-b03c-192f9c0517e5
 :END:
@@ -23408,7 +24502,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
   }
 #+end_src
 
-**** kanshare
+***** kanshare
 :PROPERTIES:
 :CUSTOM_ID: h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5
 :END:
@@ -23430,7 +24524,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
   }
 #+end_src
 
-**** swarsel-bootstrap
+***** swarsel-bootstrap
 :PROPERTIES:
 :CUSTOM_ID: h:74db57ae-0bb9-4257-84be-eddbc85130dd
 :END:
@@ -23848,7 +24942,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   }
 #+end_src
 
-**** swarsel-rebuild
+***** swarsel-rebuild
 :PROPERTIES:
 :CUSTOM_ID: h:1eabdc59-8832-44ca-a22b-11f848ab150a
 :END:
@@ -23977,7 +25071,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   }
 #+end_src
 
-**** swarsel-install
+***** swarsel-install
 :PROPERTIES:
 :CUSTOM_ID: h:fbd8aaf2-9dca-4ca3-aca1-19d0d188a435
 :END:
@@ -24191,7 +25285,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   }
 #+end_src
 
-**** swarsel-postinstall
+***** swarsel-postinstall
 :PROPERTIES:
 :CUSTOM_ID: h:c98a7615-e5da-4f47-8ed1-2b2ea65519e9
 :END:
@@ -24282,7 +25376,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   }
 #+end_src
 
-**** t2ts
+***** t2ts
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
@@ -24300,7 +25394,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-**** ts2t
+***** ts2t
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
@@ -24318,7 +25412,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-**** vershell
+***** vershell
 :PROPERTIES:
 :CUSTOM_ID: h:7806b129-a4a5-4d10-af27-6cbeafbcb294
 :END:
@@ -24336,7 +25430,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-**** eontimer
+***** eontimer
 :PROPERTIES:
 :CUSTOM_ID: h:9fda7829-09a4-4b8f-86f6-08b078ab2874
 :END:
@@ -24440,7 +25534,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-**** project
+***** project
 :PROPERTIES:
 :CUSTOM_ID: h:154b6df4-dd50-4f60-9794-05a140d02994
 :END:
@@ -24463,7 +25557,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   }
 #+end_src
 
-**** fhs
+***** fhs
 :PROPERTIES:
 :CUSTOM_ID: h:36d6c17c-6d91-4297-b76d-9d7feab6c1a0
 :END:
@@ -24483,7 +25577,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   })
 #+end_src
 
-**** swarsel-displaypower
+***** swarsel-displaypower
 :PROPERTIES:
 :CUSTOM_ID: h:814d5e7f-4b95-412d-b246-33f888514ec6
 :END:
@@ -24505,7 +25599,7 @@ A crude script to power on all displays that might be attached. Needed because s
 
 #+end_src
 
-**** swarsel-mgba
+***** swarsel-mgba
 :PROPERTIES:
 :CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
 :END:
@@ -24537,7 +25631,7 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
-**** swarsel-deploy
+***** swarsel-deploy
 :PROPERTIES:
 :CUSTOM_ID: h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e
 :END:
@@ -24669,7 +25763,7 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
-**** swarsel-build
+***** swarsel-build
 :PROPERTIES:
 :CUSTOM_ID: h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e
 :END:
@@ -24693,7 +25787,7 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
-**** swarsel-instantiate
+***** swarsel-instantiate
 :PROPERTIES:
 :CUSTOM_ID: h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa
 :END:
@@ -24712,7 +25806,7 @@ This is a convenience function that calls =nix-instantiate= with a number of fla
 
 #+end_src
 
-**** sshrm
+***** sshrm
 :PROPERTIES:
 :CUSTOM_ID: h:02842543-caca-4d4c-a4d2-7ac749b5c136
 :END:
@@ -24741,7 +25835,7 @@ This programs simply runs ssh-keygen on the last host that I tried to ssh into. 
     text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
-**** endme
+***** endme
 :PROPERTIES:
 :CUSTOM_ID: h:abbd18a2-73ae-4ee4-8487-06fef23638bb
 :END:
@@ -24761,7 +25855,7 @@ Sometimes my DE crashes after putting it to suspend - to be precise, it happens 
 
 #+end_src
 
-**** git-replace
+***** git-replace
 :PROPERTIES:
 :CUSTOM_ID: h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2
 :END:
@@ -24837,13 +25931,13 @@ This script allows for quick git replace of a string.
 
 #+end_src
 
-*** Packages (config)
+**** Packages (config)
 :PROPERTIES:
 :CUSTOM_ID: h:c01a91b8-b751-4978-b987-733de63c8211
 :END:
 
 #+begin_src nix-ts :tangle pkgs/config/default.nix
-  { self, homeConfig, lib, pkgs, config, ... }:
+  { self, lib, pkgs, config, homeConfig, ... }:
   let
     mkPackages = names: pkgs: builtins.listToAttrs (map
       (name: {
@@ -24856,7 +25950,7 @@ This script allows for quick git replace of a string.
   mkPackages packageNames pkgs
 #+end_src
 
-**** cdr
+***** cdr
 :PROPERTIES:
 :CUSTOM_ID: h:78d17941-68b3-4b36-b378-3282ae2178b8
 :END:
@@ -24880,7 +25974,7 @@ This script allows for quick git replace of a string.
 
 #+end_src
 
-**** swarsel-gens
+***** swarsel-gens
 
 This script quickly lists all nix generatinos on the system
 
@@ -24898,7 +25992,7 @@ This script quickly lists all nix generatinos on the system
 
 #+end_src
 
-**** swarsel-switch
+***** swarsel-switch
 
 This script quickly switches to another nix generation.
 
@@ -24975,6 +26069,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lowBattery = lib.mkDefault false;
         network = lib.mkDefault true;
         networkDevices = lib.mkDefault true;
+        nftables = lib.mkDefault true;
         nix-ld = lib.mkDefault true;
         nvd = lib.mkDefault true;
         packages = lib.mkDefault true;
@@ -25038,6 +26133,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         autologin = lib.mkDefault true;
         boot = lib.mkDefault true;
         btrfs = lib.mkDefault true;
+        nftables = lib.mkDefault true;
 
         server = {
           ssh = lib.mkDefault true;
@@ -25102,6 +26198,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lowBattery = lib.mkForce true;
         lanzaboote = lib.mkForce true;
         autologin = lib.mkForce true;
+        nftables = lib.mkDefault true;
       };
 
     };
@@ -25132,6 +26229,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           btrfs = lib.mkDefault true;
           sops = lib.mkDefault true;
           boot = lib.mkDefault true;
+          nftables = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
             network = lib.mkDefault true;
@@ -25139,8 +26237,41 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             packages = lib.mkDefault true;
             ssh = lib.mkDefault true;
             attic-setup = lib.mkDefault true;
+            dns-hostrecord = lib.mkDefault true;
           };
         };
+    };
+
+  }
+
+#+end_src
+**** MicroVM
+
+#+begin_src nix-ts :tangle profiles/nixos/microvm/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselprofiles.microvm = lib.mkEnableOption "is this a server";
+    config = lib.mkIf config.swarselprofiles.microvm {
+      swarselsystems = {
+        isLinux = true;
+        isNixos = true;
+      };
+      swarselmodules = {
+        general = lib.mkDefault true;
+        pii = lib.mkDefault true;
+        xserver = lib.mkDefault true;
+        time = lib.mkDefault true;
+        users = lib.mkDefault true;
+        impermanence = lib.mkDefault true;
+        btrfs = lib.mkDefault true;
+        sops = lib.mkDefault true;
+        nftables = lib.mkDefault true;
+        server = {
+          general = lib.mkDefault true;
+          packages = lib.mkDefault true;
+          ssh = lib.mkDefault true;
+        };
+      };
     };
 
   }
@@ -25157,10 +26288,12 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     options.swarselprofiles.router = lib.mkEnableOption "enable the router profile";
     config = lib.mkIf config.swarselprofiles.router {
       swarselmodules = {
-          server = {
-            router = lib.mkDefault true;
-          };
+        nftables = lib.mkDefault true;
+        server = {
+          router = lib.mkDefault true;
+          kea = lib.mkDefault true;
         };
+      };
     };
 
   }
@@ -29663,6 +30796,335 @@ This is the stylesheet used by waybar.
   }
 
 #+end_src
+** Doc Page style.css
+
+This is the stylesheet used by waybar.
+
+#+begin_src css :tangle style.css
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #1d252c;
+  color: #b7c5d3;
+  font-family: "Inter", "Fira Sans", system-ui, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden; /* prevent horizontal scroll from small overflows */
+}
+
+body {
+  display: flex;
+}
+
+#table-of-contents {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 1.2rem 1rem;
+  background-color: #232b32;
+  border-right: 1px solid #2f3b45;
+  font-size: 0.9rem;
+}
+
+#table-of-contents h2 {
+  display: none;
+}
+
+#text-table-of-contents ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+#text-table-of-contents li {
+  margin: 0.2rem 0;
+  position: relative;
+}
+
+.toc-entry {
+  display: inline-flex;
+  align-items: center;
+}
+
+#text-table-of-contents a {
+  color: #b7c5d3;
+  text-decoration: none;
+}
+
+#text-table-of-contents a:hover {
+  color: #5ec4ff;
+}
+
+#text-table-of-contents ul ul {
+  padding-left: 1rem;
+  border-left: 1px solid #2f3b45;
+}
+
+#content {
+  margin-left: 300px;
+  margin-right: 320px;
+  padding: 2rem 3rem;
+  max-width: 1200px;
+  width: calc(100vw - 620px);
+  box-sizing: border-box;
+  transition: margin 0.3s ease, padding 0.3s ease, width 0.3s ease, max-width 0.3s ease;
+}
+
+#content.pinned-hidden {
+  margin-right: 0;
+  width: calc(100vw - 300px);
+}
+
+h1, h2, h3, h4, h5 {
+  color: #70e1e8;
+  font-weight: 500;
+  margin-top: 2.2rem;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.6rem;
+}
+
+h3 {
+  font-size: 1.3rem;
+}
+
+
+a {
+  color: #5ec4ff;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+pre, code {
+  font-family: "Fira Code", monospace;
+  background-color: #232b32;
+  color: #b7c5d3;
+}
+
+pre {
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid #2f3b45;
+  border-radius: 4px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+code {
+  padding: 0.15rem 0.3rem;
+  border-radius: 3px;
+}
+
+table {
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+th, td {
+  border: 1px solid #2f3b45;
+  padding: 0.5rem 0.8rem;
+}
+
+th {
+  background-color: #232b32;
+  color: #70e1e8;
+}
+
+blockquote {
+  border-left: 3px solid #5ec4ff;
+  margin-left: 0;
+  padding-left: 1rem;
+  color: #718ca1;
+}
+
+#pinned-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 1.2rem 1rem;
+  padding-bottom: 5rem;
+  background-color: #232b32;
+  border-left: 1px solid #2f3b45;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+}
+
+#pinned-panel.hidden {
+  transform: translateX(100%);
+}
+
+#pinned-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+#pinned-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: #70e1e8;
+  font-weight: 500;
+}
+
+#toggle-pinned-btn {
+  background: none;
+  border: none;
+  color: #718ca1;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
+}
+
+#toggle-pinned-btn:hover {
+  color: #5ec4ff;
+}
+
+#pinned-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+#pinned-list li {
+  margin: 0.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#pinned-list a {
+  color: #b7c5d3;
+  text-decoration: none;
+  flex: 1;
+}
+
+#pinned-list a:hover {
+  color: #5ec4ff;
+}
+
+.pin-remove {
+  background: none;
+  border: none;
+  color: #718ca1;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0 0.3rem;
+}
+
+.pin-remove:hover {
+  color: #ff6b6b;
+}
+
+.toc-pin-btn {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  cursor: pointer;
+  margin-left: 0.4rem;
+  font-size: 0.85rem;
+  color: #718ca1;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.toc-pin-btn:hover {
+  color: #5ec4ff;
+}
+
+#text-table-of-contents .toc-entry:hover .toc-pin-btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+#show-pinned-btn {
+  position: fixed;
+  top: 4.5rem;
+  right: 1rem;
+  background-color: #232b32;
+  border: 1px solid #2f3b45;
+  color: #b7c5d3;
+  cursor: pointer;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  display: none;
+  z-index: 1000;
+}
+
+#show-pinned-btn:hover {
+  background-color: #2f3b45;
+  color: #5ec4ff;
+}
+
+#show-pinned-btn.visible {
+  display: block;
+}
+
+@media (max-width: 1600px) {
+  #content {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1300px) {
+  #pinned-panel {
+    display: none !important;
+  }
+
+  #show-pinned-btn {
+    display: none !important;
+  }
+
+  #content,
+  #content.pinned-hidden {
+    margin-right: 0;
+    width: calc(100vw - 300px);
+    max-width: 100%;
+    padding: 1.8rem 2.2rem;
+  }
+}
+
+@media (max-width: 1000px) {
+  #table-of-contents {
+    display: none;
+  }
+
+  #content {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100vw;
+    max-width: 100%;
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+@media (max-width: 700px) {
+  #content {
+    padding: 1.2rem 1rem;
+  }
+}
+
+.darkmode-layer, .darkmode-toggle {
+  z-index: 500;
+}
+
+
+#+end_src
 ** justfile
 :PROPERTIES:
 :CUSTOM_ID: h:788937cf-8816-466b-8e57-1b695cb50f52
@@ -31919,5 +33381,3 @@ similarly, there exists an version that starts from the right.
 : 3
 
 Note that the string cannot be preceded by 0 - =lib.toInt "01"= would yield ==> error: Ambiguity in interpretation of 00024 between octal and zero padded integer.=
-
-*** nixpkgs.lib.mkOption
