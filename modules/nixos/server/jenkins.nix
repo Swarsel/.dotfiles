@@ -1,18 +1,28 @@
 { pkgs, lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
-    globals.services.${serviceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+    globals = {
+      networks = {
+        ${webProxyIf}.hosts = lib.mkIf isProxied {
+          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+        };
+        ${homeProxyIf}.hosts = lib.mkIf isHome {
+          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+        };
+      };
+      services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
     };
 
     services.jenkins = {
@@ -24,7 +34,7 @@ in
       home = "/Vault/apps/${serviceName}";
     };
 
-    nodes.${serviceProxy}.services.nginx = {
+    nodes.${webProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

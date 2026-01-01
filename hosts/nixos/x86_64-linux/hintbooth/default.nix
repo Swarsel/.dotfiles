@@ -20,6 +20,8 @@
     };
   };
 
+  globals.general.homeProxy = config.node.name;
+
   swarselsystems = {
     info = "HUNSN RM02, 8GB RAM";
     flakePath = "/root/.dotfiles";

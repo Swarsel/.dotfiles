@@ -33,7 +33,6 @@
 
   swarselmodules.server = {
     bastion = true;
-    dns-hostrecord = true;
     # ssh = false;
   };
 

@@ -61,7 +61,7 @@
       nix-visualize
       nix-init
       nix-inspect
-      nixpkgs-review
+      (nixpkgs-review.override { nix = config.nix.package; })
       manix
 
       # shellscripts
@@ -90,7 +90,7 @@
       # element-desktop
 
       nicotine-plus
-      stable.transmission_3
+      stable25_05.transmission_3
       mktorrent
       hugo
 

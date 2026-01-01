@@ -1,8 +1,8 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
-  inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 user3;
+  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome webProxy dnsServer;
+  inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
   baseDomain = globals.domains.main;
 
   roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
@@ -15,7 +15,7 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
       "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
@@ -28,7 +28,7 @@ in
       };
       roundcube = {
         domain = roundcubeDomain;
-        inherit proxyAddress4 proxyAddress6;
+        inherit proxyAddress4 proxyAddress6 isHome;
       };
     };
 
@@ -60,6 +60,9 @@ in
       openFirewall = true;
       certificateScheme = "acme";
       dmarcReporting.enable = true;
+      enableSubmission = true;
+      enableSubmissionSsl = true;
+      enableImapSsl = true;
 
       loginAccounts = {
         "${user1}@${baseDomain}" = {
@@ -76,6 +79,7 @@ in
           aliases = [
             "${alias2_1}@${baseDomain}"
             "${alias2_2}@${baseDomain}"
+            "${alias2_3}@${baseDomain}"
           ];
           sendOnly = true;
         };
@@ -125,7 +129,7 @@ in
       };
     };
 
-    nodes.${serviceProxy}.services.nginx = {
+    nodes.${webProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {
@@ -144,6 +148,8 @@ in
               proxyPass = "https://${serviceName}";
               extraConfig = ''
                 client_max_body_size    0;
+                proxy_ssl_server_name on;
+                proxy_ssl_name ${roundcubeDomain};
               '';
             };
           };

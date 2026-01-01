@@ -1215,10 +1215,11 @@ A short overview over each input and what it does:
       smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
       nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
       nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
-      nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
+      nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
       nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
       nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
+      nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
 
       home-manager = {
         # url = "github:nix-community/home-manager";
@@ -3529,7 +3530,6 @@ This is my main server that I run at home. It handles most tasks that require bi
       transmission = true;
       syncthing = true;
       grafana = true;
-      emacs = true;
       freshrss = true;
       kanidm = true;
       firefly-iii = true;
@@ -3541,6 +3541,8 @@ This is my main server that I run at home. It handles most tasks that require bi
       homebox = true;
       opkssh = true;
     };
+
+    networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "enp3s0" ];
 
   }
 
@@ -6474,13 +6476,16 @@ in
     splitPath = path: lib.splitString "." path;
 
     forwardedOptions = [
-      (splitPath "sops.secrets")
-      (splitPath "swarselsystems.server.dns")
+      (splitPath "boot.kernel.sysctl")
+      (splitPath "networking.nftables.chains.postrouting")
       (splitPath "services.kanidm.provision.groups")
       (splitPath "services.kanidm.provision.systems.oauth2")
+      (splitPath "sops.secrets")
+      (splitPath "swarselsystems.server.dns")
     ]
+    ++ expandOptions (splitPath "networking.nftables.firewall") [ "zones" "rules" ]
+    ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]
     ++ expandOptions (splitPath "services.nginx") [ "upstreams" "virtualHosts" ]
-    ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" ]
     ;
 
     attrsForEachOption =
@@ -6522,7 +6527,30 @@ in
     inherit (lib)
       mkOption
       types
-      ;
+    ;
+
+    firewallOptions = {
+      allowedTCPPorts = mkOption {
+        type = types.listOf types.port;
+        default = [ ];
+        description = "Convenience option to open specific TCP ports for traffic from the network.";
+      };
+      allowedUDPPorts = mkOption {
+        type = types.listOf types.port;
+        default = [ ];
+        description = "Convenience option to open specific UDP ports for traffic from the network.";
+      };
+      allowedTCPPortRanges = mkOption {
+        type = lib.types.listOf (lib.types.attrsOf lib.types.port);
+        default = [ ];
+        description = "Convenience option to open specific TCP port ranges for traffic from another node.";
+      };
+      allowedUDPPortRanges = mkOption {
+        type = lib.types.listOf (lib.types.attrsOf lib.types.port);
+        default = [ ];
+        description = "Convenience option to open specific UDP port ranges for traffic from another node.";
+      };
+    };
 
     networkOptions = netSubmod: {
       cidrv4 = mkOption {
@@ -6552,45 +6580,10 @@ in
           services to the network.
         '';
         type = types.submodule {
-          options = {
-            allowedTCPPorts = mkOption {
-              type = types.listOf types.port;
-              default = [ ];
-              description = "Convenience option to open specific TCP ports for traffic from the network.";
-            };
-            allowedUDPPorts = mkOption {
-              type = types.listOf types.port;
-              default = [ ];
-              description = "Convenience option to open specific UDP ports for traffic from the network.";
-            };
-          };
+          options = firewallOptions;
         };
       };
 
-      firewallRuleForNode = mkOption {
-        default = { };
-        description = ''
-          If this is a wireguard network: Allows you to set specific firewall rules just for traffic originating from another network node.
-          A corresponding rule `<network-name>-node-<node-name>-to-<local-zone-name>` will be created to easily expose
-          services to that node.
-        '';
-        type = types.attrsOf (
-          types.submodule {
-            options = {
-              allowedTCPPorts = mkOption {
-                type = types.listOf types.port;
-                default = [ ];
-                description = "Convenience option to open specific TCP ports for traffic from another node.";
-              };
-              allowedUDPPorts = mkOption {
-                type = types.listOf types.port;
-                default = [ ];
-                description = "Convenience option to open specific UDP ports for traffic from another node.";
-              };
-            };
-          }
-        );
-      };
 
 
       hosts = mkOption {
@@ -6653,150 +6646,164 @@ in
                   # if we use the /32 wan address as local address directly, do not use the network address in ipv6
                     lib.net.cidr.hostCidr (if hostSubmod.config.id == 0 then 1 else hostSubmod.config.id) netSubmod.config.cidrv6;
               };
+
+              firewallRuleForNode = mkOption {
+                default = { };
+                description = ''
+                  If this is a wireguard network: Allows you to set specific firewall rules just for traffic originating from another network node.
+                  A corresponding rule `<network-name>-node-<node-name>-to-<local-zone-name>` will be created to easily expose
+                  services to that node.
+                '';
+                type = types.attrsOf (
+                  types.submodule {
+                    options = firewallOptions;
+                  }
+                );
+              };
             };
           })
         );
       };
     };
   in
-  {
-    options = {
-      globals = mkOption {
-        default = { };
-        type = types.submodule {
-          options = {
-            root = {
-              hashedPassword = mkOption {
-                type = types.str;
+    {
+      options = {
+        globals = mkOption {
+          default = { };
+          type = types.submodule {
+            options = {
+              root = {
+                hashedPassword = mkOption {
+                  type = types.str;
+                };
               };
-            };
 
-            user = {
-              name = mkOption {
-                type = types.str;
+              user = {
+                name = mkOption {
+                  type = types.str;
+                };
+                work = mkOption {
+                  type = types.str;
+                };
               };
-              work = mkOption {
-                type = types.str;
+
+
+              services = mkOption {
+                type = types.attrsOf (
+                  types.submodule (serviceSubmod: {
+                    options = {
+                      domain = mkOption {
+                        type = types.str;
+                      };
+                      subDomain = mkOption {
+                        readOnly = true;
+                        type = types.str;
+                        default = lib.swarselsystems.getSubDomain serviceSubmod.config.domain;
+                      };
+                      baseDomain = mkOption {
+                        readOnly = true;
+                        type = types.str;
+                        default = lib.swarselsystems.getBaseDomain serviceSubmod.config.domain;
+                      };
+                      proxyAddress4 = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                      };
+                      proxyAddress6 = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                      };
+                      isHome = mkOption {
+                        type = types.bool;
+                        default = false;
+                      };
+                    };
+                  })
+                );
               };
-            };
 
+              networks = mkOption {
+                default = { };
+                type = types.attrsOf (
+                  types.submodule (netSubmod: {
+                    options = networkOptions netSubmod // {
+                      vlans = mkOption {
+                        default = { };
+                        type = types.attrsOf (
+                          types.submodule (vlanNetSubmod: {
+                            options = networkOptions vlanNetSubmod // {
+                              id = mkOption {
+                                type = types.ints.between 1 4094;
+                                description = "The VLAN id";
+                              };
 
-            services = mkOption {
-              type = types.attrsOf (
-                types.submodule (serviceSubmod: {
-                  options = {
-                    domain = mkOption {
-                      type = types.str;
-                    };
-                    subDomain = mkOption {
-                      readOnly = true;
-                      type = types.str;
-                      default = lib.swarselsystems.getSubDomain serviceSubmod.config.domain;
-                    };
-                    baseDomain = mkOption {
-                      readOnly = true;
-                      type = types.str;
-                      default = lib.swarselsystems.getBaseDomain serviceSubmod.config.domain;
-                    };
-                    proxyAddress4 = mkOption {
-                      type = types.nullOr types.str;
-                      default = null;
-                    };
-                    proxyAddress6 = mkOption {
-                      type = types.nullOr types.str;
-                      default = null;
-                    };
-                    isHome = mkOption {
-                      type = types.bool;
-                      default = false;
-                    };
-                  };
-                })
-              );
-            };
-
-            networks = mkOption {
-              default = { };
-              type = types.attrsOf (
-                types.submodule (netSubmod: {
-                  options = networkOptions netSubmod // {
-                    vlans = mkOption {
-                      default = { };
-                      type = types.attrsOf (
-                        types.submodule (vlanNetSubmod: {
-                          options = networkOptions vlanNetSubmod // {
-                            id = mkOption {
-                              type = types.ints.between 1 4094;
-                              description = "The VLAN id";
+                              name = mkOption {
+                                description = "The name of this VLAN";
+                                default = vlanNetSubmod.config._module.args.name;
+                                type = types.str;
+                              };
                             };
-
-                            name = mkOption {
-                              description = "The name of this VLAN";
-                              default = vlanNetSubmod.config._module.args.name;
-                              type = types.str;
-                            };
-                          };
-                        })
-                      );
+                          })
+                        );
+                      };
                     };
-                  };
-                })
-              );
-            };
-
-            hosts = mkOption {
-              type = types.attrsOf (
-                types.submodule {
-                  options = {
-                    defaultGateway4 = mkOption {
-                      type = types.nullOr types.net.ipv4;
-                    };
-                    defaultGateway6 = mkOption {
-                      type = types.nullOr types.net.ipv6;
-                    };
-                    wanAddress4 = mkOption {
-                      type = types.nullOr types.net.ipv4;
-                    };
-                    wanAddress6 = mkOption {
-                      type = types.nullOr types.net.ipv6;
-                    };
-                    isHome = mkOption {
-                      type = types.bool;
-                    };
-                  };
-                }
-              );
-            };
-
-            domains = {
-              main = mkOption {
-                type = types.str;
+                  })
+                );
               };
-              externalDns = mkOption {
-                type = types.listOf types.str;
-                description = "List of external dns nameservers";
-              };
-            };
 
-            general = lib.mkOption {
-              type = types.submodule {
-                freeformType = types.unspecified;
+              hosts = mkOption {
+                type = types.attrsOf (
+                  types.submodule {
+                    options = {
+                      defaultGateway4 = mkOption {
+                        type = types.nullOr types.net.ipv4;
+                      };
+                      defaultGateway6 = mkOption {
+                        type = types.nullOr types.net.ipv6;
+                      };
+                      wanAddress4 = mkOption {
+                        type = types.nullOr types.net.ipv4;
+                      };
+                      wanAddress6 = mkOption {
+                        type = types.nullOr types.net.ipv6;
+                      };
+                      isHome = mkOption {
+                        type = types.bool;
+                      };
+                    };
+                  }
+                );
               };
+
+              domains = {
+                main = mkOption {
+                  type = types.str;
+                };
+                externalDns = mkOption {
+                  type = types.listOf types.str;
+                  description = "List of external dns nameservers";
+                };
+              };
+
+              general = lib.mkOption {
+                type = types.submodule {
+                  freeformType = types.unspecified;
+                };
+              };
+
             };
 
           };
+        };
 
+        _globalsDefs = mkOption {
+          type = types.unspecified;
+          default = options.globals.definitions;
+          readOnly = true;
+          internal = true;
         };
       };
-
-      _globalsDefs = mkOption {
-        type = types.unspecified;
-        default = options.globals.definitions;
-        readOnly = true;
-        internal = true;
-      };
-    };
-  }
+    }
 #+end_src
 
 **** Expose home-manager sops secrets in NixOS (automatically active)
@@ -7862,6 +7869,8 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
         };
       };
 
+      services.resolved.enable = true;
+
       networking = {
         hostName = config.node.name;
         hosts = {
@@ -7895,9 +7904,11 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
           ];
         };
 
+
         networkmanager = {
           enable = true;
           wifi.backend = "iwd";
+          dns = "systemd-resolved";
           plugins = [
             # list of plugins: https://search.nixos.org/packages?query=networkmanager-
             # docs https://networkmanager.dev/docs/vpn/
@@ -9152,6 +9163,27 @@ Auto login for the initial session.
   }
 #+end_src
 
+**** Firezone Client
+
+
+#+begin_src nix-ts :tangle modules/nixos/client/firezone-client.nix
+  { lib, config, ... }:
+  let
+    moduleName = "firezone-client";
+    inherit (config.swarselsystems) mainUser;
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      services.firezone.gui-client = {
+        enable = true;
+        inherit (config.node) name;
+        allowedUsers = [ mainUser ];
+      };
+    };
+  }
+#+end_src
+
 *** Server
 :PROPERTIES:
 :CUSTOM_ID: h:e492c24a-83a0-4bcb-a084-706f49318651
@@ -10174,7 +10206,7 @@ In order to define a new wireguard interface, I have to:
               in
               {
                 "${ifName}-to-${localZoneName}" = {
-                  inherit (netCfg.firewallRuleForAll) allowedTCPPorts allowedUDPPorts;
+                  inherit (netCfg.firewallRuleForAll) allowedTCPPorts allowedUDPPorts allowedTCPPortRanges allowedUDPPortRanges;
                   from = [ ifName ];
                   to = [ localZoneName ];
                   ignoreEmptyRule = true;
@@ -10183,8 +10215,8 @@ In order to define a new wireguard interface, I have to:
               // lib.listToAttrs (map
                 (peer:
                   lib.nameValuePair "${ifName}-node-${peer}-to-${localZoneName}" (
-                    lib.mkIf (netCfg.firewallRuleForNode ? ${peer}) {
-                      inherit (netCfg.firewallRuleForNode.${peer}) allowedTCPPorts allowedUDPPorts;
+                    lib.mkIf (netCfg.hosts.${config.node.name}.firewallRuleForNode ? ${peer}) {
+                      inherit (netCfg.hosts.${config.node.name}.firewallRuleForNode.${peer}) allowedTCPPorts allowedTCPPortRanges allowedUDPPorts allowedUDPPortRanges;
                       from = [ "${ifName}-node-${peer}" ];
                       to = [ localZoneName ];
                       ignoreEmptyRule = true;
@@ -10467,7 +10499,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   let
     inherit (config.swarselsystems) sopsFile;
 
-    inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10476,7 +10508,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         calibre
       ];
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -10486,17 +10518,26 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
-
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
       topology.self.services.${serviceName} = {
         name = "Kavita";
         info = "https://${serviceDomain}";
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
@@ -10507,7 +10548,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         dataDir = "/Vault/data/${serviceName}";
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -10544,13 +10585,13 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -10574,18 +10615,28 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
         enable = true;
         user = serviceUser;
-        openFirewall = true; # this works only for the default ports
+        # openFirewall = true; # this works only for the default ports
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -10623,13 +10674,13 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 #+begin_src nix-ts :tangle modules/nixos/server/navidrome.nix
   { pkgs, config, lib, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -10660,11 +10711,21 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         enableAllFirmware = lib.mkForce true;
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.snapserver = {
@@ -10690,7 +10751,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       services.${serviceName} = {
         enable = true;
-        openFirewall = true;
+        # openFirewall = true;
         settings = {
           LogLevel = "debug";
           Address = "0.0.0.0";
@@ -10729,7 +10790,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -10979,7 +11040,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     federationPort = 8448;
     whatsappPort = 29318;
@@ -10998,7 +11059,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -11038,7 +11099,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
 
       systemd = {
         timers."restart-bridges" = {
@@ -11069,9 +11130,19 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort federationPort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services = {
@@ -11271,7 +11342,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       # messages out after a while.
 
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -11340,7 +11411,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   let
     inherit (config.repo.secrets.local.nextcloud) adminuser;
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome dnsServer webProxy;
 
     nextcloudVersion = "32";
   in
@@ -11348,7 +11419,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -11388,7 +11459,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -11425,13 +11496,13 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
   { lib, pkgs, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -11441,9 +11512,20 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
@@ -11451,16 +11533,15 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         package = pkgs.immich;
         host = "0.0.0.0";
         port = servicePort;
-        openFirewall = true;
+        # openFirewall = true;
         mediaLocation = "/Vault/Eternor/Immich"; # dataDir
         environment = {
           IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -11513,7 +11594,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   { lib, pkgs, config, dns, globals, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     tikaPort = 9998;
     gotenbergPort = 3002;
@@ -11523,7 +11604,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -11536,11 +11617,21 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         kanidm-paperless-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services = {
@@ -11611,7 +11702,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                        )
       '';
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -11845,7 +11936,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems.syncthing) serviceDomain;
-    inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     specificServiceName = "${serviceName}-${config.node.name}";
 
@@ -11886,7 +11977,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     };
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -11898,11 +11989,27 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
       users.groups.${serviceGroup} = { };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.services.${specificServiceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy} = {
+              allowedTCPPorts = [ servicePort 22000 ];
+              allowedUDPPorts = [ 20000 21027 ];
+            };
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy} = {
+              allowedTCPPorts = [ servicePort 20000 ];
+              allowedUDPPorts = [ 20000 21027 ];
+            };
+          };
+        };
+        services.${specificServiceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = rec {
@@ -11912,7 +12019,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         dataDir = lib.mkDefault "/Vault/data/${serviceName}";
         configDir = "${cfg.dataDir}/.config/${serviceName}";
         guiAddress = "0.0.0.0:${builtins.toString servicePort}";
-        openDefaultPorts = true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
+        openDefaultPorts = lib.mkIf (!isProxied) true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
         relay.enable = false;
         settings = {
           urAccepted = -1;
@@ -11959,7 +12066,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${specificServiceName} = {
             servers = {
@@ -12070,7 +12177,7 @@ This section exposes several metrics that I use to check the health of my server
 #+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     prometheusPort = 9090;
     prometheusUser = "prometheus";
@@ -12088,7 +12195,7 @@ This section exposes several metrics that I use to check the health of my server
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -12126,13 +12233,23 @@ This section exposes several metrics that I use to check the health of my server
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
       topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort prometheusPort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort prometheusPort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services = {
@@ -12282,7 +12399,7 @@ This section exposes several metrics that I use to check the health of my server
       };
 
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           "${grafanaUpstream}" = {
             servers = {
@@ -12333,19 +12450,29 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 #+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.jenkins = {
@@ -12357,7 +12484,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
         home = "/Vault/apps/${serviceName}";
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -12432,7 +12559,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 #+begin_src nix-ts :tangle modules/nixos/server/freshrss.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome webProxy dnsServer;
 
     inherit (config.swarselsystems) sopsFile;
   in
@@ -12440,7 +12567,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -12508,7 +12635,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       #   config.sops.templates.freshrss-env.path
       # ];
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -12550,7 +12677,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     kanidmDomain = globals.services.kanidm.domain;
   in
@@ -12558,11 +12685,11 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
       users.users.${serviceUser} = {
         group = serviceGroup;
@@ -12575,9 +12702,19 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         kanidm-forgejo-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
@@ -12679,7 +12816,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           '';
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -12718,7 +12855,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   { self, lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "ankisync"; port = 27701; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "ankisync"; port = 27701; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     ankiUser = globals.user.name;
   in
@@ -12726,11 +12863,11 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
       sops.secrets.anki-pw = { inherit sopsFile; owner = "root"; };
 
@@ -12740,16 +12877,26 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         info = "https://${serviceDomain}";
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.anki-sync-server = {
         enable = true;
         port = servicePort;
         address = "0.0.0.0";
-        openFirewall = true;
+        # openFirewall = true;
         users = [
           {
             username = ankiUser;
@@ -12758,7 +12905,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         ];
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -12811,7 +12958,7 @@ kanidm person credential create-reset-token <user>
   let
     certsSopsFile = self + /secrets/repo/certs.yaml;
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy homeProxyIf webProxyIf dnsServer;
 
     oauth2ProxyDomain = globals.services.oauth2-proxy.domain;
     immichDomain = globals.services.immich.domain;
@@ -12840,16 +12987,18 @@ kanidm person credential create-reset-token <user>
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
-      users.users.${serviceUser} = {
-        group = serviceGroup;
-        isSystemUser = true;
-      };
+      users = {
+        users.${serviceUser} = {
+          group = serviceGroup;
+          isSystemUser = true;
+        };
 
-      users.groups.${serviceGroup} = { };
+        groups.${serviceGroup} = { };
+      };
 
       sops = {
         secrets = {
@@ -12867,13 +13016,23 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        general.idmServer = config.node.name;
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
-      globals.general.idmServer = config.node.name;
 
       environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
         files = [
@@ -13190,7 +13349,7 @@ kanidm person credential create-reset-token <user>
         ${serviceName}.serviceConfig.RestartSec = "30";
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -13228,7 +13387,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     kanidmDomain = globals.services.kanidm.domain;
     mainDomain = globals.domains.main;
@@ -13347,7 +13506,7 @@ kanidm person credential create-reset-token <user>
     };
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -13370,11 +13529,21 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.services.${serviceName} = {
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
         domain = serviceDomain;
         inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services = {
@@ -13426,7 +13595,7 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -13464,7 +13633,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/firefly-iii.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome dnsServer webProxy;
 
     nginxGroup = "nginx";
 
@@ -13475,7 +13644,7 @@ kanidm person credential create-reset-token <user>
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -13545,7 +13714,7 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -13588,7 +13757,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/koillection.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
     serviceDB = "koillection";
 
     postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
@@ -13602,7 +13771,7 @@ kanidm person credential create-reset-token <user>
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
       sops.secrets = {
@@ -13616,9 +13785,19 @@ kanidm person credential create-reset-token <user>
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort postgresPort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort postgresPort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       virtualisation.oci-containers.containers = {
@@ -13662,7 +13841,7 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
 
       systemd.services.postgresql.postStart =
         let
@@ -13695,7 +13874,7 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -13734,32 +13913,42 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/atuin.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "atuin"; port = 8888; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "atuin"; port = 8888; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
         enable = true;
         host = "0.0.0.0";
         port = servicePort;
-        openFirewall = true;
+        # openFirewall = true;
         openRegistration = false;
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -13798,8 +13987,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/radicale.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
-    # sopsFile = config.node.secretsDir + "/secrets2.yaml";
+    inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
     inherit (config.swarselsystems) sopsFile;
 
     cfg = config.services.${serviceName};
@@ -13808,7 +13996,7 @@ kanidm person credential create-reset-token <user>
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -13833,9 +14021,19 @@ kanidm person credential create-reset-token <user>
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
@@ -13887,9 +14085,9 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -13929,7 +14127,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/croc.nix
   { self, lib, config, pkgs, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6 isHome dnsServer;
     servicePorts = [
       9009
       9010
@@ -13946,7 +14144,7 @@ kanidm person credential create-reset-token <user>
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -14011,7 +14209,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/microbin.nix
   { self, lib, config, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     inherit (config.swarselsystems) sopsFile;
 
@@ -14021,7 +14219,7 @@ kanidm person credential create-reset-token <user>
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -14061,9 +14259,19 @@ kanidm person credential create-reset-token <user>
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
@@ -14110,13 +14318,13 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
         { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
       ];
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -14157,7 +14365,7 @@ kanidm person credential create-reset-token <user>
 #+begin_src nix-ts :tangle modules/nixos/server/shlink.nix
   { self, lib, config, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink";}) servicePort serviceName serviceDomain serviceDir serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
@@ -14169,7 +14377,7 @@ kanidm person credential create-reset-token <user>
     };
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -14226,7 +14434,7 @@ kanidm person credential create-reset-token <user>
         ]
       );
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
         { directory = serviceDir; }
@@ -14239,12 +14447,22 @@ kanidm person credential create-reset-token <user>
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -14280,103 +14498,113 @@ Deployment notes:
   - finally, disable new user registration in web ui
 
 #+begin_src nix-ts :tangle modules/nixos/server/slink.nix
-  { self, lib, config, dns, globals, confLib, ... }:
-  let
-    inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink";}) servicePort serviceName serviceDomain serviceDir serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+{ self, lib, config, dns, globals, confLib, ... }:
+let
+  inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
-    containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
-  in
-  {
-    options = {
-      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
+in
+{
+  options = {
+    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  };
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    virtualisation.oci-containers.containers.${serviceName} = {
+      image = "anirdev/slink@${containerRev}";
+      environment = {
+        "ORIGIN" = "https://${serviceDomain}";
+        "TZ" = config.repo.secrets.common.location.timezone;
+        "STORAGE_PROVIDER" = "local";
+        "IMAGE_MAX_SIZE" = "50M";
+        "USER_APPROVAL_REQUIRED" = "true";
       };
-
-      virtualisation.oci-containers.containers.${serviceName} = {
-        image = "anirdev/slink@${containerRev}";
-        environment = {
-          "ORIGIN" = "https://${serviceDomain}";
-          "TZ" = config.repo.secrets.common.location.timezone;
-          "STORAGE_PROVIDER" = "local";
-          "IMAGE_MAX_SIZE" = "50M";
-          "USER_APPROVAL_REQUIRED" = "true";
-        };
-        ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
-        volumes = [
-          "${serviceDir}/var/data:/app/var/data"
-          "${serviceDir}/images:/app/slink/images"
-        ];
-      };
-
-      systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
-        map
-          (path: {
-            name = "${serviceDir}/${path}";
-            value = {
-              d = {
-                group = "root";
-                user = "root";
-                mode = "0750";
-              };
-            };
-          }) [
-          "var/data"
-          "images"
-        ]
-      );
-
-      networking.firewall.allowedTCPPorts = [ servicePort ];
-
-      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-        { directory = serviceDir; }
+      ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
+      volumes = [
+        "${serviceDir}/var/data:/app/var/data"
+        "${serviceDir}/images:/app/slink/images"
       ];
+    };
 
-      topology.self.services.${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/shlink.png";
+    systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
+      map
+        (path: {
+          name = "${serviceDir}/${path}";
+          value = {
+            d = {
+              group = "root";
+              user = "root";
+              mode = "0750";
+            };
+          };
+        }) [
+        "var/data"
+        "images"
+      ]
+    );
+
+    # networking.firewall.allowedTCPPorts = [ servicePort ];
+
+    environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+      { directory = serviceDir; }
+    ];
+
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/files/topology-images/shlink.png";
+    };
+
+    globals = {
+      networks = {
+        ${webProxyIf}.hosts = lib.mkIf isProxied {
+          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+        };
+        ${homeProxyIf}.hosts = lib.mkIf isHome {
+          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+        };
       };
-
-      globals.services.${serviceName} = {
+      services.${serviceName} = {
         domain = serviceDomain;
         inherit proxyAddress4 proxyAddress6 isHome;
       };
+    };
 
-      nodes.${serviceProxy}.services.nginx = {
-        upstreams = {
-          ${serviceName} = {
-            servers = {
-              "${serviceAddress}:${builtins.toString servicePort}" = { };
-            };
+    nodes.${webProxy}.services.nginx = {
+      upstreams = {
+        ${serviceName} = {
+          servers = {
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
-        virtualHosts = {
-          "${serviceDomain}" = {
-            useACMEHost = globals.domains.main;
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          useACMEHost = globals.domains.main;
 
-            forceSSL = true;
-            acmeRoot = null;
-            oauth2.enable = true;
-            oauth2.allowedGroups = [ "slink_access" ];
-            locations = {
-              "/" = {
-                proxyPass = "http://${serviceName}";
-              };
-              "/image" = {
-                proxyPass = "http://${serviceName}";
-                setOauth2Headers = false;
-                bypassAuth = true;
-              };
+          forceSSL = true;
+          acmeRoot = null;
+          oauth2.enable = true;
+          oauth2.allowedGroups = [ "slink_access" ];
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}";
+            };
+            "/image" = {
+              proxyPass = "http://${serviceName}";
+              setOauth2Headers = false;
+              bypassAuth = true;
             };
           };
         };
       };
     };
-  }
+  };
+}
 #+end_src
 
 **** Snipe-IT (currently unused)
@@ -14387,7 +14615,7 @@ Deployment notes:
 #+begin_src nix-ts :tangle modules/nixos/server/snipe-it.nix
   { lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome webProxy dnsServer;
     # sopsFile = config.node.secretsDir + "/secrets2.yaml";
     inherit (config.swarselsystems) sopsFile;
 
@@ -14399,7 +14627,7 @@ Deployment notes:
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -14433,7 +14661,7 @@ Deployment notes:
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -14469,21 +14697,31 @@ Deployment notes:
 #+begin_src nix-ts :tangle modules/nixos/server/homebox.nix
   { lib, pkgs, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
@@ -14498,9 +14736,9 @@ Deployment notes:
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -14597,7 +14835,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
       name = "garage";
       port = 3900;
       domain = config.repo.secrets.common.services.domains."garage-${config.node.name}";
-    }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6 isHome;
+    }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
     cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
     inherit (config.swarselsystems) sopsFile mainUser;
@@ -14663,9 +14901,9 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         }
       ];
 
-      networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+      # networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
 
-      nodes.stoicclub.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
         "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -14694,9 +14932,19 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         ];
       };
 
-      globals.services.${specificServiceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+          };
+        };
+        services.${specificServiceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
 
@@ -14901,7 +15149,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -14979,7 +15227,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     inherit (confLib.gen { name = "dns-hostrecord"; proxy = config.node.name; }) serviceName proxyAddress4 proxyAddress6;
   in
   {
-    options. swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf (config.swarselmodules.server.${serviceName} && config.swarselsystems.isCloud) {
 
       nodes.stoicclub.swarselsystems.server.dns.${globals.domains.main}.subdomainRecords = {
@@ -15218,7 +15466,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 #+begin_src nix-ts :tangle modules/nixos/server/minecraft/default.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6 isHome dnsServer;
     inherit (config.swarselsystems) mainUser;
     worldName = "${mainUser}craft";
   in
@@ -15226,7 +15474,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
@@ -15278,7 +15526,7 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome webProxy dnsServer;
     inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
     baseDomain = globals.domains.main;
 
@@ -15292,7 +15540,7 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
     };
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
         "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
@@ -15406,7 +15654,7 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
         };
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -15454,7 +15702,7 @@ $ attic cache create hello
 #+begin_src nix-ts :tangle modules/nixos/server/attic.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
     inherit (config.swarselsystems) mainUser isPublic sopsFile;
     serviceDB = "atticd";
   in
@@ -15464,13 +15712,23 @@ $ attic cache create hello
     };
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       sops = lib.mkIf (!isPublic) {
@@ -15490,7 +15748,7 @@ $ attic cache create hello
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ servicePort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
       services.atticd = {
         enable = true;
@@ -15576,7 +15834,7 @@ $ attic cache create hello
         after = [ "garage.service" ];
       };
 
-      nodes.${serviceProxy}.services.nginx = {
+      nodes.${webProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -15625,137 +15883,147 @@ $ hydra-create-user alice --full-name 'Alice Q. User' \
 #+begin_src nix-ts :tangle modules/nixos/server/hydra.nix
   { inputs, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6 isHome;
+    inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
     inherit (config.swarselsystems) sopsFile;
   in
-    {
-      options = {
-        swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  {
+    options = {
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    };
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
-      config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-        nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          };
         };
-
-        globals.services.${serviceName} = {
+        services.${serviceName} = {
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome;
         };
+      };
 
-        sops = {
-          secrets = {
-            nixbuild-net-key = { mode = "0600"; };
-            hydra-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          };
-          templates = {
-            "hydra-env" = {
-              content = ''
-                HYDRA_PW="${config.sops.placeholder.hydra-pw}"
-              '';
-              owner = serviceUser;
-              group = serviceGroup;
-              mode = "0440";
-            };
+      sops = {
+        secrets = {
+          nixbuild-net-key = { mode = "0600"; };
+          hydra-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        };
+        templates = {
+          "hydra-env" = {
+            content = ''
+              HYDRA_PW="${config.sops.placeholder.hydra-pw}"
+            '';
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
           };
         };
+      };
 
-        services.hydra = {
-          enable = true;
-          package = inputs.hydra.packages.${config.node.arch}.hydra;
-          port = servicePort;
-          hydraURL = "https://${serviceDomain}";
-          listenHost = "*";
-          notificationSender = "hydra@${globals.domains.main}";
-          minimumDiskFreeEvaluator = 20; # 20G
-          minimumDiskFree = 20; # 20G
-          useSubstitutes = true;
-          smtpHost = globals.services.mailserver.domain;
-          buildMachinesFiles = [
-            "/etc/nix/machines"
+      services.hydra = {
+        enable = true;
+        package = inputs.hydra.packages.${config.node.arch}.hydra;
+        port = servicePort;
+        hydraURL = "https://${serviceDomain}";
+        listenHost = "*";
+        notificationSender = "hydra@${globals.domains.main}";
+        minimumDiskFreeEvaluator = 20; # 20G
+        minimumDiskFree = 20; # 20G
+        useSubstitutes = true;
+        smtpHost = globals.services.mailserver.domain;
+        buildMachinesFiles = [
+          "/etc/nix/machines"
+        ];
+        extraConfig = ''
+          using_frontend_proxy 1
+        '';
+      };
+
+      systemd.services.hydra-user-setup = {
+        description = "Create admin user for Hydra";
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = "hydra";
+          EnvironmentFile = [
+            config.sops.templates.hydra-env.path
           ];
-          extraConfig = ''
-            using_frontend_proxy 1
-          '';
         };
-
-        systemd.services.hydra-user-setup = {
-          description = "Create admin user for Hydra";
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            User = "hydra";
-            EnvironmentFile = [
-              config.sops.templates.hydra-env.path
-            ];
-          };
-          wantedBy = [ "multi-user.target" ];
-          requires = [ "hydra-init.service" ];
-          after = [ "hydra-init.service" ];
-          environment = lib.mkForce config.systemd.services.hydra-init.environment;
-          script = ''
+        wantedBy = [ "multi-user.target" ];
+        requires = [ "hydra-init.service" ];
+        after = [ "hydra-init.service" ];
+        environment = lib.mkForce config.systemd.services.hydra-init.environment;
+        script = ''
             set -eu
           if [ ! -e ~hydra/.user-setup-done ]; then
             /run/current-system/sw/bin/hydra-create-user admin --full-name 'admin' --email-address 'admin@${globals.domains.main}' --password "$HYDRA_PW" --role admin
             touch ~hydra/.user-setup-done
           fi
-          '';
-        };
+        '';
+      };
 
-        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+      ];
+
+      nix = {
+        settings.builders-use-substitutes = true;
+        distributedBuilds = true;
+        buildMachines = [
+          {
+            hostName = "localhost";
+            protocol = null;
+            system = config.node.arch;
+            supportedFeatures = [ "kvm" "nixos-test" "big-parallel" "benchmark" ];
+            maxJobs = 4;
+          }
         ];
+      };
 
-        nix = {
-          settings.builders-use-substitutes = true;
-          distributedBuilds = true;
-          buildMachines = [
-            {
-              hostName = "localhost";
-              protocol = null;
-              system = config.node.arch;
-              supportedFeatures = [ "kvm" "nixos-test" "big-parallel" "benchmark" ];
-              maxJobs = 4;
-            }
-          ];
-        };
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-        networking.firewall.allowedTCPPorts = [ servicePort ];
+      programs.ssh = {
+        extraConfig = ''
+          StrictHostKeyChecking no
+        '';
+      };
 
-        programs.ssh = {
-          extraConfig = ''
-            StrictHostKeyChecking no
-          '';
-        };
-
-        nodes.${serviceProxy}.services.nginx = {
-          upstreams = {
-            ${serviceName} = {
-              servers = {
-                "${serviceAddress}:${builtins.toString servicePort}" = { };
-              };
+      nodes.${webProxy}.services.nginx = {
+        upstreams = {
+          ${serviceName} = {
+            servers = {
+              "${serviceAddress}:${builtins.toString servicePort}" = { };
             };
           };
-          virtualHosts = {
-            "${serviceDomain}" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              oauth2.enable = false;
-              locations = {
-                "/" = {
-                  proxyPass = "http://${serviceName}";
-                  extraConfig = ''
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+                extraConfig = ''
                     client_max_body_size 0;
                   proxy_set_header  X-Request-Base    /hydra;
-                  '';
-                };
+                '';
               };
             };
           };
         };
-
       };
-    }
+
+    };
+  }
 #+end_src
 **** Kea DHCP
 :PROPERTIES:
@@ -15930,304 +16198,408 @@ This is the dhcp config that runs on my router.
 :CUSTOM_ID: h:f5daab4a-4699-47d0-a114-84fe596bc651
 :END:
 
-This is the dhcp config that runs on my router.
+Firezone provides VPN access to my services at home - this works separately from the [[#h:8cf0018d-00ba-4616-87d9-f91c614face9][Wireguard]] mesh that I run between my server nodes.
+
+This has some state:
+- OIDC setup:
+  - =Settings > Identity Providers > Kanidm > Edit=:
+    - Note the UUIDs in the URLs under "Ensure the OAuth application has the following redirect URLs whitelisted:":
+      - the first one is =accountId=, the second is the =externalId=, update them in the Kanidm config
+- Relay setup:
+  - =Relays > Relays > Deploy=:
+    - note FIREZONE_TOKEN and add it as the firezone-relay-token secret
+- Gateway setup:
+  - =Sites > Home > Deploy Gateway=:
+    - note FIREZONE_TOKEN and add it as the firezone-gateway-token secret
+- After initial deployment, setup the user account under =Actors > Add Actor=:
+  - use OIDC login
 
 #+begin_src nix-ts :tangle modules/nixos/server/firezone.nix
-  { lib, pkgs, config, globals, confLib, dns, nodes, ... }:
-  let
-    inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceUser serviceGroup serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome homeProxy webProxy idmServer dnsServer;
-    inherit (config.swarselsystems) sopsFile;
+    { lib, pkgs, config, globals, confLib, dns, nodes, ... }:
+    let
+      inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy homeProxyIf webProxyIf idmServer dnsServer;
+      inherit (config.swarselsystems) sopsFile;
 
-    cfg = config.services.firezone.server;
+      apiPort = 8081;
+      webPort = 8080;
+      relayPort = 3478;
+      domainPort = 9003;
 
-    homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
-    homeDomains = map (name: globals.services.${name}.domain) homeServices;
-    allow = group: resource: {
-      "${group}@${resource}" = {
-        inherit group resource;
-        description = "Allow ${group} access to ${resource}";
-      };
-    };
-  in
-  {
-    options = {
-      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    };
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-      nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
-
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
-      };
-
-      sops = {
-        secrets = {
-          kanidm-firezone-client = { inherit sopsFile; mode = "0400"; };
-          firezone-relay-token = { inherit sopsFile; mode = "0400"; };
-          firezone-smtp-password = { inherit sopsFile; mode = "0440"; };
-          firezone-adapter-config = { inherit sopsFile; mode = "0440"; };
+      homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
+      homeDomains = map (name: globals.services.${name}.domain) homeServices;
+      allow = group: resource: {
+        "${group}@${resource}" = {
+          inherit group resource;
+          description = "Allow ${group} access to ${resource}";
         };
       };
+    in
+    {
+      options = {
+        swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      };
+      config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-        { directory = serviceDir; mode = "0700"; }
-      ];
+        nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
 
-      services.firezone = {
-        server = {
-          enable = true;
-          enableLocalDB = true;
-          settings = {
-            LOG_LEVEL = "debug";
-            # OUTBOUND_EMAIL_ADAPTER = "Elixir.Swoosh.Adapters.SMTP";
-            # OUTBOUND_EMAIL_FROM = config.repo.secrets.local.firezone.mail.from;
+        globals = {
+          networks = {
+            ${webProxyIf}.hosts = lib.mkIf isProxied {
+              ${config.node.name}.firewallRuleForNode.${webProxy} = {
+                allowedTCPPorts = [ apiPort webPort domainPort ];
+                allowedUDPPorts = [ relayPort ];
+                allowedUDPPortRanges = [
+                  {
+                    from = config.services.firezone.relay.lowestPort;
+                    to = config.services.firezone.relay.highestPort;
+                  }
+                ];
+              };
+            };
+            ${homeProxyIf}.hosts = lib.mkIf isHome {
+              ${config.node.name}.firewallRuleForNode.${homeProxy} = {
+                allowedTCPPorts = [ apiPort webPort domainPort ];
+                allowedUDPPorts = [ relayPort ];
+                allowedUDPPortRanges = [
+                  {
+                    from = config.services.firezone.relay.lowestPort;
+                    to = config.services.firezone.relay.highestPort;
+                  }
+                ];
+              };
+            };
           };
-          settingsSecret = {
-            # OUTBOUND_EMAIL_ADAPTER_OPTS = config.sops.secrets.firezone-adapter-config.path;
+          services.${serviceName} = {
+            domain = serviceDomain;
+            inherit proxyAddress4 proxyAddress6 isHome;
           };
+        };
 
-          # smtp.configureManually = true;
-          smtp= {
-            inherit (config.repo.secrets.local.firezone.mail) from username;
-            host = globals.services.mailserver.domain;
-            port = 465;
-            implicitTls = true;
-            passwordFile = config.sops.secrets.firezone-smtp-password.path;
+        sops = {
+          secrets = {
+            kanidm-firezone-client = { inherit sopsFile; mode = "0400"; };
+            firezone-relay-token = { inherit sopsFile; mode = "0400"; };
+            firezone-smtp-password = { inherit sopsFile; mode = "0440"; };
+            firezone-adapter-config = { inherit sopsFile; mode = "0440"; };
           };
+        };
 
-          provision = {
+        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+          { directory = serviceDir; mode = "0700"; }
+        ];
+
+        services.firezone = {
+          server = {
             enable = true;
-            accounts.main = {
-              name = "Home";
-              relayGroups.relays.name = "Relays";
-              gatewayGroups.home.name = "Home";
-              actors.admin = {
-                type = "account_admin_user";
-                name = "Admin";
-                email = "admin@${globals.domains.main}";
-              };
+            enableLocalDB = true;
 
-              # auth.oidc =
-              #   let
-              #     client_id = "firezone";
-              #   in
-              #   {
-              #     name = "Kanidm";
-              #     adapter = "openid_connect";
-              #     adapter_config = {
-              #       scope = "openid email profile";
-              #       response_type = "code";
-              #       inherit client_id;
-              #       discovery_document_uri = "https://${globals.services.kanidm.domain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
-              #       clientSecretFile = config.sops.secrets.kanidm-firezone-client.path;
-              #     };
-              #   };
-
-              resources =
-                lib.genAttrs homeDomains
-                  (domain: {
-                    type = "dns";
-                    name = domain;
-                    address = domain;
-                    gatewayGroups = [ "home" ];
-                    filters = [
-                      { protocol = "icmp"; }
-                      {
-                        protocol = "tcp";
-                        ports = [
-                          443
-                          80
-                        ];
-                      }
-                      {
-                        protocol = "udp";
-                        ports = [ 443 ];
-                      }
-                    ];
-                  })
-                // {
-                  "home.vlan-services.v4" = {
-                    type = "cidr";
-                    name = "home.vlan-services.v4";
-                    address = globals.networks.home-lan.vlans.services.cidrv4;
-                    gatewayGroups = [ "home" ];
-                  };
-                  "home.vlan-services.v6" = {
-                    type = "cidr";
-                    name = "home.vlan-services.v6";
-                    address = globals.networks.home-lan.vlans.services.cidrv6;
-                    gatewayGroups = [ "home" ];
-                  };
-                };
-
-              policies =
-                { }
-                // allow "everyone" "home.vlan-services.v4"
-                // allow "everyone" "home.vlan-services.v6"
-                // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains);
+            smtp = {
+              inherit (config.repo.secrets.local.firezone.mail) from username;
+              host = globals.services.mailserver.domain;
+              port = 465;
+              implicitTls = true;
+              passwordFile = config.sops.secrets.firezone-smtp-password.path;
             };
-          };
 
-          domain = {
-            settings.ERLANG_DISTRIBUTION_PORT = 9003;
-            package = pkgs.dev.firezone-server-domain;
-          };
-          api = {
-            externalUrl = "https://${serviceDomain}/api/";
-            port = 8081;
-            package = pkgs.dev.firezone-server-api;
-          };
-          web = {
-            externalUrl = "https://${serviceDomain}/";
-            port = 8080;
-            package = pkgs.dev.firezone-server-web;
-          };
-        };
-
-        # relay = {
-        #   enable = true;
-        #   port = 3478;
-        #   inherit (config.node) name;
-        #   apiUrl = "wss://${serviceDomain}/api/";
-        #   tokenFile = config.sops.secrets.firezone-relay-token.path;
-        #   publicIpv4 = proxyAddress4;
-        #   publicIpv6 = proxyAddress6;
-        #   openFirewall = true;
-        #   package = pkgs.dev.firezone-relay;
-        # };
-      };
-      systemd.services.firezone-initialize =
-        let
-          generateSecrets =
-            let
-              requiredSecrets = lib.filterAttrs (_: v: v == null) cfg.settingsSecret;
-            in
-            ''
-              mkdir -p secrets
-              chmod 700 secrets
-            ''
-            + lib.concatLines (
-              lib.forEach (builtins.attrNames requiredSecrets) (secret: ''
-                if [[ ! -e secrets/${secret} ]]; then
-                  echo "Generating ${secret}"
-                  # Some secrets like TOKENS_KEY_BASE require a value >=64 bytes.
-                  head -c 64 /dev/urandom | base64 -w 0 > secrets/${secret}
-                  chmod 600 secrets/${secret}
-                fi
-              '')
-            );
-          loadSecretEnvironment =
-            component:
-            let
-              relevantSecrets = lib.subtractLists (builtins.attrNames cfg.${component}.settings) (
-                builtins.attrNames cfg.settingsSecret
-              );
-            in
-            lib.concatLines (
-              lib.forEach relevantSecrets (
-                secret:
-                ''export ${secret}=$(< ${
-              if cfg.settingsSecret.${secret} == null then
-                "secrets/${secret}"
-              else
-                "\"$CREDENTIALS_DIRECTORY/${secret}\""
-            })''
-              )
-            );
-        in
-        {
-          script = lib.mkForce ''
-            mkdir -p "$TZDATA_DIR"
-
-            # Generate and load secrets
-            ${generateSecrets}
-            ${loadSecretEnvironment "domain"}
-
-            echo "Running migrations"
-            ${lib.getExe cfg.domain.package} eval "Domain.Release.migrate(manual: true)"
-          '';
-        };
-
-
-      nodes = {
-        ${homeProxy} =
-          let
-            nodeCfg = nodes.${homeProxy}.config;
-          in
-          {
-            sops.secrets.firezone-gateway-token = { inherit sopsFile; mode = "0400"; };
-            services.firezone.gateway = {
+            provision = {
               enable = true;
-              inherit (nodeCfg.node) name;
-              apiUrl = "wss://${globals.services.firezone.domain}/api/";
-              tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
-              package = pkgs.dev.firezone-gateway;
+              accounts.main = {
+                name = "Home";
+                relayGroups.relays.name = "Relays";
+                gatewayGroups.home.name = "Home";
+                actors.admin = {
+                  type = "account_admin_user";
+                  name = "Admin";
+                  email = "admin@${globals.domains.main}";
+                };
+                groups.anyone = {
+                  name = "anyone";
+                  members = [
+                    "admin"
+                  ];
+                };
+
+                auth.oidc =
+                  let
+                    client_id = "firezone";
+                  in
+                  {
+                    name = "Kanidm";
+                    adapter = "openid_connect";
+                    adapter_config = {
+                      scope = "openid email profile";
+                      response_type = "code";
+                      inherit client_id;
+                      discovery_document_uri = "https://${globals.services.kanidm.domain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                      clientSecretFile = config.sops.secrets.kanidm-firezone-client.path;
+                    };
+                  };
+
+                resources =
+                  lib.genAttrs homeDomains
+                    (domain: {
+                      type = "dns";
+                      name = domain;
+                      address = domain;
+                      gatewayGroups = [ "home" ];
+                      filters = [
+                        { protocol = "icmp"; }
+                        {
+                          protocol = "tcp";
+                          ports = [
+                            443
+                            80
+                          ];
+                        }
+                        {
+                          protocol = "udp";
+                          ports = [ 443 ];
+                        }
+                      ];
+                    })
+                  // {
+                    "home.vlan-services.v4" = {
+                      type = "cidr";
+                      name = "home.vlan-services.v4";
+                      address = globals.networks.home-lan.vlans.services.cidrv4;
+                      gatewayGroups = [ "home" ];
+                    };
+                    "home.vlan-services.v6" = {
+                      type = "cidr";
+                      name = "home.vlan-services.v6";
+                      address = globals.networks.home-lan.vlans.services.cidrv6;
+                      gatewayGroups = [ "home" ];
+                    };
+                  };
+
+                policies =
+                  { }
+                  // allow "everyone" "home.vlan-services.v4"
+                  // allow "anyone" "home.vlan-services.v4"
+                  // allow "everyone" "home.vlan-services.v6"
+                  // allow "anyone" "home.vlan-services.v6"
+                  // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains)
+                  // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains);
+              };
+            };
+
+            domain = {
+              settings.ERLANG_DISTRIBUTION_PORT = domainPort;
+              package = pkgs.dev.firezone-server-domain;
+            };
+            api = {
+              externalUrl = "https://${serviceDomain}/api/";
+              address = "0.0.0.0";
+              port = apiPort;
+              package = pkgs.dev.firezone-server-api;
+            };
+            web = {
+              externalUrl = "https://${serviceDomain}/";
+              address = "0.0.0.0";
+              port = webPort;
+              package = pkgs.dev.firezone-server-web;
             };
           };
-        ${idmServer} =
-          let
-            nodeCfg = nodes.${idmServer}.config;
-          in
-          {
-            sops.secrets.kanidm-firezone = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups."firezone.access" = { };
-              systems.oauth2.firezone = {
-                displayName = "Firezone VPN";
-                # NOTE: state: both uuids are runtime values
-                originUrl = [
-                  "https://${globals.services.firezone.domain}/50e16678-6e95-49e2-b59e-d70d0e658843/sign_in/providers/fc8afaa3-ce60-4073-9cae-81dec9453a2d/handle_callback"
-                  "https://${globals.services.firezone.domain}/50e16678-6e95-49e2-b59e-d70d0e658843/settings/identity_providers/openid_connect/fc8afaa3-ce60-4073-9cae-81dec9453a2d/handle_callback"
-                ];
-                originLanding = "https://${globals.services.firezone.domain}/";
-                basicSecretFile = nodeCfg.sops.secrets.kanidm-firezone.path;
-                preferShortUsername = true;
-                scopeMaps."firezone.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
+
+          relay = {
+            enable = true;
+            port = relayPort;
+            inherit (config.node) name;
+            apiUrl = "wss://${serviceDomain}/api/";
+            tokenFile = config.sops.secrets.firezone-relay-token.path;
+            publicIpv4 = proxyAddress4;
+            publicIpv6 = proxyAddress6;
+            openFirewall = lib.mkIf (!isProxied) true;
+            package = pkgs.dev.firezone-relay;
+          };
+        };
+        # systemd.services.firezone-initialize =
+        #   let
+        #     generateSecrets =
+        #       let
+        #         requiredSecrets = lib.filterAttrs (_: v: v == null) cfg.settingsSecret;
+        #       in
+        #       ''
+        #         mkdir -p secrets
+        #         chmod 700 secrets
+        #       ''
+        #       + lib.concatLines (
+        #         lib.forEach (builtins.attrNames requiredSecrets) (secret: ''
+        #           if [[ ! -e secrets/${secret} ]]; then
+        #             echo "Generating ${secret}"
+        #             # Some secrets like TOKENS_KEY_BASE require a value >=64 bytes.
+        #             head -c 64 /dev/urandom | base64 -w 0 > secrets/${secret}
+        #             chmod 600 secrets/${secret}
+        #           fi
+        #         '')
+        #       );
+        #     loadSecretEnvironment =
+        #       component:
+        #       let
+        #         relevantSecrets = lib.subtractLists (builtins.attrNames cfg.${component}.settings) (
+        #           builtins.attrNames cfg.settingsSecret
+        #         );
+        #       in
+        #       lib.concatLines (
+        #         lib.forEach relevantSecrets (
+        #           secret:
+        #           ''export ${secret}=$(< ${
+        #                       if cfg.settingsSecret.${secret} == null then
+        #                         "secrets/${secret}"
+        #                       else
+        #                         "\"$CREDENTIALS_DIRECTORY/${secret}\""
+        #                     })''
+        #         )
+        #       );
+        #   in
+        #   {
+        #     script = lib.mkForce ''
+        #       mkdir -p "$TZDATA_DIR"
+
+        #       # Generate and load secrets
+        #       ${generateSecrets}
+        #       ${loadSecretEnvironment "domain"}
+
+        #       echo "Running migrations"
+        #       ${lib.getExe cfg.domain.package} eval "Domain.Release.migrate(manual: true)"
+        #     '';
+        #   };
+
+
+        nodes = {
+          ${homeProxy} =
+            let
+              nodeCfg = nodes.${homeProxy}.config;
+              nodePkgs = nodes.${homeProxy}.pkgs;
+            in
+            {
+              sops.secrets.firezone-gateway-token = { inherit (nodeCfg.swarselsystems) sopsFile; mode = "0400"; };
+              networking.nftables = {
+                firewall = {
+                  zones.firezone.interfaces = [ "tun-firezone" ];
+                  rules = {
+                    # masquerade firezone traffic
+                    masquerade-firezone = {
+                      from = [ "firezone" ];
+                      to = [ "vlan-services" ];
+                      # masquerade = true; NOTE: custom rule below for ip4 + ip6
+                      late = true; # Only accept after any rejects have been processed
+                      verdict = "accept";
+                    };
+                    # forward firezone traffic
+                    forward-incoming-firezone-traffic = {
+                      from = [ "firezone" ];
+                      to = [ "vlan-services" ];
+                      verdict = "accept";
+                    };
+
+                    # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
+                    forward-outgoing-firezone-traffic = {
+                      from = [ "vlan-services" ];
+                      to = [ "firezone" ];
+                      verdict = "accept";
+                    };
+                  };
+                };
+                chains.postrouting = {
+                  masquerade-firezone = {
+                    after = [ "hook" ];
+                    late = true;
+                    rules =
+                      lib.forEach
+                        [
+                          "firezone"
+                        ]
+                        (
+                          zone:
+                          lib.concatStringsSep " " [
+                            "meta protocol { ip, ip6 }"
+                            (lib.head nodeCfg.networking.nftables.firewall.zones.${zone}.ingressExpression)
+                            (lib.head nodeCfg.networking.nftables.firewall.zones.vlan-services.egressExpression)
+                            "masquerade random"
+                          ]
+                        );
+                  };
+                };
               };
 
-            };
-          };
-        ${webProxy} = {
-          services.nginx = {
-            upstreams = {
-              ${serviceName} = {
-                servers."127.0.0.1:${toString config.services.firezone.server.web.port}" = { };
+              boot.kernel.sysctl = {
+                "net.core.wmem_max" = 16777216;
+                "net.core.rmem_max" = 134217728;
               };
-              "${serviceName}-api" = {
-                servers."${serviceAddress}:${toString config.services.firezone.server.api.port}" = { };
+              services.firezone.gateway = {
+                enable = true;
+                logLevel = "trace";
+                inherit (nodeCfg.node) name;
+                apiUrl = "wss://${globals.services.firezone.domain}/api/";
+                tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
+                package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
               };
             };
-            virtualHosts = {
-              ${serviceDomain} = {
-                useACMEHost = globals.domains.main;
-                forceSSL = true;
-                acmeRoot = null;
-                locations."/" = {
-                  # The trailing slash is important to strip the location prefix from the request
-                  proxyPass = "http://${serviceName}/";
-                  proxyWebsockets = true;
+          ${idmServer} =
+            let
+              nodeCfg = nodes.${idmServer}.config;
+              accountId = "6b3c6ba7-5240-4684-95ce-f40fdae45096";
+              externalId = "08d714e9-1ab9-4133-a39d-00e843a960cc";
+            in
+            {
+              sops.secrets.kanidm-firezone = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+              services.kanidm.provision = {
+                groups."firezone.access" = { };
+                systems.oauth2.firezone = {
+                  displayName = "Firezone VPN";
+                  # NOTE: state: both uuids are runtime values
+                  originUrl = [
+                    "https://${globals.services.firezone.domain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
+                    "https://${globals.services.firezone.domain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
+                  ];
+                  originLanding = "https://${globals.services.firezone.domain}/";
+                  basicSecretFile = nodeCfg.sops.secrets.kanidm-firezone.path;
+                  preferShortUsername = true;
+                  scopeMaps."firezone.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
                 };
-                locations."/api/" = {
-                  # The trailing slash is important to strip the location prefix from the request
-                  proxyPass = "http://${serviceName}-api/";
-                  proxyWebsockets = true;
+
+              };
+            };
+          ${webProxy} = {
+            services.nginx = {
+              upstreams = {
+                ${serviceName} = {
+                  servers."${serviceAddress}:${builtins.toString webPort}" = { };
+                };
+                "${serviceName}-api" = {
+                  servers."${serviceAddress}:${builtins.toString apiPort}" = { };
+                };
+              };
+              virtualHosts = {
+                ${serviceDomain} = {
+                  useACMEHost = globals.domains.main;
+                  forceSSL = true;
+                  acmeRoot = null;
+                  locations."/" = {
+                    # The trailing slash is important to strip the location prefix from the request
+                    proxyPass = "http://${serviceName}/";
+                    proxyWebsockets = true;
+                  };
+                  locations."/api/" = {
+                    # The trailing slash is important to strip the location prefix from the request
+                    proxyPass = "http://${serviceName}-api/";
+                    proxyWebsockets = true;
+                  };
                 };
               };
             };
           };
         };
-      };
 
-    };
-  }
+      };
+    }
 #+end_src
 *** Darwin
 :PROPERTIES:
@@ -17537,7 +17909,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         # element-desktop
 
         nicotine-plus
-        stable.transmission_3
+        stable25_05.transmission_3
         mktorrent
         hugo
 
@@ -21303,6 +21675,40 @@ Sets up a systemd user service for anki that does not stall the shutdown process
   }
 #+end_src
 
+***** firezone service for tray
+
+#+begin_src nix-ts :tangle modules/home/common/firezone-tray.nix
+    { lib, config, pkgs, ... }:
+    {
+      options.swarselmodules.firezone-tray = lib.mkEnableOption "enable firezone applet for tray";
+      config = lib.mkIf config.swarselmodules.firezone-tray {
+
+        systemd.user.services.firezone-applet = {
+          Unit = {
+            Description = "Firezone applet";
+            Requires = [
+              "tray.target"
+            ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [ "graphical-session.target" ];
+          };
+
+          Install = {
+            WantedBy = [ "graphical-session.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs.firezone-gui-client}/bin/firezone-client-gui";
+          };
+        };
+      };
+
+    }
+#+end_src
+
 ***** syncthing service for tray
 :PROPERTIES:
 :CUSTOM_ID: h:5e7c606f-628a-4849-94e9-359d7b75f228
@@ -24328,6 +24734,9 @@ In short, the options defined here are passed to the modules systems using =_mod
           proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
           inherit (globals.hosts.${config.node.name}) isHome;
           inherit (globals.general) homeProxy webProxy dnsServer idmServer;
+          webProxyIf = "${webProxy}-wgProxy";
+          homeProxyIf = "home-wgHome";
+          isProxied = config.node.name != webProxy;
         };
 
         mkMicrovm = if config.swarselsystems.withMicroVMs then (guestName: {
@@ -26604,6 +27013,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         btrfs = lib.mkDefault true;
         distrobox = lib.mkDefault true;
         env = lib.mkDefault true;
+        firezone-client = lib.mkDefault true;
         general = lib.mkDefault true;
         gnome-keyring = lib.mkDefault true;
         gvfs = lib.mkDefault true;
@@ -26895,6 +27305,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         env = lib.mkDefault true;
         eza = lib.mkDefault true;
         firefox = lib.mkDefault true;
+        firezone-tray = lib.mkDefault true;
         fuzzel = lib.mkDefault true;
         gammastep = lib.mkDefault true;
         general = lib.mkDefault true;
@@ -30621,24 +31032,27 @@ These general steps are needed when setting up a new machine and do not fit into
 These are current deviations from the standard settings that I take while some things are broken upstream
 
 #+begin_src markdown :noweb-ref fixes :exports both :results html
-- 202501102:
-  - flake:
-    - emacs-overlay:
-      - : version pinned because emacsclient is currently broken on latest
-    - niri-flake:
-      - currently not using the sugared version of screenshot-[,window], as it is currently broken
-  - home-manager:
-    - emacs-tramp:
-      - using stable version in extraPackages (broken in unstable)
-      - :ensure nil in emacs tramp settings to use package in extraPackages
-    - emacs-calfwL
-      - pinned to version not in nixpkgs (is in latest emacs-overlay, but that is broken)
-    - vesktop:
-      - running stable version (broken in unstable)
-    - batgrep:
-      - running stable version (broken in unstable)
-    - swayosd:
-      - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
+  - 20260101:
+    - nixos:
+      - firezone-gateway does not work in newer versions with firezone-server (currently working version v1.4.8)
+  - 20251102:
+    - flake:
+      - emacs-overlay:
+        - : version pinned because emacsclient is currently broken on latest
+      - niri-flake:
+        - currently not using the sugared version of screenshot-[,window], as it is currently broken
+    - home-manager:
+      - emacs-tramp:
+        - using stable version in extraPackages (broken in unstable)
+        - :ensure nil in emacs tramp settings to use package in extraPackages
+      - emacs-calfwL
+        - pinned to version not in nixpkgs (is in latest emacs-overlay, but that is broken)
+      - vesktop:
+        - running stable version (broken in unstable)
+      - batgrep:
+        - running stable version (broken in unstable)
+      - swayosd:
+        - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
 #+end_src
 
 * Appendix B: Supplementary Files

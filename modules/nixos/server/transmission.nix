@@ -1,6 +1,6 @@
 { self, pkgs, lib, config, confLib, ... }:
 let
-  inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
+  inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain isHome;
 
   lidarrUser = "lidarr";
   lidarrGroup = lidarrUser;
@@ -86,7 +86,10 @@ in
       prowlarr.info = "https://${serviceDomain}/prowlarr";
     };
 
-    globals.services.transmission.domain = serviceDomain;
+    globals.services.transmission = {
+      domain = serviceDomain;
+      inherit isHome;
+    };
 
     services = {
       radarr = {

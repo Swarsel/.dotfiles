@@ -62,7 +62,6 @@
     attic = true;
     garage = true;
     hydra = false;
-    dns-hostrecord = true;
   };
 
 }

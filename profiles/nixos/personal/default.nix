@@ -11,6 +11,7 @@
       btrfs = lib.mkDefault true;
       distrobox = lib.mkDefault true;
       env = lib.mkDefault true;
+      firezone-client = lib.mkDefault true;
       general = lib.mkDefault true;
       gnome-keyring = lib.mkDefault true;
       gvfs = lib.mkDefault true;

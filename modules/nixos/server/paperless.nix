@@ -1,7 +1,7 @@
 { lib, pkgs, config, dns, globals, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
   tikaPort = 9998;
   gotenbergPort = 3002;
@@ -11,7 +11,7 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
@@ -24,11 +24,21 @@ in
       kanidm-paperless-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
-    networking.firewall.allowedTCPPorts = [ servicePort ];
+    # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.${serviceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+    globals = {
+      networks = {
+        ${webProxyIf}.hosts = lib.mkIf isProxied {
+          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+        };
+        ${homeProxyIf}.hosts = lib.mkIf isHome {
+          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+        };
+      };
+      services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
     };
 
     services = {
@@ -99,7 +109,7 @@ in
                      )
     '';
 
-    nodes.${serviceProxy}.services.nginx = {
+    nodes.${webProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

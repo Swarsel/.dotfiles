@@ -67,6 +67,7 @@
             hosts
             user
             root
+            general
             ;
         };
     };

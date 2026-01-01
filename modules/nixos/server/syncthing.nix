@@ -1,7 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems.syncthing) serviceDomain;
-  inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
   specificServiceName = "${serviceName}-${config.node.name}";
 
@@ -42,7 +42,7 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
@@ -54,11 +54,27 @@ in
 
     users.groups.${serviceGroup} = { };
 
-    networking.firewall.allowedTCPPorts = [ servicePort ];
+    # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.${specificServiceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+    globals = {
+      networks = {
+        ${webProxyIf}.hosts = lib.mkIf isProxied {
+          ${config.node.name}.firewallRuleForNode.${webProxy} = {
+            allowedTCPPorts = [ servicePort 22000 ];
+            allowedUDPPorts = [ 20000 21027 ];
+          };
+        };
+        ${homeProxyIf}.hosts = lib.mkIf isHome {
+          ${config.node.name}.firewallRuleForNode.${homeProxy} = {
+            allowedTCPPorts = [ servicePort 20000 ];
+            allowedUDPPorts = [ 20000 21027 ];
+          };
+        };
+      };
+      services.${specificServiceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
     };
 
     services.${serviceName} = rec {
@@ -68,7 +84,7 @@ in
       dataDir = lib.mkDefault "/Vault/data/${serviceName}";
       configDir = "${cfg.dataDir}/.config/${serviceName}";
       guiAddress = "0.0.0.0:${builtins.toString servicePort}";
-      openDefaultPorts = true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
+      openDefaultPorts = lib.mkIf (!isProxied) true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
       relay.enable = false;
       settings = {
         urAccepted = -1;
@@ -115,7 +131,7 @@ in
       };
     };
 
-    nodes.${serviceProxy}.services.nginx = {
+    nodes.${webProxy}.services.nginx = {
       upstreams = {
         ${specificServiceName} = {
           servers = {

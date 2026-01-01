@@ -23,7 +23,7 @@ in
       config.swarselsystems.shellAliases;
 
     nixpkgs.config = lib.mkIf (!config.swarselsystems.isMicroVM) {
-      perittedInsecurePackages = [
+      permittedInsecurePackages = [
         # matrix
         "olm-3.2.16"
         # sonarr

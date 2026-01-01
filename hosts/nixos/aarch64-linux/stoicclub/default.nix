@@ -1,4 +1,4 @@
-{ self, lib, minimal, ... }:
+{ self, config, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -25,6 +25,8 @@
     isCloud = true;
     isBastionTarget = true;
   };
+
+  globals.general.dnsServer = config.node.name;
 } // lib.optionalAttrs (!minimal) {
   swarselprofiles = {
     server = true;
@@ -32,6 +34,7 @@
 
   swarselmodules.server = {
     nsd = true;
-    dns-hostrecord = true;
   };
+
+  networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
 }

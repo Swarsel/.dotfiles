@@ -2,7 +2,7 @@
 let
   certsSopsFile = self + /secrets/repo/certs.yaml;
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy homeProxyIf webProxyIf dnsServer;
 
   oauth2ProxyDomain = globals.services.oauth2-proxy.domain;
   immichDomain = globals.services.immich.domain;
@@ -31,16 +31,18 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
-    users.users.${serviceUser} = {
-      group = serviceGroup;
-      isSystemUser = true;
-    };
+    users = {
+      users.${serviceUser} = {
+        group = serviceGroup;
+        isSystemUser = true;
+      };
 
-    users.groups.${serviceGroup} = { };
+      groups.${serviceGroup} = { };
+    };
 
     sops = {
       secrets = {
@@ -58,11 +60,22 @@ in
       };
     };
 
-    networking.firewall.allowedTCPPorts = [ servicePort ];
+    # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.${serviceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+    globals = {
+      general.idmServer = config.node.name;
+      networks = {
+        ${webProxyIf}.hosts = lib.mkIf isProxied {
+          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+        };
+        ${homeProxyIf}.hosts = lib.mkIf isHome {
+          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+        };
+      };
+      services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
     };
 
     environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
@@ -380,7 +393,7 @@ in
       ${serviceName}.serviceConfig.RestartSec = "30";
     };
 
-    nodes.${serviceProxy}.services.nginx = {
+    nodes.${webProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

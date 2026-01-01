@@ -40,7 +40,6 @@
 
   swarselmodules.server = {
     mailserver = true;
-    dns-hostrecord = true;
     postgresql = true;
     nginx = true;
     wireguard = true;
@@ -49,5 +48,7 @@
   swarselprofiles = {
     server = true;
   };
+
+  networking.nftables.firewall.zones.untrusted.interfaces = [ "wan" ];
 
 }
