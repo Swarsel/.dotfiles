@@ -35,6 +35,11 @@
         serviceProxy = proxy;
         proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
         proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
+        inherit (globals.hosts.${config.node.name}) isHome;
+        inherit (globals.general) homeProxy webProxy dnsServer idmServer;
+        webProxyIf = "${webProxy}-wgProxy";
+        homeProxyIf = "home-wgHome";
+        isProxied = config.node.name != webProxy;
       };
 
       mkMicrovm =

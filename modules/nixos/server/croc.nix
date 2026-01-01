@@ -1,6 +1,6 @@
 { self, lib, config, pkgs, dns, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6 isHome dnsServer;
   servicePorts = [
     9009
     9010
@@ -17,7 +17,7 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
@@ -44,7 +44,7 @@ in
 
     globals.services.${serviceName} = {
       domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+      inherit proxyAddress4 proxyAddress6 isHome;
     };
 
     services.${serviceName} = {

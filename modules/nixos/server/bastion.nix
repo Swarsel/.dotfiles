@@ -1,7 +1,7 @@
-{ self, lib, config, ... }:
+{ self, lib, config, withHomeManager, ... }:
 {
   options.swarselmodules.server.bastion = lib.mkEnableOption "enable bastion on server";
-  config = lib.mkIf config.swarselmodules.server.bastion {
+  config = lib.mkIf config.swarselmodules.server.bastion ({
 
     users = {
       groups = {
@@ -50,6 +50,7 @@
         }
       ];
     };
+  } // lib.optionalAttrs withHomeManager {
 
     home-manager.users.jump.config = {
       home.stateVersion = lib.mkDefault "23.05";
@@ -63,5 +64,5 @@
         } // config.repo.secrets.local.ssh.hosts;
       };
     };
-  };
+  });
 }

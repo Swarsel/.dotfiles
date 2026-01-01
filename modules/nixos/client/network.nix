@@ -47,8 +47,10 @@ in
       };
     };
 
+    services.resolved.enable = true;
+
     networking = {
-      inherit (config.swarselsystems) hostName;
+      hostName = config.node.name;
       hosts = {
         "${globals.networks.home-lan.hosts.winters.ipv4}" = [ globals.services.transmission.domain ];
       };
@@ -80,9 +82,11 @@ in
         ];
       };
 
+
       networkmanager = {
         enable = true;
         wifi.backend = "iwd";
+        dns = "systemd-resolved";
         plugins = [
           # list of plugins: https://search.nixos.org/packages?query=networkmanager-
           # docs https://networkmanager.dev/docs/vpn/

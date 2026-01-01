@@ -22,6 +22,7 @@
         packages = lib.mkDefault true;
         ssh = lib.mkDefault true;
         attic-setup = lib.mkDefault true;
+        dns-hostrecord = lib.mkDefault true;
       };
     };
   };

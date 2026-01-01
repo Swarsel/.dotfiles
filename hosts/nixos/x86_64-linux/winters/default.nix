@@ -91,7 +91,6 @@
     transmission = true;
     syncthing = true;
     grafana = true;
-    emacs = true;
     freshrss = true;
     kanidm = true;
     firefly-iii = true;
@@ -103,5 +102,7 @@
     homebox = true;
     opkssh = true;
   };
+
+  networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "enp3s0" ];
 
 }

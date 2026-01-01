@@ -5,7 +5,7 @@ let
     name = "garage";
     port = 3900;
     domain = config.repo.secrets.common.services.domains."garage-${config.node.name}";
-  }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+  }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 
   cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
   inherit (config.swarselsystems) sopsFile mainUser;
@@ -71,9 +71,9 @@ in
       }
     ];
 
-    networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+    # networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
 
-    nodes.stoicclub.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
       "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -102,9 +102,19 @@ in
       ];
     };
 
-    globals.services.${specificServiceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+    globals = {
+      networks = {
+        ${webProxyIf}.hosts = lib.mkIf isProxied {
+          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+        };
+        ${homeProxyIf}.hosts = lib.mkIf isHome {
+          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+        };
+      };
+      services.${specificServiceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
     };
 
 
@@ -309,7 +319,7 @@ in
       };
     };
 
-    nodes.${serviceProxy}.services.nginx = {
+    nodes.${webProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

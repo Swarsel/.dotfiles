@@ -1,5 +1,5 @@
 # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
-{ config, lib, outputs, ... }:
+{ config, lib, nodes, ... }:
 let
   nodeName = config.node.name;
   mkForwardedOption =
@@ -23,23 +23,21 @@ let
       '';
     };
 
+  expandOptions = basePath: optionNames: map (option: basePath ++ [ option ]) optionNames;
+  splitPath = path: lib.splitString "." path;
+
   forwardedOptions = [
-    [
-      "services"
-      "nginx"
-      "upstreams"
-    ]
-    [
-      "services"
-      "nginx"
-      "virtualHosts"
-    ]
-    [
-      "swarselsystems"
-      "server"
-      "dns"
-    ]
-  ];
+    (splitPath "boot.kernel.sysctl")
+    (splitPath "networking.nftables.chains.postrouting")
+    (splitPath "services.kanidm.provision.groups")
+    (splitPath "services.kanidm.provision.systems.oauth2")
+    (splitPath "sops.secrets")
+    (splitPath "swarselsystems.server.dns")
+  ]
+  ++ expandOptions (splitPath "networking.nftables.firewall") [ "zones" "rules" ]
+  ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]
+  ++ expandOptions (splitPath "services.nginx") [ "upstreams" "virtualHosts" ]
+  ;
 
   attrsForEachOption =
     f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;
@@ -60,10 +58,10 @@ in
       getConfig =
         path: otherNode:
         let
-          cfg = outputs.nixosConfigurations.${otherNode}.config.nodes.${nodeName} or null;
+          cfg = nodes.${otherNode}.config.nodes.${nodeName} or null;
         in
         lib.optionals (cfg != null) (lib.getAttrFromPath path cfg);
-      mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames outputs.nixosConfigurations));
+      mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames nodes));
     in
     attrsForEachOption mergeConfigFromOthers;
 }

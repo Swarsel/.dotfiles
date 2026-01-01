@@ -48,6 +48,7 @@ in
       inherit (config.repo.secrets.local.networking) defaultGateway4;
       wanAddress4 = netConfig.wanAddress4 or null;
       wanAddress6 = netConfig.wanAddress6 or null;
+      isHome = if (netPrefix == "home") then true else false;
     };
 
     networking = {

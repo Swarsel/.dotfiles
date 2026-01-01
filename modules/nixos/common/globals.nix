@@ -5,6 +5,29 @@ let
     types
     ;
 
+  firewallOptions = {
+    allowedTCPPorts = mkOption {
+      type = types.listOf types.port;
+      default = [ ];
+      description = "Convenience option to open specific TCP ports for traffic from the network.";
+    };
+    allowedUDPPorts = mkOption {
+      type = types.listOf types.port;
+      default = [ ];
+      description = "Convenience option to open specific UDP ports for traffic from the network.";
+    };
+    allowedTCPPortRanges = mkOption {
+      type = lib.types.listOf (lib.types.attrsOf lib.types.port);
+      default = [ ];
+      description = "Convenience option to open specific TCP port ranges for traffic from another node.";
+    };
+    allowedUDPPortRanges = mkOption {
+      type = lib.types.listOf (lib.types.attrsOf lib.types.port);
+      default = [ ];
+      description = "Convenience option to open specific UDP port ranges for traffic from another node.";
+    };
+  };
+
   networkOptions = netSubmod: {
     cidrv4 = mkOption {
       type = types.nullOr types.net.cidrv4;
@@ -24,6 +47,20 @@ let
       description = "The CIDRv6 of this network";
       default = null;
     };
+
+    firewallRuleForAll = mkOption {
+      default = { };
+      description = ''
+        If this is a wireguard network: Allows you to set specific firewall rules for traffic originating from any participant in this
+        wireguard network. A corresponding rule `<network-name>-to-<local-zone-name>` will be created to easily expose
+        services to the network.
+      '';
+      type = types.submodule {
+        options = firewallOptions;
+      };
+    };
+
+
 
     hosts = mkOption {
       default = { };
@@ -84,6 +121,20 @@ let
                 else
                 # if we use the /32 wan address as local address directly, do not use the network address in ipv6
                   lib.net.cidr.hostCidr (if hostSubmod.config.id == 0 then 1 else hostSubmod.config.id) netSubmod.config.cidrv6;
+            };
+
+            firewallRuleForNode = mkOption {
+              default = { };
+              description = ''
+                If this is a wireguard network: Allows you to set specific firewall rules just for traffic originating from another network node.
+                A corresponding rule `<network-name>-node-<node-name>-to-<local-zone-name>` will be created to easily expose
+                services to that node.
+              '';
+              type = types.attrsOf (
+                types.submodule {
+                  options = firewallOptions;
+                }
+              );
             };
           };
         })
@@ -210,11 +261,13 @@ in
             };
           };
 
-
+          general = lib.mkOption {
+            type = types.submodule {
+              freeformType = types.unspecified;
+            };
+          };
 
         };
-
-
 
       };
     };

@@ -77,4 +77,9 @@ in
   swarselprofiles = {
     personal = true;
   };
+
+  networking.nftables = {
+    enable = lib.mkForce false;
+    firewall.enable = lib.mkForce false;
+  };
 }

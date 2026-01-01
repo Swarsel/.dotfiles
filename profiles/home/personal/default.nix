@@ -18,6 +18,7 @@
       env = lib.mkDefault true;
       eza = lib.mkDefault true;
       firefox = lib.mkDefault true;
+      firezone-tray = lib.mkDefault true;
       fuzzel = lib.mkDefault true;
       gammastep = lib.mkDefault true;
       general = lib.mkDefault true;

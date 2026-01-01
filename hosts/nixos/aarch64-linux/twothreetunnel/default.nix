@@ -1,4 +1,4 @@
-{ self, lib, minimal, ... }:
+{ self, config, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -11,6 +11,8 @@
   topology.self = {
     icon = "devices.cloud-server";
   };
+
+  globals.general.webProxy = config.node.name;
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -27,7 +29,6 @@
     server = {
       wireguard.interfaces = {
         wgProxy = {
-          # ifName = "wg";
           isServer = true;
           peers = [
             "moonside"
@@ -47,8 +48,16 @@
   swarselmodules.server = {
     nginx = true;
     oauth2-proxy = true;
-    dns-hostrecord = true;
     wireguard = true;
+    firezone = true;
+  };
+
+  networking.nftables = {
+    firewall.zones.untrusted.interfaces = [ "lan" ];
+    chains.forward.dnat = {
+      after = [ "conntrack" ];
+      rules = [ "ct status dnat accept" ];
+    };
   };
 
 }

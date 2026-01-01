@@ -1,6 +1,6 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome dnsServer webProxy;
 
   nginxGroup = "nginx";
 
@@ -11,7 +11,7 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
@@ -38,7 +38,7 @@ in
 
     globals.services.${serviceName} = {
       domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+      inherit proxyAddress4 proxyAddress6 isHome;
     };
 
     services = {
@@ -81,7 +81,7 @@ in
       };
     };
 
-    nodes.${serviceProxy}.services.nginx = {
+    nodes.${webProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {
