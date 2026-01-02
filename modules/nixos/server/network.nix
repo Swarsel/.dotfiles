@@ -2,7 +2,6 @@
 let
   netConfig = config.repo.secrets.local.networking;
   netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
-  # netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
 in
 {
   options = {
@@ -28,11 +27,6 @@ in
 
     swarselsystems.server.localNetwork = netConfig.localNetwork or "";
 
-    # globals.networks.${netName}.hosts.${config.node.name} = {
-    #   inherit (netConfig.networks.${netConfig.localNetwork}) id;
-    #   mac = netConfig.networks.${netConfig.localNetwork}.mac or null;
-    # };
-
     globals.networks = lib.mapAttrs'
       (netName: _:
         lib.nameValuePair "${netPrefix}-${netName}" {
@@ -45,7 +39,8 @@ in
       netConfig.networks;
 
     globals.hosts.${config.node.name} = {
-      inherit (config.repo.secrets.local.networking) defaultGateway4;
+      defaultGateway4 = netConfig.defaultGateway4 or null;
+      defaultGateway6 = netConfig.defaultGateway6 or null;
       wanAddress4 = netConfig.wanAddress4 or null;
       wanAddress6 = netConfig.wanAddress6 or null;
       isHome = if (netPrefix == "home") then true else false;

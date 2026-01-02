@@ -4,6 +4,9 @@ let
   subnetMask = globals.networks.${config.swarselsystems.server.netConfigName}.subnetMask4;
   gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
 
+  inherit (globals.general) routerServer;
+  isRouter = config.node.name == routerServer;
+
   hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
   hostKeyPath =
     if config.swarselsystems.isImpermanence then
@@ -42,7 +45,7 @@ in
     };
 
     boot = lib.mkIf (!config.swarselsystems.isClient) {
-      kernelParams = lib.mkIf (!config.swarselsystems.isCloud) [
+      kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == [ ]) || isRouter)) [
         "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
       ];
       initrd = {

@@ -75,7 +75,7 @@
   fileSystems = {
     "/persist".neededForBoot = true;
     "/home".neededForBoot = true;
-    "/".neededForBoot = true;
+    "/".neededForBoot = true; # this is ok because this is not a impermanence host
     "/var/log".neededForBoot = true;
   };
 }

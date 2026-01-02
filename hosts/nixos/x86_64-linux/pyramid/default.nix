@@ -64,7 +64,7 @@ in
         main = {
           # name = "BOE 0x0BC9 Unknown";
           name = "BOE 0x0BC9";
-          mode = "2560x1600"; # TEMPLATE
+          mode = "2560x1600";
           scale = "1";
           position = "2560,0";
           workspace = "15:L";
@@ -78,8 +78,8 @@ in
     personal = true;
   };
 
-  networking.nftables = {
-    enable = lib.mkForce false;
-    firewall.enable = lib.mkForce false;
-  };
+  # networking.nftables = {
+  #   enable = lib.mkForce false;
+  #   firewall.enable = lib.mkForce false;
+  # };
 }

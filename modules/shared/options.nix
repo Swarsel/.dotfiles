@@ -37,6 +37,18 @@
       type = lib.types.str;
       default = "";
     };
+    # @ future me: dont put this under server prefix
+    # home-manager would then try to import all swarselsystems.server.* options
+    localVLANs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+    };
+    # @ future me: dont put this under server prefix
+    # home-manager would then try to import all swarselsystems.server.* options
+    initrdVLAN = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+    };
     mainUser = lib.mkOption {
       type = lib.types.str;
       default = "swarsel";
