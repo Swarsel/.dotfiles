@@ -1,28 +1,30 @@
-{ lib, config, globals, ... }:
+{ self, lib, config, globals, ... }:
+let
+  inherit (config.swarselsystems) isCrypted localVLANs;
+  inherit (globals.general) routerServer;
+
+  isRouter = config.node.name == routerServer;
+  ifName = config.swarselsystems.server.localNetwork;
+in
 {
-  networking = {
-    useDHCP = lib.mkForce false;
-    useNetworkd = true;
-    dhcpcd.enable = false;
-    renameInterfacesByMac = lib.mapAttrs (_: v: if (v ? mac) then v.mac else "") (
-      config.repo.secrets.local.networking.networks or { }
-    );
-  };
-  boot.initrd.systemd.network = {
+  imports = [
+    "${self}/modules/nixos/optional/systemd-networkd-base.nix"
+  ];
+
+  boot.initrd.systemd.network = lib.mkIf (isCrypted && ((localVLANs == [ ]) || isRouter)) {
     enable = true;
-    networks."10-${config.swarselsystems.server.localNetwork}" = config.systemd.network.networks."10-${config.swarselsystems.server.localNetwork}";
+    networks."10-${ifName}" = config.systemd.network.networks."10-${ifName}";
   };
 
   systemd = {
     network = {
-      enable = true;
       wait-online.enable = false;
       networks =
         let
           netConfig = config.repo.secrets.local.networking;
         in
         {
-          "10-${config.swarselsystems.server.localNetwork}" = {
+          "10-${ifName}" = lib.mkIf (isRouter || (localVLANs == [ ])) {
             address = [
               "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv4}"
               "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv6}"

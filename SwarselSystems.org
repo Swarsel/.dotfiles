@@ -2994,7 +2994,7 @@ My work machine. Built for more security, this is the gold standard of my config
           main = {
             # name = "BOE 0x0BC9 Unknown";
             name = "BOE 0x0BC9";
-            mode = "2560x1600"; # TEMPLATE
+            mode = "2560x1600";
             scale = "1";
             position = "2560,0";
             workspace = "15:L";
@@ -3008,10 +3008,10 @@ My work machine. Built for more security, this is the gold standard of my config
       personal = true;
     };
 
-    networking.nftables = {
-      enable = lib.mkForce false;
-      firewall.enable = lib.mkForce false;
-    };
+    # networking.nftables = {
+    #   enable = lib.mkForce false;
+    #   firewall.enable = lib.mkForce false;
+    # };
   }
 
 #+end_src
@@ -3179,7 +3179,7 @@ My work machine. Built for more security, this is the gold standard of my config
     fileSystems = {
       "/persist".neededForBoot = true;
       "/home".neededForBoot = true;
-      "/".neededForBoot = true;
+      "/".neededForBoot = true; # this is ok because this is not a impermanence host
       "/var/log".neededForBoot = true;
     };
   }
@@ -3891,15 +3891,14 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:624b3c6a-6e31-4734-a6ea-7c5b461a3429
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/default.nix
-  { self, config, lib, minimal, confLib, ... }:
+  { self, config, lib, minimal, confLib, globals, ... }:
   {
 
     imports = [
       ./hardware-configuration.nix
       ./disk-config.nix
 
-      "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-      "${self}/modules/nixos/optional/systemd-networkd-vlan.nix"
+      "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
     ];
 
     topology.self = {
@@ -3913,7 +3912,10 @@ This is my main server that I run at home. It handles most tasks that require bi
       };
     };
 
-    globals.general.homeProxy = config.node.name;
+    globals.general = {
+      homeProxy = config.node.name;
+      routerServer = config.node.name;
+    };
 
     swarselsystems = {
       info = "HUNSN RM02, 8GB RAM";
@@ -3928,6 +3930,8 @@ This is my main server that I run at home. It handles most tasks that require bi
       swapSize = "8G";
       networkKernelModules = [ "igb" ];
       withMicroVMs = true;
+      localVLANs = map (name: "${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+      initrdVLAN = "home";
       server = {
         wireguard.interfaces = {
           wgHome = {
@@ -9164,6 +9168,9 @@ Auto login for the initial session.
 #+end_src
 
 **** Firezone Client
+:PROPERTIES:
+:CUSTOM_ID: h:4d018a21-637b-4c7d-b9c9-7f1b95144a07
+:END:
 
 
 #+begin_src nix-ts :tangle modules/nixos/client/firezone-client.nix
@@ -9756,19 +9763,20 @@ Restricts access to the system by the nix build user as per https://discourse.ni
   }
 #+end_src
 
-**** Network settings
+**** Network settings (globals.networks population)
 :PROPERTIES:
 :CUSTOM_ID: h:0ff3acc5-9ce8-4b22-a2e2-f6f1e69d47a5
 :END:
 
 Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
 
+This section is mainly used to populate entries in =globals.networks= with the interfaces defined in the local secrets of the respective host. Also, we expose some convenient values under =globals.hosts= and setup basic networking.
+
 #+begin_src nix-ts :tangle modules/nixos/server/network.nix
   { lib, config, ... }:
   let
     netConfig = config.repo.secrets.local.networking;
     netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
-    # netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
   in
   {
     options = {
@@ -9794,11 +9802,6 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
 
       swarselsystems.server.localNetwork = netConfig.localNetwork or "";
 
-      # globals.networks.${netName}.hosts.${config.node.name} = {
-      #   inherit (netConfig.networks.${netConfig.localNetwork}) id;
-      #   mac = netConfig.networks.${netConfig.localNetwork}.mac or null;
-      # };
-
       globals.networks = lib.mapAttrs'
         (netName: _:
           lib.nameValuePair "${netPrefix}-${netName}" {
@@ -9811,7 +9814,8 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
         netConfig.networks;
 
       globals.hosts.${config.node.name} = {
-        inherit (config.repo.secrets.local.networking) defaultGateway4;
+        defaultGateway4 = netConfig.defaultGateway4 or null;
+        defaultGateway6 = netConfig.defaultGateway6 or null;
         wanAddress4 = netConfig.wanAddress4 or null;
         wanAddress6 = netConfig.wanAddress6 or null;
         isHome = if (netPrefix == "home") then true else false;
@@ -9873,6 +9877,9 @@ I also take some precautions in how I get networking information during stage 1.
     subnetMask = globals.networks.${config.swarselsystems.server.netConfigName}.subnetMask4;
     gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
 
+    inherit (globals.general) routerServer;
+    isRouter = config.node.name == routerServer;
+
     hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
     hostKeyPath =
       if config.swarselsystems.isImpermanence then
@@ -9911,7 +9918,7 @@ I also take some precautions in how I get networking information during stage 1.
       };
 
       boot = lib.mkIf (!config.swarselsystems.isClient) {
-        kernelParams = lib.mkIf (!config.swarselsystems.isCloud) [
+        kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == []) || isRouter)) [
           "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
         ];
         initrd = {
@@ -10342,12 +10349,43 @@ In order to define a new wireguard interface, I have to:
 :CUSTOM_ID: h:b54f2bbb-0088-46b2-957d-fd8234b772c3
 :END:
 
-This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]] act as the router for my internal network. This is not a reusable module and highly adapted to its hardware.
+This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]] act as the router for my internal network. This is not a reusable module and highly adapted to its hardware. Below is a rough sketch of the functionality:
+
+  - six LAN ports, five of which are bridged
+    - lan1–lan5 are enslaved into said bridge and behave as a single VLAN‑aware switch
+      - all VLANs are defined under =globals.networks.home-lan.vlans=
+      - for each VLAN, a routed interface me-${vlanName} is created on the router (NOTE: this interface also serves as the communication link to the local microvms - the respective extra interfaces are defined in [[#h:049fc27e-a28f-4ff0-b5f0-d81401bdd56f][systemd-networkd (server home)]])
+      - RA and forwarding are enabled on these me-* interfaces so the router advertises vlanCfg.cidrv6 and routes between VLANs / WAN / WireGuard
+    - the sixth LAN port is used as the WAN / untrusted uplink to the =Fritz!Box=
+    - the mapping from MAC addresses to interfaces is defined in =config.repo.secrets.local.networking.networks.<ifName>.mac= (and performed in [[#h:99bf6c0e-2566-4a50-b219-fb6a7d4fb2cd][systemd-networkd (base)]] using =renameInterfacesByMac=)
+  - connectivity to microvms should not be lost in case there is no cable connected to the router
+      - this is achieved by connecting the veth interface pair veth-br / veth-int
+      - veth-br is part of the bridge and carries all VLANs tagged, as if it were another physical switch port
+      - veth-int stays on the host side and is used as the internal attachment point for microvms / guests
+      - ConfigureWithoutCarrier and ActivationPolicy = "always-up" are used so that the bridge and veth side stay UP; this however does not guarantee connectivity by itself as the kernel will not route packets if the underlying interface is not up (see also [[#h:049fc27e-a28f-4ff0-b5f0-d81401bdd56f][systemd-networkd (server home)]])
+    - nftables firewall is derived from the same VLAN definitions:
+        - a zone =vlan-*= is created for each VLAN and bound to =me-*=, as well as zones for WAN, WG, and DNS
+        - all internal =vlan-*= zones are allowed to go to untrusted; NAT is implemented via a custom postrouting chain that masquerades both IPv4 and IPv6 traffic
+        - any VLAN with internet access is allowed to reach AdGuardHome for DNS (access-adguardhome-dns)
+          - this is important so that we can make use of the internal nginx instance to prevent bottlenecks over the web proxy
+        - policy between internal networks:
+          - the home VLAN is allowed to access the services and devices VLANs
+          - the services VLAN is allowed to reach selected ports on local (currently wireguard)
+          - WireGuard peers in wgHome are allowed to talk to each other (wgHome → wgHome)
+    - global IPv4/IPv6 forwarding is enabled via boot.kernel.sysctl so this host acts as the main router between all VLANs, the WireGuard network, and the WAN (untrusted)
 
 #+begin_src nix-ts :tangle modules/nixos/server/router.nix
   { lib, config, globals, ... }:
   let
     serviceName = "router";
+    bridgeVLANs = lib.mapAttrsToList
+      (_: vlan: {
+        VLAN = vlan.id;
+      })
+      globals.networks.home-lan.vlans;
+    selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
+    lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
+    lan4VLANs = selectVLANs [ "home" "services" ];
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10440,7 +10478,68 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
         systemd.network = {
           wait-online.anyInterface = true;
+
+          netdevs = {
+            "10-veth" = {
+              netdevConfig = {
+                Kind = "veth";
+                Name = "veth-br";
+              };
+              peerConfig = {
+                Name = "veth-int";
+              };
+            };
+            "20-br" = {
+              netdevConfig = {
+                Kind = "bridge";
+                Name = "br";
+              };
+              bridgeConfig = {
+                VLANFiltering = true;
+              };
+            };
+          };
           networks = {
+            "40-br" = {
+              matchConfig.Name = "br";
+              bridgeConfig = { };
+              linkConfig = {
+                ActivationPolicy = "always-up";
+                RequiredForOnline = "no";
+              };
+              networkConfig = {
+                ConfigureWithoutCarrier = true;
+                LinkLocalAddressing = "no";
+              };
+            };
+            "15-veth-br" = {
+              matchConfig.Name = "veth-br";
+
+              linkConfig = {
+                RequiredForOnline = "no";
+              };
+
+              networkConfig = {
+                Bridge = "br";
+              };
+              inherit bridgeVLANs;
+            };
+            "15-veth-int" = {
+              matchConfig.Name = "veth-int";
+
+              linkConfig = {
+                ActivationPolicy = "always-up";
+                RequiredForOnline = "no";
+              };
+
+              networkConfig = {
+                ConfigureWithoutCarrier = true;
+                LinkLocalAddressing = "no";
+              };
+
+              vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+            };
+            # br
             "30-lan1" = {
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan1.mac;
               linkConfig.RequiredForOnline = "enslaved";
@@ -10448,7 +10547,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
+              inherit bridgeVLANs;
             };
+            # wifi
             "30-lan2" = {
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
               linkConfig.RequiredForOnline = "enslaved";
@@ -10456,7 +10557,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
+              inherit bridgeVLANs;
             };
+            # summers
             "30-lan3" = {
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan3.mac;
               linkConfig.RequiredForOnline = "enslaved";
@@ -10464,7 +10567,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
+              inherit bridgeVLANs;
             };
+            # winters
             "30-lan4" = {
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
               linkConfig.RequiredForOnline = "enslaved";
@@ -10472,7 +10577,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
+              bridgeVLANs = lan4VLANs;
             };
+            # lr
             "30-lan5" = {
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan5.mac;
               linkConfig.RequiredForOnline = "enslaved";
@@ -10480,10 +10587,31 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
+              bridgeVLANs = lan5VLANs;
             };
-          };
-        };
+          } // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
+            vlanName: vlanCfg: {
+              "40-me-${vlanName}" = lib.mkForce {
+                address = [
+                  vlanCfg.hosts.${config.node.name}.cidrv4
+                  vlanCfg.hosts.${config.node.name}.cidrv6
+                ];
+                matchConfig.Name = "me-${vlanName}";
+                networkConfig = {
+                  IPv4Forwarding = "yes";
+                  IPv6PrivacyExtensions = "yes";
+                  IPv6SendRA = true;
+                  IPv6AcceptRA = false;
+                };
+                ipv6Prefixes = [
+                  { Prefix = vlanCfg.cidrv6; }
+                ];
+                linkConfig.RequiredForOnline = "routable";
+              };
+            }
+          );
 
+        };
 
       };
   }
@@ -16036,79 +16164,85 @@ This is the dhcp config that runs on my router.
   { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "kea"; dir = "/var/lib/private/kea"; }) serviceName serviceDir;
-  in
-    {
-      options = {
-        swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-      };
-      config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = serviceDir; mode = "0700"; }
-        ];
-
-        services.kea.dhcp4 = {
-          enable = true;
-          settings = {
-            lease-database = {
-              name = "/var/lib/kea/dhcp4.leases";
-              persist = true;
-              type = "memfile";
-            };
-            valid-lifetime = 86400;
-            renew-timer = 3600;
-            interfaces-config = {
-              # XXX: BUG: why does this bind other macvtaps?
-              interfaces = map (name: "me-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
-              service-sockets-max-retries = -1;
-            };
-            subnet4 = lib.flip lib.mapAttrsToList globals.networks.home-lan.vlans (
-              vlanName: vlanCfg: {
-                inherit (vlanCfg) id;
-                interface = "me-${vlanName}";
-                subnet = vlanCfg.cidrv4;
-                pools = [
-                  {
-                    pool = "${lib.net.cidr.host 20 vlanCfg.cidrv4} - ${lib.net.cidr.host (-6) vlanCfg.cidrv4}";
-                  }
-                ];
-                option-data =
-                  [
-                    {
-                      name = "routers";
-                      data = vlanCfg.hosts.hintbooth.ipv4; # FIXME: how to advertise v6 address also?
-                    }
-                  ];
-                # Advertise DNS server for VLANS that have internet access
-                # ++
-                # lib.optional
-                #   (lib.elem vlanName [
-                #     "services"
-                #     "home"
-                #     "devices"
-                #     "guests"
-                #   ])
-                #   {
-                #     name = "domain-name-servers";
-                #     data = globals.networks.home-lan.vlans.services.hosts.hintbooth-adguardhome.ipv4;
-                #   };
-                reservations = lib.concatLists (
-                  lib.forEach (builtins.attrValues vlanCfg.hosts) (
-                    hostCfg:
-                    lib.optional (hostCfg.mac != null) {
-                      hw-address = hostCfg.mac;
-                      ip-address = hostCfg.ipv4;
-                    }
-                  )
-                );
-              }
-            );
+    dhcpX = intX:
+      let
+        x = builtins.toString intX;
+      in
+      {
+        enable = true;
+        settings = {
+          lease-database = {
+            name = "/var/lib/kea/dhcp${x}.leases";
+            persist = true;
+            type = "memfile";
           };
+          valid-lifetime = 86400;
+          renew-timer = 3600;
+          interfaces-config = {
+            interfaces = map (name: "me-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+            service-sockets-max-retries = -1;
+          };
+          "subnet${x}" = lib.flip lib.mapAttrsToList globals.networks.home-lan.vlans (
+            vlanName: vlanCfg: {
+              inherit (vlanCfg) id;
+              interface = "me-${vlanName}";
+              subnet = vlanCfg."cidrv${x}";
+              pools = [
+                {
+                  pool = "${lib.net.cidr.host 20 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
+                }
+              ];
+              option-data =
+                lib.optional (intX == 4)
+                  {
+                    name = "routers";
+                    data = vlanCfg.hosts.hintbooth."ipv${x}"; # FIXME: how to advertise v6 address also?
+                  };
+              # Advertise DNS server for VLANS that have internet access
+              # ++
+              # lib.optional
+              #   (lib.elem vlanName [
+              #     "services"
+              #     "home"
+              #     "devices"
+              #     "guests"
+              #   ])
+              #   {
+              #     name = "domain-name-servers";
+              #     data = globals.networks.home-lan.vlans.services.hosts.hintbooth-adguardhome.ipv4;
+              #   };
+              reservations = lib.concatLists (
+                lib.forEach (builtins.attrValues vlanCfg.hosts) (
+                  hostCfg:
+                  lib.optional (hostCfg.mac != null) {
+                    hw-address = hostCfg.mac;
+                    ip-address = lib.mkIf (intX == 4) hostCfg."ipv${x}";
+                    ip-addresses = lib.mkIf (intX == 6) [ hostCfg."ipv${x}" ];
+                  }
+                )
+              );
+            }
+          );
         };
-
-
       };
-    }
+  in
+  {
+    options = {
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    };
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        { directory = serviceDir; mode = "0700"; }
+      ];
+
+      services.kea = {
+        dhcp4 = dhcpX 4;
+        dhcp6 = dhcpX 6;
+      };
+
+    };
+  }
 #+end_src
 **** nftables (firewall)
 :PROPERTIES:
@@ -17323,15 +17457,17 @@ Some standard options that should be set vor every microvm guest. We set the def
 
 #+end_src
 
-**** systemd-networkd (server)
+**** systemd-networkd (base)
 :PROPERTIES:
-:CUSTOM_ID: h:12370671-7892-4a74-a804-84f871acde06
+:CUSTOM_ID: h:99bf6c0e-2566-4a50-b219-fb6a7d4fb2cd
 :END:
 
-Some standard options that should be set vor every microvm guest. We set the default
+This set of options enables the network of the system to be managed by =systemd-networkd=:
+  - =networking.useNetworkd= has the effect that options from =networking.*= are not performed using network scripts but rather using =systemd-networkd=.
+  - =systemd.network.enable= enables the actual management of networks using the =systemd-networkd= interface.
 
-#+begin_src nix-ts :tangle modules/nixos/optional/systemd-networkd-server.nix
-  { lib, config, globals, ... }:
+#+begin_src nix-ts :tangle modules/nixos/optional/systemd-networkd-base.nix
+  { lib, config, ... }:
   {
     networking = {
       useDHCP = lib.mkForce false;
@@ -17341,21 +17477,47 @@ Some standard options that should be set vor every microvm guest. We set the def
         config.repo.secrets.local.networking.networks or { }
       );
     };
-    boot.initrd.systemd.network = {
+
+    systemd.network.enable = true;
+  }
+
+#+end_src
+
+**** systemd-networkd (server base)
+:PROPERTIES:
+:CUSTOM_ID: h:12370671-7892-4a74-a804-84f871acde06
+:END:
+
+Some standard options that should be set vor every microvm guest. We set the default
+
+#+begin_src nix-ts :tangle modules/nixos/optional/systemd-networkd-server.nix
+  { self, lib, config, globals, ... }:
+  let
+    inherit (config.swarselsystems) isCrypted localVLANs;
+    inherit (globals.general) routerServer;
+
+    isRouter = config.node.name == routerServer;
+    ifName = config.swarselsystems.server.localNetwork;
+  in
+  {
+    imports = [
+      "${self}/modules/nixos/optional/systemd-networkd-base.nix"
+    ];
+
+    boot.initrd.systemd.network = lib.mkIf (isCrypted && ((localVLANs == [ ]) || isRouter)) {
       enable = true;
-      networks."10-${config.swarselsystems.server.localNetwork}" = config.systemd.network.networks."10-${config.swarselsystems.server.localNetwork}";
+      networks."10-${ifName}" = config.systemd.network.networks."10-${ifName}";
     };
 
     systemd = {
       network = {
-        enable = true;
         wait-online.enable = false;
         networks =
           let
             netConfig = config.repo.secrets.local.networking;
           in
           {
-            "10-${config.swarselsystems.server.localNetwork}" = {
+            "10-${ifName}" = lib.mkIf (isRouter || (localVLANs == [ ])) {
               address = [
                 "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv4}"
                 "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv6}"
@@ -17384,136 +17546,158 @@ Some standard options that should be set vor every microvm guest. We set the def
 
 #+end_src
 
-**** systemd-networkd (vlans/microvms)
+**** TODO systemd-networkd (server home)
 :PROPERTIES:
-:CUSTOM_ID: h:9e1b68cb-f482-417d-8be8-48bfbf3a0d99
+:CUSTOM_ID: h:049fc27e-a28f-4ff0-b5f0-d81401bdd56f
 :END:
 
-This sets up the networking framework that is needed for a server that hosts microvms.
+This sets up the networking framework that is needed for a server that manages its VLAN interfaces using =systemd-networkd=. A host that is not both in the home network and using VLANs should rather be using [[#h:12370671-7892-4a74-a804-84f871acde06][systemd-networkd (server base)]] only.
 
-The general idea is as follows:
-- A host has =n= physical interfaces, which bind to the =br= bridge. Also bound to the bridge is the =veth= interfaces that the vlans are applied to. This makes it so that the macvlan interfaces still get an IP even if the physical interfaces have no carrier.
-- For each VLAN defined in globals we create a VLAN here - we also create a macvlan interface for the hosts which is bound to the respective VLAN interface; also binding to that VLAN interface are the macvtap devices that are being created by the microvm module.
-  - normally, a guest using macvtap is not reachable by the host unless using a switch that supports hairpin-mode. However, consumers of the same VLAN can still communicate, which is realized using the macvlan interface.
+We will differentiate between a host that uses microvms versus a host that is not using them.
+
+For a host with microvms the general idea is as follows:
+- For each local VLAN we create a VLAN here - we also create a macvlan interface for the hosts which is bound to the respective VLAN interface; also binding to that VLAN interface are the macvtap devices that are being created by the microvm module.
+  - normally, a guest using macvtap is not reachable by the host unless using a switch that supports hairpin-mode. However, consumers of the same VLAN can still communicate, which is realized using the macvlan =me-*= interface.
   - even then, the kernel will only route requests when the underlying interface is up. In the case that no physical ports are used, this means that the bridge interface would effectively not work (even when administratively set to UP using =activationPolicy=) - the aforementioned =veth= takes care of that problem.
+    - this is really only a consideration for the [[#h:b54f2bbb-0088-46b2-957d-fd8234b772c3][Router]] (because if the interface to the router is missing on the hosts, there will be no connectivity anyways) and is hence implemented there
 
-#+begin_src nix-ts :tangle modules/nixos/optional/systemd-networkd-vlan.nix
-  { lib, config, globals, ... }:
-  {
+The principle is the same for a host without microvms, but we do not need the local =me-*= interfaces and can ignore =macvtap= config.
 
-    systemd.network = {
-      wait-online.anyInterface = true;
-      netdevs = {
-        "10-veth" = {
-          netdevConfig = {
-            Kind = "veth";
-            Name = "veth-br";
-          };
-          peerConfig = {
-            Name = "veth-int";
-          };
-        };
-        "20-br" = {
-          netdevConfig = {
-            Kind = "bridge";
-            Name = "br";
-          };
-        };
-      } // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
-        vlanName: vlanCfg: {
-          "30-vlan-${vlanName}" = {
-            netdevConfig = {
-              Kind = "vlan";
-              Name = "vlan-${vlanName}";
+A VLAN can also be used as the initrd network - this is however disabled for the router host. For that host, we need to connect from the =FritzBox!= side in case we need to reboot it (TODO: fix interface naming lan/wan which blocks this)
+
+
+#+begin_src nix-ts :tangle modules/nixos/optional/systemd-networkd-server-home.nix
+  { self,lib, config, globals, ... }:
+  let
+    inherit (globals.general) routerServer;
+    inherit (config.swarselsystems) withMicroVMs isCrypted initrdVLAN;
+
+    isRouter = config.node.name == routerServer;
+    localVLANsList = config.swarselsystems.localVLANs;
+    localVLANs = lib.genAttrs localVLANsList (x: globals.networks.home-lan.vlans.${x});
+  in
+    {
+      imports = [
+        "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      ];
+      config = {
+        assertions = [
+          {
+            assertion = ((localVLANsList != []) && (initrdVLAN != null)) || (localVLANsList == []) || (!isCrypted);
+            message = "This host uses VLANs and disk encryption, thus a VLAN must be specified for initrd or disk encryption must be removed.";
+          }
+        ];
+
+        boot.initrd = lib.mkIf (isCrypted && (localVLANsList != []) && (!isRouter)) {
+          availableKernelModules = [ "8021q" ];
+          systemd.network = {
+            enable = true;
+            netdevs."30-vlan-${initrdVLAN}" = {
+              netdevConfig = {
+                Kind = "vlan";
+                Name = "vlan-${initrdVLAN}";
+              };
+              vlanConfig.Id = globals.networks.home-lan.vlans.${initrdVLAN}.id;
             };
-            vlanConfig.Id = vlanCfg.id;
-          };
-          "40-me-${vlanName}" = {
-            netdevConfig = {
-              Name = "me-${vlanName}";
-              Kind = "macvlan";
+            networks = {
+              "10-lan" = {
+                matchConfig.Name = "lan";
+                # This interface should only be used from attached vlans.
+                # So don't acquire a link local address and only wait for
+                # this interface to gain a carrier.
+                networkConfig.LinkLocalAddressing = "no";
+                linkConfig.RequiredForOnline = "carrier";
+                vlan = [ "vlan-${initrdVLAN}" ];
+              };
+              "30-vlan-${initrdVLAN}" = {
+                address = [
+                  globals.networks.home-lan.vlans.${initrdVLAN}.hosts.${config.node.name}.cidrv4
+                  globals.networks.home-lan.vlans.${initrdVLAN}.hosts.${config.node.name}.cidrv6
+                ];
+                matchConfig.Name = "vlan-${initrdVLAN}";
+                networkConfig = {
+                  IPv6PrivacyExtensions = "yes";
+                };
+                linkConfig.RequiredForOnline = "routable";
+              };
             };
-            extraConfig = ''
-              [MACVLAN]
-              Mode=bridge
-            '';
-          };
-        }
-      );
-      networks = {
-        "40-br" = {
-          matchConfig.Name = "br";
-          bridgeConfig = { };
-          linkConfig = {
-            ActivationPolicy = "always-up";
-            RequiredForOnline = "no";
-          };
-          networkConfig = {
-            ConfigureWithoutCarrier = true;
-            LinkLocalAddressing = "no";
           };
         };
-        "15-veth-br" = {
-          matchConfig.Name = "veth-br";
 
-          linkConfig = {
-            RequiredForOnline = "no";
-          };
-
-          networkConfig = {
-            Bridge = "br";
-          };
-        };
-        "15-veth-int" = {
-          matchConfig.Name = "veth-int";
-
-          linkConfig = {
-            ActivationPolicy = "always-up";
-            RequiredForOnline = "no";
-          };
-
-          networkConfig = {
-            ConfigureWithoutCarrier = true;
-            LinkLocalAddressing = "no";
-          };
-
-          vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
-        };
-        "90-macvtap-ignore" = {
-          matchConfig.Kind = "macvtap";
-          linkConfig.ActivationPolicy = "manual";
-          linkConfig.Unmanaged = "yes";
-        };
-      } // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
-        vlanName: vlanCfg: {
-          "30-vlan-${vlanName}" = {
-            matchConfig.Name = "vlan-${vlanName}";
-            networkConfig.LinkLocalAddressing = "no";
-            networkConfig.MACVLAN = "me-${vlanName}";
-            linkConfig.RequiredForOnline = "no";
-          };
-          "40-me-${vlanName}" = {
-            address = [
-              vlanCfg.hosts.${config.node.name}.cidrv4
-              vlanCfg.hosts.${config.node.name}.cidrv6
-            ];
-            matchConfig.Name = "me-${vlanName}";
-            networkConfig = {
-              IPv4Forwarding = "yes";
-              IPv6PrivacyExtensions = "yes";
-              IPv6SendRA = true;
-              IPv6AcceptRA = false;
+        systemd.network = {
+          netdevs = lib.flip lib.concatMapAttrs localVLANs (
+            vlanName: vlanCfg: {
+              "30-vlan-${vlanName}" = {
+                netdevConfig = {
+                  Kind = "vlan";
+                  Name = "vlan-${vlanName}";
+                };
+                vlanConfig.Id = vlanCfg.id;
+              };
+              # Create a MACVTAP for ourselves too, so that we can communicate with
+              # our guests on the same interface.
+              "40-me-${vlanName}" = lib.mkIf withMicroVMs {
+                netdevConfig = {
+                  Name = "me-${vlanName}";
+                  Kind = "macvlan";
+                };
+                extraConfig = ''
+                  [MACVLAN]
+                  Mode=bridge
+                '';
+              };
+            }
+          );
+          networks = {
+            "10-lan" = lib.mkIf (!isRouter) {
+              matchConfig.Name = "lan";
+              # This interface should only be used from attached vlans.
+              # So don't acquire a link local address and only wait for
+              # this interface to gain a carrier.
+              networkConfig.LinkLocalAddressing = "no";
+              linkConfig.RequiredForOnline = "carrier";
+              vlan = (map (name: "vlan-${name}") (builtins.attrNames localVLANs));
             };
-            ipv6Prefixes = [
-              { Prefix = vlanCfg.cidrv6; }
-            ];
-            linkConfig.RequiredForOnline = "routable";
-          };
-        }
-      );
-    };
+            # Remaining macvtap interfaces should not be touched.
+            "90-macvtap-ignore" = lib.mkIf withMicroVMs {
+              matchConfig.Kind = "macvtap";
+              linkConfig.ActivationPolicy = "manual";
+              linkConfig.Unmanaged = "yes";
+            };
+          }
+        // lib.flip lib.concatMapAttrs localVLANs (
+          vlanName: vlanCfg:
+            let
+              me = {
+                address = [
+                  vlanCfg.hosts.${config.node.name}.cidrv4
+                  vlanCfg.hosts.${config.node.name}.cidrv6
+                ];
+                gateway = lib.optionals (vlanName == "services") [ vlanCfg.hosts.${routerServer}.ipv4 vlanCfg.hosts.${routerServer}.ipv6 ];
+                matchConfig.Name = "${if withMicroVMs then "me" else "vlan"}-${vlanName}";
+                networkConfig.IPv6PrivacyExtensions = "yes";
+                linkConfig.RequiredForOnline = "routable";
+              };
 
-  }
+            in
+              {
+                "30-vlan-${vlanName}" = if (!withMicroVMs) then me else {
+                  matchConfig.Name = "vlan-${vlanName}";
+                  # This interface should only be used from attached macvlans.
+                  # So don't acquire a link local address and only wait for
+                  # this interface to gain a carrier.
+                  networkConfig.LinkLocalAddressing = "no";
+                  networkConfig.MACVLAN = "me-${vlanName}";
+                  linkConfig.RequiredForOnline = if isRouter then "no" else "carrier";
+                };
+                "40-me-${vlanName}" = lib.mkIf withMicroVMs (lib.mkDefault me);
+              }
+        );
+        };
+
+      };
+
+    }
 
 #+end_src
 
@@ -21676,6 +21860,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 #+end_src
 
 ***** firezone service for tray
+:PROPERTIES:
+:CUSTOM_ID: h:2690d49b-2b25-4204-b349-36e3efe2462a
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/firezone-tray.nix
     { lib, config, pkgs, ... }:
@@ -24343,6 +24530,18 @@ TODO: check which of these can be replaced but builtin functions.
       rootDisk = lib.mkOption {
         type = lib.types.str;
         default = "";
+      };
+      # @ future me: dont put this under server prefix
+      # home-manager would then try to import all swarselsystems.server.* options
+      localVLANs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+      };
+      # @ future me: dont put this under server prefix
+      # home-manager would then try to import all swarselsystems.server.* options
+      initrdVLAN = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
       };
       mainUser = lib.mkOption {
         type = lib.types.str;
@@ -27531,7 +27730,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 
 #+end_src
 
-* Emacse
+* Emacs
 :PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
 :END:

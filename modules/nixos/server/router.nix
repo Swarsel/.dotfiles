@@ -1,6 +1,14 @@
 { lib, config, globals, ... }:
 let
   serviceName = "router";
+  bridgeVLANs = lib.mapAttrsToList
+    (_: vlan: {
+      VLAN = vlan.id;
+    })
+    globals.networks.home-lan.vlans;
+  selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
+  lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
+  lan4VLANs = selectVLANs [ "home" "services" ];
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -93,7 +101,68 @@ in
 
       systemd.network = {
         wait-online.anyInterface = true;
+
+        netdevs = {
+          "10-veth" = {
+            netdevConfig = {
+              Kind = "veth";
+              Name = "veth-br";
+            };
+            peerConfig = {
+              Name = "veth-int";
+            };
+          };
+          "20-br" = {
+            netdevConfig = {
+              Kind = "bridge";
+              Name = "br";
+            };
+            bridgeConfig = {
+              VLANFiltering = true;
+            };
+          };
+        };
         networks = {
+          "40-br" = {
+            matchConfig.Name = "br";
+            bridgeConfig = { };
+            linkConfig = {
+              ActivationPolicy = "always-up";
+              RequiredForOnline = "no";
+            };
+            networkConfig = {
+              ConfigureWithoutCarrier = true;
+              LinkLocalAddressing = "no";
+            };
+          };
+          "15-veth-br" = {
+            matchConfig.Name = "veth-br";
+
+            linkConfig = {
+              RequiredForOnline = "no";
+            };
+
+            networkConfig = {
+              Bridge = "br";
+            };
+            inherit bridgeVLANs;
+          };
+          "15-veth-int" = {
+            matchConfig.Name = "veth-int";
+
+            linkConfig = {
+              ActivationPolicy = "always-up";
+              RequiredForOnline = "no";
+            };
+
+            networkConfig = {
+              ConfigureWithoutCarrier = true;
+              LinkLocalAddressing = "no";
+            };
+
+            vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+          };
+          # br
           "30-lan1" = {
             matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan1.mac;
             linkConfig.RequiredForOnline = "enslaved";
@@ -101,7 +170,9 @@ in
               Bridge = "br";
               ConfigureWithoutCarrier = true;
             };
+            inherit bridgeVLANs;
           };
+          # wifi
           "30-lan2" = {
             matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
             linkConfig.RequiredForOnline = "enslaved";
@@ -109,7 +180,9 @@ in
               Bridge = "br";
               ConfigureWithoutCarrier = true;
             };
+            inherit bridgeVLANs;
           };
+          # summers
           "30-lan3" = {
             matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan3.mac;
             linkConfig.RequiredForOnline = "enslaved";
@@ -117,7 +190,9 @@ in
               Bridge = "br";
               ConfigureWithoutCarrier = true;
             };
+            inherit bridgeVLANs;
           };
+          # winters
           "30-lan4" = {
             matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
             linkConfig.RequiredForOnline = "enslaved";
@@ -125,7 +200,9 @@ in
               Bridge = "br";
               ConfigureWithoutCarrier = true;
             };
+            bridgeVLANs = lan4VLANs;
           };
+          # lr
           "30-lan5" = {
             matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan5.mac;
             linkConfig.RequiredForOnline = "enslaved";
@@ -133,10 +210,31 @@ in
               Bridge = "br";
               ConfigureWithoutCarrier = true;
             };
+            bridgeVLANs = lan5VLANs;
           };
-        };
-      };
+        } // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
+          vlanName: vlanCfg: {
+            "40-me-${vlanName}" = lib.mkForce {
+              address = [
+                vlanCfg.hosts.${config.node.name}.cidrv4
+                vlanCfg.hosts.${config.node.name}.cidrv6
+              ];
+              matchConfig.Name = "me-${vlanName}";
+              networkConfig = {
+                IPv4Forwarding = "yes";
+                IPv6PrivacyExtensions = "yes";
+                IPv6SendRA = true;
+                IPv6AcceptRA = false;
+              };
+              ipv6Prefixes = [
+                { Prefix = vlanCfg.cidrv6; }
+              ];
+              linkConfig.RequiredForOnline = "routable";
+            };
+          }
+        );
 
+      };
 
     };
 }

@@ -1,12 +1,11 @@
-{ self, config, lib, minimal, confLib, ... }:
+{ self, config, lib, minimal, confLib, globals, ... }:
 {
 
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-    "${self}/modules/nixos/optional/systemd-networkd-vlan.nix"
+    "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
   ];
 
   topology.self = {
@@ -20,7 +19,10 @@
     };
   };
 
-  globals.general.homeProxy = config.node.name;
+  globals.general = {
+    homeProxy = config.node.name;
+    routerServer = config.node.name;
+  };
 
   swarselsystems = {
     info = "HUNSN RM02, 8GB RAM";
@@ -35,6 +37,8 @@
     swapSize = "8G";
     networkKernelModules = [ "igb" ];
     withMicroVMs = true;
+    localVLANs = map (name: "${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+    initrdVLAN = "home";
     server = {
       wireguard.interfaces = {
         wgHome = {
