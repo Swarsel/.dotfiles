@@ -17,8 +17,8 @@ in
   ];
 
   topology.self.interfaces = {
-    "eth1" = { };
-    "wifi" = { };
+    eth1.network = lib.mkForce "home";
+    wifi = { };
   };
 
   swarselsystems = {

@@ -1,4 +1,4 @@
-{ lib, config, globals, ... }:
+{ lib, config, globals, confLib, ... }:
 let
   serviceName = "router";
   bridgeVLANs = lib.mapAttrsToList
@@ -9,6 +9,7 @@ let
   selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
   lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
   lan4VLANs = selectVLANs [ "home" "services" ];
+  inherit (confLib.gen { }) homeDnsServer;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -16,13 +17,27 @@ in
     {
       services.avahi.reflector = true;
 
+      topology.self.interfaces = (lib.mapAttrs'
+        (vlanName: _:
+          lib.nameValuePair "vlan-${vlanName}" {
+            network = lib.mkForce vlanName;
+          }
+        )
+        globals.networks.home-lan.vlans) // (lib.mapAttrs'
+        (vlanName: _:
+          lib.nameValuePair "me-${vlanName}" {
+            network = lib.mkForce vlanName;
+          }
+        )
+        globals.networks.home-lan.vlans);
+
       networking.nftables = {
         firewall = {
           zones = {
             untrusted.interfaces = [ "lan" ];
             wgHome.interfaces = [ "wgHome" ];
-            adguardhome.ipv4Addresses = [ globals.networks.home-lan.vlans.services.hosts.hintbooth-adguardhome.ipv4 ];
-            adguardhome.ipv6Addresses = [ globals.networks.home-lan.vlans.services.hosts.hintbooth-adguardhome.ipv6 ];
+            adguardhome.ipv4Addresses = [ globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4 ];
+            adguardhome.ipv6Addresses = [ globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6 ];
           }
           // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
             vlanName: _: {
@@ -32,7 +47,7 @@ in
 
           rules = {
             masquerade-internet = {
-              from = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+              from = map (name: "vlan-${name}") (globals.general.internetVLANs);
               to = [ "untrusted" ];
               # masquerade = true; NOTE: custom rule below for ip4 + ip6
               late = true; # Only accept after any rejects have been processed
@@ -41,7 +56,7 @@ in
 
             # Allow access to the AdGuardHome DNS server from any VLAN that has internet access
             access-adguardhome-dns = {
-              from = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+              from = map (name: "vlan-${name}") (globals.general.internetVLANs);
               to = [ "adguardhome" ];
               verdict = "accept";
             };
@@ -61,7 +76,7 @@ in
             services-to-local = {
               from = [ "vlan-services" ];
               to = [ "local" ];
-              allowedUDPPorts = [ 52829 ];
+              allowedUDPPorts = [ 52829 547 ];
             };
 
             # Forward traffic between wireguard participants
@@ -79,7 +94,7 @@ in
             late = true;
             rules =
               lib.forEach
-                (map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans))
+                (map (name: "vlan-${name}") (globals.general.internetVLANs))
                 (
                   zone:
                   lib.concatStringsSep " " [
@@ -227,8 +242,14 @@ in
                 IPv6AcceptRA = false;
               };
               ipv6Prefixes = [
-                { Prefix = vlanCfg.cidrv6; }
+                {
+                  Prefix = vlanCfg.cidrv6;
+                }
               ];
+              ipv6SendRAConfig = {
+                Managed = true; # set RA M flag -> DHCPv6 for addresses
+                OtherInformation = true; # optional, for “other info” via DHCPv6
+              };
               linkConfig.RequiredForOnline = "routable";
             };
           }

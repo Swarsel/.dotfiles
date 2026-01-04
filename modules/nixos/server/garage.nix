@@ -1,5 +1,5 @@
 # inspired by https://github.com/atropos112/nixos/blob/7fef652006a1c939f4caf9c8a0cb0892d9cdfe21/modules/garage.nix
-{ lib, pkgs, config, globals, dns, confLib, ... }:
+{ self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen {
     name = "garage";
@@ -79,6 +79,12 @@ in
       "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
     sops = {

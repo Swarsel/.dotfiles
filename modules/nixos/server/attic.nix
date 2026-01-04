@@ -14,6 +14,12 @@ in
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      # attic does not have a logo
+    };
+
     globals = {
       networks = {
         ${webProxyIf}.hosts = lib.mkIf isProxied {

@@ -1,7 +1,7 @@
 { config, lib, ... }:
 let
   mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
-  inherit (config.swarselsystems) isImpermanence isCrypted;
+  inherit (config.swarselsystems) isImpermanence isCrypted isBtrfs;
 in
 {
   options.swarselmodules.impermanence = lib.mkEnableOption "impermanence config";
@@ -17,7 +17,7 @@ in
     # So if it doesn't run, the btrfs system effectively acts like a normal system
     # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
     boot.tmp.useTmpfs = lib.mkIf (!isImpermanence) true;
-    boot.initrd.systemd = lib.mkIf isImpermanence {
+    boot.initrd.systemd = lib.mkIf (isImpermanence && isBtrfs) {
       enable = true;
       services.rollback = {
         description = "Rollback BTRFS root subvolume to a pristine state";

@@ -62,7 +62,6 @@ in
       virtualHosts = {
         "${serviceDomain}" = {
           useACMEHost = globals.domains.main;
-
           forceSSL = true;
           acmeRoot = null;
           locations = {

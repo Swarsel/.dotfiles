@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "nsd"; port = 53; }) serviceName servicePort proxyAddress4 proxyAddress6;
   inherit (config.swarselsystems) sopsFile;
@@ -32,6 +32,11 @@ in
         allowedUDPPorts = [ servicePort ];
         allowedTCPPorts = [ servicePort ];
       };
+    };
+
+    topology.self.services.${serviceName} = {
+      name = lib.toUpper serviceName;
+      icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
     services.nsd = {

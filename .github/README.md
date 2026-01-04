@@ -171,13 +171,14 @@
   |🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference               |
   |🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, data storage             |
   |🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                                  |
-  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router                                                          |
+  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router, DNS Resolver, home NGINX endpoint                       |
   |☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative DNS server                                        |
   |☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                                     |
   |☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                                   |
   |☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                                      |
-  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Gaming server, syncthing + lightweight services                 |
+  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Game servers, syncthing + other lightweight services            |
   |☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binary cache                              |
+  |🪟 **chaostheater**  | Asus Z97-A, i7-4790k, GTX970, 32GB RAM              | Home Game Streaming Server (Windows/AtlasOS, not nix-managed)   |
   |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                                           |
   |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts                 |
   |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines             |

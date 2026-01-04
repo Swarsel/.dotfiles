@@ -1117,7 +1117,7 @@ create a new one."
 
 (use-package nix-ts-mode
   :after lsp-mode
-  :mode "\\.nix\\'"
+  :mode ("\\.nix\\'" . "\\.nix\\.enc\\'")
   :ensure t
   :hook
   (nix-ts-mode . lsp-deferred) ;; So that envrc mode will work

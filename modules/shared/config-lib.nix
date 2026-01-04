@@ -1,27 +1,27 @@
 { self, config, lib, globals, inputs, outputs, minimal, nixosConfig ? null, ... }:
+let
+  domainDefault = service: config.repo.secrets.common.services.domains.${service};
+  proxyDefault = config.swarselsystems.proxyHost;
+
+  addressDefault =
+    if
+      config.swarselsystems.proxyHost != config.node.name
+    then
+      if
+        config.swarselsystems.server.wireguard.interfaces.wgProxy.isClient
+      then
+        globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgProxy.serverNetConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
+      else
+        globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
+    else
+      "localhost";
+in
 {
   _module.args = {
     confLib = rec {
-
-      addressDefault =
-        if
-          config.swarselsystems.proxyHost != config.node.name
-        then
-          if
-            config.swarselsystems.server.wireguard.interfaces.wgProxy.isClient
-          then
-            globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgProxy.serverNetConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
-          else
-            globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
-        else
-          "localhost";
-
-      domainDefault = service: config.repo.secrets.common.services.domains.${service};
-      proxyDefault = config.swarselsystems.proxyHost;
-
       getConfig = if nixosConfig == null then config else nixosConfig;
 
-      gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
+      gen = { name ? "n/a", user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
         servicePort = port;
         serviceName = name;
         specificServiceName = "${name}-${config.node.name}";
@@ -36,10 +36,26 @@
         proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
         proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
         inherit (globals.hosts.${config.node.name}) isHome;
-        inherit (globals.general) homeProxy webProxy dnsServer idmServer;
+        inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer;
         webProxyIf = "${webProxy}-wgProxy";
         homeProxyIf = "home-wgHome";
         isProxied = config.node.name != webProxy;
+      };
+
+      static = rec {
+        inherit (globals.hosts.${config.node.name}) isHome;
+        inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer;
+        webProxyIf = "${webProxy}-wgProxy";
+        homeProxyIf = "home-wgHome";
+        isProxied = config.node.name != webProxy;
+        nginxAccessRules = ''
+          allow ${globals.networks.home-lan.vlans.home.cidrv4};
+          allow ${globals.networks.home-lan.vlans.home.cidrv6};
+          allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4};
+          allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
+          deny all;
+        '';
+        homeServiceAddress = lib.optionalString (config.swarselsystems.server.wireguard.interfaces ? wgHome) globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgHome.serverNetConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
       };
 
       mkMicrovm =
@@ -49,7 +65,7 @@
               backend = "microvm";
               autostart = true;
               modules = [
-                (config.node.configDir + /guests/${guestName}.nix)
+                (config.node.configDir + /guests/${guestName}/default.nix)
                 {
                   node.secretsDir = config.node.configDir + /secrets/${guestName};
                   node.configDir = config.node.configDir + /guests/${guestName};
@@ -62,6 +78,7 @@
                   };
                 }
                 "${self}/modules/nixos/optional/microvm-guest.nix"
+                "${self}/modules/nixos/optional/systemd-networkd-base.nix"
               ];
               microvm = {
                 system = config.node.arch;
@@ -74,6 +91,7 @@
                 inherit inputs outputs minimal;
                 inherit (inputs) self;
                 withHomeManager = false;
+                microVMParent = config.node.name;
                 globals = outputs.globals.${config.node.arch};
               };
             };

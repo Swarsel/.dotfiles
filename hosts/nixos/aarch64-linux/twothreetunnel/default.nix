@@ -12,7 +12,10 @@
     icon = "devices.cloud-server";
   };
 
-  globals.general.webProxy = config.node.name;
+  globals.general = {
+    webProxy = config.node.name;
+    oauthServer = config.node.name;
+  };
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -35,6 +38,7 @@
             "winters"
             "belchsfactory"
             "eagleland"
+            "hintbooth-adguardhome"
           ];
         };
       };

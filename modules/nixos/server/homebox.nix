@@ -1,4 +1,4 @@
-{ lib, pkgs, config, globals, dns, confLib, ... }:
+{ self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
 in
@@ -10,7 +10,11 @@ in
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName} = {
+      name = "Homebox";
+      info = "https://${serviceDomain}";
+      icon = "${self}/files/topology-images/${serviceName}.png";
+    };
 
     globals = {
       networks = {

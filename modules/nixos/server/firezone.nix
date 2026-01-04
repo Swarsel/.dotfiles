@@ -1,4 +1,4 @@
-{ lib, pkgs, config, globals, confLib, dns, nodes, ... }:
+{ self, lib, pkgs, config, globals, confLib, dns, nodes, ... }:
 let
   inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy homeProxyIf webProxyIf idmServer dnsServer;
   inherit (config.swarselsystems) sopsFile;
@@ -58,6 +58,12 @@ in
         domain = serviceDomain;
         inherit proxyAddress4 proxyAddress6 isHome;
       };
+    };
+
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
     sops = {
@@ -314,11 +320,16 @@ in
           };
           services.firezone.gateway = {
             enable = true;
-            logLevel = "trace";
+            # logLevel = "trace";
             inherit (nodeCfg.node) name;
             apiUrl = "wss://${globals.services.firezone.domain}/api/";
             tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
             package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
+          };
+
+          topology.self.services."${serviceName}-gateway" = {
+            name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
+            icon = "${self}/files/topology-images/${serviceName}.png";
           };
         };
       ${idmServer} =

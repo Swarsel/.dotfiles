@@ -1,4 +1,4 @@
-{ lib, config, pkgs, globals, dns, confLib, ... }:
+{ self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6 isHome dnsServer;
   inherit (config.swarselsystems) mainUser;
@@ -12,7 +12,11 @@ in
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName} = {
+      name = "Minecraft";
+      info = "https://${serviceDomain}";
+      icon = "${self}/files/topology-images/${serviceName}.png";
+    };
 
     globals.services.${serviceName} = {
       domain = serviceDomain;

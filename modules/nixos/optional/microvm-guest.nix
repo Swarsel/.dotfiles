@@ -1,11 +1,10 @@
-{ self, inputs, ... }:
+{ self, lib, config, inputs, microVMParent, nodes, ... }:
 {
   imports = [
     inputs.disko.nixosModules.disko
     inputs.home-manager.nixosModules.home-manager
     inputs.impermanence.nixosModules.impermanence
     inputs.lanzaboote.nixosModules.lanzaboote
-    inputs.microvm.nixosModules.host
     inputs.microvm.nixosModules.microvm
     inputs.nix-index-database.nixosModules.nix-index
     inputs.nix-minecraft.nixosModules.minecraft-servers
@@ -23,6 +22,51 @@
   ];
 
   config = {
-    system.stateVersion = "23.05";
+    _module.args.dns = inputs.dns;
+
+    nix.settings.experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+    systemd.services."systemd-networkd".environment.SYSTEMD_LOG_LEVEL = "debug";
+    # NOTE: this is needed, we dont import sevrer network module for microvms
+    globals.hosts.${config.node.name}.isHome = true;
+
+    fileSystems."/persist".neededForBoot = lib.mkForce true;
+
+    systemd.network.networks."10-vlan-services" = {
+      dhcpV6Config = {
+        WithoutRA = "solicit";
+        # duid-en is nice in principle, but I already have MAC info anyways for reservations
+        DUIDType = "link-layer";
+      };
+      # networkConfig = {
+      #   IPv6PrivacyExtensions = "no";
+      #   IPv6AcceptRA = false;
+      # };
+      ipv6AcceptRAConfig = {
+        DHCPv6Client = "always";
+      };
+    };
+
+    microvm = {
+      shares = [
+        {
+          tag = "persist";
+          source = "${lib.optionalString nodes.${microVMParent}.config.swarselsystems.isImpermanence "/persist"}/microvms/${config.networking.hostName}";
+          mountPoint = "/persist";
+          proto = "virtiofs";
+        }
+      ];
+      # mount the writeable overlay so that we can use nix shells inside the microvm
+      volumes = [
+        {
+          image = "/tmp/nix-store-overlay-${config.networking.hostName}.img";
+          autoCreate = true;
+          mountPoint = config.microvm.writableStoreOverlay;
+          size = 1024;
+        }
+      ];
+    };
   };
 }

@@ -1,4 +1,4 @@
-{ self, lib, minimal, ... }:
+{ self, config, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -10,6 +10,16 @@
 
   topology.self = {
     icon = "devices.cloud-server";
+    interfaces.ProxyJump = {
+      virtual = true;
+      physicalConnections = [
+        (config.lib.topology.mkConnection "moonside" "lan")
+        (config.lib.topology.mkConnection "twothreetunnel" "lan")
+        (config.lib.topology.mkConnection "belchsfactory" "lan")
+        (config.lib.topology.mkConnection "stoicclub" "lan")
+        (config.lib.topology.mkConnection "eagleland" "wan")
+      ];
+    };
   };
 
   swarselsystems = {

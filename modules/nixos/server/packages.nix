@@ -13,6 +13,8 @@
       sops
       tmux
       busybox
+      ndisc6
+      tcpdump
       swarsel-deploy
     ] ++ lib.optionals withHomeManager [
       swarsel-gens

@@ -1,6 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf homeWebProxy oauthServer nginxAccessRules;
 
   kanidmDomain = globals.services.kanidm.domain;
   mainDomain = globals.domains.main;
@@ -119,10 +120,6 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
-
     sops = {
       secrets = {
         "oauth2-cookie-secret" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -208,31 +205,41 @@ in
       };
     };
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
-        };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
-
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
+    nodes =
+      let
+        genNginx = toAddress: extraConfig: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
+              };
             };
           };
-          extraConfig = ''
-            proxy_set_header X-Scheme                $scheme;
-            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-          '';
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
+
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}";
+                };
+              };
+              extraConfig = ''
+                proxy_set_header X-Scheme                $scheme;
+                proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+              '' + lib.optionalString (extraConfig != "") extraConfig;
+            };
+          };
         };
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = genNginx globals.hosts.${oauthServer}.wanAddress4 nginxAccessRules;
       };
-    };
   };
 }
