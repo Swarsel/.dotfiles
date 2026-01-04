@@ -19,6 +19,8 @@ keys:
     - &twothreetunnel age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d
     - &winters age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza
     - &dgx age1ax5hqk6e2ekgfx5u7pl8ayc3vvhrehyvtvf07llaxhs5azpnny0qpltrns
+    - &hintbooth-adguardhome age1c2enwel9un28dcs4wg0vcyamx9a4a6g3walkhu8w5lqhmd804paq9d24as
+    - &hintbooth-nginx age1c2enwel9un28dcs4wg0vcyamx9a4a6g3walkhu8w5lqhmd804paq9d24as
 creation_rules:
   - path_regex: secrets/repo/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -38,6 +40,8 @@ creation_rules:
       - *pyramid
       - *moonside
       - *dgx
+      - *hintbooth-adguardhome
+      - *hintbooth-nginx
 
   - path_regex: secrets/work/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -53,6 +57,7 @@ creation_rules:
       age:
       - *twothreetunnel
       - *eagleland
+      - *hintbooth-nginx
 
   - path_regex: hosts/nixos/x86_64-linux/pyramid/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -130,6 +135,22 @@ creation_rules:
       - *swarsel
       age:
       - *hintbooth
+
+  - path_regex: hosts/nixos/x86_64-linux/hintbooth/secrets/adguardhome/[^/]+\.(yaml|json|env|ini|enc)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *hintbooth
+      - *hintbooth-adguardhome
+
+  - path_regex: hosts/nixos/x86_64-linux/hintbooth/secrets/nginx/[^/]+\.(yaml|json|env|ini|enc)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *hintbooth
+      - *hintbooth-nginx
 
   - path_regex: hosts/darwin/x86_64-darwin/nbm-imba-166/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:

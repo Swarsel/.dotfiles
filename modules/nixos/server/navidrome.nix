@@ -16,6 +16,8 @@ in
       mpv
     ];
 
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
     users = {
       groups = {
         ${serviceGroup} = {

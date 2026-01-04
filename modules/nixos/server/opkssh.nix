@@ -11,6 +11,7 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+
     services.${serviceName} = {
       enable = true;
       user = serviceUser;

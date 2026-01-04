@@ -20,6 +20,8 @@
         general = lib.mkDefault true;
         packages = lib.mkDefault true;
         ssh = lib.mkDefault true;
+        wireguard = lib.mkDefault true;
+        dns-home = lib.mkDefault true;
       };
     };
   };

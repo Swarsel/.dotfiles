@@ -6,16 +6,15 @@
     ./disk-config.nix
 
     "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
+    "${self}/modules/nixos/optional/microvm-host.nix"
   ];
 
   topology.self = {
     interfaces = {
-      "eth1" = { };
-      "eth2" = { };
-      "eth3" = { };
-      "eth4" = { };
-      "eth5" = { };
-      "eth6" = { };
+      lan2.physicalConnections = [{ node = "summers"; interface = "eth1"; }];
+      lan3.physicalConnections = [{ node = "summers"; interface = "eth2"; }];
+      lan4.physicalConnections = [{ node = "switch-bedroom"; interface = "eth1"; }];
+      lan5.physicalConnections = [{ node = "switch-livingroom"; interface = "eth1"; }];
     };
   };
 
@@ -45,6 +44,8 @@
           isServer = true;
           peers = [
             "winters"
+            "hintbooth-adguardhome"
+            "hintbooth-nginx"
           ];
         };
       };
@@ -67,6 +68,7 @@
   guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
     { }
     // confLib.mkMicrovm "adguardhome"
+    // confLib.mkMicrovm "nginx"
   );
 
 }

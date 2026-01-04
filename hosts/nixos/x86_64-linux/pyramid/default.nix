@@ -23,9 +23,9 @@ in
 
   topology.self = {
     interfaces = {
-      "eth1" = { };
-      "wifi" = { };
-      "fritz-wg" = { };
+      eth1.network = lib.mkForce "home";
+      wifi = { };
+      fritz-wg.network = "fritz-wg";
     };
   };
 

@@ -228,6 +228,7 @@ in
             "radicale.access" = { };
             "slink.access" = { };
             "opkssh.access" = { };
+            "adguardhome.access" = { };
           };
 
           inherit (config.repo.secrets.local) persons;
@@ -370,6 +371,11 @@ in
                     "email"
                     "profile"
                   ];
+                  "adguardhome.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
                 };
                 preferShortUsername = true;
                 claimMaps.groups = {
@@ -380,6 +386,7 @@ in
                     "firefly.access" = [ "firefly_access" ];
                     "radicale.access" = [ "radicale_access" ];
                     "slink.access" = [ "slink_access" ];
+                    "adguardhome.access" = [ "adguardhome_access" ];
                   };
                 };
               };

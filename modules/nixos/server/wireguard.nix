@@ -95,6 +95,14 @@ in
       )
     );
 
+    topology.self.interfaces = lib.mapAttrs'
+      (wgName: _:
+        lib.nameValuePair "${wgName}" {
+          network = wgName;
+        }
+      )
+      config.swarselsystems.server.wireguard.interfaces;
+
     environment.systemPackages = with pkgs; [
       wireguard-tools
     ];

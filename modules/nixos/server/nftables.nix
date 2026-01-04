@@ -40,6 +40,7 @@ in
           nnf-drop.enable = true;
           nnf-loopback.enable = true;
           nnf-ssh.enable = true;
+          nnf-dhcpv6.enable = true;
         };
 
         rules.untrusted-to-local = {

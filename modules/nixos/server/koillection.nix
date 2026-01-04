@@ -13,6 +13,10 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+    swarselmodules.server = {
+      podman = true;
+      postgresql = true;
+    };
 
     nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;

@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome webProxy dnsServer;
@@ -31,6 +31,16 @@ in
         inherit proxyAddress4 proxyAddress6 isHome;
       };
     };
+
+    topology.self.services = lib.listToAttrs (map
+      (service:
+        lib.nameValuePair "${service}" {
+          name = lib.swarselsystems.toCapitalized service;
+          info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
+          icon = "${self}/files/topology-images/${service}.png";
+        }
+      )
+      [ "postfix" "dovecot" "rspamd" "clamav" "roundcube" ]);
 
     sops.secrets = {
       user1-hashed-pw = { inherit sopsFile; owner = serviceUser; };

@@ -10,6 +10,10 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+    swarselmodules.server = {
+      podman = true;
+    };
+
     nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };

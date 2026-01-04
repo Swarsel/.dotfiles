@@ -67,7 +67,7 @@ in
             };
           };
           config = {
-            extraConfig = lib.mkIf topmod.config.defaultStapling (lib.mkAfter ''
+            extraConfig = lib.mkIf topmod.config.defaultStapling (lib.mkBefore ''
               ssl_stapling on;
               ssl_stapling_verify on;
               resolver 1.1.1.1 8.8.8.8 valid=300s;
