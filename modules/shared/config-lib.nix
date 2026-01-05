@@ -35,11 +35,6 @@ in
         serviceProxy = proxy;
         proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
         proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
-        inherit (globals.hosts.${config.node.name}) isHome;
-        inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer;
-        webProxyIf = "${webProxy}-wgProxy";
-        homeProxyIf = "home-wgHome";
-        isProxied = config.node.name != webProxy;
       };
 
       static = rec {
@@ -96,6 +91,53 @@ in
               };
             };
           }) else (_: { _ = { }; });
+
+      genNginx =
+        { serviceAddress
+        , serviceName
+        , serviceDomain
+        , servicePort
+        , protocol ? "http"
+        , maxBody ? (-1)
+        , maxBodyUnit ? ""
+        , noSslVerify ? false
+        , proxyWebsockets ? false
+        , oauth2 ? false
+        , oauth2Groups ? [ ]
+        , extraConfig ? ""
+        , extraConfigLoc ? ""
+        }: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${serviceAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
+          };
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2 = {
+                enable = lib.mkIf oauth2 true;
+                allowedGroups = lib.mkIf (oauth2Groups != [ ]) oauth2Groups;
+              };
+              locations = {
+                "/" = {
+                  proxyPass = "${protocol}://${serviceName}";
+                  proxyWebsockets = lib.mkIf proxyWebsockets true;
+                  extraConfig = lib.optionalString (maxBody != (-1)) ''
+                    client_max_body_size ${builtins.toString maxBody}${maxBodyUnit};
+                  '' + extraConfigLoc;
+                };
+              };
+              extraConfig = lib.optionalString noSslVerify ''
+                proxy_ssl_verify off;
+              '' + extraConfig;
+            };
+          };
+        };
 
     };
   };

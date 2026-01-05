@@ -61,7 +61,7 @@
     postgresql = true;
     attic = true;
     garage = true;
-    hydra = true;
+    hydra = false;
   };
 
 }

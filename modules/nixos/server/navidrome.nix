@@ -1,14 +1,12 @@
 { pkgs, config, lib, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     environment.systemPackages = with pkgs; [
       pciutils
@@ -47,7 +45,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
       services.${serviceName} = {
@@ -118,58 +116,69 @@ in
       };
     };
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
-        };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
-
-          forceSSL = true;
-          acmeRoot = null;
-          oauth2.enable = true;
-          oauth2.allowedGroups = [ "navidrome_access" ];
-          locations =
-            let
-              extraConfig = ''
-                proxy_redirect          http:// https://;
-                proxy_read_timeout      600s;
-                proxy_send_timeout      600s;
-                proxy_buffering         off;
-                proxy_request_buffering off;
-                client_max_body_size    0;
-              '';
-            in
-            {
-              "/" = {
-                proxyPass = "http://${serviceName}";
-                proxyWebsockets = true;
-                inherit extraConfig;
-              };
-              "/share" = {
-                proxyPass = "http://${serviceName}";
-                proxyWebsockets = true;
-                setOauth2Headers = false;
-                bypassAuth = true;
-                inherit extraConfig;
-              };
-              "/rest" = {
-                proxyPass = "http://${serviceName}";
-                proxyWebsockets = true;
-                setOauth2Headers = false;
-                bypassAuth = true;
-                inherit extraConfig;
+    nodes =
+      let
+        genNginx = toAddress: extraConfigPre: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
               };
             };
+          };
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2 = {
+                enable = true;
+                allowedGroups = [ "navidrome_access" ];
+              };
+              extraConfig = extraConfigPre;
+              locations =
+                let
+                  extraConfig = ''
+                    proxy_redirect          http:// https://;
+                    proxy_read_timeout      600s;
+                    proxy_send_timeout      600s;
+                    proxy_buffering         off;
+                    proxy_request_buffering off;
+                    client_max_body_size    0;
+                  '';
+                in
+                {
+                  "/" = {
+                    proxyPass = "http://${serviceName}";
+                    proxyWebsockets = true;
+                    inherit extraConfig;
+                  };
+                  "/share" = {
+                    proxyPass = "http://${serviceName}";
+                    proxyWebsockets = true;
+                    setOauth2Headers = false;
+                    bypassAuth = true;
+                    inherit extraConfig;
+                  };
+                  "/rest" = {
+                    proxyPass = "http://${serviceName}";
+                    proxyWebsockets = true;
+                    setOauth2Headers = false;
+                    bypassAuth = true;
+                    inherit extraConfig;
+                  };
+                };
+            };
+          };
         };
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };
-    };
+
   };
-
-
 }

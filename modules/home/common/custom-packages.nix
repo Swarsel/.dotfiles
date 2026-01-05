@@ -35,6 +35,7 @@
       prstatus
       swarsel-gens
       swarsel-switch
+      swarsel-sops
     ];
   };
 }

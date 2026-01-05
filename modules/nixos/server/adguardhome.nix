@@ -1,7 +1,7 @@
-{ self, inputs, lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "adguardhome"; port = 3000; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied homeProxy homeProxyIf webProxy webProxyIf homeWebProxy dnsServer homeDnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy dnsServer homeDnsServer homeServiceAddress nginxAccessRules;
 
   homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
   homeDomains = map (name: globals.services.${name}.domain) homeServices;
@@ -19,7 +19,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
       services.${serviceName} = {
@@ -58,11 +58,7 @@ in
           ];
           dhcp.enabled = false;
         };
-        filtering.rewrites = [
-        ]
-        # Use the local mirror-proxy for some services (not necessary, just for speed)
-        ++
-        map
+        filtering.rewrites = map
           (domain: {
             inherit domain;
             # FIXME: change to homeWebProxy once that is setup
@@ -97,42 +93,12 @@ in
       }
     ];
 
-    nodes =
-      let
-        genNginx = toAddress: extraConfig: {
-          upstreams = {
-            ${serviceName} = {
-              servers = {
-                "${toAddress}:${builtins.toString servicePort}" = { };
-              };
-            };
-          };
-          virtualHosts = {
-            "${serviceDomain}" = {
-              useACMEHost = globals.domains.main;
-              forceSSL = true;
-              acmeRoot = null;
-              oauth2 = {
-                enable = true;
-                allowedGroups = [ "adguardhome_access" ];
-              };
-              locations = {
-                "/" = {
-                  proxyPass = "http://${serviceName}";
-                  proxyWebsockets = true;
-                };
-              };
-              extraConfig = lib.mkIf (extraConfig != "") extraConfig;
-            };
-          };
-        };
-      in
-      {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
-        ${webProxy}.services.nginx = genNginx serviceAddress "";
-        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
+    nodes = {
+      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
+      ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; };
+      ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+    };
   };
 }

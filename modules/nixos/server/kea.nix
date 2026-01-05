@@ -1,6 +1,7 @@
 { self, lib, config, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "kea"; dir = "/var/lib/private/kea"; }) serviceName serviceDir homeDnsServer;
+  inherit (confLib.gen { name = "kea"; dir = "/var/lib/private/kea"; }) serviceName serviceDir;
+  inherit (confLib.static) homeDnsServer;
   dhcpX = intX:
     let
       x = builtins.toString intX;

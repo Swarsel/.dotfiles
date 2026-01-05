@@ -1,4 +1,4 @@
-{ lib, config, globals, confLib, ... }:
+{ lib, config, globals, ... }:
 let
   serviceName = "router";
   bridgeVLANs = lib.mapAttrsToList
@@ -9,7 +9,7 @@ let
   selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
   lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
   lan4VLANs = selectVLANs [ "home" "services" ];
-  inherit (confLib.gen { }) homeDnsServer;
+  inherit (globals.general) homeDnsServer;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -47,7 +47,7 @@ in
 
           rules = {
             masquerade-internet = {
-              from = map (name: "vlan-${name}") (globals.general.internetVLANs);
+              from = map (name: "vlan-${name}") globals.general.internetVLANs;
               to = [ "untrusted" ];
               # masquerade = true; NOTE: custom rule below for ip4 + ip6
               late = true; # Only accept after any rejects have been processed
@@ -56,7 +56,7 @@ in
 
             # Allow access to the AdGuardHome DNS server from any VLAN that has internet access
             access-adguardhome-dns = {
-              from = map (name: "vlan-${name}") (globals.general.internetVLANs);
+              from = map (name: "vlan-${name}") globals.general.internetVLANs;
               to = [ "adguardhome" ];
               verdict = "accept";
             };
@@ -94,7 +94,7 @@ in
             late = true;
             rules =
               lib.forEach
-                (map (name: "vlan-${name}") (globals.general.internetVLANs))
+                (map (name: "vlan-${name}") globals.general.internetVLANs)
                 (
                   zone:
                   lib.concatStringsSep " " [

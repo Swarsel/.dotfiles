@@ -1,6 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   prometheusPort = 9090;
   prometheusUser = "prometheus";
@@ -17,10 +18,6 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     sops = {
       secrets = {
@@ -66,7 +63,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort prometheusPort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort prometheusPort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort prometheusPort ];
         };
       };
       services.${serviceName} = {
@@ -222,42 +219,55 @@ in
     };
 
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        "${grafanaUpstream}" = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
+    nodes =
+      let
+        genNginx = toAddress: extraConfigPre: {
+          upstreams = {
+            "${grafanaUpstream}" = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
+            "${prometheusUpstream}" = {
+              servers = {
+                "${toAddress}:${builtins.toString prometheusPort}" = { };
+              };
+            };
           };
-        };
-        "${prometheusUpstream}" = {
-          servers = {
-            "${serviceAddress}:${builtins.toString prometheusPort}" = { };
-          };
-        };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
 
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://${grafanaUpstream}";
-              proxyWebsockets = true;
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-            "/${prometheusWebRoot}" = {
-              proxyPass = "http://${prometheusUpstream}";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
+              forceSSL = true;
+              acmeRoot = null;
+              extraConfig = extraConfigPre;
+              locations =
+                let
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                in
+                {
+                  "/" = {
+                    proxyPass = "http://${grafanaUpstream}";
+                    proxyWebsockets = true;
+                    inherit extraConfig;
+                  };
+                  "/${prometheusWebRoot}" = {
+                    proxyPass = "http://${prometheusUpstream}";
+                    inherit extraConfig;
+                  };
+                };
             };
           };
         };
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };
-    };
   };
 }

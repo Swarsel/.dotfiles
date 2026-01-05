@@ -87,7 +87,7 @@ in
           # this interface to gain a carrier.
           networkConfig.LinkLocalAddressing = "no";
           linkConfig.RequiredForOnline = "carrier";
-          vlan = (map (name: "vlan-${name}") (builtins.attrNames localVLANs));
+          vlan = map (name: "vlan-${name}") (builtins.attrNames localVLANs);
         };
         # Remaining macvtap interfaces should not be touched.
         "90-macvtap-ignore" = lib.mkIf withMicroVMs {
