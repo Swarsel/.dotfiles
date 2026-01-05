@@ -1,7 +1,8 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6 isHome webProxy dnsServer;
+  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
   inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
   baseDomain = globals.domains.main;
 
@@ -14,11 +15,6 @@ in
     swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
-      "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     globals.services = {
       ${serviceName} = {
@@ -139,33 +135,21 @@ in
       };
     };
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
+    nodes =
+      let
+        extraConfigLoc = ''
+          proxy_ssl_server_name on;
+          proxy_ssl_name ${roundcubeDomain};
+        '';
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
+          "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; maxBody = 0; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
-      virtualHosts = {
-        "${roundcubeDomain}" = {
-          useACMEHost = globals.domains.main;
-
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "https://${serviceName}";
-              extraConfig = ''
-                client_max_body_size    0;
-                proxy_ssl_server_name on;
-                proxy_ssl_name ${roundcubeDomain};
-              '';
-            };
-          };
-        };
-      };
-    };
 
   };
 }

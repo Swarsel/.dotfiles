@@ -1,14 +1,11 @@
 { lib, pkgs, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     users.users.${serviceUser} = {
       extraGroups = [ "video" "render" "users" ];
@@ -23,7 +20,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
       services.${serviceName} = {
@@ -44,42 +41,26 @@ in
       };
     };
 
+    nodes =
+      let
+        extraConfigLoc = ''
+          proxy_http_version 1.1;
+          proxy_set_header   Upgrade    $http_upgrade;
+          proxy_set_header   Connection "upgrade";
+          proxy_redirect     off;
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
+          proxy_read_timeout 600s;
+          proxy_send_timeout 600s;
+          send_timeout       600s;
+        '';
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
-
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
-              extraConfig = ''
-                client_max_body_size    0;
-
-                proxy_http_version 1.1;
-                proxy_set_header   Upgrade    $http_upgrade;
-                proxy_set_header   Connection "upgrade";
-                proxy_redirect     off;
-
-                proxy_read_timeout 600s;
-                proxy_send_timeout 600s;
-                send_timeout       600s;
-              '';
-            };
-          };
-        };
-      };
-    };
 
   };
-
 }

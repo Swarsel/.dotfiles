@@ -1,6 +1,7 @@
 { self, lib, config, dns, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   inherit (config.swarselsystems) sopsFile;
 
@@ -9,10 +10,6 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     users = {
       groups.${serviceGroup} = { };
@@ -56,7 +53,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
       services.${serviceName} = {
@@ -115,30 +112,12 @@ in
       { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
     ];
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
-        };
+    nodes = {
+      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
-
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
-              extraConfig = ''
-                client_max_body_size 1G;
-              '';
-            };
-          };
-        };
-      };
+      ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; };
+      ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };
 
   };

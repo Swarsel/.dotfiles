@@ -26,7 +26,7 @@ in
         };
 
         local-to-podman = {
-          from = [ "local" "wgProxy" "wgHme" ];
+          from = [ "local" "wgProxy" "wgHome" ];
           to = [ "podman" ];
           before = [ "drop" ];
           verdict = "accept";

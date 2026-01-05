@@ -1,6 +1,7 @@
 { self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6 isHome dnsServer;
+  inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome dnsServer;
   inherit (config.swarselsystems) mainUser;
   worldName = "${mainUser}craft";
 in

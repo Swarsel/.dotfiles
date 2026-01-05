@@ -1,6 +1,7 @@
 { self, lib, config, dns, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
 in
@@ -12,10 +13,6 @@ in
 
     swarselmodules.server = {
       podman = true;
-    };
-
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
     virtualisation.oci-containers.containers.${serviceName} = {
@@ -69,7 +66,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
       services.${serviceName} = {
@@ -78,34 +75,48 @@ in
       };
     };
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
+    nodes =
+      let
+        genNginx = toAddress: extraConfig: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
           };
-        };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
 
-          forceSSL = true;
-          acmeRoot = null;
-          oauth2.enable = true;
-          oauth2.allowedGroups = [ "slink_access" ];
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
-            };
-            "/image" = {
-              proxyPass = "http://${serviceName}";
-              setOauth2Headers = false;
-              bypassAuth = true;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2 = {
+                enable = true;
+                allowedGroups = [ "slink_access" ];
+              };
+              inherit extraConfig;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}";
+                };
+                "/image" = {
+                  proxyPass = "http://${serviceName}";
+                  setOauth2Headers = false;
+                  bypassAuth = true;
+                };
+              };
             };
           };
         };
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };
-    };
+
   };
 }

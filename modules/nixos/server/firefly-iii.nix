@@ -1,6 +1,7 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome dnsServer webProxy;
+  inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   nginxGroup = "nginx";
 
@@ -10,10 +11,6 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     users = {
       groups.${serviceGroup} = { };
@@ -81,36 +78,48 @@ in
       };
     };
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
+    nodes =
+      let
+        genNginx = toAddress: extraConfig: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
           };
-        };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
 
-          forceSSL = true;
-          acmeRoot = null;
-          oauth2.enable = true;
-          oauth2.allowedGroups = [ "firefly_access" ];
-          # main config is automatically added by nixos firefly config.
-          # hence, only provide certificate
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
-            };
-            "/api" = {
-              proxyPass = "http://${serviceName}";
-              setOauth2Headers = false;
-              bypassAuth = true;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2 = {
+                enable = true;
+                allowedGroups = [ "firefly_access" ];
+              };
+              inherit extraConfig;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}";
+                };
+                "/api" = {
+                  proxyPass = "http://${serviceName}";
+                  setOauth2Headers = false;
+                  bypassAuth = true;
+                };
+              };
             };
           };
         };
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };
-    };
+
   };
 }

@@ -1,7 +1,8 @@
 { lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   federationPort = 8448;
   whatsappPort = 29318;
@@ -19,10 +20,6 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     environment.systemPackages = with pkgs; [
       matrix-synapse
@@ -97,7 +94,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort federationPort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
       services.${serviceName} = {
@@ -303,60 +300,72 @@ in
     # messages out after a while.
 
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
-        };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
-
-          forceSSL = true;
-          acmeRoot = null;
-          listen = [
-            {
-              addr = "0.0.0.0";
-              port = 8448;
-              ssl = true;
-              extraParameters = [
-                "default_server"
-              ];
-            }
-            {
-              addr = "[::0]";
-              port = 8448;
-              ssl = true;
-              extraParameters = [
-                "default_server"
-              ];
-            }
-            {
-              addr = "0.0.0.0";
-              port = 443;
-              ssl = true;
-            }
-            {
-              addr = "[::0]";
-              port = 443;
-              ssl = true;
-            }
-          ];
-          locations = {
-            "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://${serviceName}";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
+    nodes =
+      let
+        genNginx = toAddress: extraConfig: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
+              };
             };
-            "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
-            "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
+          };
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
+
+              forceSSL = true;
+              acmeRoot = null;
+              listen = [
+                {
+                  addr = "0.0.0.0";
+                  port = 8448;
+                  ssl = true;
+                  extraParameters = [
+                    "default_server"
+                  ];
+                }
+                {
+                  addr = "[::0]";
+                  port = 8448;
+                  ssl = true;
+                  extraParameters = [
+                    "default_server"
+                  ];
+                }
+                {
+                  addr = "0.0.0.0";
+                  port = 443;
+                  ssl = true;
+                }
+                {
+                  addr = "[::0]";
+                  port = 443;
+                  ssl = true;
+                }
+              ];
+              inherit extraConfig;
+              locations = {
+                "~ ^(/_matrix|/_synapse/client)" = {
+                  proxyPass = "http://${serviceName}";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+                "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+                "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
+              };
+            };
           };
         };
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };
-    };
+
   };
 }

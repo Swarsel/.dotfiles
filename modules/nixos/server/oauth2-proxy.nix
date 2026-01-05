@@ -1,7 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf homeWebProxy oauthServer nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules;
 
   kanidmDomain = globals.services.kanidm.domain;
   mainDomain = globals.domains.main;
@@ -139,7 +139,8 @@ in
       };
     };
 
-    # networking.firewall.allowedTCPPorts = [ servicePort ];
+    # needed for homeWebProxy
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
     globals = {
       networks = {
@@ -147,7 +148,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
       services.${serviceName} = {
@@ -207,39 +208,17 @@ in
 
     nodes =
       let
-        genNginx = toAddress: extraConfig: {
-          upstreams = {
-            ${serviceName} = {
-              servers = {
-                "${toAddress}:${builtins.toString servicePort}" = { };
-              };
-            };
-          };
-          virtualHosts = {
-            "${serviceDomain}" = {
-              useACMEHost = globals.domains.main;
-
-              forceSSL = true;
-              acmeRoot = null;
-              locations = {
-                "/" = {
-                  proxyPass = "http://${serviceName}";
-                };
-              };
-              extraConfig = ''
-                proxy_set_header X-Scheme                $scheme;
-                proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-              '' + lib.optionalString (extraConfig != "") extraConfig;
-            };
-          };
-        };
+        extraConfig = ''
+          proxy_set_header X-Scheme                $scheme;
+          proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+        '';
       in
       {
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
-        ${webProxy}.services.nginx = genNginx serviceAddress "";
-        ${homeWebProxy}.services.nginx = genNginx globals.hosts.${oauthServer}.wanAddress4 nginxAccessRules;
+        ${webProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceAddress serviceDomain serviceName extraConfig; protocol = "https"; };
+        ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; extraConfig = extraConfig + nginxAccessRules; serviceAddress = globals.hosts.${oauthServer}.wanAddress4; };
       };
   };
 }

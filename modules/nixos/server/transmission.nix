@@ -1,6 +1,7 @@
 { self, pkgs, lib, config, confLib, ... }:
 let
-  inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain isHome;
+  inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
+  inherit (confLib.static) isHome;
 
   lidarrUser = "lidarr";
   lidarrGroup = lidarrUser;

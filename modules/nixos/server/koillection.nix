@@ -1,6 +1,7 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   serviceDB = "koillection";
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
@@ -18,9 +19,6 @@ in
       postgresql = true;
     };
 
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
     sops.secrets = {
       koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
       koillection-env-file = { inherit sopsFile; };
@@ -38,7 +36,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort postgresPort ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort postgresPort ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort postgresPort ];
         };
       };
       services.${serviceName} = {
@@ -121,32 +119,22 @@ in
       };
     };
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
+    nodes =
+      let
+        extraConfigLoc = ''
+          proxy_buffer_size          128k;
+          proxy_buffers              4 256k;
+          proxy_busy_buffers_size    256k;
+        '';
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          useACMEHost = globals.domains.main;
 
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
-              extraConfig = ''
-                proxy_buffer_size          128k;
-                proxy_buffers              4 256k;
-                proxy_busy_buffers_size    256k;
-              '';
-            };
-          };
-        };
-      };
-    };
+
   };
 }

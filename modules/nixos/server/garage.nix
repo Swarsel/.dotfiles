@@ -1,11 +1,8 @@
 # inspired by https://github.com/atropos112/nixos/blob/7fef652006a1c939f4caf9c8a0cb0892d9cdfe21/modules/garage.nix
 { self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen {
-    name = "garage";
-    port = 3900;
-    domain = config.repo.secrets.common.services.domains."garage-${config.node.name}";
-  }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress proxyAddress4 proxyAddress6 isHome isProxied homeProxy webProxy dnsServer homeProxyIf webProxyIf;
+  inherit (confLib.gen { name = "garage"; port = 3900; domain = config.repo.secrets.common.services.domains."garage-${config.node.name}"; }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
   inherit (config.swarselsystems) sopsFile mainUser;
@@ -73,14 +70,6 @@ in
 
     # networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
 
-    nodes.${dnsServer}.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
-      "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
-
     topology.self.services.${serviceName} = {
       name = lib.swarselsystems.toCapitalized serviceName;
       info = "https://${serviceDomain}";
@@ -114,7 +103,7 @@ in
           ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
         };
         ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
         };
       };
       services.${specificServiceName} = {
@@ -325,69 +314,86 @@ in
       };
     };
 
-    nodes.${webProxy}.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
+    nodes =
+      let
+        genNginx = toAddress: extraConfig: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
+            "${serviceName}Web" = {
+              servers = {
+                "${toAddress}:${builtins.toString garageWebPort}" = { };
+              };
+            };
+            "${serviceName}Admin" = {
+              servers = {
+                "${toAddress}:${builtins.toString garageAdminPort}" = { };
+              };
+            };
+          };
+          virtualHosts = {
+            "${adminDomain}" = {
+              useACMEHost = globals.domains.main;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2.enable = false;
+              inherit extraConfig;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}Admin";
+                };
+              };
+            };
+            "*.${webDomain}" = {
+              useACMEHost = globals.domains.main;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2.enable = false;
+              inherit extraConfig;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}Web";
+                };
+              };
+            };
+            "${serviceDomain}" = {
+              serverAliases = [ "*.${serviceDomain}" ];
+              useACMEHost = globals.domains.main;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2.enable = false;
+              inherit extraConfig;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                    client_body_timeout        600s;
+                    proxy_connect_timeout      600s;
+                    proxy_send_timeout         600s;
+                    proxy_read_timeout         600s;
+                    proxy_request_buffering    off;
+                  '';
+                };
+              };
+            };
           };
         };
-        "${serviceName}Web" = {
-          servers = {
-            "${serviceAddress}:${builtins.toString garageWebPort}" = { };
-          };
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
+          "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
-        "${serviceName}Admin" = {
-          servers = {
-            "${serviceAddress}:${builtins.toString garageAdminPort}" = { };
-          };
-        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };
-      virtualHosts = {
-        "${adminDomain}" = {
-          useACMEHost = globals.domains.main;
-          forceSSL = true;
-          acmeRoot = null;
-          oauth2.enable = false;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}Admin";
-            };
-          };
-        };
-        "*.${webDomain}" = {
-          useACMEHost = globals.domains.main;
-          forceSSL = true;
-          acmeRoot = null;
-          oauth2.enable = false;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}Web";
-            };
-          };
-        };
-        "${serviceDomain}" = {
-          serverAliases = [ "*.${serviceDomain}" ];
-          useACMEHost = globals.domains.main;
-          forceSSL = true;
-          acmeRoot = null;
-          oauth2.enable = false;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
-              extraConfig = ''
-                client_max_body_size 0;
-                client_body_timeout        600s;
-                proxy_connect_timeout      600s;
-                proxy_send_timeout         600s;
-                proxy_read_timeout         600s;
-                proxy_request_buffering    off;
-              '';
-            };
-          };
-        };
-      };
-    };
 
   };
 }
