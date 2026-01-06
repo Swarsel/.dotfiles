@@ -37,15 +37,20 @@ That is the reason why I keep this configuration as a literate one: so that I am
 
 For a beginner, I recommend to read this file like a book, from start to finish. I will try to explain concepts whenever they first come up, and will regularly link to [[#h:8ea35dcc-ef94-4c10-9112-8be8efd6f424][Appendix C: Explanations to nix functions and operators]] when more context is needed. For the first few times that I am using a new function, I will place such a link again. However, to keep the writing of this file manageable, I will generally only do this no more than three times.
 
+This page offers some utilities to you: you can pin specific headings to the right "pinned" bar by hovering over the heading and clicking =[pin]=. If a section seems uninteresting to you, you can press the =↓= button to skip to the next one. And if you want to send a section to somebody else, you can click the =#= in order to copy its link to the clipboard. Your pinned headings will be saved locally, so you can continue reading in case you take a break.
+
 ** Structure of this file
 :PROPERTIES:
 :CUSTOM_ID: h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5
 :END:
 
-This file is structured as follows:
+Now, I will outline how this document is structured. I have segmented this file into the following sections:
 
 - [[#h:a86fe971-f169-4052-aacf-15e0f267c6cd][Introduction (no code)]]
-  This is the block you are currently in. It holds no code that actually builds the system, it just outlines the general approach and explains the rough design mentality. For simply understanding the code in here, reading this should not be necessary (feel free to skip to [[#h:c7588c0d-2528-485d-b2df-04d6336428d7][flake.nix]])
+  This is the block you are currently in. It holds no code that actually builds the system, it just outlines the general approach and explains the rough design mentality. For understanding the nix (or Emacs) code in here, reading this should not be necessary if you already know some nix (feel free to skip to [[#h:c7588c0d-2528-485d-b2df-04d6336428d7][flake.nix]]). Otherwise, I will also give a brief introduction to some nix terms here.
+
+- [[#h:10a6f80d-7e00-4db1-953a-811993c22cb0][An introduction to nix]]
+  Here I will give a coarse overview over some important concepts in the nix landscape. This is aimed at beginners in the field; others might want to skip this section as they are likely to not find much that will be worth their time.
 
 - [[#h:c7588c0d-2528-485d-b2df-04d6336428d7][flake.nix]]
   This block holds everything related to the heart of the nix side of the configuration - the =flake.nix= file. I am using [[https://github.com/hercules-ci/flake-parts][flake-parts]] to manage this flake, so different aspects of the configuration are handled by flake-part modules in different files.
@@ -56,7 +61,7 @@ This file is structured as follows:
 - [[#h:ed4cd05c-0879-41c6-bc39-3f1246a96f04][Emacs]]
   This section defines my Emacs configuration. For a while, I considered to use rycee's =emacs-init= module ([[https://github.com/nix-community/nur-combined/blob/master/repos/rycee/hm-modules/emacs-init.nix]]) to manage my Emacs configuration; I have since come to the conclusion that this would be a bad idea: at the moment, even though it might seem as I am very bound to the configuration file that you are currently reading, if I ever decide to change how I run my system, I can simply take the generated =.nix= and =.el= files and put them wherever I need them. This file only simplifies that generation without putting further restrictions on my. If I were however to switch to =emacs-init= then I would be indeed to some level confined to the nix ecosystem with my Emacs configuration, as I would no longer have a valid =.org= file to manage it with, instead generating an =init.el= directly from nix code. I like to keep that level of freedom for potential future use. Also, you will notice there is no package system setup in this configuration. This is because packages are automatically handled on the NixOS side by parsing the generated =init.el= file for package installs.
 
-  My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: {{{revision-date}}})
+[[#h:fa377c74-36e5-4aea-bc39-4d3def4b67d1][nix build]]  My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: {{{revision-date}}})
 
 #+begin_src emacs-lisp :tangle no :exports both
 
@@ -67,7 +72,7 @@ This file is structured as follows:
 #+RESULTS:
 : --prefix=/nix/store/lymgpfqr5dp1wc0khbcbhhjnxq8ccsy9-emacs-pgtk-20240521.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
 
-This file is not loaded by Emacs directly as the configuration (even though this would be possible) - instead, it generates two more files:
+This file is not loaded by Emacs directly as the configuration (even though this would be possible - actually I did that in the past!) - instead, it generates two more files:
 
 - =early-init.el=
   This file handle startup optimization and sets up the basic frame that I will be working in.
@@ -77,7 +82,7 @@ This file is not loaded by Emacs directly as the configuration (even though this
 
 By using the configuration offered by this file, the file you are reading right now (=SwarselSystems.org=) will not be freshly tangled on every file save, as this slows down emacs over time. However, when you clone this configuration yourself and have not yet activated it, you need to tangle the file yourself. This can be done using the general keybind =C-c C-v t= or my personal chord =C-SPC o t=. Alternatively, execute the following block:
 
-#+begin_src emacs-lisp :tangle no :export both :results silent
+#+begin_src emacs-lisp :tangle no :export code :results silent
 
   (org-babel-tangle)
 
@@ -96,23 +101,29 @@ As such, this served to reduce code duplication in this file. The tangled files 
 
 An example of using a noweb-ref block:
 
+First we define the block:
+
 #+begin_src nix-ts :tangle no :noweb-ref blockName
   enable = true;
 #+end_src
 
 which can then be used in a block like:
 
-#+begin_src markdown :tangle no :noweb yes
+#+begin_src markdown :tangle no :noweb no :results silent
   <<blockName>>
 #+end_src
 
-#+RESULTS:
-: enable = true;
+and is finally parsed as:
 
-Note that noweb-reffed blocks will not be indented correctly. You will want to account for that when checking your nix flake with the formatter of your choice. Personally, I have solved this issue using the functions defined in [[#h:59d4306e-9b73-4b2c-b039-6a6518c357fc][org-mode: Upon-save actions (Auto-tangle, export to html, formatting)]]. Originally, I also automatically exported to html there, but it incurred a too high memory penalty which made Emacs become sluggish over time - instead I now build the website version whenever I push to GitHub.
+#+begin_src markdown :tangle no :noweb yes :results silent
+  <<blockName>>
+#+end_src
+
+
+Note that noweb-reffed blocks will not always be indented correctly. You will want to account for that when checking your nix flake with the formatter of your choice. Personally, I have solved this issue using the functions defined in [[#h:59d4306e-9b73-4b2c-b039-6a6518c357fc][org-mode: Upon-save actions (Auto-tangle, export to html, formatting)]]. Originally, I also automatically exported to html there, but it incurred a too high memory penalty which made Emacs become sluggish over time - instead I now build the website version whenever I push to GitHub.
 
 - [[#h:8fc9f66a-7412-4091-8dee-a06f897baf67][Appendix B: Supplementary Files]]
-  This section holds files that are not written in nix but are still referenced in the configuration in some way. This is mostly used for configuration of programs that have no native nix support, like tridactyl. Note that shell scripts are still defined under their respective entry in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. Over time, the goal is to reduce this section to a minimum, but things like the aforementioned tridactyl might stay for a long time, until we have a stable interface to configure browser plugins.
+  This section holds files that are not written in nix but are still referenced in the configuration in some way. This is mostly used for configuration of programs that have no native nix support, like tridactyl, as well as "meta" files like the [[#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec][GitHub Readme]] or the [[#h:abed312c-5bf7-43f5-b0d0-43cce513ccb9][GitHub Workflow: Build-and-deploy]]. Note that shell scripts are still defined under their respective entry in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. Over time, the goal is to reduce this section to a minimum, but things like the aforementioned tridactyl might stay for a long time, until we have a stable nix interface to configure browser plugins.
 
 - [[#h:8ea35dcc-ef94-4c10-9112-8be8efd6f424][Appendix C: Explanations to nix functions and operators]]
   When I started to learn about nix, I found that journey quite arduous; while I disagree with the general public in that the documentation is too sparse, I will say that, while it is very good, reading (and understanding!) it requires a certain level of existing nix knowledge that one will problably not have when starging out. Hence, the goal of this document is to explain common nix functions as they come up in this document (I thing I wrote this before :sweat:), in hopes that you will be able to understand most of the code. When a new function appears for the first time, I will try to link to an entry in the appendix.
@@ -122,9 +133,11 @@ Note that noweb-reffed blocks will not be indented correctly. You will want to a
 :CUSTOM_ID: h:12880c64-229c-4063-9eea-387a97490676
 :END:
 
-The =.html= version of this page is normally built by a GitHub workflow; it can be generated manually by calling the chord =C-SPC o e=, or by executing the below block
+I will also quickly talk about the webpage that (I hope) you are currently viewing works:
 
-#+begin_src emacs-lisp :tangle no :export both :results silent
+The =.html= version of this page is built by a GitHub workflow; it can also be generated manually by calling the chord =C-SPC o e=, or by executing the below block
+
+#+begin_src emacs-lisp :tangle no :export code :results silent
 
   (org-html-export-to-html)
 
@@ -135,831 +148,24 @@ The web version is useful because it allows navigation using org-mode links, whi
 - Functionality to save links to certain headers in a "Pinned" menu that can be toggled
 - These links are locally saved
 
-I add a javascript bit to the file in order to have a darkmode toggle when exporting to html. NOTE: What I am doing is defining an elisp multiline string which gives me heredoc capabilities for defining blocks that should be both exported to the final =.html= but should also be shown in the document itself (only putting a =#+[begin/end]_export= block would not show the block in the content of the page) which is then output as html and exported to both.
+I add a javascript bit to the file in order to have a darkmode toggle when exporting to html (defined in [[#h:cf6a12cf-929b-4080-9945-e6f02afc7990][HTML Export: Darkmode toggle]]). NOTE: What I am doing is defining an elisp multiline string which gives me heredoc capabilities for defining blocks that should be both exported to the final =.html= but should also be shown in the document itself (only putting a =#+[begin/end]_export= block would not show the block in the content of the page) which is then output as html and exported to both.
 
 #+begin_src elisp :noweb yes :exports both :results html
   "
-  <script src='https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js'></script>
+  <<js-darkmode-toggle>>
+  "
+#+end_src
+
+
+I also add this javascript to add header pinning functionality to the site, using the same trick as above (this is defined in [[#h:e5f900a0-9d68-4269-a663-53c52434c342][HTML Export: Docs QoL]]):
+
+#+begin_src elisp :noweb yes :exports both :results html
+  "
   <script>
-  function addDarkmodeWidget() {
-  new Darkmode({label:'[☀︎]'}).showWidget();
-  }
-  window.addEventListener('load', addDarkmodeWidget);
+  <<js-docs-qol>>
   </script>
   "
 #+end_src
-
-#+RESULTS:
-#+begin_export html
-
-<script src='https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js'></script>
-<script>
-function addDarkmodeWidget() {
-new Darkmode({label:'[☀︎]'}).showWidget();
-}
-window.addEventListener('load', addDarkmodeWidget);
-</script>
-#+end_export
-
-I also add this javascript to add header pinning functionality to the site, using the same trick as above:
-
-#+begin_src elisp :noweb yes :exports both :results html
-    "
-     <script>
-         (function() {
-             function ready(fn) {
-                 if (document.readyState === 'loading') {
-                     document.addEventListener('DOMContentLoaded', fn);
-                 } else {
-                     fn();
-                 }
-             }
-
-             ready(function initPinned() {
-                 const STORAGE_KEY = 'org-pinned-items-v2';
-
-                 let pinnedPanel = document.getElementById('pinned-panel');
-                 if (!pinnedPanel) {
-                     pinnedPanel = document.createElement('aside');
-                     pinnedPanel.id = 'pinned-panel';
-                     pinnedPanel.innerHTML = `
-                 <div id='pinned-panel-header'>
-                   <h2>Pinned</h2>
-                   <button id='toggle-pinned-btn' type='button' title='Hide pinned panel'>✕</button>
-                 </div>
-                 <button id='clear-all-pins-btn' type='button'>Clear All</button>
-                 <ul id='pinned-list'></ul>
-               `;
-                     document.body.appendChild(pinnedPanel);
-                 }
-
-                 let showBtn = document.getElementById('show-pinned-btn');
-                 if (!showBtn) {
-                     showBtn = document.createElement('button');
-                     showBtn.id = 'show-pinned-btn';
-                     showBtn.type = 'button';
-                     showBtn.textContent = 'Pinned';
-                     document.body.appendChild(showBtn);
-                 }
-
-                 const content      = document.getElementById('content');
-                 const pinnedList   = document.getElementById('pinned-list');
-                 const toggleBtn    = document.getElementById('toggle-pinned-btn');
-                 const clearAllBtn  = document.getElementById('clear-all-pins-btn');
-                 const toc          = document.getElementById('table-of-contents');
-                 const body         = document.body;
-
-                 if (!content || !pinnedList || !toggleBtn || !clearAllBtn || !toc) return;
-                 function injectSearch() {
-                     // Check if already injected
-                     if (document.getElementById('toc-search-input')) return;
-
-                     const searchContainer = document.createElement('div');
-                     searchContainer.id = 'toc-search-container';
-
-                     const searchInput = document.createElement('input');
-                     searchInput.id = 'toc-search-input';
-                     searchInput.type = 'text';
-                     searchInput.placeholder = 'Search TOC...';
-                     searchInput.autocomplete = 'off';
-
-                     const clearBtn = document.createElement('button');
-                     clearBtn.id = 'toc-search-clear';
-                     clearBtn.type = 'button';
-                     clearBtn.textContent = 'Clear';
-
-                     searchContainer.appendChild(searchInput);
-                     searchContainer.appendChild(clearBtn);
-
-                     toc.insertBefore(searchContainer, toc.firstChild);
-
-                     function filterTOC(term) {
-                         const allLinks = toc.querySelectorAll('a');
-
-                         allLinks.forEach(link => {
-                             const li = link.closest('li');
-                             if (!li) return;
-
-                             const text = link.textContent.toLowerCase();
-                             const matches = text.includes(term);
-
-                             if (matches) {
-                                 li.classList.remove('hidden-by-search');
-                                 let parent = li.parentElement;
-                                 while (parent && parent !== toc) {
-                                     if (parent.tagName === 'UL') {
-                                         parent.style.display = '';
-                                     }
-                                     if (parent.tagName === 'LI') {
-                                         parent.classList.remove('hidden-by-search');
-                                     }
-                                     parent = parent.parentElement;
-                                 }
-                             } else {
-                                 li.classList.add('hidden-by-search');
-                             }
-                         });
-
-                         if (term === '') {
-                             const allLis = toc.querySelectorAll('li');
-                             allLis.forEach(li => li.classList.remove('hidden-by-search'));
-                         }
-                     }
-
-                     searchInput.addEventListener('input', function(e) {
-                         const term = e.target.value.toLowerCase();
-                         filterTOC(term);
-                     });
-
-                     clearBtn.addEventListener('click', function() {
-                         searchInput.value = '';
-                         filterTOC('');
-                         searchInput.focus();
-                     });
-                 }
-                 injectSearch();
-                 function addHeadingLinks() {
-                     const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9');
-                     headers.forEach(header => {
-                         const id = header.getAttribute('id');
-                         if (!id) return;
-
-                         if (header.querySelector('.heading-link')) return;
-
-                         const link = document.createElement('a');
-                         link.className = 'heading-link';
-                         link.href = '#' + id;
-                         link.textContent = '#';
-                         link.title = 'Copy link to this heading';
-
-                         const pinBtn = header.querySelector('.toc-pin-btn');
-                         if (pinBtn) {
-                             header.insertBefore(link, pinBtn);
-                         } else {
-                             header.appendChild(link);
-                         }
-
-                         link.addEventListener('click', function(e) {
-                             e.preventDefault();
-                             const url = window.location.origin + window.location.pathname + '#' + id;
-
-                             if (navigator.clipboard && navigator.clipboard.writeText) {
-                                 navigator.clipboard.writeText(url).then(() => {
-                                     const originalText = link.textContent;
-                                     link.textContent = '✓';
-                                     setTimeout(() => {
-                                         link.textContent = originalText;
-                                     }, 1000);
-                                 }).catch(err => {
-                                     console.warn('Failed to copy to clipboard', err);
-                                     window.location.hash = id;
-                                 });
-                             } else {
-                                 window.location.hash = id;
-                             }
-                         });
-                     });
-                 }
-                 addHeadingLinks();
-
-                 function addNextHeadingButtons() {
-                     const headers = Array.from(content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9'));
-
-                     headers.forEach((header, index) => {
-                         // Skip if button already exists
-                         if (header.querySelector('.heading-next')) return;
-
-                         // Find next heading
-                         const nextHeader = headers[index + 1];
-                         if (!nextHeader) return; // No next heading
-
-                         const nextId = nextHeader.getAttribute('id');
-                         if (!nextId) return;
-
-                         const nextBtn = document.createElement('button');
-                         nextBtn.className = 'heading-next';
-                         nextBtn.type = 'button';
-                         nextBtn.textContent = '↓';
-                         nextBtn.title = 'Jump to next heading';
-
-                         // Insert after the heading link, before the pin button
-                         const headingLink = header.querySelector('.heading-link');
-                         const pinBtn = header.querySelector('.toc-pin-btn');
-
-                         if (pinBtn) {
-                             header.insertBefore(nextBtn, pinBtn);
-                         } else if (headingLink) {
-                             headingLink.after(nextBtn);
-                         } else {
-                             header.appendChild(nextBtn);
-                         }
-
-                         nextBtn.addEventListener('click', function(e) {
-                             e.preventDefault();
-                             nextHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                             // Update URL hash
-                             history.pushState(null, null, '#' + nextId);
-                         });
-                     });
-                 }
-                 addNextHeadingButtons();
-
-                 let mobileTocBtn = document.getElementById('mobile-toc-toggle');
-                 if (!mobileTocBtn) {
-                     mobileTocBtn = document.createElement('button');
-                     mobileTocBtn.id = 'mobile-toc-toggle';
-                     mobileTocBtn.type = 'button';
-                     mobileTocBtn.textContent = 'TOC';
-                     document.body.appendChild(mobileTocBtn);
-                 }
-
-                 let mobilePinnedBtn = document.getElementById('mobile-pinned-toggle');
-                 if (!mobilePinnedBtn) {
-                     mobilePinnedBtn = document.createElement('button');
-                     mobilePinnedBtn.id = 'mobile-pinned-toggle';
-                     mobilePinnedBtn.type = 'button';
-                     mobilePinnedBtn.textContent = 'Pinned';
-                     document.body.appendChild(mobilePinnedBtn);
-                 }
-
-                 function anyMobilePanelOpen() {
-                     return toc.classList.contains('mobile-visible') ||
-                         pinnedPanel.classList.contains('mobile-visible');
-                 }
-
-                 function updateBodyMobilePanelState() {
-                     if (anyMobilePanelOpen()) body.classList.add('mobile-panel-open');
-                     else body.classList.remove('mobile-panel-open');
-                 }
-
-                 document.addEventListener('click', function(e) {
-                     if (window.innerWidth > 1000) return;
-
-                     if (!anyMobilePanelOpen()) return;
-
-                     const clickedInsideToc = toc.contains(e.target);
-                     const clickedInsidePinned = pinnedPanel.contains(e.target);
-                     const clickedTocBtn = mobileTocBtn.contains(e.target);
-                     const clickedPinnedBtn = mobilePinnedBtn.contains(e.target);
-
-                     const clickedInteractive =
-                           e.target.tagName === 'A' ||
-                           e.target.tagName === 'BUTTON' ||
-                           e.target.tagName === 'INPUT' ||
-                           e.target.tagName === 'TEXTAREA' ||
-                           e.target.closest('a') ||
-                           e.target.closest('button');
-
-                     if (!clickedInsideToc && !clickedInsidePinned && !clickedTocBtn && !clickedPinnedBtn && !clickedInteractive) {
-                         toc.classList.remove('mobile-visible');
-                         pinnedPanel.classList.remove('mobile-visible');
-                         updateBodyMobilePanelState();
-                     }
-                 });
-
-                 mobileTocBtn.addEventListener('click', function() {
-                     const isOpen = toc.classList.toggle('mobile-visible');
-                     if (isOpen) {
-                         pinnedPanel.classList.remove('mobile-visible');
-                     }
-                     updateBodyMobilePanelState();
-                 });
-
-                 mobilePinnedBtn.addEventListener('click', function() {
-                     const isOpen = pinnedPanel.classList.toggle('mobile-visible');
-                     if (isOpen) {
-                         toc.classList.remove('mobile-visible');
-                     }
-                     updateBodyMobilePanelState();
-                 });
-
-                 const pinnedItems = new Map();
-                 let initiallyPinnedHrefs = new Set();
-
-                 function loadFromStorage() {
-                     try {
-                         const raw = window.localStorage && localStorage.getItem(STORAGE_KEY);
-                         if (!raw) return;
-                         const arr = JSON.parse(raw);
-                         if (!Array.isArray(arr)) return;
-                         initiallyPinnedHrefs = new Set(arr);
-                     } catch (e) {
-                         console.warn('Pinned: failed to load from localStorage', e);
-                     }
-                 }
-
-                 function saveToStorage() {
-                     try {
-                         if (!window.localStorage) return;
-                         const arr = [];
-                         pinnedItems.forEach((entry, href) => {
-                             if (entry.li) arr.push(href);
-                         });
-                         localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-                     } catch (e) {
-                         console.warn('Pinned: failed to save to localStorage', e);
-                     }
-                 }
-
-                 function sortPinnedList() {
-                     const items = Array.from(pinnedList.children).map(li => {
-                         const link = li.querySelector('a');
-                         return {
-                             li: li,
-                             text: link ? link.textContent.trim().toLowerCase() : ''
-                         };
-                     });
-                     items.sort((a, b) => a.text.localeCompare(b.text));
-                     items.forEach(item => pinnedList.appendChild(item.li));
-                 }
-
-                 function hidePinnedPanel() {
-                     pinnedPanel.classList.add('hidden');
-                     content.classList.add('pinned-hidden');
-                     showBtn.classList.add('visible');
-                 }
-
-                 function showPinnedPanel() {
-                     pinnedPanel.classList.remove('hidden');
-                     content.classList.remove('pinned-hidden');
-                     showBtn.classList.remove('visible');
-                 }
-
-                 toggleBtn.addEventListener('click', hidePinnedPanel);
-                 showBtn.addEventListener('click', showPinnedPanel);
-
-                 clearAllBtn.addEventListener('click', function() {
-                     if (pinnedItems.size === 0) return;
-
-                     const confirmed = confirm('Are you sure you want to clear all pinned items?');
-                     if (!confirmed) return;
-
-                     pinnedItems.forEach((entry, href) => {
-                         if (entry.li && entry.li.parentElement) {
-                             entry.li.parentElement.removeChild(entry.li);
-                         }
-                         entry.li = null;
-                         entry.btns.forEach(b => b.textContent = '[pin]');
-                     });
-
-                     saveToStorage();
-                 });
-
-                 function attachPinBehavior(pinBtn, href, text) {
-                     if (!href) return;
-
-                     if (!pinnedItems.has(href)) {
-                         pinnedItems.set(href, { li: null, btns: new Set(), text: text });
-                     }
-                     const entry = pinnedItems.get(href);
-                     entry.btns.add(pinBtn);
-
-                     pinBtn.textContent = entry.li ? '[unpin]' : '[pin]';
-
-                     pinBtn.addEventListener('click', function(e) {
-                         e.preventDefault();
-                         e.stopPropagation();
-                         const current = pinnedItems.get(href);
-                         if (!current) return;
-
-                         if (current.li) {
-                             if (current.li.parentElement) {
-                                 current.li.parentElement.removeChild(current.li);
-                             }
-                             current.li = null;
-                             current.btns.forEach(b => b.textContent = '[pin]');
-                             saveToStorage();
-                         } else {
-                             const li = document.createElement('li');
-
-                             const a = document.createElement('a');
-                             a.href = href;
-                             a.textContent = current.text;
-
-                             const removeBtn = document.createElement('button');
-                             removeBtn.className = 'pin-remove';
-                             removeBtn.type = 'button';
-                             removeBtn.textContent = '✕';
-                             removeBtn.addEventListener('click', () => {
-                                 const cur = pinnedItems.get(href);
-                                 if (!cur) return;
-                                 if (cur.li && cur.li.parentElement) {
-                                     cur.li.parentElement.removeChild(cur.li);
-                                 }
-                                 cur.li = null;
-                                 cur.btns.forEach(b => b.textContent = '[pin]');
-                                 saveToStorage();
-                             });
-
-                             li.appendChild(a);
-                             li.appendChild(removeBtn);
-                             pinnedList.appendChild(li);
-
-                             current.li = li;
-                             current.btns.forEach(b => b.textContent = '[unpin]');
-
-                             sortPinnedList();
-                             saveToStorage();
-                         }
-                     });
-                 }
-
-                 loadFromStorage();
-
-                 const tocLinks = document.querySelectorAll('#text-table-of-contents a');
-                 tocLinks.forEach(link => {
-                     if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
-                         return;
-                     }
-                     const li = link.closest('li');
-                     if (!li) return;
-
-                     const wrapper = document.createElement('span');
-                     wrapper.className = 'toc-entry';
-                     li.insertBefore(wrapper, link);
-                     wrapper.appendChild(link);
-
-                     const pinBtn = document.createElement('button');
-                     pinBtn.className = 'toc-pin-btn';
-                     pinBtn.type = 'button';
-                     pinBtn.textContent = '[pin]';
-                     wrapper.appendChild(pinBtn);
-
-                     const href = link.getAttribute('href');
-                     const text = link.textContent.trim();
-                     attachPinBehavior(pinBtn, href, text);
-                 });
-
-                 const headers = content.querySelectorAll('h2, h3, h4, h5, h6, h7, h8, h9');
-                 headers.forEach(header => {
-                     const id = header.getAttribute('id');
-                     if (!id) return;
-                     if (header.querySelector('.toc-pin-btn')) return;
-
-                     const href = '#' + id;
-                     const text = header.textContent.trim();
-
-                     const pinBtn = document.createElement('button');
-                     pinBtn.className = 'toc-pin-btn';
-                     pinBtn.type = 'button';
-                     pinBtn.textContent = '[pin]';
-                     pinBtn.style.marginLeft = '0.8rem';
-                     pinBtn.style.fontSize  = '0.75em';
-
-                     header.appendChild(pinBtn);
-                     attachPinBehavior(pinBtn, href, text);
-                 });
-
-                 initiallyPinnedHrefs.forEach(href => {
-                     const entry = pinnedItems.get(href);
-                     if (!entry) return;
-
-                     const li = document.createElement('li');
-
-                     const a = document.createElement('a');
-                     a.href = href;
-                     a.textContent = entry.text;
-
-                     const removeBtn = document.createElement('button');
-                     removeBtn.className = 'pin-remove';
-                     removeBtn.type = 'button';
-                     removeBtn.textContent = '✕';
-                     removeBtn.addEventListener('click', () => {
-                         const cur = pinnedItems.get(href);
-                         if (!cur) return;
-                         if (cur.li && cur.li.parentElement) {
-                             cur.li.parentElement.removeChild(cur.li);
-                         }
-                         cur.li = null;
-                         cur.btns.forEach(b => b.textContent = '[pin]');
-                         saveToStorage();
-                     });
-
-                     li.appendChild(a);
-                     li.appendChild(removeBtn);
-                     pinnedList.appendChild(li);
-
-                     entry.li = li;
-                     entry.btns.forEach(b => b.textContent = '[unpin]');
-                 });
-
-                 sortPinnedList();
-                 saveToStorage();
-             });
-         })();
-     </script>
-     "
-#+end_src
-
-#+RESULTS:
-#+begin_export html
-
-<script>
-(function() {
-  function ready(fn) {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', fn);
-    } else {
-      fn();
-    }
-  }
-
-  ready(function initPinned() {
-    const STORAGE_KEY = 'org-pinned-items-v2';
-
-    let pinnedPanel = document.getElementById('pinned-panel');
-    if (!pinnedPanel) {
-      pinnedPanel = document.createElement('aside');
-      pinnedPanel.id = 'pinned-panel';
-      pinnedPanel.innerHTML = `
-        <div id='pinned-panel-header'>
-          <h2>Pinned</h2>
-          <button id='toggle-pinned-btn' type='button' title='Hide pinned panel'>✕</button>
-        </div>
-        <button id='clear-all-pins-btn' type='button'>Clear All</button>
-        <ul id='pinned-list'></ul>
-      `;
-      document.body.appendChild(pinnedPanel);
-    }
-
-    let showBtn = document.getElementById('show-pinned-btn');
-    if (!showBtn) {
-      showBtn = document.createElement('button');
-      showBtn.id = 'show-pinned-btn';
-      showBtn.type = 'button';
-      showBtn.textContent = 'Pinned';
-      document.body.appendChild(showBtn);
-    }
-
-    const content      = document.getElementById('content');
-    const pinnedList   = document.getElementById('pinned-list');
-    const toggleBtn    = document.getElementById('toggle-pinned-btn');
-    const clearAllBtn  = document.getElementById('clear-all-pins-btn');
-    const toc          = document.getElementById('table-of-contents');
-    const body         = document.body;
-
-    if (!content || !pinnedList || !toggleBtn || !clearAllBtn || !toc) return;
-
-    let mobileTocBtn = document.getElementById('mobile-toc-toggle');
-    if (!mobileTocBtn) {
-      mobileTocBtn = document.createElement('button');
-      mobileTocBtn.id = 'mobile-toc-toggle';
-      mobileTocBtn.type = 'button';
-      mobileTocBtn.textContent = 'TOC';
-      document.body.appendChild(mobileTocBtn);
-    }
-
-    let mobilePinnedBtn = document.getElementById('mobile-pinned-toggle');
-    if (!mobilePinnedBtn) {
-      mobilePinnedBtn = document.createElement('button');
-      mobilePinnedBtn.id = 'mobile-pinned-toggle';
-      mobilePinnedBtn.type = 'button';
-      mobilePinnedBtn.textContent = 'Pinned';
-      document.body.appendChild(mobilePinnedBtn);
-    }
-
-    function anyMobilePanelOpen() {
-      return toc.classList.contains('mobile-visible') ||
-             pinnedPanel.classList.contains('mobile-visible');
-    }
-
-    function updateBodyMobilePanelState() {
-      if (anyMobilePanelOpen()) body.classList.add('mobile-panel-open');
-      else body.classList.remove('mobile-panel-open');
-    }
-
-    mobileTocBtn.addEventListener('click', function() {
-      const isOpen = toc.classList.toggle('mobile-visible');
-      if (isOpen) {
-        pinnedPanel.classList.remove('mobile-visible');
-      }
-      updateBodyMobilePanelState();
-    });
-
-    mobilePinnedBtn.addEventListener('click', function() {
-      const isOpen = pinnedPanel.classList.toggle('mobile-visible');
-      if (isOpen) {
-        toc.classList.remove('mobile-visible');
-      }
-      updateBodyMobilePanelState();
-    });
-
-    const pinnedItems = new Map();
-    let initiallyPinnedHrefs = new Set();
-
-    function loadFromStorage() {
-      try {
-        const raw = window.localStorage && localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const arr = JSON.parse(raw);
-        if (!Array.isArray(arr)) return;
-        initiallyPinnedHrefs = new Set(arr);
-      } catch (e) {
-        console.warn('Pinned: failed to load from localStorage', e);
-      }
-    }
-
-    function saveToStorage() {
-      try {
-        if (!window.localStorage) return;
-        const arr = [];
-        pinnedItems.forEach((entry, href) => {
-          if (entry.li) arr.push(href);
-        });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-      } catch (e) {
-        console.warn('Pinned: failed to save to localStorage', e);
-      }
-    }
-
-    function sortPinnedList() {
-      const items = Array.from(pinnedList.children).map(li => {
-        const link = li.querySelector('a');
-        return {
-          li: li,
-          text: link ? link.textContent.trim().toLowerCase() : ''
-        };
-      });
-      items.sort((a, b) => a.text.localeCompare(b.text));
-      items.forEach(item => pinnedList.appendChild(item.li));
-    }
-
-    function hidePinnedPanel() {
-      pinnedPanel.classList.add('hidden');
-      content.classList.add('pinned-hidden');
-      showBtn.classList.add('visible');
-    }
-
-    function showPinnedPanel() {
-      pinnedPanel.classList.remove('hidden');
-      content.classList.remove('pinned-hidden');
-      showBtn.classList.remove('visible');
-    }
-
-    toggleBtn.addEventListener('click', hidePinnedPanel);
-    showBtn.addEventListener('click', showPinnedPanel);
-
-    clearAllBtn.addEventListener('click', function() {
-      if (pinnedItems.size === 0) return;
-
-      const confirmed = confirm('Are you sure you want to clear all pinned items?');
-      if (!confirmed) return;
-
-      pinnedItems.forEach((entry, href) => {
-        if (entry.li && entry.li.parentElement) {
-          entry.li.parentElement.removeChild(entry.li);
-        }
-        entry.li = null;
-        entry.btns.forEach(b => b.textContent = '[pin]');
-      });
-
-      saveToStorage();
-    });
-
-    function attachPinBehavior(pinBtn, href, text) {
-      if (!href) return;
-
-      if (!pinnedItems.has(href)) {
-        pinnedItems.set(href, { li: null, btns: new Set(), text: text });
-      }
-      const entry = pinnedItems.get(href);
-      entry.btns.add(pinBtn);
-
-      pinBtn.textContent = entry.li ? '[unpin]' : '[pin]';
-
-      pinBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const current = pinnedItems.get(href);
-        if (!current) return;
-
-        if (current.li) {
-          if (current.li.parentElement) {
-            current.li.parentElement.removeChild(current.li);
-          }
-          current.li = null;
-          current.btns.forEach(b => b.textContent = '[pin]');
-          saveToStorage();
-        } else {
-          const li = document.createElement('li');
-
-          const a = document.createElement('a');
-          a.href = href;
-          a.textContent = current.text;
-
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'pin-remove';
-          removeBtn.type = 'button';
-          removeBtn.textContent = '✕';
-          removeBtn.addEventListener('click', () => {
-            const cur = pinnedItems.get(href);
-            if (!cur) return;
-            if (cur.li && cur.li.parentElement) {
-              cur.li.parentElement.removeChild(cur.li);
-            }
-            cur.li = null;
-            cur.btns.forEach(b => b.textContent = '[pin]');
-            saveToStorage();
-          });
-
-          li.appendChild(a);
-          li.appendChild(removeBtn);
-          pinnedList.appendChild(li);
-
-          current.li = li;
-          current.btns.forEach(b => b.textContent = '[unpin]');
-
-          sortPinnedList();
-          saveToStorage();
-        }
-      });
-    }
-
-    loadFromStorage();
-
-    const tocLinks = document.querySelectorAll('#text-table-of-contents a');
-    tocLinks.forEach(link => {
-      if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
-        return;
-      }
-      const li = link.closest('li');
-      if (!li) return;
-
-      const wrapper = document.createElement('span');
-      wrapper.className = 'toc-entry';
-      li.insertBefore(wrapper, link);
-      wrapper.appendChild(link);
-
-      const pinBtn = document.createElement('button');
-      pinBtn.className = 'toc-pin-btn';
-      pinBtn.type = 'button';
-      pinBtn.textContent = '[pin]';
-      wrapper.appendChild(pinBtn);
-
-      const href = link.getAttribute('href');
-      const text = link.textContent.trim();
-      attachPinBehavior(pinBtn, href, text);
-    });
-
-    const headers = content.querySelectorAll('h2, h3, h4, h5, h6, h7, h8, h9');
-    headers.forEach(header => {
-      const id = header.getAttribute('id');
-      if (!id) return;
-      if (header.querySelector('.toc-pin-btn')) return;
-
-      const href = '#' + id;
-      const text = header.textContent.trim();
-
-      const pinBtn = document.createElement('button');
-      pinBtn.className = 'toc-pin-btn';
-      pinBtn.type = 'button';
-      pinBtn.textContent = '[pin]';
-      pinBtn.style.marginLeft = '0.8rem';
-      pinBtn.style.fontSize  = '0.75em';
-
-      header.appendChild(pinBtn);
-      attachPinBehavior(pinBtn, href, text);
-    });
-
-    initiallyPinnedHrefs.forEach(href => {
-      const entry = pinnedItems.get(href);
-      if (!entry) return;
-
-      const li = document.createElement('li');
-
-      const a = document.createElement('a');
-      a.href = href;
-      a.textContent = entry.text;
-
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'pin-remove';
-      removeBtn.type = 'button';
-      removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', () => {
-        const cur = pinnedItems.get(href);
-        if (!cur) return;
-        if (cur.li && cur.li.parentElement) {
-          cur.li.parentElement.removeChild(cur.li);
-        }
-        cur.li = null;
-        cur.btns.forEach(b => b.textContent = '[pin]');
-        saveToStorage();
-      });
-
-      li.appendChild(a);
-      li.appendChild(removeBtn);
-      pinnedList.appendChild(li);
-
-      entry.li = li;
-      entry.btns.forEach(b => b.textContent = '[unpin]');
-    });
-
-    sortPinnedList();
-    saveToStorage();
-  });
-})();
-</script>
-#+end_export
 
 ** TODO Structure of this flake
 :PROPERTIES:
@@ -991,6 +197,18 @@ The structure of this flake as seen many revisions, however lately I have settle
       my_value = 2;
       my_attrSet = {
         enable = true;
+      };
+    }
+  #+end_src
+
+It is also possible to pass it as a function:
+
+
+  #+begin_src nix-ts :tangle no
+    { config }: {
+      my_value = 2;
+      my_attrSet = {
+        enable = config.myconfig.enable;
       };
     }
   #+end_src
@@ -1139,110 +357,1165 @@ This is a comprehensive list of the services/components ran by my server machine
   |✉️ **Mail**                 | [simple-nixos-mailserver](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mailserver.nix)  |
 #+end_src
 
-** Manual steps when setting up a new machine
+* An introduction to nix
 :PROPERTIES:
-:CUSTOM_ID: h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a
+:CUSTOM_ID: h:10a6f80d-7e00-4db1-953a-811993c22cb0
 :END:
 
-In the [[#h:a86fe971-f169-4052-aacf-15e0f267c6cd][Introduction (no code)]], I mentioned that this is a nearly fully declarative config. In fact, most client configs are in one way or another not fully declarative. I use oneshotting systemd services + sentinel files for most such tasks (which makes them declarative!), but some of them I would rather perform manually once. This mainly concerns work related things.
+This is where it gets interesting.
 
-Whenever I encounter a configuration bit that needs manual steps, I use a [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]] to tangle that bit of information into a central place (here). I discern between the following scenarios:
-  - =setup=: Used in a standard NixOs + home-manager deployment
-  - =worksetup=: Stuff to be done only on work machines
-  - =homemanageronlysetup=: Steps that are needed only on machines that are not running NixOs.
+In this section, I want to give an overview over some important concepts needed when working with nix.
 
-#+begin_src markdown :noweb yes :exports results :results html
-  These steps are required when setting up a normal NixOS host:
+** Nix, NixOS, Nixpkgs, and Nix
+:PROPERTIES:
+:CUSTOM_ID: h:6d0a91d4-e478-45ae-82de-0997fa289e7a
+:END:
 
-  <<setup>>
+First off, when talking about nix, we need to differentiate between several things:
 
-  If the new machine is a work machine, these steps are additionally needed:
+- The [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]]
+- The [[#h:f4fa6a46-e016-48f8-9ead-608b739c706a][nix package manager]]
+- The linux distribution [[#h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef][NixOS]]
+- the =nix-community= input [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]]
 
-  <<worksetup>>
+While these terms are all connected with each other, it is important to keep in mind that funamentally those are separate entities. Let us briefly talk about each one:
 
-  If the new machine is home-manager only, perform these steps:
+*** nix language
+:PROPERTIES:
+:CUSTOM_ID: h:b2222c7c-0bd5-44f8-aa69-17869d6913c0
+:END:
 
-  <<homemanageronlysetup>>
+Fundamental to all of the other concepts named above is the =nix language=, a functional programming language (that feels like a design language for reasons we will get to). What follows is what you can read at [[https://hydra.nixos.org/build/318367945/download/1/manual/][the nix reference manual]] in detail, condensed to the most important stuff.
+
+
+Here I will give a brief overview over the nix language. While a very deep topic, this aims to only build the essential understanding needed for dealing with the configuration I am using (this should be sufficient to then understand most other configurations online). For deepening your knowledge, you might want to check out the [[https://nix.dev/reference/nix-manual.html][nix reference manual]].
+
+**** Derivations and the nix store
+:PROPERTIES:
+:CUSTOM_ID: h:45135360-96d4-4348-b6fb-e8bc4685611e
+:END:
+
+The main purpose of the nix language is to build packages. These packages are built by functions that can be inaccurately described by something like this:
+
+~f: { source, compiler, dependencies, etc. } -> package~
+
+This function along with all its inputs we call a =derivation=. What is important to realize is that such a derivation can itself depend on other derivations, and the resulting package does not necessarily need to be a callable program (a more correct name for the function result is =outputs=). When we as nix users define a package, we will usually use =pkgs.stdenv.mkDerivation= (ore one of its derived wrappers like =buildRustPackage=), which will run things like install phases and setup hooks for us. It is a wrapper around nix function ~derivation(name, system, builder, args=[],outputs=["out"])~, where =name= is the derivation name, =system= is the system architecture to build for, =builder= is the executable responsible for building the result, =args= are arbitrary arguments passed to =builder=, and =outputs=, which can be thought of a list of locations where we want to put different build artifacts that can be referenced separately when using the package. There are [[https://nix.dev/manual/nix/2.28/language/advanced-attributes][more attributes]], but these five are the most important and commonly used ones.
+
+Building such a package (in nix terms: "realising") from a derivation causes the package to be created in the =nix store=. This is a read-only filesystem that is usually located at =/nix/store=. When building a package, nix will place its content of each output at =/nix/store/<hash>-<package name>-<package version>-<output name if not 'out'>/=, where =<hash>= is a unique identifier that changes whenever one of the inputs to the above function changes. That means that it is no problem to store different versions of the same file on one system, and each program can use the correct dependencies that it needs.
+
+A key observation that follows from this is that packages are declarative; when not changing the inputs, a derivation will always yield the same package with the same store path.
+
+We call the set of derivations (and, recursively, the derivations that those depend on) that a derivation depends on its =closure=.
+
+Usually when installing a package, we do not need all the outputs it provides: For example, the [[https://search.nixos.org/packages?channel=25.11&query=pcsclite][pcscliteWithPolkit package on nixpkgs]]  that is used for configuring smart cards provides 5 outputs: =out=, =dev=, =doc=, =man=, and =lib=. By default, a NixOS system will install =out=, =man=, =info= and =doc= outputs (the latter three have respective =documentation.<name>.enable= NixOS options) as well as any outputs listed in =environment.extraOutputsToInstall= (by default an empty list). However, if we need to debug something, we might need the =dev= output of the package, which can then be installed by referencing =pcscliteWithPolkit.dev=.
+
+When reading package source code in =nixpkgs= for example, you will often come across =$out= and =$src=. The =$out= represents the root of that build output (=$src= are the build sources). You will often see that in build phases (it is there set as an environment variable). In other places, you will instead see =placeholder <output>=, which will be replaced by the outputs future location in the nix store.
+
+**** Types in the nix language
+:PROPERTIES:
+:CUSTOM_ID: h:7bbb4e50-f5e9-4496-a0cd-d8eb34aa2514
+:END:
+
+The nix language supports the following types and how they look in the wild:
+- null: =null=
+- bool: =true=
+- strings: ="text"=
+  - strings can also be defined as =multiline strings=
+    - Those will look for the lowest level of indent shared over all lines and strip it:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate "
+  ''
+  indent0
+    indent2
+   indent1
+  ''
+  "
+#+end_src
+/(you can ignore the [[#h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa][swarsel-instantiate]]; it is just a wrapper around =nix-instantiate= that preloads nixpkgs. I will use this to show you the evaluation results of nix calls)/
+    - note that tab characters will /not/ be stripped:
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate "
+  ''
+   	indentTab
+   indent1
+    indent2
+  ''
+  "
 #+end_src
 
 #+RESULTS:
-#+begin_export html
-These steps are required when setting up a normal NixOS host:
+: \tindentTab\nindent1\n indent2\n
 
-- setup yubikey (automatic yubikey enrollment is not yet supported by `disko`):
-  - `systemd-cryptenroll --fido2-device=auto /dev/<device, e.g. 'nvme0n1p2'>`
+  - an URI string can assume the type of string without need for quoting (e.g. you can write =http://about.org= instead of ="http://about.org"=)
+  - Strings can be interpolated by using =${expression]= (read on for an example)
+    - =expression= can be any valid nix expression that is compatible with the enclosing type (here: string)
+    - As in many languages, you have =\n=, =\r=, and =\t= available
+    - in normal strings, you can escape stuff using =\=
+      - the following characters need to be escaped in normal strings:
+        - Backslash: =\= (escape using =\\=)
+        - Double quote: ="= (using =\"=)
+        - Opening of nix expression: =${= (using =\${=)
+    - in multiline strings, you escape stuff using one or two apostrophes ='=
+      - the following characters need to be escaped in multline strings:
+        - Two apostrophes are escaped with a single apostrophe: =''= (escape with ='''=)
+        - All other things are escaped using =''=:
+          - Dollar sigh: =$= (escape with =''$=)
+          - =\n=, =\r=, and =\t= (=''\n= and so on)
+          - =''\= is a catchall for all other escaping
+    - somewhat interestingly, double dollars =$$= (as used in Makefiles) never need to be escaped
+  - ints: 1
+  - floats: 1.1
+  - paths: =/home=
+    - a path can also be given as a relative path (e.g. =./.config=)
+  - attribute sets: ={ }=
+    - these hold name value pairs, e.g. ={ a = 3; }=
+    - a "chain" of attributes, separated by dots, is called an =attribute path=, e.g. =config.environment.systemPackages=
+      - in such a chain, all attributes but the last will be =attribute sets=
+      - =config.environment.systemPackages= is equivalent to  ~config = { environment = { systemPackages = <some list>; }; };~
+  - lists: [ ]
+    - these hold values, e.g. =[ { a == 3; } ]=. In this example, the list holds a single value, that is, the attribute set ={ a = 3; }=.
+  - functions: =arg: body=
+    - =arg= can be any of these data types, including functions
+      - when =arg= is an attribute set, some special things apply:
+        - default values can be specified using =arg ? defaultValue=, e.g. ={ name ? "Default", age }: "${name} is ${age} years old"= will yield ="X is 20 years old"= when called using the attribute set ={ name = "X"; age = "20"; }=. Otherwise it will yield "Default is 20 years old" when called using ={ age = "20"; }=. When not passing =age= in this example, it will throw an error (also not that we had to pass =age= as a string as the value is not cast to a string automatically. Alternatively, we could have passed =age = 20;= and updated the function body to ="${name} is ${builtins.toString age} years old"=. But that is just a sidenote)
+        - the evaluator will error out if it is called with an argument that is not explicitely mentioned in the function definition
+          - this behaviour can be suppressed by adding an ellipsis =...= to the function arguments (={ name ? "Default", age, ... }:=)
 
-If the new machine is a work machine, these steps are additionally needed:
+Let's see this in action:
 
-- setup the work VPN:
-  - using the laptop certificate `.pem` as User cert and private key (CA cert: none)
-  - vpn gateway is found in `nixosConfig.repo.secrets.local.work.vpnGateway`
-- setup gpgsm for signing of mails using S/MIME:
-  - `gpgsm --import ~/Certificates/<certname>.p12`
-  - `gpgsm --import ~/Certificates/harica-root.pem`
-  - `gpgsm --import ~/Certificates/harica-intermediate.pem`
-  - `gpgsm --list-keys --with-validation "HARICA Client RSA Root CA 2021"`
-    - trust the certificate and set passphrase
-- setup pizauth for microsoft mail sync (account names are possibly `uni` and `work`):
-  - `pizauth auth <account name, e.g. 'work'>`
-  - `pizauth dump > ~/.pizauth.state`
+Calling with explicit values:
 
-If the new machine is home-manager only, perform these steps:
-
-- (Optional) Install openssh-server
-- Set hostname to the name specified in the home-manager configuration
-- Install nix, either:
-  - (if upgrading existing nix) Install nix version matching with version that `nix-plugins` is compiled against: `nix-env --install --file '<nixpkgs>' cacert -I nixpkgs=channel:nixpkgs-unstable --attr nixVersions.nix_x_yy`
-  - (or installing nix freshly):
-    - Grab the link to the install script of the needed nix version from https://releases.nixos.org/?prefix=nix, e.g. https://releases.nixos.org/nix/nix-2.30.1/install
-    - `bash <(curl -L https://releases.nixos.org/nix/nix-x-yy-y/install) --daemon`
-- add the following to /etc/nix/nix.conf to become a trusted user: `trusted-users = @wheel root swarsel`
-- For the first build:
-  1) Clone dotfile repo & change into it
-  2) `nix --extra-experimental-features 'nix-command flakes' develop`
-  3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
-#+end_export
-
-** TODO Current issues
-:PROPERTIES:
-:CUSTOM_ID: h:b562adaf-536c-4267-88a5-026d8a0cda61
-:END:
-
-Besides the manual steps outlined above, sometimes things break when I update this flake. The fix, for me, is most of the times one of these two:
-  - instead of the broken package, use the package from the latest stable nixpkgs release where the package is still functoning (this is why I pull all of these in as inputs)
-  - if the broken component is critical, I perform manual patches/overrides.
-
-In order to keep track of these changes, I gather them here in a similar style to what you saw in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]. I simply prefix them with the date and check them after a while to see if things got better. TODO: this list is not comprehensive probably
-
-#+begin_src markdown :noweb yes :exports results :results html
-  Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
-
-  <<fixes>>
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { name = "X"; age = "20"; }'
 #+end_src
 
 #+RESULTS:
-#+begin_export html
-Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
+: X is 20 years old
 
-- 202501102:
-  - flake:
-    - emacs-overlay:
-      - : version pinned because emacsclient is currently broken on latest
-    - niri-flake:
-      - currently not using the sugared version of screenshot-[,window], as it is currently broken
-  - home-manager:
-    - emacs-tramp:
-      - using stable version in extraPackages (broken in unstable)
-      - :ensure nil in emacs tramp settings to use package in extraPackages
-    - emacs-calfwL
-      - pinned to version not in nixpkgs (is in latest emacs-overlay, but that is broken)
-    - vesktop:
-      - running stable version (broken in unstable)
-    - batgrep:
-      - running stable version (broken in unstable)
-    - swayosd:
-      - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
-#+end_export
+Calling by using a default value:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "20"; }'
+#+end_src
+
+#+RESULTS:
+: Default is 20 years old
+
+Not passing =age= errors out:
+
+#+begin_src bash :tangle no :exports both :results output
+  swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { }'
+#+end_src
+
+#+RESULTS:
+#+begin_example
+error:
+       … from call site
+         at «string»:1:104:
+            1| let lib = import <nixpkgs/lib>; in let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { }
+             |                                                                                                        ^
+
+       error: function 'f' called without required argument 'age'
+       at «string»:1:44:
+            1| let lib = import <nixpkgs/lib>; in let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { }
+             |                                            ^
+[ Babel evaluation exited with code 1 ]
+#+end_example
+
+Passing a superfluous =another= errors out:
+
+#+begin_src bash :tangle no :exports both :results output
+  swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
+#+end_src
+
+#+RESULTS:
+#+begin_example
+error:
+       … from call site
+         at «string»:1:104:
+            1| let lib = import <nixpkgs/lib>; in let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }
+             |                                                                                                        ^
+
+       error: function 'f' called with unexpected argument 'another'
+       at «string»:1:44:
+            1| let lib = import <nixpkgs/lib>; in let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }
+             |                                            ^
+[ Babel evaluation exited with code 1 ]
+#+end_example
+
+
+When adding the ellipsis =...= to the function definition, we can now pass =another=:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate 'let f = {name ? "Default", age, ... }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
+#+end_src
+
+#+RESULTS:
+: Default is 2 years old
+
+The latter is useful mainly in the NixOS module system, where a lot of things will be passed by default. More on that later.
+
+Finally, we can make the values in =...= available by using =@= as in =extra @ { name, ... }: "${name} likes ${extra.object}"=:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate 'let f = extra @ { name, ... }: "${name} likes ${extra.object}"; in f { name = "Nyx"; object = "nix"; }'
+#+end_src
+
+#+RESULTS:
+: Nyx likes nix
+
+Note that it is equivalent to write ={} @ extra=:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate 'let f = { name, ... } @ extra: "${name} likes ${extra.object}"; in f { name = "Nyx"; object = "nix"; }'
+#+end_src
+
+#+RESULTS:
+: Nyx likes nix
+
+This looks cumberesome on first sight, but is for example useful when referencing flake inputs in the flake outputs, as it allows you to forego listing them all in the arguments (which can be a very long list!). More on that later.
+
+**** Language features
+:PROPERTIES:
+:CUSTOM_ID: h:5b660aa4-6dbb-4ca7-a006-c97319ae6b7e
+:END:
+
+- The functions available to the nix language can be found in [[https://hydra.nixos.org/build/318491462/download/1/manual/language/builtins.html][the nix reference manual]]. Some explanations to common functions are provided in [[#h:ebe86cf4-fe65-464f-8f64-04b57870c5e9][Builtin functions]].
+
+- Scopes are static in nix. That means that scoped variables are not inherited by the context of the evaluation (this needs to be kept in mind when e.g defining outputs using =flake-parts=)
+  - Variables can be created in an enclosing scope using =let <variable declarations> in <expression>=. You actually saw me use this several times in the above function call. Note that usually, you will not be able to declare arbitrary variables; this is because usually we will be working within the confines of [[#h:8067f8fc-92d7-46af-b1be-e8a337d7a953][The module system]] - in that scope, you either need to resort to the =let ... in= construct or you need to declare things as module options (more on that later). In general nix however, this would be no problem.
+  - another way to add an expression to the scope is using the =rec= keyword:
+    - this adds all attributes of the enclosing attribute
+    - the following will error out:
+
+#+begin_src bash :tangle no :exports both :results output
+  swarsel-instantiate '
+    {
+      a = true;
+      b = a;
+    }
+  '
+#+end_src
+
+#+RESULTS:
+: error: undefined variable 'a'
+:        at «string»:4:9:
+:             3|     a = true;
+:             4|     b = a;
+:              |         ^
+:             5|   }
+: [ Babel evaluation exited with code 1 ]
+
+    - however, =rec= makes =a= available to the scope (also note that the order of expressions does /not/ matter):
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate '
+    rec {
+      b = a;
+      a = true;
+    }
+  '
+#+end_src
+
+#+RESULTS:
+: { a = true; b = true; }
+
+  - the last way to something to the scope is by using =with=:
+    - this adds the passed set to the lexical scope of the enclosing expression:
+    - the following will error out:
+
+#+begin_src bash :tangle no :exports both :results output
+    swarsel-instantiate '
+      let
+        functions = {
+          print = v: v;
+        };
+      in
+        print "ok"
+    '
+#+end_src
+
+#+RESULTS:
+: error: undefined variable 'print'
+:        at «string»:7:5:
+:             6|   in
+:             7|     print "ok"
+:              |     ^
+:             8|
+: [ Babel evaluation exited with code 1 ]
+
+    - using =with= will make it work:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate '
+    let
+      functions = {
+        print = v: v;
+      };
+    in
+      with functions; print "ok"
+  '
+#+end_src
+
+#+RESULTS:
+: ok
+
+  - generally, the values of the variable in the innermmost scope is given precedence in evaluation:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate '
+    let
+      scope = "outer";
+    in
+      let
+        scope = "inner";
+      in
+        scope
+  '
+#+end_src
+
+#+RESULTS:
+: inner
+
+    - the same holds true for =with=:
+
+#+begin_src bash :tangle no :exports both
+    swarsel-instantiate '
+      with { scope = "outer"; }; with { scope = "inner"; }; scope
+    '
+#+end_src
+
+#+RESULTS:
+: inner
+
+- you can copy variables from an outer scope by using =inherit (<outer scope>) <name>;=
+  - This is syntactic sugar to achieve the same as =<name> = <outer scope>.<name>;=
+- when not in a string, we can place parentheses around a nix expression to provide its return value to other expressions (remember the =builtins.toString (-1)= example from before. =-1= is indeed a nix expression.)
+- you can write inline comments using =#= and multiline comments using =/* ... */=
+- The following words are reserved keywords and cannot be used for variable names: =assert=, =else=, =if=, =in= =inherit=, =let=, =or=, =rec=, =then=, =with=
+
+**** Operators
+:PROPERTIES:
+:CUSTOM_ID: h:f995d46f-ff07-4a5e-9164-ed7aef369c42
+:END:
+  The following operators work as you know them from basically any other language:
+    - Any operator involving numbers (=+=, =-=, =*=, =/=)
+      /Sidenote:/ When negating a number in actual nix code you will need to wrap it in parentheses nearly every time due to function evaluation:
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate '
+    builtins.toString (-1)
+  '
+#+end_src
+
+#+RESULTS:
+: -1
+
+but:
+
+#+begin_src bash :tangle no :exports both :results output
+  swarsel-instantiate '
+    builtins.toString -1
+  '
+#+end_src
+
+#+RESULTS:
+#+begin_example
+error:
+       … while calling the 'sub' builtin
+         at «string»:2:21:
+            1| let lib = import <nixpkgs/lib>; in
+            2|   builtins.toString -1
+             |                     ^
+            3|
+
+       … while evaluating the first argument of the subtraction
+
+       error: expected an integer but found the built-in function 'toString': «primop toString»
+[ Babel evaluation exited with code 1 ]
+#+end_example
+
+    - Logical operators (=!=, ====, =!==, =<=, =>=, =>==, =<==, =&&=, =||=)
+      - additionally, logical implications are available as =->= (defined as =!v1 || v2= aka. =if v1 then v2 else true=)
+
+  The following operators are nix specific:
+    - Concatenations can be done between strings and paths (in any order) using =+=
+    - List Concatenations however use the =++= operator
+    - you can use the =?= operator on an attribue set to check whether it has an attribute:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate '
+    { exists = true; } ? exists
+  '
+  swarsel-instantiate '
+    { exists = true; } ? noExists
+  '
+#+end_src
+
+#+RESULTS:
+| true  |
+| false |
+
+    - Attribute selection is done using =.=:
+
+#+begin_src bash :tangle no :exports both
+  swarsel-instantiate '
+    { v = 1; }.v
+  '
+#+end_src
+
+    - Updates to attribute sets are done using [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]
+
+#+RESULTS:
+: 1
+
+**** Flakes
+:PROPERTIES:
+:CUSTOM_ID: h:b44026d5-bf7e-4ab3-a31b-68b72292e908
+:END:
+
+Next, we shall talk about some concepts regarding nix flakes.
+
+What are flakes? The answer is surprisingly simple: Flakes can be thought of packages that contain nix expressions. They can include other flakes as inputs (acting as libraries if you want) and build on their functionality (in fact, this is exactly what happens when you are using [[#h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef][NixOS]] with [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]]). What exactly is provided by a flake is up to the owner entirely, although there are some "norms" that we will get to later.
+
+This historical note aside, a directory becomes a flake as soon as it contains a file called =flake.nix=, which contains an attribute set that has at least an attribute =outputs=, which must be a function returning an attribute set. Hence, the simplest possible flake is the following:
+
+  #+begin_src nix-ts :tangle no
+    {
+      outputs = _: { };
+    }
+#+end_src
+
+What is very nice about flakes is that each flake generates a corresponding =flake.lock= file the first time a nix command is called targetting it. This file exactly specifies at which revision every flake input should be pulled in. This makes flakes very nice for setting up development environments that can then be committed to a project; this enables collaborators to do [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]] which will setup a declarative environment, which is the same for every developer. This increases reproducibility greatly.
+
+That was a very dry introcution. Now, what we are usually interested in when pulling in a flake is any of the following:
+
+- modules to extend our configuration with
+- packages that are not in =nixpkgs=
+- flake templates
+- devshells
+
+  Where these things come from we will learn soon.
+
+***** Why flakes
+:PROPERTIES:
+:CUSTOM_ID: h:96d28671-8b9d-4fbc-8620-1a7d5fcec480
+:END:
+
+Flakes are currently an experimental feature in nix, although their interface has been quite stable for a while now - this is possible in part why nearly all bigger nix projects are using flakes nowadays. People like to (mistakenly) claim that it is because of flakes that we have version pinning in nix. In fact, people were doing this long before flakes were a thing using a construct that looked roughly like this:
+
+#+begin_src nix-ts :tangle no
+  let
+    let pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/0b20bf89e0035b6d62ad58f9db8fdbc99c2b01e8.tar.gz") {};
+  in
+    pkgs.mkShell {
+      buildInputs = [ pkgs.cowsay ];
+    }
+#+end_src
+
+This approach simply imports a chunk of nix code that is fetched using =fetchTarball= - and the version is pinned by the git revision. However, imagine a bigger project; even if you were to import every input like this and pass the expressions to the modules that need them, updating the inputs manually would be a chore. And even though projects like [[https://github.com/nmattia/niv][niv]] and [[https://github.com/andir/npins][npins]] exist(/ed) to help with these problems, flakes provide a uniform interface and are reasonably easy to work with, which makes this this considerably more pleasant.
+
+That being said, some people decide to work without flakes. Depending on the reasoning, I think this is totally fair, as really for the code itself they dont automatically provide a lot of extra functionality that cannot be achieved with other tools). However, some people dismiss flakes for the only reason being "they are too complex" with really is not at all true (which is what I hope to prooe to you soon!). A simple project devshell for example could very reasonably be built only from the =fetchTarball= construct I showed above.
+
+****** Channels
+:PROPERTIES:
+:CUSTOM_ID: h:2cb443a5-9de2-4ae5-8a7e-d8e96748d599
+:END:
+
+Finally and for completeness sake, a historical note on nix channels.
+
+Nix channels are one of the official mechanisms to provide package sources. They are managed manually through the cli. A channel would be given a name (like =nixpkgs=) which could then in nix code be referenced for example like:
+
+#+begin_src nix-ts :tangle no
+  { pkgs ? import <nixpkgs> {} }: ...
+#+end_src
+
+Really, this leaves it up to the caller to decide what =nixpkgs= really is, along with a few other considerations that I do not want to get into. This chapter is intentionally left short; I just want you to know how the pattern above (the =<nixpkgs>=) looks so that you know what you are working with if you encounter it in the wild.
+
+Channels are not a great tool for reproducability and I would advise against using them if possible.
+
+***** Flake arguments
+:PROPERTIES:
+:CUSTOM_ID: h:2dec2fcf-5923-4bae-9407-027dd9d917e1
+:END:
+
+Let us now talk about arguments that a flake (kind of) expects.
+
+****** Inputs
+:PROPERTIES:
+:CUSTOM_ID: h:e965faf8-5782-4720-aa44-d20d700a339c
+:END:
+
+As we already learned, a flake must provide an attribute called =outputs= (whatever that might mean at this point!). However, unless we want to build everything that our flake provides from the ground up, we probably also want to pass some libraries or build tools to it. This is done using the attribute called =inputs=. An =inputs= definition might look something like this:
+
+#+begin_src nix-ts :tangle no
+  {
+    inputs = {
+      nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+      hydra = {
+        url = "github:nixos/hydra/nix-2.30";
+        inputs.nix-eval-jobs.follows = "nix-eval-jobs";
+      };
+      nix-eval-jobs = {
+        url = "github:nix-community/nix-eval-jobs/v2.30.0";
+        flake = false;
+      };
+      toplevel.url = "./..";
+    };
+  }
+#+end_src
+
+This is a surprisingly real-world example that we can use so explain most of the important =inputs= options:
+- the most important attribute is =url=. It describes where the source should be fetched from. As you can see from the =toplevel= input, you can put as an input a path on the local filesystem. Note that by default, it is expected that every input is itself a flake - meaning, a =flake.nix= exists there which will be loaded into our flake along with its dependencies. You can also see that we set this to =false= for the =nix-eval-jobs= input. This is usually done when the target project is simply not a flake. Nix will then load in the contents of the repository as a raw filetree.
+
+However, if you go and check out [[https://github.com/nix-community/nix-eval-jobs][nix-eval-jobs]] you will see that this project /does/ have a =flake.nix=, and it is also very active; so what is going on here? In this particular case, this is done to avoid pulling in the dependencies that the =nix-eval-jobs= would bring along. Instead, the files provided by it must be then made to work using what is provided in the parent flake. This is not a common pattern, but something that is good to know.
+
+Another interesting option is the =hydra.inputs.nix-eval-jobs.follows=. Let us first talk about the general interface =<input>.inputs.<dependency>=: This structure allows to customize options for the *dependency* of a flake input. For example, we could have customized the source of the =nix-eval-jobs= dependency of =hydra= had we written =hydra.inputs.nix-eval-jobs.url = ...=. The =follows= option takes a similar approach by setting an input dependency to the same version as some other input of the parent flake (in our case, it is pinned to the =nix-eval-jobs= v2.30.0 version).
+
+When we are done defining our flake inputs, we can then decide what our flake shoud actually do.
+
+****** Outputs
+:PROPERTIES:
+:CUSTOM_ID: h:66a04339-dbc7-4d98-a763-5a9be9185f9b
+:END:
+
+As we already learned earlier, =outputs= is a function returning an attribute set. In fact, it is usually a function that takes as an argument an attribute set containing our inputs, looking roughly like this:
+
+#+begin_src nix-ts :tangle no
+  {
+    inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    outputs = inputs @ { self, nixpkgs, ... }:
+      let
+        inherit (self) outputs;
+      in
+      {
+
+        nixosConfigurations = {
+          main = nixpkgs.lib.nixosSystem {
+            modules = [ "${self}/configuration.nix" ];
+            specialArgs = {
+              inherit inputs outputs;
+            };
+          };
+        };
+      };
+  }
+#+end_src
+
+With what we learned so far, you are already able to understand most of what is going on here:
+  - outputs is a function that expects =self= and =nixpkgs= but /tolerates/ other attributes in the set, and the attribute set =inputs= can be referenced.
+  - an attribute =outputs= is inherited from the outer scope =self=, meaning =outputs = self.outputs;= (what =self= is and why we can reference the =outputs= in the same place where we are defining them I will explain shortly)
+  - the resulting attribute set holds an attribute called =nixosConfigurations= that holds an attribute called =main=, which is set by calling a function that we now do not want to get into too much.
+
+  You might (rightfully!) wonder where the =self= argument comes from. It is actually not a flake input. Instead, =self= is a special flake construct that refers to the root of the current flake, meaning all flake attributes can be accessed using =self.<attribute>=. Moreover, when using =self= as a path, it refers to the path os the current flake in the nix store. This can be used to reference files within the repository without needing relative paths (this is exactly what happenss in =self.outputs.nixosConfigurations.main.modules=: it loads in =configuration.nix=, which resides in the same directory as the =flake.nix=. We could have also written =./configuration.nix= here instead).
+
+  Another question might be what happens when we load in =self.outputs= while defining outputs. Normally that should not work? Remember that nix is a lazy language. When =outputs= is first created in the =let ... in= block, its value will be something along the lines of =outputs = <thunk>;=. That means, not all values are loaded upon instanciation, but only whenever they are needed. And if a value is needed, nix will then move on to compute that value.
+
+  Of course that does mean that we need to be careful to not introtuce circular chains of dependency. Doing that would result in what is called an =infinite recursion error=, a type of error that can be very hard to wrap one's head around. Luckily, when writing a simple config, you are not very likely to encounter it in a shape that is not rather easily solved.
+
+  Like we saw here with =nixosConfigurations= and some other outputs that we heard about earlier, there are some "standard" outputs that nix recognizes and is able to apply some defaults on. Let us quickly go over them:
+
+****** Standard flake outputs
+:PROPERTIES:
+:CUSTOM_ID: h:680b38c1-14de-4892-8840-2c82accd6827
+:END:
+
+I will now list output names and explain what they to; some outputs are what I call "system-scoped". That means they have toplevel attribute in the name of system architectures, e.g. =x86_64-linux=. I will mention when an output is system-scoped. This list is roughly ordered by importance to a NixOS beginner:
+
+- =nixosConfigurations=: A set of NixOS host configurations
+- =devShells=: *system-scoped*. A set of devshells that can be used by calling [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]]. Defaults to the devshell called =default=.
+- =checks=: *system-scoped*. Flake checks to perform when calling [[#h:b07b1776-75cd-4a40-9e71-fb00eab65c6f][nix flake check]]
+- =formatter=: *system-scoped*. Formatting package/config to use when calling [[#h:cf6cc5fa-cbaa-415a-b1d8-c6c5b7016700][nix fmt]]
+
+- =nixosModules=: A set of nixos [[#h:de7bc464-e04f-45d4-9d29-e46592535419][Modules]]. By default, when consuming one of these modules but not specifying which one, the overlay =default= will be chosen.
+- =overlays=: A set of nixpkgs [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. By default, when consuming one of these overlays but not specifying which one, the overlay =default= will be chosen.
+- =packages=: *system-scoped*. Packages that can be directly built using [[#h:fa377c74-36e5-4aea-bc39-4d3def4b67d1][nix build]]
+- =apps=: *system-scoped*. Packages that can be directly run using [[#h:9f55f619-892e-488c-936f-43962f90cde8][nix run]]
+- =templates=: A set of templates that can be initialized using =nix flake init -t <template name>=. By default, the =default= template will be chosen.
+- =legacyPackages=: *system-scoped*. An alternative to =packages= that does not provide guarantees on the structure within. An attribute here might be a package, but it could also be a package set in need of further evaluation. This is used for example in =nix flake show nixpkgs= because the number of packages in =packages= takes *very* long to evaluate. Whenever nix encounters a =legacyPackages= however, it simply displays "omitted" instead of evaluating everything within. In a way you could say =legacyPackages= contains an attribute that is closer to what the structure used by the [[#h:2cb443a5-9de2-4ae5-8a7e-d8e96748d599][Channels]] construct yields.
+- =hydraJobs=: An arbitrarily deeply nested attribute set of derivations that defines jobs that should run on a hydra build farm
+- =bundlers=: A set of bundlers (a bundler packages app for usage outside of the nix store). Will choose the =default= bundler by default
+
+- =devShell=: *system-scoped, deprecated*. A single devshell that can be used by calling [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]].
+- =overlay=: *deprecated*. A single overlay.
+- =nixosModule=: *deprecated*. A single nixos module.
+- =defaultApp=: *system-scoped, deprecated*. The app that this flake should default to. Instead, you can also define =apps.<system>.default=.
+- =defaultPackage=: *system-scoped, deprecated*. The package that this flake should default to. Instead, you can also define =packages.<system>.default=.
+- =defaultTemplates=: *deprecated*. The template that this flake should default to. Instead, you can also define =templates.default=.
+- =defaultBundler=: *deprecated*. The bundler that this flake should default to. Instead, you can also define =bundlers.default=.
+- =bundler=: *deprecated*. A single bundler.
+
+Again, you can also define other outputs (for example, a widely used output that is not recognized by nix is =homeModules=, used in, you guessed it, modules for home-manager). [[#h:b07b1776-75cd-4a40-9e71-fb00eab65c6f][nix flake check]] will simply emit a warning when it encounters such an output, but there are no other side-effects. Also, keep in mind that flake outputs are things that your flake /exposes/ to others. That means, unless you have written NixOS modules that you want to share with the world, you probably do not need a =nixosModules= output in your flake.
+
+***** References
+:PROPERTIES:
+:CUSTOM_ID: h:410e74cc-6fea-43cc-9d4a-3c88d6437760
+:END:
+
+When interacting with flakes in the CLI, you will always do it in the same style:
+
+~<reference>#<attribute path><optional: ^<outputs>>~
+
+The flake reference can be an absolute or relative path, but also a URI. It can also be an identifier in the [[#h:e6aeff2e-de6c-411c-ae24-77c2928e8e4f][Registries]]. This means that all of the following are valid (the output to stderr is needed because my flake loads some nix values per default that get printed to the command line on stderr, which org-babel does not capture. This makes the evaluator sad):
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix run n#cowsay -- hello 2>/dev/null
+  nix run github:nixos/nixpkgs#cowsay -- hello 2>/dev/null
+  nix run .#pkgs.x86_64-linux.cowsay -- hello 2>/dev/null
+  nix run /home/swarsel/.dotfiles#pkgs.x86_64-linux.cowsay -- hello 2>/dev/null
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ _______
+< hello >
+ -------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+ _______
+< hello >
+ -------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+ _______
+< hello >
+ -------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+ _______
+< hello >
+ -------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+#+end_example
+
+***** Registries
+:PROPERTIES:
+:CUSTOM_ID: h:e6aeff2e-de6c-411c-ae24-77c2928e8e4f
+:END:
+
+  All you really need to know about flake registries is that they provide a shorthand to access flake [[#h:410e74cc-6fea-43cc-9d4a-3c88d6437760][References]] easily. By default, the =nixpkgs= identifier is provided when installing nix with flakes. Additional registries can however be configured (I do this in [[#h:24c9146f-2147-4fd5-bafc-d5853e15cf12][General NixOS settings (nix config, stateVersion)]]). For example, I have configured a =n= identifier that simply mirriors the =nixpkgs= identifier, which allows me to save on some typing with most nix commands:
+
+#+begin_src bash :tangle no :exports both :results output :eval never-export
+  nix run n#cowsay -- hello
+#+end_src
+
+#+RESULTS:
+:  _______
+: < hello >
+:  -------
+:         \   ^__^
+:          \  (oo)\_______
+:             (__)\       )\/\
+:                 ||----w |
+:                 ||     ||
+
+**** Essential commands
+:PROPERTIES:
+:CUSTOM_ID: h:b06ed01d-9ed1-438c-8643-8850218a4350
+:END:
+
+Finally, here are some of the most essential nix commands. Note that there is a "legacy CLI" as well as a "new CLI", the latter of which is enabled by setting ==--experimental-features 'nix-command'== or enabling =nix.settings.experimental-features = [ "nix-command" ];=. I will only talk about the new CLI, which is meant to deprecate the legacy one. Also, these explanations assume that we are interacting with them in =flakes= (which also need to be separately enabled by appending =flakes= to the two snippets given above).
+
+***** nix shell
+:PROPERTIES:
+:CUSTOM_ID: h:403a8ebd-f094-4795-aca3-60de62c77ef9
+:END:
+
+This is a very important command. It spawns a subshell in which the commands specified are available. You can pass multiple arguments:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix shell nixpkgs#cowsay n#bonsai 2>/dev/null
+#+end_src
+
+#+RESULTS:
+
+***** nix build
+:PROPERTIES:
+:CUSTOM_ID: h:fa377c74-36e5-4aea-bc39-4d3def4b67d1
+:END:
+
+This is the essential command to trigger a nix build of stuff. Anything that is a =derivation= can be built. Typically, these are the =packages= and =legacyPackages= outputs of a flake; for these outputs, the full path does not need to be specified. For example, to build the very simple [[#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1][t2ts]] tool from this flake:
+
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix build .#ts2t 2>/dev/null && echo success
+#+end_src
+
+#+RESULTS:
+: success
+
+However, you can also specify the full path
+
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix build .#packages.x86_64-linux.ts2t 2>/dev/null && echo success
+#+end_src
+
+#+RESULTS:
+: success
+
+What is often useful is to build a =nixosConfiguration= using =nix build= prior to applying it. This can be done using for example the [[#h:a320569e-7bf0-4552-9039-b2a8e0939a12][Bakery (Lenovo ThinkPad)]] host:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nixosConfigurations.bakery.config.system.build.toplevel 2>/dev/null && echo success
+#+end_src
+
+#+RESULTS:
+: success
+
+***** nix run
+:PROPERTIES:
+:CUSTOM_ID: h:9f55f619-892e-488c-936f-43962f90cde8
+:END:
+
+This is the command that allows you to run a command directly. These apps are per default defined under the =apps= output, and that again allows to run them directly instead of specifying the full path. For example to run the [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] tool that I expore under [[#h:52e1fae8-0e8c-4be6-a6ce-758ada652dd3][Apps]]:
+
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix run s#swarsel-bootstrap -- --help 2>/dev/null
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+Remotely installs SwarselSystem on a target machine including secret deployment.
+
+USAGE: /nix/store/mwa8qhmhzfx1jrjw3kzynfhf7ynh2mgm-swarsel-bootstrap/bin/swarsel-bootstrap -n <target_hostname> -d <target_destination> [OPTIONS]
+
+ARGS:
+  -n <target_hostname>                    specify target_hostname of the target host to deploy the nixos config on.
+  -d <target_destination>                 specify ip or url to the target host.
+  -a <targeit_arch>                       specify the architecture of the target host.
+                                          target during install process.
+
+OPTIONS:
+  -u <target_user>                        specify target_user with sudo access. nix-config will be cloned to their home.
+                                          Default='swarsel'.
+  --port <ssh_port>                       specify the ssh port to use for remote access. Default=22.
+  --debug                                 Enable debug mode.
+  --no-disko-deps                         Upload only disk script and not dependencies (for use on low ram).
+  -h | --help                             Print this help.
+#+end_example
+
+***** nix develop
+:PROPERTIES:
+:CUSTOM_ID: h:c22f65c4-4c0d-4aea-9b70-d34c295764f0
+:END:
+
+This command spins up a development shell in the current directory, provided that the passed nix expression exposes a =devshell=:
+
+If the current directory has such a =flake.nix=, you can simply do
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix develop 2>/dev/null
+#+end_src
+
+#+RESULTS:
+
+
+Otherwise you can pass the path (or any flake reference); again, per default the =default= devshell will be loaded. If you need another one, use the syntax we discussed above. For example, here is how to use a path in the nix store, loading the =deploy= devshell:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix develop swarsel#deploy 2>&1
+#+end_src
+
+#+RESULTS:
+
+***** nix eval
+:PROPERTIES:
+:CUSTOM_ID: h:2786825a-5a6d-4b04-9bdf-6b69a6916ad8
+:END:
+
+This command evaluates the nix expression given to it:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix eval .#nixosConfigurations.pyramid.config.networking.hostName 2>/dev/null
+#+end_src
+
+#+RESULTS:
+: "pyramid"
+
+***** nix repl
+:PROPERTIES:
+:CUSTOM_ID: h:e525f73a-8920-4628-8bd7-cdcc3c425346
+:END:
+
+This starts the nix REPL ("Read Evaluate Print Loop"), an interactive environment for evaluating nix expressions for the given environment. Usually you will want to start this pointing to your flake like:
+
+#+begin_src bash :tangle no :exports both :results output :eval never-export
+  nix repl . 2>/dev/null
+#+end_src
+
+#+RESULTS:
+: Nix 2.30.3
+: Type :? for help.
+: Using saved setting for 'extra-substituters = https://nix-community.cachix.org' from ~/.local/share/nix/trusted-settings.json.
+: Using saved setting for 'extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=' from ~/.local/share/nix/trusted-settings.json.
+: Loading installable 'git+file:///home/swarsel/.dotfiles#'...
+: Added 25 variables.
+: apps, checks, darwinConfigurations, darwinConfigurationsMinimal, devShells, diskoConfigurations, formatter, globals, guestConfigurations, homeConfigurations, homeLib, homeModules, legacyPackages, lib, nixOnDroidConfigurations, nixosConfigurations, nixosConfigurationsMinimal, nixosModules, nodes, overlays
+: ... and 5 more; view with :ll
+:
+
+In there you get tab completion and have all functions available that you can use in your flake. This is my preferred command to get insight into what is happening in my config if some error is not obvious.
+
+***** nix fmt
+:PROPERTIES:
+:CUSTOM_ID: h:cf6cc5fa-cbaa-415a-b1d8-c6c5b7016700
+:END:
+
+This uses the formatter that is defined in the passed flakes =formatter= output and formats the repository accordingly.
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix fmt 2>&1
+#+end_src
+
+#+RESULTS:
+: Using saved setting for 'extra-substituters = https://nix-community.cachix.org' from ~/.local/share/nix/trusted-settings.json.
+: Using saved setting for 'extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=' from ~/.local/share/nix/trusted-settings.json.
+: traversed 582 files
+: emitted 387 files for processing
+: formatted 0 files (0 changed) in 24ms
+
+***** nix hash
+:PROPERTIES:
+:CUSTOM_ID: h:092fe295-4211-4b19-a071-53b5f3061a9b
+:END:
+
+This command allows us to convert between different hasn algorithms that are used by nix. The interesting command for us is =nix hash convert=, which is used like
+
+#+begin_src bash :tangle no :exports both :results output
+  nix hash convert --from base16 --hash-algo sha1 --to nix32 bb0d59cfdddd37f62fee1e214be3467acffe58df
+#+end_src
+
+#+RESULTS:
+: vxcgxkvs8viln88yxqpzcdyxvp7mj3dv
+
+The supported formats for =--from= are: =base16=, =nix32=, =base64=, and =sri=. Per default, nix will try to choose the correct format from the input.
+The supported formats for =--to= are: =base16=, =nix32=, =base64=, and =sri=. The default is =sri=.
+The supported hashing algorithms for =--hash-algo= are: =blake3=, =md5=, =sha1=, =sha256=, and =sha512=. For SRI hashes, this can be omitted.
+
+***** nix flake
+:PROPERTIES:
+:CUSTOM_ID: h:17a08338-74c8-477e-ad8a-866267eef0c8
+:END:
+
+This is the main command that we use to interact with our flake. It has several subcommand, but only a few really interest us:
+
+****** nix flake update
+:PROPERTIES:
+:CUSTOM_ID: h:10205ee6-475b-4785-9d3a-cefd5a4595c0
+:END:
+
+This updates your flake inputs. That means, it will fetch the latest revisions from the =inputs.<name>= source that we discussed in [[#h:2dec2fcf-5923-4bae-9407-027dd9d917e1][Flake arguments]]. By default, all flake inputs will be updates:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+
+  nix flake update
+#+end_src
+
+#+RESULTS:
+
+It is also possible to only update specific inputs:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+
+  nix flake update home-manager
+#+end_src
+
+#+RESULTS:
+
+To lock an input from ever updating, a nice trick is to pin it to a specific revision in the inputs' source url like I do in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton (inputs)]] for the =nixpkgs-kernel= input.
+
+****** nix flake check
+:PROPERTIES:
+:CUSTOM_ID: h:b07b1776-75cd-4a40-9e71-fb00eab65c6f
+:END:
+
+This evaluates the entire flake and runs its tests, if there are any.
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+
+  nix flake check
+#+end_src
+
+#+RESULTS:
+
+****** nix flake show
+:PROPERTIES:
+:CUSTOM_ID: h:54e532ec-0056-4cd1-b257-aac17ccd944b
+:END:
+
+This lists all outputs of the passed flake. The default is the flake in the current directory. This can be useful to check whether outputs are configured correctly or which templates are exposed by a flake.
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+
+  nix flake show . 2>/dev/null
+#+end_src
+
+#+RESULTS:
+
+****** nix flake init
+:PROPERTIES:
+:CUSTOM_ID: h:a084fd59-fba1-4661-9807-cd0e06c21f2b
+:END:
+
+This initializes a new flake. Per default it chooses the simple flake that you might have seen before if you ever tried this command. After you already have your own config flake, this command is mainly useful to create a project flake from a template. If you have a flake that exposes =templates= as outputs, you can list them as showen in [[#h:54e532ec-0056-4cd1-b257-aac17ccd944b][nix flake show]] and then initialize the flake using:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+
+  nix flake init -t .#<template name>
+#+end_src
+
+Keep in mind that you are free in choosing the flake reference.
+
+
+*** nix package manager
+:PROPERTIES:
+:CUSTOM_ID: h:f4fa6a46-e016-48f8-9ead-608b739c706a
+:END:
+
+In contrast to the [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]], there really is not much important stuff that you need to know about the nix package manager. Just keep in mind that the nix package manager is the tool that the [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]] was invented for in the first place. It aims to escape the dependancy problems that conventional package managers bring by the mechanisms that we learned about earlier.
+
+In practice, you should never need to install a package with the nix package manager imperatively. For things you only need once you can resort to [[#h:403a8ebd-f094-4795-aca3-60de62c77ef9][nix shell]] or [[#h:9f55f619-892e-488c-936f-43962f90cde8][nix run]] or even [[https://github.com/nix-community/comma][comma]]. Otherwise you should probably make it available in your config or in a devshell.
+
+*** nixpkgs
+:PROPERTIES:
+:CUSTOM_ID: h:f4e89635-e006-4c41-a545-d4b56c7ac293
+:END:
+
+Nixpkgs is the name of the community project that provides loads of packages for different architectures and is the main building block that [[#h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef][NixOS]] builds upon.
+
+The main way that we as users interact with nixpkgs (unless we contribute to it) is that we add it as one of the [[#h:e965faf8-5782-4720-aa44-d20d700a339c][Inputs]] of our flake. That will provide the majority of packages and modules that we will need to build our system. However, there are a few things that deserves a special mention:
+
+**** Configuring nixpkgs
+:PROPERTIES:
+:CUSTOM_ID: h:8c8e9bd2-c00e-44f6-a142-78756341494c
+:END:
+
+The main way of configuring nixpkgs is the =nixpkgs.config= option. There we can configure what packages we want to use. Some flags that we might want to set are:
+
+- ~{ allowUnfree = true; }=~ to allow packages with an unfree license to be built
+- ~{ permittedInsecurePackages = [ <package name> ]; }~ to selectively allow packages that are marked as insecure to be built
+- ~{ cudaSupport = true; }=~ to build packages with CUDRA support by default
+- ~{ rocmSupport = true; }=~ to build packages with ROCm support by default
+
+**** Overrides
+:PROPERTIES:
+:CUSTOM_ID: h:3bc8d573-b38c-493f-9545-5f239bcc6294
+:END:
+
+A simple way to modify packages that are already in nixpkgs is the use of overrides. Two main override methods exist:
+
+- =override= for overriding the arguments passed to a function
+- =overrideAttrs= for overriding the attribute set passed to =stdenv.mkDervivation=
+
+  =overrideAttrs= is used as follows:
+
+#+begin_src nix-ts :tangle no
+  pkgs.<package>.overrideAttrs (finalAttrs: previousAttrs: { pname = previousAttrs.pname + "-new"; })
+#+end_src
+
+in the wild, this can be used for example directly when installing packages:
+
+#+begin_src nix-ts :tangle no
+  { pkgs, ... }: {
+    environment.systemPackages = [
+      (pkgs.hello.overrideAttrs (finalAttrs: previousAttrs: { pname = previousAttrs.pname + "-new"; }))
+    ];
+  }
+#+end_src
+
+For an explanation to =override= and the =overrideAttrs= parameters, read on.
+
+**** Overlays
+:PROPERTIES:
+:CUSTOM_ID: h:14be98e8-94ca-4ecb-995e-8e7131a8eb32
+:END:
+
+Other than that, we can also extend nixpkgs with packages that it does not normally ship with; this is done using a concept called =overlays=. An overlay is defined as such
+
+#+begin_src nix-ts :tangle no
+  final: prev: { newVesktop = prev.vesktop.override { withSystemVencord = true; }; }
+#+end_src
+
+This overlay will add a =newVesktop= package with a vesktop package that has the =withSystemVencord= flag set to true to nixpkgs when applied (this is due to =override= overriding the arguments of the =vesktop package=; such flags can be found by checking out the source of the package. To find that source. you can use the [[https://search.nixos.org/packages?query=][nix package search]] to search for a package, and then click the "source" button, which for the vesktop example yields [[https://github.com/NixOS/nixpkgs/blob/2e21f6c5797fcccfc1e8eced873aea8401a71135/pkgs/by-name/ve/vesktop/package.nix][this GitHub page]]. There you will also see that =withSystemVencord= defaults to =false=.). In this case of course, this has the same effect as simply using an override, so this is better used for adding new packages.
+
+When installing =newVesktop afterwards=, we will get a =vekstop= that will have system vencord enabled. Overlays can also be added by referencing a [[#h:66a04339-dbc7-4d98-a763-5a9be9185f9b][flake overlay output]]. Here is an example of how to use both of these methods in practise:
+
+  #+begin_src nix-ts :tangle no
+    { outputs, inputs, ... }:
+    {
+      nixpkgs.overlays = [
+        outputs.overlays.this
+        inputs.someExternalFlake.overlays.default
+        (final: prev: { vesktop = prev.vesktop.override { withSystemVencord = true; }; })
+      ];
+    }
+#+end_src
+
+This will add the previous =vesktop= override as well as the =this= overlay from our flake (keep in mind that =outputs= refers to the outputs that our flake exposes) and the default overlay from a flake input called =someExternalFlake=.
+
+Also keep the parentheses around the inline overlay in mind; we need to pass whole elements to the list, so we use parentheses to evaluate a nix expression. This is the standard equivalent to the =${}= approach that we took with strings, as you remember.
+
+*** NixOS
+:PROPERTIES:
+:CUSTOM_ID: h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef
+:END:
+
+NixOS is the name of the linux distribution that relies on the [[#h:f4fa6a46-e016-48f8-9ead-608b739c706a][nix package manager]]. NixOS also relies heavily on [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]] to provide packages, library functions, and modules. The one part this really important to understand here is the module system.
+
+**** The module system
+:PROPERTIES:
+:CUSTOM_ID: h:8067f8fc-92d7-46af-b1be-e8a337d7a953
+:END:
+
+The module system can be thought of a nix library acts as an extension to nix in NixOS. It much enhances the ways in which we can set values within "the configuration" - for example, it becomes possible to set something like =environment.systemPackages= in two files, and both set values will be merged. Also, to these so-called "options" we can easily add type checking.
+
+***** Modules
+:PROPERTIES:
+:CUSTOM_ID: h:de7bc464-e04f-45d4-9d29-e46592535419
+:END:
+
+This provides a broad overview over [[https://github.com/NixOS/nixpkgs/blob/5c7a370a208d93d458193fc05ed84ced0ba7f387/lib/modules.nix][the module system]].
+
+On a very high level, a module is just a function returning an attribute set. Hence the simplest possible module should be:
+
+  #+begin_src nix-ts :tangle no
+    _: { }
+#+end_src
+
+Actually, because of syntactic sugar, the module arguments can be omitted if they are not accessed at all, so the simplest simplest module is actually:
+
+  #+begin_src nix-ts :tangle no
+    { }
+#+end_src
+
+but that is just a note for completeness sake.
+
+In the module systems, the above attribute sets supports three main options:
+
+- =imports=, which allows for importing further files
+- =options=, for declaring Nixoptions that should be added to the module system
+- =config=, for setting said options.
+
+****** imports
+:PROPERTIES:
+:CUSTOM_ID: h:2982102b-1cf7-4be5-b267-348f19ef60bd
+:END:
+
+=imports= is a simple list that takes paths to other nix files and adds them to be evaluated by the module system:
+
+
+  #+begin_src nix-ts :tangle no
+    _:
+    {
+      imports = [
+        ./configuration.nix
+        ./extras
+      ]
+    }
+#+end_src
+
+
+The module system will pass an attribute as an argument to this function. When a module requires *no* args from the outer scope. As soon as you pass any argument however, you also need to pass the ellipsis =...= to the attribute set. This is because the module systems always adds the following arguments to each module contained within:
+
+- =lib= for library functions
+- =pkgs= the set of packages of the systems architecture
+- =options=, the option declarations. Note that you only need to import this if you need the access the option declarations themselves. You will not need this for declaring options in a moduls - i.e. you will only need to add this *very* rarely
+- =config=, the option definitions - you need this whenever you want to access configuration parts that has been defined somewhere
+- the set of values passed to =specialArgs= in the call to =nixpkgs.lib.nixosSystem=. To that, everything should be added that is needed to be evaluated when resolving the model structure (e.g. imports)
+  - =specialArgs= includes =modulesPath=, which can be used to import =nixpkgs= modules without knowing their location in the nix store
+    - this happens by default in =hardware-configuration.nix=:
+
+  #+begin_src nix-ts :tangle no
+    { modulesPath, ... }:
+    {
+      imports =
+        [
+          (modulesPath + "/installer/scan/not-detected.nix")
+        ];
+    };
+#+end_src
+Remember now what we said above: here we now need to pass the ellipsis =...=, only ={ modulesPath }= would error out because of the other passed arguments. =_= works because that accepts /any/ value.
+
+- any values set under =_module.args= (sometimes you might see =extraArgs=; that has been deprecated in favor of =_module.args=)
+
+If a directory is passed to =imports=, nix will look for a file called =default.nix= in the passed directory.
+
+****** options
+:PROPERTIES:
+:CUSTOM_ID: h:311fd85d-1d89-4b04-818a-139210f1c518
+:END:
+
+Options are *declared* (not defined) using =lib.mkOption= (or one of its derivatives, like =lib.mkEnableOption=, which creates a boolean option defaulting to =false=)
+
+  #+begin_src nix-ts :tangle no
+    { lib, ... }:
+    {
+      options.myBool = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "An example of a boolean option definition.";
+      };
+    }
+#+end_src
+
+****** config
+:PROPERTIES:
+:CUSTOM_ID: h:e868b977-c258-4a4d-9995-1d6193827bff
+:END:
+
+=config= is what we use to actually set the values for which we declared options somewhere. Note that an option does not need to be declared in the same file where it is set (in fact, option declarations need to be unique across the entire module system). We call the process of setting a value under =config.<name>= an *option definition*.
+
+We can extend our module from [[#h:311fd85d-1d89-4b04-818a-139210f1c518][options]]:
+
+  #+begin_src nix-ts :tangle no
+    { lib, ... }:
+    {
+      options.myBool = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "An example of a boolean option definition.";
+      };
+      config.myBool = false;
+    }
+    #+end_src
+
+This will define =config.myBool= to be =false=, which can now be referenced in another file under =config.myBool=.
+
+If a file does not use either =imports= or =options= but only =config=, you can omit the =config= attribute:
+
+  #+begin_src nix-ts :tangle no
+    { pkgs, ... }:
+    {
+      environment.systemPackages = [ pkgs.cowsay ];
+    }
+    #+end_src
+
+If we would however declare options in the same file, we would need to write:
+
+  #+begin_src nix-ts :tangle no
+    { lib, pkgs, ... }:
+    {
+      options.myDo = lib.mkEnableOption "do it"; # this expects a string that will be prepended by "whether to" and appended a dot
+      config.environment.systemPackages = [ pkgs.cowsay ];
+    }
+    #+end_src
+
 
 * flake.nix
 :PROPERTIES:
@@ -1255,7 +1528,6 @@ Nowadays, I use flake-parts to manage my flake. It allows me to conveniently spl
 
 - =imports= are files pulled in to build the flake configuration (similar to the imports in the module system)
 - =systems= defines the architectures that the flake should be provided for - I go here for the four "main" architectures, although true support is only provided for linux systems (see [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] for the main reason)
-
 ** flake.nix skeleton (inputs)
 :PROPERTIES:
 :CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
@@ -1351,7 +1623,7 @@ A short overview over each input and what it does:
 
   At the moment I am not using the full range of modules, but my usage keeps increasing steadily. Using this module forced me to make some adjustments in my config, namely exposing the =nodes= output in [[#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02][Hosts]].
 - [[https://github.com/nix-community/dns.nix][dns.nix]]
-  This adds a module that helps with creating zone files (like [[#h:dc1dbc54-46f7-406d-a551-527e97439614][nsd (dns) - site1]]). This flake was competing with [[https://github.com/Janik-Haag/nixos-dns/][NixOS-DNS]] for my favour - while the latter adds many nice utilities that generage records straight from a host configuration, I prefer to do this myself using the [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] + [[#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5][Share configuration between nodes (automatically active)]] systems. In the end, I just tried out dns.nix without giving NixOS-DNS a chance and it has been working great, but I believe NixOS-DNS still deserves a mention here, as it would have been a great fit as well, most likely.
+  This adds a module that helps with creating zone files (like [[#h:dc1dbc54-46f7-406d-a551-527e97439614][nsd (dns) - site1]]). This flake was competing with [[https://github.com/Janik-Haag/nixos-dns/][NixOS-DNS]] for my favour - while the latter adds many nice utilities that generage records straight from a host configuration, I prefer to do this myself using the [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] + [[#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5][Share sconfiguration between nodes (automatically active)]] systems. In the end, I just tried out dns.nix without giving NixOS-DNS a chance and it has been working great, but I believe NixOS-DNS still deserves a mention here, as it would have been a great fit as well, most likely.
 - [[https://github.com/Infinidoge/nix-minecraft][nix-minecraft]]
   This adds a module that makes it easier to manage (modded) minecraft servers. At the moment, it does not really work with Forge 1.20.1 (which is what my server is running), so I am not making full use of it right now, but I keep close watch on it every day.
 - [[https://gitlab.com/simple-nixos-mailserver/nixos-mailserver][nixos-mailserver]]
@@ -1887,8 +2159,8 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
  - =mkHalfHostsForArch= generates attribute sets for every halfHost found through =readHostDirs=
  - =mkHostsForArch= does the same for full NixOS configurations
  - =mkConfigurationsPerArch= is the wrapper that calls =mkHalfHostsForArch= or =mkHostsForArch= depending on the config it is called for, holding all configurations in principal
- - =halfConfigurationsPerArch== returns all halfConfigurations of a certain type (android or home-manager only)
- - =ConfigurationsPerArch== does the same for full NixOS systems (NixOS or darwin). These can further be specialized by passing in the corresponding =minimal= arg that is used during bootstrapping.
+ - =halfConfigurationsPerArch= returns all halfConfigurations of a certain type (android or home-manager only)
+ - =ConfigurationsPerArch= does the same for full NixOS systems (NixOS or darwin). These can further be specialized by passing in the corresponding =minimal= arg that is used during bootstrapping.
 
 #+begin_src nix-ts :tangle nix/hosts.nix
   { self, inputs, ... }:
@@ -2361,7 +2633,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
 
 #+end_src
 
-** Devshell (checks)
+** Devshell (checks/pre-commit-hooks)
 :PROPERTIES:
 :CUSTOM_ID: h:4d0548db-99b2-4e07-b762-6d86fbb26d4c
 :END:
@@ -2931,6 +3203,111 @@ Hence, what I instead do is to define another output =nixosConfigurationsMinimal
 
 This holds most of the NixOS side of configuration.
 
+** Manual steps when setting up a new machine
+:PROPERTIES:
+:CUSTOM_ID: h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a
+:END:
+
+In the [[#h:a86fe971-f169-4052-aacf-15e0f267c6cd][Introduction (no code)]], I mentioned that this is a nearly fully declarative config. In fact, most client configs are in one way or another not fully declarative. I use oneshotting systemd services + sentinel files for most such tasks (which makes them declarative!), but some of them I would rather perform manually once. This mainly concerns work related things.
+
+Whenever I encounter a configuration bit that needs manual steps, I use a [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]] to tangle that bit of information into a central place (here). I discern between the following scenarios:
+  - =setup=: Used in a standard NixOs + home-manager deployment
+  - =worksetup=: Stuff to be done only on work machines
+  - =homemanageronlysetup=: Steps that are needed only on machines that are not running NixOs.
+
+#+begin_src markdown :noweb yes :exports results :results html
+  These steps are required when setting up a normal NixOS host:
+
+  <<setup>>
+
+  If the new machine is a work machine, these steps are additionally needed:
+
+  <<worksetup>>
+
+  If the new machine is home-manager only, perform these steps:
+
+  <<homemanageronlysetup>>
+#+end_src
+
+#+RESULTS:
+#+begin_export html
+These steps are required when setting up a normal NixOS host:
+
+- setup yubikey (automatic yubikey enrollment is not yet supported by `disko`):
+  - `systemd-cryptenroll --fido2-device=auto /dev/<device, e.g. 'nvme0n1p2'>`
+
+If the new machine is a work machine, these steps are additionally needed:
+
+- setup the work VPN:
+  - using the laptop certificate `.pem` as User cert and private key (CA cert: none)
+  - vpn gateway is found in `nixosConfig.repo.secrets.local.work.vpnGateway`
+- setup gpgsm for signing of mails using S/MIME:
+  - `gpgsm --import ~/Certificates/<certname>.p12`
+  - `gpgsm --import ~/Certificates/harica-root.pem`
+  - `gpgsm --import ~/Certificates/harica-intermediate.pem`
+  - `gpgsm --list-keys --with-validation "HARICA Client RSA Root CA 2021"`
+    - trust the certificate and set passphrase
+- setup pizauth for microsoft mail sync (account names are possibly `uni` and `work`):
+  - `pizauth auth <account name, e.g. 'work'>`
+  - `pizauth dump > ~/.pizauth.state`
+
+If the new machine is home-manager only, perform these steps:
+
+- (Optional) Install openssh-server
+- Set hostname to the name specified in the home-manager configuration
+- Install nix, either:
+  - (if upgrading existing nix) Install nix version matching with version that `nix-plugins` is compiled against: `nix-env --install --file '<nixpkgs>' cacert -I nixpkgs=channel:nixpkgs-unstable --attr nixVersions.nix_x_yy`
+  - (or installing nix freshly):
+    - Grab the link to the install script of the needed nix version from https://releases.nixos.org/?prefix=nix, e.g. https://releases.nixos.org/nix/nix-2.30.1/install
+    - `bash <(curl -L https://releases.nixos.org/nix/nix-x-yy-y/install) --daemon`
+- add the following to /etc/nix/nix.conf to become a trusted user: `trusted-users = @wheel root swarsel`
+- For the first build:
+  1) Clone dotfile repo & change into it
+  2) `nix --extra-experimental-features 'nix-command flakes' develop`
+  3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
+#+end_export
+
+** TODO Current issues
+:PROPERTIES:
+:CUSTOM_ID: h:b562adaf-536c-4267-88a5-026d8a0cda61
+:END:
+
+Besides the manual steps outlined above, sometimes things break when I update this flake. The fix, for me, is most of the times one of these two:
+  - instead of the broken package, use the package from the latest stable nixpkgs release where the package is still functoning (this is why I pull all of these in as inputs)
+  - if the broken component is critical, I perform manual patches/overrides.
+
+In order to keep track of these changes, I gather them here in a similar style to what you saw in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]. I simply prefix them with the date and check them after a while to see if things got better. TODO: this list is not comprehensive probably
+
+#+begin_src markdown :noweb yes :exports results :results html
+  Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
+
+  <<fixes>>
+#+end_src
+
+#+RESULTS:
+#+begin_export html
+Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
+
+- 202501102:
+  - flake:
+    - emacs-overlay:
+      - : version pinned because emacsclient is currently broken on latest
+    - niri-flake:
+      - currently not using the sugared version of screenshot-[,window], as it is currently broken
+  - home-manager:
+    - emacs-tramp:
+      - using stable version in extraPackages (broken in unstable)
+      - :ensure nil in emacs tramp settings to use package in extraPackages
+    - emacs-calfwL
+      - pinned to version not in nixpkgs (is in latest emacs-overlay, but that is broken)
+    - vesktop:
+      - running stable version (broken in unstable)
+    - batgrep:
+      - running stable version (broken in unstable)
+    - swayosd:
+      - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
+#+end_export
+
 ** System specific configuration
 :PROPERTIES:
 :CUSTOM_ID: h:88bf4b90-e94b-46fb-aaf1-a381a512860d
@@ -3259,6 +3636,8 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:25115a54-c634-4896-9a41-254064ce9fcc
 :END:
 
+=dcdebugmask= enums: https://docs.kernel.org/gpu/amdgpu/driver-core.html#c.DC_DEBUG_MASK
+
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/pyramid/hardware-configuration.nix
   { config, lib, pkgs, modulesPath, ... }:
   {
@@ -3288,7 +3667,20 @@ My work machine. Built for more security, this is the gold standard of my config
       # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
       binfmt.emulatedSystems = [ "aarch64-linux" ];
       initrd = {
-        availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
+        availableKernelModules = [
+          "nvme"
+          "xhci_pci"
+          "thunderbolt"
+          "usb_storage"
+          "cryptd"
+          "usbhid"
+          "sd_mod"
+          "r8152"
+          "drm"
+          "drm_kms_helper"
+          "ttm"
+          "gpu_sched"
+        ];
         # allow to remote build on arm (needed for moonside)
         kernelModules = [ "sg" ];
         luks.devices."cryptroot" = {
@@ -3299,7 +3691,7 @@ My work machine. Built for more security, this is the gold standard of my config
         };
       };
 
-      kernelModules = [ "kvm-amd" ];
+      kernelModules = [ "amdgpu" "kvm-amd" ];
       kernelParams = [
         # deep sleep is discontinued by amd
         # "mem_sleep_default=deep"
@@ -3749,35 +4141,35 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselmodules.server = {
       diskEncryption = lib.mkForce false;
-      nginx = true; # for php stuff
-      acme = false; # cert handled by proxy
-      wireguard = true;
+      # nginx = true; # for php stuff
+      # acme = false; # cert handled by proxy
+      # wireguard = true;
 
-      nfs = true;
-      kavita = true;
-      restic = true;
-      jellyfin = true;
-      navidrome = true;
-      spotifyd = true;
-      mpd = true;
-      postgresql = true;
-      matrix = true;
-      nextcloud = true;
-      immich = true;
-      paperless = true;
-      transmission = true;
-      syncthing = true;
-      grafana = true;
-      freshrss = true;
-      kanidm = true;
-      firefly-iii = true;
-      koillection = true;
-      radicale = true;
-      atuin = true;
-      forgejo = true;
-      ankisync = true;
-      homebox = true;
-      opkssh = true;
+      # nfs = true;
+      # kavita = true;
+      # restic = true;
+      # jellyfin = true;
+      # navidrome = true;
+      # spotifyd = true;
+      # mpd = true;
+      # postgresql = true;
+      # matrix = true;
+      # nextcloud = true;
+      # immich = true;
+      # paperless = true;
+      # transmission = true;
+      # syncthing = true;
+      # grafana = true;
+      # freshrss = true;
+      # kanidm = true;
+      # firefly-iii = true;
+      # koillection = true;
+      # radicale = true;
+      # atuin = true;
+      # forgejo = true;
+      # ankisync = true;
+      # homebox = true;
+      # opkssh = true;
     };
 
     networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "enp3s0" ];
@@ -3847,20 +4239,21 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:dc2233df-cd78-43cc-bb45-57568a83fb24
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/default.nix
-  { self, inputs, lib, config, minimal, nodes, globals, ... }:
+  { self, inputs, lib, config, minimal, nodes, globals, confLib, ... }:
   {
 
     imports = [
       ./hardware-configuration.nix
       ./disk-config.nix
 
+      "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
       "${self}/modules/nixos/optional/microvm-host.nix"
     ];
 
     topology.self = {
       interfaces = {
-        "eth1" = { };
-        "eth2" = { };
+        "lan" = { };
+        "bmc" = { };
       };
     };
 
@@ -3881,9 +4274,36 @@ This is my main server that I run at home. It handles most tasks that require bi
       isLinux = true;
       isNixos = true;
       isSwap = false;
+      writeGlobalNetworks = false;
       rootDisk = "/dev/disk/by-id/ata-TS128GMTS430S_H537280456";
-      withMicroVMs = false;
-      server.localNetwork = "lan";
+      withMicroVMs = true;
+      localVLANs = [ "services" "home" ];
+      server = {
+        wireguard.interfaces = {
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+        };
+        restic = {
+          bucketName = "SwarselWinters";
+          paths = [
+            "/Vault/data/paperless"
+            "/Vault/data/koillection"
+            "/Vault/data/postgresql"
+            "/Vault/data/firefly-iii"
+            "/Vault/data/radicale"
+            "/Vault/data/matrix-synapse"
+            "/Vault/Eternor/Paperless"
+            "/Vault/Eternor/Bilder"
+            "/Vault/Eternor/Immich"
+          ];
+        };
+      };
     };
 
   } // lib.optionalAttrs (!minimal) {
@@ -3892,35 +4312,34 @@ This is my main server that I run at home. It handles most tasks that require bi
       server = true;
     };
 
-    microvm.vms =
-      let
-        mkMicrovm = guestName: {
-          ${guestName} = {
-            backend = "microvm";
-            autostart = true;
-            modules = [
-              ./guests/${guestName}.nix
-              {
-                node.secretsDir = ./secrets/${guestName};
-              }
-            ];
-            microvm = {
-              system = "x86_64-linux";
-              # baseMac = config.repo.secrets.local.networking.interfaces.lan.mac;
-              # interfaces.vlan-services = { };
-            };
-            specialArgs = {
-              inherit (config) nodes globals;
-              inherit lib;
-              inherit inputs minimal;
-            };
-          };
-        };
-      in
-      lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-        { }
-        // mkMicrovm "guest1"
-      );
+    swarselmodules.server = {
+      restic = true;
+      opkssh = true;
+    };
+
+    guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+      { }
+      // confLib.mkMicrovm "kavita"
+      // confLib.mkMicrovm "jellyfin"
+      // confLib.mkMicrovm "audio"
+      // confLib.mkMicrovm "postgresql"
+      // confLib.mkMicrovm "matrix"
+      // confLib.mkMicrovm "nextcloud"
+      // confLib.mkMicrovm "immich"
+      // confLib.mkMicrovm "paperless"
+      // confLib.mkMicrovm "transmission"
+      // confLib.mkMicrovm "storage"
+      // confLib.mkMicrovm "monitoring"
+      // confLib.mkMicrovm "freshrss"
+      // confLib.mkMicrovm "kanidm"
+      // confLib.mkMicrovm "firefly"
+      // confLib.mkMicrovm "koillection"
+      // confLib.mkMicrovm "radicale"
+      // confLib.mkMicrovm "atuin"
+      // confLib.mkMicrovm "forgejo"
+      // confLib.mkMicrovm "ankisync"
+      // confLib.mkMicrovm "homebox"
+    );
 
   }
 
@@ -4089,30 +4508,1026 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:5e571d89-6590-4aa4-a5f4-5c871683d09b
 :END:
-****** Guest 1
+****** Kavita
 :PROPERTIES:
-:CUSTOM_ID: h:b9af4b1c-f35a-48a5-afa7-030c2be9c808
+:CUSTOM_ID: h:14a705ff-1924-41da-a6f8-1537e2f5bfb6
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/guest1/default.nix
-  { self,lib, minimal, ... }:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/kavita/default.nix
+  { self, config, lib, minimal, ... }:
   {
     imports = [
-      "${self}/modules/nixos/optional/microvm-guest.nix"
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
-      info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
     };
+
 
   } // lib.optionalAttrs (!minimal) {
 
-    swarselprofiles = {
-      server = false;
+    microvm = {
+      mem = 1024 * 1;
+      vcpu = 1;
     };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      kavita = true;
+    };
+
+  }
+
+#+end_src
+
+****** Jellyfin
+:PROPERTIES:
+:CUSTOM_ID: h:84c85e0f-dcbc-4d2e-bc5c-2f5615b67450
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/jellyfin/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      jellyfin = true;
+    };
+
+  }
+
+#+end_src
+
+****** Audio
+:PROPERTIES:
+:CUSTOM_ID: h:dd59a022-e05e-488f-afdd-766de3814f1e
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/audio/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
 
     microvm = {
       mem = 1024 * 4;
       vcpu = 2;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      navidrome = true;
+      spotifyd = true;
+      mpd = true;
+    };
+
+  }
+
+#+end_src
+
+****** Postgresql
+:PROPERTIES:
+:CUSTOM_ID: h:4dee4e22-33b2-4e6a-b0ab-91061a4efffa
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/postgresql/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      postgresql = true;
+    };
+
+  }
+
+#+end_src
+
+****** Matrix
+:PROPERTIES:
+:CUSTOM_ID: h:1ab43f9c-f32d-4c7c-85a5-b07bd5172112
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/matrix/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 3;
+      vcpu = 2;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      matrix = true;
+    };
+
+  }
+
+#+end_src
+
+****** Nextcloud
+:PROPERTIES:
+:CUSTOM_ID: h:3de0bfe4-0d9c-4fb8-9289-9910516652a8
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/nextcloud/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 3;
+      vcpu = 2;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      nextcloud = true;
+      nginx = true;
+    };
+
+  }
+
+#+end_src
+
+****** Immich
+:PROPERTIES:
+:CUSTOM_ID: h:e6b7438f-6487-4bd4-9a3a-d0853d5d2b7b
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/immich/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 8;
+      vcpu = 8;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      immich = true;
+    };
+
+  }
+
+#+end_src
+
+****** Paperless
+:PROPERTIES:
+:CUSTOM_ID: h:b6f71fde-9d35-43f8-82da-10a9203bb8d9
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/paperless/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 4;
+      vcpu = 4;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      paperless = true;
+    };
+
+  }
+
+#+end_src
+
+****** Transmission
+:PROPERTIES:
+:CUSTOM_ID: h:782cd89f-7bc8-48c9-bdb8-177c6a62c235
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/transmission/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 2;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      transmission = true;
+    };
+
+  }
+
+#+end_src
+
+****** Storage
+:PROPERTIES:
+:CUSTOM_ID: h:c4bd66cb-447e-4e1e-9d99-706c446c51e6
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/storage/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 2;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      nfs = true;
+      syncthing = true;
+    };
+
+  }
+
+#+end_src
+
+****** Monitoring
+:PROPERTIES:
+:CUSTOM_ID: h:ca57b719-c2cd-4f4c-b14a-71e3447292bd
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/monitoring/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 2;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      grafana = true;
+    };
+
+  }
+
+#+end_src
+
+****** FreshRSS
+:PROPERTIES:
+:CUSTOM_ID: h:7c611318-52fe-4d76-980b-df851a6af4ca
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/freshrss/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 3;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      freshrss = true;
+      nginx = true;
+    };
+
+  }
+
+#+end_src
+
+****** Kanidm
+:PROPERTIES:
+:CUSTOM_ID: h:589e154d-78d9-4938-bd11-66413120030a
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/kanidm/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 4;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      kanidm = true;
+    };
+
+  }
+
+#+end_src
+
+****** Firefly-III
+:PROPERTIES:
+:CUSTOM_ID: h:bd23aa0c-0d40-4360-b0ef-23de844ad88e
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/firefly/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 3;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      firefly-iii = true;
+      nginx = true;
+    };
+
+  }
+
+#+end_src
+
+****** Koillection
+:PROPERTIES:
+:CUSTOM_ID: h:11f3fb05-abed-4766-8da1-fc95432c22d0
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/koillection/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      koillection = true;
+    };
+
+  }
+
+#+end_src
+
+****** Radicale
+:PROPERTIES:
+:CUSTOM_ID: h:215533a7-d017-4618-a9e2-18327f22663f
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/radicale/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      radicale = true;
+    };
+
+  }
+
+#+end_src
+
+****** Atuin
+:PROPERTIES:
+:CUSTOM_ID: h:24bdcac0-e4ef-49df-8686-18a8d5730311
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/atuin/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 1;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      atuin = true;
+    };
+
+  }
+
+#+end_src
+
+****** Forgejo
+:PROPERTIES:
+:CUSTOM_ID: h:37b9df5f-3755-4dc4-82f5-aaed75cb0ffa
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/forgejo/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      forgejo = true;
+    };
+
+  }
+
+#+end_src
+
+****** Anki Sync Server
+:PROPERTIES:
+:CUSTOM_ID: h:b1f52613-2928-4b5c-b9bf-3788c409d745
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/ankisync/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      ankisync = true;
+    };
+
+  }
+
+#+end_src
+
+****** Homebox
+:PROPERTIES:
+:CUSTOM_ID: h:aef416e8-f0d5-4ced-8dd4-c0f904bac2ff
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/homebox/default.nix
+  { self, config, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+      server = {
+        wireguard.interfaces = {
+          wgHome = {
+            isClient = true;
+            serverName = "hintbooth";
+          };
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
+    };
+
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 2;
+      vcpu = 1;
+    };
+
+    swarselprofiles = {
+      microvm = true;
+    };
+
+    swarselmodules.server = {
+      homebox = true;
     };
 
   }
@@ -4142,8 +5557,8 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     topology.self = {
       interfaces = {
-        lan2.physicalConnections = [ { node = "summers"; interface = "eth1";} ];
-        lan3.physicalConnections = [ { node = "summers"; interface = "eth2";} ];
+        lan2.physicalConnections = [ { node = "summers"; interface = "lan";} ];
+        lan3.physicalConnections = [ { node = "summers"; interface = "bmc";} ];
         lan4.physicalConnections = [ { node = "switch-bedroom"; interface = "eth1";} ];
         lan5.physicalConnections = [ { node = "switch-livingroom"; interface = "eth1";} ];
       };
@@ -10149,7 +11564,7 @@ This section is mainly used to populate entries in =globals.networks= with the i
 
       swarselsystems.server.localNetwork = netConfig.localNetwork or "";
 
-      globals.networks = lib.mapAttrs'
+      globals.networks = lib.mkIf config.swarselsystems.writeGlobalNetworks (lib.mapAttrs'
         (netName: _:
           lib.nameValuePair "${netPrefix}-${netName}" {
             hosts.${config.node.name} = {
@@ -10158,7 +11573,7 @@ This section is mainly used to populate entries in =globals.networks= with the i
             };
           }
         )
-        netConfig.networks;
+        netConfig.networks);
 
       globals.hosts.${config.node.name} = {
         defaultGateway4 = netConfig.defaultGateway4 or null;
@@ -11482,7 +12897,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/postgresql.nix
-  { config, lib, pkgs, confLib, ... }:
+  { self, config, lib, pkgs, confLib, ... }:
   let
     inherit (confLib.gen { name = "postgresql"; port = 3254; }) serviceName;
     postgresVersion = 14;
@@ -11491,6 +12906,14 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      topology.self.services = {
+        ${serviceName} = {
+          name = lib.swarselsystems.toCapitalized serviceName;
+          icon = "${self}/files/topology-images/${serviceName}.png";
+        };
+      };
+
       services = {
         ${serviceName} = {
           enable = true;
@@ -11507,6 +12930,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 #+end_src
 
 **** podman
+:PROPERTIES:
+:CUSTOM_ID: h:669e1715-7685-4157-8283-a1f8f39212eb
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/podman.nix
   { config, lib, ... }:
@@ -11555,7 +12981,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/matrix.nix
-  { lib, config, pkgs, globals, dns, confLib, ... }:
+  { self, lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
@@ -11615,6 +13041,20 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       };
 
       # networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
+
+      topology.self.services = {
+        ${serviceName} = {
+          name = lib.swarselsystems.toCapitalized serviceName;
+          info = "https://${serviceDomain}";
+          icon = "${self}/files/topology-images/${serviceName}.png";
+        };
+      } // (lib.listToAttrs (map
+        (service:
+          lib.nameValuePair "mautrix-${service}" {
+            name = "mautrix-${service}";
+            icon = "${self}/files/topology-images/mautrix.png";
+          })
+        [ "whatsapp" "signal" "telegram" ]));
 
       systemd = {
         timers."restart-bridges" = {
@@ -12537,8 +13977,8 @@ in
       };
 
       nodes = {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain; serviceName = specificServiceName; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain; serviceName = specificServiceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
@@ -16375,7 +17815,7 @@ This is the dhcp config that runs on my router.
                rapid-commit = lib.mkIf (intX == 6) true;
                pools = [
                  {
-                   pool = "${lib.net.cidr.host 20 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
+                   pool = "${lib.net.cidr.host 100 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
                  }
                ];
                pd-pools = lib.mkIf (intX == 6) [
@@ -17899,6 +19339,7 @@ Some standard options that should be set vor every microvm guest. We set the def
           in
           {
             "10-${ifName}" = lib.mkIf (isRouter || (localVLANs == [ ])) {
+              # address = lib.optionals (isRouter || (localVLANs == [ ])) [
               address = [
                 "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv4}"
                 "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv6}"
@@ -18117,7 +19558,6 @@ Hold standard options for nix-topology per config
   }
 
 #+end_src
-
 
 ** Home-manager
 :PROPERTIES:
@@ -24917,6 +26357,10 @@ TODO: check which of these can be replaced but builtin functions.
         type = lib.types.bool;
         default = true;
       };
+      writeGlobalNetworks = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
       swapSize = lib.mkOption {
         type = lib.types.str;
         default = "8G";
@@ -25371,13 +26815,13 @@ In short, the options defined here are passed to the modules systems using =_mod
                   interfaces.vlan-services = { };
                 };
                 extraSpecialArgs = {
-                  inherit (outputs) nodes;
+                  inherit (inputs.self) nodes;
                   inherit (inputs.self.pkgs.${config.node.arch}) lib;
                   inherit inputs outputs minimal;
                   inherit (inputs) self;
                   withHomeManager = false;
                   microVMParent = config.node.name;
-                  globals = outputs.globals.${config.node.arch};
+                  globals = inputs.self.globals.${config.node.arch};
                 };
               };
             }) else (_: { _ = { }; });
@@ -27541,6 +28985,48 @@ This script allows for quick git replace of a string.
 
 #+end_src
 
+***** gen-sops-guest
+:PROPERTIES:
+:CUSTOM_ID: h:c9f65ba6-f24e-4855-ad17-28315b63d086
+:END:
+
+This script quickly generates a block in =.sops.yaml= for a guest host.
+
+#+begin_src nix-ts :tangle pkgs/flake/gen-sops-guest/default.nix
+  { name, writeShellApplication, ... }:
+
+  writeShellApplication {
+    inherit name;
+    text = ''
+
+      if [ "$#" -lt 3 ]; then
+        echo "Usage: $0 <host> <arch_path> <service1> [service2 ...]" >&2
+        echo "Example: $0 hintbooth hosts/nixos/x86_64-linux adguardhome nginx" >&2
+        exit 1
+      fi
+
+      HOST="$1"
+      ARCH_PATH="$2"
+      shift 2
+
+      for service in "$@"; do
+        cat <<EOF
+        - path_regex: ''${ARCH_PATH}/''${HOST}/secrets/''${service}/[^/]+\.(yaml|json|env|ini|enc)\$
+          key_groups:
+          - pgp:
+            - *swarsel
+            age:
+            - *''${HOST}
+            - *''${HOST}-''${service}
+
+      EOF
+      done
+    '';
+  }
+
+
+#+end_src
+
 **** Packages (config)
 :PROPERTIES:
 :CUSTOM_ID: h:c01a91b8-b751-4978-b987-733de63c8211
@@ -27627,6 +29113,9 @@ This script quickly switches to another nix generation.
 #+end_src
 
 ***** swarsel-sops
+:PROPERTIES:
+:CUSTOM_ID: h:530d8021-cf9f-48b1-9913-8937f77e4e33
+:END:
 
 #+begin_src nix-ts :tangle pkgs/config/swarsel-sops/default.nix
   { name, sops, homeConfig, writeShellApplication, ... }:
@@ -27634,10 +29123,10 @@ This script quickly switches to another nix generation.
     inherit name;
     runtimeInputs = [ sops ];
     text = ''
-      sops updatekeys ${homeConfig.homeDirectory}/secrets/repo/*
-      sops updatekeys ${homeConfig.homeDirectory}/secrets/nginx/*
-      sops updatekeys ${homeConfig.homeDirectory}/secrets/work/*
-      sops updatekeys ${homeConfig.homeDirectory}/hosts/*/*/*/secrets/*/secrets.yaml
+      sops updatekeys ${homeConfig.home.homeDirectory}/secrets/repo/*
+      sops updatekeys ${homeConfig.home.homeDirectory}/secrets/nginx/*
+      sops updatekeys ${homeConfig.home.homeDirectory}/secrets/work/*
+      sops updatekeys ${homeConfig.home.homeDirectory}/hosts/*/*/*/secrets/*/secrets.yaml
     '';
   }
 
@@ -30311,44 +31800,47 @@ It supports all functions that I normally need. Note that getting completions fo
 
 #+begin_src emacs-lisp
 
-    (use-package nix-mode
-      :after lsp-mode
-      :ensure t
-      :hook
-      (nix-mode . lsp-deferred) ;; So that envrc mode will work
-      :custom
-      (lsp-disabled-clients '((nix-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
-      :config
-      (setq lsp-nix-nixd-server-path "nixd"
-            lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
-            lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
-            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
-            ))
+  (use-package nix-mode
+    :after lsp-mode
+    :ensure t
+    :hook
+    (nix-mode . lsp-deferred) ;; So that envrc mode will work
+    :custom
+    (lsp-disabled-clients '((nix-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
+    :config
+    (setq lsp-nix-nixd-server-path "nixd"
+          lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
+          lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
+          lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
+          lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
+          ))
 
-    (use-package nix-ts-mode
-      :after lsp-mode
-      :mode ("\\.nix\\'" . "\\.nix\\.enc\\'")
-      :ensure t
-      :hook
-      (nix-ts-mode . lsp-deferred) ;; So that envrc mode will work
-      :custom
-      (lsp-disabled-clients '((nix-ts-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
-      :config
-      (setq lsp-nix-nixd-server-path "nixd"
-            lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
-            lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
-            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
-            ))
+  (use-package nix-ts-mode
+    :after lsp-mode
+    :mode "\\.nix\\'" "\\.nix\\.enc\\'"
+    :ensure t
+    :hook
+    (nix-ts-mode . lsp-deferred) ;; So that envrc mode will work
+    :custom
+    (lsp-disabled-clients '((nix-ts-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
+    :config
+    (setq lsp-nix-nixd-server-path "nixd"
+          lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
+          lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
+          lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
+          lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
+          ))
+
+  (add-to-list 'auto-mode-alist '("\\.nix\\.enc\\'" . nix-mode))
+  (add-to-list 'auto-mode-alist '("\\.nix\\.enc\\'" . nix-ts-mode))
 
 
-    (with-eval-after-load 'lsp-mode
-      (lsp-register-client
-       (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
-                        :major-modes '(nix-mode nix-ts-mode)
-                        :priority 0
-                        :server-id 'nixd)))
+  (with-eval-after-load 'lsp-mode
+    (lsp-register-client
+     (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
+                      :major-modes '(nix-mode nix-ts-mode)
+                      :priority 0
+                      :server-id 'nixd)))
 #+end_src
 *** HCL Mode
 :PROPERTIES:
@@ -31588,6 +33080,8 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
                )
               ))))
 
+(add-to-list 'recentf-exclude "\\Archive\\.org\\'")
+(add-to-list 'recentf-exclude "\\Tasks\\.org\\'")
 
 #+end_src
 
@@ -31729,6 +33223,531 @@ These are current deviations from the standard settings that I take while some t
         - running stable version (broken in unstable)
       - swayosd:
         - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
+#+end_src
+
+** HTML Export: Darkmode toggle
+:PROPERTIES:
+:CUSTOM_ID: h:cf6a12cf-929b-4080-9945-e6f02afc7990
+:END:
+
+This adds a simple darkmode toggle to the [[#h:12880c64-229c-4063-9eea-387a97490676][HTML version of this document]].
+
+#+begin_src javascript :noweb-ref js-darkmode-toggle :exports code
+  <script src='https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js'></script>
+  <script>
+  function addDarkmodeWidget() {
+    new Darkmode({label:'[☀︎]'}).showWidget();
+  }
+  window.addEventListener('load', addDarkmodeWidget);
+  </script>
+#+end_src
+
+** HTML Export: Docs QoL
+:PROPERTIES:
+:CUSTOM_ID: h:e5f900a0-9d68-4269-a663-53c52434c342
+:END:
+
+This adds the following functionalities to the [[#h:12880c64-229c-4063-9eea-387a97490676][HTML version of this document]]:
+- Section pinning with persistent pins
+- Copy section links to clipboard button
+- Searching in table of contents
+- Skip to next section button
+
+#+begin_src javascript :noweb-ref js-docs-qol :exports code
+  (function() {
+    function ready(fn) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn);
+      } else {
+        fn();
+      }
+    }
+
+    ready(function initPinned() {
+      const STORAGE_KEY = 'org-pinned-items-v2';
+
+        let pinnedPanel = document.getElementById('pinned-panel');
+      if (!pinnedPanel) {
+        pinnedPanel = document.createElement('aside');
+        pinnedPanel.id = 'pinned-panel';
+        pinnedPanel.innerHTML = `
+                   <div id='pinned-panel-header'>
+                     <h2>Pinned</h2>
+                     <button id='toggle-pinned-btn' type='button' title='Hide pinned panel'>✕</button>
+                   </div>
+                   <button id='clear-all-pins-btn' type='button'>Clear All</button>
+                   <ul id='pinned-list'></ul>
+                 `;
+        document.body.appendChild(pinnedPanel);
+      }
+
+      let showBtn = document.getElementById('show-pinned-btn');
+      if (!showBtn) {
+        showBtn = document.createElement('button');
+        showBtn.id = 'show-pinned-btn';
+        showBtn.type = 'button';
+        showBtn.textContent = 'Pinned';
+        document.body.appendChild(showBtn);
+      }
+
+      const content = document.getElementById('content');
+      const pinnedList = document.getElementById('pinned-list');
+      const toggleBtn = document.getElementById('toggle-pinned-btn');
+      const clearAllBtn = document.getElementById('clear-all-pins-btn');
+      const toc = document.getElementById('table-of-contents');
+      const body = document.body;
+
+      if (!content || !pinnedList || !toggleBtn || !clearAllBtn || !toc) return;
+
+      function injectSearch() {
+        // Check if already injected
+        if (document.getElementById('toc-search-input')) return;
+
+        const searchContainer = document.createElement('div');
+        searchContainer.id = 'toc-search-container';
+
+        const searchInput = document.createElement('input');
+        searchInput.id = 'toc-search-input';
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search TOC...';
+        searchInput.autocomplete = 'off';
+
+        const clearBtn = document.createElement('button');
+        clearBtn.id = 'toc-search-clear';
+        clearBtn.type = 'button';
+        clearBtn.textContent = 'Clear';
+
+        searchContainer.appendChild(searchInput);
+        searchContainer.appendChild(clearBtn);
+
+        toc.insertBefore(searchContainer, toc.firstChild);
+
+        function filterTOC(term) {
+          const allLinks = toc.querySelectorAll('a');
+
+          allLinks.forEach(link => {
+            const li = link.closest('li');
+            if (!li) return;
+
+            const text = link.textContent.toLowerCase();
+            const matches = text.includes(term);
+
+            if (matches) {
+              li.classList.remove('hidden-by-search');
+              let parent = li.parentElement;
+              while (parent && parent !== toc) {
+                if (parent.tagName === 'UL') {
+                  parent.style.display = '';
+                }
+                if (parent.tagName === 'LI') {
+                  parent.classList.remove('hidden-by-search');
+                }
+                parent = parent.parentElement;
+              }
+            } else {
+              li.classList.add('hidden-by-search');
+            }
+          });
+
+          if (term === '') {
+            const allLis = toc.querySelectorAll('li');
+            allLis.forEach(li => li.classList.remove('hidden-by-search'));
+          }
+        }
+
+        searchInput.addEventListener('input', function(e) {
+          const term = e.target.value.toLowerCase();
+          filterTOC(term);
+        });
+
+        clearBtn.addEventListener('click', function() {
+          searchInput.value = '';
+          filterTOC('');
+          searchInput.focus();
+        });
+      }
+      injectSearch();
+
+      function addHeadingLinks() {
+        const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9');
+        headers.forEach(header => {
+          const id = header.getAttribute('id');
+          if (!id) return;
+
+          if (header.querySelector('.heading-link')) return;
+
+          const link = document.createElement('a');
+          link.className = 'heading-link';
+          link.href = '#' + id;
+          link.textContent = '#';
+          link.title = 'Copy link to this heading';
+
+          const pinBtn = header.querySelector('.toc-pin-btn');
+          if (pinBtn) {
+            header.insertBefore(link, pinBtn);
+          } else {
+            header.appendChild(link);
+          }
+
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = window.location.origin + window.location.pathname + '#' + id;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(url)
+                .then(() => {
+                  const originalText = link.textContent;
+                  link.textContent = '✓';
+                  setTimeout(() => {
+                    link.textContent = originalText;
+                  }, 1000);
+                })
+                .catch(err => {
+                  console.warn('Failed to copy to clipboard', err);
+                  window.location.hash = id;
+                });
+            } else {
+              window.location.hash = id;
+            }
+          });
+        });
+      }
+      addHeadingLinks();
+
+      function addNextHeadingButtons() {
+        const headers = Array.from(content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9'));
+
+        headers.forEach((header, index) => {
+          // Skip if button already exists
+          if (header.querySelector('.heading-next')) return;
+
+          // Find next heading
+          const nextHeader = headers[index + 1];
+          if (!nextHeader) return; // No next heading
+
+          const nextId = nextHeader.getAttribute('id');
+          if (!nextId) return;
+
+          const nextBtn = document.createElement('button');
+          nextBtn.className = 'heading-next';
+          nextBtn.type = 'button';
+          nextBtn.textContent = '↓';
+          nextBtn.title = 'Jump to next heading';
+
+          // Insert after the heading link, before the pin button
+          const headingLink = header.querySelector('.heading-link');
+          const pinBtn = header.querySelector('.toc-pin-btn');
+
+          if (pinBtn) {
+            header.insertBefore(nextBtn, pinBtn);
+          } else if (headingLink) {
+            headingLink.after(nextBtn);
+          } else {
+            header.appendChild(nextBtn);
+          }
+
+          nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            nextHeader.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+            // Update URL hash
+            history.pushState(null, null, '#' + nextId);
+          });
+        });
+      }
+      addNextHeadingButtons();
+
+      let mobileTocBtn = document.getElementById('mobile-toc-toggle');
+      if (!mobileTocBtn) {
+        mobileTocBtn = document.createElement('button');
+        mobileTocBtn.id = 'mobile-toc-toggle';
+        mobileTocBtn.type = 'button';
+        mobileTocBtn.textContent = 'TOC';
+        document.body.appendChild(mobileTocBtn);
+      }
+
+      let mobilePinnedBtn = document.getElementById('mobile-pinned-toggle');
+      if (!mobilePinnedBtn) {
+        mobilePinnedBtn = document.createElement('button');
+        mobilePinnedBtn.id = 'mobile-pinned-toggle';
+        mobilePinnedBtn.type = 'button';
+        mobilePinnedBtn.textContent = 'Pinned';
+        document.body.appendChild(mobilePinnedBtn);
+      }
+
+      function anyMobilePanelOpen() {
+        return toc.classList.contains('mobile-visible') ||
+          pinnedPanel.classList.contains('mobile-visible');
+      }
+
+      function updateBodyMobilePanelState() {
+        if (anyMobilePanelOpen()) body.classList.add('mobile-panel-open');
+        else body.classList.remove('mobile-panel-open');
+      }
+
+      document.addEventListener('click', function(e) {
+        if (window.innerWidth > 1000) return;
+
+        if (!anyMobilePanelOpen()) return;
+
+        const clickedInsideToc = toc.contains(e.target);
+        const clickedInsidePinned = pinnedPanel.contains(e.target);
+        const clickedTocBtn = mobileTocBtn.contains(e.target);
+        const clickedPinnedBtn = mobilePinnedBtn.contains(e.target);
+
+        const clickedInteractive =
+          e.target.tagName === 'A' ||
+          e.target.tagName === 'BUTTON' ||
+          e.target.tagName === 'INPUT' ||
+          e.target.tagName === 'TEXTAREA' ||
+          e.target.closest('a') ||
+          e.target.closest('button');
+
+        if (!clickedInsideToc && !clickedInsidePinned && !clickedTocBtn && !clickedPinnedBtn && !clickedInteractive) {
+          toc.classList.remove('mobile-visible');
+          pinnedPanel.classList.remove('mobile-visible');
+          updateBodyMobilePanelState();
+        }
+      });
+
+      mobileTocBtn.addEventListener('click', function() {
+        const isOpen = toc.classList.toggle('mobile-visible');
+        if (isOpen) {
+          pinnedPanel.classList.remove('mobile-visible');
+        }
+        updateBodyMobilePanelState();
+      });
+
+      mobilePinnedBtn.addEventListener('click', function() {
+        const isOpen = pinnedPanel.classList.toggle('mobile-visible');
+        if (isOpen) {
+          toc.classList.remove('mobile-visible');
+        }
+        updateBodyMobilePanelState();
+      });
+
+      const pinnedItems = new Map();
+      let initiallyPinnedHrefs = new Set();
+
+      function loadFromStorage() {
+        try {
+          const raw = window.localStorage && localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          const arr = JSON.parse(raw);
+          if (!Array.isArray(arr)) return;
+          initiallyPinnedHrefs = new Set(arr);
+        } catch (e) {
+          console.warn('Pinned: failed to load from localStorage', e);
+        }
+      }
+
+      function saveToStorage() {
+        try {
+          if (!window.localStorage) return;
+          const arr = [];
+          pinnedItems.forEach((entry, href) => {
+            if (entry.li) arr.push(href);
+          });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+        } catch (e) {
+          console.warn('Pinned: failed to save to localStorage', e);
+        }
+      }
+
+      function sortPinnedList() {
+        const items = Array.from(pinnedList.children)
+          .map(li => {
+            const link = li.querySelector('a');
+            return {
+              li: li,
+              text: link ? link.textContent.trim()
+                .toLowerCase() : ''
+            };
+          });
+        items.sort((a, b) => a.text.localeCompare(b.text));
+        items.forEach(item => pinnedList.appendChild(item.li));
+      }
+
+      function hidePinnedPanel() {
+        pinnedPanel.classList.add('hidden');
+        content.classList.add('pinned-hidden');
+        showBtn.classList.add('visible');
+      }
+
+      function showPinnedPanel() {
+        pinnedPanel.classList.remove('hidden');
+        content.classList.remove('pinned-hidden');
+        showBtn.classList.remove('visible');
+      }
+
+      toggleBtn.addEventListener('click', hidePinnedPanel);
+      showBtn.addEventListener('click', showPinnedPanel);
+
+      clearAllBtn.addEventListener('click', function() {
+        if (pinnedItems.size === 0) return;
+
+        const confirmed = confirm('Are you sure you want to clear all pinned items?');
+        if (!confirmed) return;
+
+        pinnedItems.forEach((entry, href) => {
+          if (entry.li && entry.li.parentElement) {
+            entry.li.parentElement.removeChild(entry.li);
+          }
+          entry.li = null;
+          entry.btns.forEach(b => b.textContent = '[pin]');
+        });
+
+        saveToStorage();
+      });
+
+      function attachPinBehavior(pinBtn, href, text) {
+        if (!href) return;
+
+        if (!pinnedItems.has(href)) {
+          pinnedItems.set(href, {
+            li: null,
+            btns: new Set(),
+            text: text
+          });
+        }
+        const entry = pinnedItems.get(href);
+        entry.btns.add(pinBtn);
+
+        pinBtn.textContent = entry.li ? '[unpin]' : '[pin]';
+
+        pinBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const current = pinnedItems.get(href);
+          if (!current) return;
+
+          if (current.li) {
+            if (current.li.parentElement) {
+              current.li.parentElement.removeChild(current.li);
+            }
+            current.li = null;
+            current.btns.forEach(b => b.textContent = '[pin]');
+            saveToStorage();
+          } else {
+            const li = document.createElement('li');
+
+            const a = document.createElement('a');
+            a.href = href;
+            a.textContent = current.text;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'pin-remove';
+            removeBtn.type = 'button';
+            removeBtn.textContent = '✕';
+            removeBtn.addEventListener('click', () => {
+              const cur = pinnedItems.get(href);
+              if (!cur) return;
+              if (cur.li && cur.li.parentElement) {
+                cur.li.parentElement.removeChild(cur.li);
+              }
+              cur.li = null;
+              cur.btns.forEach(b => b.textContent = '[pin]');
+              saveToStorage();
+            });
+
+            li.appendChild(a);
+            li.appendChild(removeBtn);
+            pinnedList.appendChild(li);
+
+            current.li = li;
+            current.btns.forEach(b => b.textContent = '[unpin]');
+
+            sortPinnedList();
+            saveToStorage();
+          }
+        });
+      }
+
+      loadFromStorage();
+
+      const tocLinks = document.querySelectorAll('#text-table-of-contents a');
+      tocLinks.forEach(link => {
+        if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
+          return;
+        }
+        const li = link.closest('li');
+        if (!li) return;
+
+        const wrapper = document.createElement('span');
+        wrapper.className = 'toc-entry';
+        li.insertBefore(wrapper, link);
+        wrapper.appendChild(link);
+
+        const pinBtn = document.createElement('button');
+        pinBtn.className = 'toc-pin-btn';
+        pinBtn.type = 'button';
+        pinBtn.textContent = '[pin]';
+        wrapper.appendChild(pinBtn);
+
+        const href = link.getAttribute('href');
+        const text = link.textContent.trim();
+        attachPinBehavior(pinBtn, href, text);
+      });
+
+      const headers = content.querySelectorAll('h2, h3, h4, h5, h6, h7, h8, h9');
+      headers.forEach(header => {
+        const id = header.getAttribute('id');
+        if (!id) return;
+        if (header.querySelector('.toc-pin-btn')) return;
+
+        const href = '#' + id;
+        const text = header.textContent.trim();
+
+        const pinBtn = document.createElement('button');
+        pinBtn.className = 'toc-pin-btn';
+        pinBtn.type = 'button';
+        pinBtn.textContent = '[pin]';
+        pinBtn.style.marginLeft = '0.8rem';
+        pinBtn.style.fontSize = '0.75em';
+
+        header.appendChild(pinBtn);
+        attachPinBehavior(pinBtn, href, text);
+      });
+
+      initiallyPinnedHrefs.forEach(href => {
+        const entry = pinnedItems.get(href);
+        if (!entry) return;
+
+        const li = document.createElement('li');
+
+        const a = document.createElement('a');
+        a.href = href;
+        a.textContent = entry.text;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'pin-remove';
+        removeBtn.type = 'button';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', () => {
+          const cur = pinnedItems.get(href);
+          if (!cur) return;
+          if (cur.li && cur.li.parentElement) {
+            cur.li.parentElement.removeChild(cur.li);
+          }
+          cur.li = null;
+          cur.btns.forEach(b => b.textContent = '[pin]');
+          saveToStorage();
+        });
+
+        li.appendChild(a);
+        li.appendChild(removeBtn);
+        pinnedList.appendChild(li);
+
+        entry.li = li;
+        entry.btns.forEach(b => b.textContent = '[unpin]');
+      });
+
+      sortPinnedList();
+      saveToStorage();
+    });
+  })();
 #+end_src
 
 * Appendix B: Supplementary Files
@@ -34699,7 +36718,8 @@ Here lies defined the readme for GitHub and Forgejo:
     <details>
       <summary>Click here for a summary of my infrastructure</summary>
 
-  <img width="2202" height="2947" alt="topology" src="https://github.com/user-attachments/assets/0eb37288-47a8-40e3-9211-648eee0ed408" />
+  <img width="3854" height="7060" alt="topology" src="https://github.com/user-attachments/assets/fc557fdb-b779-4530-ae19-93ff019a2b29" />
+
 
     ### Programs
 
@@ -34847,6 +36867,109 @@ Here lies defined the readme for GitHub and Forgejo:
 
     If you feel that I forgot to pay you tribute for code that I used in this repository, please shoot me a message and I will fix it :)
 
+
+#+end_src
+
+** GitHub Workflow: Build-and-deploy
+:PROPERTIES:
+:CUSTOM_ID: h:abed312c-5bf7-43f5-b0d0-43cce513ccb9
+:END:
+
+This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9eea-387a97490676][HTML version of this document]]. It will first tangle this file, which will generate the =style.css= that is going to be used by the site before exporting the file to html, which will generate the =index.html=. Finally we build the site.
+
+#+begin_src yaml :tangle .github/workflows/build-and-deploy.yaml :mkdirp yes
+  name: Build and Deploy
+
+  on:
+    push:
+      branches:
+        - main
+    workflow_dispatch:
+
+  permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+  concurrency:
+    group: "pages"
+    cancel-in-progress: false
+
+  jobs:
+    build:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Install Emacs
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y emacs-nox elpa-htmlize
+
+        - name: Tangle files & export to HTML
+          run: |
+            emacs --batch \
+              --eval "(require 'org)" \
+              --eval "(setq org-confirm-babel-evaluate nil
+                       org-html-validation-link nil
+                       org-export-headline-levels 6
+                       org-export-with-broken-links 'mark)" \
+              --visit=SwarselSystems.org \
+              --funcall org-babel-tangle \
+              --funcall org-html-export-to-html
+
+        - name: Setup Pages
+          uses: actions/configure-pages@v4
+
+        - name: Upload artifact
+          uses: actions/upload-pages-artifact@v3
+          with:
+            path: 'site'
+
+    deploy:
+      environment:
+        name: github-pages
+        url: ${{ steps.deployment.outputs.page_url }}
+      runs-on: ubuntu-latest
+      needs: build
+      steps:
+        - name: Deploy to GitHub Pages
+          id: deployment
+          uses: actions/deploy-pages@v4
+
+#+end_src
+
+** GitHub Workflow: Flake check
+:PROPERTIES:
+:CUSTOM_ID: h:c2b8c7a5-9aa6-42d5-a55a-67b2010d09c2
+:END:
+
+This is a crude workflow that performs some rudimentary checks on the repository. As long as [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks/pre-commit-hooks)]] are used, this should never fail.
+
+#+begin_src yaml :tangle .github/workflows/flake-checks.yaml :mkdirp yes
+name: Flake check
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  build:
+    name: Check flake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v3
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Check for dead code in .nix files
+        run: git ls-files '*.nix' | nix run nixpkgs#deadnix
+      - name: Check for lints in .nix files
+        run: nix run nixpkgs#statix -- check
+      - name: Check formatting in .nix files
+        run: git ls-files '*.nix' | xargs nix run nixpkgs#nixpkgs-fmt -- --check
 
 #+end_src
 
