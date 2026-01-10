@@ -36,6 +36,7 @@
           peers = [
             "moonside"
             "winters"
+            "summers"
             "belchsfactory"
             "eagleland"
             "hintbooth-adguardhome"

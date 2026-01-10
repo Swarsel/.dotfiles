@@ -51,6 +51,7 @@ in
       initrd = {
         secrets."/tmp${hostKeyPathBase}" = if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
         availableKernelModules = config.swarselsystems.networkKernelModules;
+        kernelModules = config.swarselsystems.networkKernelModules; # at least summers needs this to actually find the interfaces
         network = {
           enable = true;
           flushBeforeStage2 = true;

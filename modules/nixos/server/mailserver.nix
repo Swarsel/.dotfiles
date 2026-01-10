@@ -24,7 +24,8 @@ in
       };
       roundcube = {
         domain = roundcubeDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 

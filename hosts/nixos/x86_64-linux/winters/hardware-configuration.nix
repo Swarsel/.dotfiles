@@ -1,4 +1,4 @@
-{ config, lib, modulesPath, ... }:
+{ lib, modulesPath, ... }:
 
 {
   imports =
@@ -13,7 +13,7 @@
     extraModulePackages = [ ];
 
     supportedFilesystems = [ "zfs" ];
-    zfs.extraPools = [ "Vault" ];
+    # zfs.extraPools = [ "Vault" ];
   };
 
   fileSystems = {

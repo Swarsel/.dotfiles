@@ -81,13 +81,13 @@ in
                 interfaces.vlan-services = { };
               };
               extraSpecialArgs = {
-                inherit (outputs) nodes;
+                inherit (inputs.self) nodes;
                 inherit (inputs.self.pkgs.${config.node.arch}) lib;
                 inherit inputs outputs minimal;
                 inherit (inputs) self;
                 withHomeManager = false;
                 microVMParent = config.node.name;
-                globals = outputs.globals.${config.node.arch};
+                globals = inputs.self.globals.${config.node.arch};
               };
             };
           }) else (_: { _ = { }; });

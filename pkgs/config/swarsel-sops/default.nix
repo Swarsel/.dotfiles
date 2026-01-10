@@ -3,9 +3,9 @@ writeShellApplication {
   inherit name;
   runtimeInputs = [ sops ];
   text = ''
-    sops updatekeys ${homeConfig.homeDirectory}/secrets/repo/*
-    sops updatekeys ${homeConfig.homeDirectory}/secrets/nginx/*
-    sops updatekeys ${homeConfig.homeDirectory}/secrets/work/*
-    sops updatekeys ${homeConfig.homeDirectory}/hosts/*/*/*/secrets/*/secrets.yaml
+    sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/repo/*
+    sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/nginx/*
+    sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/work/*
+    sops updatekeys ${homeConfig.swarselsystems.flakePath}/hosts/*/*/*/secrets/*/secrets.yaml
   '';
 }

@@ -7,8 +7,9 @@ let
     })
     globals.networks.home-lan.vlans;
   selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
+  lan3VLANs = selectVLANs [ "home" "devices" "services" ];
+  lan4VLANs = lan3VLANs;
   lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
-  lan4VLANs = selectVLANs [ "home" "services" ];
   inherit (globals.general) homeDnsServer;
 in
 {
@@ -205,9 +206,9 @@ in
               Bridge = "br";
               ConfigureWithoutCarrier = true;
             };
-            inherit bridgeVLANs;
+            bridgeVLANs = lan3VLANs;
           };
-          # winters
+          # summers
           "30-lan4" = {
             matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
             linkConfig.RequiredForOnline = "enslaved";

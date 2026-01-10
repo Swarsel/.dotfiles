@@ -21,6 +21,7 @@ in
 
     boot.initrd = lib.mkIf (isCrypted && (localVLANsList != [ ]) && (!isRouter)) {
       availableKernelModules = [ "8021q" ];
+      kernelModules = [ "8021q" ]; # at least summers needs this to actually find the interfaces
       systemd.network = {
         enable = true;
         netdevs."30-vlan-${initrdVLAN}" = {
@@ -54,6 +55,20 @@ in
         };
       };
     };
+
+    topology.self.interfaces = (lib.mapAttrs'
+      (vlanName: _:
+        lib.nameValuePair "vlan-${vlanName}" {
+          network = lib.mkForce vlanName;
+        }
+      )
+      localVLANs) // (lib.mapAttrs'
+      (vlanName: _:
+        lib.nameValuePair "me-${vlanName}" {
+          network = lib.mkForce vlanName;
+        }
+      )
+      localVLANs);
 
     systemd.network = {
       netdevs = lib.flip lib.concatMapAttrs localVLANs (

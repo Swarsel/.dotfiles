@@ -11,7 +11,7 @@
           specialArgs = {
             inherit inputs outputs self minimal homeLib configName arch;
             inherit (config.pkgs.${arch}) lib;
-            inherit (config) nodes;
+            inherit (config) nodes topologyPrivate;
             globals = config.globals.${arch};
             type = "nixos";
             withHomeManager = true;
@@ -73,7 +73,7 @@
         inputs.nix-darwin.lib.darwinSystem {
           specialArgs = {
             inherit inputs lib outputs self minimal configName;
-            inherit (config) nodes;
+            inherit (config) nodes topologyPrivate;
             withHomeManager = true;
             globals = config.globals.${arch};
           };
@@ -110,7 +110,7 @@
           inherit pkgs;
           extraSpecialArgs = {
             inherit inputs lib outputs self configName arch type;
-            inherit (config) nodes;
+            inherit (config) nodes topologyPrivate;
             globals = config.globals.${arch};
             minimal = false;
           };
@@ -197,5 +197,7 @@
       nodes = config.nixosConfigurations
         // config.darwinConfigurations
         // config.guestConfigurations;
+
+      "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
     };
 }

@@ -29,6 +29,10 @@
       type = lib.types.bool;
       default = true;
     };
+    writeGlobalNetworks = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
     swapSize = lib.mkOption {
       type = lib.types.str;
       default = "8G";

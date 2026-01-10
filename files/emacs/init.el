@@ -1117,7 +1117,7 @@ create a new one."
 
 (use-package nix-ts-mode
   :after lsp-mode
-  :mode ("\\.nix\\'" . "\\.nix\\.enc\\'")
+  :mode "\\.nix\\'" "\\.nix\\.enc\\'"
   :ensure t
   :hook
   (nix-ts-mode . lsp-deferred) ;; So that envrc mode will work
@@ -1130,6 +1130,9 @@ create a new one."
         lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
         lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
         ))
+
+(add-to-list 'auto-mode-alist '("\\.nix\\.enc\\'" . nix-mode))
+(add-to-list 'auto-mode-alist '("\\.nix\\.enc\\'" . nix-ts-mode))
 
 
 (with-eval-after-load 'lsp-mode
@@ -1774,70 +1777,73 @@ create a new one."
     )))
 
 (use-package dashboard
-  :ensure t
-  :config
-  (dashboard-setup-startup-hook)
-  ;; (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+    :ensure t
+    :config
+    (dashboard-setup-startup-hook)
+    ;; (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
 
-  (let ((files-domain (getenv "SWARSEL_FILES_DOMAIN"))
-        (music-domain (getenv "SWARSEL_MUSIC_DOMAIN"))
-        (insta-domain (getenv "SWARSEL_INSTA_DOMAIN"))
-        (sport-domain (getenv "SWARSEL_SPORT_DOMAIN"))
-        (swarsel-domain (getenv "SWARSEL_DOMAIN"))
-        )
-    (setq dashboard-display-icons-p t ;; display icons on both GUI and terminal
-          dashboard-icon-type 'nerd-icons ;; use `nerd-icons' package
-          dashboard-set-file-icons t
-          dashboard-items '((recents . 5)
-                            (projects . 5)
-                            (agenda . 5))
-          dashboard-set-footer nil
-          dashboard-banner-logo-title "Welcome to SwarsEmacs!"
-          dashboard-image-banner-max-height 300
-          dashboard-startup-banner "~/.dotfiles/files/wallpaper/swarsel.png"
-          dashboard-projects-backend 'projectile
-          dashboard-projects-switch-function 'magit-status
-          dashboard-set-navigator t
-          dashboard-startupify-list '(dashboard-insert-banner
-                                      dashboard-insert-newline
-                                      dashboard-insert-banner-title
-                                      dashboard-insert-newline
-                                      dashboard-insert-navigator
-                                      dashboard-insert-newline
-                                      dashboard-insert-init-info
-                                      dashboard-insert-items
-                                      )
-          dashboard-navigator-buttons
-          `(;; line1
-            ((,""
-              "SwarselSocial"
-              "Browse Swarsele"
-              (lambda (&rest _) (browse-url ,insta-domain)))
+    (let ((files-domain (getenv "SWARSEL_FILES_DOMAIN"))
+          (music-domain (getenv "SWARSEL_MUSIC_DOMAIN"))
+          (insta-domain (getenv "SWARSEL_INSTA_DOMAIN"))
+          (sport-domain (getenv "SWARSEL_SPORT_DOMAIN"))
+          (swarsel-domain (getenv "SWARSEL_DOMAIN"))
+          )
+      (setq dashboard-display-icons-p t ;; display icons on both GUI and terminal
+            dashboard-icon-type 'nerd-icons ;; use `nerd-icons' package
+            dashboard-set-file-icons t
+            dashboard-items '((recents . 5)
+                              (projects . 5)
+                              (agenda . 5))
+            dashboard-set-footer nil
+            dashboard-banner-logo-title "Welcome to SwarsEmacs!"
+            dashboard-image-banner-max-height 300
+            dashboard-startup-banner "~/.dotfiles/files/wallpaper/swarsel.png"
+            dashboard-projects-backend 'projectile
+            dashboard-projects-switch-function 'magit-status
+            dashboard-set-navigator t
+            dashboard-startupify-list '(dashboard-insert-banner
+                                        dashboard-insert-newline
+                                        dashboard-insert-banner-title
+                                        dashboard-insert-newline
+                                        dashboard-insert-navigator
+                                        dashboard-insert-newline
+                                        dashboard-insert-init-info
+                                        dashboard-insert-items
+                                        )
+            dashboard-navigator-buttons
+            `(;; line1
+              ((,""
+                "SwarselSocial"
+                "Browse Swarsele"
+                (lambda (&rest _) (browse-url ,insta-domain)))
 
-             (,""
-              "SwarselSound"
-              "Browse SwarselSound"
-              (lambda (&rest _) (browse-url ,(concat "https://" music-domain))) )
-             (,""
-              "SwarselSwarsel"
-              "Browse Swarsel"
-              (lambda (&rest _) (browse-url "https://github.com/Swarsel")) )
-             (,""
-              "SwarselStash"
-              "Browse SwarselStash"
-              (lambda (&rest _) (browse-url ,(concat "https://" files-domain))) )
-             (,"󰫑"
-              "SwarselSport"
-              "Browse SwarselSports"
-              (lambda (&rest _) (browse-url ,sport-domain)))
-             )
-            (
-             (,"󱄅"
-              ,swarsel-domain
-              ,(concat "Browse " main-domain)
-              (lambda (&rest _) (browse-url ,(concat "https://" swarsel-domain))))
-             )
-            ))))
+               (,""
+                "SwarselSound"
+                "Browse SwarselSound"
+                (lambda (&rest _) (browse-url ,(concat "https://" music-domain))) )
+               (,""
+                "SwarselSwarsel"
+                "Browse Swarsel"
+                (lambda (&rest _) (browse-url "https://github.com/Swarsel")) )
+               (,""
+                "SwarselStash"
+                "Browse SwarselStash"
+                (lambda (&rest _) (browse-url ,(concat "https://" files-domain))) )
+               (,"󰫑"
+                "SwarselSport"
+                "Browse SwarselSports"
+                (lambda (&rest _) (browse-url ,sport-domain)))
+               )
+              (
+               (,"󱄅"
+                ,swarsel-domain
+                ,(concat "Browse " main-domain)
+                (lambda (&rest _) (browse-url ,(concat "https://" swarsel-domain))))
+               )
+              ))))
+
+(add-to-list 'recentf-exclude "\\Archive\\.org\\'")
+(add-to-list 'recentf-exclude "\\Tasks\\.org\\'")
 
 (use-package vterm
   :ensure t)

@@ -72,7 +72,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -396,13 +397,20 @@ in
 
     systemd.services.${serviceName}.serviceConfig.RestartSec = "30";
 
-    nodes = {
-      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    nodes =
+      let
+        extraConfig = ''
+          allow ${globals.networks.home-lan.vlans.services.cidrv4};
+          allow ${globals.networks.home-lan.vlans.services.cidrv6};
+        '';
+      in
+      {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; };
+        ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; extraConfig = extraConfig + nginxAccessRules; serviceAddress = homeServiceAddress; };
       };
-      ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; };
-      ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; };
-    };
 
   };
 }

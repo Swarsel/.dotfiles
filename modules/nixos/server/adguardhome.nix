@@ -24,7 +24,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -64,6 +65,7 @@ in
             # FIXME: change to homeWebProxy once that is setup
             answer = globals.networks.home-lan.vlans.services.hosts.${homeWebProxy}.ipv4;
             # answer = globals.hosts.${webProxy}.wanAddress4;
+            enabled = true;
           })
           homeDomains;
         filters = [
@@ -83,6 +85,7 @@ in
             enabled = true;
           }
         ];
+        user_rules = config.repo.secrets.local.adguardUserRules;
       };
     };
 

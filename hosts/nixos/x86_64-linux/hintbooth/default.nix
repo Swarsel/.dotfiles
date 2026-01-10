@@ -11,8 +11,8 @@
 
   topology.self = {
     interfaces = {
-      lan2.physicalConnections = [{ node = "summers"; interface = "eth1"; }];
-      lan3.physicalConnections = [{ node = "summers"; interface = "eth2"; }];
+      lan2.physicalConnections = [{ node = "summers"; interface = "lan"; }];
+      lan3.physicalConnections = [{ node = "summers"; interface = "bmc"; }];
       lan4.physicalConnections = [{ node = "switch-bedroom"; interface = "eth1"; }];
       lan5.physicalConnections = [{ node = "switch-livingroom"; interface = "eth1"; }];
     };
@@ -43,9 +43,10 @@
         wgHome = {
           isServer = true;
           peers = [
-            "winters"
             "hintbooth-adguardhome"
             "hintbooth-nginx"
+            "summers"
+            "winters"
           ];
         };
       };

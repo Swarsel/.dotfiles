@@ -68,7 +68,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -221,6 +222,10 @@ in
 
     nodes =
       let
+        extraConfig = ''
+          allow ${globals.networks.home-lan.vlans.services.cidrv4};
+          allow ${globals.networks.home-lan.vlans.services.cidrv6};
+        '';
         genNginx = toAddress: extraConfigPre: {
           upstreams = {
             "${grafanaUpstream}" = {
@@ -267,7 +272,7 @@ in
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
-        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
+        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress (extraConfig + nginxAccessRules);
       };
   };
 }

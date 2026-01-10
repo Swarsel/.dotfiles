@@ -1,4 +1,4 @@
-{ lib, config, pkgs, globals, dns, confLib, ... }:
+{ self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
@@ -59,6 +59,20 @@ in
 
     # networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
 
+    topology.self.services = {
+      ${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/files/topology-images/${serviceName}.png";
+      };
+    } // (lib.listToAttrs (map
+      (service:
+        lib.nameValuePair "mautrix-${service}" {
+          name = "mautrix-${service}";
+          icon = "${self}/files/topology-images/mautrix.png";
+        })
+      [ "whatsapp" "signal" "telegram" ]));
+
     systemd = {
       timers."restart-bridges" = {
         wantedBy = [ "timers.target" ];
@@ -99,7 +113,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, minimal, globals, confLib, type, ... }:
+{ self, config, pkgs, lib, minimal, globals, confLib, type, ... }:
 let
   inherit (config.swarselsystems) flakePath isNixos;
   crocDomain = globals.services.croc.domain;
@@ -46,7 +46,7 @@ in
             boot-diff = "nix store diff-closures /run/*-system";
             gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
             cc = "wl-copy";
-            build-topology = "nix build .#topology.x86_64-linux.config.output";
+            build-topology = "nix build --override-input topologyPrivate ${self}/files/topology/private .#topology.x86_64-linux.config.output";
             build-iso = "nix build --print-out-paths .#live-iso";
             nix-review-local = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
             nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";

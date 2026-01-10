@@ -25,6 +25,7 @@ in
         in
         {
           "10-${ifName}" = lib.mkIf (isRouter || (localVLANs == [ ])) {
+            # address = lib.optionals (isRouter || (localVLANs == [ ])) [
             address = [
               "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv4}"
               "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv6}"

@@ -1,7 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
 
   kanidmDomain = globals.services.kanidm.domain;
   mainDomain = globals.domains.main;
@@ -153,7 +153,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -211,14 +212,16 @@ in
         extraConfig = ''
           proxy_set_header X-Scheme                $scheme;
           proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+          allow ${globals.networks.home-lan.vlans.services.cidrv4};
+          allow ${globals.networks.home-lan.vlans.services.cidrv6};
         '';
       in
       {
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
-        ${webProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceAddress serviceDomain serviceName extraConfig; protocol = "https"; };
-        ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; extraConfig = extraConfig + nginxAccessRules; serviceAddress = globals.hosts.${oauthServer}.wanAddress4; };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceAddress serviceDomain serviceName extraConfig; };
+        ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; extraConfig = extraConfig + nginxAccessRules; serviceAddress = globals.hosts.${oauthServer}.wanAddress4; };
       };
   };
 }

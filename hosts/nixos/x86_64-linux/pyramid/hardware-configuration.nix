@@ -26,7 +26,20 @@
     # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     binfmt.emulatedSystems = [ "aarch64-linux" ];
     initrd = {
-      availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
+      availableKernelModules = [
+        "nvme"
+        "xhci_pci"
+        "thunderbolt"
+        "usb_storage"
+        "cryptd"
+        "usbhid"
+        "sd_mod"
+        "r8152"
+        "drm"
+        "drm_kms_helper"
+        "ttm"
+        "gpu_sched"
+      ];
       # allow to remote build on arm (needed for moonside)
       kernelModules = [ "sg" ];
       luks.devices."cryptroot" = {
@@ -37,7 +50,7 @@
       };
     };
 
-    kernelModules = [ "kvm-amd" ];
+    kernelModules = [ "amdgpu" "kvm-amd" ];
     kernelParams = [
       # deep sleep is discontinued by amd
       # "mem_sleep_default=deep"

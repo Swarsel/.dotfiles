@@ -133,21 +133,25 @@
                   # trunk
                   [ "eth1" ]
                   # devices
-                  [ "eth2" ]
+                  [ "eth2" "eth5" "eth6" ]
                   # home
                   [ "eth3" "eth8" ]
                   # guests
-                  [ "eth4" "eth5" "eth6" "eth7" ]
+                  [ "eth4" "eth7" ]
                 ];
                 interfaces = {
                   eth2 = { network = lib.mkForce "devices"; };
                   eth3 = { network = lib.mkForce "home"; };
+                  eth5 = { network = lib.mkForce "devices"; };
+                  eth6 = { network = lib.mkForce "devices"; };
                   eth7 = { network = lib.mkForce "guests"; };
                   eth8 = { network = lib.mkForce "home"; };
                 };
                 connections = {
                   eth2 = mkConnection "nswitch" "eth1";
                   eth3 = mkConnection "bakery" "eth1";
+                  eth5 = mkConnection "ps4" "eth1";
+                  eth6 = mkConnection "ender3" "eth1";
                   eth7 = mkConnection "pc" "eth1";
                   eth8 = mkConnection "pyramid" "eth1";
                 };
@@ -175,9 +179,27 @@
               };
 
               nswitch = mkDevice "Nintendo Switch" {
-                info = "Nintendo Switch";
+                info = "Atmosphère 1.3.2 @ FW 19.0.1";
                 image = "${self}/files/topology-images/nintendo-switch.png";
                 interfaces.eth1 = { };
+              };
+
+              ps4 = mkDevice "PlayStation 4" {
+                info = "GoldHEN @ FW 5.05";
+                image = "${self}/files/topology-images/ps4.png";
+                interfaces.eth1 = { };
+              };
+
+              ender3 = mkDevice "Ender 3" {
+                info = "SKR V1.3, TMC2209 (Dual), TFT35";
+                image = "${self}/files/topology-images/ender3.png";
+                interfaces.eth1 = { };
+                services = {
+                  octoprint = {
+                    name = "OctoPrint";
+                    icon = "${self}/files/topology-images/octoprint.png";
+                  };
+                };
               };
 
               magicant = mkDevice "magicant" {

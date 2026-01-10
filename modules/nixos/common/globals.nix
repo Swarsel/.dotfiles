@@ -189,6 +189,14 @@ in
                     type = types.nullOr types.str;
                     default = null;
                   };
+                  serviceAddress = mkOption {
+                    type = types.nullOr types.str;
+                    default = null;
+                  };
+                  homeServiceAddress = mkOption {
+                    type = types.nullOr types.str;
+                    default = null;
+                  };
                   isHome = mkOption {
                     type = types.bool;
                     default = false;

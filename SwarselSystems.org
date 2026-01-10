@@ -1,15 +1,17 @@
 #+title: SwarselSystems: NixOS + Emacs Configuration
-#+PROPERTY: header-args:emacs-lisp :tangle files/emacs/init.el :mkdirp yes
-#+PROPERTY: header-args:nix :mkdirp yes
-#+PROPERTY: header-args:nix-ts :mkdirp yes
-#+PROPERTY: header-args:shell :mkdirp yes
 #+EXPORT_FILE_NAME: site/index.html
-#+OPTIONS: toc:6 author:nil creator:nil timestamp:nil validate:nil html-postamble:nil html-preamble:nil broken-links:mark
 #+HTML_HEAD: <link rel="stylesheet" href="style.css">
-#+macro: revision-date (eval (format-time-string "%F %T %z"))
-#+macro: count-words (eval (count-words (point-min) (point-max)))
-#+macro: count-lines (eval (count-lines (point-min) (point-max)))
-#+macro: NOTE (eval "This file has {{{count-words}}} words spanning {{{count-lines}}} lines and was last revised on {{{revision-date}}}.")
+#+OPTIONS: toc:6 author:nil creator:nil timestamp:nil validate:nil html-postamble:nil html-preamble:nil broken-links:mark
+#+PROPERTY: header-args:config :eval never-export
+#+PROPERTY: header-args:css :eval never-export
+#+PROPERTY: header-args:emacs-lisp :tangle files/emacs/init.el :mkdirp yes :eval never-export
+#+PROPERTY: header-args:markdown :eval never-export
+#+PROPERTY: header-args:nix-ts :mkdirp yes :eval never-export
+#+PROPERTY: header-args:shell :mkdirp yes :eval never-export
+#+MACRO: revision-date (eval (format-time-string "%F %T %z"))
+#+MACRO: count-words (eval (count-words (point-min) (point-max)))
+#+MACRO: count-lines (eval (count-lines (point-min) (point-max)))
+#+MACRO: NOTE (eval "This file has {{{count-words}}} words spanning {{{count-lines}}} lines and was last revised on {{{revision-date}}}.")
 
 *{{{NOTE(If you can see this, you might want to switch to [[https://swarsel.github.io/.dotfiles/][the hmtl version of this document]] in order to have working links and other QoL functions while reading this file.)}}}*
 
@@ -472,9 +474,9 @@ The nix language supports the following types and how they look in the wild:
     - these hold name value pairs, e.g. ={ a = 3; }=
     - a "chain" of attributes, separated by dots, is called an =attribute path=, e.g. =config.environment.systemPackages=
       - in such a chain, all attributes but the last will be =attribute sets=
-      - =config.environment.systemPackages= is equivalent to  ~config = { environment = { systemPackages = <some list>; }; };~
+      - =config.environment.systemPackages= is equivalent to  =config = { environment = { systemPackages = <some list>; }; };=
   - lists: [ ]
-    - these hold values, e.g. =[ { a == 3; } ]=. In this example, the list holds a single value, that is, the attribute set ={ a = 3; }=.
+    - these hold values, e.g. =[ { a = 3; } ]=. In this example, the list holds a single value, that is, the attribute set ={ a = 3; }=.
   - functions: =arg: body=
     - =arg= can be any of these data types, including functions
       - when =arg= is an attribute set, some special things apply:
@@ -504,7 +506,7 @@ Calling by using a default value:
 
 Not passing =age= errors out:
 
-#+begin_src bash :tangle no :exports both :results output
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { }'
 #+end_src
 
@@ -520,12 +522,11 @@ error:
        at «string»:1:44:
             1| let lib = import <nixpkgs/lib>; in let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { }
              |                                            ^
-[ Babel evaluation exited with code 1 ]
 #+end_example
 
 Passing a superfluous =another= errors out:
 
-#+begin_src bash :tangle no :exports both :results output
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
 #+end_src
 
@@ -541,7 +542,6 @@ error:
        at «string»:1:44:
             1| let lib = import <nixpkgs/lib>; in let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }
              |                                            ^
-[ Babel evaluation exited with code 1 ]
 #+end_example
 
 
@@ -589,7 +589,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
     - this adds all attributes of the enclosing attribute
     - the following will error out:
 
-#+begin_src bash :tangle no :exports both :results output
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     {
       a = true;
@@ -605,7 +605,6 @@ This looks cumberesome on first sight, but is for example useful when referencin
 :             4|     b = a;
 :              |         ^
 :             5|   }
-: [ Babel evaluation exited with code 1 ]
 
     - however, =rec= makes =a= available to the scope (also note that the order of expressions does /not/ matter):
 
@@ -625,7 +624,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
     - this adds the passed set to the lexical scope of the enclosing expression:
     - the following will error out:
 
-#+begin_src bash :tangle no :exports both :results output
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
     swarsel-instantiate '
       let
         functions = {
@@ -643,7 +642,6 @@ This looks cumberesome on first sight, but is for example useful when referencin
 :             7|     print "ok"
 :              |     ^
 :             8|
-: [ Babel evaluation exited with code 1 ]
 
     - using =with= will make it work:
 
@@ -713,7 +711,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
 
 but:
 
-#+begin_src bash :tangle no :exports both :results output
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     builtins.toString -1
   '
@@ -732,7 +730,6 @@ error:
        … while evaluating the first argument of the subtraction
 
        error: expected an integer but found the built-in function 'toString': «primop toString»
-[ Babel evaluation exited with code 1 ]
 #+end_example
 
     - Logical operators (=!=, ====, =!==, =<=, =>=, =>==, =<==, =&&=, =||=)
@@ -1632,6 +1629,8 @@ A short overview over each input and what it does:
   The hydra module already exists in nixpkgs - however, because, I am also using [[https://github.com/shlevy/nix-plugins][nix-plugins]], I need to build all tools that are using nix against a specific nix version (this is also why I pull in =nix-eval-jobs= as a flake input).
 - [[https://github.com/thelegy/nixos-nftables-firewall][nixos-nftables-firewall]]
   This flake introduces a module that allows for more structurized nftables config.
+- [[#h:c88d569e-70c4-4dd6-a959-be649fdeaa71][topologyPrivate]]
+  This input per default provides a simple output =topologyPrivate = false;=. This is the value that is normally used in the config. When I export my setup to a topology diagram, there are some public IPs and domains that I want to obfuscate. When doing that, I can then override this input.
 
 #+begin_src nix :noweb yes :tangle flake.nix
   {
@@ -1712,6 +1711,7 @@ A short overview over each input and what it does:
       nix-minecraft.url = "github:Infinidoge/nix-minecraft";
       simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
       nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
+      topologyPrivate.url = "./files/topology/public";
     };
 
     outputs =
@@ -2081,6 +2081,7 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
                 inherit (pkgs) lib;
                 inherit (self.outputs) nodes;
                 inherit inputs;
+                inherit (inputs.topologyPrivate) topologyPrivate;
               };
               modules = [
                 ../modules/nixos/common/globals.nix
@@ -2176,7 +2177,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
             specialArgs = {
               inherit inputs outputs self minimal homeLib configName arch;
               inherit (config.pkgs.${arch}) lib;
-              inherit (config) nodes;
+              inherit (config) nodes topologyPrivate;
               globals = config.globals.${arch};
               type = "nixos";
               withHomeManager = true;
@@ -2238,7 +2239,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
           inputs.nix-darwin.lib.darwinSystem {
             specialArgs = {
               inherit inputs lib outputs self minimal configName;
-              inherit (config) nodes;
+              inherit (config) nodes topologyPrivate;
               withHomeManager = true;
               globals = config.globals.${arch};
             };
@@ -2275,7 +2276,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
             inherit pkgs;
             extraSpecialArgs = {
               inherit inputs lib outputs self configName arch type;
-              inherit (config) nodes;
+              inherit (config) nodes topologyPrivate;
               globals = config.globals.${arch};
               minimal = false;
             };
@@ -2362,6 +2363,8 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
         nodes = config.nixosConfigurations
           // config.darwinConfigurations
           // config.guestConfigurations;
+
+        "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
       };
   }
 #+end_src
@@ -2512,21 +2515,25 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     # trunk
                     [ "eth1" ]
                     # devices
-                    [ "eth2" ]
+                    [ "eth2" "eth5" "eth6" ]
                     # home
                     [ "eth3" "eth8" ]
                     # guests
-                    [ "eth4" "eth5" "eth6" "eth7" ]
+                    [ "eth4" "eth7" ]
                   ];
                   interfaces = {
                     eth2 = { network = lib.mkForce "devices"; };
                     eth3 = { network = lib.mkForce "home"; };
+                    eth5 = { network = lib.mkForce "devices"; };
+                    eth6 = { network = lib.mkForce "devices"; };
                     eth7 = { network = lib.mkForce "guests"; };
                     eth8 = { network = lib.mkForce "home"; };
                   };
                   connections = {
                     eth2 = mkConnection "nswitch" "eth1";
                     eth3 = mkConnection "bakery" "eth1";
+                    eth5 = mkConnection "ps4" "eth1";
+                    eth6 = mkConnection "ender3" "eth1";
                     eth7 = mkConnection "pc" "eth1";
                     eth8 = mkConnection "pyramid" "eth1";
                   };
@@ -2554,9 +2561,27 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                 };
 
                 nswitch = mkDevice "Nintendo Switch" {
-                  info = "Nintendo Switch";
+                  info = "Atmosphère 1.3.2 @ FW 19.0.1";
                   image = "${self}/files/topology-images/nintendo-switch.png";
                   interfaces.eth1 = { };
+                };
+
+                ps4 = mkDevice "PlayStation 4" {
+                  info = "GoldHEN @ FW 5.05";
+                  image = "${self}/files/topology-images/ps4.png";
+                  interfaces.eth1 = { };
+                };
+
+                ender3 = mkDevice "Ender 3" {
+                  info = "SKR V1.3, TMC2209 (Dual), TFT35";
+                  image = "${self}/files/topology-images/ender3.png";
+                  interfaces.eth1 = { };
+                  services = {
+                    octoprint = {
+                      name = "OctoPrint";
+                      icon = "${self}/files/topology-images/octoprint.png";
+                    };
+                  };
                 };
 
                 magicant = mkDevice "magicant" {
@@ -4183,7 +4208,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:0fdefb4f-ce53-4caf-89ed-5d79646f70f0
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/hardware-configuration.nix
-  { config, lib, modulesPath, ... }:
+  { lib, modulesPath, ... }:
 
   {
     imports =
@@ -4198,7 +4223,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       extraModulePackages = [ ];
 
       supportedFilesystems = [ "zfs" ];
-      zfs.extraPools = [ "Vault" ];
+      # zfs.extraPools = [ "Vault" ];
     };
 
     fileSystems = {
@@ -4239,12 +4264,14 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:dc2233df-cd78-43cc-bb45-57568a83fb24
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/default.nix
-  { self, inputs, lib, config, minimal, nodes, globals, confLib, ... }:
+  { self, inputs, lib, minimal, ... }:
   {
 
     imports = [
       ./hardware-configuration.nix
       ./disk-config.nix
+
+      inputs.nixos-hardware.nixosModules.common-cpu-intel
 
       "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
       "${self}/modules/nixos/optional/microvm-host.nix"
@@ -4262,22 +4289,25 @@ This is my main server that I run at home. It handles most tasks that require bi
       loader.efi.canTouchEfiVariables = true;
     };
 
-    node.lockFromBootstrapping = lib.mkForce false;
+    hardware.enableRedistributableFirmware = true;
 
     swarselsystems = {
       info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
       flakePath = "/root/.dotfiles";
       isImpermanence = true;
-      isSecureBoot = false;
+      isSecureBoot = true;
       isCrypted = true;
       isBtrfs = true;
       isLinux = true;
       isNixos = true;
       isSwap = false;
+      proxyHost = "twothreetunnel";
       writeGlobalNetworks = false;
-      rootDisk = "/dev/disk/by-id/ata-TS128GMTS430S_H537280456";
-      withMicroVMs = true;
-      localVLANs = [ "services" "home" ];
+      networkKernelModules = [ "igb" ];
+      rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
+      withMicroVMs = false;
+      localVLANs = [ "services" "home" ]; # devices is only provided on interface for bmc
+      initrdVLAN = "home";
       server = {
         wireguard.interfaces = {
           wgProxy = {
@@ -4313,33 +4343,63 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
+      wireguard = true;
+
+      nginx = true; # for php stuff
+      acme = false; # cert handled by proxy
+
+      nfs = true;
+      kavita = true;
       restic = true;
+      jellyfin = true;
+      navidrome = true;
+      spotifyd = true;
+      mpd = true;
+      postgresql = true;
+      matrix = true;
+      nextcloud = true;
+      immich = true;
+      paperless = true;
+      transmission = true;
+      syncthing = true;
+      grafana = true;
+      freshrss = true;
+      kanidm = true;
+      firefly-iii = true;
+      koillection = true;
+      radicale = true;
+      atuin = true;
+      forgejo = true;
+      ankisync = true;
+      homebox = true;
       opkssh = true;
     };
 
-    guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-      { }
-      // confLib.mkMicrovm "kavita"
-      // confLib.mkMicrovm "jellyfin"
-      // confLib.mkMicrovm "audio"
-      // confLib.mkMicrovm "postgresql"
-      // confLib.mkMicrovm "matrix"
-      // confLib.mkMicrovm "nextcloud"
-      // confLib.mkMicrovm "immich"
-      // confLib.mkMicrovm "paperless"
-      // confLib.mkMicrovm "transmission"
-      // confLib.mkMicrovm "storage"
-      // confLib.mkMicrovm "monitoring"
-      // confLib.mkMicrovm "freshrss"
-      // confLib.mkMicrovm "kanidm"
-      // confLib.mkMicrovm "firefly"
-      // confLib.mkMicrovm "koillection"
-      // confLib.mkMicrovm "radicale"
-      // confLib.mkMicrovm "atuin"
-      // confLib.mkMicrovm "forgejo"
-      // confLib.mkMicrovm "ankisync"
-      // confLib.mkMicrovm "homebox"
-    );
+    # guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+    #   { }
+    #   // confLib.mkMicrovm "kavita"
+    #   // confLib.mkMicrovm "jellyfin"
+    #   // confLib.mkMicrovm "audio"
+    #   // confLib.mkMicrovm "postgresql"
+    #   // confLib.mkMicrovm "matrix"
+    #   // confLib.mkMicrovm "nextcloud"
+    #   // confLib.mkMicrovm "immich"
+    #   // confLib.mkMicrovm "paperless"
+    #   // confLib.mkMicrovm "transmission"
+    #   // confLib.mkMicrovm "storage"
+    #   // confLib.mkMicrovm "monitoring"
+    #   // confLib.mkMicrovm "freshrss"
+    #   // confLib.mkMicrovm "kanidm"
+    #   // confLib.mkMicrovm "firefly"
+    #   // confLib.mkMicrovm "koillection"
+    #   // confLib.mkMicrovm "radicale"
+    #   // confLib.mkMicrovm "atuin"
+    #   // confLib.mkMicrovm "forgejo"
+    #   // confLib.mkMicrovm "ankisync"
+    #   // confLib.mkMicrovm "homebox"
+    # );
+
+    networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "bmc" ];
 
   }
 
@@ -4514,7 +4574,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/kavita/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4565,7 +4625,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/jellyfin/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4616,7 +4676,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/audio/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4669,7 +4729,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/postgresql/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4720,7 +4780,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/matrix/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4771,7 +4831,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/nextcloud/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4823,7 +4883,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/immich/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4874,7 +4934,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/paperless/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4925,7 +4985,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/transmission/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4976,7 +5036,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/storage/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5028,7 +5088,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/monitoring/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5079,7 +5139,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/freshrss/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5131,7 +5191,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/kanidm/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5182,7 +5242,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/firefly/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5234,7 +5294,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/koillection/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5285,7 +5345,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/radicale/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5336,7 +5396,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/atuin/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5387,7 +5447,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/forgejo/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5438,7 +5498,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/ankisync/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5489,7 +5549,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/homebox/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5589,9 +5649,10 @@ This is my main server that I run at home. It handles most tasks that require bi
           wgHome = {
             isServer = true;
             peers = [
-              "winters"
               "hintbooth-adguardhome"
               "hintbooth-nginx"
+              "summers"
+              "winters"
             ];
           };
         };
@@ -7028,6 +7089,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
             peers = [
               "moonside"
               "winters"
+              "summers"
               "belchsfactory"
               "eagleland"
               "hintbooth-adguardhome"
@@ -8477,6 +8539,14 @@ in
                         type = types.nullOr types.str;
                         default = null;
                       };
+                      serviceAddress = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                      };
+                      homeServiceAddress = mkOption {
+                        type = types.nullOr types.str;
+                        default = null;
+                      };
                       isHome = mkOption {
                         type = types.bool;
                         default = false;
@@ -9050,7 +9120,7 @@ This system, while highly pleasant to work with during everyday use, sometimes h
 
         secrets = lib.mkOption {
           readOnly = true;
-          default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes inputs; }) config.repo.secretFiles;
+          default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes inputs; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
           type = lib.types.unspecified;
           description = "Exposes the loaded repo secrets. This option is read-only.";
         };
@@ -9079,20 +9149,27 @@ This dynamically uses systemd boot or Lanzaboote depending on the minimal system
 
 #+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
   { lib, pkgs, config, minimal, ... }:
+  let
+    inherit (config.swarselsystems) isSecureBoot isImpermanence;
+  in
   {
     options.swarselmodules.lanzaboote = lib.mkEnableOption "lanzaboote config";
     config = lib.mkIf config.swarselmodules.lanzaboote {
 
-      environment.systemPackages = lib.mkIf config.swarselsystems.isSecureBoot [
+      environment.systemPackages = lib.mkIf isSecureBoot [
         pkgs.sbctl
       ];
+
+      environment.persistence."/persist" = lib.mkIf (isImpermanence && isSecureBoot) {
+        directories = [{ directory = "/var/lib/sbctl"; }];
+      };
 
       boot = {
         loader = {
           efi.canTouchEfiVariables = true;
-          systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+          systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !isSecureBoot) (lib.mkForce true) (lib.mkForce false);
         };
-        lanzaboote = lib.mkIf (!minimal && config.swarselsystems.isSecureBoot) {
+        lanzaboote = lib.mkIf (!minimal && isSecureBoot) {
           enable = true;
           pkiBundle = "/var/lib/sbctl";
           configurationLimit = 6;
@@ -11686,6 +11763,7 @@ I also take some precautions in how I get networking information during stage 1.
         initrd = {
           secrets."/tmp${hostKeyPathBase}" = if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
           availableKernelModules = config.swarselsystems.networkKernelModules;
+          kernelModules = config.swarselsystems.networkKernelModules; # at least summers needs this to actually find the interfaces
           network = {
             enable = true;
             flushBeforeStage2 = true;
@@ -12154,8 +12232,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       })
       globals.networks.home-lan.vlans;
     selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
+    lan3VLANs = selectVLANs [ "home" "devices" "services" ];
+    lan4VLANs = lan3VLANs;
     lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
-    lan4VLANs = selectVLANs [ "home" "services" ];
     inherit (globals.general) homeDnsServer;
   in
   {
@@ -12352,9 +12431,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
-              inherit bridgeVLANs;
+              bridgeVLANs = lan3VLANs;
             };
-            # winters
+            # summers
             "30-lan4" = {
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
               linkConfig.RequiredForOnline = "enslaved";
@@ -12453,7 +12532,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -12496,15 +12576,15 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         extraGroups = [ "video" "render" "users" ];
       };
 
-      nixpkgs.config.packageOverrides = pkgs: {
-        intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
-      };
+      # nixpkgs.config.packageOverrides = pkgs: {
+      #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
+      # };
 
       hardware.graphics = {
         enable = true;
         extraPackages = with pkgs; [
           intel-media-driver # LIBVA_DRIVER_NAME=iHD
-          intel-vaapi-driver # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+          # intel-vaapi-driver # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
           libva-vdpau-driver
           libvdpau-va-gl
         ];
@@ -12523,7 +12603,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -12603,7 +12684,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -13096,7 +13178,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -13394,7 +13477,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
 
       services = {
@@ -13468,7 +13552,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -13555,7 +13640,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -13918,7 +14004,8 @@ in
         };
         services.${specificServiceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -14138,7 +14225,8 @@ This section exposes several metrics that I use to check the health of my server
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -14291,6 +14379,10 @@ This section exposes several metrics that I use to check the health of my server
 
       nodes =
         let
+          extraConfig = ''
+            allow ${globals.networks.home-lan.vlans.services.cidrv4};
+            allow ${globals.networks.home-lan.vlans.services.cidrv6};
+          '';
           genNginx = toAddress: extraConfigPre: {
             upstreams = {
               "${grafanaUpstream}" = {
@@ -14337,7 +14429,7 @@ This section exposes several metrics that I use to check the health of my server
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
+          ${homeWebProxy}.services.nginx = genNginx homeServiceAddress (extraConfig + nginxAccessRules);
         };
     };
   }
@@ -14371,7 +14463,8 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -14493,7 +14586,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
 
       services.${serviceName} =
@@ -14601,7 +14695,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -14755,7 +14850,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -14877,7 +14973,8 @@ kanidm person credential create-reset-token <user>
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -15201,12 +15298,17 @@ kanidm person credential create-reset-token <user>
 
       systemd.services.${serviceName}.serviceConfig.RestartSec = "30";
 
-      nodes = {
+      nodes = let
+        extraConfig = ''
+          allow ${globals.networks.home-lan.vlans.services.cidrv4};
+          allow ${globals.networks.home-lan.vlans.services.cidrv6};
+        '';
+      in {
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; };
-        ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; };
+        ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; extraConfig = extraConfig + nginxAccessRules; serviceAddress = homeServiceAddress; };
       };
 
     };
@@ -15223,7 +15325,7 @@ kanidm person credential create-reset-token <user>
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
 
     kanidmDomain = globals.services.kanidm.domain;
     mainDomain = globals.domains.main;
@@ -15375,7 +15477,8 @@ kanidm person credential create-reset-token <user>
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -15433,14 +15536,16 @@ kanidm person credential create-reset-token <user>
           extraConfig = ''
             proxy_set_header X-Scheme                $scheme;
             proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+            allow ${globals.networks.home-lan.vlans.services.cidrv4};
+            allow ${globals.networks.home-lan.vlans.services.cidrv6};
           '';
         in
         {
           ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceAddress serviceDomain serviceName extraConfig; protocol = "https"; };
-          ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; extraConfig = extraConfig + nginxAccessRules; serviceAddress = globals.hosts.${oauthServer}.wanAddress4; };
+          ${webProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceAddress serviceDomain serviceName extraConfig;  };
+          ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; extraConfig = extraConfig + nginxAccessRules; serviceAddress = globals.hosts.${oauthServer}.wanAddress4; };
         };
     };
   }
@@ -15489,7 +15594,8 @@ kanidm person credential create-reset-token <user>
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
 
       services = {
@@ -15628,7 +15734,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -15755,7 +15862,8 @@ in
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -15830,7 +15938,8 @@ in
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -16046,7 +16155,8 @@ in
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -16215,7 +16325,8 @@ in
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -16315,7 +16426,8 @@ in
       };
       services.${serviceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -16406,7 +16518,8 @@ in
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -16470,7 +16583,8 @@ in
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -16672,7 +16786,8 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         };
         services.${specificServiceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -17330,7 +17445,8 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
         };
         roundcube = {
           domain = roundcubeDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -17505,7 +17621,8 @@ $ attic cache create hello
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -17671,7 +17788,8 @@ $ hydra-create-user alice --full-name 'Alice Q. User' \
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -18045,7 +18163,8 @@ This has some state:
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -18426,7 +18545,8 @@ This has some state:
         };
         services.${serviceName} = {
           domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
 
@@ -18466,6 +18586,7 @@ This has some state:
               # FIXME: change to homeWebProxy once that is setup
               answer = globals.networks.home-lan.vlans.services.hosts.${homeWebProxy}.ipv4;
               # answer = globals.hosts.${webProxy}.wanAddress4;
+              enabled = true;
             })
             homeDomains;
           filters = [
@@ -18485,6 +18606,7 @@ This has some state:
               enabled = true;
             }
           ];
+          user_rules = config.repo.secrets.local.adguardUserRules;
         };
       };
 
@@ -19412,6 +19534,7 @@ A VLAN can also be used as the initrd network - this is however disabled for the
 
         boot.initrd = lib.mkIf (isCrypted && (localVLANsList != []) && (!isRouter)) {
           availableKernelModules = [ "8021q" ];
+          kernelModules = [ "8021q" ]; # at least summers needs this to actually find the interfaces
           systemd.network = {
             enable = true;
             netdevs."30-vlan-${initrdVLAN}" = {
@@ -19445,6 +19568,20 @@ A VLAN can also be used as the initrd network - this is however disabled for the
             };
           };
         };
+
+        topology.self.interfaces = (lib.mapAttrs'
+          (vlanName: _:
+            lib.nameValuePair "vlan-${vlanName}" {
+              network = lib.mkForce vlanName;
+            }
+          )
+          localVLANs) // (lib.mapAttrs'
+          (vlanName: _:
+            lib.nameValuePair "me-${vlanName}" {
+              network = lib.mkForce vlanName;
+            }
+          )
+          localVLANs);
 
         systemd.network = {
           netdevs = lib.flip lib.concatMapAttrs localVLANs (
@@ -20969,18 +21106,18 @@ Common order values:
 
 To specify both content in Early initialization and General configuration, use lib.mkMerge:
 
-#+begin_src nix
-initContent = let
-zshConfigEarlyInit = lib.mkOrder 500 "do something";
-zshConfig = lib.mkOrder 1000 "do something";
-in
-lib.mkMerge [ zshConfigEarlyInit zshConfig ];
+#+begin_src nix-ts :tangle no
+  let
+    zshConfigEarlyInit = lib.mkOrder 500 "do something";
+    zshConfig = lib.mkOrder 1000 "do something";
+  in
+    lib.mkMerge [ zshConfigEarlyInit zshConfig ];
 #+end_src
 
 Currently I only use it as before with =initExtra= though.
 
 #+begin_src nix-ts :tangle modules/home/common/zsh.nix
-  { config, pkgs, lib, minimal, globals, confLib, type, ... }:
+  { self, config, pkgs, lib, minimal, globals, confLib, type, ... }:
   let
     inherit (config.swarselsystems) flakePath isNixos;
     crocDomain = globals.services.croc.domain;
@@ -21028,7 +21165,7 @@ Currently I only use it as before with =initExtra= though.
               boot-diff = "nix store diff-closures /run/*-system";
               gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
               cc = "wl-copy";
-              build-topology = "nix build .#topology.x86_64-linux.config.output";
+              build-topology = "nix build --override-input topologyPrivate ${self}/files/topology/private .#topology.x86_64-linux.config.output";
               build-iso = "nix build --print-out-paths .#live-iso";
               nix-review-local = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
               nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";
@@ -29123,10 +29260,10 @@ This script quickly switches to another nix generation.
     inherit name;
     runtimeInputs = [ sops ];
     text = ''
-      sops updatekeys ${homeConfig.home.homeDirectory}/secrets/repo/*
-      sops updatekeys ${homeConfig.home.homeDirectory}/secrets/nginx/*
-      sops updatekeys ${homeConfig.home.homeDirectory}/secrets/work/*
-      sops updatekeys ${homeConfig.home.homeDirectory}/hosts/*/*/*/secrets/*/secrets.yaml
+      sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/repo/*
+      sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/nginx/*
+      sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/work/*
+      sops updatekeys ${homeConfig.swarselsystems.flakePath}/hosts/*/*/*/secrets/*/secrets.yaml
     '';
   }
 
@@ -36973,6 +37110,31 @@ jobs:
 
 #+end_src
 
+** Private topology flake
+
+This flake is automatically loaded as an override when building the repo topology using the alias =build-topology= defined in [[#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5][zsh]].
+
+#+begin_src nix-ts :tangle files/topology/private/flake.nix
+  {
+    description = "Flake that sets topologyPrivate to true for building topology.";
+
+    outputs = _: { topologyPrivate = true; };
+  }
+#+end_src
+** Public topology flake
+:PROPERTIES:
+:CUSTOM_ID: h:c88d569e-70c4-4dd6-a959-be649fdeaa71
+:END:
+
+This flake is loaded per default as an input to not obfuscate values that could be exposed to nix-topology.
+
+#+begin_src nix-ts :tangle files/topology/public/flake.nix
+  {
+    description = "Flake that sets topologyPrivate to false for general purpose.";
+
+    outputs = _: { topologyPrivate = false; };
+  }
+#+end_src
 * Appendix C: Explanations to nix functions and operators
 :PROPERTIES:
 :CUSTOM_ID: h:8ea35dcc-ef94-4c10-9112-8be8efd6f424

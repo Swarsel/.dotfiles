@@ -29,7 +29,7 @@ let
             rapid-commit = lib.mkIf (intX == 6) true;
             pools = [
               {
-                pool = "${lib.net.cidr.host 20 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
+                pool = "${lib.net.cidr.host 100 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
               }
             ];
             pd-pools = lib.mkIf (intX == 6) [

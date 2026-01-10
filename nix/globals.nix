@@ -24,6 +24,7 @@
               inherit (pkgs) lib;
               inherit (self.outputs) nodes;
               inherit inputs;
+              inherit (inputs.topologyPrivate) topologyPrivate;
             };
             modules = [
               ../modules/nixos/common/globals.nix

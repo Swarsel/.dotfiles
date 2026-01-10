@@ -76,6 +76,7 @@
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
     simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
+    topologyPrivate.url = "./files/topology/public";
   };
 
   outputs =

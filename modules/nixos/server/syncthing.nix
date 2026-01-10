@@ -70,7 +70,8 @@ in
       };
       services.${specificServiceName} = {
         domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
     };
 
@@ -129,8 +130,8 @@ in
     };
 
     nodes = {
-      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      ${dnsServer}.swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain; serviceName = specificServiceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain; serviceName = specificServiceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });

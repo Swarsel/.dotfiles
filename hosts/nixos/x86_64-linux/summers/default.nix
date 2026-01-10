@@ -1,17 +1,20 @@
-{ self, inputs, lib, config, minimal, nodes, globals, ... }:
+{ self, inputs, lib, minimal, ... }:
 {
 
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
 
+    inputs.nixos-hardware.nixosModules.common-cpu-intel
+
+    "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
     "${self}/modules/nixos/optional/microvm-host.nix"
   ];
 
   topology.self = {
     interfaces = {
-      "eth1" = { };
-      "eth2" = { };
+      "lan" = { };
+      "bmc" = { };
     };
   };
 
@@ -20,21 +23,51 @@
     loader.efi.canTouchEfiVariables = true;
   };
 
-  node.lockFromBootstrapping = lib.mkForce false;
+  hardware.enableRedistributableFirmware = true;
 
   swarselsystems = {
     info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
     flakePath = "/root/.dotfiles";
     isImpermanence = true;
-    isSecureBoot = false;
+    isSecureBoot = true;
     isCrypted = true;
     isBtrfs = true;
     isLinux = true;
     isNixos = true;
     isSwap = false;
-    rootDisk = "/dev/disk/by-id/ata-TS128GMTS430S_H537280456";
+    proxyHost = "twothreetunnel";
+    writeGlobalNetworks = false;
+    networkKernelModules = [ "igb" ];
+    rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
     withMicroVMs = false;
-    server.localNetwork = "lan";
+    localVLANs = [ "services" "home" ]; # devices is only provided on interface for bmc
+    initrdVLAN = "home";
+    server = {
+      wireguard.interfaces = {
+        wgProxy = {
+          isClient = true;
+          serverName = "twothreetunnel";
+        };
+        wgHome = {
+          isClient = true;
+          serverName = "hintbooth";
+        };
+      };
+      restic = {
+        bucketName = "SwarselWinters";
+        paths = [
+          "/Vault/data/paperless"
+          "/Vault/data/koillection"
+          "/Vault/data/postgresql"
+          "/Vault/data/firefly-iii"
+          "/Vault/data/radicale"
+          "/Vault/data/matrix-synapse"
+          "/Vault/Eternor/Paperless"
+          "/Vault/Eternor/Bilder"
+          "/Vault/Eternor/Immich"
+        ];
+      };
+    };
   };
 
 } // lib.optionalAttrs (!minimal) {
@@ -43,34 +76,63 @@
     server = true;
   };
 
-  microvm.vms =
-    let
-      mkMicrovm = guestName: {
-        ${guestName} = {
-          backend = "microvm";
-          autostart = true;
-          modules = [
-            ./guests/${guestName}.nix
-            {
-              node.secretsDir = ./secrets/${guestName};
-            }
-          ];
-          microvm = {
-            system = "x86_64-linux";
-            # baseMac = config.repo.secrets.local.networking.interfaces.lan.mac;
-            # interfaces.vlan-services = { };
-          };
-          specialArgs = {
-            inherit (config) nodes globals;
-            inherit lib;
-            inherit inputs minimal;
-          };
-        };
-      };
-    in
-    lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-      { }
-      // mkMicrovm "guest1"
-    );
+  swarselmodules.server = {
+    wireguard = true;
+
+    nginx = true; # for php stuff
+    acme = false; # cert handled by proxy
+
+    nfs = true;
+    kavita = true;
+    restic = true;
+    jellyfin = true;
+    navidrome = true;
+    spotifyd = true;
+    mpd = true;
+    postgresql = true;
+    matrix = true;
+    nextcloud = true;
+    immich = true;
+    paperless = true;
+    transmission = true;
+    syncthing = true;
+    grafana = true;
+    freshrss = true;
+    kanidm = true;
+    firefly-iii = true;
+    koillection = true;
+    radicale = true;
+    atuin = true;
+    forgejo = true;
+    ankisync = true;
+    homebox = true;
+    opkssh = true;
+  };
+
+  # guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+  #   { }
+  #   // confLib.mkMicrovm "kavita"
+  #   // confLib.mkMicrovm "jellyfin"
+  #   // confLib.mkMicrovm "audio"
+  #   // confLib.mkMicrovm "postgresql"
+  #   // confLib.mkMicrovm "matrix"
+  #   // confLib.mkMicrovm "nextcloud"
+  #   // confLib.mkMicrovm "immich"
+  #   // confLib.mkMicrovm "paperless"
+  #   // confLib.mkMicrovm "transmission"
+  #   // confLib.mkMicrovm "storage"
+  #   // confLib.mkMicrovm "monitoring"
+  #   // confLib.mkMicrovm "freshrss"
+  #   // confLib.mkMicrovm "kanidm"
+  #   // confLib.mkMicrovm "firefly"
+  #   // confLib.mkMicrovm "koillection"
+  #   // confLib.mkMicrovm "radicale"
+  #   // confLib.mkMicrovm "atuin"
+  #   // confLib.mkMicrovm "forgejo"
+  #   // confLib.mkMicrovm "ankisync"
+  #   // confLib.mkMicrovm "homebox"
+  # );
+
+  networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "bmc" ];
 
 }

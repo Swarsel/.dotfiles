@@ -53,7 +53,7 @@ in
 
       secrets = lib.mkOption {
         readOnly = true;
-        default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes inputs; }) config.repo.secretFiles;
+        default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes inputs; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
         type = lib.types.unspecified;
         description = "Exposes the loaded repo secrets. This option is read-only.";
       };
