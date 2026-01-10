@@ -11,6 +11,7 @@
 #+MACRO: revision-date (eval (format-time-string "%F %T %z"))
 #+MACRO: count-words (eval (count-words (point-min) (point-max)))
 #+MACRO: count-lines (eval (count-lines (point-min) (point-max)))
+#+MACRO: days-since (eval (number-to-string (- (org-today) (org-time-string-to-absolute (format "%s-%s-%s" $1 $2 $3)))))
 #+MACRO: NOTE (eval "This file has {{{count-words}}} words spanning {{{count-lines}}} lines and was last revised on {{{revision-date}}}.")
 
 *{{{NOTE(If you can see this, you might want to switch to [[https://swarsel.github.io/.dotfiles/][the hmtl version of this document]] in order to have working links and other QoL functions while reading this file.)}}}*
@@ -22,11 +23,32 @@
 
 This literate configuration file holds the entirety of all configuration for both NixOS PCs and servers as well as home-manager only systems across all machines that I currently use. It also holds an extensive Emacs configuration. I use this project to manage my entire home + cloud infrastructure
 
-This configuration is part of a NixOS system that is (nearly) fully declarative and can be found here:
+This configuration is part of a NixOS system that is for the most part fully declarative (execpt for the steps outlined in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]) and can be found here:
 
 - [[https://github.com/Swarsel/.dotfiles][Swarsel/.dotfiles on GitHub]]
 
 The literate configuration approach lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all design steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, this is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into NixOS (and, to some extent, Emacs) as I know it can be a struggle in the beginning.
+
+** What I achieve with this project
+
+[[https://github.com/Swarsel/.dotfiles/tree/main/files/topology/topology.png][file:./files/topology/topology_small.png]]
+
+/(click to enlarge)/
+
+This project manages my entire IT infrastructure. In particular:
+
+- A mailserver ([[#h:81bc8746-b46b-4d29-87de-ddbd77788b43][Eagleland (Hetzner)]])
+- My home router ([[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]) and its MicroVMs
+- Two homeservers ([[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]], [[#h:932ef6b0-4c14-4200-8e3f-2e208e748746][Winters (Server: ASRock J4105-ITX)]] and their respective MicroVMs) and one cloud server ([[#h:f547ed16-5e6e-4744-9e33-af090e0a175b][Moonside (OCI)]]) that are using other services defined in [[#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7][Services]]
+- Two servers (the cloud host [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]] and one microvm [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][Nginx]] hosted on [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]) that proxy requests to those services
+- A NixOS hydra buildfarm ([[#h:90457194-6b97-4cd6-90bc-4f42d0d69f51][Belchsfactory (OCI)]]) with binary caching that helps me build derivations faster and cache them for reuse
+- An authoritative DNS server ([[#h:1888ded8-69dc-431f-bb39-5089a8e8b1f4][Stoicclub (OCI)]]) that pushes records to both Hetzner and Hurricane Electric DNS
+- An SSH bastion ([[#h:a6baab45-b608-4289-bc92-4454bb0856c6][Liliputsteps (OCI)]]) that gatekeeps access to all cloud hosts
+- My work laptop ([[#h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9][pyramid (Framework Laptop 16)]]) and my personal laptop ([[#h:a320569e-7bf0-4552-9039-b2a8e0939a12][Bakery (Lenovo ThinkPad)]])
+- My work workstation ([[#h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0][Treehouse (DGX Spark)]])
+- My phone ([[#h:729af373-37e7-4379-9a3d-b09792219415][Magicant (Phone)]])
+
+  This is a system that grew organically over {{{days-since(2021,11,27)}}} days and has reached considerable complexity at this point. This documents exists to try and make it understandable to other people as well.
 
 ** How to use this document
 :PROPERTIES:
@@ -326,8 +348,8 @@ This is a comprehensive list of the services/components ran by my server machine
 
 #+begin_src markdown :tangle no :noweb-ref services
   | Topic                      | Program                                                                                                        |
-  |----------------------------|----------------------------------------------------------------------------------------------------------------|
-  |📖 **Books**                |  [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                      |
+  |------------------------------|----------------------------------------------------------------------------------------------------------------|
+  |📖 **Books**                | [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                       |
   |📼 **Videos**               | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                   |
   |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                                                              |
   |🗨️ **Messaging**            | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                       |
@@ -339,8 +361,8 @@ This is a comprehensive list of the services/components ran by my server machine
   |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/monitoring.nix)                  |
   |🍴 **RSS**                  | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                   |
   |🌳 **Git**                  | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                     |
-  |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)           |
-  |🪪 **SSO**                  | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/oauth2-proxy.nix)                                            |
+  |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)                      |
+  |🪪 **SSO**                  | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/oauth2-proxy.nix)           |
   |💸 **Finance**              | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firefly-iii.nix)             |
   |🃏 **Collections**          | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)             |
   |🗃️ **Shell History**        | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                         |
@@ -355,8 +377,11 @@ This is a comprehensive list of the services/components ran by my server machine
   |🐙 **Nix Build farm**       | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix)                         |
   |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
   |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
-  |👀 **DNS**                  | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |
+  |👀 **DNS Records**          | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |
   |✉️ **Mail**                 | [simple-nixos-mailserver](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mailserver.nix)  |
+  |🚇 **VPN Access**           | [Firezone](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firezone.nix)                   |
+  |🛡️ **Local DNS Resolver**   | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/adguardhome.nix)                     |
+  |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
 #+end_src
 
 * An introduction to nix
@@ -366,7 +391,7 @@ This is a comprehensive list of the services/components ran by my server machine
 
 This is where it gets interesting.
 
-In this section, I want to give an overview over some important concepts needed when working with nix.
+In this section, I want to give an overview over some important concepts needed when working in the nix ecosystem.
 
 ** Nix, NixOS, Nixpkgs, and Nix
 :PROPERTIES:
@@ -380,38 +405,42 @@ First off, when talking about nix, we need to differentiate between several thin
 - The linux distribution [[#h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef][NixOS]]
 - the =nix-community= input [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]]
 
-While these terms are all connected with each other, it is important to keep in mind that funamentally those are separate entities. Let us briefly talk about each one:
+While these terms are all connected with each other, it is important to keep in mind that fundamentally those are separate entities. Let us briefly talk about each one:
 
 *** nix language
 :PROPERTIES:
 :CUSTOM_ID: h:b2222c7c-0bd5-44f8-aa69-17869d6913c0
 :END:
 
-Fundamental to all of the other concepts named above is the =nix language=, a functional programming language (that feels like a design language for reasons we will get to). What follows is what you can read at [[https://hydra.nixos.org/build/318367945/download/1/manual/][the nix reference manual]] in detail, condensed to the most important stuff.
+The base of all the other concepts named above is the =nix language=, a pure functional programming language that is declarative, dynamically typed, and evaluated lazily. That means:
+- Functions are just values, that can be assigned to variables, passed as arguments to other functions, or returned by functions
+- All variables are immutable (their values cannot change during computation)
+- Values will only be computed when their result is needed
+  - There is no sequential order of operations; instead, operations get ordered they need to evaluate another expression that they depend on
+- We do not need to specify a values type when declaring it
 
-
-Here I will give a brief overview over the nix language. While a very deep topic, this aims to only build the essential understanding needed for dealing with the configuration I am using (this should be sufficient to then understand most other configurations online). For deepening your knowledge, you might want to check out the [[https://nix.dev/reference/nix-manual.html][nix reference manual]].
+Now, I will give a brief overview over some important concepts of the nix language. This aims to only build the essential understanding needed for dealing with the configuration I am using (this should be sufficient to then understand most other configurations online). For deepening your knowledge, you might want to check out the [[https://nix.dev/reference/nix-manual.html][nix reference manual]].
 
 **** Derivations and the nix store
 :PROPERTIES:
 :CUSTOM_ID: h:45135360-96d4-4348-b6fb-e8bc4685611e
 :END:
 
-The main purpose of the nix language is to build packages. These packages are built by functions that can be inaccurately described by something like this:
+The main purpose of the nix language is to build packages. These packages are built by functions that can be roughly described by something like this:
 
 ~f: { source, compiler, dependencies, etc. } -> package~
 
-This function along with all its inputs we call a =derivation=. What is important to realize is that such a derivation can itself depend on other derivations, and the resulting package does not necessarily need to be a callable program (a more correct name for the function result is =outputs=). When we as nix users define a package, we will usually use =pkgs.stdenv.mkDerivation= (ore one of its derived wrappers like =buildRustPackage=), which will run things like install phases and setup hooks for us. It is a wrapper around nix function ~derivation(name, system, builder, args=[],outputs=["out"])~, where =name= is the derivation name, =system= is the system architecture to build for, =builder= is the executable responsible for building the result, =args= are arbitrary arguments passed to =builder=, and =outputs=, which can be thought of a list of locations where we want to put different build artifacts that can be referenced separately when using the package. There are [[https://nix.dev/manual/nix/2.28/language/advanced-attributes][more attributes]], but these five are the most important and commonly used ones.
+This function along with all its inputs we call a =derivation=. What is important to realize is that such a derivation can itself depend on other derivations, and the resulting package does not necessarily need to be a callable program (a more correct name for the function result is =outputs=). When we as nix users define a package, we will usually use a function called =pkgs.stdenv.mkDerivation= (ore one of its derived wrappers like =buildRustPackage=; for now, it is not important what these do exactly), which will run things like install phases and setup hooks for us. It is a wrapper around nix function ~derivation(name, system, builder, args=[],outputs=["out"])~, where =name= is the derivation name, =system= is the system architecture to build for, =builder= is the executable responsible for building the result, =args= are arbitrary arguments passed to =builder=, and =outputs=, which can be thought of a list of locations where we want to put different build artifacts that can be referenced separately when using the package. There are [[https://nix.dev/manual/nix/2.28/language/advanced-attributes][more attributes]], but these five are the most important and commonly used ones.
 
-Building such a package (in nix terms: "realising") from a derivation causes the package to be created in the =nix store=. This is a read-only filesystem that is usually located at =/nix/store=. When building a package, nix will place its content of each output at =/nix/store/<hash>-<package name>-<package version>-<output name if not 'out'>/=, where =<hash>= is a unique identifier that changes whenever one of the inputs to the above function changes. That means that it is no problem to store different versions of the same file on one system, and each program can use the correct dependencies that it needs.
+Building a package (in nix terms: "realising") from a derivation causes the package to be created in the =nix store=. This is a read-only filesystem that is usually located at =/nix/store=. When building a package, nix will place its content of each output at =/nix/store/<hash>-<package name>-<package version>-<output name if not 'out'>/=, where =<hash>= is a unique identifier that changes whenever one of the inputs to the above function changes. That means that it is no problem to store different versions of the same file on one system, and each program can use the correct dependencies that it needs.
 
-A key observation that follows from this is that packages are declarative; when not changing the inputs, a derivation will always yield the same package with the same store path.
+A key observation that follows from this is that packages are declarative and reproducible; when not changing the inputs, a derivation will always yield the same package with the same store path.
 
 We call the set of derivations (and, recursively, the derivations that those depend on) that a derivation depends on its =closure=.
 
-Usually when installing a package, we do not need all the outputs it provides: For example, the [[https://search.nixos.org/packages?channel=25.11&query=pcsclite][pcscliteWithPolkit package on nixpkgs]]  that is used for configuring smart cards provides 5 outputs: =out=, =dev=, =doc=, =man=, and =lib=. By default, a NixOS system will install =out=, =man=, =info= and =doc= outputs (the latter three have respective =documentation.<name>.enable= NixOS options) as well as any outputs listed in =environment.extraOutputsToInstall= (by default an empty list). However, if we need to debug something, we might need the =dev= output of the package, which can then be installed by referencing =pcscliteWithPolkit.dev=.
+Usually when installing a package, we do not need all the outputs it provides: For example, the [[https://search.nixos.org/packages?channel=25.11&query=pcsclite][pcscliteWithPolkit package on nixpkgs]]  that is used for configuring smart cards provides 5 outputs: =out=, =dev=, =doc=, =man=, and =lib=. By default, a NixOS system will install =out=, =man=, =info= and =doc= outputs (the latter three have respective =documentation.<name>.enable= NixOS options, where =<name>= would be either of =man=, =info=, or =doc=) as well as any outputs listed in =environment.extraOutputsToInstall= (by default an empty list). However, if we need to debug something, we might need the =dev= output of the package, which can then be installed by referencing =pcscliteWithPolkit.dev=.
 
-When reading package source code in =nixpkgs= for example, you will often come across =$out= and =$src=. The =$out= represents the root of that build output (=$src= are the build sources). You will often see that in build phases (it is there set as an environment variable). In other places, you will instead see =placeholder <output>=, which will be replaced by the outputs future location in the nix store.
+Also, a note that may be useful when reading package source code (for example in =nixpkgs=); you will often come across =$out= and =$src=. The =$out= represents the root of that build output (=$src= are the build sources). You will often see that in build phases (it is there set as an environment variable). In other places, you will instead see =placeholder <output>=, which will be replaced by the outputs future location in the nix store.
 
 **** Types in the nix language
 :PROPERTIES:
@@ -434,6 +463,10 @@ The nix language supports the following types and how they look in the wild:
   ''
   "
 #+end_src
+
+#+RESULTS:
+: indent0\n  indent2\n indent1\n
+
 /(you can ignore the [[#h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa][swarsel-instantiate]]; it is just a wrapper around =nix-instantiate= that preloads nixpkgs. I will use this to show you the evaluation results of nix calls)/
     - note that tab characters will /not/ be stripped:
 #+begin_src bash :tangle no :exports both
@@ -450,21 +483,21 @@ The nix language supports the following types and how they look in the wild:
 : \tindentTab\nindent1\n indent2\n
 
   - an URI string can assume the type of string without need for quoting (e.g. you can write =http://about.org= instead of ="http://about.org"=)
-  - Strings can be interpolated by using =${expression]= (read on for an example)
+  - Strings can be interpolated by using =${expression}= (read on for an example)
     - =expression= can be any valid nix expression that is compatible with the enclosing type (here: string)
-    - As in many languages, you have =\n=, =\r=, and =\t= available
-    - in normal strings, you can escape stuff using =\=
-      - the following characters need to be escaped in normal strings:
-        - Backslash: =\= (escape using =\\=)
-        - Double quote: ="= (using =\"=)
-        - Opening of nix expression: =${= (using =\${=)
-    - in multiline strings, you escape stuff using one or two apostrophes ='=
-      - the following characters need to be escaped in multline strings:
-        - Two apostrophes are escaped with a single apostrophe: =''= (escape with ='''=)
-        - All other things are escaped using =''=:
-          - Dollar sigh: =$= (escape with =''$=)
-          - =\n=, =\r=, and =\t= (=''\n= and so on)
-          - =''\= is a catchall for all other escaping
+  - As in many languages, you have =\n=, =\r=, and =\t= available
+  - in normal strings, you can escape stuff using =\=
+    - the following characters need to be escaped in normal strings:
+      - Backslash: =\= (escape using =\\=)
+      - Double quote: ="= (using =\"=)
+      - Opening of nix expression: =${= (using =\${=)
+  - in multiline strings, you escape stuff using one or two apostrophes ='=
+    - the following characters need to be escaped in multline strings:
+      - Two apostrophes are escaped with a single apostrophe: =''= (escape with ='''=)
+      - All other things are escaped using =''=:
+        - Dollar sign: =$= (escape with =''$=)
+        - =\n=, =\r=, and =\t= (=''\n= and so on)
+        - =''\= is a catchall for all other escaping
     - somewhat interestingly, double dollars =$$= (as used in Makefiles) never need to be escaped
   - ints: 1
   - floats: 1.1
@@ -474,15 +507,13 @@ The nix language supports the following types and how they look in the wild:
     - these hold name value pairs, e.g. ={ a = 3; }=
     - a "chain" of attributes, separated by dots, is called an =attribute path=, e.g. =config.environment.systemPackages=
       - in such a chain, all attributes but the last will be =attribute sets=
-      - =config.environment.systemPackages= is equivalent to  =config = { environment = { systemPackages = <some list>; }; };=
+      - =config.environment.systemPackages = <some list>;= is equivalent to  =config = { environment = { systemPackages = <some list>; }; };=
   - lists: [ ]
-    - these hold values, e.g. =[ { a = 3; } ]=. In this example, the list holds a single value, that is, the attribute set ={ a = 3; }=.
+    - these hold values, e.g. =[ { a = 3; b = 2; } ]=. In this example, the list holds a single value, that is, the attribute set ={ a = 3; b = 2; }=.
   - functions: =arg: body=
     - =arg= can be any of these data types, including functions
       - when =arg= is an attribute set, some special things apply:
         - default values can be specified using =arg ? defaultValue=, e.g. ={ name ? "Default", age }: "${name} is ${age} years old"= will yield ="X is 20 years old"= when called using the attribute set ={ name = "X"; age = "20"; }=. Otherwise it will yield "Default is 20 years old" when called using ={ age = "20"; }=. When not passing =age= in this example, it will throw an error (also not that we had to pass =age= as a string as the value is not cast to a string automatically. Alternatively, we could have passed =age = 20;= and updated the function body to ="${name} is ${builtins.toString age} years old"=. But that is just a sidenote)
-        - the evaluator will error out if it is called with an argument that is not explicitely mentioned in the function definition
-          - this behaviour can be suppressed by adding an ellipsis =...= to the function arguments (={ name ? "Default", age, ... }:=)
 
 Let's see this in action:
 
@@ -495,7 +526,7 @@ Calling with explicit values:
 #+RESULTS:
 : X is 20 years old
 
-Calling by using a default value:
+Calling by using a default value with =?=:
 
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "20"; }'
@@ -524,7 +555,7 @@ error:
              |                                            ^
 #+end_example
 
-Passing a superfluous =another= errors out:
+- the evaluator will error out if it is called with an argument that is not explicitely mentioned in the function definition. Passing a superfluous =another= errors out:
 
 #+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
@@ -542,10 +573,9 @@ error:
        at «string»:1:44:
             1| let lib = import <nixpkgs/lib>; in let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }
              |                                            ^
-#+end_example
+             #+end_example
 
-
-When adding the ellipsis =...= to the function definition, we can now pass =another=:
+- this behaviour can be suppressed by adding an ellipsis =...= to the function arguments (={ name ? "Default", age, ... }:=). Adding this ellipsis =...= to the function definition, we can now pass =another=:
 
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate 'let f = {name ? "Default", age, ... }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
@@ -583,8 +613,8 @@ This looks cumberesome on first sight, but is for example useful when referencin
 
 - The functions available to the nix language can be found in [[https://hydra.nixos.org/build/318491462/download/1/manual/language/builtins.html][the nix reference manual]]. Some explanations to common functions are provided in [[#h:ebe86cf4-fe65-464f-8f64-04b57870c5e9][Builtin functions]].
 
-- Scopes are static in nix. That means that scoped variables are not inherited by the context of the evaluation (this needs to be kept in mind when e.g defining outputs using =flake-parts=)
-  - Variables can be created in an enclosing scope using =let <variable declarations> in <expression>=. You actually saw me use this several times in the above function call. Note that usually, you will not be able to declare arbitrary variables; this is because usually we will be working within the confines of [[#h:8067f8fc-92d7-46af-b1be-e8a337d7a953][The module system]] - in that scope, you either need to resort to the =let ... in= construct or you need to declare things as module options (more on that later). In general nix however, this would be no problem.
+- Scopes are static in nix; scoped variables are not inherited by the context of the evaluation
+  - Variables can be created in an enclosing scope using =let <variable declarations> in <expression>=. You actually saw me use this several times in the above function call. Note that "usually", you will not be able to declare arbitrary variables; this is because usually we will be working within [[#h:8067f8fc-92d7-46af-b1be-e8a337d7a953][The module system]] - in that scope, you either need to resort to the =let ... in= construct or you need to declare things as module options (more on that later). In general nix however, this would be no problem.
   - another way to add an expression to the scope is using the =rec= keyword:
     - this adds all attributes of the enclosing attribute
     - the following will error out:
@@ -606,7 +636,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
 :              |         ^
 :             5|   }
 
-    - however, =rec= makes =a= available to the scope (also note that the order of expressions does /not/ matter):
+    - however, =rec= makes =a= available to the scope (also remember that the order of expressions does /not/ matter):
 
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate '
@@ -697,7 +727,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
 :PROPERTIES:
 :CUSTOM_ID: h:f995d46f-ff07-4a5e-9164-ed7aef369c42
 :END:
-  The following operators work as you know them from basically any other language:
+  The following operators work as you know them from most other programming languages:
     - Any operator involving numbers (=+=, =-=, =*=, =/=)
       /Sidenote:/ When negating a number in actual nix code you will need to wrap it in parentheses nearly every time due to function evaluation:
 #+begin_src bash :tangle no :exports both
@@ -733,7 +763,7 @@ error:
 #+end_example
 
     - Logical operators (=!=, ====, =!==, =<=, =>=, =>==, =<==, =&&=, =||=)
-      - additionally, logical implications are available as =->= (defined as =!v1 || v2= aka. =if v1 then v2 else true=)
+      - additionally, logical implications are available as =->= (defined as =!v1 || v2= a.k.a. =if v1 then v2 else true=)
 
   The following operators are nix specific:
     - Concatenations can be done between strings and paths (in any order) using =+=
@@ -753,7 +783,7 @@ error:
 | true  |
 | false |
 
-    - Attribute selection is done using =.=:
+    - Attribute selection (on attribute sets) is done using =.=:
 
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate '
@@ -761,10 +791,10 @@ error:
   '
 #+end_src
 
-    - Updates to attribute sets are done using [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]
-
 #+RESULTS:
 : 1
+
+    - Updates to attribute sets are done using [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]
 
 **** Flakes
 :PROPERTIES:
@@ -775,7 +805,7 @@ Next, we shall talk about some concepts regarding nix flakes.
 
 What are flakes? The answer is surprisingly simple: Flakes can be thought of packages that contain nix expressions. They can include other flakes as inputs (acting as libraries if you want) and build on their functionality (in fact, this is exactly what happens when you are using [[#h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef][NixOS]] with [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]]). What exactly is provided by a flake is up to the owner entirely, although there are some "norms" that we will get to later.
 
-This historical note aside, a directory becomes a flake as soon as it contains a file called =flake.nix=, which contains an attribute set that has at least an attribute =outputs=, which must be a function returning an attribute set. Hence, the simplest possible flake is the following:
+A directory becomes a flake as soon as it contains a file called =flake.nix=, which contains an attribute set that has at least an attribute =outputs=, which must be a function returning an attribute set. Hence, the simplest possible flake is the following:
 
   #+begin_src nix-ts :tangle no
     {
@@ -783,12 +813,15 @@ This historical note aside, a directory becomes a flake as soon as it contains a
     }
 #+end_src
 
-What is very nice about flakes is that each flake generates a corresponding =flake.lock= file the first time a nix command is called targetting it. This file exactly specifies at which revision every flake input should be pulled in. This makes flakes very nice for setting up development environments that can then be committed to a project; this enables collaborators to do [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]] which will setup a declarative environment, which is the same for every developer. This increases reproducibility greatly.
+What is very nice about flakes is that each flake generates a corresponding =flake.lock= file the first time a nix command is called targetting it. This file exactly specifies at which revision every flake input should be pulled in. This makes flakes very nice for declaratively setting up development environments that can then be committed to a project; this enables collaborators to do [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]] which will setup a reproducible environment, which is the same for every developer.
 
-That was a very dry introcution. Now, what we are usually interested in when pulling in a flake is any of the following:
+That was a very dry introduction. Now, what we are usually interested in when pulling in a flake is any of the following:
 
 - modules to extend our configuration with
 - packages that are not in =nixpkgs=
+
+and, to a somewhat lesser degree:
+
 - flake templates
 - devshells
 
@@ -799,7 +832,7 @@ That was a very dry introcution. Now, what we are usually interested in when pul
 :CUSTOM_ID: h:96d28671-8b9d-4fbc-8620-1a7d5fcec480
 :END:
 
-Flakes are currently an experimental feature in nix, although their interface has been quite stable for a while now - this is possible in part why nearly all bigger nix projects are using flakes nowadays. People like to (mistakenly) claim that it is because of flakes that we have version pinning in nix. In fact, people were doing this long before flakes were a thing using a construct that looked roughly like this:
+Flakes are, as of writing, an experimental feature in nix, although their interface has been quite stable for a while now - in fact, stable enough that most bigger nix projects are exposing a flake nowadays. People like to (mistakenly) claim that it is because of flakes that we have version pinning in nix. In fact, people were doing this long before flakes were a thing using a construct that looks roughly like this:
 
 #+begin_src nix-ts :tangle no
   let
@@ -810,9 +843,9 @@ Flakes are currently an experimental feature in nix, although their interface ha
     }
 #+end_src
 
-This approach simply imports a chunk of nix code that is fetched using =fetchTarball= - and the version is pinned by the git revision. However, imagine a bigger project; even if you were to import every input like this and pass the expressions to the modules that need them, updating the inputs manually would be a chore. And even though projects like [[https://github.com/nmattia/niv][niv]] and [[https://github.com/andir/npins][npins]] exist(/ed) to help with these problems, flakes provide a uniform interface and are reasonably easy to work with, which makes this this considerably more pleasant.
+This approach simply imports a chunk of nix code that is fetched using =fetchTarball= - and the version is pinned by the git revision. However, imagine a bigger project; even if you were to import every input like this and pass the expressions to the modules that need them, updating the inputs manually would be a chore. And even though projects like [[https://github.com/nmattia/niv][niv]] and [[https://github.com/andir/npins][npins]] exist(/ed) to help with these problems, flakes provide a uniform interface and are reasonably easy to work with, and provide a lot more other stuff on the side.
 
-That being said, some people decide to work without flakes. Depending on the reasoning, I think this is totally fair, as really for the code itself they dont automatically provide a lot of extra functionality that cannot be achieved with other tools). However, some people dismiss flakes for the only reason being "they are too complex" with really is not at all true (which is what I hope to prooe to you soon!). A simple project devshell for example could very reasonably be built only from the =fetchTarball= construct I showed above.
+That being said, some people decide to work without flakes. Depending on the reasoning, I think this is totally fair (as really for the code itself they dont automatically provide a lot of extra functionality that cannot be achieved with other tools). However, some people dismiss flakes for the only reason being "they are too complex" with really is not at all true (which is what I hope to prove to you soon!). A simple project devshell for example could very reasonably be built only from the =fetchTarball= construct I showed above.
 
 ****** Channels
 :PROPERTIES:
@@ -862,7 +895,7 @@ As we already learned, a flake must provide an attribute called =outputs= (whate
   }
 #+end_src
 
-This is a surprisingly real-world example that we can use so explain most of the important =inputs= options:
+This is a surprisingly real-world example from my [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix]] that we can use so explain most of the important =inputs= options:
 - the most important attribute is =url=. It describes where the source should be fetched from. As you can see from the =toplevel= input, you can put as an input a path on the local filesystem. Note that by default, it is expected that every input is itself a flake - meaning, a =flake.nix= exists there which will be loaded into our flake along with its dependencies. You can also see that we set this to =false= for the =nix-eval-jobs= input. This is usually done when the target project is simply not a flake. Nix will then load in the contents of the repository as a raw filetree.
 
 However, if you go and check out [[https://github.com/nix-community/nix-eval-jobs][nix-eval-jobs]] you will see that this project /does/ have a =flake.nix=, and it is also very active; so what is going on here? In this particular case, this is done to avoid pulling in the dependencies that the =nix-eval-jobs= would bring along. Instead, the files provided by it must be then made to work using what is provided in the parent flake. This is not a common pattern, but something that is good to know.
@@ -908,7 +941,7 @@ With what we learned so far, you are already able to understand most of what is 
 
   Another question might be what happens when we load in =self.outputs= while defining outputs. Normally that should not work? Remember that nix is a lazy language. When =outputs= is first created in the =let ... in= block, its value will be something along the lines of =outputs = <thunk>;=. That means, not all values are loaded upon instanciation, but only whenever they are needed. And if a value is needed, nix will then move on to compute that value.
 
-  Of course that does mean that we need to be careful to not introtuce circular chains of dependency. Doing that would result in what is called an =infinite recursion error=, a type of error that can be very hard to wrap one's head around. Luckily, when writing a simple config, you are not very likely to encounter it in a shape that is not rather easily solved.
+  Of course that does mean that we need to be careful to not introduce circular chains of dependency. Doing that would result in what is called an =infinite recursion error=, a type of error that can be very hard to wrap one's head around. Luckily, when writing a simple config, you are not very likely to encounter it in a shape that is not rather easily solved.
 
   Like we saw here with =nixosConfigurations= and some other outputs that we heard about earlier, there are some "standard" outputs that nix recognizes and is able to apply some defaults on. Let us quickly go over them:
 
@@ -921,17 +954,18 @@ I will now list output names and explain what they to; some outputs are what I c
 
 - =nixosConfigurations=: A set of NixOS host configurations
 - =devShells=: *system-scoped*. A set of devshells that can be used by calling [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]]. Defaults to the devshell called =default=.
-- =checks=: *system-scoped*. Flake checks to perform when calling [[#h:b07b1776-75cd-4a40-9e71-fb00eab65c6f][nix flake check]]
-- =formatter=: *system-scoped*. Formatting package/config to use when calling [[#h:cf6cc5fa-cbaa-415a-b1d8-c6c5b7016700][nix fmt]]
-
 - =nixosModules=: A set of nixos [[#h:de7bc464-e04f-45d4-9d29-e46592535419][Modules]]. By default, when consuming one of these modules but not specifying which one, the overlay =default= will be chosen.
 - =overlays=: A set of nixpkgs [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. By default, when consuming one of these overlays but not specifying which one, the overlay =default= will be chosen.
+- =checks=: *system-scoped*. Flake checks to perform when calling [[#h:b07b1776-75cd-4a40-9e71-fb00eab65c6f][nix flake check]]
+- =formatter=: *system-scoped*. Formatting package/config to use when calling [[#h:cf6cc5fa-cbaa-415a-b1d8-c6c5b7016700][nix fmt]]
 - =packages=: *system-scoped*. Packages that can be directly built using [[#h:fa377c74-36e5-4aea-bc39-4d3def4b67d1][nix build]]
 - =apps=: *system-scoped*. Packages that can be directly run using [[#h:9f55f619-892e-488c-936f-43962f90cde8][nix run]]
 - =templates=: A set of templates that can be initialized using =nix flake init -t <template name>=. By default, the =default= template will be chosen.
 - =legacyPackages=: *system-scoped*. An alternative to =packages= that does not provide guarantees on the structure within. An attribute here might be a package, but it could also be a package set in need of further evaluation. This is used for example in =nix flake show nixpkgs= because the number of packages in =packages= takes *very* long to evaluate. Whenever nix encounters a =legacyPackages= however, it simply displays "omitted" instead of evaluating everything within. In a way you could say =legacyPackages= contains an attribute that is closer to what the structure used by the [[#h:2cb443a5-9de2-4ae5-8a7e-d8e96748d599][Channels]] construct yields.
 - =hydraJobs=: An arbitrarily deeply nested attribute set of derivations that defines jobs that should run on a hydra build farm
 - =bundlers=: A set of bundlers (a bundler packages app for usage outside of the nix store). Will choose the =default= bundler by default
+
+The following are also recognized by nix, but are deprecated:
 
 - =devShell=: *system-scoped, deprecated*. A single devshell that can be used by calling [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]].
 - =overlay=: *deprecated*. A single overlay.
@@ -949,14 +983,14 @@ Again, you can also define other outputs (for example, a widely used output that
 :CUSTOM_ID: h:410e74cc-6fea-43cc-9d4a-3c88d6437760
 :END:
 
-When interacting with flakes in the CLI, you will always do it in the same style:
+When interacting with flakes on the CLI, you will always do it in the same style:
 
 ~<reference>#<attribute path><optional: ^<outputs>>~
 
 The flake reference can be an absolute or relative path, but also a URI. It can also be an identifier in the [[#h:e6aeff2e-de6c-411c-ae24-77c2928e8e4f][Registries]]. This means that all of the following are valid (the output to stderr is needed because my flake loads some nix values per default that get printed to the command line on stderr, which org-babel does not capture. This makes the evaluator sad):
 
 #+begin_src bash :tangle no :exports both :results discard :eval never-export
-  nix run n#cowsay -- hello 2>/dev/null
+  nix run nixpkgs#cowsay -- hello 2>/dev/null
   nix run github:nixos/nixpkgs#cowsay -- hello 2>/dev/null
   nix run .#pkgs.x86_64-linux.cowsay -- hello 2>/dev/null
   nix run /home/swarsel/.dotfiles#pkgs.x86_64-linux.cowsay -- hello 2>/dev/null
@@ -997,6 +1031,32 @@ The flake reference can be an absolute or relative path, but also a URI. It can 
                 ||----w |
                 ||     ||
 #+end_example
+
+However:
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix shell n#cowsay^man --command hello
+#+end_src
+
+#+RESULTS:
+: error: unable to execute 'hello': No such file or directory
+
+This happens because the =man= output of =cowsay= does not provide the package itself, but only its manpage. =nix run= reads your mind a little more in that case and makes it available anyways (this is because the =apps= output is tailored towards running programs):
+
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
+  nix run nixpkgs#cowsay^man -- hello
+#+end_src
+
+#+RESULTS:
+:  _______
+: < hello >
+:  -------
+:         \   ^__^
+:          \  (oo)\_______
+:             (__)\       )\/\
+:                 ||----w |
+:                 ||     ||
+
 
 ***** Registries
 :PROPERTIES:
@@ -1064,10 +1124,10 @@ However, you can also specify the full path
 #+RESULTS:
 : success
 
-What is often useful is to build a =nixosConfiguration= using =nix build= prior to applying it. This can be done using for example the [[#h:a320569e-7bf0-4552-9039-b2a8e0939a12][Bakery (Lenovo ThinkPad)]] host:
+What is often useful is to build a =nixosConfiguration= using =nix build= prior to applying it. E.g. this can be done using the [[#h:a320569e-7bf0-4552-9039-b2a8e0939a12][Bakery (Lenovo ThinkPad)]] host:
 
 #+begin_src bash :tangle no :exports both :results discard :eval never-export
-  nixosConfigurations.bakery.config.system.build.toplevel 2>/dev/null && echo success
+  nix build .#nixosConfigurations.bakery.config.system.build.toplevel 2>/dev/null && echo success
 #+end_src
 
 #+RESULTS:
@@ -1278,7 +1338,6 @@ This initializes a new flake. Per default it chooses the simple flake that you m
 #+end_src
 
 Keep in mind that you are free in choosing the flake reference.
-
 
 *** nix package manager
 :PROPERTIES:
@@ -37043,6 +37102,11 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
           run: |
             sudo apt-get update
             sudo apt-get install -y emacs-nox elpa-htmlize
+
+        - name: Prepare site images
+          run: |
+            mkdir -p site/files/topology
+            cp files/topology/topology_small.png site/files/topology/topology_small.png
 
         - name: Tangle files & export to HTML
           run: |

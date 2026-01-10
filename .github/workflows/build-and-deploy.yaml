@@ -27,6 +27,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y emacs-nox elpa-htmlize
 
+      - name: Prepare site images
+        run: |
+          mkdir -p site/files/topology
+          cp files/topology/topology_small.png site/files/topology/topology_small.png
+
       - name: Tangle files & export to HTML
         run: |
           emacs --batch \
