@@ -27,7 +27,7 @@
 } // lib.optionalAttrs (!minimal) {
 
   microvm = {
-    mem = 1024 * 2;
+    mem = 1024 * 1;
     vcpu = 1;
   };
 
@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    ankisync = true;
+    # ankisync = true;
   };
 
 }

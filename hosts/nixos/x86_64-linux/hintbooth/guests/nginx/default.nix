@@ -6,6 +6,7 @@ in
   imports = [
     "${self}/profiles/nixos/microvm"
     "${self}/modules/nixos"
+    "${self}/modules/nixos/optional/microvm-guest-shares.nix"
   ];
 
   swarselsystems = {

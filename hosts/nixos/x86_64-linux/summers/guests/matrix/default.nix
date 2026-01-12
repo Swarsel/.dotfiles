@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    matrix = true;
+    # matrix = true;
   };
 
 }

@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    kanidm = true;
+    # kanidm = true;
   };
 
 }

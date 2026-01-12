@@ -12,8 +12,13 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    users.users.${serviceUser} = {
-      extraGroups = [ "users" ];
+    users = {
+      persistentIds = {
+        redis-paperless = confLib.mkIds 975;
+      };
+      users.${serviceUser} = {
+        extraGroups = [ "users" ];
+      };
     };
 
     sops.secrets = {

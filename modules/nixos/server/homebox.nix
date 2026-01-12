@@ -13,6 +13,10 @@ in
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
+    users.persistentIds = {
+      homebox = confLib.mkIds 981;
+    };
+
     globals = {
       networks = {
         ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -29,14 +33,25 @@ in
       };
     };
 
+    systemd.services.homebox = {
+      environment = {
+        TMPDIR = "/var/lib/homebox/.tmp";
+      };
+      serviceConfig = {
+        # ReadWritePaths = "/var/lib/homebox";
+        RuntimeDirectory = "homebox";
+        BindPaths = "/run/homebox:/var/lib/homebox/.tmp";
+      };
+    };
+
     services.${serviceName} = {
       enable = true;
-      package = pkgs.dev.homebox;
+      package = pkgs.bisect.homebox;
       database.createLocally = true;
       settings = {
         HBOX_WEB_PORT = builtins.toString servicePort;
         HBOX_OPTIONS_ALLOW_REGISTRATION = "false";
-        HBOX_STORAGE_CONN_STRING = "file:///Vault/data/homebox";
+        HBOX_STORAGE_CONN_STRING = "file:///var/lib/homebox";
         HBOX_STORAGE_PREFIX_PATH = ".data";
       };
     };

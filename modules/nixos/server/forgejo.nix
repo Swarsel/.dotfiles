@@ -12,9 +12,14 @@ in
 
     # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    users.users.${serviceUser} = {
-      group = serviceGroup;
-      isSystemUser = true;
+    users = {
+      persistentIds = {
+        forgejo = confLib.mkIds 985;
+      };
+      users.${serviceUser} = {
+        group = serviceGroup;
+        isSystemUser = true;
+      };
     };
 
     users.groups.${serviceGroup} = { };

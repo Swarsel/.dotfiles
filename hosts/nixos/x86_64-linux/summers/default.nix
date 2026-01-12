@@ -1,4 +1,4 @@
-{ self, inputs, lib, minimal, ... }:
+{ self, config, inputs, lib, minimal, confLib, ... }:
 {
 
   imports = [
@@ -39,7 +39,7 @@
     writeGlobalNetworks = false;
     networkKernelModules = [ "igb" ];
     rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
-    withMicroVMs = false;
+    withMicroVMs = true;
     localVLANs = [ "services" "home" ]; # devices is only provided on interface for bmc
     initrdVLAN = "home";
     server = {
@@ -83,7 +83,7 @@
     acme = false; # cert handled by proxy
 
     nfs = true;
-    kavita = true;
+    # kavita = true;
     restic = true;
     jellyfin = true;
     navidrome = true;
@@ -109,29 +109,29 @@
     opkssh = true;
   };
 
-  # guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-  #   { }
-  #   // confLib.mkMicrovm "kavita"
-  #   // confLib.mkMicrovm "jellyfin"
-  #   // confLib.mkMicrovm "audio"
-  #   // confLib.mkMicrovm "postgresql"
-  #   // confLib.mkMicrovm "matrix"
-  #   // confLib.mkMicrovm "nextcloud"
-  #   // confLib.mkMicrovm "immich"
-  #   // confLib.mkMicrovm "paperless"
-  #   // confLib.mkMicrovm "transmission"
-  #   // confLib.mkMicrovm "storage"
-  #   // confLib.mkMicrovm "monitoring"
-  #   // confLib.mkMicrovm "freshrss"
-  #   // confLib.mkMicrovm "kanidm"
-  #   // confLib.mkMicrovm "firefly"
-  #   // confLib.mkMicrovm "koillection"
-  #   // confLib.mkMicrovm "radicale"
-  #   // confLib.mkMicrovm "atuin"
-  #   // confLib.mkMicrovm "forgejo"
-  #   // confLib.mkMicrovm "ankisync"
-  #   // confLib.mkMicrovm "homebox"
-  # );
+  guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+    { }
+    // confLib.mkMicrovm "kavita" { withZfs = true; }
+    // confLib.mkMicrovm "jellyfin" { withZfs = true; }
+    // confLib.mkMicrovm "audio" { withZfs = true; }
+    // confLib.mkMicrovm "postgresql" { withZfs = true; }
+    // confLib.mkMicrovm "matrix" { withZfs = true; }
+    // confLib.mkMicrovm "nextcloud" { withZfs = true; }
+    // confLib.mkMicrovm "immich" { withZfs = true; }
+    // confLib.mkMicrovm "paperless" { withZfs = true; }
+    // confLib.mkMicrovm "transmission" { withZfs = true; }
+    // confLib.mkMicrovm "storage" { withZfs = true; }
+    // confLib.mkMicrovm "monitoring" { withZfs = true; }
+    // confLib.mkMicrovm "freshrss" { withZfs = true; }
+    // confLib.mkMicrovm "kanidm" { withZfs = true; }
+    // confLib.mkMicrovm "firefly" { withZfs = true; }
+    // confLib.mkMicrovm "koillection" { withZfs = true; }
+    // confLib.mkMicrovm "radicale" { withZfs = true; }
+    // confLib.mkMicrovm "atuin" { withZfs = true; }
+    // confLib.mkMicrovm "forgejo" { withZfs = true; }
+    // confLib.mkMicrovm "ankisync" { withZfs = true; }
+    // confLib.mkMicrovm "homebox" { withZfs = true; }
+  );
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "bmc" ];
 

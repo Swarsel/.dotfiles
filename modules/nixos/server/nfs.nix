@@ -1,10 +1,15 @@
-{ lib, config, pkgs, globals, ... }:
+{ lib, config, pkgs, globals, confLib, ... }:
 let
   nfsUser = globals.user.name;
 in
 {
   options.swarselmodules.server.nfs = lib.mkEnableOption "enable nfs on server";
   config = lib.mkIf config.swarselmodules.server.nfs {
+
+    users.persistentIds = {
+      avahi = confLib.mkIds 978;
+    };
+
     services = {
       # add a user with sudo smbpasswd -a <user>
       samba = {

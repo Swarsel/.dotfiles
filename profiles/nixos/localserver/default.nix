@@ -17,6 +17,7 @@
       nftables = lib.mkDefault true;
       server = {
         general = lib.mkDefault true;
+        ids = lib.mkDefault true;
         network = lib.mkDefault true;
         diskEncryption = lib.mkDefault true;
         packages = lib.mkDefault true;

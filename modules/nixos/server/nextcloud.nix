@@ -16,6 +16,11 @@ in
       kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
+    users.persistentIds = {
+      nextcloud = confLib.mkIds 990;
+      redis-nextcloud = confLib.mkIds 976;
+    };
+
     globals.services.${serviceName} = {
       domain = serviceDomain;
       inherit proxyAddress4 proxyAddress6 isHome serviceAddress;

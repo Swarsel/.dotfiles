@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, confLib, ... }:
 {
   config = lib.mkIf (config.guests != { }) {
 
@@ -16,6 +16,8 @@
         })
         (builtins.attrNames config.guests)
     );
+
+    users.persistentIds.microvm = confLib.mkIds 999;
 
   };
 }

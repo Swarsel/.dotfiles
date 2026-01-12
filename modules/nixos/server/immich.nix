@@ -7,8 +7,14 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    users.users.${serviceUser} = {
-      extraGroups = [ "video" "render" "users" ];
+    users = {
+      persistentIds = {
+        immich = confLib.mkIds 989;
+        redis-immich = confLib.mkIds 977;
+      };
+      users.${serviceUser} = {
+        extraGroups = [ "video" "render" "users" ];
+      };
     };
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";

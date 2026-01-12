@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    atuin = true;
+    # atuin = true;
   };
 
 }

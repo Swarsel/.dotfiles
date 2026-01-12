@@ -42,6 +42,11 @@ in
     };
 
     users = {
+      persistentIds = {
+        nextcloud-exporter = confLib.mkIds 988;
+        node-exporter = confLib.mkIds 987;
+        grafana = confLib.mkIds 974;
+      };
       users = {
         nextcloud-exporter = {
           extraGroups = [ "nextcloud" ];

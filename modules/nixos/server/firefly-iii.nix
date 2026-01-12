@@ -13,6 +13,9 @@ in
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     users = {
+      persistentIds = {
+        firefly-iii = confLib.mkIds 983;
+      };
       groups.${serviceGroup} = { };
       users.${serviceUser} = {
         group = lib.mkForce serviceGroup;

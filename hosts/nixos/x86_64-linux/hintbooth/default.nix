@@ -68,8 +68,8 @@
 
   guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
     { }
-    // confLib.mkMicrovm "adguardhome"
-    // confLib.mkMicrovm "nginx"
+    // confLib.mkMicrovm "adguardhome" { }
+    // confLib.mkMicrovm "nginx" { }
   );
 
 }

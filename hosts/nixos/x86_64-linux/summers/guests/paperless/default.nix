@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    paperless = true;
+    # paperless = true;
   };
 
 }

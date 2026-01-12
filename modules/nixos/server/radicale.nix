@@ -29,6 +29,10 @@ in
         };
     };
 
+    users.persistentIds = {
+      radicale = confLib.mkIds 982;
+    };
+
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
     globals = {

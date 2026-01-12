@@ -314,6 +314,11 @@ in
     # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
     # messages out after a while.
 
+    users.persistentIds = {
+      mautrix-signal = confLib.mkIds 993;
+      mautrix-whatsapp = confLib.mkIds 992;
+      mautrix-telegram = confLib.mkIds 991;
+    };
 
     nodes =
       let

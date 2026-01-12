@@ -21,6 +21,27 @@ keys:
     - &toto age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl
     - &twothreetunnel age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d
     - &winters age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza
+    - &summers-ankisync age1kyue7mfvzuxprjz2g6ulz2mxlr57rgzg6lfpnrqedkelehley5ls3enwsd
+    - &summers-atuin age1qpgj3ell93rzkpjq0ezs6t669ds3nyxx67pj50smx597pspz6fqs4jc6pt
+    - &summers-audio age1f63r2klnpfxmntswz5xydpa75ckgjqcs2yzkm0msqwqgz9aqgu0qwzr659
+    - &summers-firefly age17328xwk0z3znalpmma5rvp0lt5ghn5p8xfvnrtdxwsw80dqysacqj9j37q
+    - &summers-forgejo age1qdzkn6v3xhrfjwe8jxz3945dhyyhevwal0narjtr8whf9y7nh3wsn524u5
+    - &summers-freshrss age1etgfym5m8hn3hxs6cgg757zcv5zg5n22wq38fuq59n7qk7nef5uqyg6vvs
+    - &summers-homebox age17mugmkdw0y768a3huuf37r45eff9apyknxvwk3agg6xzsjmqp96q57tcty
+    - &summers-immich age16gf76uustmyyksm3t56zcq9g6j8avy0wrngh8laknfq733s5welqedeg4x
+    - &summers-jellyfin age1fnvlmhzju0yq908xtgags0sy85q3tacl2sc3w3vdd3yfp27xv5aq06v948
+    - &summers-kanidm age1s5gcxtatd9frwctzwg54fqycsx2sa73ll36k7qrpm9wwyknkldtst90gn4
+    - &summers-kavita age1d89878cvt7wsa07ydwtexspku5gppwstrpnpph4ufx5pcd4fadyqgf6lvl
+    - &summers-koillection age1ayupuxlrkepyvjk7xwgrd0pvcj3tfcha688mcuc8ees2hg3g2ersd0q3nc
+    - &summers-matrix age1cq7wxnugpfvjk6dgqpfmc8vemzhkg75drkgeaqjd9fuylz5qh40slazr4u
+    - &summers-monitoring age1vn6ya0japzpgc256jg57fldsqe4udmq50sj5hmkywn7rxfnskevsx2q96u
+    - &summers-nextcloud age1t7zagjfddns4yltupk7nx8xps4gh7mupyz85uuys0wd22cxj5qsq2hw0p7
+    - &summers-paperless age1rn0pxluh7m8dyeshek06d7scejqlrcewlk8xmyrwt5e5nev2dc2s3s78vq
+    - &summers-postgresql age12jh5836w3cmazec8ql652p9h3a3xn6quztztzqxg4n0kz7r96dnqqlhxxw
+    - &summers-radicale age1gxg2peektn8x36kk3nsgmeawl73e54kaadqd649ygwrv43kkvejq2cw64z
+    - &summers-storage age1kn34ny229gm0rg7wlcvxmcyjtz4gka6f2vd958fde6vmuzrxcvcsufra90
+    - &summers-transmission age1y69f2elvmq39lc3t3ucq9y7wt675520n7rvug88qg368qsmmk47qvwrtny
+
 creation_rules:
   - path_regex: secrets/repo/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -42,6 +63,26 @@ creation_rules:
       - *dgx
       - *hintbooth-adguardhome
       - *hintbooth-nginx
+      - *summers-ankisync
+      - *summers-atuin
+      - *summers-audio
+      - *summers-firefly
+      - *summers-forgejo
+      - *summers-freshrss
+      - *summers-homebox
+      - *summers-immich
+      - *summers-jellyfin
+      - *summers-kanidm
+      - *summers-kavita
+      - *summers-koillection
+      - *summers-matrix
+      - *summers-monitoring
+      - *summers-nextcloud
+      - *summers-paperless
+      - *summers-postgresql
+      - *summers-radicale
+      - *summers-storage
+      - *summers-transmission
 
   - path_regex: secrets/work/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -159,6 +200,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-ankisync
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/atuin/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -166,6 +208,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-atuin
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/audio/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -173,6 +216,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-audio
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/firefly/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -180,6 +224,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-firefly
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/forgejo/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -187,6 +232,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-forgejo
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/freshrss/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -194,6 +240,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-freshrss
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/homebox/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -201,6 +248,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-homebox
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/immich/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -208,6 +256,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-immich
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/jellyfin/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -215,6 +264,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-jellyfin
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/kanidm/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -222,6 +272,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-kanidm
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/kavita/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -229,6 +280,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-kavita
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/koillection/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -236,6 +288,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-koillection
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/matrix/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -243,6 +296,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-matrix
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/monitoring/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -250,6 +304,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-monitoring
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/nextcloud/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -257,6 +312,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-nextcloud
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/paperless/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -264,6 +320,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-paperless
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/postgresql/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -271,6 +328,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-postgresql
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/radicale/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -278,6 +336,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-radicale
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/storage/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -285,6 +344,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-storage
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/transmission/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
@@ -292,6 +352,7 @@ creation_rules:
       - *swarsel
       age:
       - *summers
+      - *summers-transmission
 
   - path_regex: hosts/darwin/x86_64-darwin/nbm-imba-166/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:

@@ -82,6 +82,8 @@ in
       { directory = serviceDir; mode = "0700"; }
     ];
 
+    users.persistentIds.kea = confLib.mkIds 968;
+
     topology = {
       extractors.kea.enable = false;
       self.services.${serviceName} = {

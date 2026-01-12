@@ -11,6 +11,10 @@ in
     paths = lib.mkOption {
       type = lib.types.listOf lib.types.str;
     };
+    withPostgres = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+    };
   };
   config = lib.mkIf config.swarselmodules.server.restic {
 

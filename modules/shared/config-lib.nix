@@ -53,44 +53,104 @@ in
         homeServiceAddress = lib.optionalString (config.swarselsystems.server.wireguard.interfaces ? wgHome) globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgHome.serverNetConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
       };
 
+      mkIds = id: {
+        uid = id;
+        gid = id;
+      };
+
+      mkDeviceMac = id:
+        let
+          mod = n: d: n - (n / d) * d;
+          toHexByte = n:
+            let
+              hex = "0123456789abcdef";
+              hi = n / 16;
+              lo = mod n 16;
+            in
+            builtins.substring hi 1 hex
+            + builtins.substring lo 1 hex;
+
+          max = 16777215; # 256^3 - 1
+
+          b1 = id / (256 * 256);
+          r1 = mod id (256 * 256);
+          b2 = r1 / 256;
+          b3 = mod r1 256;
+        in
+        if
+          (id <= max)
+        then
+          (builtins.concatStringsSep ":"
+            (map toHexByte [ b1 b2 b3 ]))
+        else
+          (throw "Device MAC ID too large (max is 16777215)");
+
       mkMicrovm =
         if config.swarselsystems.withMicroVMs then
-          (guestName: {
-            ${guestName} = {
-              backend = "microvm";
-              autostart = true;
-              modules = [
-                (config.node.configDir + /guests/${guestName}/default.nix)
-                {
-                  node.secretsDir = config.node.configDir + /secrets/${guestName};
-                  node.configDir = config.node.configDir + /guests/${guestName};
-                  networking.nftables.firewall = {
-                    zones.untrusted.interfaces = lib.mkIf
-                      (
-                        lib.length config.guests.${guestName}.networking.links == 1
-                      )
-                      config.guests.${guestName}.networking.links;
+          (guestName:
+            { enableStorage ? false
+            , withZfs ? false
+            , ...
+            }:
+            {
+              ${guestName} = {
+                backend = "microvm";
+                autostart = true;
+                zfs = lib.mkIf withZfs {
+                  # stateful config that should be backed up
+                  "/state" = {
+                    pool = "Vault";
+                    dataset = "guests/${guestName}/state";
                   };
-                }
-                "${self}/modules/nixos/optional/microvm-guest.nix"
-                "${self}/modules/nixos/optional/systemd-networkd-base.nix"
-              ];
-              microvm = {
-                system = config.node.arch;
-                baseMac = config.repo.secrets.local.networking.networks.lan.mac;
-                interfaces.vlan-services = { };
+                  # data that should be backed up
+                  "/storage" = lib.mkIf enableStorage {
+                    pool = "Vault";
+                    dataset = "guests/${guestName}/storage";
+                  };
+                  # other stuff that should only reside on disk, not backed up
+                  "/persist" = {
+                    pool = "Vault";
+                    dataset = "guests/${guestName}/persist";
+                  };
+                };
+                modules = [
+                  (config.node.configDir + /guests/${guestName}/default.nix)
+                  {
+                    node.secretsDir = config.node.configDir + /secrets/${guestName};
+                    node.configDir = config.node.configDir + /guests/${guestName};
+                    networking.nftables.firewall = {
+                      zones.untrusted.interfaces = lib.mkIf
+                        (
+                          lib.length config.guests.${guestName}.networking.links == 1
+                        )
+                        config.guests.${guestName}.networking.links;
+                    };
+                  }
+                  "${self}/modules/nixos/optional/microvm-guest.nix"
+                  "${self}/modules/nixos/optional/systemd-networkd-base.nix"
+                ];
+                microvm = {
+                  system = config.node.arch;
+                  baseMac = config.repo.secrets.local.networking.networks.lan.mac;
+                  interfaces.vlan-services = {
+                    mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id}";
+
+                  };
+                };
+                extraSpecialArgs = {
+                  inherit (inputs.self) nodes;
+                  inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                  inherit inputs outputs minimal;
+                  inherit (inputs) self;
+                  withHomeManager = false;
+                  microVMParent = config.node.name;
+                  globals = inputs.self.globals.${config.node.arch};
+                };
               };
-              extraSpecialArgs = {
-                inherit (inputs.self) nodes;
-                inherit (inputs.self.pkgs.${config.node.arch}) lib;
-                inherit inputs outputs minimal;
-                inherit (inputs) self;
-                withHomeManager = false;
-                microVMParent = config.node.name;
-                globals = inputs.self.globals.${config.node.arch};
-              };
-            };
-          }) else (_: { _ = { }; });
+            }) else
+          (_: {
+            _ = { };
+          });
 
       genNginx =
         { serviceAddress

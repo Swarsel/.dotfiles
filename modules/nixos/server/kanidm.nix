@@ -34,6 +34,9 @@ in
 
 
     users = {
+      persistentIds = {
+        kanidm = confLib.mkIds 984;
+      };
       users.${serviceUser} = {
         group = serviceGroup;
         isSystemUser = true;

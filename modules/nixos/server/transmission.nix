@@ -25,6 +25,10 @@ in
 
     # this user/group section is probably unneeded
     users = {
+      persistentIds = {
+        prowlarr = confLib.mkIds 971;
+        readarr = confLib.mkIds 970;
+      };
       groups = {
         dockeruser = {
           gid = 1155;

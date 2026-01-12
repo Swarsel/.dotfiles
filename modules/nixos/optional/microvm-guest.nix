@@ -1,4 +1,4 @@
-{ self, lib, config, inputs, microVMParent, nodes, ... }:
+{ self, lib, config, inputs, microVMParent, nodes, globals, confLib, ... }:
 {
   imports = [
     inputs.disko.nixosModules.disko
@@ -49,24 +49,16 @@
       };
     };
 
-    microvm = {
-      shares = [
-        {
-          tag = "persist";
-          source = "${lib.optionalString nodes.${microVMParent}.config.swarselsystems.isImpermanence "/persist"}/microvms/${config.networking.hostName}";
-          mountPoint = "/persist";
-          proto = "virtiofs";
-        }
-      ];
-      # mount the writeable overlay so that we can use nix shells inside the microvm
-      volumes = [
-        {
-          image = "/tmp/nix-store-overlay-${config.networking.hostName}.img";
-          autoCreate = true;
-          mountPoint = config.microvm.writableStoreOverlay;
-          size = 1024;
-        }
-      ];
-    };
+    # microvm = {
+    #   mount the writeable overlay so that we can use nix shells inside the microvm
+    #   volumes = [
+    #     {
+    #       image = "/tmp/nix-store-overlay-${config.networking.hostName}.img";
+    #       autoCreate = true;
+    #       mountPoint = config.microvm.writableStoreOverlay;
+    #       size = 1024;
+    #     }
+    #   ];
+    # };
   };
 }

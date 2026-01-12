@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    immich = true;
+    # immich = true;
   };
 
 }

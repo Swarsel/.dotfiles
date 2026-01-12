@@ -7,10 +7,12 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    users.users.${serviceUser} = {
-      extraGroups = [ "video" "render" "users" ];
+    users = {
+      persistentIds.jellyfin = confLib.mkIds 994;
+      users.${serviceUser} = {
+        extraGroups = [ "video" "render" "users" ];
+      };
     };
-
     # nixpkgs.config.packageOverrides = pkgs: {
     #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
     # };

@@ -12,10 +12,13 @@ in
       calibre
     ];
 
-
-    users.users.${serviceUser} = {
-      extraGroups = [ "users" ];
+    users = {
+      persistentIds.kavita = confLib.mkIds 995;
+      users.${serviceUser} = {
+        extraGroups = [ "users" ];
+      };
     };
+
 
     sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
 

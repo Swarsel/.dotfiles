@@ -13,6 +13,8 @@
         };
         "${config.swarselsystems.mainUser}" = {
           isNormalUser = true;
+          uid = 1000;
+          autoSubUidGidRange = false;
           description = "Leon S";
           password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
           hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;

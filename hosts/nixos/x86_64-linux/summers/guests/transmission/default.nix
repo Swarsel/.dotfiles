@@ -27,7 +27,7 @@
 } // lib.optionalAttrs (!minimal) {
 
   microvm = {
-    mem = 1024 * 2;
+    mem = 1024 * 4;
     vcpu = 2;
   };
 
@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    transmission = true;
+    # transmission = true;
   };
 
 }

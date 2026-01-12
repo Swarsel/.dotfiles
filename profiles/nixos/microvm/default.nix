@@ -18,6 +18,7 @@
       nftables = lib.mkDefault true;
       server = {
         general = lib.mkDefault true;
+        ids = lib.mkDefault true;
         packages = lib.mkDefault true;
         ssh = lib.mkDefault true;
         wireguard = lib.mkDefault true;

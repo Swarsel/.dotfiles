@@ -1,4 +1,4 @@
-{ self, pkgs, lib, config, globals, ... }:
+{ self, pkgs, lib, config, globals, confLib, ... }:
 let
   inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
 
@@ -21,7 +21,10 @@ in
       '';
     };
 
-    users.groups.acme.members = lib.mkIf config.swarselmodules.server.nginx [ "nginx" ];
+    users = {
+      persistentIds.acme = confLib.mkIds 967;
+      groups.acme.members = lib.mkIf config.swarselmodules.server.nginx [ "nginx" ];
+    };
 
     security.acme = {
       acceptTerms = true;

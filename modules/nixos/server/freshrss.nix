@@ -9,10 +9,15 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    users.users.${serviceUser} = {
-      extraGroups = [ "users" ];
-      group = serviceGroup;
-      isSystemUser = true;
+    users = {
+      persistentIds = {
+        freshrss = confLib.mkIds 986;
+      };
+      users.${serviceUser} = {
+        extraGroups = [ "users" ];
+        group = serviceGroup;
+        isSystemUser = true;
+      };
     };
 
     users.groups.${serviceGroup} = { };

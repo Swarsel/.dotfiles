@@ -45,9 +45,9 @@ in
     };
 
     boot = lib.mkIf (!config.swarselsystems.isClient) {
-      kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == [ ]) || isRouter)) [
-        "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
-      ];
+      # kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == []) || isRouter)) [
+      #   "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
+      # ];
       initrd = {
         secrets."/tmp${hostKeyPathBase}" = if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
         availableKernelModules = config.swarselsystems.networkKernelModules;
