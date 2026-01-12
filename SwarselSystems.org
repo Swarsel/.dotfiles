@@ -61,7 +61,12 @@ That is the reason why I keep this configuration as a literate one: so that I am
 
 For a beginner, I recommend to read this file like a book, from start to finish. I will try to explain concepts whenever they first come up, and will regularly link to [[#h:8ea35dcc-ef94-4c10-9112-8be8efd6f424][Appendix C: Explanations to nix functions and operators]] when more context is needed. For the first few times that I am using a new function, I will place such a link again. However, to keep the writing of this file manageable, I will generally only do this no more than three times.
 
-This page offers some utilities to you: you can pin specific headings to the right "pinned" bar by hovering over the heading and clicking =[pin]=. If a section seems uninteresting to you, you can press the =↓= button to skip to the next one. And if you want to send a section to somebody else, you can click the =#= in order to copy its link to the clipboard. Your pinned headings will be saved locally, so you can continue reading in case you take a break.
+This page offers some utilities to you:
+- you can pin specific headings to the right "pinned" bar by hovering over the heading and clicking =[pin]=
+- If a section seems uninteresting to you, you can press the =↓= button to skip to the next one.
+- If a sections upcoming subsections seem uninteresting to you, you can press the =⇣= button to skip to the next heading of at least same or higher level.
+- If you are currently in a level of subsections that all seem uninteresting to you, you can press the =⇑= button to skip to the next heading that is at least one level higher.
+- And if you want to send a section to somebody else, you can click the =#= in order to copy its link to the clipboard. Your pinned headings will be saved locally, so you can continue reading in case you take a break.
 
 ** Structure of this file
 :PROPERTIES:
@@ -183,13 +188,14 @@ I add a javascript bit to the file in order to have a darkmode toggle when expor
 
 I also add this javascript to add header pinning functionality to the site, using the same trick as above (this is defined in [[#h:e5f900a0-9d68-4269-a663-53c52434c342][HTML Export: Docs QoL]]):
 
-#+begin_src elisp :noweb yes :exports both :results html
+#+begin_src elisp :tangle no :noweb yes :exports both :results html
   "
   <script>
   <<js-docs-qol>>
   </script>
   "
 #+end_src
+
 
 ** TODO Structure of this flake
 :PROPERTIES:
@@ -1721,7 +1727,7 @@ A short overview over each input and what it does:
 
       smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
       nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
-      nixpkgs-debug.url = "github:nixos/nixpkgs/master";
+      nixpkgs-bisect.url = "github:nixos/nixpkgs/master";
       nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
       nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
       nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
@@ -2621,7 +2627,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                 };
 
                 nswitch = mkDevice "Nintendo Switch" {
-                  info = "Atmosphere 1.3.2 @ FW 19.0.1";
+                  info = "Atmosphère 1.3.2 @ FW 19.0.1";
                   image = "${self}/files/topology-images/nintendo-switch.png";
                   interfaces.eth1 = { };
                 };
@@ -4324,7 +4330,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:dc2233df-cd78-43cc-bb45-57568a83fb24
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/default.nix
-  { self, inputs, lib, minimal, ... }:
+  { self, config, inputs, lib, minimal, confLib, ... }:
   {
 
     imports = [
@@ -4365,7 +4371,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       writeGlobalNetworks = false;
       networkKernelModules = [ "igb" ];
       rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
-      withMicroVMs = false;
+      withMicroVMs = true;
       localVLANs = [ "services" "home" ]; # devices is only provided on interface for bmc
       initrdVLAN = "home";
       server = {
@@ -4409,7 +4415,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       acme = false; # cert handled by proxy
 
       nfs = true;
-      kavita = true;
+      # kavita = true;
       restic = true;
       jellyfin = true;
       navidrome = true;
@@ -4435,29 +4441,29 @@ This is my main server that I run at home. It handles most tasks that require bi
       opkssh = true;
     };
 
-    # guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-    #   { }
-    #   // confLib.mkMicrovm "kavita"
-    #   // confLib.mkMicrovm "jellyfin"
-    #   // confLib.mkMicrovm "audio"
-    #   // confLib.mkMicrovm "postgresql"
-    #   // confLib.mkMicrovm "matrix"
-    #   // confLib.mkMicrovm "nextcloud"
-    #   // confLib.mkMicrovm "immich"
-    #   // confLib.mkMicrovm "paperless"
-    #   // confLib.mkMicrovm "transmission"
-    #   // confLib.mkMicrovm "storage"
-    #   // confLib.mkMicrovm "monitoring"
-    #   // confLib.mkMicrovm "freshrss"
-    #   // confLib.mkMicrovm "kanidm"
-    #   // confLib.mkMicrovm "firefly"
-    #   // confLib.mkMicrovm "koillection"
-    #   // confLib.mkMicrovm "radicale"
-    #   // confLib.mkMicrovm "atuin"
-    #   // confLib.mkMicrovm "forgejo"
-    #   // confLib.mkMicrovm "ankisync"
-    #   // confLib.mkMicrovm "homebox"
-    # );
+    guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+      { }
+      // confLib.mkMicrovm "kavita" { withZfs = true; }
+      // confLib.mkMicrovm "jellyfin" { withZfs = true;  }
+      // confLib.mkMicrovm "audio" { withZfs = true; }
+      // confLib.mkMicrovm "postgresql" { withZfs = true; }
+      // confLib.mkMicrovm "matrix" { withZfs = true; }
+      // confLib.mkMicrovm "nextcloud" { withZfs = true; }
+      // confLib.mkMicrovm "immich" { withZfs = true; }
+      // confLib.mkMicrovm "paperless" { withZfs = true; }
+      // confLib.mkMicrovm "transmission" { withZfs = true; }
+      // confLib.mkMicrovm "storage" { withZfs = true; }
+      // confLib.mkMicrovm "monitoring" { withZfs = true; }
+      // confLib.mkMicrovm "freshrss" { withZfs = true; }
+      // confLib.mkMicrovm "kanidm" { withZfs = true; }
+      // confLib.mkMicrovm "firefly" { withZfs = true; }
+      // confLib.mkMicrovm "koillection" { withZfs = true; }
+      // confLib.mkMicrovm "radicale" { withZfs = true; }
+      // confLib.mkMicrovm "atuin" { withZfs = true; }
+      // confLib.mkMicrovm "forgejo" { withZfs = true; }
+      // confLib.mkMicrovm "ankisync" { withZfs = true; }
+      // confLib.mkMicrovm "homebox" { withZfs = true; }
+    );
 
     networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "bmc" ];
 
@@ -4665,6 +4671,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     microvm = {
       mem = 1024 * 1;
       vcpu = 1;
+
     };
 
     swarselprofiles = {
@@ -4672,7 +4679,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      kavita = true;
+      # kavita = true;
     };
 
   }
@@ -4714,7 +4721,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 3;
       vcpu = 1;
     };
 
@@ -4723,7 +4730,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      jellyfin = true;
+      # jellyfin = true;
     };
 
   }
@@ -4774,9 +4781,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      navidrome = true;
-      spotifyd = true;
-      mpd = true;
+      # navidrome = true;
+      # spotifyd = true;
+      # mpd = true;
     };
 
   }
@@ -4818,7 +4825,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 1;
       vcpu = 1;
     };
 
@@ -4827,7 +4834,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      postgresql = true;
+      # postgresql = true;
     };
 
   }
@@ -4878,7 +4885,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      matrix = true;
+      # matrix = true;
     };
 
   }
@@ -4929,8 +4936,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      nextcloud = true;
-      nginx = true;
+      # nextcloud = true;
+      # nginx = true;
+      # acme = true;
     };
 
   }
@@ -4981,7 +4989,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      immich = true;
+      # immich = true;
     };
 
   }
@@ -5032,7 +5040,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      paperless = true;
+      # paperless = true;
     };
 
   }
@@ -5074,7 +5082,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 4;
       vcpu = 2;
     };
 
@@ -5083,7 +5091,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      transmission = true;
+      # transmission = true;
     };
 
   }
@@ -5125,7 +5133,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 4;
       vcpu = 2;
     };
 
@@ -5134,8 +5142,8 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      nfs = true;
-      syncthing = true;
+      # nfs = true;
+      # syncthing = true;
     };
 
   }
@@ -5177,7 +5185,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 3;
       vcpu = 2;
     };
 
@@ -5186,7 +5194,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      grafana = true;
+      # grafana = true;
     };
 
   }
@@ -5237,8 +5245,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      freshrss = true;
-      nginx = true;
+      # freshrss = true;
+      # nginx = true;
+      # acme = true;
     };
 
   }
@@ -5289,7 +5298,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      kanidm = true;
+      # kanidm = true;
     };
 
   }
@@ -5340,8 +5349,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      firefly-iii = true;
-      nginx = true;
+      # firefly-iii = true;
+      # nginx = true;
+      # acme = true;
     };
 
   }
@@ -5383,7 +5393,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 1;
       vcpu = 1;
     };
 
@@ -5392,7 +5402,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      koillection = true;
+      # koillection = true;
     };
 
   }
@@ -5434,7 +5444,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 1;
       vcpu = 1;
     };
 
@@ -5443,7 +5453,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      radicale = true;
+      # radicale = true;
     };
 
   }
@@ -5494,7 +5504,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      atuin = true;
+      # atuin = true;
     };
 
   }
@@ -5536,7 +5546,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 1;
       vcpu = 1;
     };
 
@@ -5545,7 +5555,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      forgejo = true;
+      # forgejo = true;
     };
 
   }
@@ -5587,7 +5597,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 1;
       vcpu = 1;
     };
 
@@ -5596,7 +5606,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      ankisync = true;
+      # ankisync = true;
     };
 
   }
@@ -5638,7 +5648,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 2;
+      mem = 1024 * 1;
       vcpu = 1;
     };
 
@@ -5647,7 +5657,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      homebox = true;
+      # homebox = true;
     };
 
   }
@@ -5734,8 +5744,8 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
         { }
-        // confLib.mkMicrovm "adguardhome"
-        // confLib.mkMicrovm "nginx"
+        // confLib.mkMicrovm "adguardhome" { }
+        // confLib.mkMicrovm "nginx" { }
       );
 
   }
@@ -5912,6 +5922,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     imports = [
       "${self}/profiles/nixos/microvm"
       "${self}/modules/nixos"
+      "${self}/modules/nixos/optional/microvm-guest-shares.nix"
     ];
 
     swarselsystems = {
@@ -5967,6 +5978,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     imports = [
       "${self}/profiles/nixos/microvm"
       "${self}/modules/nixos"
+      "${self}/modules/nixos/optional/microvm-guest-shares.nix"
     ];
 
     swarselsystems = {
@@ -9030,6 +9042,8 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
           };
           "${config.swarselsystems.mainUser}" = {
             isNormalUser = true;
+            uid = 1000;
+            autoSubUidGidRange = false;
             description = "Leon S";
             password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
             hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
@@ -9115,7 +9129,9 @@ Both cases should return the proper values - in the second case the parent set m
 In general, there are three types of pii file:
 - Per-node secrets: found under the nodes =secretDir= as =pii.nix.enc= (exposed as =config.repo.secrets.local=)
 - Common secrets: found in =secrets/repo/pii.nix.enc= (exposed as =config.repo.secrets.common=)
+  - if those use =globals= as in input argument, it needs to have ={ }= as an input argument as we cannot pass it to the global evaluator.
 - Global definitions of networks and domains: found in =secrets/repo/globals.nix.enc= (not exposed to nodes, but only loaded in in [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]])
+  - these cannot use =globals= as input argument, as that would cause infinite recursion
 
 This system, while highly pleasant to work with during everyday use, sometimes has quirks:
 - =nixos-rebuild= cannot be used
@@ -9126,7 +9142,7 @@ This system, while highly pleasant to work with during everyday use, sometimes h
 
 #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-  { config, inputs, lib, nodes, ... }:
+  { config, inputs, lib, nodes, globals, ... }:
   let
     # If the given expression is a bare set, it will be wrapped in a function,
     # so that the imported file can always be applied to the inputs, similar to
@@ -9180,7 +9196,7 @@ This system, while highly pleasant to work with during everyday use, sometimes h
 
         secrets = lib.mkOption {
           readOnly = true;
-          default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes inputs; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
+          default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes globals inputs; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
           type = lib.types.unspecified;
           description = "Exposes the loaded repo secrets. This option is read-only.";
         };
@@ -11165,6 +11181,114 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   }
 #+end_src
 
+**** Persistent user/group IDs
+
+#+begin_src nix-ts :tangle modules/nixos/server/id.nix
+  { lib, config, confLib, ... }:
+  let
+    inherit (lib)
+      concatLists
+      flip
+      mapAttrsToList
+      mkDefault
+      mkIf
+      mkOption
+      types
+    ;
+
+    cfg = config.users.persistentIds;
+  in
+    {
+      options = {
+        swarselmodules.server.ids = lib.mkEnableOption "enable persistent ids on server";
+        users.persistentIds = mkOption {
+          default = { };
+          description = ''
+            Maps a user or group name to its expected uid/gid values. If a user/group is
+            used on the system without specifying a uid/gid, this module will assign the
+            corresponding ids defined here, or show an error if the definition is missing.
+          '';
+          type = types.attrsOf (
+            types.submodule {
+              options = {
+                uid = mkOption {
+                  type = types.nullOr types.int;
+                  default = null;
+                  description = "The uid to assign if it is missing in `users.users.<name>`.";
+                };
+                gid = mkOption {
+                  type = types.nullOr types.int;
+                  default = null;
+                  description = "The gid to assign if it is missing in `users.groups.<name>`.";
+                };
+              };
+            }
+          );
+        };
+
+        users.users = mkOption {
+          type = types.attrsOf (
+            types.submodule (
+              { name, ... }:
+              {
+                config.uid =
+                  let
+                    persistentUid = cfg.${name}.uid or null;
+                  in
+                    mkIf (persistentUid != null) (mkDefault persistentUid);
+              }
+            )
+          );
+        };
+
+        users.groups = mkOption {
+          type = types.attrsOf (
+            types.submodule (
+              { name, ... }:
+              {
+                config.gid =
+                  let
+                    persistentGid = cfg.${name}.gid or null;
+                  in
+                    mkIf (persistentGid != null) (mkDefault persistentGid);
+              }
+            )
+          );
+        };
+      };
+      config = lib.mkIf config.swarselmodules.server.ids {
+        assertions =
+          concatLists
+            (
+              flip mapAttrsToList config.users.users (
+                name: user: [
+                  {
+                    assertion = user.uid != null;
+                    message = "non-persistent uid detected for '${name}', please assign one via `users.persistentIds`";
+                  }
+                  {
+                    assertion = !user.autoSubUidGidRange;
+                    message = "non-persistent subUids/subGids detected for: ${name}";
+                  }
+                ]
+              )
+            )
+          ++ flip mapAttrsToList config.users.groups (
+            name: group: {
+              assertion = group.gid != null;
+              message = "non-persistent gid detected for '${name}', please assign one via `users.persistentIds`";
+            }
+          );
+        users.persistentIds = {
+          systemd-coredump = confLib.mkIds 998;
+          systemd-oom = confLib.mkIds 997;
+          polkituser = confLib.mkIds 973;
+          nscd = confLib.mkIds 972;
+        };
+      };
+    }
+#+end_src
+
 **** System Packages (Server Programs)
 :PROPERTIES:
 :CUSTOM_ID: h:6f2967d9-7e32-4605-bb5c-5e27770bec0f
@@ -11205,13 +11329,18 @@ This is a collection of packages that are useful for server-type hosts that do n
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/nfs.nix
-  { lib, config, pkgs, globals, ... }:
+  { lib, config, pkgs, globals, confLib, ... }:
   let
     nfsUser = globals.user.name;
   in
   {
     options.swarselmodules.server.nfs = lib.mkEnableOption "enable nfs on server";
     config = lib.mkIf config.swarselmodules.server.nfs {
+
+      users.persistentIds = {
+        avahi = confLib.mkIds 978;
+      };
+
       services = {
         # add a user with sudo smbpasswd -a <user>
         samba = {
@@ -11268,51 +11397,54 @@ This is a collection of packages that are useful for server-type hosts that do n
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/acme.nix
-    { self, pkgs, lib, config, globals, ... }:
-    let
-      inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
+  { self, pkgs, lib, config, globals, confLib, ... }:
+  let
+    inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
 
-      sopsFile = self + "/secrets/nginx/acme.json";
-    in
-    {
-      options.swarselmodules.server.acme = lib.mkEnableOption "enable acme on server";
-      config = lib.mkIf config.swarselmodules.server.acme {
-        environment.systemPackages = with pkgs; [
-          lego
-        ];
+    sopsFile = self + "/secrets/nginx/acme.json";
+  in
+  {
+    options.swarselmodules.server.acme = lib.mkEnableOption "enable acme on server";
+    config = lib.mkIf config.swarselmodules.server.acme {
+      environment.systemPackages = with pkgs; [
+        lego
+      ];
 
-        sops = {
-          secrets = {
-            acme-creds = { format = "json"; key = ""; group = "acme"; inherit sopsFile; mode = "0660"; };
-          };
-          templates."certs.secret".content = ''
-            ACME_DNS_API_BASE = ${dnsBase}
-            ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
-          '';
+      sops = {
+        secrets = {
+          acme-creds = { format = "json"; key = ""; group = "acme"; inherit sopsFile; mode = "0660"; };
         };
-
-        users.groups.acme.members = lib.mkIf config.swarselmodules.server.nginx [ "nginx" ];
-
-        security.acme = {
-          acceptTerms = true;
-          defaults = {
-            inherit dnsProvider;
-            email = dnsMail;
-            environmentFile = "${config.sops.templates."certs.secret".path}";
-            reloadServices = [ "nginx" ];
-            dnsPropagationCheck = true;
-          };
-          certs."${globals.domains.main}" = {
-            domain = "*.${globals.domains.main}";
-          };
-        };
-
-        environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-          directories = [{ directory = "/var/lib/acme"; }];
-        };
-
+        templates."certs.secret".content = ''
+          ACME_DNS_API_BASE = ${dnsBase}
+          ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
+        '';
       };
-    }
+
+      users = {
+        persistentIds.acme = confLib.mkIds 967;
+        groups.acme.members = lib.mkIf config.swarselmodules.server.nginx [ "nginx" ];
+      };
+
+      security.acme = {
+        acceptTerms = true;
+        defaults = {
+          inherit dnsProvider;
+          email = dnsMail;
+          environmentFile = "${config.sops.templates."certs.secret".path}";
+          reloadServices = [ "nginx" ];
+          dnsPropagationCheck = true;
+        };
+        certs."${globals.domains.main}" = {
+          domain = "*.${globals.domains.main}";
+        };
+      };
+
+      environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        directories = [{ directory = "/var/lib/acme"; }];
+      };
+
+    };
+  }
 #+end_src
 
 **** NGINX
@@ -11491,7 +11623,7 @@ This is a collection of packages that are useful for server-type hosts that do n
 Here I am forcing =startWhenNeeded= to false so that the value will not be set to true in containers = this would be a problem because it would delay ssh host key generation.
 
 #+begin_src nix-ts :tangle modules/nixos/server/ssh.nix
-  { self, lib, config, withHomeManager, ... }:
+  { self, lib, config, withHomeManager, confLib, ... }:
   {
     options.swarselmodules.server.ssh = lib.mkEnableOption "enable ssh on server";
     config = lib.mkIf config.swarselmodules.server.ssh {
@@ -11514,17 +11646,22 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           }
         ];
       };
-      users.users = {
-        "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
-          (self + /secrets/public/ssh/yubikey.pub)
-          (self + /secrets/public/ssh/magicant.pub)
-          # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
-        ];
-        root.openssh.authorizedKeys.keyFiles = [
-          (self + /secrets/public/ssh/yubikey.pub)
-          (self + /secrets/public/ssh/magicant.pub)
-          # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
-        ];
+      users = {
+        persistentIds = {
+          sshd = lib.mkIf config.swarselmodules.server.ids (confLib.mkIds 979);
+        };
+        users = {
+          "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
+            (self + /secrets/public/ssh/yubikey.pub)
+            (self + /secrets/public/ssh/magicant.pub)
+            # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+          ];
+          root.openssh.authorizedKeys.keyFiles = [
+            (self + /secrets/public/ssh/yubikey.pub)
+            (self + /secrets/public/ssh/magicant.pub)
+            # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+          ];
+        };
       };
       security.sudo.extraConfig = ''
         Defaults    env_keep+=SSH_AUTH_SOCK
@@ -11817,9 +11954,9 @@ I also take some precautions in how I get networking information during stage 1.
       };
 
       boot = lib.mkIf (!config.swarselsystems.isClient) {
-        kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == []) || isRouter)) [
-          "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
-        ];
+        # kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == []) || isRouter)) [
+        #   "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
+        # ];
         initrd = {
           secrets."/tmp${hostKeyPathBase}" = if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
           availableKernelModules = config.swarselsystems.networkKernelModules;
@@ -12567,10 +12704,13 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         calibre
       ];
 
-
-      users.users.${serviceUser} = {
-        extraGroups = [ "users" ];
+      users = {
+        persistentIds.kavita = confLib.mkIds 995;
+        users.${serviceUser} = {
+          extraGroups = [ "users" ];
+        };
       };
+
 
       sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
 
@@ -12623,67 +12763,69 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
-  { pkgs, lib, config, globals, dns, confLib, ... }:
-  let
-    inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
-  in
-  {
-    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+      { pkgs, lib, config, globals, dns, confLib, ... }:
+      let
+        inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+        inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+      in
+      {
+        options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+        config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      users.users.${serviceUser} = {
-        extraGroups = [ "video" "render" "users" ];
-      };
-
-      # nixpkgs.config.packageOverrides = pkgs: {
-      #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
-      # };
-
-      hardware.graphics = {
-        enable = true;
-        extraPackages = with pkgs; [
-          intel-media-driver # LIBVA_DRIVER_NAME=iHD
-          # intel-vaapi-driver # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-          libva-vdpau-driver
-          libvdpau-va-gl
-        ];
-      };
-
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-      globals = {
-        networks = {
-          ${webProxyIf}.hosts = lib.mkIf isProxied {
-            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          users = {
+            persistentIds.jellyfin = confLib.mkIds 994;
+            users.${serviceUser} = {
+              extraGroups = [ "video" "render" "users" ];
+            };
           };
-          ${homeProxyIf}.hosts = lib.mkIf isHome {
-            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          # nixpkgs.config.packageOverrides = pkgs: {
+          #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
+          # };
+
+          hardware.graphics = {
+            enable = true;
+            extraPackages = with pkgs; [
+              intel-media-driver # LIBVA_DRIVER_NAME=iHD
+              # intel-vaapi-driver # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+              libva-vdpau-driver
+              libvdpau-va-gl
+            ];
           };
-        };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
-      };
 
-      services.${serviceName} = {
-        enable = true;
-        user = serviceUser;
-        # openFirewall = true; # this works only for the default ports
-      };
+          topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
-      nodes = {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          globals = {
+            networks = {
+              ${webProxyIf}.hosts = lib.mkIf isProxied {
+                ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+              };
+              ${homeProxyIf}.hosts = lib.mkIf isHome {
+                ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+              };
+            };
+            services.${serviceName} = {
+              domain = serviceDomain;
+              inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+              homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+            };
+          };
+
+          services.${serviceName} = {
+            enable = true;
+            user = serviceUser;
+            # openFirewall = true; # this works only for the default ports
+          };
+
+          nodes = {
+            ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+              "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+            };
+            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          };
+
         };
-        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-      };
-
-    };
-  }
+      }
 #+end_src
 
 **** navidrome
@@ -13011,11 +13153,13 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/pipewire.nix
-  { lib, config, ... }:
+  { lib, config, confLib, ... }:
   {
-    config = lib.mkIf (config?swarselmodules.server.mpd || config?swarselmodules.server.navidrome) {
+    config = lib.mkIf (config.swarselmodules.server.mpd || config.swarselmodules.server.navidrome) {
 
       security.rtkit.enable = true; # this is required for pipewire real-time access
+
+      users.persistentIds.rtkit = confLib.mkIds 996;
 
       services.pipewire = {
         enable = true;
@@ -13077,13 +13221,17 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/podman.nix
-  { config, lib, ... }:
+  { config, lib, confLib, ... }:
   let
     serviceName = "podman";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      users.persistentIds = {
+        podman = confLib.mkIds 969;
+      };
 
       virtualisation = {
         podman.enable = true;
@@ -13439,6 +13587,11 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
       # messages out after a while.
 
+      users.persistentIds = {
+        mautrix-signal = confLib.mkIds 993;
+        mautrix-whatsapp = confLib.mkIds 992;
+        mautrix-telegram = confLib.mkIds 991;
+      };
 
       nodes =
         let
@@ -13535,6 +13688,11 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
+      users.persistentIds = {
+        nextcloud = confLib.mkIds 990;
+        redis-nextcloud = confLib.mkIds 976;
+      };
+
       globals.services.${serviceName} = {
         domain = serviceDomain;
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
@@ -13594,8 +13752,14 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      users.users.${serviceUser} = {
-        extraGroups = [ "video" "render" "users" ];
+      users = {
+        persistentIds = {
+          immich = confLib.mkIds 989;
+          redis-immich = confLib.mkIds 977;
+        };
+        users.${serviceUser} = {
+          extraGroups = [ "video" "render" "users" ];
+        };
       };
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
@@ -13664,134 +13828,139 @@ This is my personal document management system. It automatically pulls documents
 Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml='s. This is needed for e.g. online services that only send their invoices through email body text.
 
 #+begin_src nix-ts :tangle modules/nixos/server/paperless.nix
-{ lib, pkgs, config, dns, globals, confLib, ... }:
-let
-  inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  { lib, pkgs, config, dns, globals, confLib, ... }:
+  let
+    inherit (config.swarselsystems) sopsFile;
+    inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
-  tikaPort = 9998;
-  gotenbergPort = 3002;
-  kanidmDomain = globals.services.kanidm.domain;
-in
-{
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    tikaPort = 9998;
+    gotenbergPort = 3002;
+    kanidmDomain = globals.services.kanidm.domain;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    users.users.${serviceUser} = {
-      extraGroups = [ "users" ];
-    };
-
-    sops.secrets = {
-      paperless-admin-pw = { inherit sopsFile; owner = serviceUser; };
-      kanidm-paperless-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-    };
-
-    # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-    globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+      users = {
+        persistentIds = {
+          redis-paperless = confLib.mkIds 975;
         };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+        users.${serviceUser} = {
+          extraGroups = [ "users" ];
         };
       };
-      services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-      };
-    };
 
-    services = {
-      ${serviceName} = {
-        enable = true;
-        mediaDir = "/Vault/Eternor/Paperless";
-        dataDir = "/Vault/data/${serviceName}";
-        user = serviceUser;
-        port = servicePort;
-        passwordFile = config.sops.secrets.paperless-admin-pw.path;
-        address = "0.0.0.0";
-        settings = {
-          PAPERLESS_OCR_LANGUAGE = "deu+eng";
-          PAPERLESS_URL = "https://${serviceDomain}";
-          PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
-            optimize = 1;
-            invalidate_digital_signatures = true;
-            pdfa_image_compression = "lossless";
+      sops.secrets = {
+        paperless-admin-pw = { inherit sopsFile; owner = serviceUser; };
+        kanidm-paperless-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      };
+
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
           };
-          PAPERLESS_TIKA_ENABLED = "true";
-          PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
-          PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
-          PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
-          PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
-            openid_connect = {
-              OAUTH_PKCE_ENABLED = "True";
-              APPS = [
-                rec {
-                  provider_id = "kanidm";
-                  name = "Kanidm";
-                  client_id = "paperless";
-                  # secret will be added by paperless-web.service (see below)
-                  #secret = "";
-                  settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
-                }
-              ];
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+      };
+
+      services = {
+        ${serviceName} = {
+          enable = true;
+          mediaDir = "/Vault/Eternor/Paperless";
+          dataDir = "/Vault/data/${serviceName}";
+          user = serviceUser;
+          port = servicePort;
+          passwordFile = config.sops.secrets.paperless-admin-pw.path;
+          address = "0.0.0.0";
+          settings = {
+            PAPERLESS_OCR_LANGUAGE = "deu+eng";
+            PAPERLESS_URL = "https://${serviceDomain}";
+            PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
+              optimize = 1;
+              invalidate_digital_signatures = true;
+              pdfa_image_compression = "lossless";
+            };
+            PAPERLESS_TIKA_ENABLED = "true";
+            PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
+            PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
+            PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
+            PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
+              openid_connect = {
+                OAUTH_PKCE_ENABLED = "True";
+                APPS = [
+                  rec {
+                    provider_id = "kanidm";
+                    name = "Kanidm";
+                    client_id = "paperless";
+                    # secret will be added by paperless-web.service (see below)
+                    #secret = "";
+                    settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                  }
+                ];
+              };
             };
           };
         };
-      };
 
-      tika = {
-        enable = true;
-        port = tikaPort;
-        openFirewall = false;
-        listenAddress = "127.0.0.1";
-        enableOcr = true;
-      };
-
-      gotenberg = {
-        enable = true;
-        package = pkgs.stable.gotenberg;
-        port = gotenbergPort;
-        bindIP = "127.0.0.1";
-        timeout = "600s";
-        chromium.package = pkgs.stable.chromium;
-      };
-    };
-
-
-    # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
-    systemd.services.paperless-web.script = lib.mkBefore ''
-      oidcSecret=$(< ${config.sops.secrets.kanidm-paperless-client.path})
-      export PAPERLESS_SOCIALACCOUNT_PROVIDERS=$(
-        ${pkgs.jq}/bin/jq <<< "$PAPERLESS_SOCIALACCOUNT_PROVIDERS" \
-          --compact-output \
-          --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
-                     )
-    '';
-
-    nodes =
-      let
-        extraConfigLoc = ''
-          proxy_connect_timeout   300;
-          proxy_send_timeout      300;
-          proxy_read_timeout      300;
-          send_timeout            300;
-        '';
-      in
-      {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        tika = {
+          enable = true;
+          port = tikaPort;
+          openFirewall = false;
+          listenAddress = "127.0.0.1";
+          enableOcr = true;
         };
-        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+
+        gotenberg = {
+          enable = true;
+          package = pkgs.stable.gotenberg;
+          port = gotenbergPort;
+          bindIP = "127.0.0.1";
+          timeout = "600s";
+          chromium.package = pkgs.stable.chromium;
+        };
       };
 
-  };
-}
+
+      # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
+      systemd.services.paperless-web.script = lib.mkBefore ''
+        oidcSecret=$(< ${config.sops.secrets.kanidm-paperless-client.path})
+        export PAPERLESS_SOCIALACCOUNT_PROVIDERS=$(
+          ${pkgs.jq}/bin/jq <<< "$PAPERLESS_SOCIALACCOUNT_PROVIDERS" \
+            --compact-output \
+            --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
+                       )
+      '';
+
+      nodes =
+        let
+          extraConfigLoc = ''
+            proxy_connect_timeout   300;
+            proxy_send_timeout      300;
+            proxy_read_timeout      300;
+            send_timeout            300;
+          '';
+        in
+        {
+          ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+            "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          };
+          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+        };
+
+    };
+  }
 #+end_src
 
 **** transmission
@@ -13800,189 +13969,193 @@ in
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/transmission.nix
-   { self, pkgs, lib, config, confLib, ... }:
-   let
-     inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
-     inherit (confLib.static) isHome;
+  { self, pkgs, lib, config, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
+    inherit (confLib.static) isHome;
 
-     lidarrUser = "lidarr";
-     lidarrGroup = lidarrUser;
-     lidarrPort = 8686;
-     radarrUser = "radarr";
-     radarrGroup = radarrUser;
-     radarrPort = 7878;
-     sonarrUser = "sonarr";
-     sonarrGroup = sonarrUser;
-     sonarrPort = 8989;
-     readarrUser = "readarr";
-     readarrGroup = readarrUser;
-     readarrPort = 8787;
-     prowlarrUser = "prowlarr";
-     prowlarrGroup = prowlarrUser;
-     prowlarrPort = 9696;
-   in
-   {
-     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
-     config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    lidarrUser = "lidarr";
+    lidarrGroup = lidarrUser;
+    lidarrPort = 8686;
+    radarrUser = "radarr";
+    radarrGroup = radarrUser;
+    radarrPort = 7878;
+    sonarrUser = "sonarr";
+    sonarrGroup = sonarrUser;
+    sonarrPort = 8989;
+    readarrUser = "readarr";
+    readarrGroup = readarrUser;
+    readarrPort = 8787;
+    prowlarrUser = "prowlarr";
+    prowlarrGroup = prowlarrUser;
+    prowlarrPort = 9696;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-       # this user/group section is probably unneeded
-       users = {
-         groups = {
-           dockeruser = {
-             gid = 1155;
-           };
-           "${radarrGroup}" = { };
-           "${readarrGroup}" = { };
-           "${sonarrGroup}" = { };
-           "${lidarrGroup}" = { };
-           "${prowlarrGroup}" = { };
-         };
-         users = {
-           dockeruser = {
-             isSystemUser = true;
-             uid = 1155;
-             group = "docker";
-             extraGroups = [ "users" ];
-           };
-           "${radarrUser}" = {
-             isSystemUser = true;
-             group = radarrGroup;
-             extraGroups = [ "users" ];
-           };
-           "${readarrGroup}" = {
-             isSystemUser = true;
-             group = readarrGroup;
-             extraGroups = [ "users" ];
-           };
-           "${sonarrGroup}" = {
-             isSystemUser = true;
-             group = sonarrGroup;
-             extraGroups = [ "users" ];
-           };
-           "${lidarrUser}" = {
-             isSystemUser = true;
-             group = lidarrGroup;
-             extraGroups = [ "users" ];
-           };
-           "${prowlarrGroup}" = {
-             isSystemUser = true;
-             group = prowlarrGroup;
-             extraGroups = [ "users" ];
-           };
-         };
-       };
+      # this user/group section is probably unneeded
+      users = {
+        persistentIds = {
+          prowlarr = confLib.mkIds 971;
+          readarr = confLib.mkIds 970;
+        };
+        groups = {
+          dockeruser = {
+            gid = 1155;
+          };
+          "${radarrGroup}" = { };
+          "${readarrGroup}" = { };
+          "${sonarrGroup}" = { };
+          "${lidarrGroup}" = { };
+          "${prowlarrGroup}" = { };
+        };
+        users = {
+          dockeruser = {
+            isSystemUser = true;
+            uid = 1155;
+            group = "docker";
+            extraGroups = [ "users" ];
+          };
+          "${radarrUser}" = {
+            isSystemUser = true;
+            group = radarrGroup;
+            extraGroups = [ "users" ];
+          };
+          "${readarrGroup}" = {
+            isSystemUser = true;
+            group = readarrGroup;
+            extraGroups = [ "users" ];
+          };
+          "${sonarrGroup}" = {
+            isSystemUser = true;
+            group = sonarrGroup;
+            extraGroups = [ "users" ];
+          };
+          "${lidarrUser}" = {
+            isSystemUser = true;
+            group = lidarrGroup;
+            extraGroups = [ "users" ];
+          };
+          "${prowlarrGroup}" = {
+            isSystemUser = true;
+            group = prowlarrGroup;
+            extraGroups = [ "users" ];
+          };
+        };
+      };
 
-       virtualisation.docker.enable = true;
-       environment.systemPackages = with pkgs; [
-         docker
-       ];
+      virtualisation.docker.enable = true;
+      environment.systemPackages = with pkgs; [
+        docker
+      ];
 
-       topology.self.services = {
-         radarr.info = "https://${serviceDomain}/radarr";
-         readarr = {
-           name = "Readarr";
-           info = "https://${serviceDomain}/readarr";
-           icon = "${self}/files/topology-images/readarr.png";
-         };
-         sonarr.info = "https://${serviceDomain}/sonarr";
-         lidarr.info = "https://${serviceDomain}/lidarr";
-         prowlarr.info = "https://${serviceDomain}/prowlarr";
-       };
+      topology.self.services = {
+        radarr.info = "https://${serviceDomain}/radarr";
+        readarr = {
+          name = "Readarr";
+          info = "https://${serviceDomain}/readarr";
+          icon = "${self}/files/topology-images/readarr.png";
+        };
+        sonarr.info = "https://${serviceDomain}/sonarr";
+        lidarr.info = "https://${serviceDomain}/lidarr";
+        prowlarr.info = "https://${serviceDomain}/prowlarr";
+      };
 
-       globals.services.transmission = {
-         domain = serviceDomain;
-         inherit isHome;
-       };
+      globals.services.transmission = {
+        domain = serviceDomain;
+        inherit isHome;
+      };
 
-       services = {
-         radarr = {
-           enable = true;
-           user = radarrUser;
-           group = radarrGroup;
-           settings.server.port = radarrPort;
-           openFirewall = true;
-           dataDir = "/Vault/data/radarr";
-         };
-         readarr = {
-           enable = true;
-           user = readarrUser;
-           group = readarrGroup;
-           settings.server.port = readarrPort;
-           openFirewall = true;
-           dataDir = "/Vault/data/readarr";
-         };
-         sonarr = {
-           enable = true;
-           user = sonarrUser;
-           group = sonarrGroup;
-           settings.server.port = sonarrPort;
-           openFirewall = true;
-           dataDir = "/Vault/data/sonarr";
-         };
-         lidarr = {
-           enable = true;
-           user = lidarrUser;
-           group = lidarrGroup;
-           settings.server.port = lidarrPort;
-           openFirewall = true;
-           dataDir = "/Vault/data/lidarr";
-         };
-         prowlarr = {
-           enable = true;
-           settings.server.port = prowlarrPort;
-           openFirewall = true;
-         };
+      services = {
+        radarr = {
+          enable = true;
+          user = radarrUser;
+          group = radarrGroup;
+          settings.server.port = radarrPort;
+          openFirewall = true;
+          dataDir = "/Vault/data/radarr";
+        };
+        readarr = {
+          enable = true;
+          user = readarrUser;
+          group = readarrGroup;
+          settings.server.port = readarrPort;
+          openFirewall = true;
+          dataDir = "/Vault/data/readarr";
+        };
+        sonarr = {
+          enable = true;
+          user = sonarrUser;
+          group = sonarrGroup;
+          settings.server.port = sonarrPort;
+          openFirewall = true;
+          dataDir = "/Vault/data/sonarr";
+        };
+        lidarr = {
+          enable = true;
+          user = lidarrUser;
+          group = lidarrGroup;
+          settings.server.port = lidarrPort;
+          openFirewall = true;
+          dataDir = "/Vault/data/lidarr";
+        };
+        prowlarr = {
+          enable = true;
+          settings.server.port = prowlarrPort;
+          openFirewall = true;
+        };
 
-         nginx = {
-           virtualHosts = {
-             "${serviceDomain}" = {
-               enableACME = false;
-               forceSSL = false;
-               acmeRoot = null;
-               locations = {
-                 "/" = {
-                   proxyPass = "http://localhost:9091";
-                   extraConfig = ''
-                     client_max_body_size    0;
-                   '';
-                 };
-                 "/radarr" = {
-                   proxyPass = "http://localhost:${builtins.toString radarrPort}";
-                   extraConfig = ''
-                     client_max_body_size    0;
-                   '';
-                 };
-                 "/readarr" = {
-                   proxyPass = "http://localhost:${builtins.toString readarrPort}";
-                   extraConfig = ''
-                     client_max_body_size    0;
-                   '';
-                 };
-                 "/sonarr" = {
-                   proxyPass = "http://localhost:${builtins.toString sonarrPort}";
-                   extraConfig = ''
-                     client_max_body_size    0;
-                   '';
-                 };
-                 "/lidarr" = {
-                   proxyPass = "http://localhost:${builtins.toString lidarrPort}";
-                   extraConfig = ''
-                     client_max_body_size    0;
-                   '';
-                 };
-                 "/prowlarr" = {
-                   proxyPass = "http://localhost:${builtins.toString prowlarrPort}";
-                   extraConfig = ''
-                     client_max_body_size    0;
-                   '';
-                 };
-               };
-             };
-           };
-         };
-       };
-     };
-   }
+        nginx = {
+          virtualHosts = {
+            "${serviceDomain}" = {
+              enableACME = false;
+              forceSSL = false;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://localhost:9091";
+                  extraConfig = ''
+                    client_max_body_size    0;
+                  '';
+                };
+                "/radarr" = {
+                  proxyPass = "http://localhost:${builtins.toString radarrPort}";
+                  extraConfig = ''
+                    client_max_body_size    0;
+                  '';
+                };
+                "/readarr" = {
+                  proxyPass = "http://localhost:${builtins.toString readarrPort}";
+                  extraConfig = ''
+                    client_max_body_size    0;
+                  '';
+                };
+                "/sonarr" = {
+                  proxyPass = "http://localhost:${builtins.toString sonarrPort}";
+                  extraConfig = ''
+                    client_max_body_size    0;
+                  '';
+                };
+                "/lidarr" = {
+                  proxyPass = "http://localhost:${builtins.toString lidarrPort}";
+                  extraConfig = ''
+                    client_max_body_size    0;
+                  '';
+                };
+                "/prowlarr" = {
+                  proxyPass = "http://localhost:${builtins.toString prowlarrPort}";
+                  extraConfig = ''
+                    client_max_body_size    0;
+                  '';
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  }
 
 #+end_src
 
@@ -14135,7 +14308,7 @@ in
   }
 #+end_src
 
-**** restic
+**** restic backups
 :PROPERTIES:
 :CUSTOM_ID: h:b73ac8bf-b721-4563-9eff-973925c99a39
 :END:
@@ -14156,6 +14329,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
       };
       paths = lib.mkOption {
         type = lib.types.listOf lib.types.str;
+      };
+      withPostgres = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
       };
     };
     config = lib.mkIf config.swarselmodules.server.restic {
@@ -14259,6 +14436,11 @@ This section exposes several metrics that I use to check the health of my server
       };
 
       users = {
+        persistentIds = {
+          nextcloud-exporter = confLib.mkIds 988;
+          node-exporter = confLib.mkIds 987;
+          grafana = confLib.mkIds 974;
+        };
         users = {
           nextcloud-exporter = {
             extraGroups = [ "nextcloud" ];
@@ -14603,10 +14785,15 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      users.users.${serviceUser} = {
-        extraGroups = [ "users" ];
-        group = serviceGroup;
-        isSystemUser = true;
+      users = {
+        persistentIds = {
+          freshrss = confLib.mkIds 986;
+        };
+        users.${serviceUser} = {
+          extraGroups = [ "users" ];
+          group = serviceGroup;
+          isSystemUser = true;
+        };
       };
 
       users.groups.${serviceGroup} = { };
@@ -14733,9 +14920,14 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      users.users.${serviceUser} = {
-        group = serviceGroup;
-        isSystemUser = true;
+      users = {
+        persistentIds = {
+          forgejo = confLib.mkIds 985;
+        };
+        users.${serviceUser} = {
+          group = serviceGroup;
+          isSystemUser = true;
+        };
       };
 
       users.groups.${serviceGroup} = { };
@@ -14995,6 +15187,9 @@ kanidm person credential create-reset-token <user>
 
 
       users = {
+        persistentIds = {
+          kanidm = confLib.mkIds 984;
+        };
         users.${serviceUser} = {
           group = serviceGroup;
           isSystemUser = true;
@@ -15632,6 +15827,9 @@ kanidm person credential create-reset-token <user>
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users = {
+        persistentIds = {
+          firefly-iii = confLib.mkIds 983;
+        };
         groups.${serviceGroup} = { };
         users.${serviceUser} = {
           group = lib.mkForce serviceGroup;
@@ -15983,6 +16181,10 @@ in
               mode = "0440";
             };
           };
+      };
+
+      users.persistentIds = {
+        radicale = confLib.mkIds 982;
       };
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
@@ -16632,6 +16834,10 @@ in
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
+      users.persistentIds = {
+        homebox = confLib.mkIds 981;
+      };
+
       globals = {
         networks = {
           ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -16648,14 +16854,25 @@ in
         };
       };
 
+      systemd.services.homebox = {
+        environment = {
+          TMPDIR = "/var/lib/homebox/.tmp";
+        };
+        serviceConfig = {
+          # ReadWritePaths = "/var/lib/homebox";
+          RuntimeDirectory = "homebox";
+          BindPaths="/run/homebox:/var/lib/homebox/.tmp";
+        };
+      };
+
       services.${serviceName} = {
         enable = true;
-        package = pkgs.dev.homebox;
+        package = pkgs.bisect.homebox;
         database.createLocally = true;
         settings = {
           HBOX_WEB_PORT = builtins.toString servicePort;
           HBOX_OPTIONS_ALLOW_REGISTRATION = "false";
-          HBOX_STORAGE_CONN_STRING = "file:///Vault/data/homebox";
+          HBOX_STORAGE_CONN_STRING = "file:///var/lib/homebox";
           HBOX_STORAGE_PREFIX_PATH = ".data";
         };
       };
@@ -16692,6 +16909,9 @@ in
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+      users.persistentIds = {
+        opksshuser = confLib.mkIds 980;
+      };
 
       services.${serviceName} = {
         enable = true;
@@ -17962,105 +18182,107 @@ $ hydra-create-user alice --full-name 'Alice Q. User' \
 This is the dhcp config that runs on my router.
 
 #+begin_src nix-ts :tangle modules/nixos/server/kea.nix
-   { self, lib, config, globals, confLib, ... }:
-   let
-     inherit (confLib.gen { name = "kea"; dir = "/var/lib/private/kea"; }) serviceName serviceDir;
-     inherit (confLib.static) homeDnsServer;
-     dhcpX = intX:
-       let
-         x = builtins.toString intX;
-       in
-       {
-         enable = true;
-         settings = {
-           reservations-out-of-pool = true;
-           lease-database = {
-             name = "/var/lib/kea/dhcp${x}.leases";
-             persist = true;
-             type = "memfile";
-           };
-           valid-lifetime = 86400;
-           renew-timer = 3600;
-           interfaces-config = {
-             interfaces = map (name: "me-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
-             service-sockets-max-retries = -1;
-           };
-           "subnet${x}" = lib.flip lib.mapAttrsToList globals.networks.home-lan.vlans (
-             vlanName: vlanCfg: {
-               inherit (vlanCfg) id;
-               interface = "me-${vlanName}";
-               subnet = vlanCfg."cidrv${x}";
-               rapid-commit = lib.mkIf (intX == 6) true;
-               pools = [
-                 {
-                   pool = "${lib.net.cidr.host 100 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
-                 }
-               ];
-               pd-pools = lib.mkIf (intX == 6) [
-                 {
-                   prefix = builtins.replaceStrings [ "::" ] [ ":0:0:100::" ] (lib.head (lib.splitString "/" vlanCfg.cidrv6));
-                   prefix-len = 56;
-                   delegated-len = 64;
-                 }
-               ];
-               option-data =
-                 lib.optional (intX == 4)
-                   {
-                     name = "routers";
-                     data = vlanCfg.hosts.hintbooth."ipv${x}";
-                   }
-                 # Advertise DNS server for VLANS that have internet access
-                 ++
-                 lib.optional
-                   (lib.elem vlanName globals.general.internetVLANs)
-                   {
-                     name = if (intX == 4) then "domain-name-servers" else "dns-servers";
-                     data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
-                   };
-               reservations = lib.concatLists (
-                 lib.forEach (builtins.attrValues vlanCfg.hosts) (
-                   hostCfg:
-                   lib.optional (hostCfg.mac != null) {
-                     hw-address = lib.mkIf (intX == 4) hostCfg.mac;
-                     duid = lib.mkIf (intX == 6) "00:03:00:01:${hostCfg.mac}"; # 00:03 = duid type 3; 00:01 = ethernet
-                     ip-address = lib.mkIf (intX == 4) hostCfg."ipv${x}";
-                     ip-addresses = lib.mkIf (intX == 6) [ hostCfg."ipv${x}" ];
-                     prefixes = lib.mkIf (intX == 6) [
-                       "${builtins.replaceStrings ["::"] [":0:0:${builtins.toString (256 + hostCfg.id)}::"] (lib.head (lib.splitString "/" vlanCfg.cidrv6))}/64"
-                     ];
-                   }
-                 )
-               );
-             }
-           );
-         };
-       };
-   in
-   {
-     options = {
-       swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-     };
-     config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  { self, lib, config, globals, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "kea"; dir = "/var/lib/private/kea"; }) serviceName serviceDir;
+    inherit (confLib.static) homeDnsServer;
+    dhcpX = intX:
+      let
+        x = builtins.toString intX;
+      in
+      {
+        enable = true;
+        settings = {
+          reservations-out-of-pool = true;
+          lease-database = {
+            name = "/var/lib/kea/dhcp${x}.leases";
+            persist = true;
+            type = "memfile";
+          };
+          valid-lifetime = 86400;
+          renew-timer = 3600;
+          interfaces-config = {
+            interfaces = map (name: "me-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+            service-sockets-max-retries = -1;
+          };
+          "subnet${x}" = lib.flip lib.mapAttrsToList globals.networks.home-lan.vlans (
+            vlanName: vlanCfg: {
+              inherit (vlanCfg) id;
+              interface = "me-${vlanName}";
+              subnet = vlanCfg."cidrv${x}";
+              rapid-commit = lib.mkIf (intX == 6) true;
+              pools = [
+                {
+                  pool = "${lib.net.cidr.host 100 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
+                }
+              ];
+              pd-pools = lib.mkIf (intX == 6) [
+                {
+                  prefix = builtins.replaceStrings [ "::" ] [ ":0:0:100::" ] (lib.head (lib.splitString "/" vlanCfg.cidrv6));
+                  prefix-len = 56;
+                  delegated-len = 64;
+                }
+              ];
+              option-data =
+                lib.optional (intX == 4)
+                  {
+                    name = "routers";
+                    data = vlanCfg.hosts.hintbooth."ipv${x}";
+                  }
+                # Advertise DNS server for VLANS that have internet access
+                ++
+                lib.optional
+                  (lib.elem vlanName globals.general.internetVLANs)
+                  {
+                    name = if (intX == 4) then "domain-name-servers" else "dns-servers";
+                    data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
+                  };
+              reservations = lib.concatLists (
+                lib.forEach (builtins.attrValues vlanCfg.hosts) (
+                  hostCfg:
+                  lib.optional (hostCfg.mac != null) {
+                    hw-address = lib.mkIf (intX == 4) hostCfg.mac;
+                    duid = lib.mkIf (intX == 6) "00:03:00:01:${hostCfg.mac}"; # 00:03 = duid type 3; 00:01 = ethernet
+                    ip-address = lib.mkIf (intX == 4) hostCfg."ipv${x}";
+                    ip-addresses = lib.mkIf (intX == 6) [ hostCfg."ipv${x}" ];
+                    prefixes = lib.mkIf (intX == 6) [
+                      "${builtins.replaceStrings ["::"] [":0:0:${builtins.toString (256 + hostCfg.id)}::"] (lib.head (lib.splitString "/" vlanCfg.cidrv6))}/64"
+                    ];
+                  }
+                )
+              );
+            }
+          );
+        };
+      };
+  in
+  {
+    options = {
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    };
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-         { directory = serviceDir; mode = "0700"; }
-       ];
+      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        { directory = serviceDir; mode = "0700"; }
+      ];
 
-       topology = {
-         extractors.kea.enable = false;
-         self.services.${serviceName} = {
-           name = lib.swarselsystems.toCapitalized serviceName;
-           icon = "${self}/files/topology-images/${serviceName}.png";
-         };
-       };
+      users.persistentIds.kea = confLib.mkIds 968;
 
-       services.kea = {
-         dhcp4 = dhcpX 4;
-         dhcp6 = dhcpX 6;
-       };
+      topology = {
+        extractors.kea.enable = false;
+        self.services.${serviceName} = {
+          name = lib.swarselsystems.toCapitalized serviceName;
+          icon = "${self}/files/topology-images/${serviceName}.png";
+        };
+      };
 
-     };
-   }
+      services.kea = {
+        dhcp4 = dhcpX 4;
+        dhcp6 = dhcpX 6;
+      };
+
+    };
+  }
 #+end_src
 **** nftables (firewall)
 :PROPERTIES:
@@ -18928,7 +19150,7 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 :CUSTOM_ID: h:5c41c4ee-22ca-405b-9e4f-cc4051634edd
 :END:
 
-This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
+This smashes Atmosphère 1.3.2 on the switch, which is what I am currenty using.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/nswitch-rcm.nix
   { pkgs, ... }:
@@ -19355,7 +19577,7 @@ When setting up a new machine:
 Some standard options that should be set for every microvm host.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/microvm-host.nix
-  { config, lib, ... }:
+  { config, lib, confLib, ... }:
   {
     config = lib.mkIf (config.guests != { }) {
 
@@ -19373,6 +19595,8 @@ Some standard options that should be set for every microvm host.
           }) (builtins.attrNames config.guests)
       );
 
+      users.persistentIds.microvm = confLib.mkIds 999;
+
     };
   }
 #+end_src
@@ -19385,57 +19609,80 @@ Some standard options that should be set for every microvm host.
 Some standard options that should be set for every microvm guest. We set the default
 
 #+begin_src nix-ts :tangle modules/nixos/optional/microvm-guest.nix
+  { self, lib, config, inputs, microVMParent, nodes, globals, confLib, ... }:
+  {
+    imports = [
+      inputs.disko.nixosModules.disko
+      inputs.home-manager.nixosModules.home-manager
+      inputs.impermanence.nixosModules.impermanence
+      inputs.lanzaboote.nixosModules.lanzaboote
+      inputs.microvm.nixosModules.microvm
+      inputs.nix-index-database.nixosModules.nix-index
+      inputs.nix-minecraft.nixosModules.minecraft-servers
+      inputs.nix-topology.nixosModules.default
+      inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+      inputs.simple-nixos-mailserver.nixosModules.default
+      inputs.sops.nixosModules.sops
+      inputs.stylix.nixosModules.stylix
+      inputs.swarsel-nix.nixosModules.default
+      inputs.nixos-nftables-firewall.nixosModules.default
+
+      (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+
+      "${self}/modules/shared/meta.nix"
+    ];
+
+    config = {
+      _module.args.dns = inputs.dns;
+
+      nix.settings.experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      systemd.services."systemd-networkd".environment.SYSTEMD_LOG_LEVEL = "debug";
+      # NOTE: this is needed, we dont import sevrer network module for microvms
+      globals.hosts.${config.node.name}.isHome = true;
+
+      fileSystems."/persist".neededForBoot = lib.mkForce true;
+
+      systemd.network.networks."10-vlan-services" = {
+        dhcpV6Config = {
+          WithoutRA = "solicit";
+          # duid-en is nice in principle, but I already have MAC info anyways for reservations
+          DUIDType = "link-layer";
+        };
+        # networkConfig = {
+        #   IPv6PrivacyExtensions = "no";
+        #   IPv6AcceptRA = false;
+        # };
+        ipv6AcceptRAConfig = {
+          DHCPv6Client = "always";
+        };
+      };
+
+      # microvm = {
+      #   mount the writeable overlay so that we can use nix shells inside the microvm
+      #   volumes = [
+      #     {
+      #       image = "/tmp/nix-store-overlay-${config.networking.hostName}.img";
+      #       autoCreate = true;
+      #       mountPoint = config.microvm.writableStoreOverlay;
+      #       size = 1024;
+      #     }
+      #   ];
+      # };
+    };
+  }
+
+#+end_src
+
+**** microvm-guest-shares
+Some standard options that should be set for every microvm guest. We set the default
+
+#+begin_src nix-ts :tangle modules/nixos/optional/microvm-guest-shares.nix
     { self, lib, config, inputs, microVMParent, nodes, ... }:
     {
-      imports = [
-        inputs.disko.nixosModules.disko
-        inputs.home-manager.nixosModules.home-manager
-        inputs.impermanence.nixosModules.impermanence
-        inputs.lanzaboote.nixosModules.lanzaboote
-        inputs.microvm.nixosModules.microvm
-        inputs.nix-index-database.nixosModules.nix-index
-        inputs.nix-minecraft.nixosModules.minecraft-servers
-        inputs.nix-topology.nixosModules.default
-        inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-        inputs.simple-nixos-mailserver.nixosModules.default
-        inputs.sops.nixosModules.sops
-        inputs.stylix.nixosModules.stylix
-        inputs.swarsel-nix.nixosModules.default
-        inputs.nixos-nftables-firewall.nixosModules.default
-
-        (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
-
-        "${self}/modules/shared/meta.nix"
-      ];
-
       config = {
-        _module.args.dns = inputs.dns;
-
-        nix.settings.experimental-features = [
-          "nix-command"
-          "flakes"
-        ];
-        systemd.services."systemd-networkd".environment.SYSTEMD_LOG_LEVEL = "debug";
-        # NOTE: this is needed, we dont import sevrer network module for microvms
-        globals.hosts.${config.node.name}.isHome = true;
-
-        fileSystems."/persist".neededForBoot = lib.mkForce true;
-
-        systemd.network.networks."10-vlan-services" = {
-          dhcpV6Config = {
-            WithoutRA = "solicit";
-            # duid-en is nice in principle, but I already have MAC info anyways for reservations
-            DUIDType = "link-layer";
-          };
-          # networkConfig = {
-          #   IPv6PrivacyExtensions = "no";
-          #   IPv6AcceptRA = false;
-          # };
-          ipv6AcceptRAConfig = {
-            DHCPv6Client = "always";
-          };
-        };
-
         microvm = {
           shares = [
             {
@@ -19443,15 +19690,6 @@ Some standard options that should be set for every microvm guest. We set the def
               source = "${lib.optionalString nodes.${microVMParent}.config.swarselsystems.isImpermanence "/persist"}/microvms/${config.networking.hostName}";
               mountPoint = "/persist";
               proto = "virtiofs";
-            }
-          ];
-          # mount the writeable overlay so that we can use nix shells inside the microvm
-          volumes = [
-            {
-              image = "/tmp/nix-store-overlay-${config.networking.hostName}.img";
-              autoCreate = true;
-              mountPoint = config.microvm.writableStoreOverlay;
-              size = 1024;
             }
           ];
         };
@@ -26984,44 +27222,104 @@ In short, the options defined here are passed to the modules systems using =_mod
           homeServiceAddress = lib.optionalString (config.swarselsystems.server.wireguard.interfaces ? wgHome) globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgHome.serverNetConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
         };
 
+        mkIds = id: {
+          uid = id;
+          gid = id;
+        };
+
+        mkDeviceMac = id:
+          let
+            mod = n: d: n - (n / d) * d;
+            toHexByte = n:
+              let
+                hex = "0123456789abcdef";
+                hi = n / 16;
+                lo = mod n 16;
+              in
+              builtins.substring hi 1 hex
+              + builtins.substring lo 1 hex;
+
+            max = 16777215; # 256^3 - 1
+
+            b1 = id / (256 * 256);
+            r1 = mod id (256 * 256);
+            b2 = r1 / 256;
+            b3 = mod r1 256;
+          in
+          if
+            (id <= max)
+          then
+            (builtins.concatStringsSep ":"
+              (map toHexByte [ b1 b2 b3 ]))
+          else
+            (throw "Device MAC ID too large (max is 16777215)");
+
         mkMicrovm =
           if config.swarselsystems.withMicroVMs then
-            (guestName: {
-              ${guestName} = {
-                backend = "microvm";
-                autostart = true;
-                modules = [
-                  (config.node.configDir + /guests/${guestName}/default.nix)
-                  {
-                    node.secretsDir = config.node.configDir + /secrets/${guestName};
-                    node.configDir = config.node.configDir + /guests/${guestName};
-                    networking.nftables.firewall = {
-                      zones.untrusted.interfaces = lib.mkIf
-                        (
-                          lib.length config.guests.${guestName}.networking.links == 1
-                        )
-                        config.guests.${guestName}.networking.links;
+            (guestName:
+              { enableStorage ? false
+              , withZfs ? false
+              , ...
+              }:
+              {
+                ${guestName} = {
+                  backend = "microvm";
+                  autostart = true;
+                  zfs = lib.mkIf withZfs {
+                    # stateful config that should be backed up
+                    "/state" = {
+                      pool = "Vault";
+                      dataset = "guests/${guestName}/state";
                     };
-                  }
-                  "${self}/modules/nixos/optional/microvm-guest.nix"
-                  "${self}/modules/nixos/optional/systemd-networkd-base.nix"
-                ];
-                microvm = {
-                  system = config.node.arch;
-                  baseMac = config.repo.secrets.local.networking.networks.lan.mac;
-                  interfaces.vlan-services = { };
+                    # data that should be backed up
+                    "/storage" = lib.mkIf enableStorage {
+                      pool = "Vault";
+                      dataset = "guests/${guestName}/storage";
+                    };
+                    # other stuff that should only reside on disk, not backed up
+                    "/persist" = {
+                      pool = "Vault";
+                      dataset = "guests/${guestName}/persist";
+                    };
+                  };
+                  modules = [
+                    (config.node.configDir + /guests/${guestName}/default.nix)
+                    {
+                      node.secretsDir = config.node.configDir + /secrets/${guestName};
+                      node.configDir = config.node.configDir + /guests/${guestName};
+                      networking.nftables.firewall = {
+                        zones.untrusted.interfaces = lib.mkIf
+                          (
+                            lib.length config.guests.${guestName}.networking.links == 1
+                          )
+                          config.guests.${guestName}.networking.links;
+                      };
+                    }
+                    "${self}/modules/nixos/optional/microvm-guest.nix"
+                    "${self}/modules/nixos/optional/systemd-networkd-base.nix"
+                  ];
+                  microvm = {
+                    system = config.node.arch;
+                    baseMac = config.repo.secrets.local.networking.networks.lan.mac;
+                    interfaces.vlan-services = {
+                      mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id}";
+
+                    };
+                  };
+                  extraSpecialArgs = {
+                    inherit (inputs.self) nodes;
+                    inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                    inherit inputs outputs minimal;
+                    inherit (inputs) self;
+                    withHomeManager = false;
+                    microVMParent = config.node.name;
+                    globals = inputs.self.globals.${config.node.arch};
+                  };
                 };
-                extraSpecialArgs = {
-                  inherit (inputs.self) nodes;
-                  inherit (inputs.self.pkgs.${config.node.arch}) lib;
-                  inherit inputs outputs minimal;
-                  inherit (inputs) self;
-                  withHomeManager = false;
-                  microVMParent = config.node.name;
-                  globals = inputs.self.globals.${config.node.arch};
-                };
-              };
-            }) else (_: { _ = { }; });
+              }) else
+            (_: {
+              _ = { };
+            });
 
         genNginx =
           { serviceAddress
@@ -29552,6 +29850,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           nftables = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
+            ids = lib.mkDefault true;
             network = lib.mkDefault true;
             diskEncryption = lib.mkDefault true;
             packages = lib.mkDefault true;
@@ -29591,6 +29890,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         nftables = lib.mkDefault true;
         server = {
           general = lib.mkDefault true;
+          ids = lib.mkDefault true;
           packages = lib.mkDefault true;
           ssh = lib.mkDefault true;
           wireguard = lib.mkDefault true;
@@ -33422,7 +33722,7 @@ These are current deviations from the standard settings that I take while some t
         - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
 #+end_src
 
-** HTML Export: Darkmode toggle
+** HTML export javascript: Darkmode toggle
 :PROPERTIES:
 :CUSTOM_ID: h:cf6a12cf-929b-4080-9945-e6f02afc7990
 :END:
@@ -33439,7 +33739,7 @@ This adds a simple darkmode toggle to the [[#h:12880c64-229c-4063-9eea-387a97490
   </script>
 #+end_src
 
-** HTML Export: Docs QoL
+** HTML export javascript: Docs QoL
 :PROPERTIES:
 :CUSTOM_ID: h:e5f900a0-9d68-4269-a663-53c52434c342
 :END:
@@ -33448,502 +33748,562 @@ This adds the following functionalities to the [[#h:12880c64-229c-4063-9eea-387a
 - Section pinning with persistent pins
 - Copy section links to clipboard button
 - Searching in table of contents
-- Skip to next section button
+- Skip to next section buttons (one for simply next section, one for same level, one for at least higher level)
 
 #+begin_src javascript :noweb-ref js-docs-qol :exports code
   (function() {
-    function ready(fn) {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', fn);
-      } else {
-        fn();
-      }
-    }
-
-    ready(function initPinned() {
-      const STORAGE_KEY = 'org-pinned-items-v2';
-
-        let pinnedPanel = document.getElementById('pinned-panel');
-      if (!pinnedPanel) {
-        pinnedPanel = document.createElement('aside');
-        pinnedPanel.id = 'pinned-panel';
-        pinnedPanel.innerHTML = `
-                   <div id='pinned-panel-header'>
-                     <h2>Pinned</h2>
-                     <button id='toggle-pinned-btn' type='button' title='Hide pinned panel'>✕</button>
-                   </div>
-                   <button id='clear-all-pins-btn' type='button'>Clear All</button>
-                   <ul id='pinned-list'></ul>
-                 `;
-        document.body.appendChild(pinnedPanel);
+      function ready(fn) {
+          if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', fn);
+          } else {
+              fn();
+          }
       }
 
-      let showBtn = document.getElementById('show-pinned-btn');
-      if (!showBtn) {
-        showBtn = document.createElement('button');
-        showBtn.id = 'show-pinned-btn';
-        showBtn.type = 'button';
-        showBtn.textContent = 'Pinned';
-        document.body.appendChild(showBtn);
-      }
+      ready(function initPinned() {
+          const STORAGE_KEY = 'org-pinned-items-v2';
 
-      const content = document.getElementById('content');
-      const pinnedList = document.getElementById('pinned-list');
-      const toggleBtn = document.getElementById('toggle-pinned-btn');
-      const clearAllBtn = document.getElementById('clear-all-pins-btn');
-      const toc = document.getElementById('table-of-contents');
-      const body = document.body;
+          let pinnedPanel = document.getElementById('pinned-panel');
+          if (!pinnedPanel) {
+              pinnedPanel = document.createElement('aside');
+              pinnedPanel.id = 'pinned-panel';
+              pinnedPanel.innerHTML = `
+                       <div id='pinned-panel-header'>
+                         <h2>Pinned</h2>
+                         <button id='toggle-pinned-btn' type='button' title='Hide pinned panel'>✕</button>
+                       </div>
+                       <button id='clear-all-pins-btn' type='button'>Clear All</button>
+                       <ul id='pinned-list'></ul>
+                     `;
+              document.body.appendChild(pinnedPanel);
+          }
 
-      if (!content || !pinnedList || !toggleBtn || !clearAllBtn || !toc) return;
+          let showBtn = document.getElementById('show-pinned-btn');
+          if (!showBtn) {
+              showBtn = document.createElement('button');
+              showBtn.id = 'show-pinned-btn';
+              showBtn.type = 'button';
+              showBtn.textContent = 'Pinned';
+              document.body.appendChild(showBtn);
+          }
 
-      function injectSearch() {
-        // Check if already injected
-        if (document.getElementById('toc-search-input')) return;
+          const content = document.getElementById('content');
+          const pinnedList = document.getElementById('pinned-list');
+          const toggleBtn = document.getElementById('toggle-pinned-btn');
+          const clearAllBtn = document.getElementById('clear-all-pins-btn');
+          const toc = document.getElementById('table-of-contents');
+          const body = document.body;
 
-        const searchContainer = document.createElement('div');
-        searchContainer.id = 'toc-search-container';
+          if (!content || !pinnedList || !toggleBtn || !clearAllBtn || !toc) return;
 
-        const searchInput = document.createElement('input');
-        searchInput.id = 'toc-search-input';
-        searchInput.type = 'text';
-        searchInput.placeholder = 'Search TOC...';
-        searchInput.autocomplete = 'off';
+          function injectSearch() {
+              if (document.getElementById('toc-search-input')) return;
 
-        const clearBtn = document.createElement('button');
-        clearBtn.id = 'toc-search-clear';
-        clearBtn.type = 'button';
-        clearBtn.textContent = 'Clear';
+              const searchContainer = document.createElement('div');
+              searchContainer.id = 'toc-search-container';
 
-        searchContainer.appendChild(searchInput);
-        searchContainer.appendChild(clearBtn);
+              const searchInput = document.createElement('input');
+              searchInput.id = 'toc-search-input';
+              searchInput.type = 'text';
+              searchInput.placeholder = 'Search TOC...';
+              searchInput.autocomplete = 'off';
 
-        toc.insertBefore(searchContainer, toc.firstChild);
+              const clearBtn = document.createElement('button');
+              clearBtn.id = 'toc-search-clear';
+              clearBtn.type = 'button';
+              clearBtn.textContent = 'Clear';
 
-        function filterTOC(term) {
-          const allLinks = toc.querySelectorAll('a');
+              searchContainer.appendChild(searchInput);
+              searchContainer.appendChild(clearBtn);
 
-          allLinks.forEach(link => {
-            const li = link.closest('li');
-            if (!li) return;
+              toc.insertBefore(searchContainer, toc.firstChild);
 
-            const text = link.textContent.toLowerCase();
-            const matches = text.includes(term);
+              function filterTOC(term) {
+                  const allLinks = toc.querySelectorAll('a');
 
-            if (matches) {
-              li.classList.remove('hidden-by-search');
-              let parent = li.parentElement;
-              while (parent && parent !== toc) {
-                if (parent.tagName === 'UL') {
-                  parent.style.display = '';
-                }
-                if (parent.tagName === 'LI') {
-                  parent.classList.remove('hidden-by-search');
-                }
-                parent = parent.parentElement;
+                  allLinks.forEach(link => {
+                      const li = link.closest('li');
+                      if (!li) return;
+
+                      const text = link.textContent.toLowerCase();
+                      const matches = text.includes(term);
+
+                      if (matches) {
+                          li.classList.remove('hidden-by-search');
+                          let parent = li.parentElement;
+                          while (parent && parent !== toc) {
+                              if (parent.tagName === 'UL') {
+                                  parent.style.display = '';
+                              }
+                              if (parent.tagName === 'LI') {
+                                  parent.classList.remove('hidden-by-search');
+                              }
+                              parent = parent.parentElement;
+                          }
+                      } else {
+                          li.classList.add('hidden-by-search');
+                      }
+                  });
+
+                  if (term === '') {
+                      const allLis = toc.querySelectorAll('li');
+                      allLis.forEach(li => li.classList.remove('hidden-by-search'));
+                  }
               }
-            } else {
-              li.classList.add('hidden-by-search');
-            }
-          });
 
-          if (term === '') {
-            const allLis = toc.querySelectorAll('li');
-            allLis.forEach(li => li.classList.remove('hidden-by-search'));
+              searchInput.addEventListener('input', function(e) {
+                  const term = e.target.value.toLowerCase();
+                  filterTOC(term);
+              });
+
+              clearBtn.addEventListener('click', function() {
+                  searchInput.value = '';
+                  filterTOC('');
+                  searchInput.focus();
+              });
           }
-        }
+          injectSearch();
 
-        searchInput.addEventListener('input', function(e) {
-          const term = e.target.value.toLowerCase();
-          filterTOC(term);
-        });
+          function addHeadingLinks() {
+              const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9');
+              headers.forEach(header => {
+                  const id = header.getAttribute('id');
+                  if (!id) return;
 
-        clearBtn.addEventListener('click', function() {
-          searchInput.value = '';
-          filterTOC('');
-          searchInput.focus();
-        });
-      }
-      injectSearch();
+                  if (header.querySelector('.heading-link')) return;
 
-      function addHeadingLinks() {
-        const headers = content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9');
-        headers.forEach(header => {
-          const id = header.getAttribute('id');
-          if (!id) return;
+                  const link = document.createElement('a');
+                  link.className = 'heading-link';
+                  link.href = '#' + id;
+                  link.textContent = '#';
+                  link.title = 'Copy link to this heading';
 
-          if (header.querySelector('.heading-link')) return;
+                  const pinBtn = header.querySelector('.toc-pin-btn');
+                  if (pinBtn) {
+                      header.insertBefore(link, pinBtn);
+                  } else {
+                      header.appendChild(link);
+                  }
 
-          const link = document.createElement('a');
-          link.className = 'heading-link';
-          link.href = '#' + id;
-          link.textContent = '#';
-          link.title = 'Copy link to this heading';
+                  link.addEventListener('click', function(e) {
+                      e.preventDefault();
+                      const url = window.location.origin + window.location.pathname + '#' + id;
 
-          const pinBtn = header.querySelector('.toc-pin-btn');
-          if (pinBtn) {
-            header.insertBefore(link, pinBtn);
-          } else {
-            header.appendChild(link);
+                      if (navigator.clipboard && navigator.clipboard.writeText) {
+                          navigator.clipboard.writeText(url)
+                              .then(() => {
+                                  const originalText = link.textContent;
+                                  link.textContent = '✓';
+                                  setTimeout(() => {
+                                      link.textContent = originalText;
+                                  }, 1000);
+                              })
+                              .catch(err => {
+                                  console.warn('Failed to copy to clipboard', err);
+                                  window.location.hash = id;
+                              });
+                      } else {
+                          window.location.hash = id;
+                      }
+                  });
+              });
           }
+          addHeadingLinks();
 
-          link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const url = window.location.origin + window.location.pathname + '#' + id;
+          function addNextHeadingButtons() {
+              const headers = Array.from(content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9'));
 
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(url)
-                .then(() => {
-                  const originalText = link.textContent;
-                  link.textContent = '✓';
-                  setTimeout(() => {
-                    link.textContent = originalText;
-                  }, 1000);
-                })
-                .catch(err => {
-                  console.warn('Failed to copy to clipboard', err);
-                  window.location.hash = id;
-                });
-            } else {
-              window.location.hash = id;
-            }
-          });
-        });
-      }
-      addHeadingLinks();
-
-      function addNextHeadingButtons() {
-        const headers = Array.from(content.querySelectorAll('h1, h2, h3, h4, h5, h6, h7, h8, h9'));
-
-        headers.forEach((header, index) => {
-          // Skip if button already exists
-          if (header.querySelector('.heading-next')) return;
-
-          // Find next heading
-          const nextHeader = headers[index + 1];
-          if (!nextHeader) return; // No next heading
-
-          const nextId = nextHeader.getAttribute('id');
-          if (!nextId) return;
-
-          const nextBtn = document.createElement('button');
-          nextBtn.className = 'heading-next';
-          nextBtn.type = 'button';
-          nextBtn.textContent = '↓';
-          nextBtn.title = 'Jump to next heading';
-
-          // Insert after the heading link, before the pin button
-          const headingLink = header.querySelector('.heading-link');
-          const pinBtn = header.querySelector('.toc-pin-btn');
-
-          if (pinBtn) {
-            header.insertBefore(nextBtn, pinBtn);
-          } else if (headingLink) {
-            headingLink.after(nextBtn);
-          } else {
-            header.appendChild(nextBtn);
-          }
-
-          nextBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            nextHeader.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-            });
-            // Update URL hash
-            history.pushState(null, null, '#' + nextId);
-          });
-        });
-      }
-      addNextHeadingButtons();
-
-      let mobileTocBtn = document.getElementById('mobile-toc-toggle');
-      if (!mobileTocBtn) {
-        mobileTocBtn = document.createElement('button');
-        mobileTocBtn.id = 'mobile-toc-toggle';
-        mobileTocBtn.type = 'button';
-        mobileTocBtn.textContent = 'TOC';
-        document.body.appendChild(mobileTocBtn);
-      }
-
-      let mobilePinnedBtn = document.getElementById('mobile-pinned-toggle');
-      if (!mobilePinnedBtn) {
-        mobilePinnedBtn = document.createElement('button');
-        mobilePinnedBtn.id = 'mobile-pinned-toggle';
-        mobilePinnedBtn.type = 'button';
-        mobilePinnedBtn.textContent = 'Pinned';
-        document.body.appendChild(mobilePinnedBtn);
-      }
-
-      function anyMobilePanelOpen() {
-        return toc.classList.contains('mobile-visible') ||
-          pinnedPanel.classList.contains('mobile-visible');
-      }
-
-      function updateBodyMobilePanelState() {
-        if (anyMobilePanelOpen()) body.classList.add('mobile-panel-open');
-        else body.classList.remove('mobile-panel-open');
-      }
-
-      document.addEventListener('click', function(e) {
-        if (window.innerWidth > 1000) return;
-
-        if (!anyMobilePanelOpen()) return;
-
-        const clickedInsideToc = toc.contains(e.target);
-        const clickedInsidePinned = pinnedPanel.contains(e.target);
-        const clickedTocBtn = mobileTocBtn.contains(e.target);
-        const clickedPinnedBtn = mobilePinnedBtn.contains(e.target);
-
-        const clickedInteractive =
-          e.target.tagName === 'A' ||
-          e.target.tagName === 'BUTTON' ||
-          e.target.tagName === 'INPUT' ||
-          e.target.tagName === 'TEXTAREA' ||
-          e.target.closest('a') ||
-          e.target.closest('button');
-
-        if (!clickedInsideToc && !clickedInsidePinned && !clickedTocBtn && !clickedPinnedBtn && !clickedInteractive) {
-          toc.classList.remove('mobile-visible');
-          pinnedPanel.classList.remove('mobile-visible');
-          updateBodyMobilePanelState();
-        }
-      });
-
-      mobileTocBtn.addEventListener('click', function() {
-        const isOpen = toc.classList.toggle('mobile-visible');
-        if (isOpen) {
-          pinnedPanel.classList.remove('mobile-visible');
-        }
-        updateBodyMobilePanelState();
-      });
-
-      mobilePinnedBtn.addEventListener('click', function() {
-        const isOpen = pinnedPanel.classList.toggle('mobile-visible');
-        if (isOpen) {
-          toc.classList.remove('mobile-visible');
-        }
-        updateBodyMobilePanelState();
-      });
-
-      const pinnedItems = new Map();
-      let initiallyPinnedHrefs = new Set();
-
-      function loadFromStorage() {
-        try {
-          const raw = window.localStorage && localStorage.getItem(STORAGE_KEY);
-          if (!raw) return;
-          const arr = JSON.parse(raw);
-          if (!Array.isArray(arr)) return;
-          initiallyPinnedHrefs = new Set(arr);
-        } catch (e) {
-          console.warn('Pinned: failed to load from localStorage', e);
-        }
-      }
-
-      function saveToStorage() {
-        try {
-          if (!window.localStorage) return;
-          const arr = [];
-          pinnedItems.forEach((entry, href) => {
-            if (entry.li) arr.push(href);
-          });
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-        } catch (e) {
-          console.warn('Pinned: failed to save to localStorage', e);
-        }
-      }
-
-      function sortPinnedList() {
-        const items = Array.from(pinnedList.children)
-          .map(li => {
-            const link = li.querySelector('a');
-            return {
-              li: li,
-              text: link ? link.textContent.trim()
-                .toLowerCase() : ''
-            };
-          });
-        items.sort((a, b) => a.text.localeCompare(b.text));
-        items.forEach(item => pinnedList.appendChild(item.li));
-      }
-
-      function hidePinnedPanel() {
-        pinnedPanel.classList.add('hidden');
-        content.classList.add('pinned-hidden');
-        showBtn.classList.add('visible');
-      }
-
-      function showPinnedPanel() {
-        pinnedPanel.classList.remove('hidden');
-        content.classList.remove('pinned-hidden');
-        showBtn.classList.remove('visible');
-      }
-
-      toggleBtn.addEventListener('click', hidePinnedPanel);
-      showBtn.addEventListener('click', showPinnedPanel);
-
-      clearAllBtn.addEventListener('click', function() {
-        if (pinnedItems.size === 0) return;
-
-        const confirmed = confirm('Are you sure you want to clear all pinned items?');
-        if (!confirmed) return;
-
-        pinnedItems.forEach((entry, href) => {
-          if (entry.li && entry.li.parentElement) {
-            entry.li.parentElement.removeChild(entry.li);
-          }
-          entry.li = null;
-          entry.btns.forEach(b => b.textContent = '[pin]');
-        });
-
-        saveToStorage();
-      });
-
-      function attachPinBehavior(pinBtn, href, text) {
-        if (!href) return;
-
-        if (!pinnedItems.has(href)) {
-          pinnedItems.set(href, {
-            li: null,
-            btns: new Set(),
-            text: text
-          });
-        }
-        const entry = pinnedItems.get(href);
-        entry.btns.add(pinBtn);
-
-        pinBtn.textContent = entry.li ? '[unpin]' : '[pin]';
-
-        pinBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          const current = pinnedItems.get(href);
-          if (!current) return;
-
-          if (current.li) {
-            if (current.li.parentElement) {
-              current.li.parentElement.removeChild(current.li);
-            }
-            current.li = null;
-            current.btns.forEach(b => b.textContent = '[pin]');
-            saveToStorage();
-          } else {
-            const li = document.createElement('li');
-
-            const a = document.createElement('a');
-            a.href = href;
-            a.textContent = current.text;
-
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'pin-remove';
-            removeBtn.type = 'button';
-            removeBtn.textContent = '✕';
-            removeBtn.addEventListener('click', () => {
-              const cur = pinnedItems.get(href);
-              if (!cur) return;
-              if (cur.li && cur.li.parentElement) {
-                cur.li.parentElement.removeChild(cur.li);
+              function getLevel(header) {
+                  return parseInt(header.tagName.substring(1), 10);
               }
-              cur.li = null;
-              cur.btns.forEach(b => b.textContent = '[pin]');
+
+              headers.forEach((header, index) => {
+                  const currentLevel = getLevel(header);
+
+                  const headingLink = header.querySelector('.heading-link');
+                  const pinBtn = header.querySelector('.toc-pin-btn');
+
+                  function insertActionBtn(btn) {
+                      if (pinBtn) {
+                          header.insertBefore(btn, pinBtn);
+                          return;
+                      }
+                      if (headingLink && headingLink.parentNode === header) {
+                          headingLink.after(btn);
+                          return;
+                      }
+                      header.appendChild(btn);
+                  }
+
+                  const nextHeader = headers[index + 1];
+                  if (nextHeader && !header.querySelector('.heading-next')) {
+                      const nextId = nextHeader.getAttribute('id');
+                      if (nextId) {
+                          const nextBtn = document.createElement('button');
+                          nextBtn.className = 'heading-next';
+                          nextBtn.type = 'button';
+                          nextBtn.textContent = '↓';
+                          nextBtn.title = 'Jump to next heading';
+
+                          insertActionBtn(nextBtn);
+
+                          nextBtn.addEventListener('click', function(e) {
+                              e.preventDefault();
+                              nextHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              history.pushState(null, null, '#' + nextId);
+                          });
+                      }
+                  }
+
+                  if (!header.querySelector('.heading-skip')) {
+                      let skipHeader = null;
+                      for (let i = index + 1; i < headers.length; i++) {
+                          if (getLevel(headers[i]) <= currentLevel) {
+                              skipHeader = headers[i];
+                              break;
+                          }
+                      }
+
+                      if (skipHeader) {
+                          const skipId = skipHeader.getAttribute('id');
+                          if (skipId) {
+                              const skipBtn = document.createElement('button');
+                              skipBtn.className = 'heading-skip';
+                              skipBtn.type = 'button';
+                              skipBtn.textContent = '⇣';
+                              skipBtn.title = 'Skip to next section (same level)';
+
+                              insertActionBtn(skipBtn);
+
+                              skipBtn.addEventListener('click', function(e) {
+                                  e.preventDefault();
+                                  skipHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                  history.pushState(null, null, '#' + skipId);
+                              });
+                          }
+                      }
+                  }
+
+                  if (!header.querySelector('.heading-skip-up')) {
+                      let upHeader = null;
+                      for (let i = index + 1; i < headers.length; i++) {
+                          if (getLevel(headers[i]) < currentLevel) {
+                              upHeader = headers[i];
+                              break;
+                          }
+                      }
+
+                      if (upHeader) {
+                          const upId = upHeader.getAttribute('id');
+                          if (upId) {
+                              const upBtn = document.createElement('button');
+                              upBtn.className = 'heading-skip-up';
+                              upBtn.type = 'button';
+                              upBtn.textContent = '⇑';
+                              upBtn.title = 'Jump to next higher-level section (escape subsections)';
+
+                              insertActionBtn(upBtn);
+
+                              upBtn.addEventListener('click', function(e) {
+                                  e.preventDefault();
+                                  upHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                  history.pushState(null, null, '#' + upId);
+                              });
+                          }
+                      }
+                  }
+              });
+          }
+          addNextHeadingButtons();
+
+          let mobileTocBtn = document.getElementById('mobile-toc-toggle');
+          if (!mobileTocBtn) {
+              mobileTocBtn = document.createElement('button');
+              mobileTocBtn.id = 'mobile-toc-toggle';
+              mobileTocBtn.type = 'button';
+              mobileTocBtn.textContent = 'TOC';
+              document.body.appendChild(mobileTocBtn);
+          }
+
+          let mobilePinnedBtn = document.getElementById('mobile-pinned-toggle');
+          if (!mobilePinnedBtn) {
+              mobilePinnedBtn = document.createElement('button');
+              mobilePinnedBtn.id = 'mobile-pinned-toggle';
+              mobilePinnedBtn.type = 'button';
+              mobilePinnedBtn.textContent = 'Pinned';
+              document.body.appendChild(mobilePinnedBtn);
+          }
+
+          function anyMobilePanelOpen() {
+              return toc.classList.contains('mobile-visible') ||
+                  pinnedPanel.classList.contains('mobile-visible');
+          }
+
+          function updateBodyMobilePanelState() {
+              if (anyMobilePanelOpen()) body.classList.add('mobile-panel-open');
+              else body.classList.remove('mobile-panel-open');
+          }
+
+          document.addEventListener('click', function(e) {
+              if (window.innerWidth > 1000) return;
+
+              if (!anyMobilePanelOpen()) return;
+
+              const clickedInsideToc = toc.contains(e.target);
+              const clickedInsidePinned = pinnedPanel.contains(e.target);
+              const clickedTocBtn = mobileTocBtn.contains(e.target);
+              const clickedPinnedBtn = mobilePinnedBtn.contains(e.target);
+
+              const clickedInteractive =
+                    e.target.tagName === 'A' ||
+                    e.target.tagName === 'BUTTON' ||
+                    e.target.tagName === 'INPUT' ||
+                    e.target.tagName === 'TEXTAREA' ||
+                    e.target.closest('a') ||
+                    e.target.closest('button');
+
+              if (!clickedInsideToc && !clickedInsidePinned && !clickedTocBtn && !clickedPinnedBtn && !clickedInteractive) {
+                  toc.classList.remove('mobile-visible');
+                  pinnedPanel.classList.remove('mobile-visible');
+                  updateBodyMobilePanelState();
+              }
+          });
+
+          mobileTocBtn.addEventListener('click', function() {
+              const isOpen = toc.classList.toggle('mobile-visible');
+              if (isOpen) {
+                  pinnedPanel.classList.remove('mobile-visible');
+              }
+              updateBodyMobilePanelState();
+          });
+
+          mobilePinnedBtn.addEventListener('click', function() {
+              const isOpen = pinnedPanel.classList.toggle('mobile-visible');
+              if (isOpen) {
+                  toc.classList.remove('mobile-visible');
+              }
+              updateBodyMobilePanelState();
+          });
+
+          const pinnedItems = new Map();
+          let initiallyPinnedHrefs = new Set();
+
+          function loadFromStorage() {
+              try {
+                  const raw = window.localStorage && localStorage.getItem(STORAGE_KEY);
+                  if (!raw) return;
+                  const arr = JSON.parse(raw);
+                  if (!Array.isArray(arr)) return;
+                  initiallyPinnedHrefs = new Set(arr);
+              } catch (e) {
+                  console.warn('Pinned: failed to load from localStorage', e);
+              }
+          }
+
+          function saveToStorage() {
+              try {
+                  if (!window.localStorage) return;
+                  const arr = [];
+                  pinnedItems.forEach((entry, href) => {
+                      if (entry.li) arr.push(href);
+                  });
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+              } catch (e) {
+                  console.warn('Pinned: failed to save to localStorage', e);
+              }
+          }
+
+          function sortPinnedList() {
+              const items = Array.from(pinnedList.children)
+                    .map(li => {
+                        const link = li.querySelector('a');
+                        return {
+                            li: li,
+                            text: link ? link.textContent.trim()
+                                .toLowerCase() : ''
+                        };
+                    });
+              items.sort((a, b) => a.text.localeCompare(b.text));
+              items.forEach(item => pinnedList.appendChild(item.li));
+          }
+
+          function hidePinnedPanel() {
+              pinnedPanel.classList.add('hidden');
+              content.classList.add('pinned-hidden');
+              showBtn.classList.add('visible');
+          }
+
+          function showPinnedPanel() {
+              pinnedPanel.classList.remove('hidden');
+              content.classList.remove('pinned-hidden');
+              showBtn.classList.remove('visible');
+          }
+
+          toggleBtn.addEventListener('click', hidePinnedPanel);
+          showBtn.addEventListener('click', showPinnedPanel);
+
+          clearAllBtn.addEventListener('click', function() {
+              if (pinnedItems.size === 0) return;
+
+              const confirmed = confirm('Are you sure you want to clear all pinned items?');
+              if (!confirmed) return;
+
+              pinnedItems.forEach((entry, href) => {
+                  if (entry.li && entry.li.parentElement) {
+                      entry.li.parentElement.removeChild(entry.li);
+                  }
+                  entry.li = null;
+                  entry.btns.forEach(b => b.textContent = '[pin]');
+              });
+
               saveToStorage();
-            });
+          });
 
-            li.appendChild(a);
-            li.appendChild(removeBtn);
-            pinnedList.appendChild(li);
+          function attachPinBehavior(pinBtn, href, text) {
+              if (!href) return;
 
-            current.li = li;
-            current.btns.forEach(b => b.textContent = '[unpin]');
+              if (!pinnedItems.has(href)) {
+                  pinnedItems.set(href, {
+                      li: null,
+                      btns: new Set(),
+                      text: text
+                  });
+              }
+              const entry = pinnedItems.get(href);
+              entry.btns.add(pinBtn);
 
-            sortPinnedList();
-            saveToStorage();
+              pinBtn.textContent = entry.li ? '[unpin]' : '[pin]';
+
+              pinBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const current = pinnedItems.get(href);
+                  if (!current) return;
+
+                  if (current.li) {
+                      if (current.li.parentElement) {
+                          current.li.parentElement.removeChild(current.li);
+                      }
+                      current.li = null;
+                      current.btns.forEach(b => b.textContent = '[pin]');
+                      saveToStorage();
+                  } else {
+                      const li = document.createElement('li');
+
+                      const a = document.createElement('a');
+                      a.href = href;
+                      a.textContent = current.text;
+
+                      const removeBtn = document.createElement('button');
+                      removeBtn.className = 'pin-remove';
+                      removeBtn.type = 'button';
+                      removeBtn.textContent = '✕';
+                      removeBtn.addEventListener('click', () => {
+                          const cur = pinnedItems.get(href);
+                          if (!cur) return;
+                          if (cur.li && cur.li.parentElement) {
+                              cur.li.parentElement.removeChild(cur.li);
+                          }
+                          cur.li = null;
+                          cur.btns.forEach(b => b.textContent = '[pin]');
+                          saveToStorage();
+                      });
+
+                      li.appendChild(a);
+                      li.appendChild(removeBtn);
+                      pinnedList.appendChild(li);
+
+                      current.li = li;
+                      current.btns.forEach(b => b.textContent = '[unpin]');
+
+                      sortPinnedList();
+                      saveToStorage();
+                  }
+              });
           }
-        });
-      }
 
-      loadFromStorage();
+          loadFromStorage();
 
-      const tocLinks = document.querySelectorAll('#text-table-of-contents a');
-      tocLinks.forEach(link => {
-        if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
-          return;
-        }
-        const li = link.closest('li');
-        if (!li) return;
+          const tocLinks = document.querySelectorAll('#text-table-of-contents a');
+          tocLinks.forEach(link => {
+              if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
+                  return;
+              }
+              const li = link.closest('li');
+              if (!li) return;
 
-        const wrapper = document.createElement('span');
-        wrapper.className = 'toc-entry';
-        li.insertBefore(wrapper, link);
-        wrapper.appendChild(link);
+              const wrapper = document.createElement('span');
+              wrapper.className = 'toc-entry';
+              li.insertBefore(wrapper, link);
+              wrapper.appendChild(link);
 
-        const pinBtn = document.createElement('button');
-        pinBtn.className = 'toc-pin-btn';
-        pinBtn.type = 'button';
-        pinBtn.textContent = '[pin]';
-        wrapper.appendChild(pinBtn);
+              const pinBtn = document.createElement('button');
+              pinBtn.className = 'toc-pin-btn';
+              pinBtn.type = 'button';
+              pinBtn.textContent = '[pin]';
+              wrapper.appendChild(pinBtn);
 
-        const href = link.getAttribute('href');
-        const text = link.textContent.trim();
-        attachPinBehavior(pinBtn, href, text);
-      });
+              const href = link.getAttribute('href');
+              const text = link.textContent.trim();
+              attachPinBehavior(pinBtn, href, text);
+          });
 
-      const headers = content.querySelectorAll('h2, h3, h4, h5, h6, h7, h8, h9');
-      headers.forEach(header => {
-        const id = header.getAttribute('id');
-        if (!id) return;
-        if (header.querySelector('.toc-pin-btn')) return;
+          const headers = content.querySelectorAll('h2, h3, h4, h5, h6, h7, h8, h9');
+          headers.forEach(header => {
+              const id = header.getAttribute('id');
+              if (!id) return;
+              if (header.querySelector('.toc-pin-btn')) return;
 
-        const href = '#' + id;
-        const text = header.textContent.trim();
+              const href = '#' + id;
+              const text = header.textContent.trim();
 
-        const pinBtn = document.createElement('button');
-        pinBtn.className = 'toc-pin-btn';
-        pinBtn.type = 'button';
-        pinBtn.textContent = '[pin]';
-        pinBtn.style.marginLeft = '0.8rem';
-        pinBtn.style.fontSize = '0.75em';
+              const pinBtn = document.createElement('button');
+              pinBtn.className = 'toc-pin-btn';
+              pinBtn.type = 'button';
+              pinBtn.textContent = '[pin]';
+              pinBtn.style.marginLeft = '0.8rem';
+              pinBtn.style.fontSize = '0.75em';
 
-        header.appendChild(pinBtn);
-        attachPinBehavior(pinBtn, href, text);
-      });
+              header.appendChild(pinBtn);
+              attachPinBehavior(pinBtn, href, text);
+          });
 
-      initiallyPinnedHrefs.forEach(href => {
-        const entry = pinnedItems.get(href);
-        if (!entry) return;
+          initiallyPinnedHrefs.forEach(href => {
+              const entry = pinnedItems.get(href);
+              if (!entry) return;
 
-        const li = document.createElement('li');
+              const li = document.createElement('li');
 
-        const a = document.createElement('a');
-        a.href = href;
-        a.textContent = entry.text;
+              const a = document.createElement('a');
+              a.href = href;
+              a.textContent = entry.text;
 
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'pin-remove';
-        removeBtn.type = 'button';
-        removeBtn.textContent = '✕';
-        removeBtn.addEventListener('click', () => {
-          const cur = pinnedItems.get(href);
-          if (!cur) return;
-          if (cur.li && cur.li.parentElement) {
-            cur.li.parentElement.removeChild(cur.li);
-          }
-          cur.li = null;
-          cur.btns.forEach(b => b.textContent = '[pin]');
+              const removeBtn = document.createElement('button');
+              removeBtn.className = 'pin-remove';
+              removeBtn.type = 'button';
+              removeBtn.textContent = '✕';
+              removeBtn.addEventListener('click', () => {
+                  const cur = pinnedItems.get(href);
+                  if (!cur) return;
+                  if (cur.li && cur.li.parentElement) {
+                      cur.li.parentElement.removeChild(cur.li);
+                  }
+                  cur.li = null;
+                  cur.btns.forEach(b => b.textContent = '[pin]');
+                  saveToStorage();
+              });
+
+              li.appendChild(a);
+              li.appendChild(removeBtn);
+              pinnedList.appendChild(li);
+
+              entry.li = li;
+              entry.btns.forEach(b => b.textContent = '[unpin]');
+          });
+
+          sortPinnedList();
           saveToStorage();
-        });
-
-        li.appendChild(a);
-        li.appendChild(removeBtn);
-        pinnedList.appendChild(li);
-
-        entry.li = li;
-        entry.btns.forEach(b => b.textContent = '[unpin]');
       });
-
-      sortPinnedList();
-      saveToStorage();
-    });
   })();
 #+end_src
 
@@ -35048,6 +35408,72 @@ This is the stylesheet used by the [[#h:12880c64-229c-4063-9eea-387a97490676][HT
   h9:hover .heading-next {
       opacity: 1;
       visibility: visible;
+  }
+
+  .heading-skip {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    margin-left: 0.5rem;
+    color: #718ca1;
+    text-decoration: none;
+    font-size: 0.8em;
+    vertical-align: middle;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .heading-skip:hover {
+    color: #5ec4ff;
+    text-decoration: none;
+  }
+
+  h1:hover .heading-skip,
+  h2:hover .heading-skip,
+  h3:hover .heading-skip,
+  h4:hover .heading-skip,
+  h5:hover .heading-skip,
+  h6:hover .heading-skip,
+  h7:hover .heading-skip,
+  h8:hover .heading-skip,
+  h9:hover .heading-skip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .heading-skip-up {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    margin-left: 0.5rem;
+    color: #718ca1;
+    text-decoration: none;
+    font-size: 0.8em;
+    vertical-align: middle;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .heading-skip-up:hover {
+    color: #5ec4ff;
+    text-decoration: none;
+  }
+
+  h1:hover .heading-skip-up,
+  h2:hover .heading-skip-up,
+  h3:hover .heading-skip-up,
+  h4:hover .heading-skip-up,
+  h5:hover .heading-skip-up,
+  h6:hover .heading-skip-up,
+  h7:hover .heading-skip-up,
+  h8:hover .heading-skip-up,
+  h9:hover .heading-skip-up {
+    opacity: 1;
+    visibility: visible;
   }
 
   @media (max-width: 1600px) {
