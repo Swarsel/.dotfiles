@@ -8,13 +8,6 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    topology.self.services = {
-      ${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
-    };
-
     services = {
       ${serviceName} = {
         enable = true;

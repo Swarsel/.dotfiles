@@ -2662,7 +2662,8 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
 
                 ender3 = mkDevice "Ender 3" {
                   info = "SKR V1.3, TMC2209 (Dual), TFT35";
-                  image = "${self}/files/topology-images/ender3.png";
+                  deviceIcon = "${self}/files/topology-images/ender3.png";
+                  icon = "${self}/files/topology-images/raspi.png";
                   interfaces.eth1 = { };
                   services = {
                     octoprint = {
@@ -6207,7 +6208,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
         };
         restic.targets = {
           SwarselMoonside = {
-            repository = config.repo.secrets.local.resticRepoState;
+            repository = config.repo.secrets.local.resticRepo;
             paths = [
               "/persist/opt/minecraft"
             ];
@@ -12727,11 +12728,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
 
       # networking.firewall.allowedTCPPorts = [ servicePort ];
-      topology.self.services.${serviceName} = {
-        name = "Kavita";
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
         directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
@@ -13148,11 +13145,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         mpv
       ];
 
-      topology.self.services.${serviceName} = {
-        name = lib.toUpper serviceName;
-        info = "http://localhost:${builtins.toString servicePort}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
+      topology.self.services.${serviceName}.info = "http://localhost:${builtins.toString servicePort}";
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
         directories = [{ directory = "/var/lib/${serviceName}"; user = "mpd"; group = "mpd"; }];
@@ -13233,13 +13226,6 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
-
-      topology.self.services = {
-        ${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          icon = "${self}/files/topology-images/${serviceName}.png";
-        };
-      };
 
       services = {
         ${serviceName} = {
@@ -13388,19 +13374,13 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       # networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
 
-      topology.self.services = {
-        ${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
-          icon = "${self}/files/topology-images/${serviceName}.png";
-        };
-      } // (lib.listToAttrs (map
+      topology.self.services = lib.listToAttrs (map
         (service:
           lib.nameValuePair "mautrix-${service}" {
             name = "mautrix-${service}";
             icon = "${self}/files/topology-images/mautrix.png";
           })
-        [ "whatsapp" "signal" "telegram" ]));
+        [ "whatsapp" "signal" "telegram" ]);
 
       systemd = {
         timers."restart-bridges" = {
@@ -37573,8 +37553,7 @@ Here lies defined the readme for GitHub and Forgejo:
     <details>
       <summary>Click here for a summary of my infrastructure</summary>
 
-  <img width="3854" height="7060" alt="topology" src="https://github.com/user-attachments/assets/fc557fdb-b779-4530-ae19-93ff019a2b29" />
-
+  <img width="4176" height="8367" alt="topology" src="https://github.com/user-attachments/assets/8b7f148d-8e49-4788-ba0f-4487482a483b" />
 
     ### Programs
 

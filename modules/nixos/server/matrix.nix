@@ -63,19 +63,13 @@ in
 
     # networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
 
-    topology.self.services = {
-      ${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
-    } // (lib.listToAttrs (map
+    topology.self.services = lib.listToAttrs (map
       (service:
         lib.nameValuePair "mautrix-${service}" {
           name = "mautrix-${service}";
           icon = "${self}/files/topology-images/mautrix.png";
         })
-      [ "whatsapp" "signal" "telegram" ]));
+      [ "whatsapp" "signal" "telegram" ]);
 
     systemd = {
       timers."restart-bridges" = {

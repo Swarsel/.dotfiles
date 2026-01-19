@@ -192,7 +192,8 @@
 
               ender3 = mkDevice "Ender 3" {
                 info = "SKR V1.3, TMC2209 (Dual), TFT35";
-                image = "${self}/files/topology-images/ender3.png";
+                deviceIcon = "${self}/files/topology-images/ender3.png";
+                icon = "${self}/files/topology-images/raspi.png";
                 interfaces.eth1 = { };
                 services = {
                   octoprint = {

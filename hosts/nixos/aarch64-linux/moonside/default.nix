@@ -84,7 +84,7 @@ in
       };
       restic.targets = {
         SwarselMoonside = {
-          repository = config.repo.secrets.local.resticRepoState;
+          repository = config.repo.secrets.local.resticRepo;
           paths = [
             "/persist/opt/minecraft"
           ];

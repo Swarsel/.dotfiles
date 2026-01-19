@@ -23,11 +23,7 @@ in
     sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
 
     # networking.firewall.allowedTCPPorts = [ servicePort ];
-    topology.self.services.${serviceName} = {
-      name = "Kavita";
-      info = "https://${serviceDomain}";
-      icon = "${self}/files/topology-images/${serviceName}.png";
-    };
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
       directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
