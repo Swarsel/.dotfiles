@@ -44,7 +44,7 @@ in
       hostName = serviceDomain;
       user = serviceUser;
       group = serviceGroup;
-      dataDir = "/Vault/data/snipeit";
+      dataDir = "/var/lib/snipeit";
       database = {
         user = serviceUser;
         port = mysqlPort;

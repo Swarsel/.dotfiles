@@ -5,7 +5,7 @@ let
   kanidmDomain = globals.services.kanidm.domain;
 
   inherit (config.swarselsystems) mainUser;
-  inherit (config.repo.secrets.local) persons;
+  mailAddress = config.repo.secrets.common.mail.address4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -29,7 +29,7 @@ in
       authorizations = [
         {
           user = mainUser;
-          principal = builtins.head persons.${mainUser}.mailAddresses;
+          principal = mailAddress;
           inherit (config.services.opkssh.providers.kanidm) issuer;
         }
       ];

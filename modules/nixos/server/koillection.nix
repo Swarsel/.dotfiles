@@ -1,6 +1,6 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   serviceDB = "koillection";
 
@@ -44,6 +44,10 @@ in
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
+    };
+
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; }];
     };
 
     virtualisation.oci-containers.containers = {

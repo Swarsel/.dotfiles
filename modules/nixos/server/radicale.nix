@@ -35,6 +35,10 @@ in
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     globals = {
       networks = {
         ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -67,7 +71,7 @@ in
             htpasswd_encryption = "autodetect";
           };
         storage = {
-          filesystem_folder = "/Vault/data/radicale/collections";
+          filesystem_folder = "/var/lib/radicale/collections";
         };
       };
       rights = {

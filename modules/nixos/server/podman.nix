@@ -15,6 +15,12 @@ in
       oci-containers.backend = "podman";
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/containers"; }
+      ];
+    };
+
     networking.nftables.firewall = lib.mkIf config.networking.nftables.enable {
 
       zones.podman = {

@@ -47,8 +47,10 @@ in
         node-exporter = confLib.mkIds 987;
         grafana = confLib.mkIds 974;
       };
+      groups.nextcloud-exporter = { };
       users = {
         nextcloud-exporter = {
+          group = "nextcloud-exporter";
           extraGroups = [ "nextcloud" ];
         };
 
@@ -78,10 +80,17 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/lib/prometheus2"; user = prometheusUser; group = prometheusGroup; }
+      ];
+    };
+
     services = {
       ${serviceName} = {
         enable = true;
-        dataDir = "/Vault/data/${serviceName}";
+        dataDir = "/var/lib/${serviceName}";
         provision = {
           enable = true;
           datasources.settings = {

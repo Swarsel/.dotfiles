@@ -28,7 +28,7 @@
 
   microvm = {
     mem = 1024 * 1;
-    vcpu = 1;
+    vcpu = 2;
 
   };
 
@@ -37,7 +37,7 @@
   };
 
   swarselmodules.server = {
-    # kavita = true;
+    kavita = true;
   };
 
 }

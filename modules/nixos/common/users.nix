@@ -15,6 +15,18 @@
           isNormalUser = true;
           uid = 1000;
           autoSubUidGidRange = false;
+          subUidRanges = [
+            {
+              count = 65534;
+              startUid = 100001;
+            }
+          ];
+          subGidRanges = [
+            {
+              count = 999;
+              startGid = 1001;
+            }
+          ];
           description = "Leon S";
           password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
           hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;

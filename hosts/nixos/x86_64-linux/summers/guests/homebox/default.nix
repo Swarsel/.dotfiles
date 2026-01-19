@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # homebox = true;
+    homebox = true;
   };
 
 }

@@ -44,11 +44,21 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
+        { directory = "/var/lib/private/tika"; }
+        { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/cache/private/tika"; }
+      ];
+    };
+
     services = {
       ${serviceName} = {
         enable = true;
-        mediaDir = "/Vault/Eternor/Paperless";
-        dataDir = "/Vault/data/${serviceName}";
+        mediaDir = "/storage/Documents/${serviceName}";
+        dataDir = "/var/lib/${serviceName}";
         user = serviceUser;
         port = servicePort;
         passwordFile = config.sops.secrets.paperless-admin-pw.path;

@@ -1,7 +1,7 @@
 { self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   federationPort = 8448;
@@ -20,6 +20,10 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselmodules.server = {
+      postgresql = true;
+    };
 
     environment.systemPackages = with pkgs; [
       matrix-synapse
@@ -118,9 +122,18 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/matrix-synapse"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/lib/mautrix-whatsapp"; user = "mautrix-whatsapp"; group = "mautrix-whatsapp"; }
+        { directory = "/var/lib/mautrix-telegram"; user = "mautrix-telegram"; group = "mautrix-telegram"; }
+        { directory = "/var/lib/mautrix-signal"; user = "mautrix-signal"; group = "mautrix-signal"; }
+      ];
+    };
+
+
     services = {
       postgresql = {
-        enable = true;
         initialScript = pkgs.writeText "synapse-init.sql" ''
           CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
           CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
@@ -147,7 +160,7 @@ in
 
       matrix-synapse = {
         enable = true;
-        dataDir = "/Vault/data/matrix-synapse";
+        dataDir = "/var/lib/matrix-synapse";
         settings = {
           app_service_config_files =
             let

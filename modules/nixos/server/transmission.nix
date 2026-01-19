@@ -1,7 +1,7 @@
 { self, pkgs, lib, config, confLib, ... }:
 let
-  inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
-  inherit (confLib.static) isHome;
+  inherit (confLib.gen { name = "transmission"; port = 9091; }) serviceName servicePort serviceDomain;
+  inherit (confLib.static) isHome homeServiceAddress homeWebProxy nginxAccessRules;
 
   lidarrUser = "lidarr";
   lidarrGroup = lidarrUser;
@@ -96,6 +96,16 @@ in
       inherit isHome;
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/radarr"; user = radarrUser; group = radarrGroup; }
+        { directory = "/var/lib/readarr"; user = readarrUser; group = readarrGroup; }
+        { directory = "/var/lib/sonarr"; user = sonarrUser; group = sonarrGroup; }
+        { directory = "/var/lib/lidarr"; user = lidarrUser; group = lidarrGroup; }
+        { directory = "/var/lib/private/prowlarr"; user = prowlarrUser; group = prowlarrGroup; }
+      ];
+    };
+
     services = {
       radarr = {
         enable = true;
@@ -103,7 +113,7 @@ in
         group = radarrGroup;
         settings.server.port = radarrPort;
         openFirewall = true;
-        dataDir = "/Vault/data/radarr";
+        dataDir = "/var/lib/radarr";
       };
       readarr = {
         enable = true;
@@ -111,7 +121,7 @@ in
         group = readarrGroup;
         settings.server.port = readarrPort;
         openFirewall = true;
-        dataDir = "/Vault/data/readarr";
+        dataDir = "/var/lib/readarr";
       };
       sonarr = {
         enable = true;
@@ -119,7 +129,7 @@ in
         group = sonarrGroup;
         settings.server.port = sonarrPort;
         openFirewall = true;
-        dataDir = "/Vault/data/sonarr";
+        dataDir = "/var/lib/sonarr";
       };
       lidarr = {
         enable = true;
@@ -127,53 +137,88 @@ in
         group = lidarrGroup;
         settings.server.port = lidarrPort;
         openFirewall = true;
-        dataDir = "/Vault/data/lidarr";
+        dataDir = "/var/lib/lidarr";
       };
       prowlarr = {
         enable = true;
         settings.server.port = prowlarrPort;
         openFirewall = true;
       };
+    };
 
-      nginx = {
+    nodes = {
+      ${homeWebProxy}.services.nginx = {
+        upstreams = {
+          transmission = {
+            servers = {
+              "${homeServiceAddress}:${builtins.toString servicePort}" = { };
+            };
+          };
+          radarr = {
+            servers = {
+              "${homeServiceAddress}:${builtins.toString radarrPort}" = { };
+            };
+          };
+          readarr = {
+            servers = {
+              "${homeServiceAddress}:${builtins.toString readarrPort}" = { };
+            };
+          };
+          sonarr = {
+            servers = {
+              "${homeServiceAddress}:${builtins.toString sonarrPort}" = { };
+            };
+          };
+          lidarr = {
+            servers = {
+              "${homeServiceAddress}:${builtins.toString lidarrPort}" = { };
+            };
+          };
+          prowlarr = {
+            servers = {
+              "${homeServiceAddress}:${builtins.toString prowlarrPort}" = { };
+            };
+          };
+        };
         virtualHosts = {
           "${serviceDomain}" = {
             enableACME = false;
             forceSSL = false;
             acmeRoot = null;
+            extraConfig = nginxAccessRules;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:9091";
+                proxyPass = "http://transmission";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/radarr" = {
-                proxyPass = "http://localhost:${builtins.toString radarrPort}";
+                proxyPass = "http://radarr";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/readarr" = {
-                proxyPass = "http://localhost:${builtins.toString readarrPort}";
+                proxyPass = "http://readarr";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/sonarr" = {
-                proxyPass = "http://localhost:${builtins.toString sonarrPort}";
+                proxyPass = "http://sonarr";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/lidarr" = {
-                proxyPass = "http://localhost:${builtins.toString lidarrPort}";
+                proxyPass = "http://lidarr";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/prowlarr" = {
-                proxyPass = "http://localhost:${builtins.toString prowlarrPort}";
+                proxyPass = "http://prowlarr";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';

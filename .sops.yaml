@@ -37,7 +37,6 @@ keys:
     - &summers-monitoring age1vn6ya0japzpgc256jg57fldsqe4udmq50sj5hmkywn7rxfnskevsx2q96u
     - &summers-nextcloud age1t7zagjfddns4yltupk7nx8xps4gh7mupyz85uuys0wd22cxj5qsq2hw0p7
     - &summers-paperless age1rn0pxluh7m8dyeshek06d7scejqlrcewlk8xmyrwt5e5nev2dc2s3s78vq
-    - &summers-postgresql age12jh5836w3cmazec8ql652p9h3a3xn6quztztzqxg4n0kz7r96dnqqlhxxw
     - &summers-radicale age1gxg2peektn8x36kk3nsgmeawl73e54kaadqd649ygwrv43kkvejq2cw64z
     - &summers-storage age1kn34ny229gm0rg7wlcvxmcyjtz4gka6f2vd958fde6vmuzrxcvcsufra90
     - &summers-transmission age1y69f2elvmq39lc3t3ucq9y7wt675520n7rvug88qg368qsmmk47qvwrtny
@@ -79,7 +78,6 @@ creation_rules:
       - *summers-monitoring
       - *summers-nextcloud
       - *summers-paperless
-      - *summers-postgresql
       - *summers-radicale
       - *summers-storage
       - *summers-transmission
@@ -321,14 +319,6 @@ creation_rules:
       age:
       - *summers
       - *summers-paperless
-
-  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/postgresql/[^/]+\.(yaml|json|env|ini|enc)$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *summers
-      - *summers-postgresql
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/radicale/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:

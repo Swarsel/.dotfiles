@@ -75,12 +75,16 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     services.${serviceName} = rec {
       enable = true;
       user = serviceUser;
       group = serviceGroup;
-      dataDir = lib.mkDefault "/Vault/data/${serviceName}";
-      configDir = "${cfg.dataDir}/.config/${serviceName}";
+      dataDir = if config.swarselsystems.isMicroVM then "/storage/Documents/syncthing" else (lib.mkDefault "/var/lib/${serviceName}");
+      configDir = if config.swarselsystems.isMicroVM then "/var/lib/syncthing/.config/syncthing" else "${cfg.dataDir}/.config/${serviceName}";
       guiAddress = "0.0.0.0:${builtins.toString servicePort}";
       openDefaultPorts = lib.mkIf (!isProxied) true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
       relay.enable = false;

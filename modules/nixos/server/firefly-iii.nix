@@ -42,12 +42,16 @@ in
       homeServiceAddress = lib.mkIf isHome homeServiceAddress;
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     services = {
       ${serviceName} = {
         enable = true;
         user = serviceUser;
         group = if cfg.enableNginx then nginxGroup else serviceGroup;
-        dataDir = "/Vault/data/${serviceName}";
+        dataDir = "/var/lib/${serviceName}";
         settings = {
           TZ = config.repo.secrets.common.location.timezone;
           APP_URL = "https://${serviceDomain}";

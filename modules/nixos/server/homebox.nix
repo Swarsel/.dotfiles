@@ -1,6 +1,6 @@
 { self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 in
 {
@@ -11,6 +11,10 @@ in
       name = "Homebox";
       info = "https://${serviceDomain}";
       icon = "${self}/files/topology-images/${serviceName}.png";
+    };
+
+    swarselmodules.server = {
+      postgresql = true;
     };
 
     users.persistentIds = {
@@ -33,14 +37,14 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     systemd.services.homebox = {
       environment = {
         TMPDIR = "/var/lib/homebox/.tmp";
-      };
-      serviceConfig = {
-        # ReadWritePaths = "/var/lib/homebox";
-        RuntimeDirectory = "homebox";
-        BindPaths = "/run/homebox:/var/lib/homebox/.tmp";
+        HOME = "/var/lib/homebox";
       };
     };
 

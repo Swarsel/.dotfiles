@@ -8,16 +8,11 @@
   swarselsystems = {
     isMicroVM = true;
     isImpermanence = true;
-    proxyHost = "twothreetunnel";
     server = {
       wireguard.interfaces = {
         wgHome = {
           isClient = true;
           serverName = "hintbooth";
-        };
-        wgProxy = {
-          isClient = true;
-          serverName = "twothreetunnel";
         };
       };
     };
@@ -36,7 +31,7 @@
   };
 
   swarselmodules.server = {
-    # transmission = true;
+    transmission = true;
   };
 
 }

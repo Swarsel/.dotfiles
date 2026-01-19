@@ -2,7 +2,7 @@
 let
   inherit (config.swarselsystems) sopsFile;
 
-  inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
 in
 {
@@ -29,6 +29,10 @@ in
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     globals = {
       networks = {
         ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -50,7 +54,7 @@ in
       user = serviceUser;
       settings.Port = servicePort;
       tokenKeyFile = config.sops.secrets.kavita-token.path;
-      dataDir = "/Vault/data/${serviceName}";
+      dataDir = "/var/lib/${serviceName}";
     };
 
     nodes = {

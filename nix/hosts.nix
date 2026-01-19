@@ -176,7 +176,7 @@
       configurationsPerArch = type: minimal: mkConfigurationsPerArch type minimal;
 
     in
-    {
+    rec {
       nixosConfigurations = configurationsPerArch "nixos" false;
       nixosConfigurationsMinimal = configurationsPerArch "nixos" true;
       darwinConfigurations = configurationsPerArch "darwin" false;
@@ -197,6 +197,17 @@
       nodes = config.nixosConfigurations
         // config.darwinConfigurations
         // config.guestConfigurations;
+
+      guestResources = lib.mapAttrs
+        (name: _:
+          let
+            f = arg: lib.foldr (base: acc: base + acc) 0 (map (node: nodes."${name}-${node}".config.microvm.${arg}) (builtins.attrNames nodes.${name}.config.guests));
+          in
+          {
+            mem = f "mem";
+            vcpu = f "vcpu";
+          })
+        nodes;
 
       "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
     };

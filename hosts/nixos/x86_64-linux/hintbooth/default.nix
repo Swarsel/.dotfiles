@@ -27,7 +27,7 @@
     info = "HUNSN RM02, 8GB RAM";
     flakePath = "/root/.dotfiles";
     isImpermanence = true;
-    isSecureBoot = false;
+    isSecureBoot = true;
     isCrypted = true;
     isBtrfs = true;
     isLinux = true;
@@ -46,6 +46,25 @@
             "hintbooth-adguardhome"
             "hintbooth-nginx"
             "summers"
+            "summers-ankisync"
+            "summers-atuin"
+            "summers-audio"
+            "summers-firefly"
+            "summers-forgejo"
+            "summers-freshrss"
+            "summers-homebox"
+            "summers-immich"
+            "summers-jellyfin"
+            "summers-kanidm"
+            "summers-kavita"
+            "summers-koillection"
+            "summers-matrix"
+            "summers-monitoring"
+            "summers-nextcloud"
+            "summers-paperless"
+            "summers-radicale"
+            "summers-storage"
+            "summers-transmission"
             "winters"
           ];
         };

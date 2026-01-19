@@ -36,6 +36,10 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/private/${serviceName}"; }];
+    };
+
     services.anki-sync-server = {
       enable = true;
       port = servicePort;

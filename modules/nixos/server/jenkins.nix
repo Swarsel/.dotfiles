@@ -1,6 +1,6 @@
 { pkgs, lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 in
 {
@@ -23,13 +23,17 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     services.jenkins = {
       enable = true;
       withCLI = true;
       port = servicePort;
       packages = [ pkgs.stdenv pkgs.git pkgs.jdk17 config.programs.ssh.package pkgs.nix ];
       listenAddress = "0.0.0.0";
-      home = "/Vault/apps/${serviceName}";
+      home = "/var/lib/${serviceName}";
     };
 
     nodes = {

@@ -23,6 +23,7 @@
         ssh = lib.mkDefault true;
         wireguard = lib.mkDefault true;
         dns-home = lib.mkDefault true;
+        opkssh = true;
       };
     };
   };

@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # forgejo = true;
+    forgejo = true;
   };
 
 }

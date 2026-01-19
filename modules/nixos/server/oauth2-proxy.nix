@@ -139,6 +139,10 @@ in
       };
     };
 
+    users = {
+      persistentIds.oauth2-proxy = confLib.mkIds 966;
+    };
+
     # needed for homeWebProxy
     networking.firewall.allowedTCPPorts = [ servicePort ];
 

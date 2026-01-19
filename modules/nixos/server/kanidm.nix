@@ -80,12 +80,19 @@ in
       };
     };
 
-    environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-      files = [
-        certPathBase
-        keyPathBase
-      ];
+    environment.persistence = {
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        files = [
+          certPathBase
+          keyPathBase
+        ];
+      };
+
+      "/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
     };
+
     systemd.services."generateSSLCert-${serviceName}" =
       let
         daysValid = 3650;

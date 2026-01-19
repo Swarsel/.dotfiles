@@ -27,8 +27,8 @@
 } // lib.optionalAttrs (!minimal) {
 
   microvm = {
-    mem = 1024 * 8;
-    vcpu = 8;
+    mem = 1024 * 16;
+    vcpu = 14;
   };
 
   swarselprofiles = {
@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # immich = true;
+    immich = true;
   };
 
 }

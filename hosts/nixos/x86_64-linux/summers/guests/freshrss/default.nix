@@ -36,9 +36,9 @@
   };
 
   swarselmodules.server = {
-    # freshrss = true;
-    # nginx = true;
-    # acme = true;
+    freshrss = true;
+    nginx = true;
+    acme = false;
   };
 
 }

@@ -41,26 +41,6 @@
           serverName = "hintbooth";
         };
       };
-      restic = {
-        bucketName = "SwarselWinters";
-        paths = [
-          "/Vault/data/paperless"
-          "/Vault/data/koillection"
-          "/Vault/data/postgresql"
-          "/Vault/data/firefly-iii"
-          "/Vault/data/radicale"
-          "/Vault/data/matrix-synapse"
-          "/Vault/Eternor/Paperless"
-          "/Vault/Eternor/Bilder"
-          "/Vault/Eternor/Immich"
-        ];
-      };
-      garage = {
-        data_dir = {
-          capacity = "200G";
-          path = "/Vault/data/garage/data";
-        };
-      };
     };
   };
 
@@ -72,35 +52,6 @@
 
   swarselmodules.server = {
     diskEncryption = lib.mkForce false;
-    # nginx = true; # for php stuff
-    # acme = false; # cert handled by proxy
-    # wireguard = true;
-
-    # nfs = true;
-    # kavita = true;
-    # restic = true;
-    # jellyfin = true;
-    # navidrome = true;
-    # spotifyd = true;
-    # mpd = true;
-    # postgresql = true;
-    # matrix = true;
-    # nextcloud = true;
-    # immich = true;
-    # paperless = true;
-    # transmission = true;
-    # syncthing = true;
-    # grafana = true;
-    # freshrss = true;
-    # kanidm = true;
-    # firefly-iii = true;
-    # koillection = true;
-    # radicale = true;
-    # atuin = true;
-    # forgejo = true;
-    # ankisync = true;
-    # homebox = true;
-    # opkssh = true;
   };
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "enp3s0" ];

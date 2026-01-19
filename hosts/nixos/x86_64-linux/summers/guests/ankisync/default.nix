@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # ankisync = true;
+    ankisync = true;
   };
 
 }

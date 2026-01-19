@@ -61,6 +61,10 @@ in
       homeServiceAddress = lib.mkIf isHome homeServiceAddress;
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     services.${serviceName} =
       let
         inherit (config.repo.secrets.local.freshrss) defaultUser;
@@ -71,7 +75,7 @@ in
         virtualHost = serviceDomain;
         baseUrl = "https://${serviceDomain}";
         authType = "form";
-        dataDir = "/Vault/data/tt-rss";
+        dataDir = "/var/lib/freshrss";
         passwordFile = config.sops.secrets.freshrss-pw.path;
       };
 

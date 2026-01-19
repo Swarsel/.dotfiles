@@ -36,9 +36,9 @@
   };
 
   swarselmodules.server = {
-    # firefly-iii = true;
-    # nginx = true;
-    # acme = true;
+    firefly-iii = true;
+    nginx = true;
+    acme = false;
   };
 
 }

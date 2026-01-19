@@ -44,9 +44,13 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     services.${serviceName} = {
       enable = true;
-      stateDir = "/Vault/data/${serviceName}";
+      stateDir = "/var/lib/${serviceName}";
       user = serviceUser;
       group = serviceGroup;
       lfs.enable = lib.mkDefault true;

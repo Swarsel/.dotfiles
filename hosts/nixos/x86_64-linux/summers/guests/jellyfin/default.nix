@@ -28,7 +28,7 @@
 
   microvm = {
     mem = 1024 * 3;
-    vcpu = 1;
+    vcpu = 4;
   };
 
   swarselprofiles = {
@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # jellyfin = true;
+    jellyfin = true;
   };
 
 }

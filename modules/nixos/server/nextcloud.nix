@@ -27,6 +27,13 @@ in
       homeServiceAddress = lib.mkIf isHome homeServiceAddress;
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/lib/redis-${serviceName}"; user = serviceUser; group = serviceGroup; }
+      ];
+    };
+
     services = {
       ${serviceName} = {
         enable = true;
@@ -36,8 +43,8 @@ in
         };
         package = pkgs."nextcloud${nextcloudVersion}";
         hostName = serviceDomain;
-        home = "/Vault/data/${serviceName}";
-        datadir = "/Vault/data/${serviceName}";
+        home = "/var/lib/${serviceName}";
+        datadir = "/var/lib/${serviceName}";
         https = true;
         configureRedis = true;
         maxUploadSize = "4G";

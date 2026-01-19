@@ -53,19 +53,19 @@
           serverName = "hintbooth";
         };
       };
-      restic = {
-        bucketName = "SwarselWinters";
-        paths = [
-          "/Vault/data/paperless"
-          "/Vault/data/koillection"
-          "/Vault/data/postgresql"
-          "/Vault/data/firefly-iii"
-          "/Vault/data/radicale"
-          "/Vault/data/matrix-synapse"
-          "/Vault/Eternor/Paperless"
-          "/Vault/Eternor/Bilder"
-          "/Vault/Eternor/Immich"
-        ];
+      restic.targets = {
+        SwarselState = {
+          repository = config.repo.secrets.local.resticRepoState;
+          # nextcloud stores all data in state dir and has no data that needs backup
+          paths = lib.map (guest: "/Vault/guests/${guest}/state") (builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests));
+        };
+        SwarselStorage = {
+          repository = config.repo.secrets.local.resticRepoStorage;
+          paths = [
+            "/Vault/Eternor/Pictures"
+            "/Vault/Eternor/Documents/paperless"
+          ];
+        };
       };
     };
   };
@@ -78,59 +78,31 @@
 
   swarselmodules.server = {
     wireguard = true;
-
-    nginx = true; # for php stuff
-    acme = false; # cert handled by proxy
-
-    nfs = true;
-    # kavita = true;
     restic = true;
-    jellyfin = true;
-    navidrome = true;
-    spotifyd = true;
-    mpd = true;
-    postgresql = true;
-    matrix = true;
-    nextcloud = true;
-    immich = true;
-    paperless = true;
-    transmission = true;
-    syncthing = true;
-    grafana = true;
-    freshrss = true;
-    kanidm = true;
-    firefly-iii = true;
-    koillection = true;
-    radicale = true;
-    atuin = true;
-    forgejo = true;
-    ankisync = true;
-    homebox = true;
     opkssh = true;
   };
 
   guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
     { }
-    // confLib.mkMicrovm "kavita" { withZfs = true; }
-    // confLib.mkMicrovm "jellyfin" { withZfs = true; }
-    // confLib.mkMicrovm "audio" { withZfs = true; }
-    // confLib.mkMicrovm "postgresql" { withZfs = true; }
-    // confLib.mkMicrovm "matrix" { withZfs = true; }
-    // confLib.mkMicrovm "nextcloud" { withZfs = true; }
-    // confLib.mkMicrovm "immich" { withZfs = true; }
-    // confLib.mkMicrovm "paperless" { withZfs = true; }
-    // confLib.mkMicrovm "transmission" { withZfs = true; }
-    // confLib.mkMicrovm "storage" { withZfs = true; }
-    // confLib.mkMicrovm "monitoring" { withZfs = true; }
-    // confLib.mkMicrovm "freshrss" { withZfs = true; }
-    // confLib.mkMicrovm "kanidm" { withZfs = true; }
-    // confLib.mkMicrovm "firefly" { withZfs = true; }
-    // confLib.mkMicrovm "koillection" { withZfs = true; }
-    // confLib.mkMicrovm "radicale" { withZfs = true; }
-    // confLib.mkMicrovm "atuin" { withZfs = true; }
-    // confLib.mkMicrovm "forgejo" { withZfs = true; }
     // confLib.mkMicrovm "ankisync" { withZfs = true; }
+    // confLib.mkMicrovm "atuin" { withZfs = true; }
+    // confLib.mkMicrovm "audio" { withZfs = true; eternorPaths = [ "Music" ]; }
+    // confLib.mkMicrovm "firefly" { withZfs = true; }
+    // confLib.mkMicrovm "forgejo" { withZfs = true; }
+    // confLib.mkMicrovm "freshrss" { withZfs = true; }
     // confLib.mkMicrovm "homebox" { withZfs = true; }
+    // confLib.mkMicrovm "immich" { withZfs = true; eternorPaths = [ "Pictures" ]; }
+    // confLib.mkMicrovm "jellyfin" { withZfs = true; eternorPaths = [ "Videos" ]; }
+    // confLib.mkMicrovm "kanidm" { withZfs = true; }
+    // confLib.mkMicrovm "kavita" { withZfs = true; eternorPaths = [ "Books" ]; }
+    // confLib.mkMicrovm "koillection" { withZfs = true; }
+    // confLib.mkMicrovm "matrix" { withZfs = true; }
+    // confLib.mkMicrovm "monitoring" { withZfs = true; }
+    // confLib.mkMicrovm "nextcloud" { withZfs = true; }
+    // confLib.mkMicrovm "paperless" { withZfs = true; eternorPaths = [ "Documents" ]; }
+    // confLib.mkMicrovm "radicale" { withZfs = true; }
+    // confLib.mkMicrovm "storage" { withZfs = true; eternorPaths = [ "Books" "Videos" "Music" "Pictures" "Software" "Documents" ]; }
+    // confLib.mkMicrovm "transmission" { withZfs = true; eternorPaths = [ "Books" "Videos" "Music" "Software" ]; }
   );
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "bmc" ];

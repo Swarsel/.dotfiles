@@ -1,7 +1,7 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 80; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
   inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
   baseDomain = globals.domains.main;

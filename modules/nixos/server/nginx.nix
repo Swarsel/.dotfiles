@@ -84,8 +84,15 @@ in
 
     networking.firewall.allowedTCPPorts = [ 80 443 ];
 
-    environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-      files = [ dhParamsPathBase ];
+    environment.persistence = {
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        files = [ dhParamsPathBase ];
+      };
+      "/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/cache/nginx"; user = "nginx"; group = "nginx"; }
+        ];
+      };
     };
 
     services.nginx = {

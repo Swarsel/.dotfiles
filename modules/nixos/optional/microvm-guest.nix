@@ -32,8 +32,6 @@
     # NOTE: this is needed, we dont import sevrer network module for microvms
     globals.hosts.${config.node.name}.isHome = true;
 
-    fileSystems."/persist".neededForBoot = lib.mkForce true;
-
     systemd.network.networks."10-vlan-services" = {
       dhcpV6Config = {
         WithoutRA = "solicit";

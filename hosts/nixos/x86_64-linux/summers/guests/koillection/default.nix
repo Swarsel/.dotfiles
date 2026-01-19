@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # koillection = true;
+    koillection = true;
   };
 
 }

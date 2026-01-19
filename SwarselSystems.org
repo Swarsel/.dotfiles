@@ -2067,41 +2067,55 @@ The =_module.args= part is needed because we need to set/override the =flake-par
 More information on the actual packages build can be found in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]].
 
 #+begin_src nix-ts :tangle nix/packages.nix
-{ self, inputs, ... }:
-{
-  imports = [
-    (
-      { lib, flake-parts-lib, ... }:
-      flake-parts-lib.mkTransposedPerSystemModule {
-        name = "pkgs";
-        file = ./packages.nix;
-        option = lib.mkOption {
-          type = lib.types.unspecified;
-        };
-      }
-    )
-  ];
-  flake = _:
-    let
-      inherit (self.outputs) lib;
-    in
-    {
-      packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import "${self}/pkgs/flake" { inherit self lib pkgs; });
-    };
-
-  perSystem = { pkgs, system, ... }:
-    {
-      # see https://flake.parts/module-arguments.html?highlight=modulewith#persystem-module-parameters
-      _module.args.pkgs = import inputs.nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-        overlays = [
-          self.overlays.default
-        ];
+  { self, inputs, ... }:
+  {
+    imports = [
+      (
+        { lib, flake-parts-lib, ... }:
+        flake-parts-lib.mkTransposedPerSystemModule {
+          name = "pkgs";
+          file = ./packages.nix;
+          option = lib.mkOption {
+            type = lib.types.unspecified;
+          };
+        }
+      )
+    ];
+    flake = _:
+      let
+        inherit (self.outputs) lib;
+      in
+      {
+        packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import "${self}/pkgs/flake" { inherit self lib pkgs; });
       };
-      inherit pkgs;
-    };
-}
+
+    perSystem = { pkgs, system, ... }:
+      {
+        # see https://flake.parts/module-arguments.html?highlight=modulewith#persystem-module-parameters
+        _module.args.pkgs = import inputs.nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+
+            permittedInsecurePackages = [
+              # matrix
+              "olm-3.2.16"
+              # sonarr
+              "aspnetcore-runtime-wrapped-6.0.36"
+              "aspnetcore-runtime-6.0.36"
+              "dotnet-sdk-wrapped-6.0.428"
+              "dotnet-sdk-6.0.428"
+              #
+              "SDL_ttf-2.0.11"
+            ];
+          };
+          overlays = [
+            self.overlays.default
+          ];
+        };
+        inherit pkgs;
+      };
+  }
 #+end_src
 ** Globals
 :PROPERTIES:
@@ -2230,209 +2244,217 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
  - =ConfigurationsPerArch= does the same for full NixOS systems (NixOS or darwin). These can further be specialized by passing in the corresponding =minimal= arg that is used during bootstrapping.
 
 #+begin_src nix-ts :tangle nix/hosts.nix
-  { self, inputs, ... }:
-  {
-    flake = { config, ... }:
-      let
-        inherit (self) outputs;
-        inherit (outputs) lib homeLib;
-        # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
+   { self, inputs, ... }:
+   {
+     flake = { config, ... }:
+       let
+         inherit (self) outputs;
+         inherit (outputs) lib homeLib;
+         # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
-        mkNixosHost = { minimal }: configName: arch:
-          inputs.nixpkgs.lib.nixosSystem {
-            specialArgs = {
-              inherit inputs outputs self minimal homeLib configName arch;
-              inherit (config.pkgs.${arch}) lib;
-              inherit (config) nodes topologyPrivate;
-              globals = config.globals.${arch};
-              type = "nixos";
-              withHomeManager = true;
-              extraModules = [ "${self}/modules/nixos/common/globals.nix" ];
-            };
-            modules = [
-              inputs.disko.nixosModules.disko
-              inputs.home-manager.nixosModules.home-manager
-              inputs.impermanence.nixosModules.impermanence
-              inputs.lanzaboote.nixosModules.lanzaboote
-              inputs.microvm.nixosModules.host
-              inputs.microvm.nixosModules.microvm
-              inputs.nix-index-database.nixosModules.nix-index
-              inputs.nix-minecraft.nixosModules.minecraft-servers
-              inputs.nix-topology.nixosModules.default
-              inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-              inputs.simple-nixos-mailserver.nixosModules.default
-              inputs.sops.nixosModules.sops
-              inputs.stylix.nixosModules.stylix
-              inputs.swarsel-nix.nixosModules.default
-              inputs.nixos-nftables-firewall.nixosModules.default
-              (inputs.nixos-extra-modules + "/modules/guests")
-              (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
-              "${self}/hosts/nixos/${arch}/${configName}"
-              "${self}/profiles/nixos"
-              "${self}/modules/nixos"
-              {
-                _module.args.dns = inputs.dns;
+         mkNixosHost = { minimal }: configName: arch:
+           inputs.nixpkgs.lib.nixosSystem {
+             specialArgs = {
+               inherit inputs outputs self minimal homeLib configName arch;
+               inherit (config.pkgs.${arch}) lib;
+               inherit (config) nodes topologyPrivate;
+               globals = config.globals.${arch};
+               type = "nixos";
+               withHomeManager = true;
+               extraModules = [ "${self}/modules/nixos/common/globals.nix" ];
+             };
+             modules = [
+               inputs.disko.nixosModules.disko
+               inputs.home-manager.nixosModules.home-manager
+               inputs.impermanence.nixosModules.impermanence
+               inputs.lanzaboote.nixosModules.lanzaboote
+               inputs.microvm.nixosModules.host
+               inputs.microvm.nixosModules.microvm
+               inputs.nix-index-database.nixosModules.nix-index
+               inputs.nix-minecraft.nixosModules.minecraft-servers
+               inputs.nix-topology.nixosModules.default
+               inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+               inputs.simple-nixos-mailserver.nixosModules.default
+               inputs.sops.nixosModules.sops
+               inputs.stylix.nixosModules.stylix
+               inputs.swarsel-nix.nixosModules.default
+               inputs.nixos-nftables-firewall.nixosModules.default
+               (inputs.nixos-extra-modules + "/modules/guests")
+               (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+               "${self}/hosts/nixos/${arch}/${configName}"
+               "${self}/profiles/nixos"
+               "${self}/modules/nixos"
+               {
+                 _module.args.dns = inputs.dns;
 
-                microvm.guest.enable = lib.mkDefault false;
+                 microvm.guest.enable = lib.mkDefault false;
 
-                networking.hostName = lib.swarselsystems.mkStrong configName;
+                 networking.hostName = lib.swarselsystems.mkStrong configName;
 
-                node = {
-                  name = lib.mkForce configName;
-                  arch = lib.mkForce arch;
-                  type = lib.mkForce "nixos";
-                  secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
-                  configDir = ../hosts/nixos/${arch}/${configName};
-                  lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
-                };
+                 node = {
+                   name = lib.mkForce configName;
+                   arch = lib.mkForce arch;
+                   type = lib.mkForce "nixos";
+                   secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
+                   configDir = ../hosts/nixos/${arch}/${configName};
+                   lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
+                 };
 
-                swarselprofiles = {
-                  minimal = lib.mkIf minimal (lib.swarselsystems.mkStrong true);
-                };
+                 swarselprofiles = {
+                   minimal = lib.mkIf minimal (lib.swarselsystems.mkStrong true);
+                 };
 
-                swarselmodules.server = {
-                  ssh = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
-                };
+                 swarselmodules.server = {
+                   ssh = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
+                 };
 
-                swarselsystems = {
-                  mainUser = lib.swarselsystems.mkStrong "swarsel";
-                };
-              }
-            ];
-          };
+                 swarselsystems = {
+                   mainUser = lib.swarselsystems.mkStrong "swarsel";
+                 };
+               }
+             ];
+           };
 
-        mkDarwinHost = { minimal }: configName: arch:
-          inputs.nix-darwin.lib.darwinSystem {
-            specialArgs = {
-              inherit inputs lib outputs self minimal configName;
-              inherit (config) nodes topologyPrivate;
-              withHomeManager = true;
-              globals = config.globals.${arch};
-            };
-            modules = [
-              # inputs.disko.nixosModules.disko
-              # inputs.sops.nixosModules.sops
-              # inputs.impermanence.nixosModules.impermanence
-              # inputs.lanzaboote.nixosModules.lanzaboote
-              # inputs.fw-fanctrl.nixosModules.default
-              # inputs.nix-topology.nixosModules.default
-              inputs.home-manager.darwinModules.home-manager
-              "${self}/hosts/darwin/${arch}/${configName}"
-              "${self}/modules/nixos/darwin"
-              # needed for infrastructure
-              "${self}/modules/shared/meta.nix"
-              "${self}/modules/nixos/common/globals.nix"
-              {
-                node = {
-                  name = lib.mkForce configName;
-                  arch = lib.mkForce arch;
-                  type = lib.mkForce "darwin";
-                  secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
-                };
-              }
-            ];
-          };
+         mkDarwinHost = { minimal }: configName: arch:
+           inputs.nix-darwin.lib.darwinSystem {
+             specialArgs = {
+               inherit inputs lib outputs self minimal configName;
+               inherit (config) nodes topologyPrivate;
+               withHomeManager = true;
+               globals = config.globals.${arch};
+             };
+             modules = [
+               # inputs.disko.nixosModules.disko
+               # inputs.sops.nixosModules.sops
+               # inputs.impermanence.nixosModules.impermanence
+               # inputs.lanzaboote.nixosModules.lanzaboote
+               # inputs.fw-fanctrl.nixosModules.default
+               # inputs.nix-topology.nixosModules.default
+               inputs.home-manager.darwinModules.home-manager
+               "${self}/hosts/darwin/${arch}/${configName}"
+               "${self}/modules/nixos/darwin"
+               # needed for infrastructure
+               "${self}/modules/shared/meta.nix"
+               "${self}/modules/nixos/common/globals.nix"
+               {
+                 node = {
+                   name = lib.mkForce configName;
+                   arch = lib.mkForce arch;
+                   type = lib.mkForce "darwin";
+                   secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
+                 };
+               }
+             ];
+           };
 
-        mkHalfHost = configName: type: arch:
-          let
-            systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
-            pkgs = lib.swarselsystems.pkgsFor.${arch};
-          in
-          systemFunc {
-            inherit pkgs;
-            extraSpecialArgs = {
-              inherit inputs lib outputs self configName arch type;
-              inherit (config) nodes topologyPrivate;
-              globals = config.globals.${arch};
-              minimal = false;
-            };
-            modules = [
-              inputs.stylix.homeModules.stylix
-              inputs.nix-index-database.homeModules.nix-index
-              inputs.sops.homeManagerModules.sops
-              inputs.spicetify-nix.homeManagerModules.default
-              inputs.swarsel-nix.homeModules.default
-              "${self}/hosts/${type}/${arch}/${configName}"
-              "${self}/profiles/home"
-              "${self}/modules/nixos/common/pii.nix"
-              {
-                node = {
-                  name = lib.mkForce configName;
-                  arch = lib.mkForce arch;
-                  type = lib.mkForce type;
-                  secretsDir = ../hosts/${type}/${arch}/${configName}/secrets;
-                };
-              }
-            ];
-          };
+         mkHalfHost = configName: type: arch:
+           let
+             systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+             pkgs = lib.swarselsystems.pkgsFor.${arch};
+           in
+           systemFunc {
+             inherit pkgs;
+             extraSpecialArgs = {
+               inherit inputs lib outputs self configName arch type;
+               inherit (config) nodes topologyPrivate;
+               globals = config.globals.${arch};
+               minimal = false;
+             };
+             modules = [
+               inputs.stylix.homeModules.stylix
+               inputs.nix-index-database.homeModules.nix-index
+               inputs.sops.homeManagerModules.sops
+               inputs.spicetify-nix.homeManagerModules.default
+               inputs.swarsel-nix.homeModules.default
+               "${self}/hosts/${type}/${arch}/${configName}"
+               "${self}/profiles/home"
+               "${self}/modules/nixos/common/pii.nix"
+               {
+                 node = {
+                   name = lib.mkForce configName;
+                   arch = lib.mkForce arch;
+                   type = lib.mkForce type;
+                   secretsDir = ../hosts/${type}/${arch}/${configName}/secrets;
+                 };
+               }
+             ];
+           };
 
-        linuxArches = [ "x86_64-linux" "aarch64-linux" ];
-        darwinArches = [ "x86_64-darwin" "aarch64-darwin" ];
-        mkArches = type: if (type == "nixos") then linuxArches else if (type == "darwin") then darwinArches else linuxArches ++ darwinArches;
+         linuxArches = [ "x86_64-linux" "aarch64-linux" ];
+         darwinArches = [ "x86_64-darwin" "aarch64-darwin" ];
+         mkArches = type: if (type == "nixos") then linuxArches else if (type == "darwin") then darwinArches else linuxArches ++ darwinArches;
 
-        readHostDirs = hostDir:
-          if builtins.pathExists hostDir then
-            builtins.attrNames
-              (
-                lib.filterAttrs (_: type: type == "directory")
-                  (builtins.readDir hostDir)
-              ) else [ ];
+         readHostDirs = hostDir:
+           if builtins.pathExists hostDir then
+             builtins.attrNames
+               (
+                 lib.filterAttrs (_: type: type == "directory")
+                   (builtins.readDir hostDir)
+               ) else [ ];
 
-        mkHalfHostsForArch = type: arch:
-          let
-            hostDir = "${self}/hosts/${type}/${arch}";
-            hosts = readHostDirs hostDir;
-          in
-          lib.genAttrs hosts (host: mkHalfHost host type arch);
+         mkHalfHostsForArch = type: arch:
+           let
+             hostDir = "${self}/hosts/${type}/${arch}";
+             hosts = readHostDirs hostDir;
+           in
+           lib.genAttrs hosts (host: mkHalfHost host type arch);
 
-        mkHostsForArch = type: arch: minimal:
-          let
-            hostDir = "${self}/hosts/${type}/${arch}";
-            hosts = readHostDirs hostDir;
-          in
-          if (type == "nixos") then
-            lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
-          else if (type == "darwin") then
-            lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
-          else { };
+         mkHostsForArch = type: arch: minimal:
+           let
+             hostDir = "${self}/hosts/${type}/${arch}";
+             hosts = readHostDirs hostDir;
+           in
+           if (type == "nixos") then
+             lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
+           else if (type == "darwin") then
+             lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
+           else { };
 
-        mkConfigurationsPerArch = type: minimal:
-          let
-            arches = mkArches type;
-            toMake = if (minimal == null) then (arch: _: mkHalfHostsForArch type arch) else (arch: _: mkHostsForArch type arch minimal);
-          in
-          lib.concatMapAttrs toMake
-            (lib.listToAttrs (map (a: { name = a; value = { }; }) arches));
+         mkConfigurationsPerArch = type: minimal:
+           let
+             arches = mkArches type;
+             toMake = if (minimal == null) then (arch: _: mkHalfHostsForArch type arch) else (arch: _: mkHostsForArch type arch minimal);
+           in
+           lib.concatMapAttrs toMake
+             (lib.listToAttrs (map (a: { name = a; value = { }; }) arches));
 
-        halfConfigurationsPerArch = type: mkConfigurationsPerArch type null;
-        configurationsPerArch = type: minimal: mkConfigurationsPerArch type minimal;
+         halfConfigurationsPerArch = type: mkConfigurationsPerArch type null;
+         configurationsPerArch = type: minimal: mkConfigurationsPerArch type minimal;
 
-      in
-      {
-        nixosConfigurations = configurationsPerArch "nixos" false;
-        nixosConfigurationsMinimal = configurationsPerArch "nixos" true;
-        darwinConfigurations = configurationsPerArch "darwin" false;
-        darwinConfigurationsMinimal = configurationsPerArch "darwin" true;
-        homeConfigurations = halfConfigurationsPerArch "home";
-        nixOnDroidConfigurations = halfConfigurationsPerArch "android";
+       in
+       rec {
+         nixosConfigurations = configurationsPerArch "nixos" false;
+         nixosConfigurationsMinimal = configurationsPerArch "nixos" true;
+         darwinConfigurations = configurationsPerArch "darwin" false;
+         darwinConfigurationsMinimal = configurationsPerArch "darwin" true;
+         homeConfigurations = halfConfigurationsPerArch "home";
+         nixOnDroidConfigurations = halfConfigurationsPerArch "android";
 
-        guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
-          _: node:
-            lib.flip lib.mapAttrs' (node.config.guests or { }) (
-              guestName: guestDef:
-                lib.nameValuePair guestDef.nodeName node.config.microvm.vms.${guestName}.config
-            )
-        );
+         guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
+           _: node:
+             lib.flip lib.mapAttrs' (node.config.guests or { }) (
+               guestName: guestDef:
+                 lib.nameValuePair guestDef.nodeName node.config.microvm.vms.${guestName}.config
+             )
+         );
 
-        diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
+         diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
-        nodes = config.nixosConfigurations
-          // config.darwinConfigurations
-          // config.guestConfigurations;
+         nodes = config.nixosConfigurations
+           // config.darwinConfigurations
+           // config.guestConfigurations;
 
-        "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
-      };
-  }
+         guestResources = lib.mapAttrs
+           (name: _: let
+           f = arg: lib.foldr (base: acc: base + acc) 0 (map (node: nodes."${name}-${node}".config.microvm.${arg}) (builtins.attrNames nodes.${name}.config.guests));
+         in {
+           mem = f "mem";
+           vcpu = f "vcpu";
+         }) nodes;
+
+         "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
+       };
+   }
 #+end_src
 
 ** Topology (nix-topology generated network diagram)
@@ -4201,26 +4223,6 @@ This is my main server that I run at home. It handles most tasks that require bi
             serverName = "hintbooth";
           };
         };
-        restic = {
-          bucketName = "SwarselWinters";
-          paths = [
-            "/Vault/data/paperless"
-            "/Vault/data/koillection"
-            "/Vault/data/postgresql"
-            "/Vault/data/firefly-iii"
-            "/Vault/data/radicale"
-            "/Vault/data/matrix-synapse"
-            "/Vault/Eternor/Paperless"
-            "/Vault/Eternor/Bilder"
-            "/Vault/Eternor/Immich"
-          ];
-        };
-        garage = {
-          data_dir = {
-            capacity = "200G";
-            path = "/Vault/data/garage/data";
-          };
-        };
       };
     };
 
@@ -4232,35 +4234,6 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselmodules.server = {
       diskEncryption = lib.mkForce false;
-      # nginx = true; # for php stuff
-      # acme = false; # cert handled by proxy
-      # wireguard = true;
-
-      # nfs = true;
-      # kavita = true;
-      # restic = true;
-      # jellyfin = true;
-      # navidrome = true;
-      # spotifyd = true;
-      # mpd = true;
-      # postgresql = true;
-      # matrix = true;
-      # nextcloud = true;
-      # immich = true;
-      # paperless = true;
-      # transmission = true;
-      # syncthing = true;
-      # grafana = true;
-      # freshrss = true;
-      # kanidm = true;
-      # firefly-iii = true;
-      # koillection = true;
-      # radicale = true;
-      # atuin = true;
-      # forgejo = true;
-      # ankisync = true;
-      # homebox = true;
-      # opkssh = true;
     };
 
     networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "enp3s0" ];
@@ -4385,19 +4358,19 @@ This is my main server that I run at home. It handles most tasks that require bi
             serverName = "hintbooth";
           };
         };
-        restic = {
-          bucketName = "SwarselWinters";
-          paths = [
-            "/Vault/data/paperless"
-            "/Vault/data/koillection"
-            "/Vault/data/postgresql"
-            "/Vault/data/firefly-iii"
-            "/Vault/data/radicale"
-            "/Vault/data/matrix-synapse"
-            "/Vault/Eternor/Paperless"
-            "/Vault/Eternor/Bilder"
-            "/Vault/Eternor/Immich"
-          ];
+        restic.targets = {
+          SwarselState = {
+            repository = config.repo.secrets.local.resticRepoState;
+            # nextcloud stores all data in state dir and has no data that needs backup
+            paths = lib.map (guest: "/Vault/guests/${guest}/state") (builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests));
+          };
+          SwarselStorage = {
+            repository = config.repo.secrets.local.resticRepoStorage;
+            paths = [
+              "/Vault/Eternor/Pictures"
+              "/Vault/Eternor/Documents/paperless"
+            ];
+          };
         };
       };
     };
@@ -4410,59 +4383,31 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselmodules.server = {
       wireguard = true;
-
-      nginx = true; # for php stuff
-      acme = false; # cert handled by proxy
-
-      nfs = true;
-      # kavita = true;
       restic = true;
-      jellyfin = true;
-      navidrome = true;
-      spotifyd = true;
-      mpd = true;
-      postgresql = true;
-      matrix = true;
-      nextcloud = true;
-      immich = true;
-      paperless = true;
-      transmission = true;
-      syncthing = true;
-      grafana = true;
-      freshrss = true;
-      kanidm = true;
-      firefly-iii = true;
-      koillection = true;
-      radicale = true;
-      atuin = true;
-      forgejo = true;
-      ankisync = true;
-      homebox = true;
       opkssh = true;
     };
 
     guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
       { }
-      // confLib.mkMicrovm "kavita" { withZfs = true; }
-      // confLib.mkMicrovm "jellyfin" { withZfs = true;  }
-      // confLib.mkMicrovm "audio" { withZfs = true; }
-      // confLib.mkMicrovm "postgresql" { withZfs = true; }
-      // confLib.mkMicrovm "matrix" { withZfs = true; }
-      // confLib.mkMicrovm "nextcloud" { withZfs = true; }
-      // confLib.mkMicrovm "immich" { withZfs = true; }
-      // confLib.mkMicrovm "paperless" { withZfs = true; }
-      // confLib.mkMicrovm "transmission" { withZfs = true; }
-      // confLib.mkMicrovm "storage" { withZfs = true; }
-      // confLib.mkMicrovm "monitoring" { withZfs = true; }
-      // confLib.mkMicrovm "freshrss" { withZfs = true; }
-      // confLib.mkMicrovm "kanidm" { withZfs = true; }
-      // confLib.mkMicrovm "firefly" { withZfs = true; }
-      // confLib.mkMicrovm "koillection" { withZfs = true; }
-      // confLib.mkMicrovm "radicale" { withZfs = true; }
-      // confLib.mkMicrovm "atuin" { withZfs = true; }
-      // confLib.mkMicrovm "forgejo" { withZfs = true; }
       // confLib.mkMicrovm "ankisync" { withZfs = true; }
+      // confLib.mkMicrovm "atuin" { withZfs = true; }
+      // confLib.mkMicrovm "audio" { withZfs = true; eternorPaths = [ "Music" ]; }
+      // confLib.mkMicrovm "firefly" { withZfs = true; }
+      // confLib.mkMicrovm "forgejo" { withZfs = true; }
+      // confLib.mkMicrovm "freshrss" { withZfs = true; }
       // confLib.mkMicrovm "homebox" { withZfs = true; }
+      // confLib.mkMicrovm "immich" { withZfs = true; eternorPaths = [ "Pictures" ]; }
+      // confLib.mkMicrovm "jellyfin" { withZfs = true; eternorPaths = [ "Videos" ];  }
+      // confLib.mkMicrovm "kanidm" { withZfs = true; }
+      // confLib.mkMicrovm "kavita" { withZfs = true; eternorPaths = [ "Books" ]; }
+      // confLib.mkMicrovm "koillection" { withZfs = true; }
+      // confLib.mkMicrovm "matrix" { withZfs = true; }
+      // confLib.mkMicrovm "monitoring" { withZfs = true; }
+      // confLib.mkMicrovm "nextcloud" { withZfs = true; }
+      // confLib.mkMicrovm "paperless" { withZfs = true; eternorPaths = [ "Documents" ]; }
+      // confLib.mkMicrovm "radicale" { withZfs = true; }
+      // confLib.mkMicrovm "storage" { withZfs = true; eternorPaths = [ "Books" "Videos" "Music" "Pictures" "Software" "Documents" ]; }
+      // confLib.mkMicrovm "transmission" { withZfs = true; eternorPaths = [ "Books" "Videos" "Music" "Software" ]; }
     );
 
     networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "bmc" ];
@@ -4634,6 +4579,16 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:5e571d89-6590-4aa4-a5f4-5c871683d09b
 :END:
+
+#+begin_src bash :results output :eval never-export
+  echo "Currently using $(nix eval .#guestResources.summers.mem 2>/dev/null) MB out of 128GB RAM"
+  echo "Currently using $(nix eval .#guestResources.summers.vcpu 2>/dev/null) vCPUs. 48 threads are available."
+#+end_src
+
+#+RESULTS:
+: Currently using 54272 MB out of 128GB RAM
+: Currently using 40 vCPUs. 48 threads are available.
+
 ****** Kavita
 :PROPERTIES:
 :CUSTOM_ID: h:14a705ff-1924-41da-a6f8-1537e2f5bfb6
@@ -4670,7 +4625,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     microvm = {
       mem = 1024 * 1;
-      vcpu = 1;
+      vcpu = 2;
 
     };
 
@@ -4679,7 +4634,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # kavita = true;
+      kavita = true;
     };
 
   }
@@ -4722,7 +4677,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     microvm = {
       mem = 1024 * 3;
-      vcpu = 1;
+      vcpu = 4;
     };
 
     swarselprofiles = {
@@ -4730,7 +4685,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # jellyfin = true;
+      jellyfin = true;
     };
 
   }
@@ -4781,60 +4736,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # navidrome = true;
-      # spotifyd = true;
-      # mpd = true;
-    };
-
-  }
-
-#+end_src
-
-****** Postgresql
-:PROPERTIES:
-:CUSTOM_ID: h:4dee4e22-33b2-4e6a-b0ab-91061a4efffa
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/postgresql/default.nix
-  { self, lib, minimal, ... }:
-  {
-    imports = [
-      "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
-    ];
-
-    swarselsystems = {
-      isMicroVM = true;
-      isImpermanence = true;
-      proxyHost = "twothreetunnel";
-      server = {
-        wireguard.interfaces = {
-          wgHome = {
-            isClient = true;
-            serverName = "hintbooth";
-          };
-          wgProxy = {
-            isClient = true;
-            serverName = "twothreetunnel";
-          };
-        };
-      };
-    };
-
-
-  } // lib.optionalAttrs (!minimal) {
-
-    microvm = {
-      mem = 1024 * 1;
-      vcpu = 1;
-    };
-
-    swarselprofiles = {
-      microvm = true;
-    };
-
-    swarselmodules.server = {
-      # postgresql = true;
+      navidrome = true;
+      spotifyd = true;
+      mpd = true;
     };
 
   }
@@ -4876,7 +4780,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 3;
+      mem = 1024 * 6;
       vcpu = 2;
     };
 
@@ -4885,7 +4789,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # matrix = true;
+      matrix = true;
     };
 
   }
@@ -4936,9 +4840,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # nextcloud = true;
-      # nginx = true;
-      # acme = true;
+      nextcloud = true;
+      nginx = true;
+      acme = false;
     };
 
   }
@@ -4980,8 +4884,8 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 8;
-      vcpu = 8;
+      mem = 1024 * 16;
+      vcpu = 14;
     };
 
     swarselprofiles = {
@@ -4989,7 +4893,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # immich = true;
+      immich = true;
     };
 
   }
@@ -5031,7 +4935,7 @@ This is my main server that I run at home. It handles most tasks that require bi
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 4;
+      mem = 1024 * 8;
       vcpu = 4;
     };
 
@@ -5040,7 +4944,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # paperless = true;
+      paperless = true;
     };
 
   }
@@ -5063,16 +4967,11 @@ This is my main server that I run at home. It handles most tasks that require bi
     swarselsystems = {
       isMicroVM = true;
       isImpermanence = true;
-      proxyHost = "twothreetunnel";
       server = {
         wireguard.interfaces = {
           wgHome = {
             isClient = true;
             serverName = "hintbooth";
-          };
-          wgProxy = {
-            isClient = true;
-            serverName = "twothreetunnel";
           };
         };
       };
@@ -5091,7 +4990,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # transmission = true;
+      transmission = true;
     };
 
   }
@@ -5142,8 +5041,8 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # nfs = true;
-      # syncthing = true;
+      nfs = true;
+      syncthing = true;
     };
 
   }
@@ -5194,7 +5093,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # grafana = true;
+      grafana = true;
     };
 
   }
@@ -5245,9 +5144,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # freshrss = true;
-      # nginx = true;
-      # acme = true;
+      freshrss = true;
+      nginx = true;
+      acme = false;
     };
 
   }
@@ -5290,7 +5189,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     microvm = {
       mem = 1024 * 4;
-      vcpu = 1;
+      vcpu = 2;
     };
 
     swarselprofiles = {
@@ -5298,7 +5197,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # kanidm = true;
+      kanidm = true;
     };
 
   }
@@ -5349,9 +5248,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # firefly-iii = true;
-      # nginx = true;
-      # acme = true;
+      firefly-iii = true;
+      nginx = true;
+      acme = false;
     };
 
   }
@@ -5402,7 +5301,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # koillection = true;
+      koillection = true;
     };
 
   }
@@ -5453,7 +5352,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # radicale = true;
+      radicale = true;
     };
 
   }
@@ -5504,7 +5403,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # atuin = true;
+      atuin = true;
     };
 
   }
@@ -5555,7 +5454,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # forgejo = true;
+      forgejo = true;
     };
 
   }
@@ -5606,7 +5505,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # ankisync = true;
+      ankisync = true;
     };
 
   }
@@ -5657,7 +5556,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
-      # homebox = true;
+      homebox = true;
     };
 
   }
@@ -5703,7 +5602,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       info = "HUNSN RM02, 8GB RAM";
       flakePath = "/root/.dotfiles";
       isImpermanence = true;
-      isSecureBoot = false;
+      isSecureBoot = true;
       isCrypted = true;
       isBtrfs = true;
       isLinux = true;
@@ -5722,6 +5621,25 @@ This is my main server that I run at home. It handles most tasks that require bi
               "hintbooth-adguardhome"
               "hintbooth-nginx"
               "summers"
+              "summers-ankisync"
+              "summers-atuin"
+              "summers-audio"
+              "summers-firefly"
+              "summers-forgejo"
+              "summers-freshrss"
+              "summers-homebox"
+              "summers-immich"
+              "summers-jellyfin"
+              "summers-kanidm"
+              "summers-kavita"
+              "summers-koillection"
+              "summers-matrix"
+              "summers-monitoring"
+              "summers-nextcloud"
+              "summers-paperless"
+              "summers-radicale"
+              "summers-storage"
+              "summers-transmission"
               "winters"
             ];
           };
@@ -5743,10 +5661,10 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-        { }
+      { }
         // confLib.mkMicrovm "adguardhome" { }
         // confLib.mkMicrovm "nginx" { }
-      );
+    );
 
   }
 
@@ -5911,6 +5829,16 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:c19725c0-0523-40f2-8083-9a4f53b6c2d1
 :END:
+
+#+begin_src bash :results output :eval never-export
+  echo "Currently using $(nix eval .#guestResources.hintbooth.mem 2>/dev/null) MB out of 8GB RAM"
+  echo "Currently using $(nix eval .#guestResources.hintbooth.vcpu 2>/dev/null) vCPUs. 4 threads are available."
+#+end_src
+
+#+RESULTS:
+: Currently using 4096 MB out of 8GB RAM
+: Currently using 2 vCPUs. 2 cores are available for a total of 4 threads.
+
 ****** Adguardhome
 :PROPERTIES:
 :CUSTOM_ID: h:f479a908-8071-4d69-97ea-c03bfd7b88bf
@@ -6277,11 +6205,13 @@ This machine mainly acts as my proxy server to stand before my local machines.
             serverName = "twothreetunnel";
           };
         };
-        restic = {
-          bucketName = "SwarselMoonside";
-          paths = [
-            "/persist/opt/minecraft"
-          ];
+        restic.targets = {
+          SwarselMoonside = {
+            repository = config.repo.secrets.local.resticRepoState;
+            paths = [
+              "/persist/opt/minecraft"
+            ];
+          };
         };
       };
       syncthing = {
@@ -7162,6 +7092,24 @@ This machine mainly acts as my proxy server to stand before my local machines.
               "moonside"
               "winters"
               "summers"
+              "summers-ankisync"
+              "summers-atuin"
+              "summers-audio"
+              "summers-firefly"
+              "summers-forgejo"
+              "summers-freshrss"
+              "summers-homebox"
+              "summers-immich"
+              "summers-jellyfin"
+              "summers-kanidm"
+              "summers-kavita"
+              "summers-koillection"
+              "summers-matrix"
+              "summers-monitoring"
+              "summers-nextcloud"
+              "summers-paperless"
+              "summers-radicale"
+              "summers-storage"
               "belchsfactory"
               "eagleland"
               "hintbooth-adguardhome"
@@ -9044,6 +8992,18 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
             isNormalUser = true;
             uid = 1000;
             autoSubUidGidRange = false;
+            subUidRanges = [
+              {
+                count = 65534;
+                startUid = 100001;
+              }
+            ];
+            subGidRanges = [
+              {
+                count = 999;
+                startGid = 1001;
+              }
+            ];
             description = "Leon S";
             password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
             hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
@@ -11054,9 +11014,10 @@ Auto login for the initial session.
 Auto login for the initial session.
 
 #+begin_src nix-ts :tangle modules/nixos/client/uwsm.nix
-  { lib, config, ... }:
+  { lib, config, pkgs, ... }:
   let
     moduleName = "uwsm";
+    cfg = config.programs.uwsm;
   in
   {
     options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
@@ -11076,6 +11037,40 @@ Auto login for the initial session.
           };
         };
       };
+
+      services.displayManager.sessionPackages =
+        let
+          mk_uwsm_desktop_entry =
+            opts:
+            (pkgs.writeTextFile {
+              name = "${opts.name}-uwsm";
+              text = ''
+                [Desktop Entry]
+                Name=${opts.prettyName} (UWSM)
+                Comment=${opts.comment}
+                Exec=${lib.getExe cfg.package} start -F -- ${opts.binPath} ${lib.strings.escapeShellArgs opts.extraArgs}
+                Type=Application
+              '';
+              destination = "/share/wayland-sessions/${opts.name}-uwsm.desktop";
+              derivationArgs = {
+                passthru.providedSessions = [ "${opts.name}-uwsm" ];
+              };
+            });
+        in
+        lib.mkForce (lib.mapAttrsToList
+          (
+            name: value:
+              mk_uwsm_desktop_entry {
+                inherit name;
+                inherit (value)
+                  prettyName
+                  comment
+                  binPath
+                  extraArgs
+                  ;
+              }
+          )
+          cfg.waylandCompositors);
     };
   }
 #+end_src
@@ -11194,14 +11189,15 @@ Here we just define some aliases for rebuilding the system, and we allow some in
       mkIf
       mkOption
       types
-    ;
+      ;
 
     cfg = config.users.persistentIds;
   in
-    {
-      options = {
-        swarselmodules.server.ids = lib.mkEnableOption "enable persistent ids on server";
-        users.persistentIds = mkOption {
+  {
+    options = {
+      swarselmodules.server.ids = lib.mkEnableOption "enable persistent ids on server";
+      users = {
+        persistentIds = mkOption {
           default = { };
           description = ''
             Maps a user or group name to its expected uid/gid values. If a user/group is
@@ -11226,7 +11222,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
           );
         };
 
-        users.users = mkOption {
+        users = mkOption {
           type = types.attrsOf (
             types.submodule (
               { name, ... }:
@@ -11235,13 +11231,13 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                   let
                     persistentUid = cfg.${name}.uid or null;
                   in
-                    mkIf (persistentUid != null) (mkDefault persistentUid);
+                  mkIf (persistentUid != null) (mkDefault persistentUid);
               }
             )
           );
         };
 
-        users.groups = mkOption {
+        groups = mkOption {
           type = types.attrsOf (
             types.submodule (
               { name, ... }:
@@ -11250,43 +11246,44 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                   let
                     persistentGid = cfg.${name}.gid or null;
                   in
-                    mkIf (persistentGid != null) (mkDefault persistentGid);
+                  mkIf (persistentGid != null) (mkDefault persistentGid);
               }
             )
           );
         };
       };
-      config = lib.mkIf config.swarselmodules.server.ids {
-        assertions =
-          concatLists
-            (
-              flip mapAttrsToList config.users.users (
-                name: user: [
-                  {
-                    assertion = user.uid != null;
-                    message = "non-persistent uid detected for '${name}', please assign one via `users.persistentIds`";
-                  }
-                  {
-                    assertion = !user.autoSubUidGidRange;
-                    message = "non-persistent subUids/subGids detected for: ${name}";
-                  }
-                ]
-              )
+    };
+    config = lib.mkIf config.swarselmodules.server.ids {
+      assertions =
+        concatLists
+          (
+            flip mapAttrsToList config.users.users (
+              name: user: [
+                {
+                  assertion = user.uid != null;
+                  message = "non-persistent uid detected for '${name}', please assign one via `users.persistentIds`";
+                }
+                {
+                  assertion = !user.autoSubUidGidRange;
+                  message = "non-persistent subUids/subGids detected for: ${name}";
+                }
+              ]
             )
-          ++ flip mapAttrsToList config.users.groups (
-            name: group: {
-              assertion = group.gid != null;
-              message = "non-persistent gid detected for '${name}', please assign one via `users.persistentIds`";
-            }
-          );
-        users.persistentIds = {
-          systemd-coredump = confLib.mkIds 998;
-          systemd-oom = confLib.mkIds 997;
-          polkituser = confLib.mkIds 973;
-          nscd = confLib.mkIds 972;
-        };
+          )
+        ++ flip mapAttrsToList config.users.groups (
+          name: group: {
+            assertion = group.gid != null;
+            message = "non-persistent gid detected for '${name}', please assign one via `users.persistentIds`";
+          }
+        );
+      users.persistentIds = {
+        systemd-coredump = confLib.mkIds 998;
+        systemd-oom = confLib.mkIds 997;
+        polkituser = confLib.mkIds 973;
+        nscd = confLib.mkIds 972;
       };
-    }
+    };
+  }
 #+end_src
 
 **** System Packages (Server Programs)
@@ -11341,6 +11338,12 @@ This is a collection of packages that are useful for server-type hosts that do n
         avahi = confLib.mkIds 978;
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/cache/samba"; }
+        ];
+      };
+
       services = {
         # add a user with sudo smbpasswd -a <user>
         samba = {
@@ -11366,7 +11369,7 @@ This is a collection of packages that are useful for server-type hosts that do n
             browseable = "yes";
             "read only" = "no";
             "guest ok" = "no";
-            path = "/Vault/Eternor";
+            path = "/storage";
             writable = "true";
             comment = "Eternor";
             "valid users" = nfsUser;
@@ -11539,8 +11542,15 @@ This is a collection of packages that are useful for server-type hosts that do n
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
-      environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        files = [ dhParamsPathBase ];
+      environment.persistence = {
+        "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+          files = [ dhParamsPathBase ];
+        };
+        "/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            { directory = "/var/cache/nginx"; user = "nginx"; group = "nginx"; }
+          ];
+        };
       };
 
       services.nginx = {
@@ -12429,6 +12439,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       })
       globals.networks.home-lan.vlans;
     selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
+    lan1VLANs = selectVLANs [ "home" "devices" "guests" ];
+    lan2VLANs = selectVLANs [ "home" "devices" "services" ];
     lan3VLANs = selectVLANs [ "home" "devices" "services" ];
     lan4VLANs = lan3VLANs;
     lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
@@ -12608,9 +12620,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
-              inherit bridgeVLANs;
+              bridgeVLANs = lan1VLANs;
             };
-            # wifi
+            # winters
             "30-lan2" = {
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
               linkConfig.RequiredForOnline = "enslaved";
@@ -12618,7 +12630,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 Bridge = "br";
                 ConfigureWithoutCarrier = true;
               };
-              inherit bridgeVLANs;
+              bridgeVLANs = lan2VLANs;
             };
             # summers
             "30-lan3" = {
@@ -12694,7 +12706,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   let
     inherit (config.swarselsystems) sopsFile;
 
-    inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
   in
   {
@@ -12721,6 +12733,10 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       globals = {
         networks = {
           ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -12742,7 +12758,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         user = serviceUser;
         settings.Port = servicePort;
         tokenKeyFile = config.sops.secrets.kavita-token.path;
-        dataDir = "/Vault/data/${serviceName}";
+        dataDir = "/var/lib/${serviceName}";
       };
 
       nodes = {
@@ -12763,69 +12779,76 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
-      { pkgs, lib, config, globals, dns, confLib, ... }:
-      let
-        inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-        inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
-      in
-      {
-        options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-        config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  { pkgs, lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-          users = {
-            persistentIds.jellyfin = confLib.mkIds 994;
-            users.${serviceUser} = {
-              extraGroups = [ "video" "render" "users" ];
-            };
-          };
-          # nixpkgs.config.packageOverrides = pkgs: {
-          #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
-          # };
-
-          hardware.graphics = {
-            enable = true;
-            extraPackages = with pkgs; [
-              intel-media-driver # LIBVA_DRIVER_NAME=iHD
-              # intel-vaapi-driver # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-              libva-vdpau-driver
-              libvdpau-va-gl
-            ];
-          };
-
-          topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-          globals = {
-            networks = {
-              ${webProxyIf}.hosts = lib.mkIf isProxied {
-                ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-              };
-              ${homeProxyIf}.hosts = lib.mkIf isHome {
-                ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-              };
-            };
-            services.${serviceName} = {
-              domain = serviceDomain;
-              inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-              homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-            };
-          };
-
-          services.${serviceName} = {
-            enable = true;
-            user = serviceUser;
-            # openFirewall = true; # this works only for the default ports
-          };
-
-          nodes = {
-            ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-              "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-            };
-            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-          };
-
+      users = {
+        persistentIds.jellyfin = confLib.mkIds 994;
+        users.${serviceUser} = {
+          extraGroups = [ "video" "render" "users" ];
         };
-      }
+      };
+      # nixpkgs.config.packageOverrides = pkgs: {
+      #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
+      # };
+
+      hardware.graphics = {
+        enable = true;
+        extraPackages = with pkgs; [
+          intel-media-driver # LIBVA_DRIVER_NAME=iHD
+          # intel-vaapi-driver # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+          libva-vdpau-driver
+          libvdpau-va-gl
+        ];
+      };
+
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        user = serviceUser;
+        # openFirewall = true; # this works only for the default ports
+      };
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        ];
+      };
+
+      nodes = {
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+      };
+
+    };
+  }
 #+end_src
 
 **** navidrome
@@ -12912,6 +12935,10 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       services.${serviceName} = {
         enable = true;
         # openFirewall = true;
@@ -12919,7 +12946,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
           LogLevel = "debug";
           Address = "0.0.0.0";
           Port = servicePort;
-          MusicFolder = "/Vault/Eternor/Music";
+          MusicFolder = "/storage/Music";
           PlaylistsPath = "./Playlists";
           AutoImportPlaylists = false;
           EnableSharing = true;
@@ -13056,6 +13083,12 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       # when another user connects, the service will crash and the new user will login
       systemd.services.spotifyd.serviceConfig.RestartSec = lib.mkForce 1;
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/cache/private/spotifyd"; }
+        ];
+      };
+
       services.spotifyd = {
         enable = true;
         settings = {
@@ -13121,9 +13154,13 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = "mpd"; group = "mpd"; }];
+      };
+
       services.${serviceName} = {
         enable = true;
-        musicDirectory = "/media";
+        musicDirectory = "/storage/Music";
         user = serviceUser;
         group = serviceGroup;
         network = {
@@ -13161,6 +13198,10 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       users.persistentIds.rtkit = confLib.mkIds 996;
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/pipewire"; user = "pipewire"; group = "pipewire"; }];
+      };
+
       services.pipewire = {
         enable = true;
         pulse.enable = true;
@@ -13187,7 +13228,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   let
     inherit (confLib.gen { name = "postgresql"; port = 3254; }) serviceName;
     postgresVersion = 14;
-    postgresDirPrefix = if config.swarselsystems.isCloud then "/var/lib" else "/Vault/data" ;
+    postgresDirPrefix = "/var/lib";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -13207,9 +13248,14 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
           dataDir = "${postgresDirPrefix}/${serviceName}/${builtins.toString postgresVersion}";
         };
       };
-      environment.persistence."/persist".directories = lib.mkIf (config.swarselsystems.isImpermanence && config.swarselsystems.isCloud) [
-        { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
-      ];
+      environment.persistence = {
+        "/persist".directories = lib.mkIf (config.swarselsystems.isImpermanence && config.swarselsystems.isCloud) [
+          { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+        ];
+        "/state".directories = lib.mkIf config.swarselsystems.isMicroVM [
+          { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+        ];
+      };
 
     };
   }
@@ -13236,6 +13282,12 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
       virtualisation = {
         podman.enable = true;
         oci-containers.backend = "podman";
+      };
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/containers"; }
+        ];
       };
 
       networking.nftables.firewall = lib.mkIf config.networking.nftables.enable {
@@ -13265,7 +13317,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   }
 #+end_src
 
-**** matrix
+**** matrix (use db)
 :PROPERTIES:
 :CUSTOM_ID: h:1e68d84a-8f99-422f-89ac-78f664ac0013
 :END:
@@ -13274,7 +13326,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   { self, lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
     federationPort = 8448;
@@ -13293,6 +13345,10 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      swarselmodules.server = {
+        postgresql = true;
+      };
 
       environment.systemPackages = with pkgs; [
         matrix-synapse
@@ -13391,9 +13447,18 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/matrix-synapse"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/lib/mautrix-whatsapp"; user = "mautrix-whatsapp"; group = "mautrix-whatsapp"; }
+          { directory = "/var/lib/mautrix-telegram"; user = "mautrix-telegram"; group = "mautrix-telegram"; }
+          { directory = "/var/lib/mautrix-signal"; user = "mautrix-signal"; group = "mautrix-signal"; }
+        ];
+      };
+
+
       services = {
         postgresql = {
-          enable = true;
           initialScript = pkgs.writeText "synapse-init.sql" ''
             CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
             CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
@@ -13420,7 +13485,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
         matrix-synapse = {
           enable = true;
-          dataDir = "/Vault/data/matrix-synapse";
+          dataDir = "/var/lib/matrix-synapse";
           settings = {
             app_service_config_files =
               let
@@ -13670,152 +13735,171 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/nextcloud.nix
-  { pkgs, lib, config, globals, dns, confLib, ... }:
-  let
-    inherit (config.repo.secrets.local.nextcloud) adminuser;
-    inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      { pkgs, lib, config, globals, dns, confLib, ... }:
+      let
+        inherit (config.repo.secrets.local.nextcloud) adminuser;
+        inherit (config.swarselsystems) sopsFile;
+        inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+        inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
-    nextcloudVersion = "32";
-  in
-  {
-    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+        nextcloudVersion = "32";
+      in
+      {
+        options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+        config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      sops.secrets = {
-        nextcloud-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-      };
-
-      users.persistentIds = {
-        nextcloud = confLib.mkIds 990;
-        redis-nextcloud = confLib.mkIds 976;
-      };
-
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-      };
-
-      services = {
-        ${serviceName} = {
-          enable = true;
-          settings = {
-            trusted_proxies = [ "0.0.0.0" ];
-            overwriteprotocol = "https";
+          sops.secrets = {
+            nextcloud-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           };
-          package = pkgs."nextcloud${nextcloudVersion}";
-          hostName = serviceDomain;
-          home = "/Vault/data/${serviceName}";
-          datadir = "/Vault/data/${serviceName}";
-          https = true;
-          configureRedis = true;
-          maxUploadSize = "4G";
-          extraApps = {
-            inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
+
+          users.persistentIds = {
+            nextcloud = confLib.mkIds 990;
+            redis-nextcloud = confLib.mkIds 976;
           };
-          extraAppsEnable = true;
-          config = {
-            inherit adminuser;
-            adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
-            dbtype = "sqlite";
+
+          globals.services.${serviceName} = {
+            domain = serviceDomain;
+            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+              homeServiceAddress = lib.mkIf isHome homeServiceAddress;
           };
+
+          environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+            directories = [
+              { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+              { directory = "/var/lib/redis-${serviceName}"; user = serviceUser; group = serviceGroup; }
+            ];
+          };
+
+          services = {
+            ${serviceName} = {
+              enable = true;
+              settings = {
+                trusted_proxies = [ "0.0.0.0" ];
+                overwriteprotocol = "https";
+              };
+              package = pkgs."nextcloud${nextcloudVersion}";
+              hostName = serviceDomain;
+              home = "/var/lib/${serviceName}";
+              datadir = "/var/lib/${serviceName}";
+              https = true;
+              configureRedis = true;
+              maxUploadSize = "4G";
+              extraApps = {
+                inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
+              };
+              extraAppsEnable = true;
+              config = {
+                inherit adminuser;
+                adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
+                dbtype = "sqlite";
+              };
+            };
+          };
+
+          nodes = {
+            ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+              "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+            };
+            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          };
+
         };
-      };
-
-      nodes = {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
-        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-      };
-
-    };
-  }
+      }
 #+end_src
 
-**** immich
+**** immich (use db)
 :PROPERTIES:
 :CUSTOM_ID: h:33bad8ad-b362-4bf1-8a49-b9df92329aed
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
-  { lib, pkgs, config, globals, dns, confLib, ... }:
-  let
-    inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
-  in
-  {
-    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    { lib, pkgs, config, globals, dns, confLib, ... }:
+    let
+      inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+      inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+    in
+    {
+      options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      users = {
-        persistentIds = {
-          immich = confLib.mkIds 989;
-          redis-immich = confLib.mkIds 977;
+        swarselmodules.server = {
+          postgresql = true;
         };
-        users.${serviceUser} = {
-          extraGroups = [ "video" "render" "users" ];
-        };
-      };
 
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-      # networking.firewall.allowedTCPPorts = [ servicePort ];
-      globals = {
-        networks = {
-          ${webProxyIf}.hosts = lib.mkIf isProxied {
-            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+        users = {
+          persistentIds = {
+            immich = confLib.mkIds 989;
+            redis-immich = confLib.mkIds 977;
           };
-          ${homeProxyIf}.hosts = lib.mkIf isHome {
-            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          users.${serviceUser} = {
+            extraGroups = [ "video" "render" "users" ];
           };
         };
+
+        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+        # networking.firewall.allowedTCPPorts = [ servicePort ];
+        globals = {
+          networks = {
+            ${webProxyIf}.hosts = lib.mkIf isProxied {
+              ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+            };
+            ${homeProxyIf}.hosts = lib.mkIf isHome {
+              ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+            };
+          };
+          services.${serviceName} = {
+            domain = serviceDomain;
+            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          };
+        };
+
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+            { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+            { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
+          ];
+        };
+
         services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
-      };
-
-      services.${serviceName} = {
-        enable = true;
-        package = pkgs.immich;
-        host = "0.0.0.0";
-        port = servicePort;
-        # openFirewall = true;
-        mediaLocation = "/Vault/Eternor/Immich"; # dataDir
-        environment = {
-          IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
-        };
-      };
-
-      nodes =
-        let
-          extraConfigLoc = ''
-            proxy_http_version 1.1;
-            proxy_set_header   Upgrade    $http_upgrade;
-            proxy_set_header   Connection "upgrade";
-            proxy_redirect     off;
-
-            proxy_read_timeout 600s;
-            proxy_send_timeout 600s;
-            send_timeout       600s;
-          '';
-        in
-        {
-          ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-            "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          enable = true;
+          package = pkgs.immich;
+          host = "0.0.0.0";
+          port = servicePort;
+          # openFirewall = true;
+          mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
+          environment = {
+            IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
           };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
         };
 
-    };
-  }
+        nodes =
+          let
+            extraConfigLoc = ''
+              proxy_http_version 1.1;
+              proxy_set_header   Upgrade    $http_upgrade;
+              proxy_set_header   Connection "upgrade";
+              proxy_redirect     off;
+
+              proxy_read_timeout 600s;
+              proxy_send_timeout 600s;
+              send_timeout       600s;
+            '';
+          in
+          {
+            ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+              "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+            };
+            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          };
+
+      };
+    }
 #+end_src
 
 **** paperless (tika, gotenberg)
@@ -13874,11 +13958,21 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
+          { directory = "/var/lib/private/tika"; }
+          { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/cache/private/tika"; }
+        ];
+      };
+
       services = {
         ${serviceName} = {
           enable = true;
-          mediaDir = "/Vault/Eternor/Paperless";
-          dataDir = "/Vault/data/${serviceName}";
+          mediaDir = "/storage/Documents/${serviceName}";
+          dataDir = "/var/lib/${serviceName}";
           user = serviceUser;
           port = servicePort;
           passwordFile = config.sops.secrets.paperless-admin-pw.path;
@@ -13971,8 +14065,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 #+begin_src nix-ts :tangle modules/nixos/server/transmission.nix
   { self, pkgs, lib, config, confLib, ... }:
   let
-    inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
-    inherit (confLib.static) isHome;
+    inherit (confLib.gen { name = "transmission"; port = 9091; }) serviceName servicePort serviceDomain;
+    inherit (confLib.static) isHome homeServiceAddress homeWebProxy nginxAccessRules;
 
     lidarrUser = "lidarr";
     lidarrGroup = lidarrUser;
@@ -14067,6 +14161,16 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         inherit isHome;
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/radarr"; user = radarrUser; group = radarrGroup; }
+          { directory = "/var/lib/readarr"; user = readarrUser; group = readarrGroup; }
+          { directory = "/var/lib/sonarr"; user = sonarrUser; group = sonarrGroup; }
+          { directory = "/var/lib/lidarr"; user = lidarrUser; group = lidarrGroup; }
+          { directory = "/var/lib/private/prowlarr"; user = prowlarrUser; group = prowlarrGroup; }
+        ];
+      };
+
       services = {
         radarr = {
           enable = true;
@@ -14074,7 +14178,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           group = radarrGroup;
           settings.server.port = radarrPort;
           openFirewall = true;
-          dataDir = "/Vault/data/radarr";
+          dataDir = "/var/lib/radarr";
         };
         readarr = {
           enable = true;
@@ -14082,7 +14186,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           group = readarrGroup;
           settings.server.port = readarrPort;
           openFirewall = true;
-          dataDir = "/Vault/data/readarr";
+          dataDir = "/var/lib/readarr";
         };
         sonarr = {
           enable = true;
@@ -14090,7 +14194,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           group = sonarrGroup;
           settings.server.port = sonarrPort;
           openFirewall = true;
-          dataDir = "/Vault/data/sonarr";
+          dataDir = "/var/lib/sonarr";
         };
         lidarr = {
           enable = true;
@@ -14098,53 +14202,88 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           group = lidarrGroup;
           settings.server.port = lidarrPort;
           openFirewall = true;
-          dataDir = "/Vault/data/lidarr";
+          dataDir = "/var/lib/lidarr";
         };
         prowlarr = {
           enable = true;
           settings.server.port = prowlarrPort;
           openFirewall = true;
         };
+      };
 
-        nginx = {
+      nodes = {
+        ${homeWebProxy}.services.nginx = {
+          upstreams = {
+            transmission = {
+              servers = {
+                "${homeServiceAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
+            radarr = {
+              servers = {
+                  "${homeServiceAddress}:${builtins.toString radarrPort}" = { };
+                };
+            };
+            readarr = {
+                servers = {
+                  "${homeServiceAddress}:${builtins.toString readarrPort}" = { };
+                };
+            };
+            sonarr = {
+                servers = {
+                  "${homeServiceAddress}:${builtins.toString sonarrPort}" = { };
+                };
+            };
+            lidarr = {
+                servers = {
+                  "${homeServiceAddress}:${builtins.toString lidarrPort}" = { };
+                };
+            };
+            prowlarr = {
+                servers = {
+                  "${homeServiceAddress}:${builtins.toString prowlarrPort}" = { };
+                };
+            };
+          };
           virtualHosts = {
             "${serviceDomain}" = {
               enableACME = false;
               forceSSL = false;
               acmeRoot = null;
+              extraConfig = nginxAccessRules;
               locations = {
                 "/" = {
-                  proxyPass = "http://localhost:9091";
+                  proxyPass = "http://transmission";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/radarr" = {
-                  proxyPass = "http://localhost:${builtins.toString radarrPort}";
+                  proxyPass = "http://radarr";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/readarr" = {
-                  proxyPass = "http://localhost:${builtins.toString readarrPort}";
+                  proxyPass = "http://readarr";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/sonarr" = {
-                  proxyPass = "http://localhost:${builtins.toString sonarrPort}";
+                  proxyPass = "http://sonarr";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/lidarr" = {
-                  proxyPass = "http://localhost:${builtins.toString lidarrPort}";
+                  proxyPass = "http://lidarr";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/prowlarr" = {
-                  proxyPass = "http://localhost:${builtins.toString prowlarrPort}";
+                  proxyPass = "http://prowlarr";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
@@ -14242,12 +14381,16 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       services.${serviceName} = rec {
         enable = true;
         user = serviceUser;
         group = serviceGroup;
-        dataDir = lib.mkDefault "/Vault/data/${serviceName}";
-        configDir = "${cfg.dataDir}/.config/${serviceName}";
+        dataDir = if config.swarselsystems.isMicroVM then "/storage/Documents/syncthing" else (lib.mkDefault "/var/lib/${serviceName}");
+        configDir = if config.swarselsystems.isMicroVM then "/var/lib/syncthing/.config/syncthing" else "${cfg.dataDir}/.config/${serviceName}";
         guiAddress = "0.0.0.0:${builtins.toString servicePort}";
         openDefaultPorts = lib.mkIf (!isProxied) true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
         relay.enable = false;
@@ -14320,68 +14463,92 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   { lib, pkgs, config, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
+
+    targets = config.swarselsystems.server.restic.targets;
   in
   {
     options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
     options.swarselsystems.server.restic = {
-      bucketName = lib.mkOption {
-        type = lib.types.str;
-      };
-      paths = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-      };
-      withPostgres = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
+      targets = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
+          options = {
+            bucketName = lib.mkOption {
+              type = lib.types.str;
+              default = name;
+            };
+            repository = lib.mkOption {
+              type = lib.types.str;
+            };
+            paths = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+            };
+            withPostgres = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+            };
+          };
+        }));
+        default = { };
       };
     };
+
     config = lib.mkIf config.swarselmodules.server.restic {
 
       sops = {
-        secrets = {
-          resticpw = { inherit sopsFile; };
-          resticaccesskey = { inherit sopsFile; };
-          resticsecretaccesskey = { inherit sopsFile; };
-        };
-        templates = {
-          "restic-env".content = ''
-            AWS_ACCESS_KEY_ID=${config.sops.placeholder.resticaccesskey}
-            AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.resticsecretaccesskey}
-          '';
-        };
+        secrets =
+          lib.mkMerge (lib.mapAttrsToList
+            (name: _: {
+              "resticpw-${name}" = { inherit sopsFile; };
+              "resticaccesskey-${name}" = { inherit sopsFile; };
+              "resticsecretaccesskey-${name}" = { inherit sopsFile; };
+            })
+            targets);
+
+        templates =
+          lib.mkMerge (lib.mapAttrsToList
+            (name: _: {
+              "restic-env-${name}".content = ''
+                AWS_ACCESS_KEY_ID=${config.sops.placeholder."resticaccesskey-${name}"}
+                AWS_SECRET_ACCESS_KEY=${config.sops.placeholder."resticsecretaccesskey-${name}"}
+              '';
+            })
+            targets);
       };
 
-      services.restic =
-        let
-          inherit (config.repo.secrets.local) resticRepo;
-        in
-        {
-          backups = {
-            "${config.swarselsystems.server.restic.bucketName}" = {
-              environmentFile = config.sops.templates."restic-env".path;
-              passwordFile = config.sops.secrets.resticpw.path;
-              inherit (config.swarselsystems.server.restic) paths;
+      services.restic.backups =
+        lib.mapAttrs'
+          (name: target:
+            lib.nameValuePair target.bucketName {
+              environmentFile =
+                config.sops.templates."restic-env-${name}".path;
+
+              passwordFile =
+                config.sops.secrets."resticpw-${name}".path;
+
+              inherit (target) paths repository;
+
               pruneOpts = [
                 "--keep-daily 3"
                 "--keep-weekly 2"
                 "--keep-monthly 3"
                 "--keep-yearly 100"
               ];
+
               backupPrepareCommand = ''
                 ${pkgs.restic}/bin/restic prune
               '';
-              repository = "${resticRepo}";
+
               initialize = true;
+
               timerConfig = {
                 OnCalendar = "03:00";
               };
-            };
-
-          };
-        };
-
+            }
+          )
+          targets;
     };
   }
+
 #+end_src
 
 **** monitoring (Grafana, Prometheus)
@@ -14441,8 +14608,10 @@ This section exposes several metrics that I use to check the health of my server
           node-exporter = confLib.mkIds 987;
           grafana = confLib.mkIds 974;
         };
+        groups.nextcloud-exporter = {};
         users = {
           nextcloud-exporter = {
+            group = "nextcloud-exporter";
             extraGroups = [ "nextcloud" ];
           };
 
@@ -14472,10 +14641,17 @@ This section exposes several metrics that I use to check the health of my server
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/lib/prometheus2"; user = prometheusUser; group = prometheusGroup; }
+        ];
+      };
+
       services = {
         ${serviceName} = {
           enable = true;
-          dataDir = "/Vault/data/${serviceName}";
+          dataDir = "/var/lib/${serviceName}";
           provision = {
             enable = true;
             datasources.settings = {
@@ -14687,7 +14863,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 #+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   in
   {
@@ -14710,13 +14886,17 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       services.jenkins = {
         enable = true;
         withCLI = true;
         port = servicePort;
         packages = [ pkgs.stdenv pkgs.git pkgs.jdk17 config.programs.ssh.package pkgs.nix ];
         listenAddress = "0.0.0.0";
-        home = "/Vault/apps/${serviceName}";
+        home = "/var/lib/${serviceName}";
       };
 
       nodes = {
@@ -14837,6 +15017,10 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       services.${serviceName} =
         let
           inherit (config.repo.secrets.local.freshrss) defaultUser;
@@ -14847,7 +15031,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           virtualHost = serviceDomain;
           baseUrl = "https://${serviceDomain}";
           authType = "form";
-          dataDir = "/Vault/data/tt-rss";
+          dataDir = "/var/lib/freshrss";
           passwordFile = config.sops.secrets.freshrss-pw.path;
         };
 
@@ -14952,9 +15136,13 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       services.${serviceName} = {
         enable = true;
-        stateDir = "/Vault/data/${serviceName}";
+        stateDir = "/var/lib/${serviceName}";
         user = serviceUser;
         group = serviceGroup;
         lfs.enable = lib.mkDefault true;
@@ -15107,6 +15295,10 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/private/${serviceName}"; }];
+      };
+
       services.anki-sync-server = {
         enable = true;
         port = servicePort;
@@ -15233,12 +15425,19 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        files = [
-          certPathBase
-          keyPathBase
-        ];
+      environment.persistence = {
+        "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+          files = [
+            certPathBase
+            keyPathBase
+          ];
+        };
+
+        "/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+        };
       };
+
       systemd.services."generateSSLCert-${serviceName}" =
         let
           daysValid = 3650;
@@ -15718,6 +15917,10 @@ kanidm person credential create-reset-token <user>
         };
       };
 
+      users = {
+        persistentIds.oauth2-proxy = confLib.mkIds 966;
+      };
+
       # needed for homeWebProxy
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -15856,12 +16059,16 @@ kanidm person credential create-reset-token <user>
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       services = {
         ${serviceName} = {
           enable = true;
           user = serviceUser;
           group = if cfg.enableNginx then nginxGroup else serviceGroup;
-          dataDir = "/Vault/data/${serviceName}";
+          dataDir = "/var/lib/${serviceName}";
           settings = {
             TZ = config.repo.secrets.common.location.timezone;
             APP_URL = "https://${serviceDomain}";
@@ -15943,156 +16150,160 @@ kanidm person credential create-reset-token <user>
   }
 #+end_src
 
-**** Koillection
+**** Koillection (use db)
 :PROPERTIES:
 :CUSTOM_ID: h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/koillection.nix
-{ self, lib, config, globals, dns, confLib, ... }:
-let
-  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
-  serviceDB = "koillection";
+  { self, lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+    serviceDB = "koillection";
 
-  postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
-  postgresPort = config.services.postgresql.settings.port; # 5432
-  containerRev = "sha256:96693e41a6eb2aae44f96033a090378270f024ddf4e6095edf8d57674f21095d";
+    postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
+    postgresPort = config.services.postgresql.settings.port; # 5432
+    containerRev = "sha256:96693e41a6eb2aae44f96033a090378270f024ddf4e6095edf8d57674f21095d";
 
-  inherit (config.swarselsystems) sopsFile;
-in
-{
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    inherit (config.swarselsystems) sopsFile;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    swarselmodules.server = {
-      podman = true;
-      postgresql = true;
-    };
+      swarselmodules.server = {
+        podman = true;
+        postgresql = true;
+      };
 
-    sops.secrets = {
-      koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
-      koillection-env-file = { inherit sopsFile; };
-    };
+      sops.secrets = {
+        koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
+        koillection-env-file = { inherit sopsFile; };
+      };
 
-    topology.self.services.${serviceName} = {
-      name = lib.swarselsystems.toCapitalized serviceName;
-      info = "https://${serviceDomain}";
-      icon = "${self}/files/topology-images/${serviceName}.png";
-    };
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/files/topology-images/${serviceName}.png";
+      };
 
-    globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort postgresPort ];
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort postgresPort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort postgresPort ];
+          };
         };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort postgresPort ];
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
       };
-      services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; }];
       };
-    };
 
-    virtualisation.oci-containers.containers = {
-      koillection = {
-        image = "koillection/koillection@${containerRev}";
+      virtualisation.oci-containers.containers = {
+        koillection = {
+          image = "koillection/koillection@${containerRev}";
 
-        ports = [
-          "${toString servicePort}:80"
-        ];
+          ports = [
+            "${toString servicePort}:80"
+          ];
 
-        volumes = [
-          "${serviceDir}/uploads:/uploads"
-        ];
+          volumes = [
+            "${serviceDir}/uploads:/uploads"
+          ];
 
-        environment = {
-          APP_DEBUG = "0";
-          APP_ENV = "prod";
-          HTTPS_ENABLED = "1";
-          UPLOAD_MAX_FILESIZE = "512M";
-          PHP_MEMORY_LIMIT = "512M";
-          PHP_TZ = config.repo.secrets.common.location.timezone;
+          environment = {
+            APP_DEBUG = "0";
+            APP_ENV = "prod";
+            HTTPS_ENABLED = "1";
+            UPLOAD_MAX_FILESIZE = "512M";
+            PHP_MEMORY_LIMIT = "512M";
+            PHP_TZ = config.repo.secrets.common.location.timezone;
 
-          CORS_ALLOW_ORIGIN = "https?://(localhost|swag\\.swarsel\\.win)(:[0-9]+)?$";
+            CORS_ALLOW_ORIGIN = "https?://(localhost|swag\\.swarsel\\.win)(:[0-9]+)?$";
 
-          DB_DRIVER = "pdo_pgsql";
-          DB_NAME = serviceDB;
-          DB_HOST = "host.docker.internal";
-          DB_USER = serviceUser;
-          # DB_PASSWORD set in koillection-env-file
-          DB_PORT = "${toString postgresPort}";
-          DB_VERSION = "16";
+            DB_DRIVER = "pdo_pgsql";
+            DB_NAME = serviceDB;
+            DB_HOST = "host.docker.internal";
+            DB_USER = serviceUser;
+            # DB_PASSWORD set in koillection-env-file
+            DB_PORT = "${toString postgresPort}";
+            DB_VERSION = "16";
+          };
+
+          environmentFiles = [
+            config.sops.secrets.koillection-env-file.path
+          ];
+
+          extraOptions = [
+            "--add-host=host.docker.internal:host-gateway" # podman
+          ];
         };
-
-        environmentFiles = [
-          config.sops.secrets.koillection-env-file.path
-        ];
-
-        extraOptions = [
-          "--add-host=host.docker.internal:host-gateway" # podman
-        ];
       };
-    };
 
-    # networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
+      # networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
 
-    systemd.services.postgresql.postStart =
-      let
-        passwordPath = config.sops.secrets.koillection-db-password.path;
-      in
-      ''
-        ${config.services.postgresql.package}/bin/psql -tA <<'EOF'
-          DO $$
-          DECLARE password TEXT;
-          BEGIN
-            password := trim(both from replace(pg_read_file('${passwordPath}'), E'\n', '''));
-            EXECUTE format('ALTER ROLE ${serviceDB} WITH PASSWORD '''%s''';', password);
-          END $$;
-        EOF
-      '';
-    services = {
-      postgresql = {
-        enable = true;
-        enableTCPIP = true;
-        ensureDatabases = [ serviceDB ];
-        ensureUsers = [
-          {
-            name = serviceDB;
-            ensureDBOwnership = true;
-          }
-        ];
-        authentication = ''
-          host ${serviceDB} ${serviceDB} 10.88.0.0/16 scram-sha-256
+      systemd.services.postgresql.postStart =
+        let
+          passwordPath = config.sops.secrets.koillection-db-password.path;
+        in
+        ''
+          ${config.services.postgresql.package}/bin/psql -tA <<'EOF'
+            DO $$
+            DECLARE password TEXT;
+            BEGIN
+              password := trim(both from replace(pg_read_file('${passwordPath}'), E'\n', '''));
+              EXECUTE format('ALTER ROLE ${serviceDB} WITH PASSWORD '''%s''';', password);
+            END $$;
+          EOF
         '';
-      };
-    };
-
-    nodes =
-      let
-        extraConfigLoc = ''
-          proxy_buffer_size          128k;
-          proxy_buffers              4 256k;
-          proxy_busy_buffers_size    256k;
-        '';
-      in
-      {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      services = {
+        postgresql = {
+          enable = true;
+          enableTCPIP = true;
+          ensureDatabases = [ serviceDB ];
+          ensureUsers = [
+            {
+              name = serviceDB;
+              ensureDBOwnership = true;
+            }
+          ];
+          authentication = ''
+            host ${serviceDB} ${serviceDB} 10.88.0.0/16 scram-sha-256
+          '';
         };
-        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
 
+      nodes =
+        let
+          extraConfigLoc = ''
+            proxy_buffer_size          128k;
+            proxy_buffers              4 256k;
+            proxy_busy_buffers_size    256k;
+          '';
+        in
+        {
+          ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+            "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          };
+          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+        };
 
-  };
-}
+
+    };
+  }
 #+end_src
 
-**** Atuin
+**** Atuin (use db)
 :PROPERTIES:
 :CUSTOM_ID: h:27eac8b9-c202-4e45-9b80-42592f1e41c8
 :END:
@@ -16103,47 +16314,51 @@ in
     inherit (confLib.gen { name = "atuin"; port = 8888; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   in
-  {
-    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    {
+      options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+        swarselmodules.server = {
+          postgresql = true;
+        };
 
-      globals = {
-        networks = {
-          ${webProxyIf}.hosts = lib.mkIf isProxied {
-            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+        globals = {
+          networks = {
+            ${webProxyIf}.hosts = lib.mkIf isProxied {
+              ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+            };
+            ${homeProxyIf}.hosts = lib.mkIf isHome {
+              ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+            };
           };
-          ${homeProxyIf}.hosts = lib.mkIf isHome {
-            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          services.${serviceName} = {
+            domain = serviceDomain;
+            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
           };
         };
+
         services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          enable = true;
+          host = "0.0.0.0";
+          port = servicePort;
+          # openFirewall = true;
+          openRegistration = false;
         };
-      };
 
-      services.${serviceName} = {
-        enable = true;
-        host = "0.0.0.0";
-        port = servicePort;
-        # openFirewall = true;
-        openRegistration = false;
-      };
-
-      nodes = {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        nodes = {
+          ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+            "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          };
+          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
         };
-        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+
       };
 
-    };
-
-  }
+    }
 #+end_src
 
 **** Radicale
@@ -16189,6 +16404,10 @@ in
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       globals = {
         networks = {
           ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -16221,7 +16440,7 @@ in
               htpasswd_encryption = "autodetect";
             };
           storage = {
-            filesystem_folder = "/Vault/data/radicale/collections";
+            filesystem_folder = "/var/lib/radicale/collections";
           };
         };
         rights = {
@@ -16792,7 +17011,7 @@ in
         hostName = serviceDomain;
         user = serviceUser;
         group = serviceGroup;
-        dataDir = "/Vault/data/snipeit";
+        dataDir = "/var/lib/snipeit";
         database = {
           user = serviceUser;
           port = mysqlPort;
@@ -16813,7 +17032,7 @@ in
     };
   }
 #+end_src
-**** Homebox
+**** Homebox (use db)
 :PROPERTIES:
 :CUSTOM_ID: h:5b4feb1b-e7a3-43f1-9930-8d00012742ad
 :END:
@@ -16821,7 +17040,7 @@ in
 #+begin_src nix-ts :tangle modules/nixos/server/homebox.nix
   { self, lib, pkgs, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   in
   {
@@ -16832,6 +17051,10 @@ in
         name = "Homebox";
         info = "https://${serviceDomain}";
         icon = "${self}/files/topology-images/${serviceName}.png";
+      };
+
+      swarselmodules.server = {
+        postgresql = true;
       };
 
       users.persistentIds = {
@@ -16854,14 +17077,14 @@ in
         };
       };
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+      };
+
       systemd.services.homebox = {
         environment = {
           TMPDIR = "/var/lib/homebox/.tmp";
-        };
-        serviceConfig = {
-          # ReadWritePaths = "/var/lib/homebox";
-          RuntimeDirectory = "homebox";
-          BindPaths="/run/homebox:/var/lib/homebox/.tmp";
+          HOME = "/var/lib/homebox";
         };
       };
 
@@ -16903,7 +17126,7 @@ in
     kanidmDomain = globals.services.kanidm.domain;
 
     inherit (config.swarselsystems) mainUser;
-    inherit (config.repo.secrets.local) persons;
+    mailAddress = config.repo.secrets.common.mail.address4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -16927,7 +17150,7 @@ in
         authorizations = [
           {
             user = mainUser;
-            principal = builtins.head persons.${mainUser}.mailAddresses;
+            principal = mailAddress;
             inherit (config.services.opkssh.providers.kanidm) issuer;
           }
         ];
@@ -17702,7 +17925,7 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
   { self, lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 80; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
     inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
     baseDomain = globals.domains.main;
@@ -19642,8 +19865,6 @@ Some standard options that should be set for every microvm guest. We set the def
       systemd.services."systemd-networkd".environment.SYSTEMD_LOG_LEVEL = "debug";
       # NOTE: this is needed, we dont import sevrer network module for microvms
       globals.hosts.${config.node.name}.isHome = true;
-
-      fileSystems."/persist".neededForBoot = lib.mkForce true;
 
       systemd.network.networks."10-vlan-services" = {
         dhcpV6Config = {
@@ -27167,210 +27388,220 @@ In short, the options defined here are passed to the modules systems using =_mod
 :CUSTOM_ID: h:a33322d5-014a-4072-a4a5-91bc71c343b8
 :END:
 #+begin_src nix-ts :noweb yes :tangle modules/shared/config-lib.nix
-  { self, config, lib, globals, inputs, outputs, minimal, nixosConfig ? null, ... }:
-  let
-    domainDefault = service: config.repo.secrets.common.services.domains.${service};
-    proxyDefault = config.swarselsystems.proxyHost;
+    { self, config, lib, globals, inputs, outputs, minimal, nixosConfig ? null, ... }:
+    let
+      domainDefault = service: config.repo.secrets.common.services.domains.${service};
+      proxyDefault = config.swarselsystems.proxyHost;
 
-    addressDefault =
-      if
-        config.swarselsystems.proxyHost != config.node.name
-      then
+      addressDefault =
         if
-          config.swarselsystems.server.wireguard.interfaces.wgProxy.isClient
+          config.swarselsystems.proxyHost != config.node.name
         then
-          globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgProxy.serverNetConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
-        else
-          globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
-      else
-        "localhost";
-  in
-  {
-    _module.args = {
-      confLib = rec {
-        getConfig = if nixosConfig == null then config else nixosConfig;
-
-        gen = { name ? "n/a", user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
-          servicePort = port;
-          serviceName = name;
-          specificServiceName = "${name}-${config.node.name}";
-          serviceUser = user;
-          serviceGroup = group;
-          serviceDomain = domain;
-          baseDomain = lib.swarselsystems.getBaseDomain domain;
-          subDomain = lib.swarselsystems.getSubDomain domain;
-          serviceDir = dir;
-          serviceAddress = address;
-          serviceProxy = proxy;
-          proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
-          proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
-        };
-
-        static = rec {
-          inherit (globals.hosts.${config.node.name}) isHome;
-          inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer;
-          webProxyIf = "${webProxy}-wgProxy";
-          homeProxyIf = "home-wgHome";
-          isProxied = config.node.name != webProxy;
-          nginxAccessRules = ''
-            allow ${globals.networks.home-lan.vlans.home.cidrv4};
-            allow ${globals.networks.home-lan.vlans.home.cidrv6};
-            allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4};
-            allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
-            deny all;
-          '';
-          homeServiceAddress = lib.optionalString (config.swarselsystems.server.wireguard.interfaces ? wgHome) globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgHome.serverNetConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
-        };
-
-        mkIds = id: {
-          uid = id;
-          gid = id;
-        };
-
-        mkDeviceMac = id:
-          let
-            mod = n: d: n - (n / d) * d;
-            toHexByte = n:
-              let
-                hex = "0123456789abcdef";
-                hi = n / 16;
-                lo = mod n 16;
-              in
-              builtins.substring hi 1 hex
-              + builtins.substring lo 1 hex;
-
-            max = 16777215; # 256^3 - 1
-
-            b1 = id / (256 * 256);
-            r1 = mod id (256 * 256);
-            b2 = r1 / 256;
-            b3 = mod r1 256;
-          in
           if
-            (id <= max)
+            config.swarselsystems.server.wireguard.interfaces.wgProxy.isClient
           then
-            (builtins.concatStringsSep ":"
-              (map toHexByte [ b1 b2 b3 ]))
+            globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgProxy.serverNetConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
           else
-            (throw "Device MAC ID too large (max is 16777215)");
+            globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
+        else
+          "localhost";
+    in
+    {
+      _module.args = {
+        confLib = rec {
+          getConfig = if nixosConfig == null then config else nixosConfig;
 
-        mkMicrovm =
-          if config.swarselsystems.withMicroVMs then
-            (guestName:
-              { enableStorage ? false
-              , withZfs ? false
-              , ...
-              }:
-              {
-                ${guestName} = {
-                  backend = "microvm";
-                  autostart = true;
-                  zfs = lib.mkIf withZfs {
-                    # stateful config that should be backed up
-                    "/state" = {
-                      pool = "Vault";
-                      dataset = "guests/${guestName}/state";
-                    };
-                    # data that should be backed up
-                    "/storage" = lib.mkIf enableStorage {
-                      pool = "Vault";
-                      dataset = "guests/${guestName}/storage";
-                    };
-                    # other stuff that should only reside on disk, not backed up
-                    "/persist" = {
-                      pool = "Vault";
-                      dataset = "guests/${guestName}/persist";
-                    };
-                  };
-                  modules = [
-                    (config.node.configDir + /guests/${guestName}/default.nix)
-                    {
-                      node.secretsDir = config.node.configDir + /secrets/${guestName};
-                      node.configDir = config.node.configDir + /guests/${guestName};
-                      networking.nftables.firewall = {
-                        zones.untrusted.interfaces = lib.mkIf
-                          (
-                            lib.length config.guests.${guestName}.networking.links == 1
-                          )
-                          config.guests.${guestName}.networking.links;
-                      };
-                    }
-                    "${self}/modules/nixos/optional/microvm-guest.nix"
-                    "${self}/modules/nixos/optional/systemd-networkd-base.nix"
-                  ];
-                  microvm = {
-                    system = config.node.arch;
-                    baseMac = config.repo.secrets.local.networking.networks.lan.mac;
-                    interfaces.vlan-services = {
-                      mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id}";
-
-                    };
-                  };
-                  extraSpecialArgs = {
-                    inherit (inputs.self) nodes;
-                    inherit (inputs.self.pkgs.${config.node.arch}) lib;
-                    inherit inputs outputs minimal;
-                    inherit (inputs) self;
-                    withHomeManager = false;
-                    microVMParent = config.node.name;
-                    globals = inputs.self.globals.${config.node.arch};
-                  };
-                };
-              }) else
-            (_: {
-              _ = { };
-            });
-
-        genNginx =
-          { serviceAddress
-          , serviceName
-          , serviceDomain
-          , servicePort
-          , protocol ? "http"
-          , maxBody ? (-1)
-          , maxBodyUnit ? ""
-          , noSslVerify ? false
-          , proxyWebsockets ? false
-          , oauth2 ? false
-          , oauth2Groups ? [ ]
-          , extraConfig ? ""
-          , extraConfigLoc ? ""
-          }: {
-            upstreams = {
-              ${serviceName} = {
-                servers = {
-                  "${serviceAddress}:${builtins.toString servicePort}" = { };
-                };
-              };
-            };
-            virtualHosts = {
-              "${serviceDomain}" = {
-                useACMEHost = globals.domains.main;
-                forceSSL = true;
-                acmeRoot = null;
-                oauth2 = {
-                  enable = lib.mkIf oauth2 true;
-                  allowedGroups = lib.mkIf (oauth2Groups != [ ]) oauth2Groups;
-                };
-                locations = {
-                  "/" = {
-                    proxyPass = "${protocol}://${serviceName}";
-                    proxyWebsockets = lib.mkIf proxyWebsockets true;
-                    extraConfig = lib.optionalString (maxBody != (-1)) ''
-                      client_max_body_size ${builtins.toString maxBody}${maxBodyUnit};
-                    '' + extraConfigLoc;
-                  };
-                };
-                extraConfig = lib.optionalString noSslVerify ''
-                  proxy_ssl_verify off;
-                '' + extraConfig;
-              };
-            };
+          gen = { name ? "n/a", user ? name, group ? user, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
+            servicePort = port;
+            serviceName = name;
+            specificServiceName = "${name}-${config.node.name}";
+            serviceUser = user;
+            serviceGroup = group;
+            serviceDomain = domain;
+            baseDomain = lib.swarselsystems.getBaseDomain domain;
+            subDomain = lib.swarselsystems.getSubDomain domain;
+            serviceDir = dir;
+            serviceAddress = address;
+            serviceProxy = proxy;
+            proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
+            proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
           };
 
+          static = rec {
+            inherit (globals.hosts.${config.node.name}) isHome;
+            inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer;
+            webProxyIf = "${webProxy}-wgProxy";
+            homeProxyIf = "home-wgHome";
+            isProxied = config.node.name != webProxy;
+            nginxAccessRules = ''
+              allow ${globals.networks.home-lan.vlans.home.cidrv4};
+              allow ${globals.networks.home-lan.vlans.home.cidrv6};
+              allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4};
+              allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
+              deny all;
+            '';
+            homeServiceAddress = lib.optionalString (config.swarselsystems.server.wireguard.interfaces ? wgHome) globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgHome.serverNetConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
+          };
+
+          mkIds = id: {
+            uid = id;
+            gid = id;
+          };
+
+          mkDeviceMac = id:
+            let
+              mod = n: d: n - (n / d) * d;
+              toHexByte = n:
+                let
+                  hex = "0123456789abcdef";
+                  hi = n / 16;
+                  lo = mod n 16;
+                in
+                builtins.substring hi 1 hex
+                + builtins.substring lo 1 hex;
+
+              max = 16777215; # 256^3 - 1
+
+              b1 = id / (256 * 256);
+              r1 = mod id (256 * 256);
+              b2 = r1 / 256;
+              b3 = mod r1 256;
+            in
+            if
+              (id <= max)
+            then
+              (builtins.concatStringsSep ":"
+                (map toHexByte [ b1 b2 b3 ]))
+            else
+              (throw "Device MAC ID too large (max is 16777215)");
+
+          mkMicrovm =
+            if config.swarselsystems.withMicroVMs then
+              (guestName:
+                { eternorPaths ? [ ]
+                , withZfs ? false
+                , ...
+                }:
+                {
+                  ${guestName} =
+                    {
+                      backend = "microvm";
+                      autostart = true;
+                      zfs = lib.mkIf withZfs
+                        ({
+                          # stateful config usually bind-mounted to /var/lib/ that should be backed up remotely
+                          "/state" = {
+                            pool = "Vault";
+                            dataset = "guests/${guestName}/state";
+                          };
+                          # other stuff that should only reside on zfs, not backed up remotely
+                          "/persist" = {
+                            pool = "Vault";
+                            dataset = "guests/${guestName}/persist";
+                          };
+                        } // lib.optionalAttrs (eternorPaths != [ ])
+                          (lib.listToAttrs (map
+                            # data that is pulled in externally by services, some of which is backed up externally
+                            (eternorPath:
+                              lib.nameValuePair "/storage/${eternorPath}" {
+                                pool = "Vault";
+                                dataset = "Eternor/${eternorPath}";
+                              }) eternorPaths)));
+                      modules = [
+                        (config.node.configDir + /guests/${guestName}/default.nix)
+                        {
+                          node.secretsDir = config.node.configDir + /secrets/${guestName};
+                          node.configDir = config.node.configDir + /guests/${guestName};
+                          networking.nftables.firewall = {
+                            zones.untrusted.interfaces = lib.mkIf
+                              (
+                                lib.length config.guests.${guestName}.networking.links == 1
+                              )
+                              config.guests.${guestName}.networking.links;
+                          };
+
+                          fileSystems = {
+                            "/persist".neededForBoot = true;
+                          } // lib.optionalAttrs withZfs {
+                            "/state".neededForBoot = true;
+                          };
+                        }
+                        "${self}/modules/nixos/optional/microvm-guest.nix"
+                        "${self}/modules/nixos/optional/systemd-networkd-base.nix"
+                      ];
+                      microvm = {
+                        system = config.node.arch;
+                        baseMac = config.repo.secrets.local.networking.networks.lan.mac;
+                        interfaces.vlan-services = {
+                          mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id}";
+
+                        };
+                      };
+                      extraSpecialArgs = {
+                        inherit (inputs.self) nodes;
+                        inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                        inherit inputs outputs minimal;
+                        inherit (inputs) self;
+                        withHomeManager = false;
+                        microVMParent = config.node.name;
+                        globals = inputs.self.globals.${config.node.arch};
+                      };
+                    };
+                }) else
+              (_: {
+                _ = { };
+              });
+
+          genNginx =
+            { serviceAddress
+            , serviceName
+            , serviceDomain
+            , servicePort
+            , protocol ? "http"
+            , maxBody ? (-1)
+            , maxBodyUnit ? ""
+            , noSslVerify ? false
+            , proxyWebsockets ? false
+            , oauth2 ? false
+            , oauth2Groups ? [ ]
+            , extraConfig ? ""
+            , extraConfigLoc ? ""
+            }: {
+              upstreams = {
+                ${serviceName} = {
+                  servers = {
+                    "${serviceAddress}:${builtins.toString servicePort}" = { };
+                  };
+                };
+              };
+              virtualHosts = {
+                "${serviceDomain}" = {
+                  useACMEHost = globals.domains.main;
+                  forceSSL = true;
+                  acmeRoot = null;
+                  oauth2 = {
+                    enable = lib.mkIf oauth2 true;
+                    allowedGroups = lib.mkIf (oauth2Groups != [ ]) oauth2Groups;
+                  };
+                  locations = {
+                    "/" = {
+                      proxyPass = "${protocol}://${serviceName}";
+                      proxyWebsockets = lib.mkIf proxyWebsockets true;
+                      extraConfig = lib.optionalString (maxBody != (-1)) ''
+                        client_max_body_size ${builtins.toString maxBody}${maxBodyUnit};
+                      '' + extraConfigLoc;
+                    };
+                  };
+                  extraConfig = lib.optionalString noSslVerify ''
+                    proxy_ssl_verify off;
+                  '' + extraConfig;
+                };
+              };
+            };
+
+        };
       };
-    };
-  }
+    }
 #+end_src
 
 *** Packages
@@ -29895,6 +30126,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           ssh = lib.mkDefault true;
           wireguard = lib.mkDefault true;
           dns-home = lib.mkDefault true;
+          opkssh = true;
         };
       };
     };

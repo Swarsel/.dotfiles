@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # radicale = true;
+    radicale = true;
   };
 
 }

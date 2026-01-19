@@ -10,6 +10,12 @@ in
       avahi = confLib.mkIds 978;
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/cache/samba"; }
+      ];
+    };
+
     services = {
       # add a user with sudo smbpasswd -a <user>
       samba = {
@@ -35,7 +41,7 @@ in
           browseable = "yes";
           "read only" = "no";
           "guest ok" = "no";
-          path = "/Vault/Eternor";
+          path = "/storage";
           writable = "true";
           comment = "Eternor";
           "valid users" = nfsUser;

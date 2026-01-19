@@ -21,7 +21,7 @@ in
     confLib = rec {
       getConfig = if nixosConfig == null then config else nixosConfig;
 
-      gen = { name ? "n/a", user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
+      gen = { name ? "n/a", user ? name, group ? user, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
         servicePort = port;
         serviceName = name;
         specificServiceName = "${name}-${config.node.name}";
@@ -88,65 +88,76 @@ in
       mkMicrovm =
         if config.swarselsystems.withMicroVMs then
           (guestName:
-            { enableStorage ? false
+            { eternorPaths ? [ ]
             , withZfs ? false
             , ...
             }:
             {
-              ${guestName} = {
-                backend = "microvm";
-                autostart = true;
-                zfs = lib.mkIf withZfs {
-                  # stateful config that should be backed up
-                  "/state" = {
-                    pool = "Vault";
-                    dataset = "guests/${guestName}/state";
-                  };
-                  # data that should be backed up
-                  "/storage" = lib.mkIf enableStorage {
-                    pool = "Vault";
-                    dataset = "guests/${guestName}/storage";
-                  };
-                  # other stuff that should only reside on disk, not backed up
-                  "/persist" = {
-                    pool = "Vault";
-                    dataset = "guests/${guestName}/persist";
-                  };
-                };
-                modules = [
-                  (config.node.configDir + /guests/${guestName}/default.nix)
-                  {
-                    node.secretsDir = config.node.configDir + /secrets/${guestName};
-                    node.configDir = config.node.configDir + /guests/${guestName};
-                    networking.nftables.firewall = {
-                      zones.untrusted.interfaces = lib.mkIf
-                        (
-                          lib.length config.guests.${guestName}.networking.links == 1
-                        )
-                        config.guests.${guestName}.networking.links;
-                    };
-                  }
-                  "${self}/modules/nixos/optional/microvm-guest.nix"
-                  "${self}/modules/nixos/optional/systemd-networkd-base.nix"
-                ];
-                microvm = {
-                  system = config.node.arch;
-                  baseMac = config.repo.secrets.local.networking.networks.lan.mac;
-                  interfaces.vlan-services = {
-                    mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id}";
+              ${guestName} =
+                {
+                  backend = "microvm";
+                  autostart = true;
+                  zfs = lib.mkIf withZfs
+                    ({
+                      # stateful config usually bind-mounted to /var/lib/ that should be backed up remotely
+                      "/state" = {
+                        pool = "Vault";
+                        dataset = "guests/${guestName}/state";
+                      };
+                      # other stuff that should only reside on zfs, not backed up remotely
+                      "/persist" = {
+                        pool = "Vault";
+                        dataset = "guests/${guestName}/persist";
+                      };
+                    } // lib.optionalAttrs (eternorPaths != [ ])
+                      (lib.listToAttrs (map
+                        # data that is pulled in externally by services, some of which is backed up externally
+                        (eternorPath:
+                          lib.nameValuePair "/storage/${eternorPath}" {
+                            pool = "Vault";
+                            dataset = "Eternor/${eternorPath}";
+                          })
+                        eternorPaths)));
+                  modules = [
+                    (config.node.configDir + /guests/${guestName}/default.nix)
+                    {
+                      node.secretsDir = config.node.configDir + /secrets/${guestName};
+                      node.configDir = config.node.configDir + /guests/${guestName};
+                      networking.nftables.firewall = {
+                        zones.untrusted.interfaces = lib.mkIf
+                          (
+                            lib.length config.guests.${guestName}.networking.links == 1
+                          )
+                          config.guests.${guestName}.networking.links;
+                      };
 
+                      fileSystems = {
+                        "/persist".neededForBoot = true;
+                      } // lib.optionalAttrs withZfs {
+                        "/state".neededForBoot = true;
+                      };
+                    }
+                    "${self}/modules/nixos/optional/microvm-guest.nix"
+                    "${self}/modules/nixos/optional/systemd-networkd-base.nix"
+                  ];
+                  microvm = {
+                    system = config.node.arch;
+                    baseMac = config.repo.secrets.local.networking.networks.lan.mac;
+                    interfaces.vlan-services = {
+                      mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id}";
+
+                    };
+                  };
+                  extraSpecialArgs = {
+                    inherit (inputs.self) nodes;
+                    inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                    inherit inputs outputs minimal;
+                    inherit (inputs) self;
+                    withHomeManager = false;
+                    microVMParent = config.node.name;
+                    globals = inputs.self.globals.${config.node.arch};
                   };
                 };
-                extraSpecialArgs = {
-                  inherit (inputs.self) nodes;
-                  inherit (inputs.self.pkgs.${config.node.arch}) lib;
-                  inherit inputs outputs minimal;
-                  inherit (inputs) self;
-                  withHomeManager = false;
-                  microVMParent = config.node.name;
-                  globals = inputs.self.globals.${config.node.arch};
-                };
-              };
             }) else
           (_: {
             _ = { };

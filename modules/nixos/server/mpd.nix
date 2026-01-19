@@ -36,9 +36,13 @@ in
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = "mpd"; group = "mpd"; }];
+    };
+
     services.${serviceName} = {
       enable = true;
-      musicDirectory = "/media";
+      musicDirectory = "/storage/Music";
       user = serviceUser;
       group = serviceGroup;
       network = {

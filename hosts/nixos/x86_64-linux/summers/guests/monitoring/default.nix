@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # grafana = true;
+    grafana = true;
   };
 
 }

@@ -28,7 +28,7 @@
 
   microvm = {
     mem = 1024 * 4;
-    vcpu = 1;
+    vcpu = 2;
   };
 
   swarselprofiles = {
@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # kanidm = true;
+    kanidm = true;
   };
 
 }

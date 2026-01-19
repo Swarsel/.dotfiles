@@ -1,6 +1,6 @@
 { pkgs, lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
 in
 {
@@ -49,6 +49,13 @@ in
       enable = true;
       user = serviceUser;
       # openFirewall = true; # this works only for the default ports
+    };
+
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+      ];
     };
 
     nodes = {

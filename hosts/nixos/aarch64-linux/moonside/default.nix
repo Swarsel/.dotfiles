@@ -82,11 +82,13 @@ in
           serverName = "twothreetunnel";
         };
       };
-      restic = {
-        bucketName = "SwarselMoonside";
-        paths = [
-          "/persist/opt/minecraft"
-        ];
+      restic.targets = {
+        SwarselMoonside = {
+          repository = config.repo.secrets.local.resticRepoState;
+          paths = [
+            "/persist/opt/minecraft"
+          ];
+        };
       };
     };
     syncthing = {

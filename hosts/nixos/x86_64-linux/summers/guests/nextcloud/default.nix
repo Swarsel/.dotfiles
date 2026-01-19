@@ -36,9 +36,9 @@
   };
 
   swarselmodules.server = {
-    # nextcloud = true;
-    # nginx = true;
-    # acme = true;
+    nextcloud = true;
+    nginx = true;
+    acme = false;
   };
 
 }

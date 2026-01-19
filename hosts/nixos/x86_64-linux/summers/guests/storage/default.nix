@@ -36,8 +36,8 @@
   };
 
   swarselmodules.server = {
-    # nfs = true;
-    # syncthing = true;
+    nfs = true;
+    syncthing = true;
   };
 
 }

@@ -76,6 +76,10 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+    };
+
     services.${serviceName} = {
       enable = true;
       # openFirewall = true;
@@ -83,7 +87,7 @@ in
         LogLevel = "debug";
         Address = "0.0.0.0";
         Port = servicePort;
-        MusicFolder = "/Vault/Eternor/Music";
+        MusicFolder = "/storage/Music";
         PlaylistsPath = "./Playlists";
         AutoImportPlaylists = false;
         EnableSharing = true;

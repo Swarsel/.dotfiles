@@ -1,11 +1,15 @@
 { lib, pkgs, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselmodules.server = {
+      postgresql = true;
+    };
 
     users = {
       persistentIds = {
@@ -36,13 +40,21 @@ in
       };
     };
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+        { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
+      ];
+    };
+
     services.${serviceName} = {
       enable = true;
       package = pkgs.immich;
       host = "0.0.0.0";
       port = servicePort;
       # openFirewall = true;
-      mediaLocation = "/Vault/Eternor/Immich"; # dataDir
+      mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
       environment = {
         IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
       };

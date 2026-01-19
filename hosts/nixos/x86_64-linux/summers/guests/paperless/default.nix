@@ -27,7 +27,7 @@
 } // lib.optionalAttrs (!minimal) {
 
   microvm = {
-    mem = 1024 * 4;
+    mem = 1024 * 8;
     vcpu = 4;
   };
 
@@ -36,7 +36,7 @@
   };
 
   swarselmodules.server = {
-    # paperless = true;
+    paperless = true;
   };
 
 }

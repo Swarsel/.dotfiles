@@ -27,6 +27,12 @@ in
     # when another user connects, the service will crash and the new user will login
     systemd.services.spotifyd.serviceConfig.RestartSec = lib.mkForce 1;
 
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/cache/private/spotifyd"; }
+      ];
+    };
+
     services.spotifyd = {
       enable = true;
       settings = {

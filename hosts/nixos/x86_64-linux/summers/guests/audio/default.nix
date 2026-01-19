@@ -36,9 +36,9 @@
   };
 
   swarselmodules.server = {
-    # navidrome = true;
-    # spotifyd = true;
-    # mpd = true;
+    navidrome = true;
+    spotifyd = true;
+    mpd = true;
   };
 
 }
