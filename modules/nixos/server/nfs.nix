@@ -19,22 +19,7 @@ in
     services = {
       # add a user with sudo smbpasswd -a <user>
       samba = {
-        # package = pkgs.samba4Full;
         package = pkgs.samba4;
-        # extraConfig = ''
-        #   workgroup = WORKGROUP
-        #   server role = standalone server
-        #   dns proxy = no
-
-        #   pam password change = yes
-        #   map to guest = bad user
-        #   create mask = 0664
-        #   force create mode = 0664
-        #   directory mask = 0775
-        #   force directory mode = 0775
-        #   follow symlinks = yes
-        # '';
-
         enable = true;
         openFirewall = true;
         settings.Eternor = {

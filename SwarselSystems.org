@@ -1736,8 +1736,8 @@ A short overview over each input and what it does:
       nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
 
       home-manager = {
-        # url = "github:nix-community/home-manager";
-        url = "github:Swarsel/home-manager/main";
+        url = "github:nix-community/home-manager";
+        # url = "github:Swarsel/home-manager/main";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       nix-index-database = {
@@ -11348,22 +11348,7 @@ This is a collection of packages that are useful for server-type hosts that do n
       services = {
         # add a user with sudo smbpasswd -a <user>
         samba = {
-          # package = pkgs.samba4Full;
           package = pkgs.samba4;
-          # extraConfig = ''
-          #   workgroup = WORKGROUP
-          #   server role = standalone server
-          #   dns proxy = no
-
-          #   pam password change = yes
-          #   map to guest = bad user
-          #   create mask = 0664
-          #   force create mode = 0664
-          #   directory mask = 0775
-          #   force directory mode = 0775
-          #   follow symlinks = yes
-          # '';
-
           enable = true;
           openFirewall = true;
           settings.Eternor = {
@@ -13153,13 +13138,14 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       services.${serviceName} = {
         enable = true;
-        musicDirectory = "/storage/Music";
+        openFirewall = true;
+        settings = {
+          music_directory = "/storage/Music";
+          bind_to_address = "any";
+          port = servicePort;
+        };
         user = serviceUser;
         group = serviceGroup;
-        network = {
-          port = servicePort;
-          listenAddress = "any";
-        };
         credentials = [
           {
             passwordFile = config.sops.secrets.mpd-pw.path;
@@ -14443,8 +14429,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   { lib, pkgs, config, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-
-    targets = config.swarselsystems.server.restic.targets;
+    inherit (config.swarselsystems.server.restic) targets;
   in
   {
     options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
@@ -15276,7 +15261,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-        directories = [{ directory = "/var/lib/private/${serviceName}"; }];
+        directories = [{ directory = "/var/lib/private/anki-sync-server"; }];
       };
 
       services.anki-sync-server = {
@@ -16144,7 +16129,7 @@ kanidm person credential create-reset-token <user>
 
     postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
     postgresPort = config.services.postgresql.settings.port; # 5432
-    containerRev = "sha256:96693e41a6eb2aae44f96033a090378270f024ddf4e6095edf8d57674f21095d";
+    containerRev = "sha256:bb8ad2b6891441d8ec5c3169b684b71574f3bb3e9afb345bad2f91d833d60340";
 
     inherit (config.swarselsystems) sopsFile;
   in
@@ -17059,13 +17044,6 @@ in
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
         directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
-      };
-
-      systemd.services.homebox = {
-        environment = {
-          TMPDIR = "/var/lib/homebox/.tmp";
-          HOME = "/var/lib/homebox";
-        };
       };
 
       services.${serviceName} = {
@@ -19065,7 +19043,7 @@ This has some state:
             ];
             dhcp.enabled = false;
           };
-          filtering.rewrites =  map
+          filtering.rewrites =  (map
             (domain: {
               inherit domain;
               # FIXME: change to homeWebProxy once that is setup
@@ -19073,7 +19051,13 @@ This has some state:
               # answer = globals.hosts.${webProxy}.wanAddress4;
               enabled = true;
             })
-            homeDomains;
+            homeDomains) ++ [
+              {
+                domain = "smb.${globals.domains.main}";
+                answer = globals.networks.home-lan.vlans.services.hosts.storage.ipv4;
+                enabled = true;
+              }
+            ];
           filters = [
             {
               name = "AdGuard DNS filter";
@@ -25098,57 +25082,61 @@ When setting up a new machine:
 #+end_src
 
 #+begin_src nix-ts :tangle modules/home/common/gpg-agent.nix
-  { self, lib, config, pkgs, ... }:
-  let
-    inherit (config.swarselsystems) mainUser homeDir;
-  in
-  {
-    options.swarselmodules.gpgagent = lib.mkEnableOption "gpg agent settings";
-    config = lib.mkIf config.swarselmodules.gpgagent {
-      services.gpg-agent = {
-        enable = true;
-        verbose = true;
-        enableZshIntegration = true;
-        enableScDaemon = true;
-        enableSshSupport = true;
-        enableExtraSocket = true;
-        pinentry.package = pkgs.wayprompt;
-        pinentry.program = "pinentry-wayprompt";
-        # pinentry.package = pkgs.pinentry.gtk2;
-        defaultCacheTtl = 600;
-        maxCacheTtl = 7200;
-        extraConfig = ''
-          allow-loopback-pinentry
-          allow-emacs-pinentry
-        '';
-        sshKeys = [
-          "4BE7925262289B476DBBC17B76FD3810215AE097"
-        ];
-      };
-
-      programs.gpg = {
-        enable = true;
-        publicKeys = [
-          {
-            source = "${self}/secrets/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
-            trust = 5;
-          }
-        ];
-      };
-
-      # assure correct permissions
-      systemd.user.tmpfiles.settings."30-gpgagent".rules = {
-        "${homeDir}/.gnupg" = {
-          d = {
-            group = "users";
-            user = mainUser;
-            mode = "0700";
+      { self, lib, config, pkgs, ... }:
+      let
+        inherit (config.swarselsystems) mainUser homeDir;
+      in
+      {
+        options.swarselmodules.gpgagent = lib.mkEnableOption "gpg agent settings";
+        config = lib.mkIf config.swarselmodules.gpgagent {
+          services.gpg-agent = {
+            enable = true;
+            verbose = true;
+            enableZshIntegration = true;
+            enableScDaemon = true;
+            enableSshSupport = true;
+            enableExtraSocket = true;
+            pinentry.package = pkgs.wayprompt;
+            pinentry.program = "pinentry-wayprompt";
+            # pinentry.package = pkgs.pinentry.gtk2;
+            defaultCacheTtl = 600;
+            maxCacheTtl = 7200;
+            extraConfig = ''
+              allow-loopback-pinentry
+              allow-emacs-pinentry
+            '';
+            sshKeys = [
+              "4BE7925262289B476DBBC17B76FD3810215AE097"
+            ];
           };
-        };
-      };
-    };
 
-  }
+          programs.gpg = {
+            enable = true;
+            publicKeys = [
+              {
+                source = "${self}/secrets/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+                trust = 5;
+              }
+            ];
+          };
+
+          systemd.user.tmpfiles.rules = [
+            "d ${homeDir}/.gnupg 0700 ${mainUser} users - -"
+          ];
+
+          # assure correct permissions
+          # systemd.user.tmpfiles.settings."30-gpgagent".rules = {
+          #   "${homeDir}/.gnupg" = {
+          #     d = {
+          #       group = "users";
+          #       user = mainUser;
+          #       mode = "0700";
+          #     };
+          #   };
+          # };
+        };
+
+      }
 #+end_src
 
 **** gammastep

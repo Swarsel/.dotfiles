@@ -38,13 +38,14 @@ in
 
     services.${serviceName} = {
       enable = true;
-      musicDirectory = "/storage/Music";
+      openFirewall = true;
+      settings = {
+        music_directory = "/storage/Music";
+        bind_to_address = "any";
+        port = servicePort;
+      };
       user = serviceUser;
       group = serviceGroup;
-      network = {
-        port = servicePort;
-        listenAddress = "any";
-      };
       credentials = [
         {
           passwordFile = config.sops.secrets.mpd-pw.path;

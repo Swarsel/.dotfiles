@@ -41,13 +41,6 @@ in
       directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
     };
 
-    systemd.services.homebox = {
-      environment = {
-        TMPDIR = "/var/lib/homebox/.tmp";
-        HOME = "/var/lib/homebox";
-      };
-    };
-
     services.${serviceName} = {
       enable = true;
       package = pkgs.bisect.homebox;

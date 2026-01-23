@@ -1,8 +1,7 @@
 { lib, pkgs, config, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-
-  targets = config.swarselsystems.server.restic.targets;
+  inherit (config.swarselsystems.server.restic) targets;
 in
 {
   options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";

@@ -37,7 +37,7 @@ in
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-      directories = [{ directory = "/var/lib/private/${serviceName}"; }];
+      directories = [{ directory = "/var/lib/private/anki-sync-server"; }];
     };
 
     services.anki-sync-server = {

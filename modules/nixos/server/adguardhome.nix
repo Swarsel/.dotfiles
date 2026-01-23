@@ -59,7 +59,7 @@ in
           ];
           dhcp.enabled = false;
         };
-        filtering.rewrites = map
+        filtering.rewrites = (map
           (domain: {
             inherit domain;
             # FIXME: change to homeWebProxy once that is setup
@@ -67,7 +67,13 @@ in
             # answer = globals.hosts.${webProxy}.wanAddress4;
             enabled = true;
           })
-          homeDomains;
+          homeDomains) ++ [
+          {
+            domain = "smb.${globals.domains.main}";
+            answer = globals.networks.home-lan.vlans.services.hosts.storage.ipv4;
+            enabled = true;
+          }
+        ];
         filters = [
           {
             name = "AdGuard DNS filter";
