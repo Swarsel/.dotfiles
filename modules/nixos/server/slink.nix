@@ -1,4 +1,4 @@
-{ self, lib, config, dns, globals, confLib, ... }:
+{ lib, config, dns, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -57,7 +57,7 @@ in
     topology.self.services.${serviceName} = {
       name = lib.swarselsystems.toCapitalized serviceName;
       info = "https://${serviceDomain}";
-      icon = "${self}/files/topology-images/shlink.png";
+      icon = "services.not-available";
     };
 
     globals = {

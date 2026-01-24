@@ -30,7 +30,10 @@ in
       mpv
     ];
 
-    topology.self.services.${serviceName}.info = "http://localhost:${builtins.toString servicePort}";
+    topology.self.services.${serviceName} = {
+      info = "http://localhost:${builtins.toString servicePort}";
+      icon = lib.mkForce "${self}/files/topology-images/mpd.png";
+    };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
       directories = [{ directory = "/var/lib/${serviceName}"; user = "mpd"; group = "mpd"; }];

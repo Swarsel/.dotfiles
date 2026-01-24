@@ -234,11 +234,11 @@
                 services = {
                   ollama = {
                     name = "Ollama";
-                    icon = "${self}/files/topology-images/ollama.png";
+                    icon = "services.ollama";
                   };
                   openwebui = {
                     name = "Open WebUI";
-                    icon = "${self}/files/topology-images/openwebui.png";
+                    icon = "services.open-webui";
                   };
                   comfyui = {
                     name = "Comfy UI";
