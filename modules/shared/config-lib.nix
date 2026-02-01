@@ -33,6 +33,8 @@ in
         serviceDir = dir;
         serviceAddress = address;
         serviceProxy = proxy;
+        serviceNode = config.node.name;
+        topologyContainerName = "${serviceNode}-${config.virtualisation.oci-containers.backend}-${name}";
         proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
         proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
       };

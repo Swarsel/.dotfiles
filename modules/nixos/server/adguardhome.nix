@@ -70,7 +70,7 @@ in
           homeDomains) ++ [
           {
             domain = "smb.${globals.domains.main}";
-            answer = globals.networks.home-lan.vlans.services.hosts.storage.ipv4;
+            answer = globals.networks.home-lan.vlans.services.hosts.summers-storage.ipv4;
             enabled = true;
           }
         ];

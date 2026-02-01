@@ -1,6 +1,6 @@
 { lib, config, dns, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
@@ -13,6 +13,12 @@ in
 
     swarselmodules.server = {
       podman = true;
+    };
+
+    topology.nodes.${topologyContainerName}.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "services.not-available";
     };
 
     virtualisation.oci-containers.containers.${serviceName} = {
@@ -53,12 +59,6 @@ in
     environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
       { directory = serviceDir; }
     ];
-
-    topology.self.services.${serviceName} = {
-      name = lib.swarselsystems.toCapitalized serviceName;
-      info = "https://${serviceDomain}";
-      icon = "services.not-available";
-    };
 
     globals = {
       networks = {

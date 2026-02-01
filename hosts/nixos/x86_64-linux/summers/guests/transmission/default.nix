@@ -1,6 +1,7 @@
 { self, lib, minimal, ... }:
 {
   imports = [
+
     "${self}/profiles/nixos/microvm"
     "${self}/modules/nixos"
   ];

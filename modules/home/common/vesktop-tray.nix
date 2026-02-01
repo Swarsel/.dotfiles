@@ -19,7 +19,7 @@
       };
 
       Service = {
-        ExecStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
+        ExecStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
       };
     };
   };

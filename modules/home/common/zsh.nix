@@ -1,6 +1,6 @@
-{ self, config, pkgs, lib, minimal, globals, confLib, type, ... }:
+{ self, config, pkgs, lib, minimal, globals, confLib, type, arch, ... }:
 let
-  inherit (config.swarselsystems) flakePath isNixos;
+  inherit (config.swarselsystems) flakePath isNixos homeDir;
   crocDomain = globals.services.croc.domain;
 in
 {
@@ -20,7 +20,11 @@ in
       // lib.optionalAttrs (!minimal) {
         shellAliases = lib.recursiveUpdate
           {
-            hg = "history | grep";
+            nb = "nix build";
+            nbl = "nix build --builders \"\"";
+            nbo = "nix build --offline --builders \"\"";
+            nd = "nix develop";
+            ns = "nix shell";
             hmswitch = lib.mkIf (!isNixos) "${lib.getExe pkgs.home-manager} --flake ${flakePath}#$(hostname) switch |& nom";
             nswitch = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
             ntest = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) test; cd -;";
@@ -46,7 +50,8 @@ in
             boot-diff = "nix store diff-closures /run/*-system";
             gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
             cc = "wl-copy";
-            build-topology = "nix build --override-input topologyPrivate ${self}/files/topology/private .#topology.x86_64-linux.config.output";
+            build-topology = "nix build --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
+            build-topology-dev = "nix build --show-trace --override-input nix-topology ${homeDir}/Documents/Private/nix-topology --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
             build-iso = "nix build --print-out-paths .#live-iso";
             nix-review-local = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
             nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";

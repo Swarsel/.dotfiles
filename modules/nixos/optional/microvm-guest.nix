@@ -1,4 +1,4 @@
-{ self, lib, config, inputs, microVMParent, nodes, globals, confLib, ... }:
+{ self, config, inputs, ... }:
 {
   imports = [
     inputs.disko.nixosModules.disko
@@ -15,6 +15,7 @@
     inputs.stylix.nixosModules.stylix
     inputs.swarsel-nix.nixosModules.default
     inputs.nixos-nftables-firewall.nixosModules.default
+    inputs.pia.nixosModules.default
 
     (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
 

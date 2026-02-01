@@ -2,6 +2,7 @@
 let
   inherit (confLib.gen { name = "transmission"; port = 9091; }) serviceName servicePort serviceDomain;
   inherit (confLib.static) isHome homeServiceAddress homeWebProxy nginxAccessRules;
+  inherit (config.swarselsystems) sopsFile;
 
   lidarrUser = "lidarr";
   lidarrGroup = lidarrUser;
@@ -22,6 +23,10 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    sops.secrets = {
+      pia = { inherit sopsFile; };
+    };
 
     # this user/group section is probably unneeded
     users = {
@@ -107,6 +112,17 @@ in
     };
 
     services = {
+      pia = {
+        enable = true;
+        credentials.credentialsFile = config.sops.secrets.pia.path;
+        protocol = "wireguard";
+        autoConnect = {
+          enable = true;
+          region = "sweden";
+        };
+        portForwarding.enable = true;
+        dns.enable = true;
+      };
       radarr = {
         enable = true;
         user = radarrUser;

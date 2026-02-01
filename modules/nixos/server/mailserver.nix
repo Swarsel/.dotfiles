@@ -16,6 +16,15 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+    users = {
+      persistentIds = {
+        knot-resolver = confLib.mkIds 963;
+        postfix-tlspol = confLib.mkIds 962;
+        roundcube = confLib.mkIds 961;
+        redis-rspamd = confLib.mkIds 960;
+      };
+    };
+
     globals.services = {
       ${serviceName} = {
         domain = serviceDomain;
@@ -65,11 +74,12 @@ in
       domains = [ baseDomain ];
       indexDir = "${serviceDir}/indices";
       openFirewall = true;
-      certificateScheme = "acme";
+      # certificateScheme = "acme";
       dmarcReporting.enable = true;
       enableSubmission = true;
       enableSubmissionSsl = true;
       enableImapSsl = true;
+      x509.useACMEHost = globals.domains.main;
 
       loginAccounts = {
         "${user1}@${baseDomain}" = {

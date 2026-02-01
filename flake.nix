@@ -37,13 +37,22 @@
 
     home-manager = {
       url = "github:nix-community/home-manager";
-      # url = "github:Swarsel/home-manager/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    dns = {
+      url = "github:kirelagin/dns.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    topologyPrivate.url = "./files/topology/public";
 
     # emacs-overlay.url = "github:nix-community/emacs-overlay";
     emacs-overlay.url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
@@ -55,7 +64,6 @@
     sops.url = "github:Mic92/sops-nix";
     lanzaboote.url = "github:nix-community/lanzaboote";
     nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
-    nixos-generators.url = "github:nix-community/nixos-generators";
     nixos-images.url = "github:Swarsel/nixos-images/main";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
@@ -73,11 +81,10 @@
     nixos-extra-modules.url = "github:oddlama/nixos-extra-modules/main";
     microvm.url = "github:astro/microvm.nix";
     treefmt-nix.url = "github:numtide/treefmt-nix";
-    dns.url = "github:kirelagin/dns.nix";
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
     simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
-    topologyPrivate.url = "./files/topology/public";
+    pia.url = "github:Swarsel/pia.nix/custom";
   };
 
   outputs =

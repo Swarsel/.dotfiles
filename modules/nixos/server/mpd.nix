@@ -1,4 +1,4 @@
-{ self, lib, config, pkgs, confLib, ... }:
+{ lib, config, pkgs, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "mpd"; port = 3254; }) servicePort serviceName serviceUser serviceGroup;
@@ -30,10 +30,10 @@ in
       mpv
     ];
 
-    topology.self.services.${serviceName} = {
-      info = "http://localhost:${builtins.toString servicePort}";
-      icon = lib.mkForce "${self}/files/topology-images/mpd.png";
-    };
+    # topology.self.services.${serviceName} = {
+    #   info = "http://localhost:${builtins.toString servicePort}";
+    #   icon = lib.mkForce "${self}/files/topology-images/mpd.png";
+    # };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
       directories = [{ directory = "/var/lib/${serviceName}"; user = "mpd"; group = "mpd"; }];

@@ -135,7 +135,7 @@
   |📼 **Videos**               | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                   |
   |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                                                              |
   |🗨️ **Messaging**            | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                       |
-  |📁 **Filesharing**          | [Nectcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix)                 |
+  |📁 **Filesharing**          | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix)                 |
   |🎞️ **Photos**               | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                       |
   |📄 **Documents**            | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                 |
   |🔄 **File Sync**            | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                 |
@@ -156,7 +156,7 @@
   |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/minecraft.nix)                 |
   |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/garage.nix)                       |
   |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/attic.nix)                         |
-  |🐙 **Nix Build farm**       | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix)                         |
+  |🐙 **Nix Build farm**       | [Hydra](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix)                         |
   |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
   |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
   |👀 **DNS Records**          | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |

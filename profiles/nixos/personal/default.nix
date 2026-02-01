@@ -25,6 +25,7 @@
       lid = lib.mkDefault true;
       login = lib.mkDefault true;
       lowBattery = lib.mkDefault false;
+      nautilus = lib.mkDefault true;
       network = lib.mkDefault true;
       networkDevices = lib.mkDefault true;
       nftables = lib.mkDefault true;

@@ -93,58 +93,65 @@ in
       };
     };
 
-    systemd.services."generateSSLCert-${serviceName}" =
-      let
-        daysValid = 3650;
-        renewBeforeDays = 365;
-      in
-      {
-        before = [ "${serviceName}.service" ];
-        requiredBy = [ "${serviceName}.service" ];
-        after = [ "local-fs.target" ];
-        requires = [ "local-fs.target" ];
+    systemd.services = {
+      "generateSSLCert-${serviceName}" =
+        let
+          daysValid = 3650;
+          renewBeforeDays = 365;
+        in
+        {
+          before = [ "${serviceName}.service" ];
+          requiredBy = [ "${serviceName}.service" ];
+          after = [ "local-fs.target" ];
+          requires = [ "local-fs.target" ];
 
-        serviceConfig = {
-          Type = "oneshot";
-        };
+          serviceConfig = {
+            Type = "oneshot";
+          };
 
-        script = ''
-          set -eu
+          script = ''
+            set -eu
 
-          ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
-          ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
-          ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
-          ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
+            ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
+            ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
+            ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
+            ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
 
-          need_gen=0
-          if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
-            need_gen=1
-          else
-            enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
-            end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
-            now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
-            seconds_left=$(( end_epoch - now_epoch ))
-            days_left=$(( seconds_left / 86400 ))
-            if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
+            need_gen=0
+            if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
               need_gen=1
             else
-              echo 'Certificate exists and is still valid'
+              enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
+              end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
+              now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
+              seconds_left=$(( end_epoch - now_epoch ))
+              days_left=$(( seconds_left / 86400 ))
+              if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
+                need_gen=1
+              else
+                echo 'Certificate exists and is still valid'
+              fi
             fi
-          fi
 
-          if [ "$need_gen" -eq 1 ]; then
-            ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
-              -keyout "${keyPath}" \
-              -out "${certPath}" \
-              -subj "/CN=${serviceDomain}" \
-              -addext "subjectAltName=DNS:${serviceDomain}"
+            if [ "$need_gen" -eq 1 ]; then
+              ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
+                -keyout "${keyPath}" \
+                -out "${certPath}" \
+                -subj "/CN=${serviceDomain}" \
+                -addext "subjectAltName=DNS:${serviceDomain}"
 
-            chmod 0644 "${certPath}"
-            chmod 0600 "${keyPath}"
-            chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
-          fi
-        '';
+              chmod 0644 "${certPath}"
+              chmod 0600 "${keyPath}"
+              chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
+            fi
+          '';
+        };
+      kanidm = {
+        environment.KANIDM_TRUST_X_FORWARD_FOR = "true";
+        serviceConfig.RestartSec = "30";
       };
+    };
+
 
 
     # system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
@@ -208,7 +215,7 @@ in
           # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
           tls_key = keyPathBase;
           bindaddress = "0.0.0.0:${toString servicePort}";
-          trust_x_forward_for = true;
+          # trust_x_forward_for = true;
         };
         enableClient = true;
         clientSettings = {
@@ -405,7 +412,6 @@ in
       };
     };
 
-    systemd.services.${serviceName}.serviceConfig.RestartSec = "30";
 
     nodes =
       let

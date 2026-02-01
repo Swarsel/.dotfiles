@@ -1,14 +1,16 @@
-{ self, lib, config, withHomeManager, ... }:
+{ self, lib, config, withHomeManager, confLib, ... }:
 {
   options.swarselmodules.server.bastion = lib.mkEnableOption "enable bastion on server";
   config = lib.mkIf config.swarselmodules.server.bastion ({
 
     users = {
+      persistentIds.jump = confLib.mkIds 1001;
       groups = {
         jump = { };
       };
       users = {
-        "jump" = {
+        jump = {
+          autoSubUidGidRange = false;
           isNormalUser = true;
           useDefaultShell = true;
           group = lib.mkForce "jump";

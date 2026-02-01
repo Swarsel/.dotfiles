@@ -1,4 +1,4 @@
-{ self, pkgs, lib, config, ... }:
+{ self, pkgs, lib, config, confLib, ... }:
 let
   ssh-restrict = "restrict,pty,command=\"${wrapper-dispatch-ssh-nix}/bin/wrapper-dispatch-ssh-nix\" ";
 
@@ -20,6 +20,7 @@ in
   options.swarselmodules.server.ssh-builder = lib.mkEnableOption "enable ssh-builder config on server";
   config = lib.mkIf config.swarselmodules.server.ssh-builder {
     users = {
+      persistentIds.builder = confLib.mkIds 965;
       groups.builder = { };
       users.builder = {
         useDefaultShell = true;

@@ -157,7 +157,7 @@
                 };
               };
 
-              switch-bedroom = mkDevice "Switch Bedroom" {
+              switch-bedroom = mkSwitch "Switch Bedroom" {
                 info = "Cisco SG 200-08";
                 image = "${self}/files/topology-images/Cisco_SG_200-08.png";
                 interfaceGroups = [

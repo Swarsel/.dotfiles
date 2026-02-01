@@ -33,6 +33,7 @@
             inputs.stylix.nixosModules.stylix
             inputs.swarsel-nix.nixosModules.default
             inputs.nixos-nftables-firewall.nixosModules.default
+            inputs.pia.nixosModules.default
             (inputs.nixos-extra-modules + "/modules/guests")
             (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
             "${self}/hosts/nixos/${arch}/${configName}"

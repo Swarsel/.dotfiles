@@ -12,6 +12,7 @@ in
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     users = {
+      persistentIds.${serviceName} = confLib.mkIds 964;
       groups.${serviceGroup} = { };
 
       users.${serviceUser} = {
