@@ -345,6 +345,10 @@ in
               };
             };
 
+            environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
+              { directory = "${serviceDir}-gateway"; mode = "0700"; }
+            ];
+
             boot.kernel.sysctl = {
               "net.core.wmem_max" = 16777216;
               "net.core.rmem_max" = 134217728;
@@ -366,8 +370,8 @@ in
         ${idmServer} =
           let
             nodeCfg = nodes.${idmServer}.config;
-            accountId = "6b3c6ba7-5240-4684-95ce-f40fdae45096";
-            externalId = "08d714e9-1ab9-4133-a39d-00e843a960cc";
+            accountId = "3e996ad9-c100-40e8-807a-282a5c5e8b6c";
+            externalId = "31e7f702-28a7-4bbc-9690-b6db9d4a162a";
           in
           {
             sops.secrets.kanidm-firezone = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };

@@ -38,7 +38,7 @@ in
       enable = true;
       package = pkgs.emacsWithPackagesFromUsePackage {
         config = self + /files/emacs/init.el;
-        package = pkgs.emacs-git-pgtk;
+        package = pkgs.emacs-unstable-pgtk;
         alwaysEnsure = true;
         alwaysTangle = true;
         extraEmacsPackages = epkgs: [
@@ -67,7 +67,7 @@ in
 
             packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
           })
-          (inputs.nixpkgs-dev.legacyPackages.${pkgs.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
+          (inputs.nixpkgs-dev.legacyPackages.${pkgs.stdenv.hostPlatform.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
           # epkgs.calfw
           # (epkgs.trivialBuild rec {
           #   pname = "calfw";

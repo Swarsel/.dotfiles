@@ -30,6 +30,7 @@
     nixpkgs-bisect.url = "github:nixos/nixpkgs/master";
     nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs-oddlama.url = "github:oddlama/nixpkgs/update/firezone-server";
     nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
@@ -51,11 +52,16 @@
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    emacs-overlay = {
+      # url = "github:swarsel/emacs-overlay/fix";
+      # url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
+      url = "github:nix-community/emacs-overlay";
+      # inputs.nixpkgs.follows = "nixpkgs";
+    };
+
 
     topologyPrivate.url = "./files/topology/public";
 
-    # emacs-overlay.url = "github:nix-community/emacs-overlay";
-    emacs-overlay.url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
     swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
     systems.url = "github:nix-systems/default";
     nur.url = "github:nix-community/NUR";

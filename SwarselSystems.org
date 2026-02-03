@@ -1730,6 +1730,7 @@ A short overview over each input and what it does:
       nixpkgs-bisect.url = "github:nixos/nixpkgs/master";
       nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
       nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+      nixpkgs-oddlama.url = "github:oddlama/nixpkgs/update/firezone-server";
       nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
       nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
@@ -1751,11 +1752,16 @@ A short overview over each input and what it does:
         url = "github:nix-community/nixos-generators";
         inputs.nixpkgs.follows = "nixpkgs";
       };
+      emacs-overlay = {
+        # url = "github:swarsel/emacs-overlay/fix";
+        # url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
+        url = "github:nix-community/emacs-overlay";
+        # inputs.nixpkgs.follows = "nixpkgs";
+      };
+
 
       topologyPrivate.url = "./files/topology/public";
 
-      # emacs-overlay.url = "github:nix-community/emacs-overlay";
-      emacs-overlay.url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
       swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       systems.url = "github:nix-systems/default";
       nur.url = "github:nix-community/NUR";
@@ -8338,6 +8344,7 @@ in
       (splitPath "sops.secrets")
       (splitPath "swarselsystems.server.dns")
       (splitPath "topology.self.services")
+      (splitPath "environment.persistence")
     ]
     ++ expandOptions (splitPath "networking.nftables.firewall") [ "zones" "rules" ]
     ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]
@@ -10683,7 +10690,7 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
           freetype
           fuse3
           gdk-pixbuf
-          glew110
+          glew_1_10
           glib
           gnome2.GConf
           pango
@@ -15784,7 +15791,7 @@ kanidm person credential create-reset-token <user>
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
@@ -15951,6 +15958,7 @@ kanidm person credential create-reset-token <user>
       services = {
         ${serviceName} = {
           enable = true;
+          package = pkgs.dev.oauth2-proxy;
           cookie = {
             domain = ".${mainDomain}";
             secure = true;
@@ -15962,13 +15970,16 @@ kanidm person credential create-reset-token <user>
           httpAddress = "0.0.0.0:${builtins.toString servicePort}";
           redirectURL = "https://${serviceDomain}/oauth2/callback";
           setXauthrequest = true;
+          upstream = [
+            "static://202"
+          ];
+
           extraConfig = {
             code-challenge-method = "S256";
             whitelist-domain = ".${mainDomain}";
             set-authorization-header = true;
             pass-access-token = true;
             skip-jwt-bearer-tokens = true;
-            upstream = "static://202";
             oidc-issuer-url = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy";
             provider-display-name = "Kanidm";
           };
@@ -18972,6 +18983,10 @@ This has some state:
                 };
               };
 
+              environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
+                { directory = "${serviceDir}-gateway"; mode = "0700"; }
+              ];
+
               boot.kernel.sysctl = {
                 "net.core.wmem_max" = 16777216;
                 "net.core.rmem_max" = 134217728;
@@ -18993,8 +19008,8 @@ This has some state:
           ${idmServer} =
             let
               nodeCfg = nodes.${idmServer}.config;
-              accountId = "6b3c6ba7-5240-4684-95ce-f40fdae45096";
-              externalId = "08d714e9-1ab9-4133-a39d-00e843a960cc";
+              accountId = "3e996ad9-c100-40e8-807a-282a5c5e8b6c";
+              externalId = "31e7f702-28a7-4bbc-9690-b6db9d4a162a";
             in
             {
               sops.secrets.kanidm-firezone = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
@@ -20560,7 +20575,6 @@ This holds packages that I can use as provided, or with small modifications (as 
         fuse
         # ventoy
         poppler-utils
-        vdhcoapp
 
         # nix
         alejandra
@@ -20647,7 +20661,7 @@ This holds packages that I can use as provided, or with small modifications (as 
 
         #nautilus
         nautilus
-        xfce.tumbler
+        tumbler
         libgsf
 
         # wayland stuff
@@ -23430,7 +23444,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
         enable = true;
         package = pkgs.emacsWithPackagesFromUsePackage {
           config = self + /files/emacs/init.el;
-          package = pkgs.emacs-git-pgtk;
+          package = pkgs.emacs-unstable-pgtk;
           alwaysEnsure = true;
           alwaysTangle = true;
           extraEmacsPackages = epkgs: [
@@ -23459,7 +23473,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
 
               packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
             })
-            (inputs.nixpkgs-dev.legacyPackages.${pkgs.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
+            (inputs.nixpkgs-dev.legacyPackages.${pkgs.stdenv.hostPlatform.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
             # epkgs.calfw
             # (epkgs.trivialBuild rec {
             #   pname = "calfw";

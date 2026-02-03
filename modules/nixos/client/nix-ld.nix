@@ -31,7 +31,7 @@
         freetype
         fuse3
         gdk-pixbuf
-        glew110
+        glew_1_10
         glib
         gnome2.GConf
         pango

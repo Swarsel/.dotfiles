@@ -49,7 +49,6 @@
       fuse
       # ventoy
       poppler-utils
-      vdhcoapp
 
       # nix
       alejandra
@@ -136,7 +135,7 @@
 
       #nautilus
       nautilus
-      xfce.tumbler
+      tumbler
       libgsf
 
       # wayland stuff

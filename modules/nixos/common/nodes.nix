@@ -34,6 +34,7 @@ let
     (splitPath "sops.secrets")
     (splitPath "swarselsystems.server.dns")
     (splitPath "topology.self.services")
+    (splitPath "environment.persistence")
   ]
   ++ expandOptions (splitPath "networking.nftables.firewall") [ "zones" "rules" ]
   ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]

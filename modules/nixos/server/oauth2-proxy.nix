@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
@@ -165,6 +165,7 @@ in
     services = {
       ${serviceName} = {
         enable = true;
+        package = pkgs.dev.oauth2-proxy;
         cookie = {
           domain = ".${mainDomain}";
           secure = true;
@@ -176,13 +177,16 @@ in
         httpAddress = "0.0.0.0:${builtins.toString servicePort}";
         redirectURL = "https://${serviceDomain}/oauth2/callback";
         setXauthrequest = true;
+        upstream = [
+          "static://202"
+        ];
+
         extraConfig = {
           code-challenge-method = "S256";
           whitelist-domain = ".${mainDomain}";
           set-authorization-header = true;
           pass-access-token = true;
           skip-jwt-bearer-tokens = true;
-          upstream = "static://202";
           oidc-issuer-url = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy";
           provider-display-name = "Kanidm";
         };
