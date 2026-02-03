@@ -16201,11 +16201,13 @@ kanidm person credential create-reset-token <user>
         koillection-env-file = { inherit sopsFile; };
       };
 
-      topology.nodes.${topologyContainerName}.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
-          icon = "${self}/files/topology-images/${serviceName}.png";
-        };
+      # topology.nodes.${topologyContainerName}.services.${serviceName} = {
+      #     name = lib.swarselsystems.toCapitalized serviceName;
+      #     info = "https://${serviceDomain}";
+      #     icon = "${self}/files/topology-images/${serviceName}.png";
+      #   };
+
+      topology.serviceRegistry.koillection.oci.repos = [ "koillection" ];
 
       globals = {
         networks = {
@@ -16763,11 +16765,13 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      topology.nodes.${topologyContainerName}.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
-          icon = "${self}/files/topology-images/${serviceName}.png";
-        };
+      # topology.nodes.${topologyContainerName}.services.${serviceName} = {
+      #     name = lib.swarselsystems.toCapitalized serviceName;
+      #     info = "https://${serviceDomain}";
+      #     icon = "${self}/files/topology-images/${serviceName}.png";
+      #   };
+
+      topology.serviceRegistry.shlinkio.oci.repos = [ "shlink" ];
 
       virtualisation.oci-containers.containers.${serviceName} = {
         image = "shlinkio/shlink@${containerRev}";
@@ -16871,11 +16875,13 @@ Deployment notes:
         podman = true;
       };
 
-      topology.nodes.${topologyContainerName}.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
-          icon = "services.not-available";
-        };
+      # topology.nodes.${topologyContainerName}.services.${serviceName} = {
+      #     name = lib.swarselsystems.toCapitalized serviceName;
+      #     info = "https://${serviceDomain}";
+      #     icon = "services.not-available";
+      #   };
+
+      topology.serviceRegistry.anirdev.oci.repos = [ "slink" ];
 
       virtualisation.oci-containers.containers.${serviceName} = {
         image = "anirdev/slink@${containerRev}";

@@ -1,6 +1,6 @@
-{ self, lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
+  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   serviceDB = "koillection";
 
@@ -24,11 +24,13 @@ in
       koillection-env-file = { inherit sopsFile; };
     };
 
-    topology.nodes.${topologyContainerName}.services.${serviceName} = {
-      name = lib.swarselsystems.toCapitalized serviceName;
-      info = "https://${serviceDomain}";
-      icon = "${self}/files/topology-images/${serviceName}.png";
-    };
+    # topology.nodes.${topologyContainerName}.services.${serviceName} = {
+    #     name = lib.swarselsystems.toCapitalized serviceName;
+    #     info = "https://${serviceDomain}";
+    #     icon = "${self}/files/topology-images/${serviceName}.png";
+    #   };
+
+    topology.serviceRegistry.koillection.oci.repos = [ "koillection" ];
 
     globals = {
       networks = {

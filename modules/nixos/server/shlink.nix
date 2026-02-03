@@ -1,6 +1,6 @@
-{ self, lib, config, dns, globals, confLib, ... }:
+{ lib, config, dns, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
+  inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
@@ -31,11 +31,13 @@ in
       };
     };
 
-    topology.nodes.${topologyContainerName}.services.${serviceName} = {
-      name = lib.swarselsystems.toCapitalized serviceName;
-      info = "https://${serviceDomain}";
-      icon = "${self}/files/topology-images/${serviceName}.png";
-    };
+    # topology.nodes.${topologyContainerName}.services.${serviceName} = {
+    #     name = lib.swarselsystems.toCapitalized serviceName;
+    #     info = "https://${serviceDomain}";
+    #     icon = "${self}/files/topology-images/${serviceName}.png";
+    #   };
+
+    topology.serviceRegistry.shlinkio.oci.repos = [ "shlink" ];
 
     virtualisation.oci-containers.containers.${serviceName} = {
       image = "shlinkio/shlink@${containerRev}";
