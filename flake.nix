@@ -58,6 +58,10 @@
       url = "github:nix-community/emacs-overlay";
       # inputs.nixpkgs.follows = "nixpkgs";
     };
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
 
     topologyPrivate.url = "./files/topology/public";

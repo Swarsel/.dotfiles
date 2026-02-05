@@ -30,7 +30,7 @@ writeShellApplication {
             ;;
         -r | --repo)
             shift
-            target_repo=rue
+            target_repo=true
             ;;
         -d | --directory)
             shift

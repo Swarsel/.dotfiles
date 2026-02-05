@@ -1,4 +1,4 @@
-{ self, lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
@@ -49,11 +49,11 @@ in
       #   };
     };
 
-    topology.self.services.${serviceName} = {
-      name = "FreshRSS";
-      info = "https://${serviceDomain}";
-      icon = "${self}/files/topology-images/${serviceName}.png";
-    };
+    # topology.self.services.${serviceName} = {
+    #   name = "FreshRSS";
+    #   info = "https://${serviceDomain}";
+    #   icon = "${self}/files/topology-images/${serviceName}.png";
+    # };
 
     globals.services.${serviceName} = {
       domain = serviceDomain;

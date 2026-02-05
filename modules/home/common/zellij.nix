@@ -5,12 +5,14 @@
     programs.zellij = {
       enable = true;
       enableZshIntegration = true;
+      attachExistingSession = false;
+      exitShellOnExit = true;
       settings = {
         pane_frames = false;
         simplified_ui = false;
         default_shell = "zsh";
         copy_on_select = true;
-        on_force_close = "detach";
+        on_force_close = "quit";
         show_startup_tips = false;
         support_kitty_keyboard_protocol = true;
         default_layout = "swarsel";

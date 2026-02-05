@@ -165,6 +165,19 @@ in
             _ = { };
           });
 
+      overrideTarget = target:
+        let
+          inherit target;
+        in
+        {
+          Unit = {
+            PartOf = lib.mkForce [ target ];
+            After = lib.mkForce [ target ];
+            Requires = lib.mkForce [ target ];
+          };
+          Install.WantedBy = lib.mkForce [ target ];
+        };
+
       genNginx =
         { serviceAddress
         , serviceName

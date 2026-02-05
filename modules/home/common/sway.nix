@@ -242,6 +242,7 @@ in
         startup = config.swarselsystems.startup ++ [
           { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
           { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
+          { command = "mako"; }
         ];
         seat = {
           "*" = {

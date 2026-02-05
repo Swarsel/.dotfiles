@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, ... }:
+{ self, lib, pkgs, config, confLib, ... }:
 {
   options.swarselmodules.kanshi = lib.mkEnableOption "kanshi settings";
   config = lib.mkIf config.swarselmodules.kanshi {
@@ -14,6 +14,8 @@
         };
       };
     };
+
+    systemd.user.services.kanshi = confLib.overrideTarget "sway-session.target";
     services.kanshi = {
       enable = true;
       settings = [

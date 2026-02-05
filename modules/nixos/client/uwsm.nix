@@ -14,7 +14,7 @@ in
           comment = "Sway compositor managed by UWSM";
           binPath = "/run/current-system/sw/bin/sway";
         };
-        niri = lib.mkIf (config.swarselmodules ? niri) {
+        niri = lib.mkIf (config.programs ? niri) {
           prettyName = "Niri";
           comment = "Niri compositor managed by UWSM";
           binPath = "/run/current-system/sw/bin/niri-session";

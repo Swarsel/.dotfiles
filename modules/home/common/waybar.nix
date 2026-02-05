@@ -66,8 +66,8 @@ in
       enable = true;
       systemd = {
         enable = false;
-        # target = "sway-session.target";
-        inherit (config.wayland.systemd) target;
+        target = "sway-session.target";
+        # inherit (config.wayland.systemd) target;
       };
       settings = {
         mainBar = {

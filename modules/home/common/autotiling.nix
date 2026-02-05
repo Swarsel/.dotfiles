@@ -7,7 +7,7 @@ in
   config = lib.mkIf config.swarselmodules.${moduleName} {
     services.${moduleName} = {
       enable = true;
-      systemdTarget = config.wayland.systemd.target;
+      systemdTarget = "sway-session.target";
     };
   };
 

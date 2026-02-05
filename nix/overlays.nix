@@ -82,6 +82,7 @@ in
               (additions final prev)
               // (nixpkgs-stable-versions final prev)
               // (inputs.niri-flake.overlays.niri final prev)
+              // (inputs.noctalia.overlays.default final prev)
               // (inputs.vbc-nix.overlays.default final prev)
               // (inputs.nur.overlays.default final prev)
               // (inputs.emacs-overlay.overlay final prev)

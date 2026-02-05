@@ -6,16 +6,18 @@
     systemd.user.services.element-applet = {
       Unit = {
         Description = "Element applet";
-        Requires = [ "tray.target" ];
+        Requires = [ "graphical-session.target" ];
         After = [
           "graphical-session.target"
           "tray.target"
         ];
-        PartOf = [ "graphical-session.target" ];
+        PartOf = [
+          "tray.target"
+        ];
       };
 
       Install = {
-        WantedBy = [ "graphical-session.target" ];
+        WantedBy = [ "tray.target" ];
       };
 
       Service = {

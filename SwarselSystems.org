@@ -1696,6 +1696,8 @@ A short overview over each input and what it does:
   This flake introduces a module that allows for more structurized nftables config.
 - [[#h:c88d569e-70c4-4dd6-a959-be649fdeaa71][topologyPrivate]]
   This input per default provides a simple output =topologyPrivate = false;=. This is the value that is normally used in the config. When I export my setup to a topology diagram, there are some public IPs and domains that I want to obfuscate. When doing that, I can then override this input.
+- [[https://github.com/noctalia-dev/noctalia-shell][noctalia]]
+  A flake that provides options for the desktop shell =noctalia-shell=.
 
 #+begin_src nix :noweb yes :tangle flake.nix
   {
@@ -1757,6 +1759,10 @@ A short overview over each input and what it does:
         # url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
         url = "github:nix-community/emacs-overlay";
         # inputs.nixpkgs.follows = "nixpkgs";
+      };
+      noctalia = {
+        url = "github:noctalia-dev/noctalia-shell";
+        inputs.nixpkgs.follows = "nixpkgs";
       };
 
 
@@ -3237,6 +3243,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 (additions final prev)
                 // (nixpkgs-stable-versions final prev)
                 // (inputs.niri-flake.overlays.niri final prev)
+                // (inputs.noctalia.overlays.default final prev)
                 // (inputs.vbc-nix.overlays.default final prev)
                 // (inputs.nur.overlays.default final prev)
                 // (inputs.emacs-overlay.overlay final prev)
@@ -3691,7 +3698,8 @@ My work machine. Built for more security, this is the gold standard of my config
       "${self}/modules/nixos/optional/nswitch-rcm.nix"
       "${self}/modules/nixos/optional/virtualbox.nix"
       "${self}/modules/nixos/optional/work.nix"
-
+      "${self}/modules/nixos/optional/niri.nix"
+      "${self}/modules/nixos/optional/noctalia.nix"
     ];
 
     topology.self = {
@@ -10860,23 +10868,23 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
 
 #+begin_src nix-ts :tangle modules/nixos/client/xdg-portal.nix
-  { lib, config, pkgs, ... }:
+  { lib, config, ... }:
   {
     options.swarselmodules.xdg-portal = lib.mkEnableOption "xdg portal config";
     config = lib.mkIf config.swarselmodules.xdg-portal {
       xdg.portal = {
         enable = true;
-        config = {
-          common = {
-            default = "wlr";
-          };
-        };
-        wlr.enable = true;
-        wlr.settings.screencast = {
-          output_name = "eDP-1";
-          chooser_type = "simple";
-          chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
-        };
+        # config = {
+        #   common = {
+        #     default = "wlr";
+        #   };
+        # };
+        # wlr.enable = true;
+        # wlr.settings.screencast =  {
+        #   output_name = "eDP-1";
+        #   chooser_type = "simple";
+        #   chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
+        # };
       };
     };
   }
@@ -10983,35 +10991,37 @@ This turns off the display when the lid is closed.
 Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/lowbattery.nix
-  { pkgs, lib, config, ... }:
-  {
-    options.swarselmodules.lowBattery = lib.mkEnableOption "low battery notification config";
-    config = lib.mkIf config.swarselmodules.lowBattery {
-      systemd.user.services."battery-low" = {
-        enable = true;
-        description = "Timer for battery check that alerts at 10% or less";
-        partOf = [ "graphical-session.target" ];
-        wantedBy = [ "graphical-session.target" ];
-        serviceConfig = {
-          Type = "simple";
-          ExecStart = pkgs.writeShellScript "battery-low-notification"
-            ''
-              if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") && $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") > 0 ));
-              then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
-              fi;
-            '';
-        };
-      };
-      systemd.user.timers."battery-low" = {
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          # Every Minute
-          OnCalendar = "*-*-* *:*:00";
-          Unit = "battery-low.service";
-        };
-      };
-    };
-  }
+     { pkgs, lib, config, ... }:
+     {
+       options.swarselmodules.lowBattery = lib.mkEnableOption "low battery notification config";
+       config = lib.mkIf config.swarselmodules.lowBattery {
+         systemd.user.services."battery-low" = let
+           target = "sway-session.target";
+         in {
+           enable = true;
+           description = "Timer for battery check that alerts at 10% or less";
+           partOf = [ target ];
+           wantedBy = [ target ];
+           serviceConfig = {
+             Type = "simple";
+             ExecStart = pkgs.writeShellScript "battery-low-notification"
+               ''
+                 if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") && $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") > 0 ));
+                 then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
+                 fi;
+               '';
+           };
+         };
+         systemd.user.timers."battery-low" = {
+           wantedBy = [ "timers.target" ];
+           timerConfig = {
+             # Every Minute
+             OnCalendar = "*-*-* *:*:00";
+             Unit = "battery-low.service";
+           };
+         };
+       };
+     }
 #+end_src
 
 **** Auto-login
@@ -11061,7 +11071,7 @@ Auto login for the initial session.
             comment = "Sway compositor managed by UWSM";
             binPath = "/run/current-system/sw/bin/sway";
           };
-          niri = lib.mkIf (config.swarselmodules ? niri) {
+          niri = lib.mkIf (config.programs ? niri) {
             prettyName = "Niri";
             comment = "Niri compositor managed by UWSM";
             binPath = "/run/current-system/sw/bin/niri-session";
@@ -14963,7 +14973,7 @@ I am using this with CapyReader on my phone, set it up as a FreshRSS account wit
 FreshRSS claims to support HTTP header auth, but at least it does not work with my oauth2-proxy setup. Until this is fixed, I resorted to the "form" login, since I mostly do not use the web version anyways.
 
 #+begin_src nix-ts :tangle modules/nixos/server/freshrss.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
@@ -15014,11 +15024,11 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         #   };
       };
 
-      topology.self.services.${serviceName} = {
-        name = "FreshRSS";
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
+      # topology.self.services.${serviceName} = {
+      #   name = "FreshRSS";
+      #   info = "https://${serviceDomain}";
+      #   icon = "${self}/files/topology-images/${serviceName}.png";
+      # };
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
@@ -16034,7 +16044,7 @@ kanidm person credential create-reset-token <user>
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/firefly-iii.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
@@ -16066,11 +16076,11 @@ kanidm person credential create-reset-token <user>
         };
       };
 
-      topology.self.services.${serviceName} = {
-        name = "Firefly-III";
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
+      # topology.self.services.${serviceName} = {
+      #   name = "Firefly-III";
+      #   info = "https://${serviceDomain}";
+      #   icon = "${self}/files/topology-images/${serviceName}.png";
+      # };
 
       globals.services.${serviceName} = {
         domain = serviceDomain;
@@ -19245,36 +19255,56 @@ TODO: evaluate whether I should keep using this structure.
 Auto login for the initial session.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/niri.nix
-  { inputs, lib, config, pkgs, ... }:
-  let
-    moduleName = "niri";
-  in
-  {
-    imports = [
-      inputs.niri-flake.nixosModules.niri
-    ];
-    options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
-    config = lib.mkIf config.swarselmodules.${moduleName} {
-
-      environment.systemPackages = with pkgs; [
-        wl-clipboard
-        wayland-utils
-        libsecret
-        cage
-        gamescope
-        xwayland-satellite-unstable
+  { self, inputs, config, pkgs, ... }:
+    {
+      imports = [
+        inputs.niri-flake.nixosModules.niri
       ];
+      config = {
+
+        niri-flake.cache.enable = true;
+        home-manager.users.${config.swarselsystems.mainUser}.imports = [
+          "${self}/modules/home/optional/niri.nix"
+        ];
+
+        environment.systemPackages = with pkgs; [
+          wl-clipboard
+          wayland-utils
+          libsecret
+          cage
+          gamescope
+          xwayland-satellite-unstable
+        ];
 
 
-      programs.niri = {
-        enable = true;
-        package = pkgs.niri-unstable; # the actual niri that will be installed and used
+        programs = {
+          niri = {
+            enable = true;
+            package = pkgs.niri-stable; # the actual niri that will be installed and used
+          };
+        };
       };
-    } // {
-      niri-flake.cache.enable = true;
-      programs.niri = {
-        package = null;
+    }
+#+end_src
+
+**** Noctalia
+
+#+begin_src nix-ts :tangle modules/nixos/optional/noctalia.nix
+  { self, inputs, config, ... }:
+  {
+    disabledModules = [ "programs/gpu-screen-recorder.nix" ];
+    imports = [
+      "${inputs.nixpkgs-dev}/nixos/modules/programs/gpu-screen-recorder.nix"
+    ];
+    config = {
+      home-manager.users.${config.swarselsystems.mainUser}.imports = [
+        "${self}/modules/home/optional/noctalia.nix"
+      ];
+      services = {
+        upower.enable = true; # needed for battery percentage
+        gnome.evolution-data-server.enable = true; # needed for calendar integration
       };
+      programs.gpu-screen-recorder.enable = true;
     };
   }
 #+end_src
@@ -20737,6 +20767,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         bak
         timer
         e
+        niri-resize
         swarselcheck
         swarselcheck-niri
         waybarupdate
@@ -21865,12 +21896,14 @@ Currently I only use it as before with =initExtra= though.
       programs.zellij = {
         enable = true;
         enableZshIntegration = true;
+        attachExistingSession = false;
+        exitShellOnExit = true;
         settings = {
           pane_frames = false;
           simplified_ui = false;
           default_shell = "zsh";
           copy_on_select = true;
-          on_force_close = "detach";
+          on_force_close = "quit";
           show_startup_tips = false;
           support_kitty_keyboard_protocol = true;
           default_layout = "swarsel";
@@ -23616,8 +23649,8 @@ The rest of the related configuration is found here:
         enable = true;
         systemd = {
           enable = false;
-          # target = "sway-session.target";
-          inherit (config.wayland.systemd) target;
+          target = "sway-session.target";
+          # inherit (config.wayland.systemd) target;
         };
         settings = {
           mainBar = {
@@ -24152,17 +24185,18 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/swayosd.nix
-  { lib, pkgs, config, ... }:
-  {
-    options.swarselmodules.swayosd = lib.mkEnableOption "swayosd settings";
-    config = lib.mkIf config.swarselmodules.swayosd {
-      services.swayosd = {
-        enable = true;
-        package = pkgs.dev.swayosd;
-        topMargin = 0.5;
+    { lib, pkgs, config, confLib, ... }:
+    {
+      options.swarselmodules.swayosd = lib.mkEnableOption "swayosd settings";
+      config = lib.mkIf config.swarselmodules.swayosd {
+        systemd.user.services.swayosd = confLib.overrideTarget "sway-session.target";
+        services.swayosd = {
+          enable = true;
+          package = pkgs.dev.swayosd;
+          topMargin = 0.5;
+        };
       };
-    };
-  }
+    }
 #+end_src
 
 ***** yubikey-touch-detector
@@ -24250,16 +24284,18 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
       systemd.user.services.obsidian-applet = {
         Unit = {
           Description = "Obsidian applet";
-          Requires = [ "tray.target" ];
+          Requires = [ "graphical-session.target" ];
           After = [
             "graphical-session.target"
             "tray.target"
           ];
-          PartOf = [ "graphical-session.target" ];
+          PartOf = [
+            "tray.target"
+          ];
         };
 
         Install = {
-          WantedBy = [ "graphical-session.target" ];
+          WantedBy = [ "tray.target" ];
         };
 
         Service = {
@@ -24287,16 +24323,18 @@ Sets up a systemd user service for anki that does not stall the shutdown process
       systemd.user.services.anki-applet = {
         Unit = {
           Description = "Anki applet";
-          Requires = [ "tray.target" ];
+          Requires = [ "graphical-session.target" ];
           After = [
             "graphical-session.target"
             "tray.target"
           ];
-          PartOf = [ "graphical-session.target" ];
+          PartOf = [
+            "tray.target"
+          ];
         };
 
         Install = {
-          WantedBy = [ "graphical-session.target" ];
+          WantedBy = [ "tray.target" ];
         };
 
         Service = {
@@ -24331,16 +24369,18 @@ Sets up a systemd user service for anki that does not stall the shutdown process
       systemd.user.services.element-applet = {
         Unit = {
           Description = "Element applet";
-          Requires = [ "tray.target" ];
+          Requires = [ "graphical-session.target" ];
           After = [
             "graphical-session.target"
             "tray.target"
           ];
-          PartOf = [ "graphical-session.target" ];
+          PartOf = [
+            "tray.target"
+          ];
         };
 
         Install = {
-          WantedBy = [ "graphical-session.target" ];
+          WantedBy = [ "tray.target" ];
         };
 
         Service = {
@@ -24366,16 +24406,18 @@ Sets up a systemd user service for anki that does not stall the shutdown process
       systemd.user.services.vesktop-applet = {
         Unit = {
           Description = "Vesktop applet";
-          Requires = [ "tray.target" ];
+          Requires = [ "graphical-session.target" ];
           After = [
             "graphical-session.target"
             "tray.target"
           ];
-          PartOf = [ "graphical-session.target" ];
+          PartOf = [
+            "tray.target"
+          ];
         };
 
         Install = {
-          WantedBy = [ "graphical-session.target" ];
+          WantedBy = [ "tray.target" ];
         };
 
         Service = {
@@ -24393,35 +24435,35 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/firezone-tray.nix
-    { lib, config, pkgs, ... }:
-    {
-      options.swarselmodules.firezone-tray = lib.mkEnableOption "enable firezone applet for tray";
-      config = lib.mkIf config.swarselmodules.firezone-tray {
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselmodules.firezone-tray = lib.mkEnableOption "enable firezone applet for tray";
+    config = lib.mkIf config.swarselmodules.firezone-tray {
 
-        systemd.user.services.firezone-applet = {
-          Unit = {
-            Description = "Firezone applet";
-            Requires = [
-              "tray.target"
-            ];
-            After = [
-              "graphical-session.target"
-              "tray.target"
-            ];
-            PartOf = [ "graphical-session.target" ];
-          };
+      systemd.user.services.firezone-applet = {
+        Unit = {
+          Description = "Firezone applet";
+          Requires = [ "graphical-session.target" ];
+          After = [
+            "graphical-session.target"
+            "tray.target"
+          ];
+          PartOf = [
+            "tray.target"
+          ];
+        };
 
-          Install = {
-            WantedBy = [ "graphical-session.target" ];
-          };
+        Install = {
+          WantedBy = [ "tray.target" ];
+        };
 
-          Service = {
-            ExecStart = "${pkgs.firezone-gui-client}/bin/firezone-client-gui";
-          };
+        Service = {
+          ExecStart = "${pkgs.firezone-gui-client}/bin/firezone-client-gui";
         };
       };
+    };
 
-    }
+  }
 #+end_src
 
 ***** syncthing service for tray
@@ -24840,6 +24882,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               startup = config.swarselsystems.startup ++ [
                 { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
                 { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
+                { command = "mako"; }
               ];
               seat = {
                 "*" = {
@@ -25033,7 +25076,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
 
 #+begin_src nix-ts :tangle modules/home/common/kanshi.nix
-  { self, lib, pkgs, config, ... }:
+  { self, lib, pkgs, config, confLib, ... }:
   {
     options.swarselmodules.kanshi = lib.mkEnableOption "kanshi settings";
     config = lib.mkIf config.swarselmodules.kanshi {
@@ -25049,6 +25092,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           };
         };
       };
+
+      systemd.user.services.kanshi = confLib.overrideTarget "sway-session.target";
       services.kanshi = {
         enable = true;
         settings = [
@@ -25228,6 +25273,7 @@ This service changes the screen hue at night. I am not sure if that really does 
   {
     options.swarselmodules.gammastep = lib.mkEnableOption "gammastep settings";
     config = lib.mkIf config.swarselmodules.gammastep {
+      systemd.user.services.gammastep = confLib.overrideTarget "sway-session.target";
       services.gammastep = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         enable = true;
         provider = "manual";
@@ -25748,7 +25794,7 @@ This service changes the screen hue at night. I am not sure if that really does 
     config = lib.mkIf config.swarselmodules.${moduleName} {
       services.${moduleName} = {
         enable = true;
-        systemdTarget = config.wayland.systemd.target;
+        systemdTarget = "sway-session.target";
       };
     };
 
@@ -25773,23 +25819,25 @@ This service changes the screen hue at night. I am not sure if that really does 
           brightnessctl = "${lib.getExe pkgs.brightnessctl}";
           swaylock = "${lib.getExe pkgs.swaylock-effects}";
           suspend = "${pkgs.systemd}/bin/systemctl suspend";
+          noctalia = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/noctalia-shell ipc call";
         in
         {
           enable = true;
-          systemdTarget = config.wayland.systemd.target;
+          # systemdTarget = "sway-session.target";
           extraArgs = [ "-w" ];
           timeouts = [
             { timeout = 60; command = "${brightnessctl} -s; ${brightnessctl} set 80%-"; resumeCommand = "${brightnessctl} -r"; }
             # { timeout = 300; command =  "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
-            { timeout = 300; command = "${swaylock} -f"; }
+            # { timeout = 300; command = "${swaylock} -f"; }
+            { timeout = 300; command = "${noctalia} lockScreen lock || ${swaylock} -f"; }
             # { timeout = 600; command = ''${pkgs.sway}/bin/swaymsg "output * dpms off"; resumeCommand = "${pkgs.sway}/bin/swaymsg output * dpms on'';  }
-            { timeout = 600; command = "${suspend}"; }
+            { timeout = 600; command = "${noctalia} sessionMenu lockAndSuspend || ${suspend}"; }
           ];
           events = {
             # { event = "before-sleep"; command = "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
             # { event = "after-resume"; command = "${swaylock} -f "; }
-            before-sleep = "${swaylock} -f ";
-            lock = "${swaylock} -f ";
+            # before-sleep = "${swaylock} -f ";
+            # lock = "${swaylock} -f ";
           };
         };
     };
@@ -25964,219 +26012,835 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
 :END:
 
 #+begin_src nix-ts :tangle modules/home/optional/niri.nix
-  { inputs, config, pkgs, lib, vars, ... }:
+  { inputs, config, pkgs, lib, vars, type, ... }:
   {
-    imports = [
+    imports = lib.optionals (type != "nixos") [
       inputs.niri-flake.homeModules.niri
     ];
-    options.swarselmodules.niri = lib.mkEnableOption "niri settings";
-    config = lib.mkIf config.swarselmodules.niri
-      {
-
-        programs.niri = {
-          package = pkgs.niri-unstable; # which package to use for niri validation
-          settings = {
-            xwayland-satellite = {
-              enable = true;
-              path = "${lib.getExe pkgs.xwayland-satellite-unstable}";
-            };
-            prefer-no-csd = true;
-            layer-rules = [
-              { matches = [{ namespace = "^notifications$"; }]; block-out-from = "screencast"; }
-              { matches = [{ namespace = "^wallpaper$"; }]; place-within-backdrop = true; }
-            ];
-            window-rules = [
-              {
-                matches = [{ app-id = ".*"; }];
-                opacity = 0.95;
-                default-column-width = { proportion = 0.5; };
-                shadow = {
-                  enable = true;
-                  draw-behind-window = true;
-                };
-                geometry-corner-radius = { top-left = 2.0; top-right = 2.0; bottom-left = 2.0; bottom-right = 2.0; };
-              }
-              { matches = [{ app-id = "at.yrlf.wl_mirror"; }]; opacity = 1.0; }
-              { matches = [{ app-id = "Gimp"; }]; opacity = 1.0; }
-              { matches = [{ app-id = "firefox"; }]; opacity = 0.99; }
-              { matches = [{ app-id = "^special.*"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; }
-              { matches = [{ app-id = "chromium-browser"; }]; opacity = 0.99; }
-              { matches = [{ app-id = "^qalculate-gtk$"; }]; open-floating = true; }
-              { matches = [{ app-id = "^blueman$"; }]; open-floating = true; }
-              { matches = [{ app-id = "^pavucontrol$"; }]; open-floating = true; }
-              { matches = [{ app-id = "^syncthingtray$"; }]; open-floating = true; }
-              { matches = [{ app-id = "^Element$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screencast"; }
-              # { matches = [{ app-id = "^Element$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
-              { matches = [{ app-id = "^vesktop$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screencast"; }
-              # { matches = [{ app-id = "^vesktop$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
-              { matches = [{ app-id = "^com.nextcloud.desktopclient.nextcloud$"; }]; open-floating = true; }
-              { matches = [{ title = ".*1Password.*"; }]; excludes = [{ app-id = "^firefox$"; } { app-id = "^emacs$"; } { app-id = "^kitty$"; }]; open-floating = true; block-out-from = "screencast"; }
-              { matches = [{ title = "(?:Open|Save) (?:File|Folder|As)"; }]; open-floating = true; }
-              { matches = [{ title = "^Add$"; }]; open-floating = true; }
-              { matches = [{ title = "^Picture-in-Picture$"; }]; open-floating = true; }
-              { matches = [{ title = "Syncthing Tray"; }]; open-floating = true; }
-              { matches = [{ title = "^Emacs Popup Frame$"; }]; open-floating = true; }
-              { matches = [{ title = "^Emacs Popup Anchor$"; }]; open-floating = true; }
-              { matches = [{ app-id = "^spotifytui$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
-              { matches = [{ app-id = "^kittyterm$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
-            ];
-            environment = {
-              DISPLAY = ":0";
-            } // vars.waylandSessionVariables;
-            screenshot-path = "~/Pictures/Screenshots/screenshot_%Y-%m-%d-%H%M%S.png";
-            input = {
-              mod-key = "Super";
-              keyboard = {
-                xkb = {
-                  layout = "us";
-                  variant = "altgr-intl";
-                };
-              };
-              mouse = {
-                natural-scroll = false;
-              };
-              touchpad = {
-                enable = true;
-                tap = true;
-                tap-button-map = "left-right-middle";
-                natural-scroll = true;
-                scroll-method = "two-finger";
-                click-method = "clickfinger";
-                disabled-on-external-mouse = true;
-                drag = true;
-                drag-lock = false;
-                dwt = true;
-                dwtp = true;
-              };
-            };
-            cursor = {
-              hide-after-inactive-ms = 2000;
-              hide-when-typing = true;
-            };
-            layout = {
-              background-color = "transparent";
-              border = {
-                enable = true;
-                width = 1;
-              };
-              focus-ring = {
-                enable = false;
-              };
-              gaps = 5;
-            };
-            binds = with config.lib.niri.actions; let
-              sh = spawn "sh" "-c";
-            in
+    config = {
+      programs.niri = {
+        package = pkgs.niri-stable; # which package to use for niri validation
+        settings = {
+          debug = {
+            honor-xdg-activation-with-invalid-serial = [];
+          };
+          xwayland-satellite = {
+            enable = true;
+            path = "${lib.getExe pkgs.xwayland-satellite-unstable}";
+          };
+          prefer-no-csd = true;
+          layer-rules = [
+            { matches = [{ namespace = "^notifications$"; }]; block-out-from = "screen-capture"; }
+            { matches = [{ namespace = "^wallpaper$"; }]; place-within-backdrop = true; }
+            { matches = [{ namespace = "^noctalia-overview*"; }]; place-within-backdrop = true; }
+          ];
+          window-rules = [
             {
-
-              # "Mod+Super_L" = spawn "killall -SIGUSR1 .waybar-wrapped";
-              "Mod+z".action = spawn "killall -SIGUSR1 .waybar-wrapped";
-              "Mod+Shift+t".action = toggle-window-rule-opacity;
-              # "Mod+Escape".action = "mode $exit";
-              "Mod+m".action = focus-workspace-previous;
-              "Mod+Shift+Space".action = toggle-window-floating;
-              "Mod+Shift+f".action = toggle-windowed-fullscreen;
-              "Mod+q".action = close-window;
-              "Mod+f".action = spawn "firefox";
-              "Mod+Space".action = spawn "fuzzel";
-              "Mod+Shift+c".action = spawn "qalculate-gtk";
-              "Mod+Ctrl+p".action = spawn "1password" "--quick-acces";
-              "Mod+Shift+Escape".action = spawn "kitty" "-o" "confirm_os_window_close=0" "btm";
-              "Mod+h".action = sh ''hyprpicker | wl-copy'';
-              # "Mod+s".action = spawn "grim" "-g" "\"$(slurp)\"" "-t" "png" "-" "|" "wl-copy" "-t" "image/png";
-              # "Mod+s".action = screenshot { show-pointer = false; };
-              "Mod+s".action.screenshot = { show-pointer = false; };
-              # "Mod+Shift+s".action = spawn "slurp" "|" "grim" "-g" "-" "Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
-              # "Mod+Shift+s".action = screenshot-window { write-to-disk = true; };
-              "Mod+Shift+s".action.screenshot-window = { write-to-disk = true; };
-              # "Mod+Shift+v".action = spawn "wf-recorder" "-g" "'$(slurp -f %o -or)'" "-f" "~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
-
-              "Mod+e".action = sh "emacsclient -nquc -a emacs -e '(dashboard-open)'";
-              "Mod+c".action = sh "emacsclient -ce '(org-capture)'";
-              "Mod+t".action = sh "emacsclient -ce '(org-agenda)'";
-              "Mod+Shift+m".action = sh "emacsclient -ce '(mu4e)'";
-              "Mod+Shift+a".action = sh "emacsclient -ce '(swarsel/open-calendar)'";
-
-              "Mod+a".action = spawn "swarselcheck-niri" "-s";
-              "Mod+x".action = spawn "swarselcheck-niri" "-k";
-              "Mod+d".action = spawn "swarselcheck-niri" "-d";
-              "Mod+w".action = spawn "swarselcheck-niri" "-e";
-
-              "Mod+p".action = spawn "pass-fuzzel";
-              "Mod+o".action = spawn "pass-fuzzel" "--otp";
-              "Mod+Shift+p".action = spawn "pass-fuzzel" "--type";
-              "Mod+Shift+o".action = spawn "pass-fuzzel" "--otp" "--type";
-
-              "Mod+Left".action = focus-column-or-monitor-left;
-              "Mod+Right".action = focus-column-or-monitor-right;
-              "Mod+Down".action = focus-window-or-workspace-down;
-              "Mod+Up".action = focus-window-or-workspace-up;
-              "Mod+Shift+Left".action = move-column-left;
-              "Mod+Shift+Right".action = move-column-right;
-              "Mod+Shift+Down".action = move-window-down-or-to-workspace-down;
-              "Mod+Shift+Up".action = move-window-up-or-to-workspace-up;
-              # "Mod+Ctrl+Shift+c".action = "reload";
-              # "Mod+Ctrl+Shift+r".action = "exec swarsel-displaypower";
-              # "Mod+Shift+e".action = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
-              # "Mod+r".action = "mode resize";
-              # "Mod+Return".action = "exec kitty";
-              "Mod+Return".action = spawn "swarselzellij";
-              "XF86AudioRaiseVolume".action = spawn "swayosd-client" "--output-volume" "raise";
-              "XF86AudioLowerVolume".action = spawn "swayosd-client" "--output-volume" "lower";
-              "XF86AudioMute".action = spawn "swayosd-client" "--output-volume" "mute-toggle";
-              "XF86MonBrightnessUp".action = spawn "swayosd-client" "--brightness raise";
-              "XF86MonBrightnessDown".action = spawn "swayosd-client" "--brightness lower";
-              "XF86Display".action = spawn "wl-mirror" "eDP-1";
-              "Mod+Escape".action = spawn "wlogout";
-              "Mod+Equal".action = set-column-width "+10%";
-              "Mod+Minus".action = set-column-width "-10%";
-
-              "Mod+1".action = focus-workspace 1;
-              "Mod+2".action = focus-workspace 2;
-              "Mod+3".action = focus-workspace 3;
-              "Mod+4".action = focus-workspace 4;
-              "Mod+5".action = focus-workspace 5;
-              "Mod+6".action = focus-workspace 6;
-              "Mod+7".action = focus-workspace 7;
-              "Mod+8".action = focus-workspace 8;
-              "Mod+9".action = focus-workspace 9;
-              "Mod+0".action = focus-workspace 0;
-
-              "Mod+Shift+1".action = move-column-to-index 1;
-              "Mod+Shift+2".action = move-column-to-index 2;
-              "Mod+Shift+3".action = move-column-to-index 3;
-              "Mod+Shift+4".action = move-column-to-index 4;
-              "Mod+Shift+5".action = move-column-to-index 5;
-              "Mod+Shift+6".action = move-column-to-index 6;
-              "Mod+Shift+7".action = move-column-to-index 7;
-              "Mod+Shift+8".action = move-column-to-index 8;
-              "Mod+Shift+9".action = move-column-to-index 9;
-              "Mod+Shift+0".action = move-column-to-index 0;
+              matches = [{ app-id = ".*"; }];
+              opacity = 0.95;
+              default-column-width = { proportion = 0.5; };
+              shadow = {
+                enable = true;
+                draw-behind-window = true;
+              };
+              clip-to-geometry = true;
+              geometry-corner-radius = { top-left = 5.0; top-right = 5.0; bottom-left = 5.0; bottom-right = 5.0; };
+            }
+            { matches = [{ app-id = "at.yrlf.wl_mirror"; }]; opacity = 1.0; }
+            { matches = [{ app-id = "Gimp"; }]; opacity = 1.0; }
+            { matches = [{ app-id = "^firefox$"; }]; opacity = 0.95; }
+            { matches = [{ app-id = "^special.*"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; }
+            { matches = [{ app-id = "chromium-browser"; }]; opacity = 0.99; }
+            { matches = [{ app-id = "^qalculate-gtk$"; }]; open-floating = true; }
+            { matches = [{ app-id = "^blueman$"; }]; open-floating = true; }
+            { matches = [{ app-id = "^pavucontrol$"; }]; open-floating = true; }
+            { matches = [{ app-id = "^syncthingtray$"; }]; open-floating = true; }
+            { matches = [{ app-id = "^Element$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; }
+            # { matches = [{ app-id = "^Element$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
+            { matches = [{ app-id = "^vesktop$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; }
+            # { matches = [{ app-id = "^vesktop$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
+            { matches = [{ app-id = "^com.nextcloud.desktopclient.nextcloud$"; }]; open-floating = true; }
+            { matches = [{ title = ".*1Password.*"; }]; excludes = [{ app-id = "^firefox$"; } { app-id = "^emacs$"; } { app-id = "^kitty$"; }]; open-floating = true; block-out-from = "screen-capture"; }
+            { matches = [{ title = "(?:Open|Save) (?:File|Folder|As)"; }]; open-floating = true; }
+            { matches = [{ title = "^Add$"; }]; open-floating = true; }
+            { matches = [{ title = "^Picture-in-Picture$"; }]; open-floating = true; }
+            { matches = [{ title = "Syncthing Tray"; }]; open-floating = true; }
+            { matches = [{ title = "^Emacs Popup Frame$"; }]; open-floating = true; }
+            { matches = [{ title = "^Emacs Popup Anchor$"; }]; open-floating = true; }
+            { matches = [{ app-id = "^spotifytui$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
+            { matches = [{ app-id = "^kittyterm$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
+          ];
+          environment = {
+            DISPLAY = ":0";
+            QT_QPA_PLATFORM = lib.mkForce "wayland";
+            EDITOR = "emacsclient -c";
+          } // vars.waylandSessionVariables;
+          screenshot-path = "~/Pictures/Screenshots/screenshot_%Y-%m-%d-%H%M%S.png";
+          input = {
+            mod-key = "Super";
+            keyboard = {
+              xkb = {
+                layout = "us";
+                variant = "altgr-intl";
+              };
             };
-            spawn-at-startup = [
-              # { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
-              # { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
-              # { command = [ "anki" ]; }
-              # { command = [ "obsidian" ]; }
-              # { command = [ "nm-applet" ]; }
-              { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
+            mouse = {
+              natural-scroll = false;
+            };
+            touchpad = {
+              enable = true;
+              tap = true;
+              tap-button-map = "left-right-middle";
+              natural-scroll = true;
+              scroll-method = "two-finger";
+              click-method = "clickfinger";
+              disabled-on-external-mouse = true;
+              drag = true;
+              drag-lock = false;
+              dwt = true;
+              dwtp = true;
+            };
+          };
+          cursor = {
+            hide-after-inactive-ms = 2000;
+            hide-when-typing = true;
+          };
+          layout = {
+            background-color = "transparent";
+            border = {
+              enable = true;
+              width = 1;
+            };
+            focus-ring = {
+              enable = false;
+            };
+            gaps = 5;
+          };
+          binds = with config.lib.niri.actions; let
+            sh = spawn "sh" "-c";
+            resizer = "niri-resize";
+          in
+          {
+            "Mod+Shift+t".action = toggle-window-rule-opacity;
+            "Mod+m".action = focus-workspace-previous;
+            "Mod+Shift+Space".action = toggle-window-floating;
+            "Mod+Shift+f".action = fullscreen-window;
+            "Mod+q".action = sh "niri msg action close-window & ${resizer}";
+            "Mod+f".action = sh "${resizer} & firefox";
+            # "Mod+Space".action = spawn "noctalia-shell" "ipc" "call" "launcher" "toggle";
+            "Mod+Space".action = sh "${resizer} & fuzzel";
+            "Mod+z".action = spawn "noctalia-shell" "ipc" "call" "bar" "toggle";
+            "Mod+Shift+c".action = spawn "qalculate-gtk";
+            "Mod+Ctrl+p".action = spawn "1password" "--quick-acces";
+            "Mod+Shift+Escape".action = spawn "kitty" "-o" "confirm_os_window_close=0" "btm";
+            "Mod+h".action = sh ''hyprpicker | wl-copy'';
+            # "Mod+s".action = spawn "grim" "-g" "\"$(slurp)\"" "-t" "png" "-" "|" "wl-copy" "-t" "image/png";
+            # "Mod+s".action = screenshot { show-pointer = false; };
+            "Mod+s".action.screenshot = { show-pointer = false; };
+            # "Mod+Shift+s".action = spawn "slurp" "|" "grim" "-g" "-" "Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
+            # "Mod+Shift+s".action = screenshot-window { write-to-disk = true; };
+            "Mod+Shift+s".action.screenshot-window = { write-to-disk = true; };
+            # "Mod+Shift+v".action = spawn "wf-recorder" "-g" "'$(slurp -f %o -or)'" "-f" "~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
+
+            "Mod+e".action = sh "${resizer} & emacsclient -nquc -a emacs -e '(dashboard-open)'";
+            "Mod+c".action = sh "${resizer} & emacsclient -ce '(org-capture)'";
+            "Mod+t".action = sh "${resizer} & emacsclient -ce '(org-agenda)'";
+            "Mod+Shift+m".action = sh "${resizer} & emacsclient -ce '(mu4e)'";
+            "Mod+Shift+a".action = sh "${resizer} & emacsclient -ce '(swarsel/open-calendar)'";
+
+            "Mod+a".action = spawn "swarselcheck-niri" "-s";
+            "Mod+x".action = spawn "swarselcheck-niri" "-k";
+            "Mod+d".action = spawn "swarselcheck-niri" "-d";
+            "Mod+w".action = spawn "swarselcheck-niri" "-e";
+
+            "Mod+p".action = spawn "pass-fuzzel";
+            "Mod+o".action = spawn "pass-fuzzel" "--otp";
+            "Mod+Shift+p".action = spawn "pass-fuzzel" "--type";
+            "Mod+Shift+o".action = spawn "pass-fuzzel" "--otp" "--type";
+
+            "Mod+Left".action = focus-column-or-monitor-left;
+            "Mod+Right".action = focus-column-or-monitor-right;
+            "Mod+Down".action = focus-window-or-workspace-down;
+            "Mod+Up".action = focus-window-or-workspace-up;
+            "Mod+Shift+Left".action = move-column-left;
+            "Mod+Shift+Right".action = move-column-right;
+            "Mod+Shift+Down".action = move-window-down-or-to-workspace-down;
+            "Mod+Shift+Up".action = move-window-up-or-to-workspace-up;
+            # "Mod+Ctrl+Shift+c".action = "reload";
+            # "Mod+Ctrl+Shift+r".action = "exec swarsel-displaypower";
+            # "Mod+Shift+e".action = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+            # "Mod+r".action = "mode resize";
+            # "Mod+Return".action = "exec kitty";
+            "Mod+Return".action = sh "${resizer} & exec kitty -o confirm_os_window_close=0";
+            "XF86AudioRaiseVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "increase";
+            "XF86AudioLowerVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "decrease";
+            "XF86AudioMute".action = spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput";
+            "XF86AudioPrev".action = spawn "noctalia-shell" "ipc" "call" "media" "previous";
+            "XF86AudioPlay".action = spawn "noctalia-shell" "ipc" "call" "media" "playPause";
+            "XF86AudioNext".action = spawn "noctalia-shell" "ipc" "call" "media" "next";
+            "XF86MonBrightnessUp".action = spawn "noctalia-shell" "ipc" "call" "brightness" "increase";
+            "XF86MonBrightnessDown".action = spawn "noctalia-shell" "ipc" "call" "brightness" "decrease";
+            "XF86Display".action = spawn "wl-mirror" "eDP-1";
+            "Mod+Escape".action = spawn "noctalia-shell" "ipc" "call" "sessionMenu" "toggle";
+            "Mod+i".action = spawn "noctalia-shell" "ipc" "call" "launcher" "emoji";
+            "Mod+Equal".action = set-column-width "+10%";
+            "Mod+Minus".action = set-column-width "-10%";
+
+            "Mod+1".action = focus-workspace 1;
+            "Mod+2".action = focus-workspace 2;
+            "Mod+3".action = focus-workspace 3;
+            "Mod+4".action = focus-workspace 4;
+            "Mod+5".action = focus-workspace 5;
+            "Mod+6".action = focus-workspace 6;
+            "Mod+7".action = focus-workspace 7;
+            "Mod+8".action = focus-workspace 8;
+            "Mod+9".action = focus-workspace 9;
+            "Mod+0".action = focus-workspace 0;
+
+            "Mod+Shift+1".action = move-column-to-index 1;
+            "Mod+Shift+2".action = move-column-to-index 2;
+            "Mod+Shift+3".action = move-column-to-index 3;
+            "Mod+Shift+4".action = move-column-to-index 4;
+            "Mod+Shift+5".action = move-column-to-index 5;
+            "Mod+Shift+6".action = move-column-to-index 6;
+            "Mod+Shift+7".action = move-column-to-index 7;
+            "Mod+Shift+8".action = move-column-to-index 8;
+            "Mod+Shift+9".action = move-column-to-index 9;
+            "Mod+Shift+0".action = move-column-to-index 0;
+          };
+          spawn-at-startup = [
+            # { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
+            # { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
+            # { command = [ "anki" ]; }
+            # { command = [ "obsidian" ]; }
+            # { command = [ "nm-applet" ]; }
+            # { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
+            # { command = [ "noctalia-shell" ]; }
+            { command = [ "pkill mako" ]; }
+            { command = [ "systemctl" "--user" "start" "noctalia-shell.target" ]; }
+          ];
+          # workspaces = {
+            # "01-Main" = {
+            #   name = "Scratchpad";
+            # };
+          #   "99-Scratchpad" = {
+          #     name = "";
+          #   };
+          # };
+        };
+      };
+
+    };
+  }
+#+end_src
+
+**** Noctalia
+
+Apart from configuring Noctalia, I here also add some systemd chains to make sure the Noctalia tray is actually ready to receive tray icons. For this I add another target =noctalia-tray-pre.target= that simply waits 5 seconds, which should be sufficient.
+
+#+begin_src nix-ts :tangle modules/home/optional/noctalia.nix
+  { self, inputs, config, pkgs, lib, confLib, ... }:
+  {
+    imports = [
+      inputs.noctalia.homeModules.default
+    ];
+    config = {
+      systemd.user = {
+        targets = {
+          noctalia-shell.Unit = {
+            After = [ "graphical-session.target" ];
+            Wants = [
+              "tray.target"
+              "noctalia-tray-pre.target"
             ];
-            workspaces = {
-              # "01-Main" = {
-              #   name = "Scratchpad";
-              # };
-              "99-Scratchpad" = {
-                name = "";
+          };
+          tray = {
+            Unit = {
+              After = [ "noctalia-tray-pre.target" ];
+              PartOf = [ "noctalia-shell.service" ];
+            };
+            Install.WantedBy = [ "noctalia-shell.target" ];
+          };
+          noctalia-tray-pre = {
+            Unit = {
+              After = [
+                "noctalia-init.service"
+              ];
+            };
+            Install.WantedBy = [ "noctalia-shell.target" ];
+          };
+        };
+        services = {
+          noctalia-shell = confLib.overrideTarget "noctalia-shell.target";
+          noctalia-init = {
+            Unit = {
+              PartOf = [ "noctalia-tray-pre.target" ];
+            };
+
+            Service = {
+              Type = "oneshot";
+              ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
+              ExecStart = "-${pkgs.busybox}/bin/pkill mako";
+              RemainAfterExit = true;
+            };
+
+            Install = {
+              WantedBy = [ "noctalia-tray-pre.target" ];
+            };
+          };
+        };
+      };
+
+      programs = {
+        fastfetch.enable = true;
+        noctalia-shell = {
+          enable = true;
+          package = pkgs.noctalia-shell.override { calendarSupport = true; };
+          systemd.enable = true;
+          settings = {
+            bar = {
+              barType = "simple";
+              position = "top";
+              monitors = [ ];
+              density = "default";
+              showCapsule = false;
+              showOutline = false;
+              capsuleOpacity = lib.mkForce 1;
+              backgroundOpacity = lib.mkForce 0.5;
+              useSeparateOpacity = true;
+              floating = false;
+              marginVertical = 4;
+              marginHorizontal = 0;
+              frameThickness = 8;
+              frameRadius = 12;
+              outerCorners = true;
+              hideOnOverview = false;
+              displayMode = "auto_hide";
+              autoHideDelay = 100;
+              autoShowDelay = 300;
+              screenOverrides = [ ];
+              widgets = {
+                left = [
+                  {
+                    characterCount = 2;
+                    colorizeIcons = false;
+                    emptyColor = "primary";
+                    enableScrollWheel = false;
+                    focusedColor = "secondary";
+                    followFocusedScreen = false;
+                    groupedBorderOpacity = 1;
+                    hideUnoccupied = true;
+                    iconScale = 0.5;
+                    id = "Workspace";
+                    labelMode = "none";
+                    occupiedColor = "primary";
+                    pillSize = 0.4;
+                    reverseScroll = false;
+                    showApplications = true;
+                    showBadge = true;
+                    showLabelsOnlyWhenOccupied = true;
+                    unfocusedIconsOpacity = 0.25;
+                  }
+                ];
+                center = [
+                  {
+                    colorizeIcons = false;
+                    hideMode = "hidden";
+                    id = "ActiveWindow";
+                    maxWidth = 145;
+                    scrollingMode = "hover";
+                    showIcon = true;
+                    useFixedWidth = false;
+                  }
+                  {
+                    id = "plugin:privacy-indicator";
+                  }
+                  {
+                    id = "plugin:screen-recorder";
+                  }
+                ];
+                right = [
+                  {
+                    blacklist = [
+                      "bluetooth*"
+                    ];
+                    colorizeIcons = false;
+                    drawerEnabled = true;
+                    hidePassive = true;
+                    id = "Tray";
+                    pinned = [ ];
+                  }
+                  {
+                    displayMode = "alwaysShow";
+                    id = "Volume";
+                    middleClickCommand = "pavucontrol";
+                  }
+                  {
+                    displayMode = "onhover";
+                    id = "Network";
+                  }
+                  {
+                    displayMode = "onhover";
+                    id = "Bluetooth";
+                  }
+                  {
+                    displayMode = "onhover";
+                    id = "VPN";
+                  }
+                  {
+                    deviceNativePath = "__default__";
+                    hideIfIdle = true;
+                    hideIfNotDetected = true;
+                    id = "Battery";
+                    showNoctaliaPerformance = false;
+                    showPowerProfiles = true;
+                  }
+                  {
+                    id = "plugin:ba7043:github-feed";
+                  }
+                  {
+                    id = "plugin:clipper";
+                  }
+                  {
+                    colorName = "primary";
+                    id = "SessionMenu";
+                  }
+                  {
+                    customFont = "FiraCode Nerd Font Mono";
+                    formatHorizontal = "ddd dd. MMM HH:mm:ss";
+                    formatVertical = "";
+                    id = "Clock";
+                    tooltipFormat = "ddd dd. MMM HH:mm:ss";
+                    useCustomFont = true;
+                    usePrimaryColor = true;
+                  }
+                  {
+                    colorizeDistroLogo = false;
+                    colorizeSystemIcon = "primary";
+                    customIconPath = "";
+                    enableColorization = true;
+                    icon = "noctalia";
+                    id = "ControlCenter";
+                    useDistroLogo = true;
+                  }
+                ];
+              };
+            };
+            general = {
+              avatarImage = "${self}/files/wallpaper/swarsel.png";
+              dimmerOpacity = 0.2;
+              showScreenCorners = false;
+              forceBlackScreenCorners = false;
+              scaleRatio = 1;
+              radiusRatio = 0.2;
+              iRadiusRatio = 1;
+              boxRadiusRatio = 1;
+              screenRadiusRatio = 1;
+              animationSpeed = 1;
+              animationDisabled = false;
+              compactLockScreen = true;
+              lockOnSuspend = true;
+              showSessionButtonsOnLockScreen = true;
+              showHibernateOnLockScreen = false;
+              enableShadows = true;
+              shadowDirection = "bottom_right";
+              shadowOffsetX = 2;
+              shadowOffsetY = 3;
+              language = "";
+              allowPanelsOnScreenWithoutBar = true;
+              showChangelogOnStartup = true;
+              telemetryEnabled = false;
+              enableLockScreenCountdown = true;
+              lockScreenCountdownDuration = 10000;
+              autoStartAuth = true;
+              allowPasswordWithFprintd = true;
+            };
+            ui = {
+              fontDefaultScale = 1;
+              fontFixedScale = 1;
+              tooltipsEnabled = true;
+              panelBackgroundOpacity = lib.mkForce 1;
+              panelsAttachedToBar = true;
+              settingsPanelMode = "centered";
+              wifiDetailsViewMode = "grid";
+              bluetoothDetailsViewMode = "grid";
+              networkPanelView = "wifi";
+              bluetoothHideUnnamedDevices = false;
+              boxBorderEnabled = false;
+            };
+            location = {
+              name = confLib.getConfig.repo.secrets.common.location.timezoneSpecific;
+              weatherEnabled = true;
+              weatherShowEffects = false;
+              useFahrenheit = false;
+              use12hourFormat = false;
+              showWeekNumberInCalendar = true;
+              showCalendarEvents = true;
+              showCalendarWeather = true;
+              analogClockInCalendar = false;
+              firstDayOfWeek = 1;
+              hideWeatherTimezone = false;
+              hideWeatherCityName = false;
+            };
+            calendar = {
+              cards = [
+                {
+                  enabled = true;
+                  id = "calendar-header-card";
+                }
+                {
+                  enabled = true;
+                  id = "calendar-month-card";
+                }
+                {
+                  enabled = true;
+                  id = "weather-card";
+                }
+              ];
+            };
+            wallpaper = {
+              enabled = true;
+              overviewEnabled = true;
+              directory = "${self}/files/wallpaper";
+              monitorDirectories = [ ];
+              enableMultiMonitorDirectories = true;
+              showHiddenFiles = false;
+              viewMode = "single";
+              setWallpaperOnAllMonitors = true;
+              fillMode = "crop";
+              fillColor = "#000000";
+              useSolidColor = false;
+              solidColor = "#1a1a2e";
+              automationEnabled = false;
+              wallpaperChangeMode = "random";
+              randomIntervalSec = 300;
+              transitionDuration = 500;
+              transitionType = "random";
+              transitionEdgeSmoothness = 0.05;
+              panelPosition = "follow_bar";
+              hideWallpaperFilenames = false;
+              useWallhaven = false;
+              wallhavenQuery = "";
+              wallhavenSorting = "relevance";
+              wallhavenOrder = "desc";
+              wallhavenCategories = "111";
+              wallhavenPurity = "100";
+              wallhavenRatios = "";
+              wallhavenApiKey = "";
+              wallhavenResolutionMode = "atleast";
+              wallhavenResolutionWidth = "";
+              wallhavenResolutionHeight = "";
+              sortOrder = "name";
+            };
+            appLauncher = {
+              enableClipboardHistory = false;
+              autoPasteClipboard = false;
+              enableClipPreview = true;
+              clipboardWrapText = true;
+              clipboardWatchTextCommand = "wl-paste --type text --watch cliphist store";
+              clipboardWatchImageCommand = "wl-paste --type image --watch cliphist store";
+              position = "center";
+              pinnedApps = [ ];
+              useApp2Unit = false;
+              sortByMostUsed = true;
+              terminalCommand = "kitty -e";
+              customLaunchPrefixEnabled = false;
+              customLaunchPrefix = "";
+              viewMode = "list";
+              showCategories = false;
+              iconMode = "native";
+              showIconBackground = false;
+              enableSettingsSearch = false;
+              enableWindowsSearch = false;
+              ignoreMouseInput = true;
+              screenshotAnnotationTool = "";
+            };
+            controlCenter = {
+              position = "close_to_bar_button";
+              diskPath = "/";
+              shortcuts = {
+                left = [
+                  {
+                    id = "Network";
+                  }
+                  {
+                    id = "Bluetooth";
+                  }
+                ];
+                right = [
+                  {
+                    id = "Notifications";
+                  }
+                  {
+                    id = "PowerProfile";
+                  }
+                  {
+                    id = "KeepAwake";
+                  }
+                  {
+                    id = "plugin:screen-recorder";
+                  }
+                ];
+              };
+              cards = [
+                {
+                  enabled = true;
+                  id = "profile-card";
+                }
+                {
+                  enabled = true;
+                  id = "shortcuts-card";
+                }
+                {
+                  enabled = true;
+                  id = "audio-card";
+                }
+                {
+                  enabled = true;
+                  id = "brightness-card";
+                }
+                {
+                  enabled = true;
+                  id = "weather-card";
+                }
+                {
+                  enabled = true;
+                  id = "media-sysmon-card";
+                }
+              ];
+            };
+            systemMonitor = {
+              cpuWarningThreshold = 80;
+              cpuCriticalThreshold = 90;
+              tempWarningThreshold = 80;
+              tempCriticalThreshold = 90;
+              gpuWarningThreshold = 80;
+              gpuCriticalThreshold = 90;
+              memWarningThreshold = 80;
+              memCriticalThreshold = 90;
+              swapWarningThreshold = 80;
+              swapCriticalThreshold = 90;
+              diskWarningThreshold = 80;
+              diskCriticalThreshold = 90;
+              diskAvailWarningThreshold = 20;
+              diskAvailCriticalThreshold = 10;
+              cpuPollingInterval = 1000;
+              gpuPollingInterval = 3000;
+              enableDgpuMonitoring = false;
+              memPollingInterval = 1000;
+              diskPollingInterval = 30000;
+              networkPollingInterval = 1000;
+              loadAvgPollingInterval = 3000;
+              useCustomColors = true;
+              warningColor = "#5ec4ff";
+              criticalColor = "#d95468";
+              externalMonitor = "btm";
+            };
+            dock = {
+              enabled = false;
+            };
+            network = {
+              wifiEnabled = true;
+              bluetoothRssiPollingEnabled = false;
+              bluetoothRssiPollIntervalMs = 10000;
+              wifiDetailsViewMode = "grid";
+              bluetoothDetailsViewMode = "grid";
+              bluetoothHideUnnamedDevices = false;
+            };
+            sessionMenu = {
+              enableCountdown = true;
+              countdownDuration = 3000;
+              position = "center";
+              showHeader = true;
+              largeButtonsStyle = true;
+              largeButtonsLayout = "grid";
+              showNumberLabels = true;
+              powerOptions = [
+                {
+                  action = "lock";
+                  command = "";
+                  countdownEnabled = true;
+                  enabled = true;
+                }
+                {
+                  action = "suspend";
+                  command = "";
+                  countdownEnabled = true;
+                  enabled = true;
+                }
+                {
+                  action = "hibernate";
+                  command = "";
+                  countdownEnabled = true;
+                  enabled = true;
+                }
+                {
+                  action = "reboot";
+                  command = "";
+                  countdownEnabled = true;
+                  enabled = true;
+                }
+                {
+                  action = "logout";
+                  command = "";
+                  countdownEnabled = true;
+                  enabled = true;
+                }
+                {
+                  action = "shutdown";
+                  command = "";
+                  countdownEnabled = true;
+                  enabled = true;
+                }
+              ];
+            };
+            notifications = {
+              enabled = true;
+              monitors = [ ];
+              location = "top_right";
+              overlayLayer = true;
+              backgroundOpacity = 0.5;
+              respectExpireTimeout = true;
+              lowUrgencyDuration = 3;
+              normalUrgencyDuration = 8;
+              criticalUrgencyDuration = 15;
+              enableMediaToast = false;
+              enableKeyboardLayoutToast = true;
+              batteryWarningThreshold = 20;
+              batteryCriticalThreshold = 5;
+              saveToHistory = {
+                low = true;
+                normal = true;
+                critical = true;
+              };
+              sounds.enabled = false;
+            };
+            osd = {
+              enabled = true;
+              location = "right";
+              autoHideMs = 2000;
+              overlayLayer = true;
+              backgroundOpacity = 0.5;
+              monitors = [ ];
+              enabledTypes = [ 0 1 2 3 ];
+            };
+            audio = {
+              volumeStep = 5;
+              volumeOverdrive = false;
+              cavaFrameRate = 30;
+              visualizerType = "linear";
+              mprisBlacklist = [ ];
+              preferredPlayer = "";
+              volumeFeedback = false;
+            };
+            brightness = {
+              brightnessStep = 5;
+              enforceMinimum = true;
+              enableDdcSupport = false;
+            };
+            nightLight = {
+              enabled = true;
+              autoSchedule = true;
+              nightTemp = "3700";
+              dayTemp = "5500";
+              manualSunrise = "06:30";
+              manualSunset = "18:30";
+            };
+            hooks.enabled = false;
+            desktopWidgets.enabled = false;
+
+            plugins = {
+              sources = [
+                {
+                  enabled = true;
+                  name = "Official Noctalia Plugins";
+                  url = "https://github.com/noctalia-dev/noctalia-plugins";
+                }
+                {
+                  enabled = true;
+                  name = "Dev";
+                  url = "https://github.com/Swarsel/noctalia-plugins";
+                }
+              ];
+              states = lib.listToAttrs
+                (map
+                  (plugin:
+                    lib.nameValuePair plugin {
+                      enabled = true;
+                      sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
+                    })
+                  [
+                    "clipper"
+                    "github-feed"
+                    "privacy-indicator"
+                    "kaomoji-provider"
+                    "unicode-picker"
+                    "screen-recorder"
+                  ]) // {
+                github-feed = {
+                  enabled = true;
+                  sourceUrl = "https://github.com/Swarsel/noctalia-plugins";
+                };
+              };
+            };
+            pluginSettings = {
+              clipper = {
+                enableTodoIntegration = false;
+              };
+
+              privacy-indicator = {
+                hideInactive = true;
+                iconSpacing = 4;
+                removeMargins = true;
+              };
+
+              screen-recorder = {
+                hideInactive = true;
+                directory = "";
+                filenamePattern = "recording_yyyyMMdd_HHmmss";
+                frameRate = "60";
+                audioCodec = "opus";
+                videoCodec = "h264";
+                quality = "very_high";
+                colorRange = "limited";
+                showCursor = true;
+                copyToClipboard = true;
+                audioSource = "default_output";
+                videoSource = "portal";
+                resolution = "original";
+              };
+
+              github-feed = {
+                username = lib.toUpper config.swarselsystems.mainUser;
+                token = confLib.getConfig.repo.secrets.common.noctaliaGithubToken;
+                refreshInterval = 300;
+                maxEvents = 50;
+                showStars = false;
+                showForks = false;
+                showPRs = false;
+                showRepoCreations = false;
+                showMyRepoStars = true;
+                showMyRepoForks = true;
+                openInBrowser = true;
+                # my fork:
+                showNotificationBadge = true;
+                colorizationEnabled = true;
+                colorizationIcon = "Primary";
+                colorizationBadge = "Tertiary";
+                colorizationBadgeText = "Primary";
+                defaultTab = 1;
+                enableSystemNotifications = true;
+                notifyGitHubNotifications = true;
+                notifyStars = true;
+                notifyForks = true;
+                notifyPRs = true;
+                notifyRepoCreations = true;
+                notifyMyRepoStars = true;
+                notifyMyRepoForks = true;
               };
             };
           };
         };
-
-      } // {
-      programs.niri = lib.mkIf (!config.swarselmodules.niri) {
-        package = null;
-        config = null;
-        settings = null;
       };
     };
   }
@@ -26267,690 +26931,694 @@ When setting up a new machine:
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
   { self, config, pkgs, lib, vars, confLib, type, ... }:
-  let
-    inherit (config.swarselsystems) homeDir mainUser;
-    inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
-    inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
+    let
+      inherit (config.swarselsystems) homeDir mainUser;
+      inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
+      inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
 
-    certsSopsFile = self + /secrets/repo/certs.yaml;
-  in
-  {
-    options.swarselmodules.optional-work = lib.swarselsystems.mkTrueOption;
-    config = {
-      home = {
-        packages = with pkgs; [
-          stable.teams-for-linux
-          shellcheck
-          dig
-          docker
-          postman
-          # rclone
-          libguestfs-with-appliance
-          prometheus.cli
-          tigervnc
-          # openstackclient
+      certsSopsFile = self + /secrets/repo/certs.yaml;
+    in
+      {
+        options.swarselmodules.optional-work = lib.swarselsystems.mkTrueOption;
+        config = {
+          home = {
+            packages = with pkgs; [
+              stable.teams-for-linux
+              shellcheck
+              dig
+              docker
+              postman
+              # rclone
+              libguestfs-with-appliance
+              prometheus.cli
+              tigervnc
+              # openstackclient
 
-          vscode
-          dev.antigravity
+              vscode
+              dev.antigravity
 
-          rustdesk-vbc
-        ];
-        sessionVariables = {
-          AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
-        };
-      };
-      systemd.user.sessionVariables = {
-        DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
-      } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
-        SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
-        SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
-      };
-
-      accounts.email.accounts.work =
-        let
-          inherit (confLib.getConfig.repo.secrets.local.work) mailName;
-        in
-        {
-          primary = false;
-          address = mailAddress;
-          userName = mailAddress;
-          realName = mailName;
-          passwordCommand = "pizauth show work";
-          imap = {
-            host = "outlook.office365.com";
-            port = 993;
-            tls.enable = true; # SSL/TLS
-          };
-          smtp = {
-            host = "outlook.office365.com";
-            port = 587;
-            tls = {
-              enable = true; # SSL/TLS
-              useStartTls = true;
-            };
-          };
-          thunderbird = {
-            enable = true;
-            profiles = [ "default" ];
-            settings = id: {
-              "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
-              "mail.server.server_${id}.authMethod" = 10; # oauth
-              # "toolkit.telemetry.enabled" = false;
-              # "toolkit.telemetry.rejected" = true;
-              # "toolkit.telemetry.prompted" = 2;
-            };
-          };
-          msmtp = {
-            enable = true;
-            extraConfig = {
-              auth = "xoauth2";
-              host = "outlook.office365.com";
-              protocol = "smtp";
-              port = "587";
-              tls = "on";
-              tls_starttls = "on";
-              from = "${mailAddress}";
-              user = "${mailAddress}";
-              passwordeval = "pizauth show work";
-            };
-          };
-          mu.enable = true;
-          mbsync = {
-            enable = true;
-            expunge = "both";
-            patterns = [ "INBOX" ];
-            extraConfig = {
-              account = {
-                AuthMechs = "XOAUTH2";
-              };
-            };
-          };
-        };
-
-      # wayland.windowManager.sway.config = {
-      #   output = {
-      #     "Applied Creative Technology Transmitter QUATTRO201811" = {
-      #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
-      #     };
-      #     "Hewlett Packard HP Z24i CN44250RDT" = {
-      #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
-      #     };
-      #     "HP Inc. HP 732pk CNC4080YL5" = {
-      #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
-      #     };
-      #   };
-      # };
-
-      wayland.windowManager.sway =
-        let
-          inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long domain1 mailAddress;
-        in
-        {
-          config = {
-            keybindings =
-              let
-                inherit (config.wayland.windowManager.sway.config) modifier;
-              in
-              {
-                "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
-                "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
-              };
-          };
-        };
-
-      stylix = {
-        targets.firefox.profileNames =
-          let
-            inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
-          in
-          [
-            "${user1}"
-            "${user2}"
-            "${user3}"
-            "work"
-          ];
-      };
-
-      programs =
-        let
-          inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail clouds;
-        in
-        {
-          openstackclient = {
-            enable = true;
-            inherit clouds;
-          };
-          awscli = {
-            enable = true;
-            package = pkgs.stable24_05.awscli2;
-            # settings = {
-            #   "default" = { };
-            #   "profile s3-imagebuilder-prod" = { };
-            # };
-            # credentials = {
-            #   "s3-imagebuilder-prod" = {
-            #     aws_access_key_id = "5OYXY4879EJG9I91K1B6";
-            #     credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
-            #   };
-            # };
-          };
-          git.settings.user.email = lib.mkForce gitMail;
-
-          zsh = {
-            shellAliases = {
-              dssh = "ssh -l ${user1Long}";
-              cssh = "ssh -l ${user2Long}";
-              wssh = "ssh -l ${user3Long}";
-            };
-            cdpath = [
-              "~/Documents/Work"
+              rustdesk-vbc
             ];
-            dirHashes = {
-              d = "$HOME/.dotfiles";
-              w = "$HOME/Documents/Work";
-              s = "$HOME/.dotfiles/secrets";
-              pr = "$HOME/Documents/Private";
-              ac = path1;
-            };
-
             sessionVariables = {
-              VSPHERE_USER = "$(cat ${confLib.getConfig.sops.secrets.vcuser.path})";
-              VSPHERE_PW = "$(cat ${confLib.getConfig.sops.secrets.vcpw.path})";
-              GOVC_USERNAME = "$(cat ${confLib.getConfig.sops.secrets.govcuser.path})";
-              GOVC_PASSWORD = "$(cat ${confLib.getConfig.sops.secrets.govcpw.path})";
-              GOVC_URL = "$(cat ${confLib.getConfig.sops.secrets.govcurl.path})";
-              GOVC_DATACENTER = "$(cat ${confLib.getConfig.sops.secrets.govcdc.path})";
-              GOVC_DATASTORE = "$(cat ${confLib.getConfig.sops.secrets.govcds.path})";
-              GOVC_HOST = "$(cat ${confLib.getConfig.sops.secrets.govchost.path})";
-              GOVC_RESOURCE_POOL = "$(cat ${confLib.getConfig.sops.secrets.govcpool.path})";
-              GOVC_NETWORK = "$(cat ${confLib.getConfig.sops.secrets.govcnetwork.path})";
+              AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
             };
           };
-
-          ssh = {
-            matchBlocks = {
-              "${loc1}" = {
-                hostname = "${loc1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.stg" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.staging" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.dev" = {
-                hostname = "${loc1}.${lifecycle2}.${domain2}";
-                user = user4;
-              };
-              "${loc2}" = {
-                hostname = "${loc2}.${domain1}";
-                user = user1Long;
-              };
-              "${loc2}.stg" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "${loc2}.staging" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "*.${domain1}" = {
-                user = user1Long;
-              };
-            };
+          systemd.user.sessionVariables = {
+            DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+          } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
+            SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
+            SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
           };
 
-          firefox = {
-            profiles =
-              let
-                isDefault = false;
-              in
+          accounts.email.accounts.work =
+            let
+              inherit (confLib.getConfig.repo.secrets.local.work) mailName;
+            in
               {
-                "${user1}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 1;
-                    settings = {
-                      "browser.startup.homepage" = "${site1}|${site2}";
+                primary = false;
+                address = mailAddress;
+                userName = mailAddress;
+                realName = mailName;
+                passwordCommand = "pizauth show work";
+                imap = {
+                  host = "outlook.office365.com";
+                  port = 993;
+                  tls.enable = true; # SSL/TLS
+                };
+                smtp = {
+                  host = "outlook.office365.com";
+                  port = 587;
+                  tls = {
+                    enable = true; # SSL/TLS
+                    useStartTls = true;
+                  };
+                };
+                thunderbird = {
+                  enable = true;
+                  profiles = [ "default" ];
+                  settings = id: {
+                    "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
+                    "mail.server.server_${id}.authMethod" = 10; # oauth
+                    # "toolkit.telemetry.enabled" = false;
+                    # "toolkit.telemetry.rejected" = true;
+                    # "toolkit.telemetry.prompted" = 2;
+                  };
+                };
+                msmtp = {
+                  enable = true;
+                  extraConfig = {
+                    auth = "xoauth2";
+                    host = "outlook.office365.com";
+                    protocol = "smtp";
+                    port = "587";
+                    tls = "on";
+                    tls_starttls = "on";
+                    from = "${mailAddress}";
+                    user = "${mailAddress}";
+                    passwordeval = "pizauth show work";
+                  };
+                };
+                mu.enable = true;
+                mbsync = {
+                  enable = true;
+                  expunge = "both";
+                  patterns = [ "INBOX" ];
+                  extraConfig = {
+                    account = {
+                      AuthMechs = "XOAUTH2";
                     };
-                  }
-                  vars.firefox;
-                "${user2}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 2;
-                    settings = {
-                      "browser.startup.homepage" = "${site3}";
-                    };
-                  }
-                  vars.firefox;
-                "${user3}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 3;
-                  }
-                  vars.firefox;
-                work = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 4;
-                    settings = {
-                      "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                    };
-                  }
-                  vars.firefox;
+                  };
+                };
               };
+
+          # wayland.windowManager.sway.config = {
+          #   output = {
+          #     "Applied Creative Technology Transmitter QUATTRO201811" = {
+          #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+          #     };
+          #     "Hewlett Packard HP Z24i CN44250RDT" = {
+          #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+          #     };
+          #     "HP Inc. HP 732pk CNC4080YL5" = {
+          #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+          #     };
+          #   };
+          # };
+
+          wayland.windowManager.sway =
+            let
+              inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long domain1 mailAddress;
+            in
+              {
+                config = {
+                  keybindings =
+                    let
+                      inherit (config.wayland.windowManager.sway.config) modifier;
+                    in
+                      {
+                        "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
+                        "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
+                      };
+                };
+              };
+
+          stylix = {
+            targets.firefox.profileNames =
+              let
+                inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+              in
+                [
+                  "${user1}"
+                  "${user2}"
+                  "${user3}"
+                  "work"
+                ];
           };
 
-          chromium = {
+          programs =
+            let
+              inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail clouds;
+            in
+              {
+                openstackclient = {
+                  enable = true;
+                  inherit clouds;
+                };
+                awscli = {
+                  enable = true;
+                  package = pkgs.stable24_05.awscli2;
+                  # settings = {
+                  #   "default" = { };
+                  #   "profile s3-imagebuilder-prod" = { };
+                  # };
+                  # credentials = {
+                  #   "s3-imagebuilder-prod" = {
+                  #     aws_access_key_id = "5OYXY4879EJG9I91K1B6";
+                  #     credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
+                  #   };
+                  # };
+                };
+                git.settings.user.email = lib.mkForce gitMail;
+
+                zsh = {
+                  shellAliases = {
+                    dssh = "ssh -l ${user1Long}";
+                    cssh = "ssh -l ${user2Long}";
+                    wssh = "ssh -l ${user3Long}";
+                  };
+                  cdpath = [
+                    "~/Documents/Work"
+                  ];
+                  dirHashes = {
+                    d = "$HOME/.dotfiles";
+                    w = "$HOME/Documents/Work";
+                    s = "$HOME/.dotfiles/secrets";
+                    pr = "$HOME/Documents/Private";
+                    ac = path1;
+                  };
+
+                  sessionVariables = {
+                    VSPHERE_USER = "$(cat ${confLib.getConfig.sops.secrets.vcuser.path})";
+                    VSPHERE_PW = "$(cat ${confLib.getConfig.sops.secrets.vcpw.path})";
+                    GOVC_USERNAME = "$(cat ${confLib.getConfig.sops.secrets.govcuser.path})";
+                    GOVC_PASSWORD = "$(cat ${confLib.getConfig.sops.secrets.govcpw.path})";
+                    GOVC_URL = "$(cat ${confLib.getConfig.sops.secrets.govcurl.path})";
+                    GOVC_DATACENTER = "$(cat ${confLib.getConfig.sops.secrets.govcdc.path})";
+                    GOVC_DATASTORE = "$(cat ${confLib.getConfig.sops.secrets.govcds.path})";
+                    GOVC_HOST = "$(cat ${confLib.getConfig.sops.secrets.govchost.path})";
+                    GOVC_RESOURCE_POOL = "$(cat ${confLib.getConfig.sops.secrets.govcpool.path})";
+                    GOVC_NETWORK = "$(cat ${confLib.getConfig.sops.secrets.govcnetwork.path})";
+                  };
+                };
+
+                ssh = {
+                  matchBlocks = {
+                    "${loc1}" = {
+                      hostname = "${loc1}.${domain2}";
+                      user = user4;
+                    };
+                    "${loc1}.stg" = {
+                      hostname = "${loc1}.${lifecycle1}.${domain2}";
+                      user = user4;
+                    };
+                    "${loc1}.staging" = {
+                      hostname = "${loc1}.${lifecycle1}.${domain2}";
+                      user = user4;
+                    };
+                    "${loc1}.dev" = {
+                      hostname = "${loc1}.${lifecycle2}.${domain2}";
+                      user = user4;
+                    };
+                    "${loc2}" = {
+                      hostname = "${loc2}.${domain1}";
+                      user = user1Long;
+                    };
+                    "${loc2}.stg" = {
+                      hostname = "${loc2}.${lifecycle1}.${domain2}";
+                      user = user1Long;
+                    };
+                    "${loc2}.staging" = {
+                      hostname = "${loc2}.${lifecycle1}.${domain2}";
+                      user = user1Long;
+                    };
+                    "*.${domain1}" = {
+                      user = user1Long;
+                    };
+                  };
+                };
+
+                firefox = {
+                  profiles =
+                    let
+                      isDefault = false;
+                    in
+                      {
+                        "${user1}" = lib.recursiveUpdate
+                          {
+                            inherit isDefault;
+                            id = 1;
+                            settings = {
+                              "browser.startup.homepage" = "${site1}|${site2}";
+                            };
+                          }
+                          vars.firefox;
+                        "${user2}" = lib.recursiveUpdate
+                          {
+                            inherit isDefault;
+                            id = 2;
+                            settings = {
+                              "browser.startup.homepage" = "${site3}";
+                            };
+                          }
+                          vars.firefox;
+                        "${user3}" = lib.recursiveUpdate
+                          {
+                            inherit isDefault;
+                            id = 3;
+                          }
+                          vars.firefox;
+                        work = lib.recursiveUpdate
+                          {
+                            inherit isDefault;
+                            id = 4;
+                            settings = {
+                              "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                            };
+                          }
+                          vars.firefox;
+                      };
+                };
+
+                chromium = {
+                  enable = true;
+                  package = pkgs.chromium;
+
+                  extensions = [
+                    # 1password
+                    "gejiddohjgogedgjnonbofjigllpkmbf"
+                    # dark reader
+                    "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+                    # ublock origin
+                    "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+                    # i still dont care about cookies
+                    "edibdbjcniadpccecjdfdjjppcpchdlm"
+                    # browserpass
+                    "naepdomgkenhinolocfifgehidddafch"
+                  ];
+                };
+              };
+
+          services = {
+            kanshi = {
+              settings = [
+                {
+                  # seminary room
+                  output = {
+                    criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                    scale = 1.0;
+                    mode = "1280x720";
+                  };
+                }
+                {
+                  # work side screen
+                  output = {
+                    criteria = "HP Inc. HP 732pk CNC4080YL5";
+                    scale = 1.0;
+                    mode = "3840x2160";
+                    transform = "270";
+                  };
+                }
+                # {
+                #   # work side screen
+                #   output = {
+                #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                #     scale = 1.0;
+                #     mode = "1920x1200";
+                #     transform = "270";
+                #   };
+                # }
+                {
+                  # work main screen
+                  output = {
+                    criteria = "HP Inc. HP Z32 CN41212T55";
+                    scale = 1.0;
+                    mode = "3840x2160";
+                  };
+                }
+                {
+                  profile = {
+                    name = "lidopen";
+                    exec = [
+                      "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    ];
+                    outputs = [
+                      {
+                        criteria = config.swarselsystems.sharescreen;
+                        status = "enable";
+                        scale = 1.5;
+                        position = "2560,0";
+                      }
+                      {
+                        criteria = "HP Inc. HP 732pk CNC4080YL5";
+                        scale = 1.0;
+                        mode = "3840x2160";
+                        position = "-3440,-1050";
+                        transform = "270";
+                      }
+                      {
+                        criteria = "HP Inc. HP Z32 CN41212T55";
+                        scale = 1.0;
+                        mode = "3840x2160";
+                        position = "-1280,0";
+                      }
+                    ];
+                  };
+                }
+                {
+                  profile =
+                    let
+                      monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                    in
+                      {
+                        name = "lidopen";
+                        exec = [
+                          "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                          "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                          "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                        ];
+                        outputs = [
+                          {
+                            criteria = config.swarselsystems.sharescreen;
+                            status = "enable";
+                            scale = 1.7;
+                            position = "2560,0";
+                          }
+                          {
+                            criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                            scale = 1.0;
+                            mode = "1280x720";
+                            position = "10000,10000";
+                          }
+                        ];
+                      };
+                }
+                {
+                  profile = {
+                    name = "lidclosed";
+                    exec = [
+                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    ];
+                    outputs = [
+                      {
+                        criteria = config.swarselsystems.sharescreen;
+                        status = "disable";
+                      }
+                      {
+                        criteria = "HP Inc. HP 732pk CNC4080YL5";
+                        scale = 1.0;
+                        mode = "3840x2160";
+                        position = "-3440,-1050";
+                        transform = "270";
+                      }
+                      {
+                        criteria = "HP Inc. HP Z32 CN41212T55";
+                        scale = 1.0;
+                        mode = "3840x2160";
+                        position = "-1280,0";
+                      }
+                    ];
+                  };
+                }
+                {
+                  profile =
+                    let
+                      monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                    in
+                      {
+                        name = "lidclosed";
+                        exec = [
+                          "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                        ];
+                        outputs = [
+                          {
+                            criteria = config.swarselsystems.sharescreen;
+                            status = "disable";
+                          }
+                          {
+                            criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                            scale = 1.0;
+                            mode = "1280x720";
+                            position = "10000,10000";
+                          }
+                        ];
+                      };
+                }
+              ];
+            };
+          };
+
+          systemd.user.services = {
+            pizauth.Service = {
+              ExecStartPost = [
+                "${pkgs.toybox}/bin/sleep 1"
+                "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
+              ];
+            };
+
+            teams-applet = {
+              Unit = {
+                Description = "teams applet";
+                Requires = [ "graphical-session.target" ];
+                After = [
+                  "graphical-session.target"
+                  "tray.target"
+                ];
+                PartOf = [
+                  "tray.target"
+                ];
+              };
+
+              Install = {
+                WantedBy = [ "tray.target" ];
+              };
+
+              Service = {
+                ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+              };
+            };
+
+            onepassword-applet = {
+              Unit = {
+                Description = "1password applet";
+                Requires = [ "graphical-session.target" ];
+                After = [
+                  "graphical-session.target"
+                  "tray.target"
+                ];
+                PartOf = [
+                  "tray.target"
+                ];
+              };
+
+              Install = {
+                WantedBy = [ "tray.target" ];
+              };
+
+              Service = {
+                ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
+              };
+            };
+
+          };
+
+          services.pizauth = {
             enable = true;
-            package = pkgs.chromium;
-
-            extensions = [
-              # 1password
-              "gejiddohjgogedgjnonbofjigllpkmbf"
-              # dark reader
-              "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-              # ublock origin
-              "cjpalhdlnbpafiamejdnhcphjbkeiagm"
-              # i still dont care about cookies
-              "edibdbjcniadpccecjdfdjjppcpchdlm"
-              # browserpass
-              "naepdomgkenhinolocfifgehidddafch"
-            ];
-          };
-        };
-
-      services = {
-        kanshi = {
-          settings = [
-            {
-              # seminary room
-              output = {
-                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                scale = 1.0;
-                mode = "1280x720";
+            extraConfig = ''
+              auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+            error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+            token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
+            '';
+            accounts = {
+              work = {
+                authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+                tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+                clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+                clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+                scopes = [
+                  "https://outlook.office365.com/IMAP.AccessAsUser.All"
+                  "https://outlook.office365.com/SMTP.Send"
+                  "offline_access"
+                ];
+                loginHint = "${confLib.getConfig.repo.secrets.local.work.mailAddress}";
               };
-            }
-            {
-              # work side screen
-              output = {
-                criteria = "HP Inc. HP 732pk CNC4080YL5";
-                scale = 1.0;
+            };
+
+          };
+
+          xdg =
+            let
+              inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+            in
+              {
+                mimeApps = {
+                  defaultApplications = {
+                    "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+                  };
+                };
+                desktopEntries =
+                  let
+                    terminal = false;
+                    categories = [ "Application" ];
+                    icon = "firefox";
+                  in
+                    {
+                      firefox_work = {
+                        name = "Firefox (work)";
+                        genericName = "Firefox work";
+                        exec = "firefox -p work";
+                        inherit terminal categories icon;
+                      };
+                      "firefox_${user1}" = {
+                        name = "Firefox (${user1})";
+                        genericName = "Firefox ${user1}";
+                        exec = "firefox -p ${user1}";
+                        inherit terminal categories icon;
+                      };
+
+                      "firefox_${user2}" = {
+                        name = "Firefox (${user2})";
+                        genericName = "Firefox ${user2}";
+                        exec = "firefox -p ${user2}";
+                        inherit terminal categories icon;
+                      };
+
+                      "firefox_${user3}" = {
+                        name = "Firefox (${user3})";
+                        genericName = "Firefox ${user3}";
+                        exec = "firefox -p ${user3}";
+                        inherit terminal categories icon;
+                      };
+
+
+                    };
+              };
+          swarselsystems = {
+            startup = [
+              # { command = "nextcloud --background"; }
+              # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+              # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+              # { command = "anki"; }
+              # { command = "obsidian"; }
+              # { command = "nm-applet"; }
+              # { command = "feishin"; }
+              # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+              # { command = "1password"; }
+            ];
+            monitors = {
+              work_back_middle = rec {
+                name = "LG Electronics LG Ultra HD 0x000305A6";
+                mode = "2560x1440";
+                scale = "1";
+                position = "5120,0";
+                workspace = "1:一";
+                # output = "DP-10";
+                output = name;
+              };
+              work_front_left = rec {
+                name = "LG Electronics LG Ultra HD 0x0007AB45";
+                mode = "3840x2160";
+                scale = "1";
+                position = "5120,0";
+                workspace = "1:一";
+                # output = "DP-7";
+                output = name;
+              };
+              work_middle_middle_main = rec {
+                name = "HP Inc. HP Z32 CN41212T55";
+                mode = "3840x2160";
+                scale = "1";
+                position = "-1280,0";
+                workspace = "1:一";
+                # output = "DP-3";
+                output = name;
+              };
+              # work_middle_middle_main = rec {
+              #   name = "HP Inc. HP 732pk CNC4080YL5";
+              #   mode = "3840x2160";
+              #   scale = "1";
+              #   position = "-1280,0";
+              #   workspace = "11:M";
+              #   # output = "DP-8";
+              #   output = name;
+              # };
+              work_middle_middle_side = rec {
+                name = "HP Inc. HP 732pk CNC4080YL5";
                 mode = "3840x2160";
                 transform = "270";
+                scale = "1";
+                position = "-3440,-1050";
+                workspace = "12:S";
+                # output = "DP-8";
+                output = name;
               };
-            }
-            # {
-            #   # work side screen
-            #   output = {
-            #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
-            #     scale = 1.0;
-            #     mode = "1920x1200";
-            #     transform = "270";
-            #   };
-            # }
-            {
-              # work main screen
-              output = {
-                criteria = "HP Inc. HP Z32 CN41212T55";
-                scale = 1.0;
-                mode = "3840x2160";
+              work_middle_middle_old = rec {
+                name = "Hewlett Packard HP Z24i CN44250RDT";
+                mode = "1920x1200";
+                transform = "270";
+                scale = "1";
+                position = "-2480,0";
+                workspace = "12:S";
+                # output = "DP-9";
+                output = name;
               };
-            }
-            {
-              profile = {
-                name = "lidopen";
-                exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
-                ];
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "enable";
-                    scale = 1.5;
-                    position = "2560,0";
-                  }
-                  {
-                    criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.0;
-                    mode = "3840x2160";
-                    position = "-3440,-1050";
-                    transform = "270";
-                  }
-                  {
-                    criteria = "HP Inc. HP Z32 CN41212T55";
-                    scale = 1.0;
-                    mode = "3840x2160";
-                    position = "-1280,0";
-                  }
-                ];
+              work_seminary = rec {
+                name = "Applied Creative Technology Transmitter QUATTRO201811";
+                mode = "1280x720";
+                scale = "1";
+                position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+                workspace = "14:T";
+                # output = "DP-4";
+                output = name;
               };
-            }
-            {
-              profile =
-                let
-                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                in
-                {
-                  name = "lidopen";
-                  exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
-                  ];
-                  outputs = [
-                    {
-                      criteria = config.swarselsystems.sharescreen;
-                      status = "enable";
-                      scale = 1.7;
-                      position = "2560,0";
-                    }
-                    {
-                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                      scale = 1.0;
-                      mode = "1280x720";
-                      position = "10000,10000";
-                    }
-                  ];
-                };
-            }
-            {
-              profile = {
-                name = "lidclosed";
-                exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
-                ];
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "disable";
-                  }
-                  {
-                    criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.0;
-                    mode = "3840x2160";
-                    position = "-3440,-1050";
-                    transform = "270";
-                  }
-                  {
-                    criteria = "HP Inc. HP Z32 CN41212T55";
-                    scale = 1.0;
-                    mode = "3840x2160";
-                    position = "-1280,0";
-                  }
-                ];
+            };
+            inputs = {
+              "1133:45081:MX_Master_2S_Keyboard" = {
+                xkb_layout = "us";
+                xkb_variant = "altgr-intl";
               };
-            }
-            {
-              profile =
-                let
-                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                in
-                {
-                  name = "lidclosed";
-                  exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                  ];
-                  outputs = [
-                    {
-                      criteria = config.swarselsystems.sharescreen;
-                      status = "disable";
-                    }
-                    {
-                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                      scale = 1.0;
-                      mode = "1280x720";
-                      position = "10000,10000";
-                    }
-                  ];
-                };
-            }
-          ];
-        };
-      };
+              # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+              #   dwt = "enabled";
+              #   tap = "enabled";
+              #   natural_scroll = "enabled";
+              #   middle_emulation = "enabled";
+              #   drag_lock = "disabled";
+              # };
+              "1133:50504:Logitech_USB_Receiver" = {
+                xkb_layout = "us";
+                xkb_variant = "altgr-intl";
+              };
+              "1133:45944:MX_KEYS_S" = {
+                xkb_layout = "us";
+                xkb_variant = "altgr-intl";
+              };
+            };
 
-      systemd.user.services = {
-        pizauth.Service = {
-          ExecStartPost = [
-            "${pkgs.toybox}/bin/sleep 1"
-            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
-          ];
-        };
-
-        teams-applet = {
-          Unit = {
-            Description = "teams applet";
-            Requires = [ "tray.target" ];
-            After = [
-              "graphical-session.target"
-              "tray.target"
-            ];
-            PartOf = [ "graphical-session.target" ];
           };
-
-          Install = {
-            WantedBy = [ "graphical-session.target" ];
-          };
-
-          Service = {
-            ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
-          };
-        };
-
-        onepassword-applet = {
-          Unit = {
-            Description = "1password applet";
-            Requires = [ "tray.target" ];
-            After = [
-              "graphical-session.target"
-              "tray.target"
-            ];
-            PartOf = [ "graphical-session.target" ];
-          };
-
-          Install = {
-            WantedBy = [ "graphical-session.target" ];
-          };
-
-          Service = {
-            ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
-          };
-        };
-
-      };
-
-      services.pizauth = {
-        enable = true;
-        extraConfig = ''
-          auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
-          error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
-          token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
-        '';
-        accounts = {
-          work = {
-            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-            scopes = [
-              "https://outlook.office365.com/IMAP.AccessAsUser.All"
-              "https://outlook.office365.com/SMTP.Send"
-              "offline_access"
-            ];
-            loginHint = "${confLib.getConfig.repo.secrets.local.work.mailAddress}";
-          };
-        };
-
-      };
-
-      xdg =
-        let
-          inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
-        in
-        {
-          mimeApps = {
-            defaultApplications = {
-              "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+        } // lib.optionalAttrs (type != "nixos") {
+          sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+            harica-root-ca = {
+              sopsFile = certsSopsFile;
+              path = "${homeDir}/.aws/certs/harica-root.pem";
+              owner = mainUser;
             };
           };
-          desktopEntries =
-            let
-              terminal = false;
-              categories = [ "Application" ];
-              icon = "firefox";
-            in
-            {
-              firefox_work = {
-                name = "Firefox (work)";
-                genericName = "Firefox work";
-                exec = "firefox -p work";
-                inherit terminal categories icon;
-              };
-              "firefox_${user1}" = {
-                name = "Firefox (${user1})";
-                genericName = "Firefox ${user1}";
-                exec = "firefox -p ${user1}";
-                inherit terminal categories icon;
-              };
 
-              "firefox_${user2}" = {
-                name = "Firefox (${user2})";
-                genericName = "Firefox ${user2}";
-                exec = "firefox -p ${user2}";
-                inherit terminal categories icon;
-              };
-
-              "firefox_${user3}" = {
-                name = "Firefox (${user3})";
-                genericName = "Firefox ${user3}";
-                exec = "firefox -p ${user3}";
-                inherit terminal categories icon;
-              };
-
-
-            };
-        };
-      swarselsystems = {
-        startup = [
-          # { command = "nextcloud --background"; }
-          # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          # { command = "anki"; }
-          # { command = "obsidian"; }
-          # { command = "nm-applet"; }
-          # { command = "feishin"; }
-          # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-          # { command = "1password"; }
-        ];
-        monitors = {
-          work_back_middle = rec {
-            name = "LG Electronics LG Ultra HD 0x000305A6";
-            mode = "2560x1440";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            # output = "DP-10";
-            output = name;
-          };
-          work_front_left = rec {
-            name = "LG Electronics LG Ultra HD 0x0007AB45";
-            mode = "3840x2160";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            # output = "DP-7";
-            output = name;
-          };
-          work_middle_middle_main = rec {
-            name = "HP Inc. HP Z32 CN41212T55";
-            mode = "3840x2160";
-            scale = "1";
-            position = "-1280,0";
-            workspace = "1:一";
-            # output = "DP-3";
-            output = name;
-          };
-          # work_middle_middle_main = rec {
-          #   name = "HP Inc. HP 732pk CNC4080YL5";
-          #   mode = "3840x2160";
-          #   scale = "1";
-          #   position = "-1280,0";
-          #   workspace = "11:M";
-          #   # output = "DP-8";
-          #   output = name;
-          # };
-          work_middle_middle_side = rec {
-            name = "HP Inc. HP 732pk CNC4080YL5";
-            mode = "3840x2160";
-            transform = "270";
-            scale = "1";
-            position = "-3440,-1050";
-            workspace = "12:S";
-            # output = "DP-8";
-            output = name;
-          };
-          work_middle_middle_old = rec {
-            name = "Hewlett Packard HP Z24i CN44250RDT";
-            mode = "1920x1200";
-            transform = "270";
-            scale = "1";
-            position = "-2480,0";
-            workspace = "12:S";
-            # output = "DP-9";
-            output = name;
-          };
-          work_seminary = rec {
-            name = "Applied Creative Technology Transmitter QUATTRO201811";
-            mode = "1280x720";
-            scale = "1";
-            position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-            workspace = "14:T";
-            # output = "DP-4";
-            output = name;
-          };
-        };
-        inputs = {
-          "1133:45081:MX_Master_2S_Keyboard" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-          #   dwt = "enabled";
-          #   tap = "enabled";
-          #   natural_scroll = "enabled";
-          #   middle_emulation = "enabled";
-          #   drag_lock = "disabled";
-          # };
-          "1133:50504:Logitech_USB_Receiver" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "1133:45944:MX_KEYS_S" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
         };
 
-      };
-    } // lib.optionalAttrs (type != "nixos") {
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
-        harica-root-ca = {
-          sopsFile = certsSopsFile;
-          path = "${homeDir}/.aws/certs/harica-root.pem";
-          owner = mainUser;
-        };
-      };
-
-    };
-
-  }
+      }
 
 #+end_src
 
@@ -27596,6 +28264,17 @@ In short, the options defined here are passed to the modules systems using =_mod
               _ = { };
             });
 
+        overrideTarget = target: let
+          inherit target;
+        in  {
+          Unit = {
+            PartOf = lib.mkForce [ target ];
+            After = lib.mkForce [ target ];
+            Requires = lib.mkForce [ target ];
+          };
+          Install.WantedBy = lib.mkForce [ target ];
+        };
+
         genNginx =
           { serviceAddress
           , serviceName
@@ -28034,6 +28713,38 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
   }
 #+end_src
 
+***** niri-resize
+:PROPERTIES:
+:CUSTOM_ID: h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d
+:END:
+
+
+#+begin_src shell :tangle files/scripts/niri-resize.sh
+  WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select(.is_active == true) | .id')
+
+  COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
+
+  while [[ $COUNT == "0" || $COUNT == "2" ]]; do
+      COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
+  done
+
+  if [[ $COUNT == "1" ]]; then
+      niri msg action maximize-column
+  fi
+#+end_src
+
+#+RESULTS:
+
+#+begin_src nix-ts :tangle pkgs/flake/niri-resize/default.nix
+  { self, name, writeShellApplication, jq }:
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ jq ];
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+  }
+
+#+end_src
+
 ***** swarselcheck
 :PROPERTIES:
 :CUSTOM_ID: h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d
@@ -28121,51 +28832,45 @@ This app checks for different apps that I keep around in the scratchpad for quic
 :CUSTOM_ID: h:96da8360-2d23-4e86-9602-415fbdb972af
 :END:
 
-#+begin_src shell :tangle files/scripts/swarselcheck-niri.sh
-  while :; do
-      case ${1:-} in
-      -k | --kitty)
-          cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm' '&')
-          searchapp="kittyterm"
-          ;;
-      -e | --element)
-          cmd=(element-desktop)
-          searchapp="Element"
-          ;;
-      -d | --vesktop)
-          cmd=(vesktop)
-          searchapp="vesktop"
-          ;;
-      -s | --spotifyplayer)
-          cmd=(sh -c 'kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&')
-          searchapp="spotifytui"
-          ;;
-      ,*) break ;;
-      esac
-      shift
-  done
-
-  WIN_INFO=$(niri msg -j windows | jq --arg search "$searchapp" '.[] | select (.app_id | test($search)) | { id, is_focused, workspace_id }')
-  ID=$(echo "$WIN_INFO" | jq -r '.id // empty')
-  IS_FOCUSED=$(echo "$WIN_INFO" | jq -r '.is_focused // empty')
-  TARGET_MONITOR=$(niri msg -j workspaces | jq --arg search "" '.[] | select (.name != null and (.name | test($search))) | { output }' | jq -r '.output // empty')
-  CURRENT_WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select (.is_active == true) | .output // empty')
-
-  if [ -z "$ID" ]; then
-      niri msg action spawn -- "${cmd[@]}"
-  elif [ "$IS_FOCUSED" ]; then
-      niri msg action move-window-to-workspace "" --window-id "$ID" --focus false
-  else
-      niri msg action focus-monitor "$TARGET_MONITOR" && niri msg action move-window-to-workspace "$CURRENT_WORKSPACE" --window-id "$ID" && niri msg action focus-floating
-  fi
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/swarselcheck-niri/default.nix
   { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      while :; do
+          case ''${1:-} in
+          -k | --kitty)
+              cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${self}/files/zellij/config-kittyterm.kdl attach --create kittyterm' '&')
+              searchapp="kittyterm"
+              ;;
+          -e | --element)
+              cmd=(element-desktop)
+              searchapp="Element"
+              ;;
+          -d | --vesktop)
+              cmd=(vesktop)
+              searchapp="vesktop"
+              ;;
+          -s | --spotifyplayer)
+              cmd=(sh -c 'kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&')
+              searchapp="spotifytui"
+              ;;
+          ,*) break ;;
+          esac
+          shift
+      done
+
+      WIN_INFO=$(niri msg -j windows | jq --arg search "$searchapp" '.[] | select (.app_id | test($search)) | { id, is_focused, workspace_id }')
+      ID=$(echo "$WIN_INFO" | jq -r '.id // empty')
+
+      if [ -z "$ID" ]; then
+          niri msg action spawn -- "''${cmd[@]}"
+      else
+          niri msg action close-window --id "$ID"
+      fi
+
+    '';
   }
 
 #+end_src
@@ -29720,7 +30425,7 @@ This script allows for quick git replace of a string.
               ;;
           -r | --repo)
               shift
-              target_repo=rue
+              target_repo=true
               ;;
           -d | --directory)
               shift
@@ -36156,353 +36861,577 @@ in
 ''
 
 #+end_src
-** Zellij config.kdl.nix
+** Zellij kittyterm config.kdl
 :PROPERTIES:
 :CUSTOM_ID: h:ae07e867-fc17-4dd7-bd21-5886265308ee
 :END:
 
-#+begin_src nix-ts :tangle files/zellij/config.kdl.nix
-  { config }:
-  ''
-    pane_frames false
-    simplified_ui false
-    default_shell "zsh"
-    copy_on_select true
-    on_force_close "detach"
-    show_startup_tips false
-
-    default_layout "default"
-    layout_dir "${config.home.homeDirectory}/.config/zellij/layouts"
-    theme_dir "${config.home.homeDirectory}/.config/zellij/themes"
-
-    keybinds clear-defaults=true {
-        locked {
-            bind "Ctrl g" { SwitchToMode "normal"; }
-        }
-        pane {
-            bind "left" { MoveFocus "left"; }
-            bind "down" { MoveFocus "down"; }
-            bind "up" { MoveFocus "up"; }
-            bind "right" { MoveFocus "right"; }
-            bind "c" { SwitchToMode "renamepane"; PaneNameInput 0; }
-            bind "d" { NewPane "down"; SwitchToMode "normal"; }
-            bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "normal"; }
-            bind "f" { ToggleFocusFullscreen; SwitchToMode "normal"; }
-            bind "h" { MoveFocus "left"; }
-            bind "j" { MoveFocus "down"; }
-            bind "k" { MoveFocus "up"; }
-            bind "l" { MoveFocus "right"; }
-            bind "n" { NewPane; SwitchToMode "normal"; }
-            bind "p" { SwitchFocus; }
-            bind "Ctrl p" { SwitchToMode "normal"; }
-            bind "r" { NewPane "right"; SwitchToMode "normal"; }
-            bind "w" { ToggleFloatingPanes; SwitchToMode "normal"; }
-            bind "z" { TogglePaneFrames; SwitchToMode "normal"; }
-        }
-        tab {
-            bind "left" { GoToPreviousTab; }
-            bind "down" { GoToNextTab; }
-            bind "up" { GoToPreviousTab; }
-            bind "right" { GoToNextTab; }
-            bind "1" { GoToTab 1; SwitchToMode "normal"; }
-            bind "2" { GoToTab 2; SwitchToMode "normal"; }
-            bind "3" { GoToTab 3; SwitchToMode "normal"; }
-            bind "4" { GoToTab 4; SwitchToMode "normal"; }
-            bind "5" { GoToTab 5; SwitchToMode "normal"; }
-            bind "6" { GoToTab 6; SwitchToMode "normal"; }
-            bind "7" { GoToTab 7; SwitchToMode "normal"; }
-            bind "8" { GoToTab 8; SwitchToMode "normal"; }
-            bind "9" { GoToTab 9; SwitchToMode "normal"; }
-            bind "[" { BreakPaneLeft; SwitchToMode "normal"; }
-            bind "]" { BreakPaneRight; SwitchToMode "normal"; }
-            bind "b" { BreakPane; SwitchToMode "normal"; }
-            bind "h" { GoToPreviousTab; }
-            bind "j" { GoToNextTab; }
-            bind "k" { GoToPreviousTab; }
-            bind "l" { GoToNextTab; }
-            bind "n" { NewTab; SwitchToMode "normal"; }
-            bind "r" { SwitchToMode "renametab"; TabNameInput 0; }
-            bind "s" { ToggleActiveSyncTab; SwitchToMode "normal"; }
-            bind "Ctrl t" { SwitchToMode "normal"; }
-            bind "x" { CloseTab; SwitchToMode "normal"; }
-            bind "tab" { ToggleTab; }
-        }
-        resize {
-            bind "left" { Resize "Increase left"; }
-            bind "down" { Resize "Increase down"; }
-            bind "up" { Resize "Increase up"; }
-            bind "right" { Resize "Increase right"; }
-            bind "+" { Resize "Increase"; }
-            bind "-" { Resize "Decrease"; }
-            bind "=" { Resize "Increase"; }
-            bind "H" { Resize "Decrease left"; }
-            bind "J" { Resize "Decrease down"; }
-            bind "K" { Resize "Decrease up"; }
-            bind "L" { Resize "Decrease right"; }
-            bind "h" { Resize "Increase left"; }
-            bind "j" { Resize "Increase down"; }
-            bind "k" { Resize "Increase up"; }
-            bind "l" { Resize "Increase right"; }
-            bind "Ctrl n" { SwitchToMode "normal"; }
-        }
-        move {
-            bind "left" { MovePane "left"; }
-            bind "down" { MovePane "down"; }
-            bind "up" { MovePane "up"; }
-            bind "right" { MovePane "right"; }
-            bind "h" { MovePane "left"; }
-            bind "Ctrl h" { SwitchToMode "normal"; }
-            bind "j" { MovePane "down"; }
-            bind "k" { MovePane "up"; }
-            bind "l" { MovePane "right"; }
-            bind "n" { MovePane; }
-            bind "p" { MovePaneBackwards; }
-            bind "tab" { MovePane; }
-        }
-        scroll {
-            bind "e" { EditScrollback; SwitchToMode "normal"; }
-            bind "s" { SwitchToMode "entersearch"; SearchInput 0; }
-        }
-        search {
-            bind "c" { SearchToggleOption "CaseSensitivity"; }
-            bind "n" { Search "down"; }
-            bind "o" { SearchToggleOption "WholeWord"; }
-            bind "p" { Search "up"; }
-            bind "w" { SearchToggleOption "Wrap"; }
-        }
-        session {
-            bind "c" {
-                LaunchOrFocusPlugin "configuration" {
-                    floating true
-                    move_to_focused_tab true
-                }
-                SwitchToMode "normal"
-            }
-            bind "Ctrl o" { SwitchToMode "normal"; }
-            bind "p" {
-                LaunchOrFocusPlugin "plugin-manager" {
-                    floating true
-                    move_to_focused_tab true
-                }
-                SwitchToMode "normal"
-            }
-            bind "w" {
-                LaunchOrFocusPlugin "session-manager" {
-                    floating true
-                    move_to_focused_tab true
-                }
-                SwitchToMode "normal"
-            }
-        }
-        shared_except "locked" {
-            bind "Alt left" { MoveFocusOrTab "left"; }
-            bind "Alt down" { MoveFocus "down"; }
-            bind "Alt up" { MoveFocus "up"; }
-            bind "Alt right" { MoveFocusOrTab "right"; }
-            bind "Alt +" { Resize "Increase"; }
-            bind "Alt -" { Resize "Decrease"; }
-            bind "Alt =" { Resize "Increase"; }
-            bind "Alt [" { PreviousSwapLayout; }
-            bind "Alt ]" { NextSwapLayout; }
-            bind "Alt f" { ToggleFloatingPanes; }
-            bind "Ctrl g" { SwitchToMode "locked"; }
-            bind "Alt h" { MoveFocusOrTab "left"; }
-            bind "Alt i" { MoveTab "left"; }
-            bind "Alt j" { MoveFocus "down"; }
-            bind "Alt k" { MoveFocus "up"; }
-            bind "Alt l" { MoveFocusOrTab "right"; }
-            bind "Alt n" { NewPane; }
-            bind "Alt o" { MoveTab "right"; }
-            bind "Ctrl q" { Quit; }
-        }
-        shared_except "locked" "move" {
-            bind "Ctrl h" { SwitchToMode "move"; }
-        }
-        shared_except "locked" "session" {
-            bind "Ctrl o" { SwitchToMode "session"; }
-        }
-        shared_except "locked" "scroll" "search" "tmux" {
-            bind "Ctrl b" { SwitchToMode "tmux"; }
-        }
-        shared_except "locked" "scroll" "search" {
-            bind "Ctrl s" { SwitchToMode "scroll"; }
-        }
-        shared_except "locked" "tab" {
-            bind "Ctrl t" { SwitchToMode "tab"; }
-        }
-        shared_except "locked" "pane" {
-            bind "Ctrl p" { SwitchToMode "pane"; }
-        }
-        shared_except "locked" "resize" {
-            bind "Ctrl n" { SwitchToMode "resize"; }
-        }
-        shared_except "normal" "locked" "entersearch" {
-            bind "enter" { SwitchToMode "normal"; }
-        }
-        shared_except "normal" "locked" "entersearch" "renametab" "renamepane" {
-            bind "esc" { SwitchToMode "normal"; }
-        }
-        shared_among "pane" "tmux" {
-            bind "x" { CloseFocus; SwitchToMode "normal"; }
-        }
-        shared_among "scroll" "search" {
-            bind "PageDown" { PageScrollDown; }
-            bind "PageUp" { PageScrollUp; }
-            bind "left" { PageScrollUp; }
-            bind "down" { ScrollDown; }
-            bind "up" { ScrollUp; }
-            bind "right" { PageScrollDown; }
-            bind "Ctrl b" { PageScrollUp; }
-            bind "Ctrl c" { ScrollToBottom; SwitchToMode "normal"; }
-            bind "d" { HalfPageScrollDown; }
-            bind "Ctrl f" { PageScrollDown; }
-            bind "h" { PageScrollUp; }
-            bind "j" { ScrollDown; }
-            bind "k" { ScrollUp; }
-            bind "l" { PageScrollDown; }
-            bind "Ctrl s" { SwitchToMode "normal"; }
-            bind "u" { HalfPageScrollUp; }
-        }
-        entersearch {
-            bind "Ctrl c" { SwitchToMode "scroll"; }
-            bind "esc" { SwitchToMode "scroll"; }
-            bind "enter" { SwitchToMode "search"; }
-        }
-        renametab {
-            bind "esc" { UndoRenameTab; SwitchToMode "tab"; }
-        }
-        shared_among "renametab" "renamepane" {
-            bind "Ctrl c" { SwitchToMode "normal"; }
-        }
-        renamepane {
-            bind "esc" { UndoRenamePane; SwitchToMode "pane"; }
-        }
-        shared_among "session" "tmux" {
-            bind "d" { Detach; }
-        }
-        tmux {
-            bind "left" { MoveFocus "left"; SwitchToMode "normal"; }
-            bind "down" { MoveFocus "down"; SwitchToMode "normal"; }
-            bind "up" { MoveFocus "up"; SwitchToMode "normal"; }
-            bind "right" { MoveFocus "right"; SwitchToMode "normal"; }
-            bind "space" { NextSwapLayout; }
-            bind "\"" { NewPane "down"; SwitchToMode "normal"; }
-            bind "%" { NewPane "right"; SwitchToMode "normal"; }
-            bind "," { SwitchToMode "renametab"; }
-            bind "[" { SwitchToMode "scroll"; }
-            bind "Ctrl b" { Write 2; SwitchToMode "normal"; }
-            bind "c" { NewTab; SwitchToMode "normal"; }
-            bind "h" { MoveFocus "left"; SwitchToMode "normal"; }
-            bind "j" { MoveFocus "down"; SwitchToMode "normal"; }
-            bind "k" { MoveFocus "up"; SwitchToMode "normal"; }
-            bind "l" { MoveFocus "right"; SwitchToMode "normal"; }
-            bind "n" { GoToNextTab; SwitchToMode "normal"; }
-            bind "o" { FocusNextPane; }
-            bind "p" { GoToPreviousTab; SwitchToMode "normal"; }
-            bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
-        }
-    }
-
-    // Plugin aliases - can be used to change the implementation of Zellij
-    // changing these requires a restart to take effect
-    plugins {
-        compact-bar location="zellij:compact-bar"
-        configuration location="zellij:configuration"
-        filepicker location="zellij:strider" {
-            cwd "/"
-        }
-        plugin-manager location="zellij:plugin-manager"
-        session-manager location="zellij:session-manager"
-        status-bar location="zellij:status-bar"
-        strider location="zellij:strider"
-        tab-bar location="zellij:tab-bar"
-        welcome-screen location="zellij:session-manager" {
-            welcome_screen true
-        }
-    }
-
-    // Plugins to load in the background when a new session starts
-    // eg. "file:/path/to/my-plugin.wasm"
-    // eg. "https://example.com/my-plugin.wasm"
-    load_plugins {
-    }
-
-    // Provide a command to execute when copying text. The text will be piped to
-    // the stdin of the program to perform the copy. This can be used with
-    // terminal emulators which do not support the OSC 52 ANSI control sequence
-    // that will be used by default if this option is not set.
-    // Examples:
-    //
-    // copy_command "xclip -selection clipboard" // x11
-    // copy_command "wl-copy"                    // wayland
-    // copy_command "pbcopy"                     // osx
-    //
-    // copy_command "pbcopy"
-
-    // Choose the destination for copied text
-    // Allows using the primary selection buffer (on x11/wayland) instead of the system clipboard.
-    // Does not apply when using copy_command.
-    // Options:
-    //   - system (default)
-    //   - primary
-    //
-    // copy_clipboard "primary"
-
-    // Path to the default editor to use to edit pane scrollbuffer
-    // Default: $EDITOR or $VISUAL
-    // scrollback_editor "/usr/bin/vim"
-
-    // Toggle between having Zellij lay out panes according to a predefined set of layouts whenever possible
-    // Options:
-    //   - true (default)
-    //   - false
-    //
-    // auto_layout false
-
-    // Whether sessions should be serialized to the cache folder (including their tabs/panes, cwds and running commands) so that they can later be resurrected
-    // Options:
-    //   - true (default)
-    //   - false
-    //
-    // session_serialization false
-
-    // Whether pane viewports are serialized along with the session, default is false
-    // Options:
-    //   - true
-    //   - false (default)
-    //
-    // serialize_pane_viewport false
-
-    // Scrollback lines to serialize along with the pane viewport when serializing sessions, 0
-    // defaults to the scrollback size. If this number is higher than the scrollback size, it will
-    // also default to the scrollback size. This does nothing if `serialize_pane_viewport` is not true.
-    //
-    // scrollback_lines_to_serialize 10000
-
-    // Enable or disable the rendering of styled and colored underlines (undercurl).
-    // May need to be disabled for certain unsupported terminals
-    // (Requires restart)
-    // Default: true
-    //
-    // styled_underlines false
-
-    // How often in seconds sessions are serialized
-    //
-    // serialization_interval 10000
-
-    // Enable or disable writing of session metadata to disk (if disabled, other sessions might not know
-    // metadata info on this session)
-    // (Requires restart)
-    // Default: false
-    //
-    // disable_session_metadata false
-
-    // Enable or disable support for the enhanced Kitty Keyboard Protocol (the host terminal must also support it)
-    // (Requires restart)
-    // Default: true (if the host terminal supports it)
-    //
-    // support_kitty_keyboard_protocol false
-  ''
+#+begin_src nix-ts :tangle files/zellij/config-kittyterm.kdl
+copy_command "wl-copy"
+copy_on_select true
+default_layout "swarsel"
+default_shell "zsh"
+keybinds clear-defaults=true {
+	entersearch {
+		bind "Ctrl c" {
+			SwitchToMode "scroll"
+		}
+		bind "esc" {
+			SwitchToMode "scroll"
+		}
+		bind "enter" {
+			SwitchToMode "search"
+		}
+	}
+	locked {
+		bind "Ctrl g" {
+			SwitchToMode "normal"
+		}
+	}
+	move {
+		bind "Ctrl h" {
+			SwitchToMode "normal"
+		}
+		bind "left" {
+			MovePane "left"
+		}
+		bind "down" {
+			MovePane "down"
+		}
+		bind "up" {
+			MovePane "up"
+		}
+		bind "right" {
+			MovePane "right"
+		}
+		bind "h" {
+			MovePane "left"
+		}
+		bind "j" {
+			MovePane "down"
+		}
+		bind "k" {
+			MovePane "up"
+		}
+		bind "l" {
+			MovePane "right"
+		}
+	}
+	pane {
+		bind "Ctrl p" {
+			SwitchToMode "normal"
+		}
+		bind "left" {
+			MoveFocus "left"
+		}
+		bind "down" {
+			MoveFocus "down"
+		}
+		bind "up" {
+			MoveFocus "up"
+		}
+		bind "right" {
+			MoveFocus "right"
+		}
+		bind "h" {
+			MoveFocus "left"
+		}
+		bind "j" {
+			MoveFocus "down"
+		}
+		bind "k" {
+			MoveFocus "up"
+		}
+		bind "l" {
+			MoveFocus "right"
+		}
+		bind "d" {
+			NewPane "down"
+			SwitchToMode "normal"
+		}
+		bind "e" {
+			TogglePaneEmbedOrFloating
+			SwitchToMode "normal"
+		}
+		bind "f" {
+			ToggleFocusFullscreen
+			SwitchToMode "normal"
+		}
+		bind "n" {
+			NewPane
+			SwitchToMode "normal"
+		}
+		bind "p" {
+			SwitchFocus
+		}
+		bind "f12" {
+			ToggleFloatingPanes
+			SwitchToMode "normal"
+		}
+	}
+	renamepane {
+		bind "esc" {
+			UndoRenamePane
+			SwitchToMode "pane"
+		}
+	}
+	renametab {
+		bind "esc" {
+			UndoRenameTab
+			SwitchToMode "tab"
+		}
+	}
+	resize {
+		bind "Ctrl n" {
+			SwitchToMode "normal"
+		}
+		bind "left" {
+			Resize "Increase left"
+		}
+		bind "down" {
+			Resize "Increase down"
+		}
+		bind "up" {
+			Resize "Increase up"
+		}
+		bind "right" {
+			Resize "Increase right"
+		}
+		bind "+" {
+			Resize "Increase"
+		}
+		bind "-" {
+			Resize "Decrease"
+		}
+		bind "=" {
+			Resize "Increase"
+		}
+		bind "H" {
+			Resize "Decrease left"
+		}
+		bind "J" {
+			Resize "Decrease down"
+		}
+		bind "K" {
+			Resize "Decrease up"
+		}
+		bind "L" {
+			Resize "Decrease right"
+		}
+		bind "h" {
+			Resize "Increase left"
+		}
+		bind "j" {
+			Resize "Increase down"
+		}
+		bind "k" {
+			Resize "Increase up"
+		}
+		bind "l" {
+			Resize "Increase right"
+		}
+	}
+	scroll {
+		bind "e" {
+			EditScrollback
+			SwitchToMode "normal"
+		}
+		bind "s" {
+			SwitchToMode "entersearch"
+			SearchInput 0
+		}
+	}
+	search {
+		bind "c" {
+			SearchToggleOption "CaseSensitivity"
+		}
+		bind "n" {
+			Search "down"
+		}
+		bind "o" {
+			SearchToggleOption "WholeWord"
+		}
+		bind "p" {
+			Search "up"
+		}
+		bind "w" {
+			SearchToggleOption "Wrap"
+		}
+	}
+	session {
+		bind "Ctrl o" {
+			SwitchToMode "normal"
+		}
+		bind "c" {
+			LaunchOrFocusPlugin "configuration" {
+				floating true
+				move_to_focused_tab true
+			}
+			SwitchToMode "normal"
+		}
+		bind "p" {
+			LaunchOrFocusPlugin "plugin-manager" {
+				floating true
+				move_to_focused_tab true
+			}
+			SwitchToMode "normal"
+		}
+		bind "w" {
+			LaunchOrFocusPlugin "session-manager" {
+				floating true
+				move_to_focused_tab true
+			}
+			SwitchToMode "normal"
+		}
+	}
+	shared_among "pane" "tmux" {
+		bind "x" {
+			CloseFocus
+			SwitchToMode "normal"
+		}
+	}
+	shared_among "renametab" "renamepane" {
+		bind "Ctrl c" {
+			SwitchToMode "normal"
+		}
+	}
+	shared_among "scroll" "search" {
+		bind "PageDown" {
+			PageScrollDown
+		}
+		bind "PageUp" {
+			PageScrollUp
+		}
+		bind "left" {
+			PageScrollUp
+		}
+		bind "down" {
+			ScrollDown
+		}
+		bind "up" {
+			ScrollUp
+		}
+		bind "right" {
+			PageScrollDown
+		}
+		bind "Ctrl b" {
+			PageScrollUp
+		}
+		bind "Ctrl c" {
+			ScrollToBottom
+			SwitchToMode "normal"
+		}
+		bind "d" {
+			HalfPageScrollDown
+		}
+		bind "Ctrl f" {
+			PageScrollDown
+		}
+		bind "h" {
+			PageScrollUp
+		}
+		bind "j" {
+			ScrollDown
+		}
+		bind "k" {
+			ScrollUp
+		}
+		bind "l" {
+			PageScrollDown
+		}
+		bind "Ctrl s" {
+			SwitchToMode "normal"
+		}
+		bind "u" {
+			HalfPageScrollUp
+		}
+	}
+	shared_among "session" "tmux" {
+		bind "d" {
+			Detach
+		}
+	}
+	shared_except "locked" {
+		bind "Alt left" {
+			MoveFocusOrTab "left"
+		}
+		bind "Alt down" {
+			MoveFocus "down"
+		}
+		bind "Alt up" {
+			MoveFocus "up"
+		}
+		bind "Alt right" {
+			MoveFocusOrTab "right"
+		}
+		bind "Alt +" {
+			Resize "Increase"
+		}
+		bind "Alt -" {
+			Resize "Decrease"
+		}
+		bind "Alt =" {
+			Resize "Increase"
+		}
+		bind "Alt r" {
+			WriteChars "source cdr"
+			WriteChars "\n"
+		}
+		bind "Alt f" {
+			ToggleFloatingPanes
+		}
+		bind "Ctrl g" {
+			SwitchToMode "locked"
+		}
+		bind "Alt h" {
+			MoveFocusOrTab "left"
+		}
+		bind "Alt i" {
+			MoveTab "left"
+		}
+		bind "Alt j" {
+			MoveFocus "down"
+		}
+		bind "Alt k" {
+			MoveFocus "up"
+		}
+		bind "Alt p" {
+			NewPane
+		}
+		bind "Alt n" {
+			NewTab
+		}
+	}
+	shared_except "locked" "move" {
+		bind "Ctrl h" {
+			SwitchToMode "move"
+		}
+	}
+	shared_except "locked" "pane" {
+		bind "Ctrl p" {
+			SwitchToMode "pane"
+		}
+	}
+	shared_except "locked" "resize" {
+		bind "Ctrl n" {
+			SwitchToMode "resize"
+		}
+	}
+	shared_except "locked" "scroll" "search" {
+		bind "Ctrl s" {
+			SwitchToMode "scroll"
+		}
+	}
+	shared_except "locked" "scroll" "search" "tmux" {
+		bind "Ctrl b" {
+			SwitchToMode "tmux"
+		}
+	}
+	shared_except "locked" "session" {
+		bind "Ctrl o" {
+			SwitchToMode "session"
+		}
+	}
+	shared_except "locked" "tab" {
+		bind "Ctrl t" {
+			SwitchToMode "tab"
+		}
+	}
+	shared_except "normal" "locked" "entersearch" {
+		bind "enter" {
+			SwitchToMode "normal"
+		}
+	}
+	shared_except "normal" "locked" "entersearch" "renametab" "renamepane" {
+		bind "esc" {
+			SwitchToMode "normal"
+		}
+	}
+	tab {
+		bind "Ctrl t" {
+			SwitchToMode "normal"
+		}
+		bind "left" {
+			GoToPreviousTab
+		}
+		bind "down" {
+			GoToNextTab
+		}
+		bind "up" {
+			GoToPreviousTab
+		}
+		bind "right" {
+			GoToNextTab
+		}
+		bind "1" {
+			GoToTab 1
+			SwitchToMode "normal"
+		}
+		bind "2" {
+			GoToTab 2
+			SwitchToMode "normal"
+		}
+		bind "3" {
+			GoToTab 3
+			SwitchToMode "normal"
+		}
+		bind "4" {
+			GoToTab 4
+			SwitchToMode "normal"
+		}
+		bind "5" {
+			GoToTab 5
+			SwitchToMode "normal"
+		}
+		bind "6" {
+			GoToTab 6
+			SwitchToMode "normal"
+		}
+		bind "7" {
+			GoToTab 7
+			SwitchToMode "normal"
+		}
+		bind "8" {
+			GoToTab 8
+			SwitchToMode "normal"
+		}
+		bind "9" {
+			GoToTab 9
+			SwitchToMode "normal"
+		}
+		bind "h" {
+			GoToPreviousTab
+		}
+		bind "j" {
+			GoToNextTab
+		}
+		bind "k" {
+			GoToPreviousTab
+		}
+		bind "l" {
+			GoToNextTab
+		}
+		bind "n" {
+			NewTab
+			SwitchToMode "normal"
+		}
+		bind "r" {
+			SwitchToMode "renametab"
+			TabNameInput 0
+		}
+		bind "s" {
+			ToggleActiveSyncTab
+			SwitchToMode "normal"
+		}
+		bind "x" {
+			CloseTab
+			SwitchToMode "normal"
+		}
+	}
+	tmux {
+		bind "left" {
+			MoveFocus "left"
+			SwitchToMode "normal"
+		}
+		bind "down" {
+			MoveFocus "down"
+			SwitchToMode "normal"
+		}
+		bind "up" {
+			MoveFocus "up"
+			SwitchToMode "normal"
+		}
+		bind "right" {
+			MoveFocus "right"
+			SwitchToMode "normal"
+		}
+		bind "space" {
+			NextSwapLayout
+		}
+		bind "\"" {
+			NewPane "down"
+			SwitchToMode "normal"
+		}
+		bind "%" {
+			NewPane "right"
+			SwitchToMode "normal"
+		}
+		bind "," {
+			SwitchToMode "renametab"
+		}
+		bind "[" {
+			SwitchToMode "scroll"
+		}
+		bind "Ctrl b" {
+			Write 2
+			SwitchToMode "normal"
+		}
+		bind "c" {
+			NewTab
+			SwitchToMode "normal"
+		}
+		bind "h" {
+			MoveFocus "left"
+			SwitchToMode "normal"
+		}
+		bind "j" {
+			MoveFocus "down"
+			SwitchToMode "normal"
+		}
+		bind "k" {
+			MoveFocus "up"
+			SwitchToMode "normal"
+		}
+		bind "l" {
+			MoveFocus "right"
+			SwitchToMode "normal"
+		}
+		bind "n" {
+			GoToNextTab
+			SwitchToMode "normal"
+		}
+		bind "o" {
+			FocusNextPane
+		}
+		bind "p" {
+			GoToPreviousTab
+			SwitchToMode "normal"
+		}
+		bind "z" {
+			ToggleFocusFullscreen
+			SwitchToMode "normal"
+		}
+	}
+}
+layout_dir "/home/swarsel/.config/zellij/layouts"
+on_force_close "detach"
+pane_frames false
+plugins {
+	compact-bar {
+		path "compact-bar"
+	}
+	status-bar {
+		path "status-bar"
+	}
+	strider {
+		path "strider"
+	}
+	tab-bar {
+		path "tab-bar"
+	}
+}
+scrollback_lines_to_serialize 100000
+session_serialization true
+show_startup_tips false
+simplified_ui false
+support_kitty_keyboard_protocol true
+theme_dir "/home/swarsel/.config/zellij/themes"
+ui {
+	pane_frames {
+		hide_session_name true
+		rounded_corners true
+	}
+}
 
 #+end_src
 ** Vieb config

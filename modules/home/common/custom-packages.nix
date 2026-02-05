@@ -11,6 +11,7 @@
       bak
       timer
       e
+      niri-resize
       swarselcheck
       swarselcheck-niri
       waybarupdate

@@ -459,16 +459,18 @@ in
       teams-applet = {
         Unit = {
           Description = "teams applet";
-          Requires = [ "tray.target" ];
+          Requires = [ "graphical-session.target" ];
           After = [
             "graphical-session.target"
             "tray.target"
           ];
-          PartOf = [ "graphical-session.target" ];
+          PartOf = [
+            "tray.target"
+          ];
         };
 
         Install = {
-          WantedBy = [ "graphical-session.target" ];
+          WantedBy = [ "tray.target" ];
         };
 
         Service = {
@@ -479,16 +481,18 @@ in
       onepassword-applet = {
         Unit = {
           Description = "1password applet";
-          Requires = [ "tray.target" ];
+          Requires = [ "graphical-session.target" ];
           After = [
             "graphical-session.target"
             "tray.target"
           ];
-          PartOf = [ "graphical-session.target" ];
+          PartOf = [
+            "tray.target"
+          ];
         };
 
         Install = {
-          WantedBy = [ "graphical-session.target" ];
+          WantedBy = [ "tray.target" ];
         };
 
         Service = {
@@ -501,7 +505,7 @@ in
     services.pizauth = {
       enable = true;
       extraConfig = ''
-        auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+          auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
         error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
         token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
       '';

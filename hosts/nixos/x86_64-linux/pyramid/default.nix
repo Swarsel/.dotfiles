@@ -18,7 +18,8 @@ in
     "${self}/modules/nixos/optional/nswitch-rcm.nix"
     "${self}/modules/nixos/optional/virtualbox.nix"
     "${self}/modules/nixos/optional/work.nix"
-
+    "${self}/modules/nixos/optional/niri.nix"
+    "${self}/modules/nixos/optional/noctalia.nix"
   ];
 
   topology.self = {

@@ -1,4 +1,4 @@
-{ self, lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
@@ -30,11 +30,11 @@ in
       };
     };
 
-    topology.self.services.${serviceName} = {
-      name = "Firefly-III";
-      info = "https://${serviceDomain}";
-      icon = "${self}/files/topology-images/${serviceName}.png";
-    };
+    # topology.self.services.${serviceName} = {
+    #   name = "Firefly-III";
+    #   info = "https://${serviceDomain}";
+    #   icon = "${self}/files/topology-images/${serviceName}.png";
+    # };
 
     globals.services.${serviceName} = {
       domain = serviceDomain;

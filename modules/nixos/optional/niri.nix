@@ -1,33 +1,30 @@
-{ inputs, lib, config, pkgs, ... }:
-let
-  moduleName = "niri";
-in
+{ self, inputs, config, pkgs, ... }:
 {
   imports = [
     inputs.niri-flake.nixosModules.niri
   ];
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
-  config = lib.mkIf config.swarselmodules.${moduleName}
-    {
+  config = {
 
-      environment.systemPackages = with pkgs; [
-        wl-clipboard
-        wayland-utils
-        libsecret
-        cage
-        gamescope
-        xwayland-satellite-unstable
-      ];
-
-
-      programs.niri = {
-        enable = true;
-        package = pkgs.niri-unstable; # the actual niri that will be installed and used
-      };
-    } // {
     niri-flake.cache.enable = true;
-    programs.niri = {
-      package = null;
+    home-manager.users.${config.swarselsystems.mainUser}.imports = [
+      "${self}/modules/home/optional/niri.nix"
+    ];
+
+    environment.systemPackages = with pkgs; [
+      wl-clipboard
+      wayland-utils
+      libsecret
+      cage
+      gamescope
+      xwayland-satellite-unstable
+    ];
+
+
+    programs = {
+      niri = {
+        enable = true;
+        package = pkgs.niri-stable; # the actual niri that will be installed and used
+      };
     };
   };
 }
