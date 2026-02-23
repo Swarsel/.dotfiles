@@ -87,7 +87,7 @@
     };
     wallpaper = lib.mkOption {
       type = lib.types.path;
-      default = "${self}/files/wallpaper/lenovowp.png";
+      default = "${self}/files/wallpaper/landscape/lenovowp.png";
     };
     sharescreen = lib.mkOption {
       type = lib.types.str;

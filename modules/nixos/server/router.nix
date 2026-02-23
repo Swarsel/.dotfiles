@@ -11,7 +11,8 @@ let
   lan2VLANs = selectVLANs [ "home" "devices" "services" ];
   lan3VLANs = selectVLANs [ "home" "devices" "services" ];
   lan4VLANs = lan3VLANs;
-  lan5VLANs = selectVLANs [ "home" "devices" "guests" ];
+  # TODO: remove services and reset ports 5+6 on swLR to guest when kitchen construction is finished
+  lan5VLANs = selectVLANs [ "home" "devices" "services" "guests" ];
   inherit (globals.general) homeDnsServer;
 in
 {

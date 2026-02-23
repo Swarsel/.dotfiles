@@ -39,7 +39,7 @@ in
 
   swarselsystems = lib.recursiveUpdate
     {
-      wallpaper = self + /files/wallpaper/lenovowp.png;
+      wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
       hasBluetooth = true;
       hasFingerprint = true;
       isImpermanence = true;

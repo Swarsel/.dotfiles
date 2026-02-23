@@ -23,7 +23,7 @@
           # laptop screen
           output = {
             criteria = config.swarselsystems.sharescreen;
-            mode = config.swarselsystems.highResolution;
+            mode = "${config.swarselsystems.highResolution}@165.000";
             scale = 1.0;
           };
         }
@@ -57,7 +57,7 @@
               name = "lidopen";
               exec = [
                 "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
               ];
               outputs = [
                 {
@@ -82,7 +82,7 @@
             in
             {
               name = "lidclosed";
-              exec = [ "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}" ];
+              exec = [ "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}" ];
               outputs = [
                 {
                   criteria = config.swarselsystems.sharescreen;

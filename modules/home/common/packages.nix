@@ -101,7 +101,7 @@
       tridactyl-native
 
       # mako related
-      mako
+      # mako
       libnotify
 
       # general utilities

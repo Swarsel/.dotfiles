@@ -84,6 +84,11 @@ in
       vim
       just
       sbctl
+      lsof
+      dig
+
+      cryptsetup
+      btrfs-progs
     ];
 
     programs = {

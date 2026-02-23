@@ -118,12 +118,12 @@
   |---------------|-----------------------------------------------------------------------------------------------------------------------------|
   |🐚 **Shell**   | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                                           |
   |🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                                     |
-  |🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                                       |
-  |⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                                     |
+  |🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix) or [Niri](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/optional/niri.nix)                                       |
+  |⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/optional/noctalia.nix)                                   |
   |✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el)                                                 |
   |🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                                       |
-  |🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                                     |
-  |🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                                         |
+  |🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/optional/noctalia.nix)                                    |
+  |🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/optional/noctalia.nix)                                        |
   |🌐 **Browser** | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                                       |
   |🎨 **Theme**   | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sharedsetup.nix)       |
 

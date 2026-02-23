@@ -79,6 +79,7 @@
   swarselmodules.server = {
     wireguard = true;
     restic = true;
+    podman = true;
     opkssh = true;
   };
 

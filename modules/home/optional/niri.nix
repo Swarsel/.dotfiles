@@ -7,6 +7,7 @@
     programs.niri = {
       package = pkgs.niri-stable; # which package to use for niri validation
       settings = {
+        gestures.hot-corners.enable = false;
         debug = {
           honor-xdg-activation-with-invalid-serial = [ ];
         };
@@ -16,7 +17,7 @@
         };
         prefer-no-csd = true;
         layer-rules = [
-          { matches = [{ namespace = "^notifications$"; }]; block-out-from = "screen-capture"; }
+          { matches = [{ namespace = "^notificatioans$"; }]; block-out-from = "screen-capture"; }
           { matches = [{ namespace = "^wallpaper$"; }]; place-within-backdrop = true; }
           { matches = [{ namespace = "^noctalia-overview*"; }]; place-within-backdrop = true; }
         ];
@@ -56,11 +57,11 @@
           { matches = [{ app-id = "^spotifytui$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
           { matches = [{ app-id = "^kittyterm$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
         ];
-        environment = {
+        environment = vars.waylandSessionVariables // {
           DISPLAY = ":0";
           QT_QPA_PLATFORM = lib.mkForce "wayland";
           EDITOR = "emacsclient -c";
-        } // vars.waylandSessionVariables;
+        };
         screenshot-path = "~/Pictures/Screenshots/screenshot_%Y-%m-%d-%H%M%S.png";
         input = {
           mod-key = "Super";
@@ -104,17 +105,18 @@
         };
         binds = with config.lib.niri.actions; let
           sh = spawn "sh" "-c";
-          resizer = "niri-resize";
+          resizer = "niri-resize & sleep 0.05";
         in
         {
           "Mod+Shift+t".action = toggle-window-rule-opacity;
           "Mod+m".action = focus-workspace-previous;
           "Mod+Shift+Space".action = toggle-window-floating;
           "Mod+Shift+f".action = fullscreen-window;
-          "Mod+q".action = sh "niri msg action close-window & ${resizer}";
-          "Mod+f".action = sh "${resizer} & firefox";
+          "Mod+q".action = sh "${resizer} && niri msg action close-window";
+          "Mod+f".action = sh "${resizer} && exec firefox";
           # "Mod+Space".action = spawn "noctalia-shell" "ipc" "call" "launcher" "toggle";
-          "Mod+Space".action = sh "${resizer} & fuzzel";
+          "Mod+Space".action = sh "${resizer} && exec noctalia-shell ipc call launcher toggle";
+          # "Mod+Space".action = sh "${resizer} & exec fuzzel";
           "Mod+z".action = spawn "noctalia-shell" "ipc" "call" "bar" "toggle";
           "Mod+Shift+c".action = spawn "qalculate-gtk";
           "Mod+Ctrl+p".action = spawn "1password" "--quick-acces";
@@ -128,11 +130,11 @@
           "Mod+Shift+s".action.screenshot-window = { write-to-disk = true; };
           # "Mod+Shift+v".action = spawn "wf-recorder" "-g" "'$(slurp -f %o -or)'" "-f" "~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
 
-          "Mod+e".action = sh "${resizer} & emacsclient -nquc -a emacs -e '(dashboard-open)'";
-          "Mod+c".action = sh "${resizer} & emacsclient -ce '(org-capture)'";
-          "Mod+t".action = sh "${resizer} & emacsclient -ce '(org-agenda)'";
-          "Mod+Shift+m".action = sh "${resizer} & emacsclient -ce '(mu4e)'";
-          "Mod+Shift+a".action = sh "${resizer} & emacsclient -ce '(swarsel/open-calendar)'";
+          "Mod+e".action = sh "${resizer} && exec emacsclient -nquc -a emacs -e '(dashboard-open)'";
+          "Mod+c".action = sh "${resizer} && exec emacsclient -ce '(org-capture)'";
+          "Mod+t".action = sh "${resizer} && exec emacsclient -ce '(org-agenda)'";
+          "Mod+Shift+m".action = sh "${resizer} && exec emacsclient -ce '(mu4e)'";
+          "Mod+Shift+a".action = sh "${resizer} && exec emacsclient -ce '(swarsel/open-calendar)'";
 
           "Mod+a".action = spawn "swarselcheck-niri" "-s";
           "Mod+x".action = spawn "swarselcheck-niri" "-k";
@@ -148,8 +150,8 @@
           "Mod+Right".action = focus-column-or-monitor-right;
           "Mod+Down".action = focus-window-or-workspace-down;
           "Mod+Up".action = focus-window-or-workspace-up;
-          "Mod+Shift+Left".action = move-column-left;
-          "Mod+Shift+Right".action = move-column-right;
+          "Mod+Shift+Left".action = move-column-left-or-to-monitor-left;
+          "Mod+Shift+Right".action = move-column-right-or-to-monitor-right;
           "Mod+Shift+Down".action = move-window-down-or-to-workspace-down;
           "Mod+Shift+Up".action = move-window-up-or-to-workspace-up;
           # "Mod+Ctrl+Shift+c".action = "reload";
@@ -157,7 +159,7 @@
           # "Mod+Shift+e".action = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
           # "Mod+r".action = "mode resize";
           # "Mod+Return".action = "exec kitty";
-          "Mod+Return".action = sh "${resizer} & exec kitty -o confirm_os_window_close=0";
+          "Mod+Return".action = sh "${resizer} && exec kitty -o confirm_os_window_close=0";
           "XF86AudioRaiseVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "increase";
           "XF86AudioLowerVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "decrease";
           "XF86AudioMute".action = spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput";
@@ -202,8 +204,8 @@
           # { command = [ "nm-applet" ]; }
           # { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
           # { command = [ "noctalia-shell" ]; }
-          { command = [ "pkill mako" ]; }
-          { command = [ "systemctl" "--user" "start" "noctalia-shell.target" ]; }
+          # { argv = [ "pkill" "mako" ]; }
+          { argv = [ "systemctl" "--user" "restart" "noctalia-shell.target" "tray.target" ]; }
         ];
         # workspaces = {
         # "01-Main" = {

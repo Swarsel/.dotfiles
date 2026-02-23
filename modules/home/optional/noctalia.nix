@@ -8,23 +8,11 @@
       targets = {
         noctalia-shell.Unit = {
           After = [ "graphical-session.target" ];
-          Wants = [
-            "tray.target"
-            "noctalia-tray-pre.target"
-          ];
         };
         tray = {
           Unit = {
-            After = [ "noctalia-tray-pre.target" ];
+            After = [ "noctalia-init.service" ];
             PartOf = [ "noctalia-shell.service" ];
-          };
-          Install.WantedBy = [ "noctalia-shell.target" ];
-        };
-        noctalia-tray-pre = {
-          Unit = {
-            After = [
-              "noctalia-init.service"
-            ];
           };
           Install.WantedBy = [ "noctalia-shell.target" ];
         };
@@ -32,19 +20,15 @@
       services = {
         noctalia-shell = confLib.overrideTarget "noctalia-shell.target";
         noctalia-init = {
-          Unit = {
-            PartOf = [ "noctalia-tray-pre.target" ];
-          };
 
           Service = {
             Type = "oneshot";
-            ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
-            ExecStart = "-${pkgs.busybox}/bin/pkill mako";
+            ExecStart = "${pkgs.coreutils}/bin/sleep 15";
             RemainAfterExit = true;
           };
 
           Install = {
-            WantedBy = [ "noctalia-tray-pre.target" ];
+            WantedBy = [ "noctalia-shell.target" ];
           };
         };
       };
@@ -72,7 +56,7 @@
             marginHorizontal = 0;
             frameThickness = 8;
             frameRadius = 12;
-            outerCorners = true;
+            outerCorners = false;
             hideOnOverview = false;
             displayMode = "auto_hide";
             autoHideDelay = 100;
@@ -81,29 +65,54 @@
             widgets = {
               left = [
                 {
-                  characterCount = 2;
+                  characterCount = 4;
                   colorizeIcons = false;
                   emptyColor = "primary";
                   enableScrollWheel = false;
                   focusedColor = "secondary";
                   followFocusedScreen = false;
                   groupedBorderOpacity = 1;
-                  hideUnoccupied = true;
+                  hideUnoccupied = false;
                   iconScale = 0.5;
                   id = "Workspace";
-                  labelMode = "none";
+                  labelMode = "name";
                   occupiedColor = "primary";
                   pillSize = 0.4;
                   reverseScroll = false;
                   showApplications = true;
                   showBadge = true;
-                  showLabelsOnlyWhenOccupied = true;
+                  showLabelsOnlyWhenOccupied = false;
                   unfocusedIconsOpacity = 0.25;
+                }
+
+                {
+                  defaultSettings = {
+                    completedCount = 0;
+                    count = 0;
+                    current_page_id = 0;
+                    isExpanded = false;
+                    pages = [
+                      {
+                        id = 0;
+                        name = "General";
+                      }
+                    ];
+                    priorityColors = {
+                      high = "#f44336";
+                      low = "#9e9e9e";
+                      medium = "#2196f3";
+                    };
+                    showBackground = true;
+                    showCompleted = true;
+                    todos = [ ];
+                    useCustomColors = false;
+                  };
+                  id = "plugin:todo";
                 }
               ];
               center = [
                 {
-                  colorizeIcons = false;
+                  colorizeIcons = true;
                   hideMode = "hidden";
                   id = "ActiveWindow";
                   maxWidth = 145;
@@ -135,6 +144,17 @@
                   middleClickCommand = "pavucontrol";
                 }
                 {
+                  id = "NotificationHistory";
+                  hideWhenZero = false;
+                  showUnreadBadge = true;
+                }
+                {
+                  id = "plugin:ba7043:github-feed";
+                }
+                {
+                  id = "plugin:clipper";
+                }
+                {
                   displayMode = "onhover";
                   id = "Network";
                 }
@@ -155,12 +175,6 @@
                   showPowerProfiles = true;
                 }
                 {
-                  id = "plugin:ba7043:github-feed";
-                }
-                {
-                  id = "plugin:clipper";
-                }
-                {
                   colorName = "primary";
                   id = "SessionMenu";
                 }
@@ -176,17 +190,17 @@
                 {
                   colorizeDistroLogo = false;
                   colorizeSystemIcon = "primary";
-                  customIconPath = "";
+                  customIconPath = "${self}/files/icons/swarsel.png";
                   enableColorization = true;
                   icon = "noctalia";
                   id = "ControlCenter";
-                  useDistroLogo = true;
+                  useDistroLogo = false;
                 }
               ];
             };
           };
           general = {
-            avatarImage = "${self}/files/wallpaper/swarsel.png";
+            avatarImage = "${self}/files/icons/swarsel.png";
             dimmerOpacity = 0.2;
             showScreenCorners = false;
             forceBlackScreenCorners = false;
@@ -195,16 +209,16 @@
             iRadiusRatio = 1;
             boxRadiusRatio = 1;
             screenRadiusRatio = 1;
-            animationSpeed = 1;
+            animationSpeed = 1.5;
             animationDisabled = false;
             compactLockScreen = true;
             lockOnSuspend = true;
             showSessionButtonsOnLockScreen = true;
             showHibernateOnLockScreen = false;
             enableShadows = true;
-            shadowDirection = "bottom_right";
-            shadowOffsetX = 2;
-            shadowOffsetY = 3;
+            shadowDirection = "center";
+            shadowOffsetX = 0;
+            shadowOffsetY = 0;
             language = "";
             allowPanelsOnScreenWithoutBar = true;
             showChangelogOnStartup = true;
@@ -260,17 +274,17 @@
           wallpaper = {
             enabled = true;
             overviewEnabled = true;
-            directory = "${self}/files/wallpaper";
+            directory = "${self}/files/wallpaper/landscape";
             monitorDirectories = [ ];
             enableMultiMonitorDirectories = true;
             showHiddenFiles = false;
             viewMode = "single";
-            setWallpaperOnAllMonitors = true;
+            setWallpaperOnAllMonitors = false;
             fillMode = "crop";
             fillColor = "#000000";
             useSolidColor = false;
             solidColor = "#1a1a2e";
-            automationEnabled = false;
+            automationEnabled = true;
             wallpaperChangeMode = "random";
             randomIntervalSec = 300;
             transitionDuration = 500;
@@ -586,7 +600,7 @@
               colorizationEnabled = true;
               colorizationIcon = "Primary";
               colorizationBadge = "Tertiary";
-              colorizationBadgeText = "Primary";
+              colorizationBadgeText = "None";
               defaultTab = 1;
               enableSystemNotifications = true;
               notifyGitHubNotifications = true;

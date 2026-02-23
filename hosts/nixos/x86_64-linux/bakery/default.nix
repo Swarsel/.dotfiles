@@ -31,7 +31,7 @@ in
     sharescreen = "eDP-1";
     info = "Lenovo Ideapad 720S-13IKB";
     firewall = lib.mkForce true;
-    wallpaper = self + /files/wallpaper/lenovowp.png;
+    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
     hasBluetooth = true;
     hasFingerprint = true;
     isImpermanence = true;

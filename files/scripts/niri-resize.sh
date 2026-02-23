@@ -1,4 +1,4 @@
-WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select(.is_active == true) | .id')
+WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select(.is_focused == true) | .id')
 
 COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
 

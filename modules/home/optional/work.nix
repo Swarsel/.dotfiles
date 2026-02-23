@@ -297,6 +297,84 @@ in
       };
 
     services = {
+
+      shikane = {
+        settings =
+          let
+            workRight = [
+              "m=HP Z32"
+              "s=CN41212T55"
+              "v=HP Inc."
+            ];
+            workLeft = [
+              "m=HP 732pk"
+              "s=CNC4080YL5"
+              "v=HP Inc."
+            ];
+            exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
+          in
+          {
+            profile = [
+
+              {
+                name = "work-internal-on";
+                inherit exec;
+                output = [
+                  {
+                    match = config.swarselsystems.sharescreen;
+                    enable = true;
+                    scale = 1.7;
+                    position = "2560,0";
+                  }
+                  {
+                    match = workRight;
+                    enable = true;
+                    scale = 1.0;
+                    mode = "3840x2160@60Hz";
+                    position = "-1280,0";
+                  }
+                  {
+                    match = workLeft;
+                    enable = true;
+                    scale = 1.0;
+                    transform = "270";
+                    mode = "3840x2160@60Hz";
+                    position = "-3440,-1050";
+                  }
+                ];
+              }
+              {
+                name = "work-internal-off";
+                inherit exec;
+                output = [
+                  {
+                    match = config.swarselsystems.sharescreen;
+                    enable = false;
+                    scale = 1.7;
+                    position = "2560,0";
+                  }
+                  {
+                    match = workRight;
+                    enable = true;
+                    scale = 1.0;
+                    mode = "3840x2160@60Hz";
+                    position = "-1280,0";
+                  }
+                  {
+                    match = workLeft;
+                    enable = true;
+                    scale = 1.0;
+                    transform = "270";
+                    mode = "3840x2160@60Hz";
+                    position = "-3440,-1050";
+                  }
+                ];
+              }
+
+
+            ];
+          };
+      };
       kanshi = {
         settings = [
           {
@@ -338,8 +416,8 @@ in
               name = "lidopen";
               exec = [
                 "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
               ];
               outputs = [
                 {
@@ -373,7 +451,7 @@ in
                 name = "lidopen";
                 exec = [
                   "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
                   "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
                 ];
                 outputs = [
@@ -396,8 +474,8 @@ in
             profile = {
               name = "lidclosed";
               exec = [
-                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
               ];
               outputs = [
                 {
@@ -428,7 +506,7 @@ in
               {
                 name = "lidclosed";
                 exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
                 ];
                 outputs = [
                   {

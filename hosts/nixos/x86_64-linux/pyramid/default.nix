@@ -40,7 +40,7 @@ in
     sharescreen = "eDP-2";
     info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
     firewall = lib.mkForce true;
-    wallpaper = self + /files/wallpaper/lenovowp.png;
+    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
     hasBluetooth = true;
     hasFingerprint = true;
     isImpermanence = false;

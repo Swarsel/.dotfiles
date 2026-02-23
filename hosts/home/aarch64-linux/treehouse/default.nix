@@ -25,7 +25,7 @@
   swarselsystems = {
     isLaptop = false;
     isNixos = false;
-    wallpaper = self + /files/wallpaper/surfacewp.png;
+    wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
   };
 
   swarselprofiles = {
