@@ -110,7 +110,7 @@ in
           };
 
           script = ''
-            set -eu
+                  set -eu
 
             ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
             ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
@@ -205,23 +205,27 @@ in
 
     services = {
       ${serviceName} = {
-        package = pkgs.kanidmWithSecretProvisioning_1_8;
-        enableServer = true;
-        serverSettings = {
-          domain = serviceDomain;
-          origin = "https://${serviceDomain}";
-          # tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
-          tls_chain = certPathBase;
-          # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
-          tls_key = keyPathBase;
-          bindaddress = "0.0.0.0:${toString servicePort}";
-          # trust_x_forward_for = true;
+        package = pkgs.kanidmWithSecretProvisioning_1_9;
+        server = {
+          enable = true;
+          settings = {
+            domain = serviceDomain;
+            origin = "https://${serviceDomain}";
+            # tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
+            tls_chain = certPathBase;
+            # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
+            tls_key = keyPathBase;
+            bindaddress = "0.0.0.0:${toString servicePort}";
+            # trust_x_forward_for = true;
+          };
         };
-        enableClient = true;
-        clientSettings = {
-          uri = config.services.kanidm.serverSettings.origin;
-          verify_ca = true;
-          verify_hostnames = true;
+        client = {
+          enable = true;
+          settings = {
+            uri = config.services.kanidm.server.settings.origin;
+            verify_ca = true;
+            verify_hostnames = true;
+          };
         };
         provision = {
           enable = true;
@@ -416,7 +420,7 @@ in
     nodes =
       let
         extraConfig = ''
-          allow ${globals.networks.home-lan.vlans.services.cidrv4};
+            allow ${globals.networks.home-lan.vlans.services.cidrv4};
           allow ${globals.networks.home-lan.vlans.services.cidrv6};
         '';
       in

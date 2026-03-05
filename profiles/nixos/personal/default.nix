@@ -41,8 +41,8 @@
       security = lib.mkDefault true;
       sops = lib.mkDefault true;
       stylix = lib.mkDefault true;
-      sway = lib.mkDefault true;
-      swayosd = lib.mkDefault true;
+      sway = lib.mkDefault false; # niri
+      swayosd = lib.mkDefault false; # niri
       syncthing = lib.mkDefault true;
       systemdTimeout = lib.mkDefault true;
       time = lib.mkDefault true;

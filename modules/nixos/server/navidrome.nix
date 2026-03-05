@@ -82,7 +82,6 @@ in
 
     services.${serviceName} = {
       enable = true;
-      # openFirewall = true;
       settings = {
         LogLevel = "debug";
         Address = "0.0.0.0";

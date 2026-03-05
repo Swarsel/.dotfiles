@@ -124,7 +124,9 @@ in
           analytics.reporting_enabled = false;
           users.allow_sign_up = false;
           security = {
-            admin_password = "$__file{/run/secrets/grafana-admin-pw}";
+            # admin_password = "$__file{/run/secrets/grafana-admin-pw}";
+            disable_initial_admin_creation = true;
+            secret_key = "$__file{${config.sops.secrets.grafana-admin-pw.path}}";
             cookie_secure = true;
             disable_gravatar = true;
           };

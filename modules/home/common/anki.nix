@@ -18,7 +18,7 @@ in
         reduceMotion = true;
         spacebarRatesCard = true;
         # videoDriver = "opengl";
-        sync = {
+        profiles."User 1".sync = {
           autoSync = false; # sync on profile close will delay system shutdown
           syncMedia = true;
           autoSyncMediaMinutes = 5;

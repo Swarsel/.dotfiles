@@ -1,14 +1,17 @@
-{ self, lib, pkgs, ... }:
+{ self, pkgs, ... }:
 {
   _module.args = {
     vars = rec {
       waylandSessionVariables = {
-        SDL_VIDEODRIVER = "wayland";
-        QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
-        QT_QPA_PLATFORM = "wayland-egl";
         ANKI_WAYLAND = "1";
-        OBSIDIAN_USE_WAYLAND = "1";
         MOZ_ENABLE_WAYLAND = "1";
+        MOZ_WEBRENDER = "1";
+        NIXOS_OZONE_WL = "1";
+        OBSIDIAN_USE_WAYLAND = "1";
+        QT_QPA_PLATFORM = "wayland-egl";
+        QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
+        SDL_VIDEODRIVER = "wayland";
+        _JAVA_AWT_WM_NONREPARENTING = "1";
       };
 
       waylandExports =
@@ -94,28 +97,28 @@
             noscript
 
             # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
-            (buildFirefoxXpiAddon {
-              pname = "shortkeys";
-              version = "4.0.2";
-              addonId = "Shortkeys@Shortkeys.com";
-              url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-              sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-              meta = with lib;
-                {
-                  description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                  mozPermissions = [
-                    "tabs"
-                    "downloads"
-                    "clipboardWrite"
-                    "browsingData"
-                    "storage"
-                    "bookmarks"
-                    "sessions"
-                    "<all_urls>"
-                  ];
-                  platforms = platforms.all;
-                };
-            })
+            # (buildFirefoxXpiAddon {
+            #   pname = "shortkeys";
+            #   version = "4.0.2";
+            #   addonId = "Shortkeys@Shortkeys.com";
+            #   url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+            #   sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+            #   meta = with lib;
+            #     {
+            #       description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+            #       mozPermissions = [
+            #         "tabs"
+            #         "downloads"
+            #         "clipboardWrite"
+            #         "browsingData"
+            #         "storage"
+            #         "bookmarks"
+            #         "sessions"
+            #         "<all_urls>"
+            #       ];
+            #       platforms = platforms.all;
+            #     };
+            # })
           ];
         };
 

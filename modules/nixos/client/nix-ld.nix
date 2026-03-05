@@ -86,26 +86,26 @@
         systemd
         tbb
         vulkan-loader
-        xorg.libICE
-        xorg.libSM
-        xorg.libX11
-        xorg.libXScrnSaver
-        xorg.libXcomposite
-        xorg.libXcursor
-        xorg.libXdamage
-        xorg.libXext
-        xorg.libXfixes
-        xorg.libXft
-        xorg.libXi
-        xorg.libXinerama
-        xorg.libXmu
-        xorg.libXrandr
-        xorg.libXrender
-        xorg.libXt
-        xorg.libXtst
-        xorg.libXxf86vm
-        xorg.libxcb
-        xorg.libxshmfence
+        libice
+        libsm
+        libx11
+        libxscrnsaver
+        libxcomposite
+        libxcursor
+        libxdamage
+        libxext
+        libxfixes
+        libxft
+        libxi
+        libxinerama
+        libxmu
+        libxrandr
+        libxrender
+        libxt
+        libxtst
+        libxxf86vm
+        libxcb
+        libxshmfence
         zlib
       ];
     };

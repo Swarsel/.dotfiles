@@ -21,7 +21,10 @@ in
         prometheus.cli
         tigervnc
         # openstackclient
+        step-cli
+
         vscode-fhs
+        copilot-cli
         antigravity
 
 
@@ -145,7 +148,7 @@ in
 
     programs =
       let
-        inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail clouds;
+        inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 clouds;
       in
       {
         openstackclient = {
@@ -166,7 +169,8 @@ in
           #   };
           # };
         };
-        git.settings.user.email = lib.mkForce gitMail;
+        # this is no longer needed since moving away from bitbucket
+        # git.settings.user.email = lib.mkForce gitMail;
 
         zsh = {
           shellAliases = {

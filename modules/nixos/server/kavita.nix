@@ -1,4 +1,4 @@
-{ self, lib, config, pkgs, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
 
@@ -8,9 +8,6 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
-    environment.systemPackages = with pkgs; [
-      calibre
-    ];
 
     users = {
       persistentIds.kavita = confLib.mkIds 995;

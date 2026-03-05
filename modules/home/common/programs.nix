@@ -87,5 +87,9 @@
         ];
       };
     };
+
+    home.sessionVariables = {
+      _ZO_EXCLUDE_DIRS = "$HOME:$HOME/.ansible/*:$HOME/test/*:/persist";
+    };
   };
 }

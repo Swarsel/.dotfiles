@@ -16,6 +16,7 @@
       pcsc-tools
       pcscliteWithPolkit.out
 
+
       # ledger packages
       ledger-live-desktop
 

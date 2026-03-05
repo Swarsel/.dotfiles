@@ -5,7 +5,7 @@
       packages = {
         # nix build --print-out-paths --no-link .#live-iso
         live-iso = inputs.nixos-generators.nixosGenerate {
-          inherit pkgs;
+          inherit pkgs system;
           specialArgs = { inherit self; };
           modules = [
             inputs.home-manager.nixosModules.home-manager

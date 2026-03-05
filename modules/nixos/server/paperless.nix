@@ -104,6 +104,7 @@ in
       gotenberg = {
         enable = true;
         package = pkgs.gotenberg;
+        libreoffice.package = pkgs.libreoffice;
         port = gotenbergPort;
         bindIP = "127.0.0.1";
         timeout = "600s";
@@ -114,7 +115,7 @@ in
 
     # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
     systemd.services.paperless-web.script = lib.mkBefore ''
-      oidcSecret=$(< ${config.sops.secrets.kanidm-paperless-client.path})
+        oidcSecret=$(< ${config.sops.secrets.kanidm-paperless-client.path})
       export PAPERLESS_SOCIALACCOUNT_PROVIDERS=$(
         ${pkgs.jq}/bin/jq <<< "$PAPERLESS_SOCIALACCOUNT_PROVIDERS" \
           --compact-output \
@@ -125,7 +126,7 @@ in
     nodes =
       let
         extraConfigLoc = ''
-          proxy_connect_timeout   300;
+            proxy_connect_timeout   300;
           proxy_send_timeout      300;
           proxy_read_timeout      300;
           send_timeout            300;
