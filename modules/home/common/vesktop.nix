@@ -7,7 +7,7 @@ in
   config = lib.mkIf config.swarselmodules.${moduleName} {
     programs.${moduleName} = {
       enable = true;
-      package = pkgs.stable.vesktop;
+      package = pkgs.vesktop;
       settings = {
         appBadge = false;
         arRPC = false;

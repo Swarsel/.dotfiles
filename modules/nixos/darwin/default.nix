@@ -12,7 +12,11 @@ in
       nix.settings.experimental-features = "nix-command flakes";
       nixpkgs = {
         hostPlatform = "x86_64-darwin";
-        overlays = [ outputs.overlays.default ];
+        overlays = [
+          outputs.overlays.default
+          outputs.overlays.stables
+          outputs.overlays.modifications
+        ];
         config = {
           allowUnfree = true;
         };

@@ -42,6 +42,8 @@
         };
         overlays = [
           self.overlays.default
+          self.overlays.stables
+          self.overlays.modifications
         ];
       };
       inherit pkgs;

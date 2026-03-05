@@ -103,11 +103,11 @@ in
 
       gotenberg = {
         enable = true;
-        package = pkgs.stable.gotenberg;
+        package = pkgs.gotenberg;
         port = gotenbergPort;
         bindIP = "127.0.0.1";
         timeout = "600s";
-        chromium.package = pkgs.stable.chromium;
+        chromium.package = pkgs.chromium;
       };
     };
 

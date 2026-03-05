@@ -5,7 +5,7 @@
     systemd.user.services.swayosd = confLib.overrideTarget "sway-session.target";
     services.swayosd = {
       enable = true;
-      package = pkgs.dev.swayosd;
+      package = pkgs.swayosd;
       topMargin = 0.5;
     };
   };

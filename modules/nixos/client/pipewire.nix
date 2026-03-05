@@ -6,7 +6,7 @@
 
     services.pipewire = {
       enable = true;
-      package = pkgs.stable.pipewire;
+      package = pkgs.pipewire;
       pulse.enable = true;
       jack.enable = true;
       audio.enable = true;

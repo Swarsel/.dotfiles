@@ -9,8 +9,7 @@
           pkgs.bat-extras.batdiff
           pkgs.bat-extras.batman
           pkgs.bat-extras.batwatch
-        ] ++ [
-          pkgs.stable.bat-extras.batgrep
+          pkgs.bat-extras.batgrep
         ];
         # extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
       };

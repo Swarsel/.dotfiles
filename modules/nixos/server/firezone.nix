@@ -174,19 +174,19 @@ in
 
         domain = {
           settings.ERLANG_DISTRIBUTION_PORT = domainPort;
-          package = pkgs.dev.firezone-server-domain;
+          package = pkgs.firezone-server-domain;
         };
         api = {
           externalUrl = "https://${serviceDomain}/api/";
           address = "0.0.0.0";
           port = apiPort;
-          package = pkgs.dev.firezone-server-api;
+          package = pkgs.firezone-server-api;
         };
         web = {
           externalUrl = "https://${serviceDomain}/";
           address = "0.0.0.0";
           port = webPort;
-          package = pkgs.dev.firezone-server-web;
+          package = pkgs.firezone-server-web;
         };
       };
 
@@ -199,7 +199,7 @@ in
         publicIpv4 = proxyAddress4;
         publicIpv6 = proxyAddress6;
         openFirewall = lib.mkIf (!isProxied) true;
-        package = pkgs.dev.firezone-relay;
+        package = pkgs.firezone-relay;
       };
     };
     # systemd.services.firezone-initialize =

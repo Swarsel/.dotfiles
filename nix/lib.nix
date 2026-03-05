@@ -49,7 +49,11 @@ let
       pkgsFor = lib.genAttrs (import systems) (system:
         import inputs.nixpkgs {
           inherit system;
-          overlays = [ self.overlays.default ];
+          overlays = [
+            self.overlays.default
+            self.overlays.stables
+            self.overlays.modifications
+          ];
           config.allowUnfree = true;
         }
       );

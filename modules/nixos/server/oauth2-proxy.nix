@@ -165,14 +165,14 @@ in
     services = {
       ${serviceName} = {
         enable = true;
-        package = pkgs.dev.oauth2-proxy;
+        package = pkgs.update.oauth2-proxy;
         cookie = {
           domain = ".${mainDomain}";
           secure = true;
           expire = "900m";
-          secret = null; # set by service EnvironmentFile
+          secretFile = null;
         };
-        clientSecret = null; # set by service EnvironmentFile
+        clientSecretFile = null;
         reverseProxy = true;
         httpAddress = "0.0.0.0:${builtins.toString servicePort}";
         redirectURL = "https://${serviceDomain}/oauth2/callback";

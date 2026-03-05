@@ -33,7 +33,7 @@
 
       bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
         enable = true;
-        package = pkgs.stable.bluez;
+        package = pkgs.bluez;
         powerOnBoot = true;
         settings = {
           General = {

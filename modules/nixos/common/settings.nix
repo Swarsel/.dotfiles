@@ -122,6 +122,8 @@ in
         nixpkgs = {
           overlays = [
             outputs.overlays.default
+            outputs.overlays.stables
+            outputs.overlays.modifications
           ] ++ lib.optionals withHomeManager [
             (final: prev:
               let

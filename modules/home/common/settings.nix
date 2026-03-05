@@ -61,6 +61,8 @@ in
       nixpkgs = lib.mkIf (!isNixos) {
         overlays = [
           outputs.overlays.default
+          outputs.overlays.stables
+          outputs.overlays.modifications
           (final: prev:
             let
               additions = final: _: import "${self}/pkgs/config" {

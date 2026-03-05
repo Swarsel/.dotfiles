@@ -11,7 +11,7 @@ in
   config = {
     home = {
       packages = with pkgs; [
-        stable.teams-for-linux
+        teams-for-linux
         shellcheck
         dig
         docker
@@ -21,9 +21,9 @@ in
         prometheus.cli
         tigervnc
         # openstackclient
+        vscode-fhs
+        antigravity
 
-        vscode
-        dev.antigravity
 
         rustdesk-vbc
       ];
@@ -154,7 +154,7 @@ in
         };
         awscli = {
           enable = true;
-          package = pkgs.stable24_05.awscli2;
+          package = pkgs.awscli2;
           # settings = {
           #   "default" = { };
           #   "profile s3-imagebuilder-prod" = { };
@@ -552,7 +552,7 @@ in
         };
 
         Service = {
-          ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+          ExecStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
         };
       };
 

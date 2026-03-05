@@ -160,7 +160,7 @@ in
     environment.systemPackages = with pkgs; [
       remmina
       # gp-onsaml-gui
-      stable24_11.python39
+      python39
       qemu
       packer
       gnumake

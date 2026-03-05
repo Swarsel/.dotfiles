@@ -14,7 +14,6 @@
       picard-tools
       audacity
       sox
-      # stable.feishin # does not work with oauth2-proxy
       calibre
 
       # printing
@@ -32,7 +31,7 @@
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
       # browser
-      stable24_11.vieb
+      vieb
       mgba
 
       # utilities
@@ -89,7 +88,7 @@
       # element-desktop
 
       nicotine-plus
-      stable25_05.transmission_3
+      transmission_3
       mktorrent
       hugo
 
@@ -150,13 +149,7 @@
       slurp
 
       # the following packages are used (in some way) by waybar
-      # playerctl
       pavucontrol
-      # stable.pamixer
-      # gnome.gnome-clocks
-      # wlogout
-      # jdiskreport
-      # monitor
 
       #keychain
       qalculate-gtk

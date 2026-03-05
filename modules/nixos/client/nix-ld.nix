@@ -82,8 +82,7 @@
         pipewire
         pixman
         speex
-        # stable.cc.cc
-        stable25_05.steam-fhsenv-without-steam
+        steam-fhsenv-without-steam
         systemd
         tbb
         vulkan-loader

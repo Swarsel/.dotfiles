@@ -8,7 +8,7 @@
         enable = true;
         enableKvm = true;
         addNetworkInterface = lib.mkIf config.virtualisation.virtualbox.host.enableKvm false;
-        package = pkgs.stable.virtualbox;
+        package = pkgs.virtualbox;
         enableExtensionPack = true;
       };
       # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch

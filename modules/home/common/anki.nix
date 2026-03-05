@@ -10,7 +10,7 @@ in
 
       programs.anki = {
         enable = true;
-        # # package = pkgs.anki;
+        package = pkgs.anki;
         hideBottomBar = true;
         hideBottomBarMode = "always";
         hideTopBar = true;
