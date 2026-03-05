@@ -1,4 +1,4 @@
-{ self, lib, config, inputs, microVMParent, nodes, ... }:
+{ lib, config, microVMParent, nodes, ... }:
 {
   config = {
     microvm = {

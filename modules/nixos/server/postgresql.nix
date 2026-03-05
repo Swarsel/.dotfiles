@@ -1,4 +1,4 @@
-{ self, config, lib, pkgs, confLib, ... }:
+{ config, lib, pkgs, confLib, ... }:
 let
   inherit (confLib.gen { name = "postgresql"; port = 3254; }) serviceName;
   postgresVersion = 14;

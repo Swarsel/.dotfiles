@@ -1,11 +1,5 @@
-{ self, pkgs, lib, config, globals, minimal, ... }:
+{ self, pkgs, lib, config, minimal, ... }:
 let
-  localIp = globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4;
-  subnetMask = globals.networks.${config.swarselsystems.server.netConfigName}.subnetMask4;
-  gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
-
-  inherit (globals.general) routerServer;
-  isRouter = config.node.name == routerServer;
 
   hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
   hostKeyPath =
