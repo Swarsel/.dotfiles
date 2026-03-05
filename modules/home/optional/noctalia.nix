@@ -1,8 +1,13 @@
-{ self, inputs, config, pkgs, lib, confLib, ... }:
+{ self, inputs, config, pkgs, lib, confLib, type, ... }:
+let
+  inherit (confLib.getConfig.repo.secrets.common) caldavTasksEndpoint;
+  inherit (config.swarselsystems) xdgDir;
+in
 {
   imports = [
     inputs.noctalia.homeModules.default
   ];
+  options.swarselmodules.optional-noctalia = lib.swarselsystems.mkTrueOption;
   config = {
     systemd.user = {
       targets = {
@@ -11,24 +16,35 @@
         };
         tray = {
           Unit = {
-            After = [ "noctalia-init.service" ];
-            PartOf = [ "noctalia-shell.service" ];
+            Wants = [ "noctalia-init.service" ];
+            After = [
+              "noctalia-shell.service"
+              "noctalia-init.service"
+            ];
           };
           Install.WantedBy = [ "noctalia-shell.target" ];
         };
       };
       services = {
-        noctalia-shell = confLib.overrideTarget "noctalia-shell.target";
+        noctalia-shell = {
+          Unit.PartOf = [ "noctalia-shell.target" ];
+          Install.WantedBy = [ "noctalia-shell.target" ];
+        };
         noctalia-init = {
+
+          Unit = {
+            Requires = [ "noctalia-shell.service" ];
+            After = [ "noctalia-shell.service" ];
+          };
 
           Service = {
             Type = "oneshot";
-            ExecStart = "${pkgs.coreutils}/bin/sleep 15";
+            ExecStart = "${pkgs.coreutils}/bin/sleep 3";
             RemainAfterExit = true;
           };
 
           Install = {
-            WantedBy = [ "noctalia-shell.target" ];
+            WantedBy = [ "tray.target" ];
           };
         };
       };
@@ -38,7 +54,7 @@
       fastfetch.enable = true;
       noctalia-shell = {
         enable = true;
-        package = pkgs.noctalia-shell.override { calendarSupport = true; };
+        package = pkgs.noctalia-shell;
         systemd.enable = true;
         settings = {
           bar = {
@@ -58,7 +74,7 @@
             frameRadius = 12;
             outerCorners = false;
             hideOnOverview = false;
-            displayMode = "auto_hide";
+            displayMode = "non_exclusive";
             autoHideDelay = 100;
             autoShowDelay = 300;
             screenOverrides = [ ];
@@ -107,7 +123,7 @@
                     todos = [ ];
                     useCustomColors = false;
                   };
-                  id = "plugin:todo";
+                  id = "plugin:ba7043:todo";
                 }
               ];
               center = [
@@ -149,7 +165,7 @@
                   showUnreadBadge = true;
                 }
                 {
-                  id = "plugin:ba7043:github-feed";
+                  id = "plugin:github-feed";
                 }
                 {
                   id = "plugin:clipper";
@@ -175,7 +191,7 @@
                   showPowerProfiles = true;
                 }
                 {
-                  colorName = "primary";
+                  iconColor = "none";
                   id = "SessionMenu";
                 }
                 {
@@ -189,7 +205,7 @@
                 }
                 {
                   colorizeDistroLogo = false;
-                  colorizeSystemIcon = "primary";
+                  colorizeSystemIcon = "none";
                   customIconPath = "${self}/files/icons/swarsel.png";
                   enableColorization = true;
                   icon = "noctalia";
@@ -322,9 +338,12 @@
             viewMode = "list";
             showCategories = false;
             iconMode = "native";
+            density = "compact";
+            overviewLayer = false;
             showIconBackground = false;
             enableSettingsSearch = false;
             enableWindowsSearch = false;
+            enableSessionSearch = false;
             ignoreMouseInput = true;
             screenshotAnnotationTool = "";
           };
@@ -434,36 +453,49 @@
                 command = "";
                 countdownEnabled = true;
                 enabled = true;
+                keybind = "L";
               }
               {
                 action = "suspend";
                 command = "";
                 countdownEnabled = true;
                 enabled = true;
+                keybind = "S";
               }
               {
                 action = "hibernate";
                 command = "";
                 countdownEnabled = true;
                 enabled = true;
+                keybind = "H";
               }
               {
                 action = "reboot";
                 command = "";
                 countdownEnabled = true;
                 enabled = true;
+                keybind = "R";
               }
               {
                 action = "logout";
                 command = "";
                 countdownEnabled = true;
                 enabled = true;
+                keybind = "U";
               }
               {
                 action = "shutdown";
                 command = "";
                 countdownEnabled = true;
                 enabled = true;
+                keybind = "P";
+              }
+              {
+                action = "rebootToUefi";
+                command = "";
+                countdownEnabled = true;
+                enabled = true;
+                keybind = "B";
               }
             ];
           };
@@ -550,7 +582,7 @@
                   "unicode-picker"
                   "screen-recorder"
                 ]) // {
-              github-feed = {
+              todo = {
                 enabled = true;
                 sourceUrl = "https://github.com/Swarsel/noctalia-plugins";
               };
@@ -559,6 +591,28 @@
           pluginSettings = {
             clipper = {
               enableTodoIntegration = false;
+            };
+
+            todo = {
+
+              caldavEnabled = true;
+              caldavUrl = caldavTasksEndpoint;
+              caldavUsername = config.swarselsystems.mainUser;
+              caldavPasswordType = "file";
+              caldavPasswordCmd = "";
+              caldavPasswordFile = confLib.getConfig.sops.secrets.radicale-token.path;
+              caldavSyncInterval = 300;
+              current_page_id = 1;
+              pages = [
+                {
+                  id = 0;
+                  name = "General";
+                }
+                {
+                  id = 1;
+                  name = "Work";
+                }
+              ];
             };
 
             privacy-indicator = {
@@ -598,8 +652,8 @@
               # my fork:
               showNotificationBadge = true;
               colorizationEnabled = true;
-              colorizationIcon = "Primary";
-              colorizationBadge = "Tertiary";
+              colorizationIcon = "None";
+              colorizationBadge = "Primary";
               colorizationBadgeText = "None";
               defaultTab = 1;
               enableSystemNotifications = true;
@@ -614,6 +668,10 @@
           };
         };
       };
+    };
+  } // lib.optionalAttrs (type != "nixos") {
+    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+      radicale-token = { path = "${xdgDir}/secrets/radicaleToken"; };
     };
   };
 }

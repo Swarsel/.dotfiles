@@ -1809,6 +1809,8 @@ A short overview over each input and what it does:
       simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
       nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
       pia.url = "github:Swarsel/pia.nix/custom";
+      niritiling.url = "github:Swarsel/niritiling";
+      noctoggle.url = "git+ssh://git@github.com/Swarsel/noctoggle.git?ref=main";
     };
 
     outputs =
@@ -2317,6 +2319,8 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
               inputs.swarsel-nix.nixosModules.default
               inputs.nixos-nftables-firewall.nixosModules.default
               inputs.pia.nixosModules.default
+              inputs.niritiling.nixosModules.default
+              inputs.noctoggle.nixosModules.default
               (inputs.nixos-extra-modules + "/modules/guests")
               (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
               "${self}/hosts/nixos/${arch}/${configName}"
@@ -8885,6 +8889,8 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
             github-forge-token = { owner = mainUser; };
           }) // (lib.optionalAttrs (modules ? optional-work) {
             harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
+          }) // (lib.optionalAttrs (modules ? optional-noctalia) {
+            radicale-token = { owner = mainUser; };
           }) // (lib.optionalAttrs modules.anki {
             anki-user = { owner = mainUser; };
             anki-pw = { owner = mainUser; };
@@ -9199,7 +9205,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
             description = "Leon S";
             password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
             hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
-            extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+            extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "input" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
           };
         };
@@ -19560,6 +19566,7 @@ Auto login for the initial session.
         xwayland-satellite-unstable
       ];
 
+      services.niritiling.enable = true;
 
       programs = {
         niri = {
@@ -19590,8 +19597,17 @@ Auto login for the initial session.
       services = {
         upower.enable = true; # needed for battery percentage
         gnome.evolution-data-server.enable = true; # needed for calendar integration
+
+        noctoggle = {
+          enable = true;
+          # noctaliaPackage = pkgs.noctalia-shell;
+        };
+
       };
-      programs.gpu-screen-recorder.enable = true;
+      programs = {
+        gpu-screen-recorder.enable = true;
+        evolution.enable = true;
+      };
     };
   }
 #+end_src
@@ -26413,6 +26429,7 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
         package = pkgs.niri-stable; # which package to use for niri validation
         settings = {
           gestures.hot-corners.enable = false;
+          hotkey-overlay.skip-at-startup = true;
           debug = {
             honor-xdg-activation-with-invalid-serial = [ ];
           };
@@ -26510,17 +26527,19 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
           };
           binds = with config.lib.niri.actions; let
             sh = spawn "sh" "-c";
-            resizer = "niri-resize & sleep 0.05";
           in
           {
             "Mod+Shift+t".action = toggle-window-rule-opacity;
             "Mod+m".action = focus-workspace-previous;
             "Mod+Shift+Space".action = toggle-window-floating;
             "Mod+Shift+f".action = fullscreen-window;
-            "Mod+q".action = sh "${resizer} && niri msg action close-window";
-            "Mod+f".action = sh "${resizer} && exec firefox";
+            # "Mod+q".action = sh "${resizer} && niri msg action close-window";
+            "Mod+q".action = sh "niri msg action close-window";
+            # "Mod+f".action = sh "${resizer} && exec firefox";
+            "Mod+f".action = sh "exec firefox";
             # "Mod+Space".action = spawn "noctalia-shell" "ipc" "call" "launcher" "toggle";
-            "Mod+Space".action = sh "${resizer} && exec noctalia-shell ipc call launcher toggle";
+            # "Mod+Space".action = sh "${resizer} && exec noctalia-shell ipc call launcher toggle";
+            "Mod+Space".action = sh "exec noctalia-shell ipc call launcher toggle";
             # "Mod+Space".action = sh "${resizer} & exec fuzzel";
             "Mod+z".action = spawn "noctalia-shell" "ipc" "call" "bar" "toggle";
             "Mod+Shift+c".action = spawn "qalculate-gtk";
@@ -26535,11 +26554,16 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
             "Mod+Shift+s".action.screenshot-window = { write-to-disk = true; };
             # "Mod+Shift+v".action = spawn "wf-recorder" "-g" "'$(slurp -f %o -or)'" "-f" "~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
 
-            "Mod+e".action = sh "${resizer} && exec emacsclient -nquc -a emacs -e '(dashboard-open)'";
-            "Mod+c".action = sh "${resizer} && exec emacsclient -ce '(org-capture)'";
-            "Mod+t".action = sh "${resizer} && exec emacsclient -ce '(org-agenda)'";
-            "Mod+Shift+m".action = sh "${resizer} && exec emacsclient -ce '(mu4e)'";
-            "Mod+Shift+a".action = sh "${resizer} && exec emacsclient -ce '(swarsel/open-calendar)'";
+            # "Mod+e".action = sh "${resizer} && exec emacsclient -nquc -a emacs -e '(dashboard-open)'";
+            "Mod+e".action = sh "exec emacsclient -nquc -a emacs -e '(dashboard-open)'";
+            # "Mod+c".action = sh "${resizer} && exec emacsclient -ce '(org-capture)'";
+            "Mod+c".action = sh "exec emacsclient -ce '(org-capture)'";
+            # "Mod+t".action = sh "${resizer} && exec emacsclient -ce '(org-agenda)'";
+            "Mod+t".action = sh "exec emacsclient -ce '(org-agenda)'";
+            # "Mod+Shift+m".action = sh "${resizer} && exec emacsclient -ce '(mu4e)'";
+            "Mod+Shift+m".action = sh "exec emacsclient -ce '(mu4e)'";
+            # "Mod+Shift+a".action = sh "${resizer} && exec emacsclient -ce '(swarsel/open-calendar)'";
+            "Mod+Shift+a".action = sh "exec emacsclient -ce '(swarsel/open-calendar)'";
 
             "Mod+a".action = spawn "swarselcheck-niri" "-s";
             "Mod+x".action = spawn "swarselcheck-niri" "-k";
@@ -26564,7 +26588,8 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
             # "Mod+Shift+e".action = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             # "Mod+r".action = "mode resize";
             # "Mod+Return".action = "exec kitty";
-            "Mod+Return".action = sh "${resizer} && exec kitty -o confirm_os_window_close=0";
+            # "Mod+Return".action = sh "${resizer} && exec kitty -o confirm_os_window_close=0";
+            "Mod+Return".action = sh "exec kitty -o confirm_os_window_close=0";
             "XF86AudioRaiseVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "increase";
             "XF86AudioLowerVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "decrease";
             "XF86AudioMute".action = spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput";
@@ -26610,7 +26635,7 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
             # { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
             # { command = [ "noctalia-shell" ]; }
             # { argv = [ "pkill" "mako" ]; }
-            { argv = [ "systemctl" "--user" "restart" "noctalia-shell.target" "tray.target" ]; }
+            { argv = [ "systemctl" "--user" "restart" "noctalia-shell.target" ]; }
           ];
           # workspaces = {
           # "01-Main" = {
@@ -26622,6 +26647,34 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
           # };
         };
       };
+
+      xdg.portal = {
+        enable = true;
+        xdgOpenUsePortal = true;
+        config.niri = {
+          default = [
+            "gtk"
+            "gnome"
+          ];
+          "org.freedesktop.impl.portal.Access" = [ "gtk" ];
+          "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
+          "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
+          "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+          "org.freedesktop.impl.portal.ScreenCast" = [ "xdg-desktop-portal-gnome" ];
+          "org.freedesktop.impl.portal.Screenshot" = [ "xdg-desktop-portal-gnome" ];
+        };
+        extraPortals = [
+          pkgs.gnome-keyring
+          pkgs.xdg-desktop-portal-gtk
+          pkgs.xdg-desktop-portal-gnome
+        ];
+      };
+
+      swarselmodules.gnome-keyring = lib.swarselsystems.mkStrong true;
+
+      home.packages = [
+        pkgs.nirius
+      ];
 
     };
   }
@@ -26635,11 +26688,16 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
 Apart from configuring Noctalia, I here also add some systemd chains to make sure the Noctalia tray is actually ready to receive tray icons.
 
 #+begin_src nix-ts :tangle modules/home/optional/noctalia.nix
-  { self, inputs, config, pkgs, lib, confLib, ... }:
+  { self, inputs, config, pkgs, lib, confLib, type, ... }:
+  let
+    inherit (confLib.getConfig.repo.secrets.common) caldavTasksEndpoint;
+    inherit (config.swarselsystems) xdgDir;
+  in
   {
     imports = [
       inputs.noctalia.homeModules.default
     ];
+    options.swarselmodules.optional-noctalia = lib.swarselsystems.mkTrueOption;
     config = {
       systemd.user = {
         targets = {
@@ -26648,24 +26706,35 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
           };
           tray = {
             Unit = {
-              After = [ "noctalia-init.service" ];
-              PartOf = [ "noctalia-shell.service" ];
+              Wants = [ "noctalia-init.service" ];
+              After = [
+                "noctalia-shell.service"
+                "noctalia-init.service"
+              ];
             };
             Install.WantedBy = [ "noctalia-shell.target" ];
           };
         };
         services = {
-          noctalia-shell = confLib.overrideTarget "noctalia-shell.target";
+          noctalia-shell = {
+            Unit.PartOf = [ "noctalia-shell.target" ];
+            Install.WantedBy = [ "noctalia-shell.target" ];
+          };
           noctalia-init = {
+
+            Unit = {
+              Requires = [ "noctalia-shell.service" ];
+              After = [ "noctalia-shell.service" ];
+            };
 
             Service = {
               Type = "oneshot";
-              ExecStart = "${pkgs.coreutils}/bin/sleep 15";
+              ExecStart = "${pkgs.coreutils}/bin/sleep 3";
               RemainAfterExit = true;
             };
 
             Install = {
-              WantedBy = [ "noctalia-shell.target" ];
+              WantedBy = [ "tray.target" ];
             };
           };
         };
@@ -26695,7 +26764,7 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
               frameRadius = 12;
               outerCorners = false;
               hideOnOverview = false;
-              displayMode = "auto_hide";
+              displayMode = "non_exclusive";
               autoHideDelay = 100;
               autoShowDelay = 300;
               screenOverrides = [ ];
@@ -26741,10 +26810,10 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
                       };
                       showBackground = true;
                       showCompleted = true;
-                      todos = [];
+                      todos = [ ];
                       useCustomColors = false;
                     };
-                    id = "plugin:todo";
+                    id = "plugin:ba7043:todo";
                   }
                 ];
                 center = [
@@ -26786,7 +26855,7 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
                     showUnreadBadge = true;
                   }
                   {
-                    id = "plugin:ba7043:github-feed";
+                    id = "plugin:github-feed";
                   }
                   {
                     id = "plugin:clipper";
@@ -26812,7 +26881,7 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
                     showPowerProfiles = true;
                   }
                   {
-                    colorName = "primary";
+                    iconColor = "none";
                     id = "SessionMenu";
                   }
                   {
@@ -26826,7 +26895,7 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
                   }
                   {
                     colorizeDistroLogo = false;
-                    colorizeSystemIcon = "primary";
+                    colorizeSystemIcon = "none";
                     customIconPath = "${self}/files/icons/swarsel.png";
                     enableColorization = true;
                     icon = "noctalia";
@@ -26959,9 +27028,12 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
               viewMode = "list";
               showCategories = false;
               iconMode = "native";
+              density = "compact";
+              overviewLayer = false;
               showIconBackground = false;
               enableSettingsSearch = false;
               enableWindowsSearch = false;
+              enableSessionSearch = false;
               ignoreMouseInput = true;
               screenshotAnnotationTool = "";
             };
@@ -27071,36 +27143,49 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
                   command = "";
                   countdownEnabled = true;
                   enabled = true;
+                  keybind = "L";
                 }
                 {
                   action = "suspend";
                   command = "";
                   countdownEnabled = true;
                   enabled = true;
+                  keybind = "S";
                 }
                 {
                   action = "hibernate";
                   command = "";
                   countdownEnabled = true;
                   enabled = true;
+                  keybind = "H";
                 }
                 {
                   action = "reboot";
                   command = "";
                   countdownEnabled = true;
                   enabled = true;
+                  keybind = "R";
                 }
                 {
                   action = "logout";
                   command = "";
                   countdownEnabled = true;
                   enabled = true;
+                  keybind = "U";
                 }
                 {
                   action = "shutdown";
                   command = "";
                   countdownEnabled = true;
                   enabled = true;
+                  keybind = "P";
+                }
+                {
+                  action = "rebootToUefi";
+                  command = "";
+                  countdownEnabled = true;
+                  enabled = true;
+                  keybind = "B";
                 }
               ];
             };
@@ -27187,15 +27272,37 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
                     "unicode-picker"
                     "screen-recorder"
                   ]) // {
-                    github-feed = {
-                      enabled = true;
-                      sourceUrl = "https://github.com/Swarsel/noctalia-plugins";
-                    };
-                  };
+                todo = {
+                  enabled = true;
+                  sourceUrl = "https://github.com/Swarsel/noctalia-plugins";
+                };
+              };
             };
             pluginSettings = {
               clipper = {
                 enableTodoIntegration = false;
+              };
+
+              todo = {
+
+                caldavEnabled = true;
+                caldavUrl = caldavTasksEndpoint;
+                caldavUsername = config.swarselsystems.mainUser;
+                caldavPasswordType = "file";
+                caldavPasswordCmd = "";
+                caldavPasswordFile = confLib.getConfig.sops.secrets.radicale-token.path;
+                caldavSyncInterval = 300;
+                current_page_id = 1;
+                pages = [
+                  {
+                    id = 0;
+                    name = "General";
+                  }
+                  {
+                    id = 1;
+                    name = "Work";
+                  }
+                ];
               };
 
               privacy-indicator = {
@@ -27235,8 +27342,8 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
                 # my fork:
                 showNotificationBadge = true;
                 colorizationEnabled = true;
-                colorizationIcon = "Primary";
-                colorizationBadge = "Tertiary";
+                colorizationIcon = "None";
+                colorizationBadge = "Primary";
                 colorizationBadgeText = "None";
                 defaultTab = 1;
                 enableSystemNotifications = true;
@@ -27252,7 +27359,11 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
           };
         };
       };
+    } // lib.optionalAttrs (type != "nixos") {
+    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+      radicale-token = { path = "${xdgDir}/secrets/radicaleToken"; };
     };
+  };
   }
 #+end_src
 

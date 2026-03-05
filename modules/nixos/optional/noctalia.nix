@@ -11,7 +11,16 @@
     services = {
       upower.enable = true; # needed for battery percentage
       gnome.evolution-data-server.enable = true; # needed for calendar integration
+
+      noctoggle = {
+        enable = true;
+        # noctaliaPackage = pkgs.noctalia-shell;
+      };
+
     };
-    programs.gpu-screen-recorder.enable = true;
+    programs = {
+      gpu-screen-recorder.enable = true;
+      evolution.enable = true;
+    };
   };
 }

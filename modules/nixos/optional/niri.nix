@@ -19,6 +19,7 @@
       xwayland-satellite-unstable
     ];
 
+    services.niritiling.enable = true;
 
     programs = {
       niri = {
