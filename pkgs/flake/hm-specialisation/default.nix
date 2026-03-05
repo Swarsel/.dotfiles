@@ -1,5 +1,4 @@
 { name, writeShellApplication, fzf, findutils, home-manager, ... }:
-
 writeShellApplication {
   inherit name;
   runtimeInputs = [ fzf findutils home-manager ];

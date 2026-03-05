@@ -1,4 +1,4 @@
-{ self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
+{ self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq, ... }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];

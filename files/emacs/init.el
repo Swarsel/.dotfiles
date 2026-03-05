@@ -1851,7 +1851,7 @@ create a new one."
               (
                (,"󱄅"
                 ,swarsel-domain
-                ,(concat "Browse " main-domain)
+                ,(concat "Browse " swarsel-domain)
                 (lambda (&rest _) (browse-url ,(concat "https://" swarsel-domain))))
                )
               ))))

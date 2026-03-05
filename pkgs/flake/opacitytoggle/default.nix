@@ -1,6 +1,12 @@
-{ self, name, writeShellApplication, sway }:
+{ name, writeShellApplication, sway, ... }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ sway ];
-  text = builtins.readFile "${self}/files/scripts/${name}.sh";
+  text = ''
+    if swaymsg opacity plus 0.01 -q; then
+        swaymsg opacity 1
+    else
+        swaymsg opacity 0.95
+    fi
+  '';
 }

@@ -1,6 +1,18 @@
-{ self, name, writeShellApplication, jq }:
+{ name, writeShellApplication, jq, ... }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ jq ];
-  text = builtins.readFile "${self}/files/scripts/${name}.sh";
+  text = ''
+    WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select(.is_focused == true) | .id')
+
+    COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
+
+    while [[ $COUNT == "0" || $COUNT == "2" ]]; do
+        COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
+    done
+
+    if [[ $COUNT == "1" ]]; then
+        niri msg action maximize-column
+    fi
+  '';
 }

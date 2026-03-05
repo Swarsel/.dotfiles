@@ -1,5 +1,4 @@
 { name, writeShellApplication, curl, ... }:
-
 writeShellApplication {
   inherit name;
   runtimeInputs = [ curl ];

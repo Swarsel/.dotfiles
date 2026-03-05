@@ -1,7 +1,5 @@
 # taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
 { appimageTools, fetchurl, writeScriptBin, pkgs, ... }:
-
-
 let
   cura5 = appimageTools.wrapType2 rec {
     pname = "cura5";

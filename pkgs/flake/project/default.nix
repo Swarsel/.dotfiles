@@ -1,5 +1,13 @@
-{ self, name, writeShellApplication }:
+{ name, writeShellApplication, ... }:
 writeShellApplication {
   inherit name;
-  text = builtins.readFile "${self}/files/scripts/${name}.sh";
+  text = ''
+    set -euo pipefail
+
+    if [ ! -d "$(pwd)/.git" ]; then
+        git init
+    fi
+    nix flake init --template "$FLAKE"#"$1"
+    direnv allow
+  '';
 }

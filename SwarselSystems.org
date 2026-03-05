@@ -21563,32 +21563,68 @@ This section is for programs that require no further configuration. zsh Integrat
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output. This also uses the =nix-index-with-full-db= from the nix-index-database input thanks to its overlay.
 
 #+begin_src nix-ts :tangle modules/home/common/nix-index.nix
-  { self, lib, config, pkgs, ... }:
-  {
-    options.swarselmodules.nix-index = lib.mkEnableOption "nix-index settings";
-    config = lib.mkIf config.swarselmodules.nix-index {
-      programs.nix-index =
-        let
-          commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
-            mkdir -p $out/etc/profile.d
-            substitute ${self + /files/scripts/command-not-found.sh}        \
-              $out/etc/profile.d/command-not-found.sh                 \
-              --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
-              --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
-          '';
-        in
+{ lib, config, pkgs, ... }:
+{
+  options.swarselmodules.nix-index = lib.mkEnableOption "nix-index settings";
+  config = lib.mkIf config.swarselmodules.nix-index {
+    programs.nix-index =
+      let
+        commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
+          mkdir -p $out/etc/profile.d
+          cat > $out/etc/profile.d/command-not-found.sh <<'EOF'
+          # Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
+          command_not_found_handle() {
+              if [ -n "''${MC_SID-}" ] || ! [ -t 1 ]; then
+                  >&2 echo "$1: command not found"
+                  return 127
+              fi
 
-        {
+              echo -n "searching nix-index..."
+              ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --whole-name --at-root "/bin/$1")
 
-          enable = true;
-          package = pkgs.symlinkJoin {
-            name = "nix-index";
-            paths = [ commandNotFound ];
-          };
+              case $(echo -n "$ATTRS" | grep -c "^") in
+              0)
+                  >&2 echo -ne "$(@tput@ el1)\r"
+                  >&2 echo "$1: command not found"
+                  ;;
+              *)
+                  >&2 echo -ne "$(@tput@ el1)\r"
+                  >&2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
+                  >&2 echo "It is provided by the following derivation(s):"
+                  while read -r ATTR; do
+                      ATTR=''${ATTR%.out}
+                      >&2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
+                  done <<< "$ATTRS"
+                  ;;
+              esac
+
+              return 127
+          }
+
+          command_not_found_handler() {
+              command_not_found_handle "$@"
+              return $?
+          }
+          EOF
+
+          substitute $out/etc/profile.d/command-not-found.sh        \
+            $out/etc/profile.d/command-not-found.sh                 \
+            --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+            --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
+        '';
+      in
+
+      {
+
+        enable = true;
+        package = pkgs.symlinkJoin {
+          name = "nix-index";
+          paths = [ commandNotFound ];
         };
-      programs.nix-index-database.comma.enable = true;
-    };
-  }
+      };
+    programs.nix-index-database.comma.enable = true;
+  };
+}
 #+end_src
 
 **** nix-your-shell
@@ -28938,7 +28974,7 @@ In short, the options defined here are passed to the modules systems using =_mod
 :CUSTOM_ID: h:64a5cc16-6b16-4802-b421-c67ccef853e1
 :END:
 
-This is the central station for self-defined packages. These are all referenced in =default.nix=. Wherever possible, I am keeping the shell version of these scripts in this file as well and then read it using =builtin.readFile= in the NixOS configurations. This lets me keep full control in this one file but also keep the separate files uncluttered.
+This is the central station for self-defined packages. These are all referenced in =default.nix=. For scripts that are packaged via =writeShellApplication=, I now keep the executable body directly inside the Nix package definitions. Where a shell block still exists for readability in this document, it is no longer tangled to =files/scripts= and serves as documentation only.
 
 Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
 
@@ -28970,97 +29006,94 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 
 This app allows me, in conjunction with my Yubikey, to quickly enter passwords when the need arises. Normal and TOTP passwords are supported, and they can either be printed directly or copied to the clipboard.
 
-#+begin_src shell :tangle files/scripts/pass-fuzzel.sh :mkdirp yes
-  # Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
-  shopt -s nullglob globstar
-
-  otp=0
-  typeit=0
-  while :; do
-      case ${1:-} in
-      -t | --type)
-          typeit=1
-          ;;
-      -o | --otp)
-          otp=1
-          ;;
-      ,*) break ;;
-      esac
-      shift
-  done
-
-  export PASSWORD_STORE_DIR=~/.local/share/password-store
-  prefix=${PASSWORD_STORE_DIR-~/.local/share/password-store}
-  if [[ $otp -eq 0 ]]; then
-      password_files=("$prefix"/**/*.gpg)
-  else
-      password_files=("$prefix"/otp/**/*.gpg)
-  fi
-  password_files=("${password_files[@]#"$prefix"/}")
-  password_files=("${password_files[@]%.gpg}")
-
-  password=$(printf '%s\n' "${password_files[@]}" | fuzzel --dmenu "$@")
-
-  [[ -n $password ]] || exit
-  if [[ $otp -eq 0 ]]; then
-      if [[ $typeit -eq 0 ]]; then
-          pass show -c "$password" &> /tmp/pass-fuzzel
-      else
-          pass show "$password" | {
-              IFS= read -r pass
-              printf %s "$pass"
-          } | wtype -
-      fi
-  else
-      if [[ $typeit -eq 0 ]]; then
-          pass otp -c "$password" &> /tmp/pass-fuzzel
-      else
-          pass otp "$password" | {
-              IFS= read -r pass
-              printf %s "$pass"
-          } | wtype -
-      fi
-  fi
-  notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/pass-fuzzel/default.nix
-  { self, name, writeShellApplication, libnotify, pass, fuzzel, wtype }:
+  { name, writeShellApplication, libnotify, pass, fuzzel, wtype, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
-  }
+    text = ''
+      # Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
+        shopt -s nullglob globstar
 
+        otp=0
+        typeit=0
+        while :; do
+            case ''${1:-} in
+            -t | --type)
+                typeit=1
+                ;;
+            -o | --otp)
+                otp=1
+                ;;
+            ,*) break ;;
+            esac
+            shift
+        done
+
+        export PASSWORD_STORE_DIR=~/.local/share/password-store
+        prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+        if [[ $otp -eq 0 ]]; then
+            password_files=("$prefix"/**/*.gpg)
+        else
+            password_files=("$prefix"/otp/**/*.gpg)
+        fi
+        password_files=("''${password_files[@]#"$prefix"/}")
+        password_files=("''${password_files[@]%.gpg}")
+
+        password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+
+        [[ -n $password ]] || exit
+        if [[ $otp -eq 0 ]]; then
+            if [[ $typeit -eq 0 ]]; then
+                pass show -c "$password" &> /tmp/pass-fuzzel
+            else
+                pass show "$password" | {
+                    IFS= read -r pass
+                    printf %s "$pass"
+                } | wtype -
+            fi
+        else
+            if [[ $typeit -eq 0 ]]; then
+                pass otp -c "$password" &> /tmp/pass-fuzzel
+            else
+                pass otp "$password" | {
+                    IFS= read -r pass
+                    printf %s "$pass"
+                } | wtype -
+            fi
+        fi
+        notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+    '';
+  }
 #+end_src
 
 ***** quickpass
 :PROPERTIES:
 :CUSTOM_ID: h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9
 :END:
-#+begin_src shell :tangle files/scripts/quickpass.sh :mkdirp yes
-    shopt -s nullglob globstar
 
-    notify-send "$(env | grep -E 'WAYLAND|SWAY')"
-
-    password="$1"
-
-    pass show "$password" | {
-        IFS= read -r pass
-        printf %s "$pass"
-    } | wtype -
-
-    notify-send -u critical -a pass -t 1000 "Typed Password"
-#+end_src
+This helper types a selected password entry directly into the active window, which is useful in places where clipboard pasting is blocked or inconvenient.
 
 #+begin_src nix-ts :tangle pkgs/flake/quickpass/default.nix
-  { self, name, writeShellApplication, libnotify, pass, wtype }:
+  { name, writeShellApplication, libnotify, pass, wtype, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ libnotify pass wtype ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
-  }
+    text = ''
+      shopt -s nullglob globstar
 
+      notify-send "$(env | grep -E 'WAYLAND|SWAY')"
+
+      password="$1"
+
+      pass show "$password" | {
+          IFS= read -r pass
+          printf %s "$pass"
+      } | wtype -
+
+      notify-send -u critical -a pass -t 1000 "Typed Password"
+    '';
+  }
 #+end_src
 
 ***** cura5
@@ -29074,8 +29107,6 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
 #+begin_src nix-ts :tangle pkgs/flake/cura5/default.nix
   # taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
   { appimageTools, fetchurl, writeScriptBin, pkgs, ... }:
-
-
   let
     cura5 = appimageTools.wrapType2 rec {
       pname = "cura5";
@@ -29114,7 +29145,6 @@ This script allows for quick git home-manager specialisation switching.
 
 #+begin_src nix-ts :tangle pkgs/flake/hm-specialisation/default.nix
   { name, writeShellApplication, fzf, findutils, home-manager, ... }:
-
   writeShellApplication {
     inherit name;
     runtimeInputs = [ fzf findutils home-manager ];
@@ -29138,7 +29168,6 @@ This script allows for quick git worktree switching.
 
 #+begin_src nix-ts :tangle pkgs/flake/cdw/default.nix
   { name, writeShellApplication, fzf, ... }:
-
   writeShellApplication {
     inherit name;
     runtimeInputs = [ fzf ];
@@ -29159,7 +29188,6 @@ This script allows for quick git branch switching.
 
 #+begin_src nix-ts :tangle pkgs/flake/cdb/default.nix
   { name, writeShellApplication, fzf, ... }:
-
   writeShellApplication {
     inherit name;
     runtimeInputs = [ fzf ];
@@ -29179,7 +29207,6 @@ This script allows for quick checking of nixpkgs PR statuses.
 
 #+begin_src nix-ts :tangle pkgs/flake/prstatus/default.nix
   { name, writeShellApplication, curl, ... }:
-
   writeShellApplication {
     inherit name;
     runtimeInputs = [ curl ];
@@ -29216,7 +29243,7 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 :CUSTOM_ID: h:3c72d263-411c-44f0-90ff-55f14d4d9d49
 :END:
 
-This app starts a configuratble timer and uses TTS to say something once the timer runs out.
+A timer that uses TTS to say something once the timer runs out.
 
 
 #+begin_src nix-ts :tangle pkgs/flake/timer/default.nix
@@ -29239,83 +29266,36 @@ This app starts a configuratble timer and uses TTS to say something once the tim
 
 This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm scratchpad window that I sometimes use for calling a command quickly, in case it is on the screen. After emacs closes, the kittyterm window is then shown again if it was visible earlier.
 
-#+begin_src shell :tangle files/scripts/e.sh
-  wait=0
-  while :; do
-      case ${1:-} in
-      -w | --wait)
-          wait=1
-          ;;
-      ,*) break ;;
-      esac
-      shift
-  done
-
-  STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
-  if [ "$STR" == "" ]; then
-      swaymsg '[title="kittyterm"]' scratchpad show
-      emacsclient -c -a "" "$@"
-      swaymsg '[title="kittyterm"]' scratchpad show
-  else
-      if [[ $wait -eq 0 ]]; then
-          emacsclient -n -c -a "" "$@"
-      else
-          emacsclient -c -a "" "$@"
-      fi
-  fi
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/e/default.nix
-  { self, name, writeShellApplication, emacs30-pgtk, sway, jq }:
+  { name, writeShellApplication, emacs30-pgtk, sway, jq, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ emacs30-pgtk sway jq ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
-  }
+    text = ''
+      wait=0
+      while :; do
+          case ''${1:-} in
+          -w | --wait)
+              wait=1
+              ;;
+          ,*) break ;;
+          esac
+          shift
+      done
 
-#+end_src
-
-***** command-not-found
-:PROPERTIES:
-:CUSTOM_ID: h:10268005-a9cd-4a00-967c-cbe975c552fa
-:END:
-
-The normal =command-not-found.sh= uses the outdated =nix-shell= commands as suggestions. This version supplies me with the more modern =nixpkgs#<name>= version.
-
-
-#+begin_src shell :tangle files/scripts/command-not-found.sh
-  # Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
-  command_not_found_handle() {
-      if [ -n "${MC_SID-}" ] || ! [ -t 1 ]; then
-          >&2 echo "$1: command not found"
-          return 127
+      STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
+      if [ "$STR" == "" ]; then
+          swaymsg '[title="kittyterm"]' scratchpad show
+          emacsclient -c -a "" "$@"
+          swaymsg '[title="kittyterm"]' scratchpad show
+      else
+          if [[ $wait -eq 0 ]]; then
+              emacsclient -n -c -a "" "$@"
+          else
+              emacsclient -c -a "" "$@"
+          fi
       fi
-
-      echo -n "searching nix-index..."
-      ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --whole-name --at-root "/bin/$1")
-
-      case $(echo -n "$ATTRS" | grep -c "^") in
-      0)
-          >&2 echo -ne "$(@tput@ el1)\r"
-          >&2 echo "$1: command not found"
-          ;;
-      ,*)
-          >&2 echo -ne "$(@tput@ el1)\r"
-          >&2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
-          >&2 echo "It is provided by the following derivation(s):"
-          while read -r ATTR; do
-              ATTR=${ATTR%.out}
-              >&2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
-          done <<< "$ATTRS"
-          ;;
-      esac
-
-      return 127
-  }
-
-  command_not_found_handler() {
-      command_not_found_handle "$@"
-      return $?
+    '';
   }
 #+end_src
 
@@ -29324,31 +29304,27 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
 :CUSTOM_ID: h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d
 :END:
 
-
-#+begin_src shell :tangle files/scripts/niri-resize.sh
-  WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select(.is_focused == true) | .id')
-
-  COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
-
-  while [[ $COUNT == "0" || $COUNT == "2" ]]; do
-      COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
-  done
-
-  if [[ $COUNT == "1" ]]; then
-      niri msg action maximize-column
-  fi
-#+end_src
-
-#+RESULTS:
+This helper adjusts focused-column behavior in Niri based on the current tiling state, so single-window layouts become easier to read without manual resizing.
 
 #+begin_src nix-ts :tangle pkgs/flake/niri-resize/default.nix
-  { self, name, writeShellApplication, jq }:
+  { name, writeShellApplication, jq, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ jq ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
-  }
+    text = ''
+      WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select(.is_focused == true) | .id')
 
+      COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
+
+      while [[ $COUNT == "0" || $COUNT == "2" ]]; do
+          COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
+      done
+
+      if [[ $COUNT == "1" ]]; then
+          niri msg action maximize-column
+      fi
+    '';
+  }
 #+end_src
 
 ***** swarselcheck
@@ -29358,79 +29334,76 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
 
 This app checks for different apps that I keep around in the scratchpad for quick viewing and hiding (messengers and music players mostly) and then behaves like the kittyterm hider that I described in [[#h:1834df06-9238-4efa-9af6-851dafe66c68][e]].
 
-#+begin_src shell :tangle files/scripts/swarselcheck.sh
-  kitty=0
-  element=0
-  vesktop=0
-  spotifyplayer=0
-  while :; do
-      case ${1:-} in
-      -k | --kitty)
-          kitty=1
-          ;;
-      -e | --element)
-          element=1
-          ;;
-      -d | --vesktop)
-          vesktop=1
-          ;;
-      -s | --spotifyplayer)
-          spotifyplayer=1
-          ;;
-      ,*) break ;;
-      esac
-      shift
-  done
-
-  if [[ $kitty -eq 1 ]]; then
-      STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
-      CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
-      if [ "$CHECK" == "" ]; then
-          exec kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm &
-          sleep 1
-      fi
-      if [ "$STR" == "" ]; then
-          exec swaymsg '[title="kittyterm"]' scratchpad show
-      else
-          exec swaymsg '[title="kittyterm"]' scratchpad show
-      fi
-  elif [[ $element -eq 1 ]]; then
-      STR=$(swaymsg -t get_tree | grep Element || true)
-      if [ "$STR" == "" ]; then
-          exec element-desktop
-      else
-          exec swaymsg '[app_id=Element]' kill
-      fi
-  elif [[ $vesktop -eq 1 ]]; then
-      STR=$(swaymsg -t get_tree | grep vesktop || true)
-      if [ "$STR" == "" ]; then
-          exec vesktop
-      else
-          exec swaymsg '[app_id=vesktop]' kill
-      fi
-  elif [[ $spotifyplayer -eq 1 ]]; then
-      STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
-      CHECK=$(swaymsg -t get_tree | grep spotifytui || true)
-      if [ "$CHECK" == "" ]; then
-          exec kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player &
-          sleep 1
-      fi
-      if [ "$STR" == "" ]; then
-          exec swaymsg '[title="spotifytui"]' scratchpad show
-      else
-          exec swaymsg '[title="spotifytui"]' scratchpad show
-      fi
-  fi
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/swarselcheck/default.nix
-  { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
+  { name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
-  }
+    text = ''
+      kitty=0
+      element=0
+      vesktop=0
+      spotifyplayer=0
+      while :; do
+        case ''${1:-} in
+        -k | --kitty)
+          kitty=1
+          ;;
+        -e | --element)
+          element=1
+          ;;
+        -d | --vesktop)
+          vesktop=1
+          ;;
+        -s | --spotifyplayer)
+          spotifyplayer=1
+          ;;
+        ,*) break ;;
+        esac
+        shift
+      done
 
+      if [[ $kitty -eq 1 ]]; then
+        STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
+        CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
+        if [ "$CHECK" == "" ]; then
+          exec kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm &
+          sleep 1
+        fi
+        if [ "$STR" == "" ]; then
+          exec swaymsg '[title="kittyterm"]' scratchpad show
+        else
+          exec swaymsg '[title="kittyterm"]' scratchpad show
+        fi
+      elif [[ $element -eq 1 ]]; then
+        STR=$(swaymsg -t get_tree | grep Element || true)
+        if [ "$STR" == "" ]; then
+          exec element-desktop
+        else
+          exec swaymsg '[app_id=Element]' kill
+        fi
+      elif [[ $vesktop -eq 1 ]]; then
+        STR=$(swaymsg -t get_tree | grep vesktop || true)
+        if [ "$STR" == "" ]; then
+          exec vesktop
+        else
+          exec swaymsg '[app_id=vesktop]' kill
+        fi
+      elif [[ $spotifyplayer -eq 1 ]]; then
+        STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
+        CHECK=$(swaymsg -t get_tree | grep spotifytui || true)
+        if [ "$CHECK" == "" ]; then
+          exec kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player &
+          sleep 1
+        fi
+        if [ "$STR" == "" ]; then
+          exec swaymsg '[title="spotifytui"]' scratchpad show
+        else
+          exec swaymsg '[title="spotifytui"]' scratchpad show
+        fi
+      fi
+    '';
+  }
 #+end_src
 
 ***** swarselcheck-niri
@@ -29438,8 +29411,10 @@ This app checks for different apps that I keep around in the scratchpad for quic
 :CUSTOM_ID: h:96da8360-2d23-4e86-9602-415fbdb972af
 :END:
 
+This is the Niri-native variant of my scratchpad toggler: it inspects running windows via Niri JSON state and either spawns or closes the matching helper app.
+
 #+begin_src nix-ts :tangle pkgs/flake/swarselcheck-niri/default.nix
-  { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
+  { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
@@ -29485,25 +29460,24 @@ This app checks for different apps that I keep around in the scratchpad for quic
 :CUSTOM_ID: h:564c102c-e335-4f17-a613-c5a436bb4864
 :END:
 
-#+begin_src shell :tangle files/scripts/swarselzellij.sh
-  # KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
-
-  # if ((KITTIES < 1)); then
-  #     exec kitty -o confirm_os_window_close=0 zellij attach --create main
-  # else
-  #     exec kitty -o confirm_os_window_close=0 zellij attach --create "temp $KITTIES"
-  # fi
-  exec kitty -o confirm_os_window_close=0 zellij
-#+end_src
+This is a small convenience launcher that opens my preferred terminal multiplexer setup with predictable terminal flags.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarselzellij/default.nix
-  { self, name, writeShellApplication, kitty }:
+  { name, writeShellApplication, kitty, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ kitty ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
-  }
+    text = ''
+      # KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
 
+      # if ((KITTIES < 1)); then
+      #     exec kitty -o confirm_os_window_close=0 zellij attach --create main
+      # else
+      #     exec kitty -o confirm_os_window_close=0 zellij attach --create "temp $KITTIES"
+      # fi
+      exec kitty -o confirm_os_window_close=0 zellij
+    '';
+  }
 #+end_src
 
 ***** waybarupdate
@@ -29513,41 +29487,38 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 This scripts checks if there are uncommited changes in either my dotfile repo, my university repo, or my passfile repo. In that case a warning will be shown in waybar.
 
-#+begin_src shell :tangle files/scripts/waybarupdate.sh
-  CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
-  CSE=$(git --git-dir="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/.git --work-tree="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/ status -s | wc -l)
-  PASS=$(($(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l)))
-
-  if [[ $CFG != 0 ]]; then
-      CFG_STR='CONFIG'
-  else
-      CFG_STR=''
-  fi
-
-  if [[ $CSE != 0 ]]; then
-      CSE_STR=' CSE'
-  else
-      CSE_STR=''
-  fi
-
-  if [[ $PASS != 0 ]]; then
-      PASS_STR=' PASS'
-  else
-      PASS_STR=''
-  fi
-
-  OUT="$CFG_STR""$CSE_STR""$PASS_STR"
-  echo "$OUT"
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/waybarupdate/default.nix
-  { self, name, writeShellApplication, git }:
+  { name, writeShellApplication, git, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
-  }
+    text = ''
+      CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
+      CSE=$(git --git-dir="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/.git --work-tree="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/ status -s | wc -l)
+      PASS=$(($(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l)))
 
+      if [[ $CFG != 0 ]]; then
+          CFG_STR='CONFIG'
+      else
+          CFG_STR=""
+      fi
+
+      if [[ $CSE != 0 ]]; then
+          CSE_STR=' CSE'
+      else
+          CSE_STR=""
+      fi
+
+      if [[ $PASS != 0 ]]; then
+          PASS_STR=' PASS'
+      else
+          PASS_STR=""
+      fi
+
+      OUT="$CFG_STR""$CSE_STR""$PASS_STR"
+      echo "$OUT"
+    '';
+  }
 #+end_src
 
 ***** opacitytoggle
@@ -29557,20 +29528,18 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 
 This app quickly toggles between 5% and 0% transparency.
 
-#+begin_src shell :tangle files/scripts/opacitytoggle.sh
-  if swaymsg opacity plus 0.01 -q; then
-      swaymsg opacity 1
-  else
-      swaymsg opacity 0.95
-  fi
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/opacitytoggle/default.nix
-  { self, name, writeShellApplication, sway }:
+  { name, writeShellApplication, sway, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ sway ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      if swaymsg opacity plus 0.01 -q; then
+          swaymsg opacity 1
+      else
+          swaymsg opacity 0.95
+      fi
+    '';
   }
 #+end_src
 
@@ -29581,34 +29550,32 @@ This app quickly toggles between 5% and 0% transparency.
 
 This utility is used to compare the current state of the root directory with the blanket state that is stored in /root-blank (the snapshot that is restored on each reboot of an impermanence machine). Using this, I can find files that I will lose once I reboot - if there are important files in that list, I can then easily add them to the persist options.
 
-#+begin_src shell :tangle files/scripts/fs-diff.sh
-  set -euo pipefail
-
-  OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
-  OLD_TRANSID=${OLD_TRANSID#transid marker was }
-
-  sudo btrfs subvolume find-new "/mnt/root" "$OLD_TRANSID" |
-      sed '$d' |
-      cut -f17- -d' ' |
-      sort |
-      uniq |
-      while read -r path; do
-          path="/$path"
-          if [ -L "$path" ]; then
-              : # The path is a symbolic link, so is probably handled by NixOS already
-          elif [ -d "$path" ]; then
-              : # The path is a directory, ignore
-          else
-              echo "$path"
-          fi
-      done
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/fs-diff/default.nix
-  { self, name, writeShellApplication }:
+  { name, writeShellApplication, ... }:
   writeShellApplication {
     inherit name;
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      set -euo pipefail
+
+      OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
+      OLD_TRANSID=''${OLD_TRANSID#transid marker was }
+
+      sudo btrfs subvolume find-new "/mnt/root" "$OLD_TRANSID" |
+          sed '$d' |
+          cut -f17- -d' ' |
+          sort |
+          uniq |
+          while read -r path; do
+              path="/$path"
+              if [ -L "$path" ]; then
+                  : # The path is a symbolic link, so is probably handled by NixOS already
+              elif [ -d "$path" ]; then
+                  : # The path is a directory, ignore
+              else
+                  echo "$path"
+              fi
+          done
+    '';
   }
 #+end_src
 
@@ -29665,357 +29632,362 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 This program sets up a new NixOS host remotely. It also takes care of secret management on the new host.
 
-#+begin_src shell :tangle files/scripts/swarsel-bootstrap.sh
-  # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/files/scripts/bootstrap-nixos.sh
-  set -eo pipefail
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-bootstrap/default.nix
+  { name, writeShellApplication, openssh, ... }:
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ openssh ];
+    text = ''
+      # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/files/scripts/bootstrap-nixos.sh
+      set -eo pipefail
 
-  target_hostname=""
-  target_destination=""
-  target_arch=""
-  target_user="swarsel"
-  ssh_port="22"
-  persist_dir=""
-  disk_encryption=0
-  disk_encryption_args=""
-  no_disko_deps="false"
-  temp=$(mktemp -d)
+      target_hostname=""
+      target_destination=""
+      target_arch=""
+      target_user="swarsel"
+      ssh_port="22"
+      persist_dir=""
+      disk_encryption=0
+      disk_encryption_args=""
+      no_disko_deps="false"
+      temp=$(mktemp -d)
 
-  function help_and_exit() {
-      echo
-      echo "Remotely installs SwarselSystem on a target machine including secret deployment."
-      echo
-      echo "USAGE: $0 -n <target_hostname> -d <target_destination> [OPTIONS]"
-      echo
-      echo "ARGS:"
-      echo "  -n <target_hostname>                    specify target_hostname of the target host to deploy the nixos config on."
-      echo "  -d <target_destination>                 specify ip or url to the target host."
-      echo "  -a <targeit_arch>                       specify the architecture of the target host."
-      echo "                                          target during install process."
-      echo
-      echo "OPTIONS:"
-      echo "  -u <target_user>                        specify target_user with sudo access. nix-config will be cloned to their home."
-      echo "                                          Default='${target_user}'."
-      echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=${ssh_port}."
-      echo "  --debug                                 Enable debug mode."
-      echo "  --no-disko-deps                         Upload only disk script and not dependencies (for use on low ram)."
-      echo "  -h | --help                             Print this help."
-      exit 0
-  }
+      function help_and_exit() {
+        echo
+        echo "Remotely installs SwarselSystem on a target machine including secret deployment."
+        echo
+        echo "USAGE: $0 -n <target_hostname> -d <target_destination> [OPTIONS]"
+        echo
+        echo "ARGS:"
+        echo "  -n <target_hostname>                    specify target_hostname of the target host to deploy the nixos config on."
+        echo "  -d <target_destination>                 specify ip or url to the target host."
+        echo "  -a <targeit_arch>                       specify the architecture of the target host."
+        echo "                                          target during install process."
+        echo
+        echo "OPTIONS:"
+        echo "  -u <target_user>                        specify target_user with sudo access. nix-config will be cloned to their home."
+        echo "                                          Default=''${target_user}."
+        echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=''${ssh_port}."
+        echo "  --debug                                 Enable debug mode."
+        echo "  --no-disko-deps                         Upload only disk script and not dependencies (for use on low ram)."
+        echo "  -h | --help                             Print this help."
+        exit 0
+      }
 
-  function cleanup() {
-      rm -rf "$temp"
-      rm -rf /tmp/disko-password
-  }
-  trap cleanup exit
+      function cleanup() {
+        rm -rf "$temp"
+        rm -rf /tmp/disko-password
+      }
+      trap cleanup exit
 
-  function red() {
-      echo -e "\x1B[31m[!] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
+      function red() {
+        echo -e "\x1B[31m[!] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
           echo -e "\x1B[31m[!] $($2) \x1B[0m"
-      fi
-  }
-  function green() {
-      echo -e "\x1B[32m[+] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
+        fi
+      }
+      function green() {
+        echo -e "\x1B[32m[+] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
           echo -e "\x1B[32m[+] $($2) \x1B[0m"
-      fi
-  }
-  function yellow() {
-      echo -e "\x1B[33m[*] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
+        fi
+      }
+      function yellow() {
+        echo -e "\x1B[33m[*] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
           echo -e "\x1B[33m[*] $($2) \x1B[0m"
-      fi
-  }
+        fi
+      }
 
-  function yes_or_no() {
-      echo -en "\x1B[32m[+] $* [y/n] (default: y): \x1B[0m"
-      while true; do
+      function yes_or_no() {
+        echo -en "\x1B[32m[+] $* [y/n] (default: y): \x1B[0m"
+        while true; do
           read -rp "" yn
-          yn=${yn:-y}
+          yn=''${yn:-y}
           case $yn in
           [Yy]*) return 0 ;;
           [Nn]*) return 1 ;;
           esac
-      done
-  }
+        done
+      }
 
-  function update_sops_file() {
-      key_name=$1
-      key_type=$2
-      key=$3
+      function update_sops_file() {
+        key_name=$1
+        key_type=$2
+        key=$3
 
-      if [ ! "$key_type" == "hosts" ] && [ ! "$key_type" == "users" ]; then
+        if [ ! "$key_type" == "hosts" ] && [ ! "$key_type" == "users" ]; then
           red "Invalid key type passed to update_sops_file. Must be either 'hosts' or 'users'."
           exit 1
-      fi
-      cd "${git_root}"
+        fi
+        cd "''${git_root}"
 
-      SOPS_FILE=".sops.yaml"
-      sed -i "{
-                                                          # Remove any * and & entries for this host
-                                                          /[*&]$key_name/ d;
-                                                          # Inject a new age: entry
-                                                          # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                                          /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                                          # Inject a new hosts or user: entry
-                                                          /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                                          }" $SOPS_FILE
-      green "Updating .sops.yaml"
-      cd -
-  }
+        SOPS_FILE=".sops.yaml"
+        sed -i "{
+                                  # Remove any * and & entries for this host
+                                  /[*&]$key_name/ d;
+                                  # Inject a new age: entry
+                                  # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                  /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                  # Inject a new hosts or user: entry
+                                  /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                  }" $SOPS_FILE
+        green "Updating .sops.yaml"
+        cd -
+      }
 
-  while [[ $# -gt 0 ]]; do
-      case "$1" in
-      -n)
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -n)
           shift
           target_hostname=$1
           ;;
-      -d)
+        -d)
           shift
           target_destination=$1
           ;;
-      -a)
+        -a)
           shift
           target_arch=$1
           ;;
-      -u)
+        -u)
           shift
           target_user=$1
           ;;
-      --port)
+        --port)
           shift
           ssh_port=$1
           ;;
-      --no-disko-deps)
+        --no-disko-deps)
           no_disko_deps="true"
           ;;
-      --debug)
+        --debug)
           set -x
           ;;
-      -h | --help) help_and_exit ;;
-      ,*)
+        -h | --help) help_and_exit ;;
+        ,*)
           echo "Invalid option detected."
           help_and_exit
           ;;
-      esac
-      shift
-  done
+        esac
+        shift
+      done
 
-  if [[ $target_arch == "" || $target_destination == "" || $target_hostname == "" ]]; then
-      red "error: target_arch, target_destination or target_hostname not set."
-      help_and_exit
-  fi
+      if [[ $target_arch == "" || $target_destination == "" || $target_hostname == "" ]]; then
+        red "error: target_arch, target_destination or target_hostname not set."
+        help_and_exit
+      fi
 
-  LOCKED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.node.lockFromBootstrapping)"
-  if [[ $LOCKED == "true" ]]; then
-      red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING - set 'node.lockFromBootstrapping = lib.mkForce false;' to proceed"
-      exit
-  fi
+      LOCKED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.node.lockFromBootstrapping)"
+      if [[ $LOCKED == "true" ]]; then
+        red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING - set 'node.lockFromBootstrapping = lib.mkForce false;' to proceed"
+        exit
+      fi
 
-  green "~SwarselSystems~ remote installer"
-  green "Reading system information for $target_hostname ..."
+      green "~SwarselSystems~ remote installer"
+      green "Reading system information for $target_hostname ..."
 
-  DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
-  green "Root Disk: $DISK"
+      DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
+      green "Root Disk: $DISK"
 
-  CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
-  if [[ $CRYPTED == "true" ]]; then
-      green "Encryption: ✓"
-      disk_encryption=1
-      disk_encryption_args=(
+      CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
+      if [[ $CRYPTED == "true" ]]; then
+        green "Encryption: ✓"
+        disk_encryption=1
+        disk_encryption_args=(
           --disk-encryption-keys
           /tmp/disko-password
           /tmp/disko-password
-      )
-  else
-      red "Encryption: X"
-      disk_encryption=0
-  fi
+        )
+      else
+        red "Encryption: X"
+        disk_encryption=0
+      fi
 
-  IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
-  if [[ $IMPERMANENCE == "true" ]]; then
-      green "Impermanence: ✓"
-      persist_dir="/persist"
-  else
-      red "Impermanence: X"
-      persist_dir=""
-  fi
+      IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+      if [[ $IMPERMANENCE == "true" ]]; then
+        green "Impermanence: ✓"
+        persist_dir="/persist"
+      else
+        red "Impermanence: X"
+        persist_dir=""
+      fi
 
-  SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
-  if [[ $SWAP == "true" ]]; then
-      green "Swap: ✓"
-  else
-      red "Swap: X"
-  fi
+      SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+      if [[ $SWAP == "true" ]]; then
+        green "Swap: ✓"
+      else
+        red "Swap: X"
+      fi
 
-  SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
-  if [[ $SECUREBOOT == "true" ]]; then
-      green "Secure Boot: ✓"
-  else
-      red "Secure Boot: X"
-  fi
+      SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+      if [[ $SECUREBOOT == "true" ]]; then
+        green "Secure Boot: ✓"
+      else
+        red "Secure Boot: X"
+      fi
 
-  ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
-  # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
-  ssh_root_cmd=${ssh_cmd/${target_user}@/root@}
-  scp_cmd="scp -oport=${ssh_port} -o StrictHostKeyChecking=no"
+      ssh_cmd="ssh -oport=''${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
+      # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|''${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
+      ssh_root_cmd=''${ssh_cmd/''${target_user}@/root@}
+      scp_cmd="scp -oport=''${ssh_port} -o StrictHostKeyChecking=no"
 
-  if [[ -z ${FLAKE} ]]; then
-      FLAKE=/home/"$target_user"/.dotfiles
-  fi
-  if [ ! -d "$FLAKE" ]; then
-      cd /home/"$target_user"
-      yellow "Flake directory not found - cloning repository from GitHub"
-      git clone git@github.com:Swarsel/.dotfiles.git || (yellow "Could not clone repository via SSH - defaulting to HTTPS" && git clone https://github.com/Swarsel/.dotfiles.git)
-      FLAKE=/home/"$target_user"/.dotfiles
-  fi
+      if [[ -z ''${FLAKE} ]]; then
+        FLAKE=/home/"$target_user"/.dotfiles
+      fi
+      if [ ! -d "$FLAKE" ]; then
+        cd /home/"$target_user"
+        yellow "Flake directory not found - cloning repository from GitHub"
+        git clone git@github.com:Swarsel/.dotfiles.git || (yellow "Could not clone repository via SSH - defaulting to HTTPS" && git clone https://github.com/Swarsel/.dotfiles.git)
+        FLAKE=/home/"$target_user"/.dotfiles
+      fi
 
-  cd "$FLAKE"
+      cd "$FLAKE"
 
-  rm install/flake.lock || true
-  git_root=$(git rev-parse --show-toplevel)
-  # ------------------------
-  green "Wiping known_hosts of $target_destination"
-  sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
-  # ------------------------
-  green "Preparing a new ssh_host_ed25519_key pair for $target_hostname."
-  # Create the directory where sshd expects to find the host keys
-  install -d -m755 "$temp/$persist_dir/etc/ssh"
-  # Generate host ssh key pair without a passphrase
-  ssh-keygen -t ed25519 -f "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
-  # Set the correct permissions so sshd will accept the key
-  chmod 600 "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key"
-  echo "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
-  # This will fail if we already know the host, but that's fine
-  ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
-  # ------------------------
-  # when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
-  # via the config
-  if [ "$disk_encryption" -eq 1 ]; then
-      while true; do
+      rm install/flake.lock || true
+      git_root=$(git rev-parse --show-toplevel)
+      # ------------------------
+      green "Wiping known_hosts of $target_destination"
+      sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
+      # ------------------------
+      green "Preparing a new ssh_host_ed25519_key pair for $target_hostname."
+      # Create the directory where sshd expects to find the host keys
+      install -d -m755 "$temp/$persist_dir/etc/ssh"
+      # Generate host ssh key pair without a passphrase
+      ssh-keygen -t ed25519 -f "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
+      # Set the correct permissions so sshd will accept the key
+      chmod 600 "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key"
+      echo "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+      # This will fail if we already know the host, but that's fine
+      ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
+      # ------------------------
+      # when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
+      # via the config
+      if [ "$disk_encryption" -eq 1 ]; then
+        while true; do
           green "Set disk encryption passphrase:"
           read -rs luks_passphrase
           green "Please confirm passphrase:"
           read -rs luks_passphrase_confirm
           if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
-              echo "$luks_passphrase" > /tmp/disko-password
-              $ssh_root_cmd "echo '$luks_passphrase' > /tmp/disko-password"
-              break
+            echo "$luks_passphrase" > /tmp/disko-password
+            $ssh_root_cmd "echo '$luks_passphrase' > /tmp/disko-password"
+            break
           else
-              red "Passwords do not match"
+            red "Passwords do not match"
           fi
-      done
-  fi
-  # ------------------------
-  green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
-  $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
+        done
+      fi
+      # ------------------------
+      green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
+      $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
-  mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
-  $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
-  # ------------------------
-  green "Generating hostkey for ssh initrd"
-  $ssh_root_cmd "mkdir -p $temp/etc/secrets/initrd /etc/secrets/initrd"
-  $ssh_root_cmd "ssh-keygen -t ed25519 -N '' -f $temp/etc/secrets/initrd/ssh_host_ed25519_key"
-  $ssh_root_cmd "cp $temp/etc/secrets/initrd/ssh_host_ed25519_key /etc/secrets/initrd/ssh_host_ed25519_key"
-  # ------------------------
+      mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
+      $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
+      # ------------------------
+      green "Generating hostkey for ssh initrd"
+      $ssh_root_cmd "mkdir -p $temp/etc/secrets/initrd /etc/secrets/initrd"
+      $ssh_root_cmd "ssh-keygen -t ed25519 -N '''' -f $temp/etc/secrets/initrd/ssh_host_ed25519_key"
+      $ssh_root_cmd "cp $temp/etc/secrets/initrd/ssh_host_ed25519_key /etc/secrets/initrd/ssh_host_ed25519_key"
+      # ------------------------
 
-  green "Deploying minimal NixOS installation on $target_destination"
+      green "Deploying minimal NixOS installation on $target_destination"
 
-  if [[ $no_disko_deps == "true" ]]; then
-      green "Building without disko dependencies (using custom kexec)"
-      nix run github:nix-community/nixos-anywhere/1.10.0 -- "${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
-  else
-      green "Building with disko dependencies (using nixos-images kexec)"
-      nix run github:nix-community/nixos-anywhere/1.10.0 -- "${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
-  fi
+      if [[ $no_disko_deps == "true" ]]; then
+        green "Building without disko dependencies (using custom kexec)"
+        nix run github:nix-community/nixos-anywhere/1.10.0 -- "''${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
+      else
+        green "Building with disko dependencies (using nixos-images kexec)"
+        nix run github:nix-community/nixos-anywhere/1.10.0 -- "''${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+      fi
 
-  echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
-  ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
-  # ------------------------
+      echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+      ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
+      # ------------------------
 
-  while true; do
-      read -rp "Press Enter to continue once the remote host has finished booting."
-      if nc -z "$target_destination" "${ssh_port}" 2> /dev/null; then
+      while true; do
+        read -rp "Press Enter to continue once the remote host has finished booting."
+        if nc -z "$target_destination" "''${ssh_port}" 2> /dev/null; then
           green "$target_destination is booted. Continuing..."
           break
-      else
+        else
           yellow "$target_destination is not yet ready."
+        fi
+      done
+
+      # ------------------------
+
+      if [[ $SECUREBOOT == "true" ]]; then
+        green "Setting up secure boot keys"
+        $ssh_root_cmd "mkdir -p /var/lib/sbctl"
+        read -ra scp_call <<< "''${scp_cmd}"
+        sudo "''${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
+        $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
       fi
-  done
+      # ------------------------
 
-  # ------------------------
-
-  if [[ $SECUREBOOT == "true" ]]; then
-      green "Setting up secure boot keys"
-      $ssh_root_cmd "mkdir -p /var/lib/sbctl"
-      read -ra scp_call <<< "${scp_cmd}"
-      sudo "${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
-      $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
-  fi
-  # ------------------------
-
-  if [ -n "$persist_dir" ]; then
-      $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
-      $ssh_root_cmd "cp -R /etc/ssh/ $persist_dir/etc/ssh/ || true"
-  fi
-  # ------------------------
-  green "Generating an age key based on the new ssh_host_ed25519_key."
-  target_key=$(
-      ssh-keyscan -p "$ssh_port" -t ssh-ed25519 "$target_destination" 2>&1 |
+      if [ -n "$persist_dir" ]; then
+        $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
+        $ssh_root_cmd "cp -R /etc/ssh/ $persist_dir/etc/ssh/ || true"
+      fi
+      # ------------------------
+      green "Generating an age key based on the new ssh_host_ed25519_key."
+      target_key=$(
+        ssh-keyscan -p "$ssh_port" -t ssh-ed25519 "$target_destination" 2>&1 |
           grep ssh-ed25519 |
           cut -f2- -d" " ||
           (
-              red "Failed to get ssh key. Host down?"
-              exit 1
+            red "Failed to get ssh key. Host down?"
+            exit 1
           )
-  )
-  host_age_key=$(nix shell nixpkgs#ssh-to-age.out -c sh -c "echo $target_key | ssh-to-age")
+      )
+      host_age_key=$(nix shell nixpkgs#ssh-to-age.out -c sh -c "echo $target_key | ssh-to-age")
 
-  if grep -qv '^age1' <<< "$host_age_key"; then
-      red "The result from generated age key does not match the expected format."
-      yellow "Result: $host_age_key"
-      yellow "Expected format: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-      exit 1
-  else
-      echo "$host_age_key"
-  fi
-
-  green "Updating nix-secrets/.sops.yaml"
-  update_sops_file "$target_hostname" "hosts" "$host_age_key"
-  yellow ".sops.yaml has been updated. There may be superfluous entries, you might need to edit manually."
-  if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
-      vim "${git_root}"/.sops.yaml
-  fi
-  green "Updating all secrets files to reflect updates .sops.yaml"
-  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/* || true
-  # --------------------------
-  green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
-  sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
-  $ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown -R $target_user:users /home/$target_user/.ssh/"
-  $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
-  $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
-  # __________________________
-
-  if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
-      green "Adding ssh host fingerprints for git{lab,hub}"
-      $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /home/$target_user/.ssh/known_hosts"
-      $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /root/.ssh/known_hosts"
-  fi
-  # --------------------------
-
-  if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $target_hostname?"; then
-      green "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
-      ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
-      green "Copying full nix-config to $target_hostname"
-      cd "${git_root}"
-      just sync "$target_user" "$target_destination"
-
-      if [ -n "$persist_dir" ]; then
-          $ssh_root_cmd "cp -r /home/$target_user/.dotfiles $persist_dir/.dotfiles || true"
-          $ssh_root_cmd "cp -r /home/$target_user/.ssh $persist_dir/.ssh || true"
+      if grep -qv '^age1' <<< "$host_age_key"; then
+        red "The result from generated age key does not match the expected format."
+        yellow "Result: $host_age_key"
+        yellow "Expected format: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        exit 1
+      else
+        echo "$host_age_key"
       fi
 
-      if yes_or_no "Do you want to rebuild immediately?"; then
+      green "Updating nix-secrets/.sops.yaml"
+      update_sops_file "$target_hostname" "hosts" "$host_age_key"
+      yellow ".sops.yaml has been updated. There may be superfluous entries, you might need to edit manually."
+      if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
+        vim "''${git_root}"/.sops.yaml
+      fi
+      green "Updating all secrets files to reflect updates .sops.yaml"
+      sops updatekeys --yes --enable-local-keyservice "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/* || true
+      # --------------------------
+      green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
+      sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
+      $ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown -R $target_user:users /home/$target_user/.ssh/"
+      $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
+      $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
+      # __________________________
+
+      if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
+        green "Adding ssh host fingerprints for git{lab,hub}"
+        $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /home/$target_user/.ssh/known_hosts"
+        $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /root/.ssh/known_hosts"
+      fi
+      # --------------------------
+
+      if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $target_hostname?"; then
+        green "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+        ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
+        green "Copying full nix-config to $target_hostname"
+        cd "''${git_root}"
+        just sync "$target_user" "$target_destination"
+
+        if [ -n "$persist_dir" ]; then
+          $ssh_root_cmd "cp -r /home/$target_user/.dotfiles $persist_dir/.dotfiles || true"
+          $ssh_root_cmd "cp -r /home/$target_user/.ssh $persist_dir/.ssh || true"
+        fi
+
+        if yes_or_no "Do you want to rebuild immediately?"; then
           green "Building nix-config for $target_hostname"
           # yellow "Reminder: The password is 'setup'"
           $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json"
@@ -30028,7 +30000,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           $ssh_root_cmd "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
           green "Setting generation to activate upon next boot"
           $ssh_root_cmd "$store_path/bin/switch-to-configuration boot"
-      else
+        else
           echo
           green "NixOS was successfully installed!"
           echo "Post-install config build instructions:"
@@ -30040,39 +30012,27 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           echo "sudo nixos-rebuild .pre-commit-config.yaml show-trace --flake .#$target_hostname switch"
           # echo "just rebuild"
           echo
+        fi
       fi
-  fi
 
-  green "NixOS was successfully installed!"
-  if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
-      cd "${git_root}"
-      deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
-      nixpkgs--fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
-      (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
+      green "NixOS was successfully installed!"
+      if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
+        cd "''${git_root}"
+        deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
+        nixpkgs--fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
+        (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
           git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix" &&
           git add "$git_root/.sops.yaml" &&
           git add "$git_root/secrets" &&
           (git commit -m "feat: deployed $target_hostname" || true) && git push
-  fi
+      fi
 
-  if yes_or_no "Reboot now?"; then
-      $ssh_root_cmd "reboot"
-  fi
+      if yes_or_no "Reboot now?"; then
+        $ssh_root_cmd "reboot"
+      fi
 
-  rm -rf /tmp/disko-password
-#+end_src
-
-#+RESULTS:
-| trap: | undefined | signal:    | exit   |      |      |   |   |
-| [     | Babel     | evaluation | exited | with | code | 1 | ] |
-
-
-#+begin_src nix-ts :tangle pkgs/flake/swarsel-bootstrap/default.nix
-  { self, name, writeShellApplication, openssh }:
-  writeShellApplication {
-    inherit name;
-    runtimeInputs = [ openssh ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+      rm -rf /tmp/disko-password
+    '';
   }
 #+end_src
 
@@ -30081,127 +30041,125 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 :CUSTOM_ID: h:1eabdc59-8832-44ca-a22b-11f848ab150a
 :END:
 
-#+begin_src shell :tangle files/scripts/swarsel-rebuild.sh
-  set -eo pipefail
-
-  target_config="hotel"
-  target_arch=""
-  target_user="swarsel"
-
-  function help_and_exit() {
-      echo
-      echo "Builds SwarselSystem configuration."
-      echo
-      echo "USAGE: $0 [OPTIONS]"
-      echo
-      echo "ARGS:"
-      echo "  -n <target_config>                      specify nixos config to build."
-      echo "                                          Default: hotel"
-      echo "  -u <target_user>                        specify user to deploy for."
-      echo "                                          Default: swarsel"
-      echo "  -a <target_arch>                        specify target architecture."
-      echo "  -h | --help                             Print this help."
-      exit 0
-  }
-
-  function red() {
-      echo -e "\x1B[31m[!] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
-          echo -e "\x1B[31m[!] $($2) \x1B[0m"
-      fi
-  }
-  function green() {
-      echo -e "\x1B[32m[+] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
-          echo -e "\x1B[32m[+] $($2) \x1B[0m"
-      fi
-  }
-  function yellow() {
-      echo -e "\x1B[33m[*] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
-          echo -e "\x1B[33m[*] $($2) \x1B[0m"
-      fi
-  }
-
-  while [[ $# -gt 0 ]]; do
-      case "$1" in
-      -n)
-          shift
-          target_config=$1
-          ;;
-      -a)
-          shift
-          target_arch=$1
-          ;;
-      -u)
-          shift
-          target_user=$1
-          ;;
-      -h | --help) help_and_exit ;;
-      ,*)
-          echo "Invalid option detected."
-          help_and_exit
-          ;;
-      esac
-      shift
-  done
-
-  if [[ $target_arch == "" ]]; then
-      red "error: target_arch not set."
-      help_and_exit
-  fi
-
-  cd /home/"$target_user"
-
-  if [ ! -d /home/"$target_user"/.dotfiles ]; then
-      green "Cloning repository from GitHub"
-      git clone https://github.com/Swarsel/.dotfiles.git
-  else
-      red "A .dotfiles repository is in the way. Please (re-)move the repository and try again."
-      exit 1
-  fi
-
-  local_keys=$(ssh-add -L || true)
-  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
-  read -ra pub_arr <<< "$pub_key"
-
-  cd .dotfiles
-  if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
-      yellow "The ssh key for this configuration is not available."
-      green "Adjusting flake.nix so that the configuration is buildable"
-      sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
-      sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
-      sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-      rm modules/home/common/env.nix
-      rm modules/home/common/gammastep.nix
-      rm modules/home/common/git.nix
-      rm modules/home/common/mail.nix
-      rm modules/home/common/yubikey.nix
-      rm modules/nixos/server/restic.nix
-      rm hosts/nixos/aarch64-linux/milkywell/default.nix
-      rm -rf modules/nixos/server
-      rm -rf modules/home/server
-      nix flake update vbc-nix
-      git add .
-  else
-      green "Valid SSH key found! Continuing with installation"
-  fi
-  sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
-  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
-
-  green "Installing flake $target_config"
-  sudo nixos-rebuild --show-trace --flake .#"$target_config" boot
-  yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
-#+end_src
-
-
+This script is a local fallback bootstrap path: it prepares a buildable clone on a target machine and installs a selected host generation for demonstration or recovery scenarios.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-rebuild/default.nix
-  { self, name, writeShellApplication, git }:
+  { name, writeShellApplication, git, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      set -eo pipefail
+
+      target_config="hotel"
+      target_arch=""
+      target_user="swarsel"
+
+      function help_and_exit() {
+        echo
+        echo "Builds SwarselSystem configuration."
+        echo
+        echo "USAGE: $0 [OPTIONS]"
+        echo
+        echo "ARGS:"
+        echo "  -n <target_config>                      specify nixos config to build."
+        echo "                                          Default: hotel"
+        echo "  -u <target_user>                        specify user to deploy for."
+        echo "                                          Default: swarsel"
+        echo "  -a <target_arch>                        specify target architecture."
+        echo "  -h | --help                             Print this help."
+        exit 0
+      }
+
+      function red() {
+        echo -e "\x1B[31m[!] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
+          echo -e "\x1B[31m[!] $($2) \x1B[0m"
+        fi
+      }
+      function green() {
+        echo -e "\x1B[32m[+] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
+          echo -e "\x1B[32m[+] $($2) \x1B[0m"
+        fi
+      }
+      function yellow() {
+        echo -e "\x1B[33m[*] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
+          echo -e "\x1B[33m[*] $($2) \x1B[0m"
+        fi
+      }
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -n)
+          shift
+          target_config=$1
+          ;;
+        -a)
+          shift
+          target_arch=$1
+          ;;
+        -u)
+          shift
+          target_user=$1
+          ;;
+        -h | --help) help_and_exit ;;
+        ,*)
+          echo "Invalid option detected."
+          help_and_exit
+          ;;
+        esac
+        shift
+      done
+
+      if [[ $target_arch == "" ]]; then
+        red "error: target_arch not set."
+        help_and_exit
+      fi
+
+      cd /home/"$target_user"
+
+      if [ ! -d /home/"$target_user"/.dotfiles ]; then
+        green "Cloning repository from GitHub"
+        git clone https://github.com/Swarsel/.dotfiles.git
+      else
+        red "A .dotfiles repository is in the way. Please (re-)move the repository and try again."
+        exit 1
+      fi
+
+      local_keys=$(ssh-add -L || true)
+      pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
+      read -ra pub_arr <<< "$pub_key"
+
+      cd .dotfiles
+      if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
+        yellow "The ssh key for this configuration is not available."
+        green "Adjusting flake.nix so that the configuration is buildable"
+        sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+        sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
+        sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
+        rm modules/home/common/env.nix
+        rm modules/home/common/gammastep.nix
+        rm modules/home/common/git.nix
+        rm modules/home/common/mail.nix
+        rm modules/home/common/yubikey.nix
+        rm modules/nixos/server/restic.nix
+        rm hosts/nixos/aarch64-linux/milkywell/default.nix
+        rm -rf modules/nixos/server
+        rm -rf modules/home/server
+        nix flake update vbc-nix
+        git add .
+      else
+        green "Valid SSH key found! Continuing with installation"
+      fi
+      sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+      git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
+
+      green "Installing flake $target_config"
+      sudo nixos-rebuild --show-trace --flake .#"$target_config" boot
+      yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
+    '';
   }
 #+end_src
 
@@ -30212,210 +30170,201 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
 Autoformatting always puts the =EOF= with indentation, which makes shfmt check fail. When editing this block, unindent them manually.
 
-#+begin_src shell :tangle files/scripts/swarsel-install.sh
-  set -eo pipefail
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-install/default.nix
+  { name, writeShellApplication, git, ... }:
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ git ];
+    text = ''
+      set -eo pipefail
 
-  target_config="hotel"
-  target_hostname="hotel"
-  target_user="swarsel"
-  target_arch=""
-  persist_dir=""
-  target_disk="/dev/vda"
-  disk_encryption=0
+      target_config="hotel"
+      target_hostname="hotel"
+      target_user="swarsel"
+      target_arch=""
+      persist_dir=""
+      target_disk="/dev/vda"
+      disk_encryption=0
 
-  function help_and_exit() {
-      echo
-      echo "Locally installs SwarselSystem on this machine."
-      echo
-      echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
-      echo
-      echo "ARGS:"
-      echo "  -n <target_config>                      specify the nixos config to deploy."
-      echo "                                          Default: hotel"
-      echo "  -d <target_disk>                        specify disk to install on."
-      echo "                                          Default: /dev/vda"
-      echo "  -u <target_user>                        specify user to deploy for."
-      echo "                                          Default: swarsel"
-      echo "  -a <target_arch>                        specify target architecture."
-      echo "  -h | --help                             Print this help."
-      exit 0
-  }
+      function help_and_exit() {
+        echo
+        echo "Locally installs SwarselSystem on this machine."
+        echo
+        echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
+        echo
+        echo "ARGS:"
+        echo "  -n <target_config>                      specify the nixos config to deploy."
+        echo "                                          Default: hotel"
+        echo "  -d <target_disk>                        specify disk to install on."
+        echo "                                          Default: /dev/vda"
+        echo "  -u <target_user>                        specify user to deploy for."
+        echo "                                          Default: swarsel"
+        echo "  -a <target_arch>                        specify target architecture."
+        echo "  -h | --help                             Print this help."
+        exit 0
+      }
 
-  function red() {
-      echo -e "\x1B[31m[!] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
+      function red() {
+        echo -e "\x1B[31m[!] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
           echo -e "\x1B[31m[!] $($2) \x1B[0m"
-      fi
-  }
-  function green() {
-      echo -e "\x1B[32m[+] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
+        fi
+      }
+      function green() {
+        echo -e "\x1B[32m[+] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
           echo -e "\x1B[32m[+] $($2) \x1B[0m"
-      fi
-  }
-  function yellow() {
-      echo -e "\x1B[33m[*] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
+        fi
+      }
+      function yellow() {
+        echo -e "\x1B[33m[*] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
           echo -e "\x1B[33m[*] $($2) \x1B[0m"
-      fi
-  }
+        fi
+      }
 
-  while [[ $# -gt 0 ]]; do
-      case "$1" in
-      -n)
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -n)
           shift
           target_config=$1
           target_hostname=$1
           ;;
-      -u)
+        -u)
           shift
           target_user=$1
           ;;
-      -d)
+        -d)
           shift
           target_disk=$1
           ;;
-      -a)
+        -a)
           shift
           target_arch=$1
           ;;
-      -h | --help) help_and_exit ;;
-      ,*)
+        -h | --help) help_and_exit ;;
+        ,*)
           echo "Invalid option detected."
           help_and_exit
           ;;
-      esac
-      shift
-  done
+        esac
+        shift
+      done
 
-  function cleanup() {
-      sudo rm -rf .cache/nix
+      function cleanup() {
+        sudo rm -rf .cache/nix
+        sudo rm -rf /root/.cache/nix
+      }
+      trap cleanup exit
+
+      if [[ $target_arch == "" || $target_hostname == "" ]]; then
+        red "error: target_arch or target_hostname not set."
+        help_and_exit
+      fi
+
+      green "~SwarselSystems~ local installer"
+
+      cd /home/"$target_user"
+
       sudo rm -rf /root/.cache/nix
-  }
-  trap cleanup exit
+      sudo rm -rf .cache/nix
+      sudo rm -rf .dotfiles
 
-  if [[ $target_arch == "" || $target_hostname == "" ]]; then
-      red "error: target_arch or target_hostname not set."
-      help_and_exit
-  fi
+      green "Cloning repository from GitHub"
+      git clone https://github.com/Swarsel/.dotfiles.git
 
-  green "~SwarselSystems~ local installer"
+      local_keys=$(ssh-add -L || true)
+      pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
+      read -ra pub_arr <<< "$pub_key"
 
-  cd /home/"$target_user"
+      cd .dotfiles
+      if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
+        yellow "The ssh key for this configuration is not available."
+        green "Adjusting flake.nix so that the configuration is buildable ..."
+        sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
+        sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
+        nix flake update vbc-nix
+        git add .
+      else
+        green "Valid SSH key found! Continuing with installation"
+      fi
 
-  sudo rm -rf /root/.cache/nix
-  sudo rm -rf .cache/nix
-  sudo rm -rf .dotfiles
+      green "Reading system information for $target_config ..."
+      DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
+      green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
 
-  green "Cloning repository from GitHub"
-  git clone https://github.com/Swarsel/.dotfiles.git
+      CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
+      if [[ $CRYPTED == "true" ]]; then
+        green "Encryption: ✓"
+        disk_encryption=1
+      else
+        red "Encryption: X"
+        disk_encryption=0
+      fi
 
-  local_keys=$(ssh-add -L || true)
-  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
-  read -ra pub_arr <<< "$pub_key"
+      IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+      if [[ $IMPERMANENCE == "true" ]]; then
+        green "Impermanence: ✓"
+        persist_dir="/persist"
+      else
+        red "Impermanence: X"
+        persist_dir=""
+      fi
 
-  cd .dotfiles
-  if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
-      yellow "The ssh key for this configuration is not available."
-      green "Adjusting flake.nix so that the configuration is buildable ..."
-      sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
-      sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-      nix flake update vbc-nix
-      git add .
-  else
-      green "Valid SSH key found! Continuing with installation"
-  fi
+      SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+      if [[ $SWAP == "true" ]]; then
+        green "Swap: ✓"
+      else
+        red "Swap: X"
+      fi
 
-  green "Reading system information for $target_config ..."
-  DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
-  green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
+      SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+      if [[ $SECUREBOOT == "true" ]]; then
+        green "Secure Boot: ✓"
+      else
+        red "Secure Boot: X"
+      fi
 
-  CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
-  if [[ $CRYPTED == "true" ]]; then
-      green "Encryption: ✓"
-      disk_encryption=1
-  else
-      red "Encryption: X"
-      disk_encryption=0
-  fi
-
-  IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
-  if [[ $IMPERMANENCE == "true" ]]; then
-      green "Impermanence: ✓"
-      persist_dir="/persist"
-  else
-      red "Impermanence: X"
-      persist_dir=""
-  fi
-
-  SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
-  if [[ $SWAP == "true" ]]; then
-      green "Swap: ✓"
-  else
-      red "Swap: X"
-  fi
-
-  SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
-  if [[ $SECUREBOOT == "true" ]]; then
-      green "Secure Boot: ✓"
-  else
-      red "Secure Boot: X"
-  fi
-
-  if [ "$disk_encryption" -eq 1 ]; then
-      while true; do
+      if [ "$disk_encryption" -eq 1 ]; then
+        while true; do
           green "Set disk encryption passphrase:"
           read -rs luks_passphrase
           green "Please confirm passphrase:"
           read -rs luks_passphrase_confirm
           if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
-              echo "$luks_passphrase" > /tmp/disko-password
-              break
+            echo "$luks_passphrase" > /tmp/disko-password
+            break
           else
-              red "Passwords do not match"
+            red "Passwords do not match"
           fi
-      done
-  fi
+        done
+      fi
 
-  green "Setting up disk ..."
-  if [[ $target_config == "hotel" ]]; then
-      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
-  else
-      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
-  fi
-  sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
-  sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
-  sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
+      green "Setting up disk ..."
+      if [[ $target_config == "hotel" ]]; then
+        sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
+      else
+        sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+      fi
+      sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
+      sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
+      sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
-  green "Generating hardware configuration ..."
-  sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+      green "Generating hardware configuration ..."
+      sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
 
-  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
-  sudo mkdir -p /root/.local/share/nix/
-  printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
-  green "Installing flake $target_config"
+      git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
+      sudo mkdir -p /root/.local/share/nix/
+      printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
+      green "Installing flake $target_config"
 
-  store_path=$(nix build --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
-  green "Linking generation in bootloader"
-  sudo "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
-  green "Setting generation to activate upon next boot"
-  sudo "$store_path/bin/switch-to-configuration boot"
-  green "Installation finished! Reboot to see changes"
-
-#+end_src
-
-#+RESULTS:
-| trap: | undefined | signal:    | exit   |      |      |   |   |
-| [     | Babel     | evaluation | exited | with | code | 1 | ] |
-
-
-
-#+begin_src nix-ts :tangle pkgs/flake/swarsel-install/default.nix
-  { self, name, writeShellApplication, git }:
-  writeShellApplication {
-    inherit name;
-    runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+      store_path=$(nix build --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
+      green "Linking generation in bootloader"
+      sudo "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
+      green "Setting generation to activate upon next boot"
+      sudo "$store_path/bin/switch-to-configuration boot"
+      green "Installation finished! Reboot to see changes"
+    '';
   }
 #+end_src
 
@@ -30424,89 +30373,87 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:c98a7615-e5da-4f47-8ed1-2b2ea65519e9
 :END:
 
-#+begin_src shell :tangle files/scripts/swarsel-postinstall.sh
-  set -eo pipefail
-
-  target_config="hotel"
-  target_user="swarsel"
-
-  function help_and_exit() {
-      echo
-      echo "Locally installs SwarselSystem on this machine."
-      echo
-      echo "USAGE: $0 -d <disk> [OPTIONS]"
-      echo
-      echo "ARGS:"
-      echo "  -d <disk>                               specify disk to install on."
-      echo "  -n <target_config>                      specify the nixos config to deploy."
-      echo "                                          Default: hotel"
-      echo "                                          Default: hotel"
-      echo "  -u <target_user>                        specify user to deploy for."
-      echo "                                          Default: swarsel"
-      echo "  -h | --help                             Print this help."
-      exit 0
-  }
-
-  function green() {
-      echo -e "\x1B[32m[+] $1 \x1B[0m"
-      if [ -n "${2-}" ]; then
-          echo -e "\x1B[32m[+] $($2) \x1B[0m"
-      fi
-  }
-
-  while [[ $# -gt 0 ]]; do
-      case "$1" in
-      -n)
-          shift
-          target_config=$1
-          ;;
-      -u)
-          shift
-          target_user=$1
-          ;;
-      -h | --help) help_and_exit ;;
-      ,*)
-          echo "Invalid option detected."
-          help_and_exit
-          ;;
-      esac
-      shift
-  done
-
-  function cleanup() {
-      sudo rm -rf .cache/nix
-      sudo rm -rf /root/.cache/nix
-  }
-  trap cleanup exit
-
-  sudo rm -rf .cache/nix
-  sudo rm -rf /root/.cache/nix
-
-  green "~SwarselSystems~ remote post-installer"
-
-  cd /home/"$target_user"/.dotfiles
-
-  SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_config".config.swarselsystems.isSecureBoot)"
-
-  if [[ $SECUREBOOT == "true" ]]; then
-      green "Setting up secure boot keys"
-      sudo mkdir -p /var/lib/sbctl
-      sbctl create-keys || true
-      sbctl enroll-keys --ignore-immutable --microsoft || true
-  fi
-
-  sudo nixos-rebuild --flake .#"$target_config" switch
-  green "Post-install finished!"
-#+end_src
-
-
+This post-install helper applies host-specific finishing steps after the initial deployment, most notably secure-boot key enrollment and a first full rebuild.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-postinstall/default.nix
-  { self, name, writeShellApplication, git }:
+  { name, writeShellApplication, git, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      set -eo pipefail
+
+      target_config="hotel"
+      target_user="swarsel"
+
+      function help_and_exit() {
+        echo
+        echo "Locally installs SwarselSystem on this machine."
+        echo
+        echo "USAGE: $0 -d <disk> [OPTIONS]"
+        echo
+        echo "ARGS:"
+        echo "  -d <disk>                               specify disk to install on."
+        echo "  -n <target_config>                      specify the nixos config to deploy."
+        echo "                                          Default: hotel"
+        echo "                                          Default: hotel"
+        echo "  -u <target_user>                        specify user to deploy for."
+        echo "                                          Default: swarsel"
+        echo "  -h | --help                             Print this help."
+        exit 0
+      }
+
+      function green() {
+        echo -e "\x1B[32m[+] $1 \x1B[0m"
+        if [ -n "''${2-}" ]; then
+          echo -e "\x1B[32m[+] $($2) \x1B[0m"
+        fi
+      }
+
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+        -n)
+          shift
+          target_config=$1
+          ;;
+        -u)
+          shift
+          target_user=$1
+          ;;
+        -h | --help) help_and_exit ;;
+        ,*)
+          echo "Invalid option detected."
+          help_and_exit
+          ;;
+        esac
+        shift
+      done
+
+      function cleanup() {
+        sudo rm -rf .cache/nix
+        sudo rm -rf /root/.cache/nix
+      }
+      trap cleanup exit
+
+      sudo rm -rf .cache/nix
+      sudo rm -rf /root/.cache/nix
+
+      green "~SwarselSystems~ remote post-installer"
+
+      cd /home/"$target_user"/.dotfiles
+
+      SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_config".config.swarselsystems.isSecureBoot)"
+
+      if [[ $SECUREBOOT == "true" ]]; then
+        green "Setting up secure boot keys"
+        sudo mkdir -p /var/lib/sbctl
+        sbctl create-keys || true
+        sbctl enroll-keys --ignore-immutable --microsoft || true
+      fi
+
+      sudo nixos-rebuild --flake .#"$target_config" switch
+      green "Post-install finished!"
+    '';
   }
 #+end_src
 
@@ -30514,6 +30461,8 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
+
+Small convenience conversion from a human-readable timestamp to Unix epoch seconds.
 
 #+begin_src nix-ts :tangle pkgs/flake/t2ts/default.nix
   { name, writeShellApplication, ... }:
@@ -30533,6 +30482,8 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
 
+Inverse helper for [[#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1][t2ts]]: converts Unix epoch values back into a readable date/time representation.
+
 #+begin_src nix-ts :tangle pkgs/flake/ts2t/default.nix
   { name, writeShellApplication, ... }:
 
@@ -30551,6 +30502,8 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:7806b129-a4a5-4d10-af27-6cbeafbcb294
 :END:
 
+Quick utility to open an ephemeral shell from an explicitly selected nixpkgs revision and package.
+
 #+begin_src nix-ts :tangle pkgs/flake/vershell/default.nix
   { name, writeShellApplication, ... }:
 
@@ -30568,6 +30521,8 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :PROPERTIES:
 :CUSTOM_ID: h:9fda7829-09a4-4b8f-86f6-08b078ab2874
 :END:
+
+A derivation for eontimer :)
 
 #+begin_src nix-ts :tangle pkgs/flake/eontimer/default.nix
   { lib
@@ -30673,21 +30628,21 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:154b6df4-dd50-4f60-9794-05a140d02994
 :END:
 
-#+begin_src shell :tangle files/scripts/project.sh
-  set -euo pipefail
-
-  if [ ! -d "$(pwd)/.git" ]; then
-      git init
-  fi
-  nix flake init --template "$FLAKE"#"$1"
-  direnv allow
-#+end_src
+This helper bootstraps a new project directory by initializing git, applying one of my flake templates, and immediately allowing direnv.
 
 #+begin_src nix-ts :tangle pkgs/flake/project/default.nix
-  { self, name, writeShellApplication }:
+  { name, writeShellApplication, ... }:
   writeShellApplication {
     inherit name;
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      set -euo pipefail
+
+      if [ ! -d "$(pwd)/.git" ]; then
+          git init
+      fi
+      nix flake init --template "$FLAKE"#"$1"
+      direnv allow
+    '';
   }
 #+end_src
 
@@ -30696,6 +30651,8 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:36d6c17c-6d91-4297-b76d-9d7feab6c1a0
 :END:
 
+
+General-purpose FHS development shell wrapper for tools that still assume a traditional Linux filesystem layout.
 
 #+begin_src nix-ts :tangle pkgs/flake/fhs/default.nix
   { name, pkgs, ... }:
@@ -30718,19 +30675,16 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 A crude script to power on all displays that might be attached. Needed because sometimes displays do not awake from sleep.
 
-#+begin_src shell :tangle files/scripts/swarsel-displaypower.sh
-  swaymsg "output * power on" > /dev/null 2>&1 || true
-  swaymsg "output * dpms on" > /dev/null 2>&1 || true
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-displaypower/default.nix
-  { self, name, writeShellApplication, sway }:
+  { name, writeShellApplication, sway, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ sway ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      swaymsg "output * power on" > /dev/null 2>&1 || true
+      swaymsg "output * dpms on" > /dev/null 2>&1 || true
+    '';
   }
-
 #+end_src
 
 ***** swarsel-mgba
@@ -30769,6 +30723,8 @@ AppImage version of mgba in which the lua scripting works.
 :PROPERTIES:
 :CUSTOM_ID: h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e
 :END:
+
+Remote deployment helper that builds one or more hosts, copies closures, activates the selected action, and prints diffs for quick review.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-deploy/default.nix
   # heavily inspired from https://github.com/oddlama/nix-config/blob/d42cbde676001a7ad8a3cace156e050933a4dcc3/pkgs/deploy.nix
@@ -30901,6 +30857,8 @@ AppImage version of mgba in which the lua scripting works.
 :CUSTOM_ID: h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e
 :END:
 
+Batch build helper for host systems that delegates output handling to =nom= for clearer progress and diagnostics.
+
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-build/default.nix
   { name, nix-output-monitor, writeShellApplication, ... }:
   writeShellApplication {
@@ -30946,26 +30904,24 @@ This is a convenience function that calls =nix-instantiate= with a number of fla
 
 This programs simply runs ssh-keygen on the last host that I tried to ssh into. I need this frequently when working with cloud-init usually.
 
-#+begin_src shell :tangle files/scripts/sshrm.sh
-  HISTFILE="$HOME"/.histfile
-
-  last_ssh_cmd=$(grep -E "ssh " "$HISTFILE" | sed -E 's/^: [0-9]+:[0-9]+;//' | grep "^ssh " | tail -1)
-  host=$(echo "$last_ssh_cmd" | sed -E 's/.*ssh ([^@ ]+@)?([^ ]+).*/\2/')
-
-  if [[ -n $host ]]; then
-      echo "Removing SSH host key for: $host"
-      ssh-keygen -R "$host"
-  else
-      echo "No valid SSH command found in history."
-  fi
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/sshrm/default.nix
-  { self, name, writeShellApplication, openssh }:
+  { name, writeShellApplication, openssh, ... }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ openssh ];
-    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+    text = ''
+      HISTFILE="$HOME"/.histfile
+
+      last_ssh_cmd=$(grep -E "ssh " "$HISTFILE" | sed -E 's/^: [0-9]+:[0-9]+;//' | grep "^ssh " | tail -1)
+      host=$(echo "$last_ssh_cmd" | sed -E 's/.*ssh ([^@ ]+@)?([^ ]+).*/\2/')
+
+      if [[ -n $host ]]; then
+          echo "Removing SSH host key for: $host"
+          ssh-keygen -R "$host"
+      else
+          echo "No valid SSH command found in history."
+      fi
+    '';
   }
 #+end_src
 ***** endme
@@ -35096,7 +35052,7 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
               (
                (,"󱄅"
                 ,swarsel-domain
-                ,(concat "Browse " main-domain)
+                ,(concat "Browse " swarsel-domain)
                 (lambda (&rest _) (browse-url ,(concat "https://" swarsel-domain))))
                )
               ))))
