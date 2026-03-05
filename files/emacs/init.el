@@ -162,16 +162,30 @@ create a new one."
 (define-key minibuffer-local-filename-completion-map
             [C-backspace] #'up-directory)
 
+(declare-function consult--read "consult")
+
 (defun swarsel/consult-magit-repos ()
   (interactive)
   (require 'magit)
-  (let* ((repos (magit-list-repos))
-         (repo  (consult--read repos
-                               :prompt "Magit repo: "
-                               :require-match t
-                               :history 'my/consult-magit-repos-history
-                               :sort t)))
-    (magit-status repo)))
+  (let ((repos (magit-list-repos)))
+    (unless repos
+      (user-error "No repositories found in `magit-repository-directories'"))
+    (let ((repo
+           (if (or (fboundp 'consult--read)
+                   (require 'consult nil t))
+               (consult--read repos
+                              :prompt "Magit repo: "
+                              :require-match t
+                              :history 'my/consult-magit-repos-history
+                              :sort t)
+             (completing-read "Magit repo: "
+                              repos
+                              nil
+                              t
+                              nil
+                              'my/consult-magit-repos-history))))
+      (when (and repo (> (length repo) 0))
+        (magit-status repo)))))
 
 (defun swarsel/org-mode-setup ()
   (variable-pitch-mode 1)
