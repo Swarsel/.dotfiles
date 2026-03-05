@@ -1702,6 +1702,10 @@ A short overview over each input and what it does:
   This input per default provides a simple output =topologyPrivate = false;=. This is the value that is normally used in the config. When I export my setup to a topology diagram, there are some public IPs and domains that I want to obfuscate. When doing that, I can then override this input.
 - [[https://github.com/noctalia-dev/noctalia-shell][noctalia]]
   A flake that provides options for the desktop shell =noctalia-shell=.
+- [[https://github.com/Swarsel/niritiling][niritiling]]
+  A flake that provides window tiling for niri
+- [[https://github.com/Swarsel/noctoggle][noctoggle]]
+  A flake that toggles the noctalia-shell bar when Super is pressed
 
 #+begin_src nix :noweb yes :tangle flake.nix
   {
@@ -3421,7 +3425,7 @@ Hence, what I instead do is to define another output =nixosConfigurationsMinimal
 :CUSTOM_ID: h:02cd20be-1ffa-4904-9d5a-da5a89ba1421
 :END:
 
-This holds most of the NixOS side of configuration.
+This section holds most of the relevant NixOS side of configuration.
 
 ** Manual steps when setting up a new machine
 :PROPERTIES:
@@ -3508,6 +3512,17 @@ In order to keep track of these changes, I gather them here in a similar style t
 #+begin_export html
 Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
 
+- 20260302:
+  - navidrome is having build issues and set to stable
+  - noto-fonts is having build issues and set to stable
+    - libreoffice-* is having build issues and set to stable
+      - also need to set services.gotenberg.libreoffice.package to stable
+- 20260224:
+  - azure-cli is having build issues and set to stable
+  - dwarfs is having build issues and set to stable
+  - shortkeys is having build issues and disabled
+  - anki is having build issues and set to stable
+  - khal is having build issues and set to stable
 - 202501102:
   - flake:
     - emacs-overlay:
@@ -3756,7 +3771,7 @@ This is a list of all physical machines that I maintain.
 :CUSTOM_ID: h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9
 :END:
 
-My work machine. Built for more security, this is the gold standard of my configurations at the moment.
+My work machine. Built for more security, this is the gold standard of my configurations at the moment. Most of the client work configurations are in [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]] and [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][home-manager/work]].
 
 ***** Main Configuration
 :PROPERTIES:
@@ -3851,13 +3866,13 @@ My work machine. Built for more security, this is the gold standard of my config
   }
 
 #+end_src
-
 ***** hardware-configuration
 :PROPERTIES:
 :CUSTOM_ID: h:25115a54-c634-4896-9a41-254064ce9fcc
 :END:
 
 =dcdebugmask= enums: https://docs.kernel.org/gpu/amdgpu/driver-core.html#c.DC_DEBUG_MASK
+This system is built with support for arm emulation, so it can build configurations that are meant to run on most of my cloud hosts (even though the remote builders are a better fit for this).
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/pyramid/hardware-configuration.nix
   { config, lib, pkgs, modulesPath, ... }:
@@ -3952,6 +3967,8 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:e0da04c7-4199-44b0-b525-6cfc64072b45
 :END:
 
+This system uses an encrypted root that is however not impermanent. At some point I should reset this host, but this will probably not happen while I use this machine at work.
+
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/pyramid/disk-config.nix
   {
     disko.devices = {
@@ -4041,7 +4058,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:a320569e-7bf0-4552-9039-b2a8e0939a12
 :END:
 
-My personal laptop. Closely follows the =pyramid= config, but leaves out some security features that I consider a bother on my work machine.
+My personal laptop. Closely follows the =pyramid= config, but leaves out some security features that I consider a bother on my work machine. Contrary to =pyramid=, this uses a clean, impermanent setup.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -4281,7 +4298,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
 :CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
 :END:
 
-This is my main server that I run at home. It handles most tasks that require bigger amounts of storage than I can receive for free at OCI. Also it houses some data that I find too sensitive to hand over to Oracle.
+This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]]). Currently I use this host as a staging system for several services, and in the future this will be my IoT management system.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -4405,6 +4422,8 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:82bf7fb1-631b-4acd-966b-d0c71a9eb463
 :END:
+
+This is my current main server at home; all services except filesystem backups run in separate microvms (see [[#h:5e571d89-6590-4aa4-a5f4-5c871683d09b][Guests]]). Generally, all services that have any amount of significant data will be run on this server, and not on the Oracle Cloud instances.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -5678,6 +5697,8 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:58c7563e-6954-42e6-a622-9d06523e8e24
 :END:
 
+This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b772c3][Router]]). It also provides an http proxy endpoint in my local network over DNS rewrites.
+
 ***** Main Configuration
 :PROPERTIES:
 :CUSTOM_ID: h:624b3c6a-6e31-4734-a6ea-7c5b461a3429
@@ -6167,6 +6188,8 @@ My phone. I use only a minimal config for remote debugging here.
 :CUSTOM_ID: h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0
 :END:
 
+This is my workstation locatated at my workplace - I use it as a remote builder and for testing things on ARM architecture.
+
 #+begin_src nix-ts :tangle hosts/home/aarch64-linux/treehouse/default.nix
   { self, pkgs, ... }:
   {
@@ -6212,18 +6235,16 @@ My phone. I use only a minimal config for remote debugging here.
 :CUSTOM_ID: h:4dc59747-9598-4029-aa7d-92bf186d6c06
 :END:
 
-My server setup was originally built on Proxmox VE; back when I started, I created all kinds of wild Debian/Ubuntu/etc. KVMs and LXCs on there. However, the root disk has suffered a weird failure where it has become unable to be cloned, but was still functional. I was for a long time rewriting all machines on there to use NixOS instead; this process is now finished.
+My server setup was originally built on Proxmox VE; back when I started, I created all kinds of wild Debian/Ubuntu/etc. KVMs and LXCs on there. However, the root disk suffered a weird failure at some point where it became unable to be cloned, while still functioning. I was for a long time rewriting all machines on there to use NixOS instead; this process is now finished.
 
-I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI:
-  - =MilkyWell=: cloud server used for very lightweight sync tasks of non-critical data
-  - =Moonside=: Proxy server + some lightweight services
+Nowadays, this section holds only hosts living in the cloud. For VM guests on physical hosts, see the =Guests= section under the corresponding hostname in [[#h:58dc6384-0d19-4f71-9043-4014bd033ba2][Physical hosts]].
 
 **** Moonside (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:f547ed16-5e6e-4744-9e33-af090e0a175b
 :END:
 
-This machine mainly acts as my proxy server to stand before my local machines.
+This machine used to be my proxy server, a functionality that is now provided by [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]]; nowadays, I use it to run non-crucial services in the cloud - i.e. any service that does not use important private data. As an effect, this mostly holds some text and image sharing tools as well as a number of game servers.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -6506,6 +6527,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :CUSTOM_ID: h:90457194-6b97-4cd6-90bc-4f42d0d69f51
 :END:
 
+This machine acts as my build farm and nix binary cache. It also provides an S3 bucket that is meant to be used for the binary cache (however, it is ocasionally used to have a separate object storage).
+
 ***** Main Configuration
 :PROPERTIES:
 :CUSTOM_ID: h:cb78799c-d47a-43d4-88ad-d32fcc0abd0b
@@ -6737,6 +6760,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :CUSTOM_ID: h:1888ded8-69dc-431f-bb39-5089a8e8b1f4
 :END:
 
+This machine is the authoritative DNS server for my domain and is responsible for pushing records to Hurricane Electric as well as Hetzner Cloud.
+
 ***** Main Configuration
 :PROPERTIES:
 :CUSTOM_ID: h:0fe53305-52c3-4cc3-81fe-33408070165e
@@ -6941,6 +6966,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :PROPERTIES:
 :CUSTOM_ID: h:a6baab45-b608-4289-bc92-4454bb0856c6
 :END:
+
+This servers is an SSH bastion responsible for shielding my others cloud instances from unauthorized access.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -7156,6 +7183,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :PROPERTIES:
 :CUSTOM_ID: h:19300583-322b-4e0b-b657-857fbf23dfa1
 :END:
+
+This host acts as my main http proxy for external access.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -7407,6 +7436,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :CUSTOM_ID: h:81bc8746-b46b-4d29-87de-ddbd77788b43
 :END:
 
+This is my mailserver. Since I do not really want to trust Oracle Cloud with any important data, I am running this one on Hetzner.
+
 ***** Main Configuration
 :PROPERTIES:
 :CUSTOM_ID: h:faee045f-a5dd-419a-b374-fc22518d4cd8
@@ -7631,6 +7662,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :PROPERTIES:
 :CUSTOM_ID: h:89ce533d-4856-4988-b456-0951d4453db8
 :END:
+
+The machines listed here are not real hosts per se, but are rather used in some aspects of testing or deployment, i.e. these hosts do not exist permanently.
+
 **** Toto (Physical/VM)
 :PROPERTIES:
 :CUSTOM_ID: h:6b495f0e-fc11-44c8-a9e8-83f3d95c8857
@@ -8027,6 +8061,8 @@ Steps to recover using live ISO:
 :CUSTOM_ID: h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9
 :END:
 
+This is a specialized kexec image that I use to have disko available on RAM-limited machines, as the kexec provided directly by nixos-anywhere does not include it. Note that I had to strip most other stuff from this image, so this is not a good image for general deployment.
+
 #+begin_src nix-ts :tangle install/kexec.nix
   { lib, pkgs, modulesPath, options, ... }:
   {
@@ -8127,15 +8163,15 @@ Steps to recover using live ISO:
 
 #+end_src
 
-**** Hotel (Demo Physical/VM)
+***** TODO Hotel (Demo Physical/VM)
 :PROPERTIES:
 :CUSTOM_ID: h:e1498bef-ec67-483d-bf02-76264e30be8e
 :END:
 
-This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
+This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys). TODO: provide a public secret that can be used to test the environment
 
 I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
-***** Main configuration
+****** Main configuration
 :PROPERTIES:
 :CUSTOM_ID: h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab
 :END:
@@ -8207,7 +8243,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 #+end_src
 
-***** disko
+****** disko
 :PROPERTIES:
 :CUSTOM_ID: h:849e4233-ba40-4fec-acfe-0d76e1e4371b
 :END:
@@ -8343,7 +8379,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
   }
 #+end_src
 
-***** NixOS dummy options configuration
+****** NixOS dummy options configuration
 :PROPERTIES:
 :CUSTOM_ID: h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9
 :END:
@@ -8354,7 +8390,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 #+end_src
 
-***** home-manager dummy options configuration
+****** home-manager dummy options configuration
 :PROPERTIES:
 :CUSTOM_ID: h:88ccb198-74b9-4269-8e22-af1277f44667
 :END:
@@ -8389,14 +8425,14 @@ Here we have NixOS options. All options are split into smaller files that are lo
 :CUSTOM_ID: h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f
 :END:
 
-These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
+These are system-level settings specific to NixOS machines. All settings that are required on all machines should go here.
 
 **** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:4acbe063-188b-42e7-b75c-b6d2e232e784
 :END:
 
-This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
+This section is for setting things that should be used on hosts that are using the default NixOS configuration.
 
 #+begin_src nix-ts :tangle modules/nixos/common/default.nix
 { lib, ... }:
@@ -8415,6 +8451,17 @@ in
 :PROPERTIES:
 :CUSTOM_ID: h:5c3027b4-ba66-445e-9c5f-c27e332c90e5
 :END:
+
+This section of code allows different =nixosConfigurations= (i.e. hosts) to "send" configuration to each other. That means host A can define in a module some configuration that should then be applied on host B. This is very useful for servers, where the full functionality may be split over multiple hosts.
+
+An example:
+
+[[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]] provides a service and loads a module. In that module I can then also define:
+  - nginx config for the internal proxy [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][hintbooth-nginx]]
+  - nginx config for the external proxy [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]]
+  - dns records to be published by [[#h:1888ded8-69dc-431f-bb39-5089a8e8b1f4][Stoicclub (OCI)]]
+
+Note that not all configuration can be sent by default, rather it has bo be defined in =forwardedOptions= below (otherwise we get an infinite recursion error). For options that do not take a submodule as argument, we need to define every last option we set by hand - see for example the =services.firezone.gateway= options below, where we redefine =[ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]=.
 
 #+begin_src nix-ts :tangle modules/nixos/common/nodes.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
@@ -8492,6 +8539,10 @@ in
 :PROPERTIES:
 :CUSTOM_ID: h:85c9b83f-40c3-4558-bb28-a37b6f8597b9
 :END:
+
+Since I am maintaining an infrastructure of moderate size, it is also useful to be able to have some mechanism of shared variables between configurations. For example, I have to reference the domain of my identity management system in some places across the config, which I can reference using =globals.services.kanidm.domain=.
+
+Do note that the below does not achieve anything on its own - as is, these would only be normal ("local") NixOS options. The real magic, as we have touched on before, happens in [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]], where we then ingest the values here and expose them as a flake output.
 
 #+begin_src nix-ts :tangle modules/nixos/common/globals.nix
   { lib, options, ... }:
@@ -8791,6 +8842,12 @@ in
 :CUSTOM_ID: h:a8bbe15f-a7dd-4e6d-ba49-26206c38e9c8
 :END:
 
+If you have worked on a system using NixOS + home-manager as a submodule, you have probably noticed that it is a hassle to use sops-nix in the home-manager configuration - as least as long as you want to retain compatibility with home-manager only systems. You might have also noticed that the home-manager sops secrets take up a considerable amount of time.
+
+Hence, here I am mirroring all of the home-manager secrets that I use across the configuration. I would like to automate this process, but the only way I see for doing this would be by defining a dummy configuration that has these values set in the respective home-manager modules and copying that here, which seems brittle to me.
+
+In the respective modules that use home-manager secrets (for example [[#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3][Mail]]) I then use an =optionalAttrs= that checks if we have a NixOS system and only includes the config if that is not the case in order to not import the same secret twice.
+
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager-secrets.nix
   { self, lib, config, globals, withHomeManager, ... }:
   let
@@ -8845,6 +8902,8 @@ in
 :PROPERTIES:
 :CUSTOM_ID: h:e2e7444b-cb85-4719-b154-e5f37274d02d
 :END:
+
+This is just some additional configuration that proliferates some [[#h:391e7712-fef3-4f13-a3ed-d36e228166fd][Topology]] node fields automatically from my own options.
 
 #+begin_src nix-ts :tangle modules/nixos/common/topology.nix
   { lib, config, ... }:
@@ -9048,7 +9107,7 @@ A breakdown of the flags being set:
 :CUSTOM_ID: h:7f6d6908-4d02-4907-9c70-f802f4358520
 :END:
 
-We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
+We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = self= line (=inherit ...=). This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
   { self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, withHomeManager, ... }:
@@ -9348,6 +9407,8 @@ This dynamically uses systemd boot or Lanzaboote depending on the minimal system
 :CUSTOM_ID: h:a1311b07-2a8d-4c1f-addc-8572fc184e0d
 :END:
 
+Here I set some general boot options, mostly enabling an emergency shell and some extra tools that would normally not be available in stage 1. Also I reduce the bootloaders default timeout because I do not really need that anymore ever since I have stopped to use specialisations.
+
 #+begin_src nix-ts :tangle modules/nixos/common/boot.nix
   { lib, pkgs, config, globals, ... }:
   {
@@ -9495,7 +9556,7 @@ This section is to be used for modules that are most likely only used on client 
 :CUSTOM_ID: h:4acbe063-188b-42e7-b75c-b6d2e232e784
 :END:
 
-This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
+This section is for setting things that should be used on clients that are using the default NixOS configuration.
 
 #+begin_src nix-ts :tangle modules/nixos/client/default.nix
   { lib, ... }:
@@ -9533,6 +9594,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
         cfssl
         pcsc-tools
         pcscliteWithPolkit.out
+
 
         # ledger packages
         ledger-live-desktop
@@ -9654,7 +9716,7 @@ Next, we will setup some environment variables that need to be set on the system
 :CUSTOM_ID: h:e2d40df9-0026-4caa-8476-9dc2353055a1
 :END:
 
-Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository).
+Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository, however, that does not matter anymore since I stopped using that solution) in order to be able to keep using the same agent upon escalation.
 
 #+begin_src nix-ts :tangle modules/nixos/client/polkit.nix
   { lib, config, minimal, ... }:
@@ -9695,6 +9757,8 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
 
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason =a stop job is running for session 1 of user ...=. I do not want to wait that long and am confident no important data is lost by doing this.
 
+Nowadays, it seems that this bug was fixed (I think it was caused by VirtualBox), but still, I keep these shorter timeouts just to be safe (or unsafe, depending on your viewpoint).
+
 #+begin_src nix-ts :tangle modules/nixos/client/systemd.nix
   { lib, config, ... }:
   {
@@ -9714,7 +9778,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 :CUSTOM_ID: h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b
 :END:
 
-Enable OpenGL, Sound, Bluetooth and various drivers.
+Enable OpenGL, Sound, Bluetooth, support for my custom keyboards and various other drivers.
 
 #+begin_src nix-ts :tangle modules/nixos/client/hardware.nix
   { pkgs, config, lib, ... }:
@@ -9772,7 +9836,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 :CUSTOM_ID: h:63f6773e-b321-4b1d-a206-3913658cf62d
 :END:
 
-This is only used on systems not running Pipewire.
+This is only used on systems not running Pipewire (none at the moment).
 
 
 #+begin_src nix-ts :tangle modules/nixos/client/pulseaudio.nix
@@ -9793,7 +9857,7 @@ This is only used on systems not running Pipewire.
 :CUSTOM_ID: h:aa433f5e-a455-4414-b76b-0a2692fa06aa
 :END:
 
-Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr=.
+Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr= when using [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/pipewire.nix
   { lib, config, pkgs, ... }:
@@ -10139,12 +10203,9 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 :CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
 :END:
 
-I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
-- `ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"
-- cat ~/.ssh/sops.pub | ssh-to-age | wl-copy
-- add the output to .sops.yaml
-- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/public/NAME.pub
-- update entry for sops.age.sshKeyPaths
+I use sops-nix to handle secrets that I want to have available on my machines at all times. For some reason validateSopsFiles needs to be turned off, probably because my age keys are not real age keys but just the host ssh keys being read in by =ssh-go-age=. The default sopsfile is the one that is available to all systems - if the secret in question is not in that file, we need to override =sopsFile= in the respective secret.
+
+Do note that we have to account for impermanent file systems here, otherwise system activation will fail because the secret files cannot be found.
 
 #+begin_src nix-ts :tangle modules/nixos/client/sops.nix
   { self, config, lib, ... }:
@@ -10169,6 +10230,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :PROPERTIES:
 :CUSTOM_ID: h:43aa6c7e-ef6a-4907-9d22-3e6fb5ba4c08
 :END:
+
+This defines all remote builds that I want to use on client machines. This includes the nixbuild.net machine as well as my own private builders. I can use these to perform x86_64 builds as well as aarch64.
 
 #+begin_src nix-ts :tangle modules/nixos/client/remotebuild.nix
   { lib, config, globals, ... }:
@@ -10297,7 +10360,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 :CUSTOM_ID: h:2bbf5f31-246d-4738-925f-eca40681f7b6
 :END:
 
-Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
+Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances (its config is in a subsection)
 
 #+begin_src nix-ts :tangle modules/nixos/client/programs.nix
   { lib, config, ... }:
@@ -10336,6 +10399,8 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 #+end_src
 ***** nautilus
 
+This enabled the right-click context menu entry in nautilus that allows to open a folder in a terminal - I never use this to be honest, but I feel like the file explorer would not be complete otherwise.
+
 #+begin_src nix-ts :tangle modules/nixos/client/nautilus.nix
   { lib, config, ... }:
   {
@@ -10352,6 +10417,8 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 :PROPERTIES:
 :CUSTOM_ID: h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8
 :END:
+
+This is the syncthing client configuration. Contrary to the [[#h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d][server syncthing config]], this sets all directories as send+receive (the servers only receive). Apart from that, I only really need to sync my Obsidian stuff and some Emacs files.
 
 #+begin_src nix-ts :tangle modules/nixos/client/syncthing.nix
   { lib, config, pkgs, ... }:
@@ -10484,7 +10551,7 @@ Avahi is the service used for the network discovery.
 :CUSTOM_ID: h:f101daa2-604d-4553-99e2-f64b9c207f51
 :END:
 
-This is being set to allow myself to use all functions of nautilus in NixOS
+This is being set to allow myself to use all functions of nautilus in NixOS.
 
 #+begin_src nix-ts :tangle modules/nixos/client/gvfs.nix
   { lib, config, ... }:
@@ -10501,7 +10568,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 :CUSTOM_ID: h:08d213d5-a9f4-4309-8635-ba557b01dc7d
 :END:
 
-This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if pressed shortly, and =CTRL= if being held.
+This is a super-convenient configuration bit that lets my remap my =CAPS= key to =ESC= if pressed shortly, and =CTRL= if being held. Interception-tools can do many other things as well, but that is really all I need when I am typing on my laptops internal keyboard.
 
 #+begin_src nix-ts :tangle modules/nixos/client/interceptiontools.nix
   { lib, config, pkgs, ... }:
@@ -10538,11 +10605,12 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
   }
 #+end_src
 
-***** keyd: remap SUPER
+***** keyd: remap SUPER (not used)
 :PROPERTIES:
 :CUSTOM_ID: h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b
 :END:
 
+This is an unused service that can also be used to remap keybinds. I tried to use this in the past to implement the self-hiding topbar that I know from [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] in [[#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb][Niri]]. That did not work. Still, it cannot hurt to keep this reference in here.
 
 #+begin_src nix-ts :tangle modules/nixos/client/keyd.nix
   { lib, config, ... }:
@@ -10582,6 +10650,8 @@ This enables power profile management. The available modes are:
 - performance
 
 Most of the time I am using =power-saver=, however, it is good to be able to choose.
+
+This is also used by [[#h:385cc6c7-416c-4570-a5d3-bf8fb7c841e7][Noctalia-shell]] in order to set and get the profiles.
 
 #+begin_src nix-ts :tangle modules/nixos/client/power-profiles-daemon.nix
   { lib, config, ... }:
@@ -10730,7 +10800,7 @@ This loads some udev rules that I need for my split keyboards.
 :CUSTOM_ID: h:eae45839-223a-4027-bce3-e26e092c9096
 :END:
 
-This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there
+This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway/niri on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there.n
 
 #+begin_src nix-ts :tangle modules/nixos/client/login.nix
   { lib, config, pkgs, ... }:
@@ -10893,7 +10963,7 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
 :CUSTOM_ID: h:b751d77d-246c-4bd6-b689-3467d82bf9c3
 :END:
 
-This snipped is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
+This snippet is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
 
 #+begin_src nix-ts :tangle modules/nixos/client/nvd-rebuild.nix
   { lib, config, pkgs, ... }:
@@ -10972,7 +11042,9 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 :CUSTOM_ID: h:872d5f46-2ffd-4076-9a2c-98783dd29434
 :END:
 
-This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
+This allows me to use screen sharing on Wayland when using [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]]. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
+
+Nowadays, I only need to enable portals in general for use with [[#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb][Niri]], which implements screensharing using gnome-portal (which allows for neat things like hiding shared windows based on =app_id=).
 
 #+begin_src nix-ts :tangle modules/nixos/client/xdg-portal.nix
   { lib, config, ... }:
@@ -11002,7 +11074,7 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 :CUSTOM_ID: h:1bef3914-a258-4585-b232-e0fbe9e7a9b5
 :END:
 
-I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
+I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS (which has not happened in a while, but you never know). It is always the goal to quickly get things working on NixOS, but this should usually prevent me from getting completely stuck.
 
 #+begin_src nix-ts :tangle modules/nixos/client/distrobox.nix
   { lib, config, pkgs, ... }:
@@ -11027,7 +11099,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 :PROPERTIES:
 :CUSTOM_ID: h:cfc22f8d-251e-4636-98d6-a43cdb112b68
 :END:
-Adds the necessary tools to allow .appimage programs easily.
+Adds the necessary tools to allow .appimage programs handling easily.
 
 #+begin_src nix-ts :tangle modules/nixos/client/appimage.nix
   { lib, config, ... }:
@@ -11048,7 +11120,9 @@ Adds the necessary tools to allow .appimage programs easily.
 :CUSTOM_ID: h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd
 :END:
 
-This turns off the display when the lid is closed.
+This turns off the display when the lid is closed. When we are docked it just turns it off, when using the laptop standalone it instead sends it to suspend.
+
+Notably we also make sure to handle the fingerprint sensor especially, because it can misfire or stop working on wakeup otherwise.
 
 #+begin_src nix-ts :tangle modules/nixos/client/lid.nix
   { lib, config, ... }:
@@ -11097,6 +11171,8 @@ This turns off the display when the lid is closed.
 
 Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
 
+Nowadays, I have replaced this with [[#h:385cc6c7-416c-4570-a5d3-bf8fb7c841e7][Noctalia-shell]].
+
 #+begin_src nix-ts :tangle modules/nixos/client/lowbattery.nix
   { pkgs, lib, config, ... }:
   {
@@ -11138,7 +11214,7 @@ Since I hide the waybar completely during normal operation, I run the risk of no
 :CUSTOM_ID: h:fa8d9ec4-3e22-458a-9239-859cffe7f55c
 :END:
 
-Auto login for the initial session.
+Auto login for the initial session. This basically skips the [[#h:eae45839-223a-4027-bce3-e26e092c9096][System Login (greetd)]] screen.
 
 #+begin_src nix-ts :tangle modules/nixos/client/autologin.nix
   { lib, config, ... }:
@@ -11161,7 +11237,7 @@ Auto login for the initial session.
 :CUSTOM_ID: h:74f5961d-2881-4a42-b99f-94c8f70c8196
 :END:
 
-Auto login for the initial session.
+UWSM is a helper tool meant to help with chaining systemd services correctly. When starting/ending sessions using it, we can be sure that the corresponding services also start and end with it - this is not standard behaviour!
 
 #+begin_src nix-ts :tangle modules/nixos/client/uwsm.nix
   { lib, config, pkgs, ... }:
@@ -11230,6 +11306,7 @@ Auto login for the initial session.
 :CUSTOM_ID: h:4d018a21-637b-4c7d-b9c9-7f1b95144a07
 :END:
 
+This is the VPN client that I use to access my internal network at home.
 
 #+begin_src nix-ts :tangle modules/nixos/client/firezone-client.nix
   { lib, config, ... }:
@@ -11327,6 +11404,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+end_src
 
 **** Persistent user/group IDs
+
+When using microvms, I opted to use ZFS with it, and mount datasets into the microvms. That however means that we need to make sure that userids stay consistent between microvm reboots. This could be done by persisting =/var/lib/nixos=, but even then it would not be guaranteed that all UIDs/GIDs match up with the hypervising host, which would not be a big problem, but I like to keep it consistent anyways.
+
+With this, evaluation will fail if there are any users/groups that are not declaratively managed.
 
 #+begin_src nix-ts :tangle modules/nixos/server/id.nix
   { lib, config, confLib, ... }:
@@ -11475,6 +11556,8 @@ This is a collection of packages that are useful for server-type hosts that do n
 :CUSTOM_ID: h:d6840d31-110c-465f-93fa-0306f755de28
 :END:
 
+Handles my main NFS share. User password setup is currently not declarative, I need to write a service for it at some point.
+
 #+begin_src nix-ts :tangle modules/nixos/server/nfs.nix
   { lib, config, pkgs, globals, confLib, ... }:
   let
@@ -11534,6 +11617,8 @@ This is a collection of packages that are useful for server-type hosts that do n
 :CUSTOM_ID: h:ebe3413f-ef12-4b22-9121-380d599d83ca
 :END:
 
+This sets up acme which I use to generate certificates. Nowadays I no longer use cloudflare but acme-dns, which allows me to have my dns records spread out over multiple providers for redundancy.
+
 #+begin_src nix-ts :tangle modules/nixos/server/acme.nix
   { self, pkgs, lib, config, globals, confLib, ... }:
   let
@@ -11589,6 +11674,8 @@ This is a collection of packages that are useful for server-type hosts that do n
 :PROPERTIES:
 :CUSTOM_ID: h:302468d2-106a-41c8-b2bc-9fdc40064a9c
 :END:
+
+This is the general NGINX config usind on [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]] and the [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][Nginx]] guest on [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]. The virtualhosts themselves are declared in the respective service modules.
 
 #+begin_src nix-ts :tangle modules/nixos/server/nginx.nix
   { pkgs, lib, config, ... }:
@@ -11820,6 +11907,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:d858c65c-4ca8-4ee5-971b-1a4aa4ccaa57
 :END:
 
+Some extra config to harden the config on my ssh bastion host. It makes it so that logging in as the jump user is prohibited on that host, and forwardAgent is forbidden.
+
 #+begin_src nix-ts :tangle modules/nixos/server/bastion.nix
   { self, lib, config, withHomeManager, confLib, ... }:
   {
@@ -12038,15 +12127,15 @@ lspci -nn | grep -i 'network\|ethernet'
 
 From the last bracket you then find out the correct kernel module:
 
-#+begin_src shell :exports both
+#+begin_src shell :exports both :results output
 lspci -k -d 14c3:0616
 #+end_src
 
 #+RESULTS:
-| 04:00.0 | Network    | controller: | MEDIATEK | Corp.  | MT7922  | 802.11ax | PCI | Express | Wireless | Network | Adapter |
-|         | Subsystem: | MEDIATEK    | Corp.    | Device | e616    |          |     |         |          |         |         |
-|         | Kernel     | driver      | in       | use:   | mt7921e |          |     |         |          |         |         |
-|         | Kernel     | modules:    | mt7921e  |        |         |          |     |         |          |         |         |
+: 04:00.0 Network controller: MEDIATEK Corp. MT7922 802.11ax PCI Express Wireless Network Adapter
+: 	Subsystem: MEDIATEK Corp. Device e616
+: 	Kernel driver in use: mt7921e
+: 	Kernel modules: mt7921e
 
 A little note about the secrets part:
 
@@ -12525,6 +12614,8 @@ In order to define a new wireguard interface, I have to:
 :CUSTOM_ID: h:475b0892-bdbd-4aa2-b68e-86a037f27b04
 :END:
 
+This literally just adds the btrfs parameters.
+
 #+begin_src nix-ts :tangle modules/nixos/server/btrfs.nix
   { lib, config, ... }:
   {
@@ -12840,6 +12931,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :CUSTOM_ID: h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295
 :END:
 
+Kavita is the service I use for my library management. It seems more tailored towards comics/graphic novels, but still I prefer its interface to what calibre offers.
+
 #+begin_src nix-ts :tangle modules/nixos/server/kavita.nix
   { self, lib, config, pkgs, globals, dns, confLib, ... }:
   let
@@ -12912,6 +13005,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :PROPERTIES:
 :CUSTOM_ID: h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b
 :END:
+
+My video streaming service of choice. In the past I used plex, but I prefer using jellyfin now, which looks more clean (and is not payment incentivised).
 
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
@@ -12990,6 +13085,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :PROPERTIES:
 :CUSTOM_ID: h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72
 :END:
+
+My music streaming service. In the past I used subsonic and gonic, but I prefer the tag based management. Sadly the jukebox seems not to work on NixOS (TODO?)
 
 #+begin_src nix-ts :tangle modules/nixos/server/navidrome.nix
   { pkgs, config, lib, globals, dns, confLib, ... }:
@@ -13076,7 +13173,6 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 
       services.${serviceName} = {
         enable = true;
-        # openFirewall = true;
         settings = {
           LogLevel = "debug";
           Address = "0.0.0.0";
@@ -13188,6 +13284,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :CUSTOM_ID: h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41
 :END:
 
+Simple config for running spotifyd which allows me to remote play spotify songs on my speakers.
+
 #+begin_src nix-ts :tangle modules/nixos/server/spotifyd.nix
   { lib, config, confLib, ... }:
   let
@@ -13249,6 +13347,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :PROPERTIES:
 :CUSTOM_ID: h:baa4149b-3788-4b05-87ec-0ee9d0726117
 :END:
+
+My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72][navidrome]] does not work :)
 
 #+begin_src nix-ts :tangle modules/nixos/server/mpd.nix
   { lib, config, pkgs, confLib, ... }:
@@ -13324,6 +13424,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :CUSTOM_ID: h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a
 :END:
 
+Needed for audio and stuff.
+
 #+begin_src nix-ts :tangle modules/nixos/server/pipewire.nix
   { lib, config, confLib, ... }:
   {
@@ -13357,6 +13459,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :PROPERTIES:
 :CUSTOM_ID: h:6ca43d5a-8ba6-4cd1-96b9-f088f11662c0
 :END:
+
+Many services require a databasee, and I like to go with full postgres when giving the chance. Each host will usually run its own instance instead of maintaining a centralised one.
 
 #+begin_src nix-ts :tangle modules/nixos/server/postgresql.nix
   { self, config, lib, pkgs, confLib, ... }:
@@ -13393,6 +13497,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :PROPERTIES:
 :CUSTOM_ID: h:669e1715-7685-4157-8283-a1f8f39212eb
 :END:
+
+Allows me to spin up containers for services that do not provide NixOS options.
 
 #+begin_src nix-ts :tangle modules/nixos/server/podman.nix
   { config, lib, confLib, ... }:
@@ -13449,6 +13555,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :PROPERTIES:
 :CUSTOM_ID: h:1e68d84a-8f99-422f-89ac-78f664ac0013
 :END:
+
+My messenger of choice. I use this mainly to bridge messages of whatsapp/telegram/signal into it, which allows me to only use a single app for all of my communication needs. TODO: add synapse oidc
 
 #+begin_src nix-ts :tangle modules/nixos/server/matrix.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
@@ -13848,6 +13956,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :CUSTOM_ID: h:d11ad8d5-25d7-4691-b319-61c16ccef715
 :END:
 
+My file server. I aim to decomission this as soon as I can, however, I need a replacement for the cospend plugin (a shared expense manager).
+
 #+begin_src nix-ts :tangle modules/nixos/server/nextcloud.nix
       { pkgs, lib, config, globals, dns, confLib, ... }:
       let
@@ -13927,6 +14037,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 :PROPERTIES:
 :CUSTOM_ID: h:33bad8ad-b362-4bf1-8a49-b9df92329aed
 :END:
+
+My photo service. It does some cool things like face recognition automatically (locally).
 
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
     { lib, pkgs, config, globals, dns, confLib, ... }:
@@ -14175,6 +14287,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 :PROPERTIES:
 :CUSTOM_ID: h:5afeb311-ab86-4029-be53-2160f6d836c3
 :END:
+
+I use this configuration for sailing.
 
 #+begin_src nix-ts :tangle modules/nixos/server/transmission.nix
   { self, pkgs, lib, config, confLib, ... }:
@@ -14432,6 +14546,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 :PROPERTIES:
 :CUSTOM_ID: h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d
 :END:
+
+This is the server syncthings config, which makes sure that the servers nevers override client data. They also store more folders that the clients.
 
 #+begin_src nix-ts :tangle modules/nixos/server/syncthing.nix
   { lib, config, globals, dns, confLib, ... }:
@@ -14987,7 +15103,7 @@ This section exposes several metrics that I use to check the health of my server
 :CUSTOM_ID: h:23452a18-a0a1-4515-8612-ceb19bb5fc22
 :END:
 
-This is a WIP Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I have turned this service off for now however, as I actually prefer to start my builds manually.
+This is a WIP Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I do not use this however, as I actually prefer to build them using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]].
 
 #+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
@@ -15040,7 +15156,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
   }
 #+end_src
 
-**** Emacs elfeed (RSS Server)
+**** Emacs elfeed (RSS Server, unused)
 :PROPERTIES:
 :CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
 :END:
@@ -15218,6 +15334,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 :CUSTOM_ID: h:a9965660-4358-4b9a-8c46-d55f28598344
 :END:
 
+My selfhosted git solution. TODO: federate
+
 #+begin_src nix-ts :tangle modules/nixos/server/forgejo.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
@@ -15384,6 +15502,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 :PROPERTIES:
 :CUSTOM_ID: h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4
 :END:
+
+I am an extensive user of Anki, and this allows me to sync my collection on my own.
 
 #+begin_src nix-ts :tangle modules/nixos/server/ankisync.nix
   { self, lib, config, globals, dns, confLib, ... }:
@@ -15909,6 +16029,8 @@ kanidm person credential create-reset-token <user>
 :CUSTOM_ID: h:605f5974-e985-4572-b353-fd1d3ccbadae
 :END:
 
+This can be used to add OIDC in a way to services that do not support it natively, by tacking it onto the corresponding NGINX service config. In here, it is enabled by setting the =oauth2.enable= option on the respective =virtualHost=.
+
 
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
@@ -16153,6 +16275,8 @@ kanidm person credential create-reset-token <user>
 :CUSTOM_ID: h:4248e9eb-4b9f-4771-bbfb-7186ef7a8331
 :END:
 
+My expenses tracker.
+
 #+begin_src nix-ts :tangle modules/nixos/server/firefly-iii.nix
   { lib, config, globals, dns, confLib, ... }:
   let
@@ -16293,6 +16417,8 @@ kanidm person credential create-reset-token <user>
 :PROPERTIES:
 :CUSTOM_ID: h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2
 :END:
+
+My collection tracker. I am not too happy with its GUI, but the API is good, and I mostly use it to check what I have manually anyways.
 
 #+begin_src nix-ts :tangle modules/nixos/server/koillection.nix
   { self, lib, config, globals, dns, confLib, ... }:
@@ -16447,6 +16573,8 @@ kanidm person credential create-reset-token <user>
 :CUSTOM_ID: h:27eac8b9-c202-4e45-9b80-42592f1e41c8
 :END:
 
+Used to sync shell history accross machines and have it backed up somewhere.
+
 #+begin_src nix-ts :tangle modules/nixos/server/atuin.nix
   { lib, config, globals, dns, confLib, ... }:
   let
@@ -16504,6 +16632,8 @@ kanidm person credential create-reset-token <user>
 :PROPERTIES:
 :CUSTOM_ID: h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6
 :END:
+
+Selfhosted calendar and contacts.
 
 #+begin_src nix-ts :tangle modules/nixos/server/radicale.nix
   { lib, config, globals, dns, confLib, ... }:
@@ -16631,6 +16761,8 @@ kanidm person credential create-reset-token <user>
 :CUSTOM_ID: h:f922e8d6-f6e8-4779-a7ad-4037229c9bf0
 :END:
 
+P2P filesharing similar to what you might know from wormhole(/-rs), but fully self-hosted.
+
 #+begin_src nix-ts :tangle modules/nixos/server/croc.nix
    { self, lib, config, pkgs, dns, globals, confLib, ... }:
    let
@@ -16713,6 +16845,8 @@ kanidm person credential create-reset-token <user>
 :PROPERTIES:
 :CUSTOM_ID: h:13071cc3-5cba-44b5-8b5b-2a27be22e021
 :END:
+
+Basically a selfhosted pastebin that also offers syntax highlighting.
 
 #+begin_src nix-ts :tangle modules/nixos/server/microbin.nix
   { self, lib, config, dns, globals, confLib, ... }:
@@ -16849,6 +16983,8 @@ kanidm person credential create-reset-token <user>
 :CUSTOM_ID: h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c
 :END:
 
+Self-hosted link shortener.
+
 #+begin_src nix-ts :tangle modules/nixos/server/shlink.nix
   { self, lib, config, dns, globals, confLib, ... }:
   let
@@ -16967,6 +17103,8 @@ kanidm person credential create-reset-token <user>
 :PROPERTIES:
 :CUSTOM_ID: h:e46c37ac-5610-4603-8afc-2f5f008fc14d
 :END:
+
+Image sharing service similar to imgur.
 
 Deployment notes:
   - enable user: =podman exec -it slink slink user:activate --email=<mail>=
@@ -17104,6 +17242,8 @@ Deployment notes:
 :CUSTOM_ID: h:470f7ee3-3307-4949-b0fa-403171e3859a
 :END:
 
+This is an asset management system. However, for my needs it is a bit too convoluted, so I use [[#h:5b4feb1b-e7a3-43f1-9930-8d00012742ad][Homebox (use db)]] instead.
+
 #+begin_src nix-ts :tangle modules/nixos/server/snipe-it.nix
   { lib, config, globals, dns, confLib, ... }:
   let
@@ -17176,6 +17316,8 @@ Deployment notes:
 :PROPERTIES:
 :CUSTOM_ID: h:5b4feb1b-e7a3-43f1-9930-8d00012742ad
 :END:
+
+My asset manager. I use it to track tools, cables and boardgames mostly.
 
 #+begin_src nix-ts :tangle modules/nixos/server/homebox.nix
   { self, lib, pkgs, config, globals, dns, confLib, ... }:
@@ -17250,6 +17392,8 @@ Deployment notes:
 :PROPERTIES:
 :CUSTOM_ID: h:6e30509a-1320-4993-a9c7-70d28ef2906a
 :END:
+
+Allows certificate based SSH logins easily. I use this to be able to quickly give people access to my server when needed (by giving them the permissions in [[#h:ee625136-29ab-4696-919f-7b0d0042f6dd][kanidm]])
 
 #+begin_src nix-ts :tangle modules/nixos/server/opkssh.nix
   { lib, config, globals, confLib, ... }:
@@ -17718,6 +17862,8 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :CUSTOM_ID: h:d1458f94-64e0-4804-8e92-35b87716e494
 :END:
 
+This is used to have a dns record that points to the public IP of my cloud servers (which is useful for consolidating IPv4 and IPv6).
+
 #+begin_src nix-ts :tangle modules/nixos/server/dns-hostrecord.nix
   { lib, config, globals, dns, confLib, ... }:
   let
@@ -17738,6 +17884,8 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :PROPERTIES:
 :CUSTOM_ID: h:c539061e-8aa8-4c5a-a2a0-22490cd4e5de
 :END:
+
+This makes sure that my servers at home know about the home NGINX endpoint and use it over the external one.
 
 #+begin_src nix-ts :tangle modules/nixos/server/dns-home.nix
    { lib, config, globals, confLib, ... }:
@@ -17763,6 +17911,9 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :PROPERTIES:
 :CUSTOM_ID: h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a
 :END:
+
+This is the setup of my authoritative dns server. This here is the general configuration that handles setup as well as zone transfers to Hetzner and Hurricane Electric. Domain specific config at:
+- [[#h:dc1dbc54-46f7-406d-a551-527e97439614][nsd (dns) - site1]]
 
 #+begin_src nix-ts :tangle modules/nixos/server/nsd/default.nix
   { self, lib, config, globals, dns, confLib, ... }:
@@ -17865,6 +18016,8 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :PROPERTIES:
 :CUSTOM_ID: h:dc1dbc54-46f7-406d-a551-527e97439614
 :END:
+
+These are the specific records in use for my main domain.
 
 #+begin_src nix-ts :tangle modules/nixos/server/nsd/site1.nix
   { config, globals, dns, proxyAddress4, proxyAddress6, ... }:
@@ -17990,6 +18143,8 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :CUSTOM_ID: h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6
 :END:
 
+Handles my minecraft server. It runs forge, so the full server is not NixOS managed, but merely the service that starts it (good enough I guess.)
+
 #+begin_src nix-ts :tangle modules/nixos/server/minecraft/default.nix
    { self, lib, config, pkgs, globals, dns, confLib, ... }:
    let
@@ -18052,13 +18207,15 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :CUSTOM_ID: h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2
 :END:
 
+This runs a mailserver using simple-nixos-mailserver.
+
 When changing the hashed passwords, =dovecot= needs to be restarted manually, it will not happen upon rebuild.
 
 #+begin_src nix-ts :tangle modules/nixos/server/mailserver.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 80; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
     inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
     baseDomain = globals.domains.main;
@@ -18226,6 +18383,8 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
 :PROPERTIES:
 :CUSTOM_ID: h:092593d2-0ca0-4f86-9951-6127a3594e25
 :END:
+
+This is my nix binary cache (similar to cachix).
 
 Generate the attic server token using =openssl genrsa -traditional 4096 | base64 -w0=
 
@@ -18400,6 +18559,8 @@ $ attic cache create hello
 :PROPERTIES:
 :CUSTOM_ID: h:59f9ba07-8f63-4317-8def-83855a2a2ac1
 :END:
+
+My buildserver config.
 
 Need to create user manually:
 
@@ -18655,7 +18816,7 @@ This is the dhcp config that runs on my router.
 :CUSTOM_ID: h:13ea6bdd-2f35-4ab8-8f6d-ae77b567ebc5
 :END:
 
-This is the dhcp config that runs on my router.
+This is the main declarative nftables configuration that I run on all servers. It basically just makes sure that the rules remain in place even when nfables stops and that the =networking.allowed*Port[...]= options work on the untrusted zone.
 
 #+begin_src nix-ts :tangle modules/nixos/server/nftables.nix
   { lib, config, confLib, ... }:
@@ -19169,6 +19330,7 @@ This has some state:
 :CUSTOM_ID: h:ecb66cb8-12b5-44e8-ad6b-7848711e1ffe
 :END:
 
+Handles my home DNS server. It also provides some nice blocklists, but the main usecase is the rewrite of service records to the homeProxy IP, which circumvents bottlenecks by connecting out to the external proxy.
 
 #+begin_src nix-ts :tangle modules/nixos/server/adguardhome.nix
   { lib, config, globals, dns, confLib, ... }:
@@ -19402,6 +19564,9 @@ Auto login for the initial session.
 #+end_src
 
 **** Noctalia
+:PROPERTIES:
+:CUSTOM_ID: h:96e05275-38df-401b-8809-d45d8f59e43c
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/optional/noctalia.nix
   { self, inputs, config, ... }:
