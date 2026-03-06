@@ -213,7 +213,27 @@ create a new one."
       (swarsel/run-formatting)
       )))
 
-(setq org-html-htmlize-output-type nil)
+(defun swarsel/org-babel-tangle-single-block-advice (orig-fun &rest args)
+  "Run ORIG-FUN with redisplay and messages temporarily inhibited."
+  (let ((inhibit-redisplay t)
+        (inhibit-message t))
+    (apply orig-fun args)))
+
+(defun swarsel/org-babel-tangle-timing-advice (orig-fun &rest args)
+  "Run ORIG-FUN and report elapsed tangle time."
+  (let ((tim (current-time)))
+    (prog1 (apply orig-fun args)
+      (message "org-tangle took %f sec" (float-time (time-subtract (current-time) tim))))))
+
+(defun swarsel/markdown-mode-keys ()
+  "Local markdown key customizations."
+  (local-set-key (kbd "C-c C-x C-l") #'org-latex-preview)
+  (local-set-key (kbd "C-c C-x C-u") #'markdown-toggle-url-hiding))
+
+(defun swarsel/eglot-ensure-and-format ()
+  "Ensure eglot is running and enable format-on-save for current buffer."
+  (eglot-ensure)
+  (add-hook 'before-save-hook #'eglot-format nil 'local))
 
 ;; (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
@@ -380,27 +400,27 @@ create a new one."
     "wm"  '(delete-other-windows :wk "maximize")
     "<right>" 'up-list
     "<left>" 'down-list
-    ))
+    )
 
-;; General often used hotkeys
-(general-define-key
- "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
- "C-c d" 'crux-duplicate-current-line-or-region
- "C-c D" 'crux-duplicate-and-comment-current-line-or-region
- "<DUMMY-m>" 'swarsel/last-buffer
- "M-\\" 'indent-region
- "M-r" 'swarsel/consult-magit-repos
- "M-i" 'swarsel/org-insert-link-to-heading
- "<Paste>" 'yank
- "<Cut>" 'kill-region
- "<Copy>" 'kill-ring-save
- "<undo>" 'evil-undo
- "<redo>" 'evil-redo
- "C-S-c C-S-c" 'mc/edit-lines
- "C->" 'mc/mark-next-like-this
- "C-<" 'mc/mark-previous-like-this
- "C-c C-<" 'mc/mark-all-like-this
- )
+  ;; General often used hotkeys
+  (general-define-key
+   "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
+   "C-c d" 'crux-duplicate-current-line-or-region
+   "C-c D" 'crux-duplicate-and-comment-current-line-or-region
+   "<DUMMY-m>" 'swarsel/last-buffer
+   "M-\\" 'indent-region
+   "M-r" 'swarsel/consult-magit-repos
+   "M-i" 'swarsel/org-insert-link-to-heading
+   "<Paste>" 'yank
+   "<Cut>" 'kill-region
+   "<Copy>" 'kill-ring-save
+   "<undo>" 'evil-undo
+   "<redo>" 'evil-redo
+   "C-S-c C-S-c" 'mc/edit-lines
+   "C->" 'mc/mark-next-like-this
+   "C-<" 'mc/mark-previous-like-this
+   "C-c C-<" 'mc/mark-all-like-this
+   ))
 
 ;; set Nextcloud directory for journals etc.
 (setq
@@ -418,9 +438,10 @@ create a new one."
       url-history-file (expand-file-name "url/history" user-emacs-directory))
 
 ;; Use no-littering to automatically set common paths to the new user-emacs-directory
-(use-package no-littering)
-(setq custom-file (make-temp-file "emacs-custom-"))
-(load custom-file t)
+(use-package no-littering
+  :config
+  (setq custom-file (make-temp-file "emacs-custom-"))
+  (load custom-file t))
 
 (let ((backup-dir "~/tmp/emacs/backups")
       (auto-saves-dir "~/tmp/emacs/auto-saves/"))
@@ -437,7 +458,8 @@ create a new one."
       delete-old-versions t  ; Clean up the backups
       version-control t      ; Use version numbers on backups,
       kept-new-versions 5    ; keep some new versions
-      kept-old-versions 2)   ; and some old ones, too
+      kept-old-versions 2    ; and some old ones, too
+      backup-by-copying-when-linked t)
 
 ;; use UTF-8 everywhere
 (set-language-environment "UTF-8")
@@ -452,7 +474,7 @@ create a new one."
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 (global-hl-line-mode 1)
 ;; (setq redisplay-dont-pause t) ;; obsolete
-(setq blink-cursor-mode nil) ;; blink-cursor is an unexpected source of slowdown
+(blink-cursor-mode -1) ;; blink-cursor is an unexpected source of slowdown
 (global-subword-mode 1) ; Iterate through CamelCase words
 (setq blink-matching-paren nil) ;; this makes the cursor jump around annoyingly
 (delete-selection-mode 1)
@@ -464,7 +486,6 @@ create a new one."
               bidi-display-reordering 'left-to-right
               bidi-inhibit-bpa t)
 (global-so-long-mode)
-(setq process-adaptive-read-buffering nil) ;; not sure if this is a good idea
 (setq fast-but-imprecise-scrolling t
       redisplay-skip-fontification-on-input t
       inhibit-compacting-font-caches t)
@@ -472,9 +493,7 @@ create a new one."
       which-func-update-delay 1.0)
 (setq undo-limit 80000000
       evil-want-fine-undo t
-      auto-save-default t
-      password-cache-expiry nil
-      )
+      auto-save-default t)
 (setq browse-url-browser-function 'browse-url-firefox)
 ;; (setenv "DISPLAY" ":0") ;; needed for firefox
 ;; disable a keybind that does more harm than good
@@ -519,16 +538,18 @@ create a new one."
               tab-width 2)
 
 (setq tab-always-indent 'complete)
-(setq python-indent-guess-indent-offset-verbose nil)
+
+(use-package python
+  :ensure nil
+  :custom
+  (python-indent-guess-indent-offset-verbose nil))
 
 (use-package highlight-indent-guides
   :hook (prog-mode . highlight-indent-guides-mode)
-  :init
-  (setq highlight-indent-guides-method 'column)
-  (setq highlight-indent-guides-responsive 'top)
-  )
-
-(with-eval-after-load 'highlight-indent-guides
+  :custom
+  (highlight-indent-guides-method 'column)
+  (highlight-indent-guides-responsive nil)
+  :config
   (set-face-attribute 'highlight-indent-guides-even-face nil :background "gray10")
   (set-face-attribute 'highlight-indent-guides-odd-face nil :background "gray20")
   (set-face-attribute 'highlight-indent-guides-stack-even-face nil :background "gray40")
@@ -598,8 +619,7 @@ create a new one."
 (use-package evil-collection
   :after evil
   :config
-  (evil-collection-init)
-  (setq forge-add-default-bindings nil))
+  (evil-collection-init))
 
 ;; enables 2-char inline search
 (use-package evil-snipe
@@ -619,16 +639,16 @@ create a new one."
   (global-evil-surround-mode 1))
 
 (use-package evil-visual-mark-mode
-  :config (evil-visual-mark-mode))
+  :commands evil-visual-mark-mode)
 
-(use-package evil-textobj-tree-sitter)
-;; bind `function.outer`(entire function block) to `f` for use in things like `vaf`, `yaf`
-(define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
-;; bind `function.inner`(function block without name and args) to `f` for use in things like `vif`, `yif`
-(define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
-
-;; You can also bind multiple items and we will match the first one we can find
-(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer)))))
+(use-package evil-textobj-tree-sitter
+  :config
+  ;; bind `function.outer`(entire function block) to `f` for use in things like `vaf`, `yaf`
+  (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+  ;; bind `function.inner`(function block without name and args) to `f` for use in things like `vif`, `yif`
+  (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+  ;; You can also bind multiple items and we will match the first one we can find
+  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer))))))
 
 (use-package evil-numbers)
 
@@ -681,21 +701,21 @@ create a new one."
 
 (use-package mini-modeline
   :after smart-mode-line
+  :custom
+  (mini-modeline-display-gui-line nil)
+  (mini-modeline-enhance-visual nil)
+  (mini-modeline-truncate-p nil)
+  (mini-modeline-l-format nil)
+  (mini-modeline-right-padding 5)
+  (mini-modeline-r-format '("%e" mode-line-front-space mode-line-mule-info mode-line-client
+                             mode-line-modified mode-line-remote mode-line-frame-identification
+                             mode-line-buffer-identification " " mode-line-position " " mode-name evil-mode-line-tag))
   :config
   (mini-modeline-mode t)
-  (setq mini-modeline-display-gui-line nil)
-  (setq mini-modeline-enhance-visual nil)
-  (setq mini-modeline-truncate-p nil)
-  (setq mini-modeline-l-format nil)
-  (setq mini-modeline-right-padding 5)
-  (setq window-divider-mode t)
-  (setq window-divider-default-places t)
-  (setq window-divider-default-bottom-width 1)
-  (setq window-divider-default-right-width 1)
-  (setq mini-modeline-r-format '("%e" mode-line-front-space mode-line-mule-info mode-line-client
-                                 mode-line-modified mode-line-remote mode-line-frame-identification
-                                 mode-line-buffer-identification " " mode-line-position " " mode-name evil-mode-line-tag ))
-  )
+  (setq window-divider-default-places t
+        window-divider-default-bottom-width 1
+        window-divider-default-right-width 1)
+  (window-divider-mode 1))
 
 (use-package smart-mode-line
   :config
@@ -746,8 +766,8 @@ create a new one."
         orderless-matching-styles '(orderless-literal orderless-regexp)))
 
 (use-package consult
-  :config
-  (setq consult-fontify-max-size 1024)
+  :custom
+  (consult-fontify-max-size 1024)
   :bind
   (("C-x b" . consult-buffer)
    ("C-c <C-m>" . consult-global-mark)
@@ -803,8 +823,8 @@ create a new one."
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
-  :config
-  (setq which-key-idle-delay 0.3))
+  :custom
+  (which-key-idle-delay 0.3))
 
 (use-package helpful
   :bind
@@ -812,8 +832,8 @@ create a new one."
    ("C-h v" . helpful-variable)
    ("C-h k" . helpful-key)
    ("C-h C-." . helpful-at-point))
-  :config
-  (setq help-window-select nil))
+  :custom
+  (help-window-select nil))
 
 (use-package ligature
   :init
@@ -901,6 +921,12 @@ create a new one."
   :bind
   (("C-<tab>" . org-fold-outer)
    ("C-c s" . org-store-link))
+  :custom
+  (org-html-htmlize-output-type nil)
+  (org-fold-core-style 'overlays)
+  (org-src-preserve-indentation nil)
+  (org-export-with-broken-links 'mark)
+  (org-confirm-babel-evaluate nil)
   :config
   (setq org-ellipsis " ⤵"
         org-link-descriptive t
@@ -923,12 +949,31 @@ create a new one."
   (setq org-capture-templates
         '(("t" "Todo" entry (file+headline "~/Org/Tasks.org" "Inbox")
            "* TODO %?\n  %i\n  %a")
-          ("j" "Journal" entry (file+datetree "~/Org/Journal.org")
+          ("j" "Journal" entry (file+olp+datetree "~/Org/Journal.org")
            "* %?\nEntered on %U\n  %i\n  %a")))
 
   (setq org-refile-targets
         '((swarsel-archive-org-file :maxlevel . 1)
           (swarsel-tasks-org-file :maxlevel . 1)))
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (js . t)
+     (shell . t)))
+
+  (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
+
+  (advice-add 'org-babel-tangle-single-block :around #'swarsel/org-babel-tangle-single-block-advice)
+  (advice-add 'org-babel-tangle :around #'swarsel/org-babel-tangle-timing-advice)
+
+  (require 'org-tempo)
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
+  (add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
+  (add-to-list 'org-structure-template-alist '("ne" . "bash :exports both"))
 
   )
 
@@ -943,64 +988,24 @@ create a new one."
 (use-package visual-fill-column
   :hook (org-mode . swarsel/org-mode-visual-fill))
 
-(setq org-fold-core-style 'overlays)
+(use-package auctex
+  :hook ((LaTeX-mode . visual-line-mode)
+         (LaTeX-mode . flyspell-mode)
+         (LaTeX-mode . LaTeX-math-mode)
+         (LaTeX-mode . reftex-mode))
+  :custom
+  (TeX-auto-save t)
+  (TeX-save-query nil)
+  (TeX-parse-self t)
+  (TeX-engine 'luatex)
+  (TeX-master nil)
+  (LaTeX-electric-left-right-brace t)
+  (font-latex-fontify-script nil)
+  (TeX-electric-sub-and-superscript t))
 
-(setq org-src-preserve-indentation nil)
-
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((emacs-lisp . t)
-   (python . t)
-   (js . t)
-   (shell . t)
-   ))
-
-(push '("conf-unix" . conf-unix) org-src-lang-modes)
-
-(setq org-export-with-broken-links 'mark)
-(setq org-confirm-babel-evaluate nil)
-
-;; tangle is too slow, try to speed it up
-(defadvice org-babel-tangle-single-block (around inhibit-redisplay activate protect compile)
-  "inhibit-redisplay and inhibit-message to avoid flicker."
-  (let ((inhibit-redisplay t)
-        (inhibit-message t))
-    ad-do-it))
-
-(defadvice org-babel-tangle (around time-it activate compile)
-  "Display the execution time"
-  (let ((tim (current-time)))
-    ad-do-it
-    (message "org-tangle took %f sec" (float-time (time-subtract (current-time) tim)))))
-
-(require 'org-tempo)
-(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-(add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
-(add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
-(add-to-list 'org-structure-template-alist '("ne" . "bash :exports both"))
-
-(use-package auctex)
-(setq TeX-auto-save t)
-(setq TeX-save-query nil)
-(setq TeX-parse-self t)
-(setq-default TeX-engine 'luatex)
-(setq-default TeX-master nil)
-
-(add-hook 'LaTeX-mode-hook 'visual-line-mode)
-(add-hook 'LaTeX-mode-hook 'flyspell-mode)
-(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-(add-hook 'LaTeX-mode-hook 'reftex-mode)
-(setq LaTeX-electric-left-right-brace t)
-(setq font-latex-fontify-script nil)
-(setq TeX-electric-sub-and-superscript t)
-;; (setq reftex-plug-into-AUCTeX t)
-
-
-
-(use-package org-fragtog)
-(add-hook 'org-mode-hook 'org-fragtog-mode)
-(add-hook 'markdown-mode-hook 'org-fragtog-mode)
+(use-package org-fragtog
+  :hook ((org-mode . org-fragtog-mode)
+         (markdown-mode . org-fragtog-mode)))
 
 (use-package org-modern
   :config (setq org-modern-block-name
@@ -1017,6 +1022,8 @@ create a new one."
               ("<right>" . swarsel/org-present-next))
   :hook ((org-present-mode . swarsel/org-present-start)
          (org-present-mode-quit . swarsel/org-present-end))
+  :config
+  (add-hook 'org-present-after-navigate-functions #'swarsel/org-present-slide)
   )
 
 
@@ -1102,14 +1109,6 @@ create a new one."
     (swarsel/org-present-slide)
     ))
 
-(defun clojure-leave-clojure-mode-function ()
-  )
-
-(add-hook 'buffer-list-update-hook #'clojure-leave-clojure-mode-function)
-(add-hook 'org-present-mode-hook 'swarsel/org-present-start)
-(add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
-(add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
-
 (defun org-babel-execute:markdown (body params)
   "Just return BODY unchanged, allowing noweb expansion."
   body)
@@ -1145,21 +1144,10 @@ create a new one."
         lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
         ))
 
-(add-to-list 'auto-mode-alist '("\\.nix\\.enc\\'" . nix-mode))
-(add-to-list 'auto-mode-alist '("\\.nix\\.enc\\'" . nix-ts-mode))
-
-
-(with-eval-after-load 'lsp-mode
-  (lsp-register-client
-   (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
-                    :major-modes '(nix-mode nix-ts-mode)
-                    :priority 0
-                    :server-id 'nixd)))
-
 (use-package hcl-mode
   :mode "\\.hcl\\'"
-  :config
-  (setq hcl-indent-level 2))
+  :custom
+  (hcl-indent-level 2))
 
 (use-package groovy-mode)
 
@@ -1173,65 +1161,60 @@ create a new one."
 
 (use-package terraform-mode
   :mode "\\.tf\\'"
-  :config
-  (setq terraform-indent-level 2)
-  (setq terraform-format-on-save t))
-
-(add-hook 'terraform-mode-hook #'outline-minor-mode)
+  :hook (terraform-mode . outline-minor-mode)
+  :custom
+  (terraform-indent-level 2)
+  (terraform-format-on-save t))
 
 (use-package nixpkgs-fmt)
 
 (use-package shfmt
-  :config
-  (setq shfmt-command "shfmt")
-  (setq shfmt-arguments '("-i" "4" "-s" "-sr")))
-
-(setq markdown-command "pandoc")
+  :custom
+  (shfmt-command "shfmt")
+  (shfmt-arguments '("-i" "4" "-s" "-sr")))
 
 (use-package markdown-mode
   :ensure t
   :mode ("README\\.md\\'" . gfm-mode)
-  :init (setq markdown-command "multimarkdown")
+  :init
+  (setq markdown-command "multimarkdown")
+  :hook (markdown-mode . swarsel/markdown-mode-keys)
   :bind (:map markdown-mode-map
-              ("C-c C-e" . markdown-do)))
+              ("C-c C-e" . markdown-do)
+              ("C-c C-x C-l" . org-latex-preview)
+              ("C-c C-x C-u" . markdown-toggle-url-hiding)))
 
-(add-hook 'markdown-mode-hook
-          (lambda ()
-            (local-set-key (kbd "C-c C-x C-l") 'org-latex-preview)
-            (local-set-key (kbd "C-c C-x C-u") 'markdown-toggle-url-hiding)
-            ))
+(use-package elfeed
+  :custom
+  (elfeed-db-directory "~/.elfeed/db/")
+  (elfeed-use-curl t)
+  (elfeed-set-timeout 36000)
+  :config
+  (define-key elfeed-show-mode-map (kbd ";") #'visual-fill-column-mode)
+  (define-key elfeed-show-mode-map (kbd "j") #'elfeed-goodies/split-show-next)
+  (define-key elfeed-show-mode-map (kbd "k") #'elfeed-goodies/split-show-prev)
+  (define-key elfeed-search-mode-map (kbd "j") #'next-line)
+  (define-key elfeed-search-mode-map (kbd "k") #'previous-line)
+  (define-key elfeed-show-mode-map (kbd "S-SPC") #'scroll-down-command))
 
-(use-package elfeed)
-
-(use-package elfeed-goodies)
-(elfeed-goodies/setup)
-
-(setq elfeed-db-directory "~/.elfeed/db/")
-
+(use-package elfeed-goodies
+  :after elfeed
+  :config
+  (elfeed-goodies/setup))
 
 (use-package elfeed-protocol
-  :after elfeed)
-
-(elfeed-protocol-enable)
-(setq elfeed-use-curl t)
-(setq elfeed-set-timeout 36000)
-(setq elfeed-protocol-enabled-protocols '(fever))
-(setq elfeed-protocol-fever-update-unread-only t)
-(setq elfeed-protocol-fever-fetch-category-as-tag t)
-
-(let ((domain (getenv "SWARSEL_RSS_DOMAIN")))
-  (setq elfeed-protocol-feeds
-        `((,(concat "fever+https://Swarsel@" domain)
-           :api-url ,(concat "https://" domain "/api/fever.php")
-           :password-file "~/.emacs.d/.fever"))))
-
-
-(define-key elfeed-show-mode-map (kbd ";") 'visual-fill-column-mode)
-(define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
-(define-key elfeed-show-mode-map (kbd "k") 'elfeed-goodies/split-show-prev)
-(define-key elfeed-search-mode-map (kbd "j") 'next-line)
-(define-key elfeed-search-mode-map (kbd "k") 'previous-line)
-(define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
+  :after elfeed
+  :custom
+  (elfeed-protocol-enabled-protocols '(fever))
+  (elfeed-protocol-fever-update-unread-only t)
+  (elfeed-protocol-fever-fetch-category-as-tag t)
+  :config
+  (elfeed-protocol-enable)
+  (let ((domain (getenv "SWARSEL_RSS_DOMAIN")))
+    (setq elfeed-protocol-feeds
+          `((,(concat "fever+https://Swarsel@" domain)
+             :api-url ,(concat "https://" domain "/api/fever.php")
+             :password-file "~/.emacs.d/.fever")))))
 
 (use-package rg)
 
@@ -1266,7 +1249,7 @@ create a new one."
 
 (use-package treesit-auto
   :custom
-  (setq treesit-auto-install t)
+  (treesit-auto-install t)
   :config
   (treesit-auto-add-to-auto-mode-alist 'all)
   (global-treesit-auto-mode))
@@ -1281,25 +1264,17 @@ create a new one."
 (use-package avy
   :bind
   (("M-o" . avy-goto-char-timer))
-  :config
-  (setq avy-all-windows 'all-frames))
+  :custom
+  (avy-all-windows 'all-frames))
 
-(use-package devdocs)
-
-(add-hook 'python-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
-(add-hook 'python-ts-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
-
-(add-hook 'c-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("c"))))
-(add-hook 'c-ts-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("c"))))
-
-(add-hook 'c++-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("cpp"))))
-(add-hook 'c++-ts-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("cpp"))))
+(use-package devdocs
+  :hook ((python-mode . (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+         (python-ts-mode . (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+         (c-mode . (lambda () (setq-local devdocs-current-docs '("c"))))
+         (c-ts-mode . (lambda () (setq-local devdocs-current-docs '("c"))))
+         (c++-mode . (lambda () (setq-local devdocs-current-docs '("cpp"))))
+         (c++-ts-mode . (lambda () (setq-local devdocs-current-docs '("cpp")))))
+  )
 
                                         ; (devdocs-update-all)
 
@@ -1326,13 +1301,16 @@ create a new one."
 
 ;; yubikey support for pushing commits
 ;; commiting is enabled through nixos gpg-agent config
-(use-package pinentry)
-(pinentry-start)
-(setq epg-pinentry-mode 'loopback)
-(setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
+(use-package pinentry
+  :config
+  (pinentry-start)
+  (setq epg-pinentry-mode 'loopback)
+  (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket"))))
 
 (use-package forge
-  :after magit)
+  :after magit
+  :init
+  (setq forge-add-default-bindings nil))
 
 (use-package git-timemachine
   :hook (git-time-machine-mode . evil-normalize-keymaps)
@@ -1361,7 +1339,7 @@ create a new one."
 ;;                                           (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
 
 (use-package rainbow-mode
-  :config (rainbow-mode))
+  :hook ((css-mode css-ts-mode web-mode html-mode html-ts-mode) . rainbow-mode))
 
 (use-package corfu
   :init
@@ -1394,15 +1372,15 @@ create a new one."
               ("<insert-state> <down>"     . swarsel/corfu-quit-and-down))
   )
 
-(use-package nerd-icons-corfu)
-
-(add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
-
-(setq nerd-icons-corfu-mapping
-      '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
-        (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
-        ;; ...
-        (t :style "cod" :icon "code" :face font-lock-warning-face)))
+(use-package nerd-icons-corfu
+  :after corfu
+  :config
+  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
+  (setq nerd-icons-corfu-mapping
+        '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
+          (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
+          ;; ...
+          (t :style "cod" :icon "code" :face font-lock-warning-face))))
 
 (use-package cape
   :bind
@@ -1460,14 +1438,11 @@ create a new one."
                            "-o ControlMaster=auto -o ControlPersist=yes"))
   )
 
-(setq vterm-tramp-shells '(("ssh" "'sh'")))
-
 (use-package diff-hl
   :hook
   ((prog-mode
     org-mode) . diff-hl-mode)
   :init
-  (diff-hl-flydiff-mode)
   (diff-hl-margin-mode)
   (diff-hl-show-hunk-mouse-mode))
 
@@ -1488,19 +1463,17 @@ create a new one."
     ;;rustic-mode
     tex-mode
     LaTeX-mode
-    ) . (lambda () (progn
-                     (eglot-ensure)
-                     (add-hook 'before-save-hook 'eglot-format nil 'local))))
+    ) . swarsel/eglot-ensure-and-format)
   :custom
   (eldoc-echo-area-use-multiline-p nil)
-  (completion-category-defaults nil)
-  (fset #'jsonrpc--log-event #'ignore)
   (eglot-events-buffer-size 0)
   (eglot-sync-connect nil)
   (eglot-connect-timeout nil)
   (eglot-autoshutdown t)
   (eglot-send-changes-idle-time 3)
   (flymake-no-changes-timeout 5)
+  :config
+  (fset #'jsonrpc--log-event #'ignore)
   :bind (:map eglot-mode-map
               ("M-(" . flymake-goto-next-error)
               ("C-c ," . eglot-code-actions)))
@@ -1518,7 +1491,13 @@ create a new one."
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
   (setq lsp-auto-guess-root "t")
-  :commands lsp)
+  :commands lsp
+  :config
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
+                    :major-modes '(nix-mode nix-ts-mode)
+                    :priority 0
+                    :server-id 'nixd)))
 
 ;; (use-package company)
 
@@ -1561,8 +1540,6 @@ create a new one."
   (setq sideline-flymake-display-mode 'point) ; 'point to show errors only on point
                                         ; 'line to show errors on the current line
   (setq sideline-backends-right '(sideline-flymake)))
-
-(setq backup-by-copying-when-linked t)
 
 (use-package dirvish
   :init
@@ -1638,6 +1615,8 @@ create a new one."
   :ensure nil
   ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
   ;;:defer 20 ; Wait until 20 seconds after startup
+  :hook ((mu4e-compose-mode . swarsel/mu4e-send-from-correct-address)
+         (mu4e-compose-post . swarsel/mu4e-restore-default))
   :config
 
   ;; This is set to 't' to avoid mail syncing issues when using mbsync
@@ -1681,11 +1660,30 @@ create a new one."
   ;; this does the equivalent of (setq mu4e-user-mail-address-list '(address1@about.com address2@about.com [...])))
   (setq mu4e-user-mail-address-list
     (mapcar #'intern (split-string (or (getenv "SWARSEL_MAIL_ALL") "") "[ ,]+" t)))
+
+  (setq mu4e--log-max-size 1000)
+
+  (mu4e t)
+
+  (let ((work (getenv "SWARSEL_MAIL_WORK")))
+    (when (and work (not (string-empty-p work)))
+      (setq swarsel-smime-cert-path "~/.Certificates/$SWARSEL_MAIL_WORK.pem")
+      (setq swarsel-smime-cert-path (substitute-env-vars swarsel-smime-cert-path))
+      (setq mml-secure-prefer-scheme 'smime)
+      (setq mml-secure-smime-sign-with-sender t)
+      (add-hook 'mu4e-compose-mode-hook
+                (lambda ()
+                  (when (and (boundp 'user-mail-address)
+                             (stringp user-mail-address)
+                             (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+                    (mml-secure-message-sign-smime))))
+      (setq smime-keys
+            `((,(getenv "SWARSEL_MAIL_WORK")
+               ,swarsel-smime-cert-path
+               ("~/Certificates/harica-root.pem"
+                "~/Certificates/harica-intermediate.pem"))))
+      ))
   )
-
-
-(add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-send-from-correct-address)
-(add-hook 'mu4e-compose-post-hook #'swarsel/mu4e-restore-default)
 
 (use-package mu4e-alert
   :config
@@ -1703,30 +1701,6 @@ create a new one."
 
   (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
   )
-
-(mu4e t)
-
-(let ((work (getenv "SWARSEL_MAIL_WORK")))
-  (when (and work (not (string-empty-p work)))
-
-    (setq swarsel-smime-cert-path "~/.Certificates/$SWARSEL_MAIL_WORK.pem")
-    (setq swarsel-smime-cert-path (substitute-env-vars swarsel-smime-cert-path))
-    (setq mml-secure-prefer-scheme 'smime)
-    (setq mml-secure-smime-sign-with-sender t)
-    (add-hook 'mu4e-compose-mode-hook
-              (lambda ()
-                (when (and (boundp 'user-mail-address)
-                           (stringp user-mail-address)
-                           (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
-                  (mml-secure-message-sign-smime))))
-
-    (setq smime-keys
-          `((,(getenv "SWARSEL_MAIL_WORK")
-             ,swarsel-smime-cert-path
-             ("~/Certificates/harica-root.pem"
-              "~/Certificates/harica-intermediate.pem"
-              ))))
-    ))
 
 (use-package org-caldav
   :init
@@ -1856,15 +1830,19 @@ create a new one."
                )
               ))))
 
-(add-to-list 'recentf-exclude "\\Archive\\.org\\'")
-(add-to-list 'recentf-exclude "\\Tasks\\.org\\'")
+(use-package recentf
+  :ensure nil
+  :config
+  (add-to-list 'recentf-exclude "\\Archive\\.org\\'")
+  (add-to-list 'recentf-exclude "\\Tasks\\.org\\'"))
 
 (use-package vterm
-  :ensure t)
+  :ensure t
+  :custom
+  (vterm-tramp-shells '(("ssh" "'sh'"))))
 
 (use-package multiple-cursors)
 
-(setq mu4e--log-max-size 1000)
 (setq message-log-max 30)
 (setq comint-buffer-maximum-size 50)
 (add-hook 'comint-output-filter-functions 'comint-truncate-buffer)
