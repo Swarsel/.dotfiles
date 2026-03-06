@@ -108,7 +108,7 @@ in
 
     networking = {
       hostName = "drugstore";
-      wireless.enable = false;
+      wireless.enable = lib.mkForce false;
       # dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
       networkmanager.enable = true;
       usePredictableInterfaceNames = false;

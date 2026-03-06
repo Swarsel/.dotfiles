@@ -3363,7 +3363,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
       };
   }
 #+end_src
-** Installer images (iso, kexec)
+** Installer images (live iso, kexec)
 :PROPERTIES:
 :CUSTOM_ID: h:1d1ccae5-62ca-4d37-a28e-c59987850ed2
 :END:
@@ -7875,7 +7875,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
 
 #+end_src
-**** TODO Drugstore (ISO installer config)
+**** TODO Drugstore (live ISO installer config)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
 :END:
@@ -8008,7 +8008,7 @@ Steps to recover using live ISO:
 
       networking = {
         hostName = "drugstore";
-        wireless.enable = false;
+        wireless.enable = lib.mkForce false;
         # dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
         networkmanager.enable = true;
         usePredictableInterfaceNames = false;
