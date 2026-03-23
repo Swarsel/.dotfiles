@@ -28,6 +28,9 @@ in
 
     programs.gpg = {
       enable = true;
+      scdaemonSettings = {
+        disable-ccid = true; # prevent conflicts between pcscd and scdameon
+      };
       publicKeys = [
         {
           source = "${self}/secrets/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";

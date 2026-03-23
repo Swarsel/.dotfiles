@@ -8,7 +8,7 @@ in
   config = lib.mkIf config.swarselmodules.yubikey {
     programs.ssh.startAgent = false;
 
-    services.pcscd.enable = false;
+    services.pcscd.enable = true;
 
     hardware.gpgSmartcards.enable = true;
 
