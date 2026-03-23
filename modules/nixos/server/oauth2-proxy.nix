@@ -165,7 +165,7 @@ in
     services = {
       ${serviceName} = {
         enable = true;
-        package = pkgs.update.oauth2-proxy;
+        package = pkgs.oauth2-proxy;
         cookie = {
           domain = ".${mainDomain}";
           secure = true;

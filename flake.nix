@@ -28,7 +28,7 @@
     smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
     nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
     nixpkgs-bisect.url = "github:nixos/nixpkgs/master";
-    nixpkgs-update.url = "github:r-ryantm/nixpkgs/auto-update/oauth2-proxy";
+    # nixpkgs-update.url = "github:r-ryantm/nixpkgs/auto-update/oauth2-proxy";
     # nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
     nixpkgs-kernel.url = "github:nixos/nixpkgs/dd9b079222d43e1943b6ebd802f04fd959dc8e61?narHash=sha256-I45esRSssFtJ8p/gLHUZ1OUaaTaVLluNkABkk6arQwE%3D"; #specifically pinned for kernel version
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
