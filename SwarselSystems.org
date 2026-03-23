@@ -19871,10 +19871,10 @@ This holds configuration that is specific to framework laptops.
       };
       systemd.services."systemd-suspend-then-hibernate".aliases = [ "systemd-suspend.service" ];
       powerManagement.enable = true;
-      systemd.sleep.extraConfig = ''
-        HibernateDelaySec=120m
-        SuspendState=freeze
-      '';
+      systemd.sleep.settings.Sleep = {
+        HibernateDelaySec = "120m";
+        SuspendState = "freeze";
+      };
     };
   }
 #+end_src
@@ -38211,125 +38211,134 @@ The double source block is intended here to circumvent a org-babel convenience w
 
 #+begin_src css :tangle files/firefox/chrome/userChrome.css :mkdirp yes
     /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_toolbox.css made available under Mozilla Public License v. 2.0
-  See the above repository for updates as well as full license text. */
+    See the above repository for updates as well as full license text. */
 
-  /* Hide the whole toolbar area unless urlbar is focused or cursor is over the toolbar
-   ,* Dimensions on non-Win10 OS probably needs to be adjusted.
-   ,*/
+    /* Hide the whole toolbar area unless urlbar is focused or cursor is over the toolbar
+     ,* Dimensions on non-Win10 OS probably needs to be adjusted.
+     ,*/
 
-  :root{
-    --uc-autohide-toolbox-delay: 200ms; /* Wait 0.1s before hiding toolbars */
-    --uc-toolbox-rotation: 82deg;  /* This may need to be lower on mac - like 75 or so */
+    :root{
+      --uc-autohide-toolbox-delay: 200ms; /* Wait 0.1s before hiding toolbars */
+      --uc-toolbox-rotation: 82deg;  /* This may need to be lower on mac - like 75 or so */
+      /* swarsel: added colorscheme */
+      --base00: #1D252C;
+      --base01: #171D23;
+      --base02: #5EC4FF;
+      --base03: #566C7D;
+      --base04: #5EC4FF;
+      --base05: #A0B3C5;
+      --base06: #C06ECE;
+      --base07: #A0B3C5;
+      --base08: #D95468;
+      --base09: #FFA880;
+      --base0A: #5EC4FF;
+      --base0B: #8BD49C;
+      --base0C: #008B94;
+      --base0D: #5EC4FF;
+      --base0E: #C06ECE;
+      --base0F: #5EC4FF;
 
-    --base00: #1D252C;
-    --base01: #171D23;
-    --base02: #5EC4FF;
-    --base03: #566C7D;
-    --base04: #5EC4FF;
-    --base05: #A0B3C5;
-    --base06: #C06ECE;
-    --base07: #A0B3C5;
-    --base08: #D95468;
-    --base09: #FFA880;
-    --base0A: #5EC4FF;
-    --base0B: #8BD49C;
-    --base0C: #008B94;
-    --base0D: #5EC4FF;
-    --base0E: #C06ECE;
-    --base0F: #5EC4FF;
+    }
 
-  }
+    :root[sizemode="maximized"]{
+      --uc-toolbox-rotation: 88.5deg;
+    }
 
-  :root[sizemode="maximized"]{
-    --uc-toolbox-rotation: 88.5deg;
-  }
+    @media  (-moz-platform: windows){
+      :root:not([lwtheme]) #navigator-toolbox{ background-color: -moz-dialog !important; }
+    }
 
-  @media  (-moz-platform: windows){
-    :root:not([lwtheme]) #navigator-toolbox{ background-color: -moz-dialog !important; }
-  }
+    :root[sizemode="fullscreen"],
+    :root[sizemode="fullscreen"] #navigator-toolbox{ margin-top: 0 !important; }
 
-  :root[sizemode="fullscreen"],
-  :root[sizemode="fullscreen"] #navigator-toolbox{ margin-top: 0 !important; }
+    #navigator-toolbox{
+      --browser-area-z-index-toolbox: 3;
+      position: fixed !important;
+      background-color: var(--lwt-accent-color,black) !important;
+      transition: transform 82ms linear, opacity 82ms linear !important;
+      transition-delay: var(--uc-autohide-toolbox-delay) !important;
+      transform-origin: top;
+      transform: rotateX(var(--uc-toolbox-rotation));
+      opacity: 0;
+      line-height: 0;
+      z-index: 1;
+      pointer-events: none;
+      width: 100vw;
+    }
+    :root[sessionrestored] #urlbar[popover]{
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 82ms linear var(--uc-autohide-toolbox-delay), opacity 0ms calc(var(--uc-autohide-toolbox-delay) + 82ms);
+      transform-origin: 0px calc(0px - var(--tab-min-height) - var(--tab-block-margin) * 2);
+      transform: rotateX(89.9deg);
+    }
 
-  #navigator-toolbox{
-    --browser-area-z-index-toolbox: 3;
-    position: fixed !important;
-    background-color: var(--lwt-accent-color,black) !important;
-    transition: transform 82ms linear, opacity 82ms linear !important;
-    transition-delay: var(--uc-autohide-toolbox-delay) !important;
-    transform-origin: top;
-    transform: rotateX(var(--uc-toolbox-rotation));
-    opacity: 0;
-    line-height: 0;
-    z-index: 1;
-    pointer-events: none;
-    width: 100vw;
-  }
-  :root[sessionrestored] #urlbar[popover]{
-    pointer-events: none;
-    opacity: 0;
-    transition: transform 82ms linear var(--uc-autohide-toolbox-delay), opacity 0ms calc(var(--uc-autohide-toolbox-delay) + 82ms);
-    transform-origin: 0px calc(0px - var(--tab-min-height) - var(--tab-block-margin) * 2);
-    transform: rotateX(89.9deg);
-  }
+    :root[window-modal-open] #urlbar[popover],
+    #mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel), > #tab-group-editor > [panelopen]) ~ toolbox #urlbar[popover],
+    /* swarsel: removed hover from next line */
+    #navigator-toolbox:is(:focus-within,[movingtab]) #urlbar[popover],
+    :where(:root[sessionrestored]) #urlbar-container > #urlbar[popover]:is([focused],[open]){
+      pointer-events: auto;
+      opacity: 1;
+      transition-delay: 33ms;
+      transform: rotateX(0deg);
+    }
 
-  :root[window-modal-open] #urlbar[popover],
-  #mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel), > #tab-group-editor > [panelopen]) ~ toolbox #urlbar[popover],
-    /* swarsel: removed :hover from below line */
-  #navigator-toolbox:is(:focus-within,[movingtab]) #urlbar[popover],
-  #urlbar-container > #urlbar[popover]:is([focused],[open]){
-    pointer-events: auto;
-    opacity: 1;
-    transition-delay: 33ms;
-    transform: rotateX(0deg);
-  }
-
-  :root[window-modal-open] #navigator-toolbox,
-  #mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel), > #tab-group-editor > [panelopen]) ~ toolbox,
-  #navigator-toolbox:has(#urlbar:is([open],[focus-within])),
-    /* swarsel: removed :hover from below line */
-  #navigator-toolbox:is(:focus-within,[movingtab]){
-    transition-delay: 33ms !important;
-    transform: rotateX(0);
-    opacity: 1;
-  }
-  /* This makes things like OS menubar/taskbar show the toolbox when hovered in maximized windows.
-   ,* Unfortunately it also means that other OS native surfaces (such as context menu on macos)
-   ,* and other always-on-top applications will trigger toolbox to show up. */
-  @media -moz-pref("userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
-    :root[sizemode="maximized"]:not(:hover){
-      #navigator-toolbox:not(:-moz-window-inactive),
-      #urlbar[popover]:not(:-moz-window-inactive){
-        transition-delay: 33ms !important;
-        transform: rotateX(0);
-        opacity: 1;
+    :root[window-modal-open] #navigator-toolbox,
+    #mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel), > #tab-group-editor > [panelopen]) ~ toolbox,
+    #navigator-toolbox:has(#urlbar:is([open],[focus-within])),
+    /* swarsel: removed hover from next line */
+    #navigator-toolbox:is(:focus-within,[movingtab]){
+      transition-delay: 33ms !important;
+      transform: rotateX(0);
+      opacity: 1;
+    }
+    /* This makes things like OS menubar/taskbar show the toolbox when hovered in maximized windows.
+     ,* Unfortunately it also means that other OS native surfaces (such as context menu on macos)
+     ,* and other always-on-top applications will trigger toolbox to show up. */
+    @media -moz-pref("userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
+      :root[sizemode="maximized"]:not(:hover){
+        #navigator-toolbox:not(:-moz-window-inactive),
+        #urlbar[popover]:not(:-moz-window-inactive){
+          transition-delay: 33ms !important;
+          transform: rotateX(0);
+          opacity: 1;
+        }
       }
     }
-  }
 
-  #navigator-toolbox > *{ line-height: normal; pointer-events: auto }
+    /* swarsel: set pointer-events to none !important */
+    #navigator-toolbox > *{ line-height: normal; pointer-events: none !important }
 
-  /* Don't apply transform before window has been fully created */
-  :root:not([sessionrestored]) #navigator-toolbox{ transform:none !important }
+    /* swarsel: make toolbox clickable */
+    :root[window-modal-open] #navigator-toolbox > *,
+    #mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel), > #tab-group-editor > [panelopen]) ~ toolbox > *,
+    #navigator-toolbox:has(#urlbar:is([open],[focus-within])) > *,
+    #navigator-toolbox:is(:focus-within,[movingtab],:hover) > * {
+        pointer-events: auto !important;
+    }
 
-  :root[customizing] #navigator-toolbox{
-    position: relative !important;
-    transform: none !important;
-    opacity: 1 !important;
-  }
+    /* Don't apply transform before window has been fully created */
+    :root:not([sessionrestored]) #navigator-toolbox{ transform:none !important }
 
-  #navigator-toolbox[inFullscreen] > #PersonalToolbar,
-  #PersonalToolbar:is([collapsed=""],[collapsed="true"]){ display: none }
+    :root[customizing] #navigator-toolbox{
+      position: relative !important;
+      transform: none !important;
+      opacity: 1 !important;
+    }
 
-  /* This is a bit hacky fix for an issue that will make urlbar zero pixels tall after you enter customize mode */
-  #urlbar[breakout][breakout-extend] > .urlbar-input-container{
-    padding-block: calc(min(4px,(var(--urlbar-container-height) - var(--urlbar-height)) / 2) + var(--urlbar-container-padding)) !important;
-  }
+    #navigator-toolbox[inFullscreen] > #PersonalToolbar,
+    #PersonalToolbar:is([collapsed=""],[collapsed="true"]){ display: none }
 
-  /* Uncomment the following for compatibility with tabs_on_bottom.css - this isn't well tested though */
-  /*
-  #navigator-toolbox{ flex-direction: column; display: flex; }
-  ,*/
+    /* This is a bit hacky fix for an issue that will make urlbar zero pixels tall after you enter customize mode */
+    #urlbar[breakout][breakout-extend] > .urlbar-input-container{
+      padding-block: calc(min(4px,(var(--urlbar-container-height) - var(--urlbar-height)) / 2) + var(--urlbar-container-padding)) !important;
+    }
+
+    /* Uncomment the following for compatibility with tabs_on_bottom.css - this isn't well tested though */
+    /*
+    #navigator-toolbox{ flex-direction: column; display: flex; }
+    ,*/
 
 #+end_src
 ** Default Flake Template

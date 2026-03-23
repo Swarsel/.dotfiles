@@ -22,9 +22,9 @@
     };
     systemd.services."systemd-suspend-then-hibernate".aliases = [ "systemd-suspend.service" ];
     powerManagement.enable = true;
-    systemd.sleep.extraConfig = ''
-      HibernateDelaySec=120m
-      SuspendState=freeze
-    '';
+    systemd.sleep.settings.Sleep = {
+      HibernateDelaySec = "120m";
+      SuspendState = "freeze";
+    };
   };
 }
