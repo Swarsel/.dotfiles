@@ -465,9 +465,6 @@ create a new one."
 (set-language-environment "UTF-8")
 ;; (profiler-start 'cpu)
 ;; set default font size
-(defvar swarsel/default-font-size 130)
-(setq swarsel-standard-font "FiraCode Nerd Font Mono"
-      swarsel-alt-font "FiraCode Nerd Font Mono")
 
 ;; (defalias 'yes-or-no-p 'y-or-n-p)
 ;;(setq-default show-trailing-whitespace t)
@@ -655,18 +652,12 @@ create a new one."
 ;; set the NixOS wordlist by hand
 (setq ispell-alternate-dictionary (getenv "WORDLIST"))
 
-(dolist (face '(default fixed-pitch))
-  (set-face-attribute face nil
-                      :font "FiraCode Nerd Font Mono"))
-(add-to-list 'default-frame-alist '(font . "FiraCode Nerd Font Mono"))
+(setq swarsel/fixed-font "FiraCode Nerd Font"
+      swarsel/variable-font "Iosevka Aile")
 
-(set-face-attribute 'default nil :height 100)
-(set-face-attribute 'fixed-pitch nil :height 1.0)
-
-(set-face-attribute 'variable-pitch nil
-                    :family "IBM Plex Sans"
-                    :weight 'regular
-                    :height 1.06)
+(set-face-attribute 'default nil :font swarsel/fixed-font :height 100)
+(set-face-attribute 'fixed-pitch nil :font swarsel/fixed-font :height 130)
+(set-face-attribute 'variable-pitch nil :font swarsel/variable-font :weight 'light :height 130)
 
 (use-package solaire-mode
   :custom
@@ -925,6 +916,7 @@ create a new one."
   (org-html-htmlize-output-type nil)
   (org-fold-core-style 'overlays)
   (org-src-preserve-indentation nil)
+  (org-src-fontify-natively t)
   (org-export-with-broken-links 'mark)
   (org-confirm-babel-evaluate nil)
   :config
@@ -935,6 +927,7 @@ create a new one."
   (setq org-support-shift-select t)
 
   (setq org-agenda-start-with-log-mode t)
+  (setq org-fontify-quote-and-verse-blocks t)
   (setq org-log-done 'time)
   (setq org-log-into-drawer t)
   (setq org-startup-with-inline-images t)
@@ -962,6 +955,28 @@ create a new one."
      (python . t)
      (js . t)
      (shell . t)))
+
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-quote nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verse nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+
+
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.0)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.0)
+                  (org-level-6 . 1.0)
+                  (org-level-7 . 1.0)
+                  (org-level-8 . 1.0)))
+    (set-face-attribute (car face) nil :font swarsel/variable-font :weight 'medium :height (cdr face)))
 
   (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
 
@@ -1033,8 +1048,11 @@ create a new one."
   (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
                                      (header-line (:height 4.0) variable-pitch)
                                      (org-document-title (:height 1.75) org-document-title)
-                                     (org-code (:height 1.55) org-code)
-                                     (org-verbatim (:height 1.55) org-verbatim)
+                                     (org-code (:height 1.2) org-code)
+                                     (org-verbatim (:height 1.0) org-verbatim)
+                                     (org-quote (:height 1.0) org-quote)
+                                     (org-verse (:height 1.0) org-verse)
+                                     (org-table (:height 0.8) org-table)
                                      (org-block (:height 1.25) org-block)
                                      (org-block-begin-line (:height 0.7) org-block)
                                      ))
@@ -1046,7 +1064,7 @@ create a new one."
                   (org-level-6 . 1.2)
                   (org-level-7 . 1.2)
                   (org-level-8 . 1.2)))
-    (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+    (set-face-attribute (car face) nil :font swarsel/variable-font :weight 'medium :height (cdr face)))
 
   (setq header-line-format " ")
   (setq visual-fill-column-width 90)
@@ -1074,7 +1092,7 @@ create a new one."
                   (org-level-6 . 0.9)
                   (org-level-7 . 0.9)
                   (org-level-8 . 0.9)))
-    (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+    (set-face-attribute (car face) nil :font swarsel/variable-font :weight 'medium :height (cdr face)))
   (setq header-line-format nil)
   (setq visual-fill-column-width 150)
   (setq indicate-buffer-boundaries t)

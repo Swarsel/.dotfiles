@@ -108,8 +108,6 @@ in
               "libreoffice"
               "libreoffice-qt"
               "nerd-fonts-symbols-only"
-              "noto-fonts"
-              "noto-fonts-cjk-sans"
               "noto-fonts-color-emoji"
               # "pipewire"
               "podman"

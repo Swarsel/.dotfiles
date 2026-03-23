@@ -46,6 +46,7 @@
                 '(undecorated . t) ; no title bar, borders etc.
                 '(background-color . "#1D252C") ; load doom-citylight colors to avoid white flash
                 '(foreground-color . "#A0B3C5") ; load doom-citylight colors to avoid white flash
+                '(font . "FiraCode Nerd Font")
                 '(vertical-scroll-bars . nil)
                 '(horizontal-scroll-bars . nil)
                 '(internal-border-width . 5)

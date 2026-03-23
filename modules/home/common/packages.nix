@@ -171,13 +171,12 @@
       })
 
       # font stuff
-      nerd-fonts.fira-mono
+      cantarell-fonts
       nerd-fonts.fira-code
+      (iosevka-bin.override { variant = "Aile"; })
       nerd-fonts.symbols-only
       noto-fonts-color-emoji
       font-awesome_5
-      noto-fonts
-      noto-fonts-cjk-sans
     ];
   };
 }

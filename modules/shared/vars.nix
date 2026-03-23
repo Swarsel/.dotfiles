@@ -37,23 +37,27 @@
           };
           serif = {
             # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-            package = pkgs.cantarell-fonts;
+            # package = pkgs.cantarell-fonts;
             # package = pkgs.montserrat;
-            name = "Cantarell";
+            # name = "Cantarell";
+            package = pkgs.iosevka-bin.override { variant = "Aile"; };
+            name = "Iosevka Aile";
             # name = "FiraCode Nerd Font Propo";
             # name = "Montserrat";
           };
           sansSerif = {
             # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-            package = pkgs.cantarell-fonts;
+            # package = pkgs.cantarell-fonts;
             # package = pkgs.montserrat;
-            name = "Cantarell";
+            # name = "Cantarell";
+            package = pkgs.iosevka-bin.override { variant = "Aile"; };
+            name = "Iosevka Aile";
             # name = "FiraCode Nerd Font Propo";
             # name = "Montserrat";
           };
           monospace = {
-            package = pkgs.nerd-fonts.fira-mono; # has overrides
-            name = "FiraCode Nerd Font Mono";
+            package = pkgs.nerd-fonts.fira-code; # has overrides
+            name = "FiraCode Nerd Font";
           };
           emoji = {
             package = pkgs.noto-fonts-color-emoji;
