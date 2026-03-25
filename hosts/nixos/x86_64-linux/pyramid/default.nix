@@ -79,6 +79,7 @@ in
     personal = true;
   };
 
+  networking.nftables.firewall.zones.untrusted.interfaces = [ "wlan*" "enp*" ];
   # networking.nftables = {
   #   enable = lib.mkForce false;
   #   firewall.enable = lib.mkForce false;

@@ -123,14 +123,64 @@ in
       };
 
 
-      firewall = {
-        enable = lib.mkDefault true;
-        trustedInterfaces = [ "virbr0" ];
+      nftables = {
+        firewall = {
+          zones = {
+            virbr = {
+              interfaces = [ "virbr*" ];
+            };
+          };
+          rules = {
+            virbr-dns-dhcp = {
+              from = [ "virbr" ];
+              to = [ "local" ];
+              allowedTCPPorts = [ 53 ];
+              allowedUDPPorts = [ 53 67 547 ];
+            };
+            virbr-forward = {
+              from = [ "virbr" ];
+              to = [ "untrusted" ];
+              verdict = "accept";
+            };
+            virbr-forward-return = {
+              from = [ "untrusted" ];
+              to = [ "virbr" ];
+              extraLines = [
+                "ct state { established, related } accept"
+              ];
+            };
+          };
+        };
+        chains.postrouting.libvirt-masq = {
+          after = [ "dnat" ];
+          rules = [
+            "iifname \"virbr*\" masquerade"
+          ];
+        };
       };
+
       search = [
         "vbc.ac.at"
         "clip.vbc.ac.at"
         "imp.univie.ac.at"
+      ];
+    };
+
+    systemd.services = {
+      virtqemud.path = with pkgs; [
+        qemu_kvm
+        libvirt
+      ];
+
+      virtstoraged.path = with pkgs; [
+        qemu_kvm
+        libvirt
+      ];
+
+      virtnetworkd.path = with pkgs; [
+        dnsmasq
+        iproute2
+        nftables
       ];
     };
 
@@ -144,22 +194,12 @@ in
           runAsRoot = true;
           swtpm.enable = true;
           vhostUserPackages = with pkgs; [ virtiofsd ];
-          # ovmf = {
-          #   enable = true;
-          #   packages = [
-          #     (pkgs.OVMFFull.override {
-          #       secureBoot = true;
-          #       tpmSupport = true;
-          #     }).fd
-          #   ];
-          # };
         };
       };
     };
 
     environment.systemPackages = with pkgs; [
       remmina
-      # gp-onsaml-gui
       python39
       qemu
       packer
@@ -168,7 +208,6 @@ in
       govc
       terraform
       opentofu
-      # dev.terragrunt
       terragrunt
       graphviz
       azure-cli
@@ -192,7 +231,7 @@ in
       openssh = {
         enable = true;
         extraConfig = ''
-            '';
+                '';
       };
 
       syncthing = {
@@ -213,10 +252,9 @@ in
         };
       };
 
-      # ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.kanshi}/bin/kanshictl switch laptoponly"
       udev.extraRules = ''
         # lock screen when yubikey removed
-        ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
+                  ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
       '';
 
     };
