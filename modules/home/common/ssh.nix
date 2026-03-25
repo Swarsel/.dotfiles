@@ -11,7 +11,7 @@
       '';
       matchBlocks = {
         "*" = {
-          forwardAgent = true;
+          forwardAgent = false;
           addKeysToAgent = "no";
           compression = false;
           serverAliveInterval = 0;

@@ -6,9 +6,20 @@ in
 {
   options.swarselmodules.yubikey = lib.mkEnableOption "yubikey config";
   config = lib.mkIf config.swarselmodules.yubikey {
-    programs.ssh.startAgent = false;
+    programs.ssh = {
+      startAgent = false; # yes we want this to use FIDO2 keys
+      # enableAskPassword = true;
+      # askPassword = lib.getExe pkgs.kdePackages.ksshaskpass;
+    };
+    services = {
+      gnome.gcr-ssh-agent.enable = false;
+      yubikey-agent.enable = false;
+      pcscd.enable = true;
 
-    services.pcscd.enable = true;
+      udev.packages = with pkgs; [
+        yubikey-personalization
+      ];
+    };
 
     hardware.gpgSmartcards.enable = true;
 
@@ -27,9 +38,8 @@ in
       };
     };
 
-    services.udev.packages = with pkgs; [
-      yubikey-personalization
+    environment.systemPackages = with pkgs; [
+      kdePackages.ksshaskpass
     ];
-
   };
 }

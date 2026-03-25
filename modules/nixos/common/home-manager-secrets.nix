@@ -4,6 +4,7 @@ let
   inherit (config.repo.secrets.common.emacs) radicaleUser;
 
   certsSopsFile = self + /secrets/repo/certs.yaml;
+  workSopsFile = self + /secrets/work/secrets.yaml;
 in
 {
   config = { } // lib.optionalAttrs withHomeManager {
@@ -29,6 +30,8 @@ in
           github-forge-token = { owner = mainUser; };
         }) // (lib.optionalAttrs (modules ? optional-work) {
           harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
+          yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
+          ucKey = { sopsFile = workSopsFile; owner = mainUser; };
         }) // (lib.optionalAttrs (modules ? optional-noctalia) {
           radicale-token = { owner = mainUser; };
         }) // (lib.optionalAttrs modules.anki {

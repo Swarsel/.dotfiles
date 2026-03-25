@@ -4,6 +4,7 @@ let
   inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
   inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
 
+  sopsFile = self + /secrets/work/secrets.yaml;
   certsSopsFile = self + /secrets/repo/certs.yaml;
 in
 {
@@ -148,7 +149,7 @@ in
 
     programs =
       let
-        inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 clouds;
+        inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long path1 site1 site2 site3 site4 site5 site6 site7 clouds;
       in
       {
         openstackclient = {
@@ -203,41 +204,7 @@ in
           };
         };
 
-        ssh = {
-          matchBlocks = {
-            "${loc1}" = {
-              hostname = "${loc1}.${domain2}";
-              user = user4;
-            };
-            "${loc1}.stg" = {
-              hostname = "${loc1}.${lifecycle1}.${domain2}";
-              user = user4;
-            };
-            "${loc1}.staging" = {
-              hostname = "${loc1}.${lifecycle1}.${domain2}";
-              user = user4;
-            };
-            "${loc1}.dev" = {
-              hostname = "${loc1}.${lifecycle2}.${domain2}";
-              user = user4;
-            };
-            "${loc2}" = {
-              hostname = "${loc2}.${domain1}";
-              user = user1Long;
-            };
-            "${loc2}.stg" = {
-              hostname = "${loc2}.${lifecycle1}.${domain2}";
-              user = user1Long;
-            };
-            "${loc2}.staging" = {
-              hostname = "${loc2}.${lifecycle1}.${domain2}";
-              user = user1Long;
-            };
-            "*.${domain1}" = {
-              user = user1Long;
-            };
-          };
-        };
+        ssh.matchBlocks = confLib.getConfig.repo.secrets.local.work.sshConfig;
 
         firefox = {
           profiles =
@@ -764,6 +731,8 @@ in
         path = "${homeDir}/.aws/certs/harica-root.pem";
         owner = mainUser;
       };
+      yubikey-1 = { inherit sopsFile; owner = mainUser; };
+      ucKey = { inherit sopsFile; owner = mainUser; };
     };
 
   };

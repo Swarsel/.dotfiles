@@ -8866,6 +8866,7 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
     inherit (config.repo.secrets.common.emacs) radicaleUser;
 
     certsSopsFile = self + /secrets/repo/certs.yaml;
+    workSopsFile = self + /secrets/work/secrets.yaml;
   in
   {
     config = { } // lib.optionalAttrs withHomeManager {
@@ -8891,6 +8892,8 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
             github-forge-token = { owner = mainUser; };
           }) // (lib.optionalAttrs (modules ? optional-work) {
             harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
+            yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
+            ucKey = { sopsFile = workSopsFile; owner = mainUser; };
           }) // (lib.optionalAttrs (modules ? optional-noctalia) {
             radicale-token = { owner = mainUser; };
           }) // (lib.optionalAttrs modules.anki {
@@ -9302,7 +9305,7 @@ This system, while highly pleasant to work with during everyday use, sometimes h
 
 #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-  { config, inputs, lib, nodes, globals, ... }:
+  { config, inputs, lib, homeLib, nodes, globals, ... }:
   let
     # If the given expression is a bare set, it will be wrapped in a function,
     # so that the imported file can always be applied to the inputs, similar to
@@ -9356,7 +9359,7 @@ This system, while highly pleasant to work with during everyday use, sometimes h
 
         secrets = lib.mkOption {
           readOnly = true;
-          default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes globals inputs; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
+          default = lib.mapAttrs (_: x: importEncrypted x { inherit lib homeLib nodes globals inputs config; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
           type = lib.types.unspecified;
           description = "Exposes the loaded repo secrets. This option is read-only.";
         };
@@ -10736,9 +10739,20 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
   {
     options.swarselmodules.yubikey = lib.mkEnableOption "yubikey config";
     config = lib.mkIf config.swarselmodules.yubikey {
-      programs.ssh.startAgent = false;
+      programs.ssh = {
+        startAgent = false; # yes we want this to use FIDO2 keys
+        # enableAskPassword = true;
+        # askPassword = lib.getExe pkgs.kdePackages.ksshaskpass;
+      };
+      services = {
+        gnome.gcr-ssh-agent.enable = false;
+        yubikey-agent.enable = false;
+        pcscd.enable = true;
 
-      services.pcscd.enable = true;
+        udev.packages = with pkgs; [
+          yubikey-personalization
+        ];
+      };
 
       hardware.gpgSmartcards.enable = true;
 
@@ -10757,13 +10771,12 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
         };
       };
 
-      services.udev.packages = with pkgs; [
-        yubikey-personalization
+      environment.systemPackages = with pkgs; [
+        kdePackages.ksshaskpass
       ];
-
     };
   }
-#+end_src
+        #+end_src
 
 ***** Ledger
 :PROPERTIES:
@@ -21179,7 +21192,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
         '';
         matchBlocks = {
           "*" = {
-            forwardAgent = true;
+            forwardAgent = false;
             addKeysToAgent = "no";
             compression = false;
             serverAliveInterval = 0;
@@ -27494,6 +27507,7 @@ When setting up a new machine:
     inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
     inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
 
+    sopsFile = self + /secrets/work/secrets.yaml;
     certsSopsFile = self + /secrets/repo/certs.yaml;
   in
   {
@@ -27638,7 +27652,7 @@ When setting up a new machine:
 
       programs =
         let
-          inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 clouds;
+          inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long path1 site1 site2 site3 site4 site5 site6 site7 clouds;
         in
         {
           openstackclient = {
@@ -27693,41 +27707,7 @@ When setting up a new machine:
             };
           };
 
-          ssh = {
-            matchBlocks = {
-              "${loc1}" = {
-                hostname = "${loc1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.stg" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.staging" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.dev" = {
-                hostname = "${loc1}.${lifecycle2}.${domain2}";
-                user = user4;
-              };
-              "${loc2}" = {
-                hostname = "${loc2}.${domain1}";
-                user = user1Long;
-              };
-              "${loc2}.stg" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "${loc2}.staging" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "*.${domain1}" = {
-                user = user1Long;
-              };
-            };
-          };
+          ssh.matchBlocks = confLib.getConfig.repo.secrets.local.work.sshConfig;
 
           firefox = {
             profiles =
@@ -28254,6 +28234,8 @@ When setting up a new machine:
           path = "${homeDir}/.aws/certs/harica-root.pem";
           owner = mainUser;
         };
+        yubikey-1 = { inherit sopsFile; owner = mainUser; };
+        ucKey = { inherit sopsFile; owner = mainUser; };
       };
 
     };
