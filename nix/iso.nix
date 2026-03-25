@@ -11,11 +11,22 @@
             inputs.home-manager.nixosModules.home-manager
             "${self}/install/installer-config.nix"
           ];
-          format =
-            {
-              x86_64-linux = "install-iso";
-              aarch64-linux = "sd-aarch64-installer";
-            }.${system};
+          format = {
+            x86_64-linux = "install-iso";
+            aarch64-linux = "sd-aarch64-installer";
+          }.${system};
+        };
+
+        keygen = inputs.nixos-generators.nixosGenerate {
+          inherit pkgs system;
+          modules = [
+            inputs.home-manager.nixosModules.home-manager
+            "${self}/install/keygen-config.nix"
+          ];
+          format = {
+            x86_64-linux = "install-iso";
+            aarch64-linux = "sd-aarch64-installer";
+          }.${system};
         };
 
         # nix build --print-out-paths --no-link .#pnap-kexec --system <system>

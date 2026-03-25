@@ -30,6 +30,7 @@ in
       enable = true;
       scdaemonSettings = {
         disable-ccid = true; # prevent conflicts between pcscd and scdameon
+        # pcsc-shared = true; # as long as only one key is used, this prevents key from not being detected sometimes
       };
       publicKeys = [
         {

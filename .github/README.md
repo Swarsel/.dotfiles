@@ -185,6 +185,7 @@
   |🪟 **chaostheater**  | Asus Z97-A, i7-4790k, GTX970, 32GB RAM              | Home Game Streaming Server (Windows/AtlasOS, not nix-managed)   |
   |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                                           |
   |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts                 |
+  |💿 **policestation** | -                                                   | NixOS live ISO for generating cryptographic keys                  |
   |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines             |
   |❔ **hotel**         | -                                                   | Demo config for checking out this configuration                 |
   |❔ **toto**          | -                                                   | Helper configuration for testing purposes                       |
