@@ -24,7 +24,7 @@ in
           in
           ''
             plugin-files = ${nix-plugins}/lib/nix/plugins
-            extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
           '';
         settings = {
           experimental-features = [

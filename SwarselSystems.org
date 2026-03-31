@@ -1781,6 +1781,8 @@ A short overview over each input and what it does:
 
       topologyPrivate.url = "./files/topology/public";
 
+      den.url = "github:vic/den";
+      import-tree.url = "github:vic/import-tree";
       swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       systems.url = "github:nix-systems/default";
       nur.url = "github:nix-community/NUR";
@@ -1819,20 +1821,7 @@ A short overview over each input and what it does:
     outputs =
       inputs:
       inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-        imports = [
-          ./nix/globals.nix
-          ./nix/hosts.nix
-          ./nix/topology.nix
-          ./nix/devshell.nix
-          ./nix/apps.nix
-          ./nix/packages.nix
-          ./nix/overlays.nix
-          ./nix/lib.nix
-          ./nix/templates.nix
-          ./nix/formatter.nix
-          ./nix/modules.nix
-          ./nix/iso.nix
-        ];
+        imports = [ (inputs.import-tree [ ./flake  ]) ];
         systems = [
           "x86_64-linux"
           "aarch64-linux"
@@ -1863,7 +1852,7 @@ This file is used by [[https://github.com/shlevy/nix-plugins][nix-plugins]]. nix
 
 The builtin that is added is a simple call to the =exec= function that calls a bash script. In order to keep some sanity, we are checking that we are actually calling it no an encryted nix file (even though there is no syntax check inside) and that the path given is a true nix path. Note that a string path will not be accepted, as that can have impurity implications.
 
-#+begin_src nix-ts :tangle nix/extra-builtins.nix
+#+begin_src nix-ts :tangle files/nix/extra-builtins.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
   { exec, ... }:
   let
@@ -1887,7 +1876,7 @@ The builtin that is added is a simple call to the =exec= function that calls a b
         assert assertMsg (hasSuffix ".nix.enc" nixFile)
           "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
         exec [
-          ./sops-decrypt-and-cache.sh
+          ./files/scripts/sops-decrypt-and-cache.sh
           nixFile
         ];
   }
@@ -1900,7 +1889,7 @@ The builtin that is added is a simple call to the =exec= function that calls a b
 
 This is the file that manages the actual decryption of the files mentioned in [[#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e][extra-builtins]]. We simply fetch the appropriate system age key from the ssh host key and then call =sops decrypt=. Since it would be a bother to decrypt these files on every build, I keep the result cached and only re-decrypt if it changes. Keeping it cached outside the nix store incurrs a theoretical bit of impurity. However, this is easier to manage and also nothing really relies on these files being present.
 
-#+begin_src shell :tangle nix/sops-decrypt-and-cache.sh :shebang #!/usr/bin/env bash
+#+begin_src shell :tangle files/scripts/sops-decrypt-and-cache.sh :shebang #!/usr/bin/env bash
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/rage-decrypt-and-cache.sh
   set -euo pipefail
 
@@ -1988,7 +1977,7 @@ Concerning the =flake = _:= part:
   - this is a mechanism introduced by [[https://flake.parts/][flake-parts]]. A =flake= output is akin to a 'normal' output of a standard nix flake (meaning, it will not be built specifically for each system defined by =mkFlake=)
   - =lib= is then defined as the merged set of the =nixpkgs= and =home-manager= lib's, as well as some extra functions that I defined in the let-block (the =.extend()= method adds attributes to a set)
 
-#+begin_src nix-ts :tangle nix/lib.nix
+#+begin_src nix-ts :tangle flake/lib.nix
   { self, inputs, ... }:
   let
     swarselsystems =
@@ -2106,7 +2095,7 @@ The =_module.args= part is needed because we need to set/override the =flake-par
 
 More information on the actual packages build can be found in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]].
 
-#+begin_src nix-ts :tangle nix/packages.nix
+#+begin_src nix-ts :tangle flake/packages.nix
   { self, inputs, ... }:
   {
     imports = [
@@ -2176,7 +2165,7 @@ Lastly, in order make this actually available to my configurations, i use the =i
 
 Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we again create a perSystem module for =globals=. We want this because we need to ingest the right =lib= with the extensions from =nixos-extra-modules= as discussed in [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]]. One side effect is that instead of a single =globals= output, we instead create outputs of the form =globals.<arch>=. This is not a problem as long as we pass one of these in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]], but it needs to be kept in mind. In effect, because we overrode =pkgs=, we can now use the =perSystem= module argument =pkgs= which will fetch the right =pkgs=. Anther method would be using =inputs'= together with =inputs'.pkgs.lib= as per https://flake.parts/module-arguments.html?highlight=modulewith#inputs.
 
-#+begin_src nix-ts :tangle nix/globals.nix
+#+begin_src nix-ts :tangle flake/globals.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
   { self, inputs, ... }:
   {
@@ -2212,7 +2201,7 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
                   let
                     sopsImportEncrypted =
                       assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
-                        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./nix/extra-builtins.nix` ?";
+                        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./files/nix/extra-builtins.nix` ?";
                       builtins.extraBuiltins.sopsImportEncrypted;
                   in
 
@@ -2285,7 +2274,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
  - =halfConfigurationsPerArch= returns all halfConfigurations of a certain type (android or home-manager only)
  - =ConfigurationsPerArch= does the same for full NixOS systems (NixOS or darwin). These can further be specialized by passing in the corresponding =minimal= arg that is used during bootstrapping.
 
-#+begin_src nix-ts :tangle nix/hosts.nix
+#+begin_src nix-ts :tangle flake/hosts.nix
   { self, inputs, ... }:
   {
     flake = { config, ... }:
@@ -2515,7 +2504,7 @@ This defines some topology for the [[https://github.com/oddlama/nix-topology][ni
 Another note concerning [[https://flake.parts/][flake-parts]]:
   - =perSystem= is a mechanism that tells flake-parts to build the following attribute set for all systems. This replaces the need to handle myself any =system= or =pkgs= variables, this is done by flake-parts. In this case this is needed so that the topology diagram can be built locally.
 
-#+begin_src nix-ts :tangle nix/topology.nix
+#+begin_src nix-ts :tangle flake/topology.nix
   { self, inputs, ... }:
   {
     imports = [
@@ -2806,7 +2795,7 @@ The devshell also provides a number of useful shorthand commands, as well as a '
 
 Aside from the =default= devShell which is the one that should usually be called interactively, I also define a =deploy= devshell: this one compiles nix-plugins against an earlier version of nix, which is needed so that the version nixos-anywhere that I am using works. However, that version is a little annoying since it had a bug in nix-plugins that is here fixed using a patch file. I guess it also serves as another fallback should problems with the current nix-plugins version arise.
 
-#+begin_src nix-ts :tangle nix/devshell.nix
+#+begin_src nix-ts :tangle flake/devshell.nix
   { self, inputs, ... }:
   {
     imports = [
@@ -2878,9 +2867,9 @@ Aside from the =default= devShell which is the one that should usually be called
                     value = ''
                       plugin-files = ${pkgs.stable25_05.nix-plugins.overrideAttrs (o: {
                         buildInputs = [pkgs.stable25_05.nixVersions."nix_${nix-version}" pkgs.stable25_05.boost];
-                        patches = (o.patches or []) ++ [./nix-plugins.patch];
+                        patches = (o.patches or []) ++ [./files/patches/nix-plugins.patch];
                       })}/lib/nix/plugins
-                      extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                      extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
                     '';
                   }
                 ];
@@ -2988,7 +2977,7 @@ Aside from the =default= devShell which is the one that should usually be called
                     name = "NIX_CONFIG";
                     value = ''
                       plugin-files = ${nix-plugins}/lib/nix/plugins
-                      extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                      extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
                     '';
                   }
                 ];
@@ -3009,7 +2998,7 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
 
 - uses [[#h:c63cd469-7724-4a05-b932-8843722a00f0][builtins.listToAttrs]]
 
-#+begin_src nix-ts :tangle nix/templates.nix
+#+begin_src nix-ts :tangle flake/templates.nix
   { self, ... }:
   {
     flake = _: {
@@ -3047,7 +3036,7 @@ Defines a formatter that can be called using =nix fmt=.
 
 Usually all formatting in this repo is done automatically while editing in emacs. However, it is nice to have a backup formatter to rely on and treefmt is extermely nice to work with, as it allows setting formatters for all kinds of aspects of the flake.
 
-#+begin_src nix-ts :tangle nix/formatter.nix
+#+begin_src nix-ts :tangle flake/formatter.nix
       { inputs, ... }:
       {
         imports = [
@@ -3104,7 +3093,7 @@ This exposes all of my modular configuration as modules. Other people can use th
 
 =homeModules= on the other hand is not standardized in this way (for example, many flakes refer to =homeManagerModules= instead); in order not to unnecessarily break things, I leave it as is.
 
-#+begin_src nix-ts :tangle nix/modules.nix
+#+begin_src nix-ts :tangle flake/modules.nix
   { self, ... }:
   {
     flake = _:
@@ -3128,7 +3117,7 @@ This defines some apps; they differ from normal packages in that they can be cal
 - uses [[#h:c63cd469-7724-4a05-b932-8843722a00f0][builtins.listToAttrs]]
 - uses [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]] to add the default output to thte set of built apps.
 
-#+begin_src nix-ts :tangle nix/apps.nix
+#+begin_src nix-ts :tangle flake/apps.nix
   { self, ... }:
   {
     perSystem = { system, ... }:
@@ -3197,7 +3186,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
 
 - The =_= argument is used like in a number of other programing languages and signals that the argument is never actually used in the function.
 
-#+begin_src nix-ts :tangle nix/overlays.nix
+#+begin_src nix-ts :tangle flake/overlays.nix
   { self, inputs, ... }:
   let
     inherit (self) outputs;
@@ -3375,7 +3364,7 @@ In a similar way, =nix build --print-out-paths --no-link <flake-path>.#pnap-kexe
 
 This is an improvement to what I did earlier, where I did not use =nixos-generators= but instead manually imported the needed modules to make this configration into a bootable USB image. Now, I can just write this in the same way that I would to write any other configuration.
 
-#+begin_src nix-ts :tangle nix/iso.nix
+#+begin_src nix-ts :tangle flake/iso.nix
   { self, inputs, ... }:
   {
     perSystem = { pkgs, system, ... }:
@@ -7962,7 +7951,7 @@ Steps to recover using live ISO:
             buildInputs = [config.nix.package pkgs.boost];
             patches = o.patches or [];
           })}/lib/nix/plugins
-          extra-builtins-file = ${../nix/extra-builtins.nix}
+          extra-builtins-file = ${../files/nix/extra-builtins.nix}
         '';
 
         settings.experimental-features = [ "nix-command" "flakes" ];
@@ -8198,8 +8187,8 @@ This live ISO config provides a secure environment for setting up cryptographic 
         hostName = "policestation";
         resolvconf.enable = false;
         dhcpcd.enable = false;
-        dhcpcd.allowInterfaces = [];
-        interfaces = {};
+        dhcpcd.allowInterfaces = [ ];
+        interfaces = { };
         firewall.enable = true;
         useDHCP = false;
         useNetworkd = false;
@@ -9248,7 +9237,7 @@ A breakdown of the flags being set:
                 in
                 ''
                   plugin-files = ${nix-plugins}/lib/nix/plugins
-                  extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                  extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
                 '' + lib.optionalString (!minimal) ''
                   !include ${config.sops.secrets.github-api-token.path}
                 '';
@@ -9481,7 +9470,7 @@ This system, while highly pleasant to work with during everyday use, sometimes h
     # Throw an error if that doesn't exist.
     sopsImportEncrypted =
       assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
-        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `<flakeRoot>/nix/extra-builtins.nix` ?";
+        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `<flakeRoot>/files/nix/extra-builtins.nix` ?";
       builtins.extraBuiltins.sopsImportEncrypted;
 
     # This "imports" an encrypted .nix.age file by evaluating the decrypted content.
@@ -20926,7 +20915,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
             in
             ''
               plugin-files = ${nix-plugins}/lib/nix/plugins
-              extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
             '';
           settings = {
             experimental-features = [
@@ -25183,6 +25172,8 @@ Normally, I want to push all nix build artifacts to my main cache automatically,
 
         Service = {
           ExecStart = "${lib.getExe pkgs.attic-client} watch-store ${config.swarselsystems.mainUser}:${config.swarselsystems.mainUser}";
+          Restart = "on-failure";
+          RestartSec = 30;
         };
       };
     };
@@ -37472,7 +37463,7 @@ dict-dir /run/current-system/sw/lib/aspell
 :CUSTOM_ID: h:931ff2fd-61f0-4f8f-b221-d879780f38d7
 :END:
 
-#+begin_src diff :tangle nix/nix-plugins.patch
+#+begin_src diff :tangle files/patches/nix-plugins.patch :mkdirp yes
 diff --git a/extra-builtins.cc b/extra-builtins.cc
 index 3a0f90e..bb10f8b 100644
 --- a/extra-builtins.cc

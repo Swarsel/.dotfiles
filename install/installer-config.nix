@@ -49,7 +49,7 @@ in
           buildInputs = [config.nix.package pkgs.boost];
           patches = o.patches or [];
         })}/lib/nix/plugins
-        extra-builtins-file = ${../nix/extra-builtins.nix}
+        extra-builtins-file = ${../files/nix/extra-builtins.nix}
       '';
 
       settings.experimental-features = [ "nix-command" "flakes" ];

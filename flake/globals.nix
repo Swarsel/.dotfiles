@@ -33,7 +33,7 @@
                 let
                   sopsImportEncrypted =
                     assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
-                      "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./nix/extra-builtins.nix` ?";
+                      "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./files/nix/extra-builtins.nix` ?";
                     builtins.extraBuiltins.sopsImportEncrypted;
                 in
 

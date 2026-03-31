@@ -68,6 +68,8 @@
 
     topologyPrivate.url = "./files/topology/public";
 
+    den.url = "github:vic/den";
+    import-tree.url = "github:vic/import-tree";
     swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
     systems.url = "github:nix-systems/default";
     nur.url = "github:nix-community/NUR";
@@ -106,20 +108,7 @@
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [
-        ./nix/globals.nix
-        ./nix/hosts.nix
-        ./nix/topology.nix
-        ./nix/devshell.nix
-        ./nix/apps.nix
-        ./nix/packages.nix
-        ./nix/overlays.nix
-        ./nix/lib.nix
-        ./nix/templates.nix
-        ./nix/formatter.nix
-        ./nix/modules.nix
-        ./nix/iso.nix
-      ];
+      imports = [ (inputs.import-tree [ ./flake ]) ];
       systems = [
         "x86_64-linux"
         "aarch64-linux"

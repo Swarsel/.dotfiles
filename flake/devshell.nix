@@ -69,9 +69,9 @@
                   value = ''
                     plugin-files = ${pkgs.stable25_05.nix-plugins.overrideAttrs (o: {
                       buildInputs = [pkgs.stable25_05.nixVersions."nix_${nix-version}" pkgs.stable25_05.boost];
-                      patches = (o.patches or []) ++ [./nix-plugins.patch];
+                      patches = (o.patches or []) ++ [./files/patches/nix-plugins.patch];
                     })}/lib/nix/plugins
-                    extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                    extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
                   '';
                 }
               ];
@@ -179,7 +179,7 @@
                   name = "NIX_CONFIG";
                   value = ''
                     plugin-files = ${nix-plugins}/lib/nix/plugins
-                    extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                    extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
                   '';
                 }
               ];
