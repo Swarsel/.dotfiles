@@ -1245,7 +1245,9 @@ create a new one."
     (if (and target (< target (point-max)))
         (progn
           (goto-char target)
-          (org-fold-show-entry))
+          (org-fold-show-entry)
+          (unless (pos-visible-in-window-p (point-max))
+            (recenter 0)))
       (org-present-next))))
 
 (defun org-babel-execute:markdown (body params)
