@@ -1,5 +1,84 @@
 { self, inputs, ... }:
+let
+  inherit (self) outputs;
+  inherit (outputs) lib homeLib;
+in
 {
+
+  den.hosts.x86_64-linux.pyramid =
+    let
+      configName = "pyramid";
+      arch = "x86_64-linux";
+    in
+    {
+      modules = [
+        inputs.disko.nixosModules.disko
+        inputs.home-manager.nixosModules.home-manager
+        inputs.impermanence.nixosModules.impermanence
+        inputs.lanzaboote.nixosModules.lanzaboote
+        inputs.microvm.nixosModules.host
+        inputs.microvm.nixosModules.microvm
+        inputs.nix-index-database.nixosModules.nix-index
+        inputs.nix-minecraft.nixosModules.minecraft-servers
+        inputs.nix-topology.nixosModules.default
+        inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+        inputs.simple-nixos-mailserver.nixosModules.default
+        inputs.sops.nixosModules.sops
+        inputs.stylix.nixosModules.stylix
+        inputs.swarsel-nix.nixosModules.default
+        inputs.nixos-nftables-firewall.nixosModules.default
+        inputs.pia.nixosModules.default
+        inputs.niritiling.nixosModules.default
+        inputs.noctoggle.nixosModules.default
+        (inputs.nixos-extra-modules + "/modules/guests")
+        (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+        "${self}/hosts/nixos/${arch}/${configName}"
+        "${self}/profiles/nixos"
+        "${self}/modules/nixos"
+        {
+          _module.args.dns = inputs.dns;
+
+          microvm.guest.enable = lib.mkDefault false;
+
+          networking.hostName = lib.swarselsystems.mkStrong configName;
+
+          node = {
+            name = lib.mkForce configName;
+            arch = lib.mkForce arch;
+            type = lib.mkForce "nixos";
+            secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
+            configDir = ../hosts/nixos/${arch}/${configName};
+            lockFromBootstrapping = lib.swarselsystems.mkStrong true;
+          };
+
+          swarselprofiles = {
+            minimal = lib.swarselsystems.mkStrong true;
+          };
+
+          swarselmodules.server = {
+            ssh = lib.swarselsystems.mkStrong true;
+          };
+
+          swarselsystems = {
+            mainUser = lib.swarselsystems.mkStrong "swarsel";
+          };
+        }
+      ];
+      users.swarsel = { };
+      instantiate = inputs.nixpkgs.lib.nixosSystem {
+        specialArgs = {
+          inherit inputs outputs self homeLib configName arch;
+          minimal = false;
+          inherit (outputs.pkgs.${arch}) lib;
+          inherit (outputs) nodes topologyPrivate;
+          globals = outputs.globals.${arch};
+          type = "nixos";
+          withHomeManager = true;
+          extraModules = [ "${self}/modules/nixos/common/globals.nix" ];
+        };
+      };
+    };
+
   flake = { config, ... }:
     let
       inherit (self) outputs;
@@ -145,7 +224,7 @@
         if builtins.pathExists hostDir then
           builtins.attrNames
             (
-              lib.filterAttrs (_: type: type == "directory")
+              lib.filterAttrs (name: type: type == "directory" && name != "pyramid")
                 (builtins.readDir hostDir)
             ) else [ ];
 
