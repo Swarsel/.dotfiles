@@ -107,8 +107,23 @@
 
   outputs =
     inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ (inputs.import-tree [ ./flake ]) ];
+    let
+      mkNixos = { name, system }: {
+        den.hosts.${system} = {
+          ${name} = { host, ... }: {
+            instantiate = inputs.self.outputs.instantiateNixos { minimal = false; } host.name host.system;
+            users.swarsel = { };
+          };
+
+          "${name}-minimal" = { host, ... }: {
+            instantiate = inputs.self.outputs.instantiateNixos { minimal = true; } host.name host.system;
+            intoAttr = [ "nixosConfigurationsMinimal" host.name ];
+          };
+        };
+      };
+    in
+    inputs.flake-parts.lib.mkFlake { inherit inputs; specialArgs = { inherit mkNixos; }; } {
+      imports = [ (inputs.import-tree [ ./flake ./aspects ]) ];
       systems = [
         "x86_64-linux"
         "aarch64-linux"

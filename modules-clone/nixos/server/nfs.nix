@@ -1,0 +1,51 @@
+{ lib, config, pkgs, globals, confLib, ... }:
+let
+  nfsUser = globals.user.name;
+in
+{
+  options.swarselmodules.server.nfs = lib.mkEnableOption "enable nfs on server";
+  config = lib.mkIf config.swarselmodules.server.nfs {
+
+    users.persistentIds = {
+      avahi = confLib.mkIds 978;
+    };
+
+    environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+      directories = [
+        { directory = "/var/cache/samba"; }
+      ];
+    };
+
+    services = {
+      # add a user with sudo smbpasswd -a <user>
+      samba = {
+        package = pkgs.samba4;
+        enable = true;
+        openFirewall = true;
+        settings.Eternor = {
+          browseable = "yes";
+          "read only" = "no";
+          "guest ok" = "no";
+          path = "/storage";
+          writable = "true";
+          comment = "Eternor";
+          "valid users" = nfsUser;
+        };
+      };
+
+      avahi = {
+        publish.enable = true;
+        publish.userServices = true; # Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
+        nssmdns4 = true;
+        enable = true;
+        openFirewall = true;
+      };
+
+      # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
+      samba-wsdd = {
+        enable = true;
+        openFirewall = true;
+      };
+    };
+  };
+}

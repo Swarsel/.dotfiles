@@ -21,7 +21,7 @@ in
       assert assertMsg (hasSuffix ".nix.enc" nixFile)
         "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
       exec [
-        ./files/scripts/sops-decrypt-and-cache.sh
+        ../scripts/sops-decrypt-and-cache.sh
         nixFile
       ];
 }

@@ -1820,8 +1820,23 @@ A short overview over each input and what it does:
 
     outputs =
       inputs:
-      inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-        imports = [ (inputs.import-tree [ ./flake  ]) ];
+      let
+        mkNixos = { name, system }: {
+          den.hosts.${system} = {
+            ${name} = { host, ... }: {
+              instantiate = inputs.self.outputs.instantiateNixos { minimal = false; } host.name host.system;
+              users.swarsel = {};
+            };
+
+            "${name}-minimal" = { host, ... }: {
+              instantiate = inputs.self.outputs.instantiateNixos { minimal = true; } host.name host.system;
+              intoAttr = [ "nixosConfigurationsMinimal" host.name ];
+            };
+          };
+        };
+      in
+      inputs.flake-parts.lib.mkFlake { inherit inputs; specialArgs = { inherit mkNixos; }; } {
+        imports = [ (inputs.import-tree [ ./flake ./aspects ]) ];
         systems = [
           "x86_64-linux"
           "aarch64-linux"
@@ -1876,7 +1891,7 @@ The builtin that is added is a simple call to the =exec= function that calls a b
         assert assertMsg (hasSuffix ".nix.enc" nixFile)
           "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
         exec [
-          ./files/scripts/sops-decrypt-and-cache.sh
+          ../scripts/sops-decrypt-and-cache.sh
           nixFile
         ];
   }
@@ -2244,7 +2259,7 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
 
 #+end_src
 
-** Hosts
+** Hosts (Legacy)
 :PROPERTIES:
 :CUSTOM_ID: h:5c5bf78a-9a66-436f-bd85-85871d9d402b
 :END:
@@ -2276,85 +2291,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
 
 #+begin_src nix-ts :tangle flake/hosts.nix
   { self, inputs, ... }:
-  let
-    inherit (self) outputs;
-    inherit (outputs) lib homeLib;
-  in
   {
-
-    den.hosts.x86_64-linux.pyramid =
-      let
-        configName = "pyramid";
-        arch = "x86_64-linux";
-      in
-      {
-        modules = [
-          inputs.disko.nixosModules.disko
-          inputs.home-manager.nixosModules.home-manager
-          inputs.impermanence.nixosModules.impermanence
-          inputs.lanzaboote.nixosModules.lanzaboote
-          inputs.microvm.nixosModules.host
-          inputs.microvm.nixosModules.microvm
-          inputs.nix-index-database.nixosModules.nix-index
-          inputs.nix-minecraft.nixosModules.minecraft-servers
-          inputs.nix-topology.nixosModules.default
-          inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-          inputs.simple-nixos-mailserver.nixosModules.default
-          inputs.sops.nixosModules.sops
-          inputs.stylix.nixosModules.stylix
-          inputs.swarsel-nix.nixosModules.default
-          inputs.nixos-nftables-firewall.nixosModules.default
-          inputs.pia.nixosModules.default
-          inputs.niritiling.nixosModules.default
-          inputs.noctoggle.nixosModules.default
-          (inputs.nixos-extra-modules + "/modules/guests")
-          (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
-          "${self}/hosts/nixos/${arch}/${configName}"
-          "${self}/profiles/nixos"
-          "${self}/modules/nixos"
-          {
-            _module.args.dns = inputs.dns;
-
-            microvm.guest.enable = lib.mkDefault false;
-
-            networking.hostName = lib.swarselsystems.mkStrong configName;
-
-            node = {
-              name = lib.mkForce configName;
-              arch = lib.mkForce arch;
-              type = lib.mkForce "nixos";
-              secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
-              configDir = ../hosts/nixos/${arch}/${configName};
-              lockFromBootstrapping = lib.swarselsystems.mkStrong true;
-            };
-
-            swarselprofiles = {
-              minimal = lib.swarselsystems.mkStrong true;
-            };
-
-            swarselmodules.server = {
-              ssh = lib.swarselsystems.mkStrong true;
-            };
-
-            swarselsystems = {
-              mainUser = lib.swarselsystems.mkStrong "swarsel";
-            };
-          }
-        ];
-        users.swarsel = { };
-        instantiate = (inputs.nixpkgs.lib.nixosSystem {
-          specialArgs = {
-            inherit inputs outputs self homeLib configName arch;
-            minimal = false;
-            inherit (outputs.pkgs.${arch}) lib;
-            inherit (outputs) nodes topologyPrivate;
-            globals = outputs.globals.${arch};
-            type = "nixos";
-            withHomeManager = true;
-            extraModules = [ "${self}/modules/nixos/common/globals.nix" ];
-          };
-        });
-      };
 
     flake = { config, ... }:
       let
@@ -3186,20 +3123,91 @@ This exposes all of my modular configuration as modules. Other people can use th
   }
 
 #+end_src
+** Instantiation Functions
+
+#+begin_src nix-ts :tangle flake/instantiate.nix
+{ self, inputs, ... }:
+{
+  flake = { config, ... }: {
+    instantiateNixos = { minimal }: configName: arch: { modules }:
+      let
+        inherit (self) outputs;
+        inherit (outputs) lib homeLib;
+        mkStrong = lib.mkOverride 60;
+      in
+      inputs.nixpkgs.lib.nixosSystem {
+        specialArgs = {
+          inherit inputs outputs self homeLib configName arch minimal;
+          inherit (config.pkgs.${arch}) lib;
+          inherit (config) nodes topologyPrivate;
+          globals = config.globals.${arch};
+          type = "nixos";
+          withHomeManager = true;
+          extraModules = [ "${self}/modules-clone/nixos/common/globals.nix" ];
+        };
+        modules = modules ++ [
+          inputs.disko.nixosModules.disko
+          inputs.home-manager.nixosModules.home-manager
+          inputs.impermanence.nixosModules.impermanence
+          inputs.lanzaboote.nixosModules.lanzaboote
+          inputs.microvm.nixosModules.host
+          inputs.microvm.nixosModules.microvm
+          inputs.nix-index-database.nixosModules.nix-index
+          inputs.nix-minecraft.nixosModules.minecraft-servers
+          inputs.nix-topology.nixosModules.default
+          inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+          inputs.simple-nixos-mailserver.nixosModules.default
+          inputs.sops.nixosModules.sops
+          inputs.stylix.nixosModules.stylix
+          inputs.swarsel-nix.nixosModules.default
+          inputs.nixos-nftables-firewall.nixosModules.default
+          inputs.pia.nixosModules.default
+          inputs.niritiling.nixosModules.default
+          inputs.noctoggle.nixosModules.default
+          (inputs.nixos-extra-modules + "/modules/guests")
+          (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+          "${self}/profiles-clone/nixos"
+          "${self}/modules-clone/nixos"
+          {
+            _module.args.dns = inputs.dns;
+
+            microvm.guest.enable = lib.mkDefault false;
+
+            networking.hostName = mkStrong configName;
+
+            node = {
+              name = lib.mkForce configName;
+              arch = lib.mkForce arch;
+              type = lib.mkForce "nixos";
+              secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
+              configDir = ../hosts/nixos/${arch}/${configName};
+              lockFromBootstrapping = lib.mkIf (!minimal) (mkStrong true);
+            };
+
+            swarselprofiles = {
+              minimal = lib.mkIf minimal (mkStrong true);
+            };
+
+            swarselmodules.server = {
+              ssh = lib.mkIf (!minimal) (mkStrong true);
+            };
+
+            swarselsystems = {
+              mainUser = mkStrong "swarsel";
+            };
+          }
+        ];
+      };
+  };
+}
+
+#+end_src
 ** Den
 
 #+begin_src nix-ts :tangle flake/den.nix
-  { self, inputs, ... }:
-    let
-      inherit (self.outputs) lib;
-    in
+  { inputs, ... }:
   {
     imports = [ inputs.den.flakeModule ];
-
-    den = {
-      schema.user.classes = lib.mkDefault [ "homeManager" ];
-      default.homeManager.home.stateVersion = "23.05";
-    };
   }
 
 #+end_src
@@ -8662,6 +8670,1457 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 #+end_src
 
+** Aspects
+*** Modules
+**** Defaults
+
+=den.default= applies settings to all hosts, users, and homes. This is the right place for =stateVersion= and other global policies.
+
+#+begin_src nix-ts :tangle aspects/defaults.nix
+  { lib, den, ... }:
+  {
+    den = {
+      schema.user.classes = lib.mkDefault [ "homeManager" ];
+      ctx.user.includes = [ den.provides.mutual-provider ];
+      default = {
+        nixos = { lib, minimal, ... }: {
+          users.mutableUsers = lib.mkIf (!minimal) (lib.mkDefault false);
+          system.stateVersion = lib.mkDefault "23.05";
+        };
+        homeManager = {
+          home.stateVersion = lib.mkDefault "23.05";
+        };
+        includes = [
+          den.provides.define-user
+        ];
+      };
+    };
+  }
+
+#+end_src
+**** Shared Options
+
+#+begin_src nix-ts :tangle aspects/shared.nix
+  {
+    den = {
+      schema.conf = { lib, ... }: {
+        options = {
+          isPublic = lib.mkEnableOption "mark this as a public config (= without secrets)";
+          isMicroVM = lib.mkEnableOption "mark this config as a microvm";
+          mainUser = lib.mkOption {
+            type = lib.types.str;
+            default = "swarsel";
+          };
+        };
+      };
+    };
+  }
+
+#+end_src
+**** Battery: SOPS shared secrets
+
+This is the battery for SOPS secrets that are used in home-manager.
+
+#+begin_src nix-ts :tangle aspects/battery-sops.nix
+  { lib, den, ... }:
+  let
+    hostContext = { name, args, class }: { host }: {
+      nixos.sops.secrets.${name} = lib.mkIf (!host.isPublic) args // lib.optionalAttrs (class == "homeManager") { owner = host.mainUser; };
+    };
+
+    # deadnix: skip
+    hostUserContext = { name, args, class }: { host, user }: {
+      nixos.sops.secrets.${name} = lib.mkIf (!host.isPublic) args // lib.optionalAttrs (class == "homeManager") { owner = host.mainUser; };
+    };
+
+    homeContext = { name, args }: { home }: {
+      homeManager.sops.secrets.${name} = lib.mkIf (!home.isPublic) args;
+    };
+
+  in
+  {
+    den.provides.sops = { name, args, class ? "homeManager" }: den.lib.parametric.exactly {
+      includes = [
+        (hostContext { inherit name args class; })
+        (hostUserContext { inherit name args class; })
+      ] ++ lib.optional (class == "homeManager") (homeContext { inherit name args; });
+    };
+  }
+
+#+end_src
+**** Battery: PII
+
+This is the battery for PII
+
+#+begin_src nix-ts :tangle aspects/battery-pii.nix
+  { lib, ... }:
+  let
+    # If the given expression is a bare set, it will be wrapped in a function,
+    # so that the imported file can always be applied to the inputs, similar to
+    # how modules can be functions or sets.
+    constSet = x: if builtins.isAttrs x then (_: x) else x;
+
+    sopsImportEncrypted =
+      assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
+        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `<flakeRoot>/files/nix/extra-builtins.nix` ?";
+      builtins.extraBuiltins.sopsImportEncrypted;
+
+    importEncrypted =
+      path:
+      constSet (
+        if builtins.pathExists path then
+          sopsImportEncrypted path
+        else
+          { }
+      );
+  in
+  {
+    den = {
+      schema.conf = { config, inputs, lib, homeLib, nodes, globals, ... }: {
+        options = {
+          repo = {
+            secretFiles = lib.mkOption {
+              default = { };
+              type = lib.types.attrsOf lib.types.path;
+              example = lib.literalExpression "{ local = ./pii.nix.enc; }";
+              description = ''
+                This is for storing PII.
+                  Each path given here must be an sops-encrypted .nix file. For each attribute `<name>`,
+                  the corresponding file will be decrypted, imported and exposed as {option}`repo.secrets.<name>`.
+              '';
+            };
+
+            secrets = lib.mkOption {
+              readOnly = true;
+              default = lib.mapAttrs (_: x: importEncrypted x { inherit lib homeLib nodes globals inputs config; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
+              type = lib.types.unspecified;
+              description = "Exposes the loaded repo secrets.";
+            };
+          };
+        };
+        config = {
+          repo.secretFiles =
+            let
+              local = config.node.secretsDir + "/pii.nix.enc";
+            in
+            (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // {
+              common = ../secrets/repo/pii.nix.enc;
+            };
+        };
+      };
+    };
+  }
+
+#+end_src
+**** Users
+
+#+begin_src nix-ts :tangle aspects/users.nix
+  { den, ... }:
+  let
+    hostContext = { host, ... }: {
+      nixos = { minimal, lib, config, ... }: {
+        users.users.swarsel = {
+          uid = 1000;
+          autoSubUidGidRange = false;
+          subUidRanges = [
+            {
+              count = 65534;
+              startUid = 100001;
+            }
+          ];
+          subGidRanges = [
+            {
+              count = 999;
+              startGid = 1001;
+            }
+          ];
+          description = "Leon S";
+          password = lib.mkIf (minimal || host.isPublic) "setup";
+          hashedPasswordFile = lib.mkIf (!minimal && !host.isPublic) config.sops.secrets.main-user-hashed-pw.path;
+          extraGroups = lib.optionals (!minimal && !host.isMicroVM) [ "input" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+        };
+      };
+    };
+
+  in
+  {
+
+    den = {
+      aspects.swarsel = {
+        includes = [
+          hostContext
+          (den.provides.sops { class = "nixos"; name = "main-user-hashed-pw"; args = { neededForUsers = true; }; })
+          den.provides.primary-user
+          (den.provides.user-shell "zsh")
+        ];
+      };
+      aspects.root = { globals, ... }: {
+        nixos = {
+          users.users.root = globals.root.hashedPassword;
+        };
+      };
+    };
+  }
+
+#+end_src
+**** Work
+
+#+begin_src nix-ts :tangle aspects/work.nix
+  { self, den, ... }:
+  let
+    sopsFile = self + /secrets/work/secrets.yaml;
+    certsSopsFile = self + /secrets/repo/certs.yaml;
+
+    hostContext = { host }: common host;
+    homeContext = { home }: common home;
+
+    common = from: {
+      nixos = { lib, pkgs, config, ... }:
+        let
+          inherit (from) mainUser;
+          inherit (config.swarselsystems) homeDir;
+          iwd = config.networking.networkmanager.wifi.backend == "iwd";
+          owner = mainUser;
+        in
+        {
+          options.swarselsystems = {
+            hostName = lib.mkOption {
+              type = lib.types.str;
+              default = config.node.name;
+            };
+            fqdn = lib.mkOption {
+              type = lib.types.str;
+              default = "";
+            };
+          };
+          config = {
+
+            sops =
+              let
+                secretNames = [
+                  "vcuser"
+                  "vcpw"
+                  "govcuser"
+                  "govcpw"
+                  "govcurl"
+                  "govcdc"
+                  "govcds"
+                  "govchost"
+                  "govcnetwork"
+                  "govcpool"
+                  "baseuser"
+                  "basepw"
+                ];
+              in
+              {
+                secrets = builtins.listToAttrs (
+                  map
+                    (name: {
+                      inherit name;
+                      value = { inherit owner sopsFile; };
+                    })
+                    secretNames
+                );
+                templates = {
+                  "network-manager-work.env".content = ''
+                    BASEUSER=${config.sops.placeholder.baseuser}
+                    BASEPASS=${config.sops.placeholder.basepw}
+                  '';
+                };
+              };
+
+            boot.initrd = {
+              systemd.enable = lib.mkForce true; # make sure we are using initrd systemd even when not using Impermanence
+              luks = {
+                # disable "support" since we use systemd-cryptenroll
+                # make sure yubikeys are enrolled using
+                # sudo systemd-cryptenroll --fido2-device=auto --fido2-with-user-verification=no --fido2-with-user-presence=true --fido2-with-client-pin=no /dev/nvme0n1p2
+                yubikeySupport = false;
+                fido2Support = false;
+              };
+            };
+
+            programs = {
+
+              browserpass.enable = true;
+              _1password.enable = true;
+              _1password-gui = {
+                enable = true;
+                package = pkgs._1password-gui-beta;
+                polkitPolicyOwners = [ "${mainUser}" ];
+              };
+            };
+
+            networking = {
+              inherit (config.swarselsystems) hostName fqdn;
+
+              networkmanager = {
+                wifi.scanRandMacAddress = false;
+                ensureProfiles = {
+                  environmentFiles = [
+                    "${config.sops.templates."network-manager-work.env".path}"
+                  ];
+                  profiles = {
+                    VBC = {
+                      "802-1x" = {
+                        eap = if (!iwd) then "ttls;" else "peap;";
+                        identity = "$BASEUSER";
+                        password = "$BASEPASS";
+                        phase2-auth = "mschapv2";
+                      };
+                      connection = {
+                        id = "VBC";
+                        type = "wifi";
+                        autoconnect-priority = "500";
+                        uuid = "3988f10e-6451-381f-9330-a12e66f45051";
+                        secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
+                      };
+                      ipv4 = { method = "auto"; };
+                      ipv6 = {
+                        # addr-gen-mode = "default";
+                        addr-gen-mode = "stable-privacy";
+                        method = "auto";
+                      };
+                      proxy = { };
+                      wifi = {
+                        cloned-mac-address = "permanent";
+                        mac-address = "E8:65:38:52:63:FF";
+                        mac-address-randomization = "1";
+                        mode = "infrastructure";
+                        band = "a";
+                        ssid = "VBC";
+                      };
+                      wifi-security = {
+                        # auth-alg = "open";
+                        key-mgmt = "wpa-eap";
+                      };
+                    };
+                  };
+                };
+              };
+
+
+              nftables = {
+                firewall = {
+                  zones = {
+                    virbr = {
+                      interfaces = [ "virbr*" ];
+                    };
+                  };
+                  rules = {
+                    virbr-dns-dhcp = {
+                      from = [ "virbr" ];
+                      to = [ "local" ];
+                      allowedTCPPorts = [ 53 ];
+                      allowedUDPPorts = [ 53 67 547 ];
+                    };
+                    virbr-forward = {
+                      from = [ "virbr" ];
+                      to = [ "untrusted" ];
+                      verdict = "accept";
+                    };
+                    virbr-forward-return = {
+                      from = [ "untrusted" ];
+                      to = [ "virbr" ];
+                      extraLines = [
+                        "ct state { established, related } accept"
+                      ];
+                    };
+                  };
+                };
+                chains.postrouting.libvirt-masq = {
+                  after = [ "dnat" ];
+                  rules = [
+                    "iifname \"virbr*\" masquerade"
+                  ];
+                };
+              };
+
+              search = [
+                "vbc.ac.at"
+                "clip.vbc.ac.at"
+                "imp.univie.ac.at"
+              ];
+            };
+
+            systemd.services = {
+              virtqemud.path = with pkgs; [
+                qemu_kvm
+                libvirt
+              ];
+
+              virtstoraged.path = with pkgs; [
+                qemu_kvm
+                libvirt
+              ];
+
+              virtnetworkd.path = with pkgs; [
+                dnsmasq
+                iproute2
+                nftables
+              ];
+            };
+
+            virtualisation = {
+              docker.enable = lib.mkIf (!config.virtualisation.podman.dockerCompat) true;
+              spiceUSBRedirection.enable = true;
+              libvirtd = {
+                enable = true;
+                qemu = {
+                  package = pkgs.qemu_kvm;
+                  runAsRoot = true;
+                  swtpm.enable = true;
+                  vhostUserPackages = with pkgs; [ virtiofsd ];
+                };
+              };
+            };
+
+            environment.systemPackages = with pkgs; [
+              remmina
+              python39
+              qemu
+              packer
+              gnumake
+              libisoburn
+              govc
+              terraform
+              opentofu
+              terragrunt
+              graphviz
+              azure-cli
+
+              # vm
+              virt-manager
+              virt-viewer
+              virtiofsd
+              spice
+              spice-gtk
+              spice-protocol
+              virtio-win
+              win-spice
+
+              powershell
+              gh
+            ];
+
+            services = {
+              spice-vdagentd.enable = true;
+              openssh = {
+                enable = true;
+                extraConfig = ''
+                                      '';
+              };
+
+              syncthing = {
+                settings = {
+                  "winters" = {
+                    id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+                  };
+                  "moonside@oracle" = {
+                    id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
+                  };
+                  folders = {
+                    "Documents" = {
+                      path = "${homeDir}/Documents";
+                      devices = [ "moonside@oracle" ];
+                      id = "hgr3d-pfu3w";
+                    };
+                  };
+                };
+              };
+
+              # udev.extraRules = ''
+              #   # lock screen when yubikey removed
+              #             ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
+              # '';
+
+            };
+
+            # cgroups v1 is required for centos7 dockers
+            # specialisation = {
+            #   cgroup_v1.configuration = {
+            #     boot.kernelParams = [
+            #       "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
+            #       "systemd.unified_cgroup_hierarchy=0"
+            #     ];
+            #   };
+            # };
+          };
+        };
+      homeManager = { self, config, pkgs, lib, vars, ... }:
+        let
+          source = if (config ? home) then "home" else "host";
+          inherit (config.swarselsystems) homeDir;
+          inherit (config.repo.secrets.local.mail) allMailAddresses;
+          inherit (config.repo.secrets.local.work) mailAddress;
+
+        in
+        {
+          config = {
+            home = {
+              packages = with pkgs; [
+                teams-for-linux
+                shellcheck
+                dig
+                docker
+                postman
+                # rclone
+                libguestfs-with-appliance
+                prometheus.cli
+                tigervnc
+                # openstackclient
+                step-cli
+
+                vscode-fhs
+                copilot-cli
+                antigravity
+
+
+                rustdesk-vbc
+              ];
+              sessionVariables = {
+                AWS_CA_BUNDLE = source.sops.secrets.harica-root-ca.path;
+              };
+            };
+            systemd.user.sessionVariables = {
+              DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+            } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
+              SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
+              SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
+            };
+
+            accounts.email.accounts.work =
+              let
+                inherit (from.repo.secrets.local.work) mailName;
+              in
+              {
+                primary = false;
+                address = mailAddress;
+                userName = mailAddress;
+                realName = mailName;
+                passwordCommand = "pizauth show work";
+                imap = {
+                  host = "outlook.office365.com";
+                  port = 993;
+                  tls.enable = true; # SSL/TLS
+                };
+                smtp = {
+                  host = "outlook.office365.com";
+                  port = 587;
+                  tls = {
+                    enable = true; # SSL/TLS
+                    useStartTls = true;
+                  };
+                };
+                thunderbird = {
+                  enable = true;
+                  profiles = [ "default" ];
+                  settings = id: {
+                    "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
+                    "mail.server.server_${id}.authMethod" = 10; # oauth
+                    # "toolkit.telemetry.enabled" = false;
+                    # "toolkit.telemetry.rejected" = true;
+                    # "toolkit.telemetry.prompted" = 2;
+                  };
+                };
+                msmtp = {
+                  enable = true;
+                  extraConfig = {
+                    auth = "xoauth2";
+                    host = "outlook.office365.com";
+                    protocol = "smtp";
+                    port = "587";
+                    tls = "on";
+                    tls_starttls = "on";
+                    from = "${mailAddress}";
+                    user = "${mailAddress}";
+                    passwordeval = "pizauth show work";
+                  };
+                };
+                mu.enable = true;
+                mbsync = {
+                  enable = true;
+                  expunge = "both";
+                  patterns = [ "INBOX" ];
+                  extraConfig = {
+                    account = {
+                      AuthMechs = "XOAUTH2";
+                    };
+                  };
+                };
+              };
+
+            wayland.windowManager.sway =
+              let
+                inherit (from.repo.secrets.local.work) user1 user1Long domain1 mailAddress;
+              in
+              {
+                config = {
+                  keybindings =
+                    let
+                      inherit (config.wayland.windowManager.sway.config) modifier;
+                    in
+                    {
+                      "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
+                      "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
+                    };
+                };
+              };
+
+            stylix = {
+              targets.firefox.profileNames =
+                let
+                  inherit (from.repo.secrets.local.work) user1 user2 user3;
+                in
+                [
+                  "${user1}"
+                  "${user2}"
+                  "${user3}"
+                  "work"
+                ];
+            };
+
+            programs =
+              let
+                inherit (from.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long path1 site1 site2 site3 site4 site5 site6 site7 clouds;
+              in
+              {
+                openstackclient = {
+                  enable = true;
+                  inherit clouds;
+                };
+                awscli = {
+                  enable = true;
+                  package = pkgs.awscli2;
+                };
+
+                zsh = {
+                  shellAliases = {
+                    dssh = "ssh -l ${user1Long}";
+                    cssh = "ssh -l ${user2Long}";
+                    wssh = "ssh -l ${user3Long}";
+                  };
+                  cdpath = [
+                    "~/Documents/Work"
+                  ];
+                  dirHashes = {
+                    d = "$HOME/.dotfiles";
+                    w = "$HOME/Documents/Work";
+                    s = "$HOME/.dotfiles/secrets";
+                    pr = "$HOME/Documents/Private";
+                    ac = path1;
+                  };
+
+                  sessionVariables = {
+                    VSPHERE_USER = "$(cat ${source.sops.secrets.vcuser.path})";
+                    VSPHERE_PW = "$(cat ${source.sops.secrets.vcpw.path})";
+                    GOVC_USERNAME = "$(cat ${source.sops.secrets.govcuser.path})";
+                    GOVC_PASSWORD = "$(cat ${source.sops.secrets.govcpw.path})";
+                    GOVC_URL = "$(cat ${source.sops.secrets.govcurl.path})";
+                    GOVC_DATACENTER = "$(cat ${source.sops.secrets.govcdc.path})";
+                    GOVC_DATASTORE = "$(cat ${source.sops.secrets.govcds.path})";
+                    GOVC_HOST = "$(cat ${source.sops.secrets.govchost.path})";
+                    GOVC_RESOURCE_POOL = "$(cat ${source.sops.secrets.govcpool.path})";
+                    GOVC_NETWORK = "$(cat ${source.sops.secrets.govcnetwork.path})";
+                  };
+                };
+
+                ssh.matchBlocks = from.repo.secrets.local.work.sshConfig;
+
+                firefox = {
+                  profiles =
+                    let
+                      isDefault = false;
+                    in
+                    {
+                      "${user1}" = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 1;
+                          settings = {
+                            "browser.startup.homepage" = "${site1}|${site2}";
+                          };
+                        }
+                        vars.firefox;
+                      "${user2}" = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 2;
+                          settings = {
+                            "browser.startup.homepage" = "${site3}";
+                          };
+                        }
+                        vars.firefox;
+                      "${user3}" = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 3;
+                        }
+                        vars.firefox;
+                      work = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 4;
+                          settings = {
+                            "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                          };
+                        }
+                        vars.firefox;
+                    };
+                };
+
+                chromium = {
+                  enable = true;
+                  package = pkgs.chromium;
+
+                  extensions = [
+                    # 1password
+                    "gejiddohjgogedgjnonbofjigllpkmbf"
+                    # dark reader
+                    "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+                    # ublock origin
+                    "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+                    # i still dont care about cookies
+                    "edibdbjcniadpccecjdfdjjppcpchdlm"
+                    # browserpass
+                    "naepdomgkenhinolocfifgehidddafch"
+                  ];
+                };
+              };
+
+            services = {
+
+              shikane = {
+                settings =
+                  let
+                    workRight = [
+                      "m=HP Z32"
+                      "s=CN41212T55"
+                      "v=HP Inc."
+                    ];
+                    workLeft = [
+                      "m=HP 732pk"
+                      "s=CNC4080YL5"
+                      "v=HP Inc."
+                    ];
+                    exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
+                  in
+                  {
+                    profile = [
+
+                      {
+                        name = "work-internal-on";
+                        inherit exec;
+                        output = [
+                          {
+                            match = config.swarselsystems.sharescreen;
+                            enable = true;
+                            scale = 1.7;
+                            position = "2560,0";
+                          }
+                          {
+                            match = workRight;
+                            enable = true;
+                            scale = 1.0;
+                            mode = "3840x2160@60Hz";
+                            position = "-1280,0";
+                          }
+                          {
+                            match = workLeft;
+                            enable = true;
+                            scale = 1.0;
+                            transform = "270";
+                            mode = "3840x2160@60Hz";
+                            position = "-3440,-1050";
+                          }
+                        ];
+                      }
+                      {
+                        name = "work-internal-off";
+                        inherit exec;
+                        output = [
+                          {
+                            match = config.swarselsystems.sharescreen;
+                            enable = false;
+                            scale = 1.7;
+                            position = "2560,0";
+                          }
+                          {
+                            match = workRight;
+                            enable = true;
+                            scale = 1.0;
+                            mode = "3840x2160@60Hz";
+                            position = "-1280,0";
+                          }
+                          {
+                            match = workLeft;
+                            enable = true;
+                            scale = 1.0;
+                            transform = "270";
+                            mode = "3840x2160@60Hz";
+                            position = "-3440,-1050";
+                          }
+                        ];
+                      }
+
+
+                    ];
+                  };
+              };
+              kanshi = {
+                settings = [
+                  {
+                    # seminary room
+                    output = {
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      scale = 1.0;
+                      mode = "1280x720";
+                    };
+                  }
+                  {
+                    # work side screen
+                    output = {
+                      criteria = "HP Inc. HP 732pk CNC4080YL5";
+                      scale = 1.0;
+                      mode = "3840x2160";
+                      transform = "270";
+                    };
+                  }
+                  # {
+                  #   # work side screen
+                  #   output = {
+                  #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  #     scale = 1.0;
+                  #     mode = "1920x1200";
+                  #     transform = "270";
+                  #   };
+                  # }
+                  {
+                    # work main screen
+                    output = {
+                      criteria = "HP Inc. HP Z32 CN41212T55";
+                      scale = 1.0;
+                      mode = "3840x2160";
+                    };
+                  }
+                  {
+                    profile = {
+                      name = "lidopen";
+                      exec = [
+                        "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                        "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                        "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                      ];
+                      outputs = [
+                        {
+                          criteria = config.swarselsystems.sharescreen;
+                          status = "enable";
+                          scale = 1.5;
+                          position = "2560,0";
+                        }
+                        {
+                          criteria = "HP Inc. HP 732pk CNC4080YL5";
+                          scale = 1.0;
+                          mode = "3840x2160";
+                          position = "-3440,-1050";
+                          transform = "270";
+                        }
+                        {
+                          criteria = "HP Inc. HP Z32 CN41212T55";
+                          scale = 1.0;
+                          mode = "3840x2160";
+                          position = "-1280,0";
+                        }
+                      ];
+                    };
+                  }
+                  {
+                    profile =
+                      let
+                        monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                      in
+                      {
+                        name = "lidopen";
+                        exec = [
+                          "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                          "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                          "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                        ];
+                        outputs = [
+                          {
+                            criteria = config.swarselsystems.sharescreen;
+                            status = "enable";
+                            scale = 1.7;
+                            position = "2560,0";
+                          }
+                          {
+                            criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                            scale = 1.0;
+                            mode = "1280x720";
+                            position = "10000,10000";
+                          }
+                        ];
+                      };
+                  }
+                  {
+                    profile = {
+                      name = "lidclosed";
+                      exec = [
+                        "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                        "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                      ];
+                      outputs = [
+                        {
+                          criteria = config.swarselsystems.sharescreen;
+                          status = "disable";
+                        }
+                        {
+                          criteria = "HP Inc. HP 732pk CNC4080YL5";
+                          scale = 1.0;
+                          mode = "3840x2160";
+                          position = "-3440,-1050";
+                          transform = "270";
+                        }
+                        {
+                          criteria = "HP Inc. HP Z32 CN41212T55";
+                          scale = 1.0;
+                          mode = "3840x2160";
+                          position = "-1280,0";
+                        }
+                      ];
+                    };
+                  }
+                  {
+                    profile =
+                      let
+                        monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                      in
+                      {
+                        name = "lidclosed";
+                        exec = [
+                          "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                        ];
+                        outputs = [
+                          {
+                            criteria = config.swarselsystems.sharescreen;
+                            status = "disable";
+                          }
+                          {
+                            criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                            scale = 1.0;
+                            mode = "1280x720";
+                            position = "10000,10000";
+                          }
+                        ];
+                      };
+                  }
+                ];
+              };
+            };
+
+            systemd.user.services = {
+              pizauth.Service = {
+                ExecStartPost = [
+                  "${pkgs.toybox}/bin/sleep 1"
+                  "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
+                ];
+              };
+
+              teams-applet = {
+                Unit = {
+                  Description = "teams applet";
+                  Requires = [ "graphical-session.target" ];
+                  After = [
+                    "graphical-session.target"
+                    "tray.target"
+                  ];
+                  PartOf = [
+                    "tray.target"
+                  ];
+                };
+
+                Install = {
+                  WantedBy = [ "tray.target" ];
+                };
+
+                Service = {
+                  ExecStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+                };
+              };
+
+              onepassword-applet = {
+                Unit = {
+                  Description = "1password applet";
+                  Requires = [ "graphical-session.target" ];
+                  After = [
+                    "graphical-session.target"
+                    "tray.target"
+                  ];
+                  PartOf = [
+                    "tray.target"
+                  ];
+                };
+
+                Install = {
+                  WantedBy = [ "tray.target" ];
+                };
+
+                Service = {
+                  ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
+                };
+              };
+
+            };
+
+            services.pizauth = {
+              enable = true;
+              extraConfig = ''
+                  auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+                error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+                token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
+              '';
+              accounts = {
+                work = {
+                  authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+                  tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+                  clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+                  clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+                  scopes = [
+                    "https://outlook.office365.com/IMAP.AccessAsUser.All"
+                    "https://outlook.office365.com/SMTP.Send"
+                    "offline_access"
+                  ];
+                  loginHint = "${from.repo.secrets.local.work.mailAddress}";
+                };
+              };
+
+            };
+
+            xdg =
+              let
+                inherit (from.repo.secrets.local.work) user1 user2 user3;
+              in
+              {
+                mimeApps = {
+                  defaultApplications = {
+                    "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+                  };
+                };
+                desktopEntries =
+                  let
+                    terminal = false;
+                    categories = [ "Application" ];
+                    icon = "firefox";
+                  in
+                  {
+                    firefox_work = {
+                      name = "Firefox (work)";
+                      genericName = "Firefox work";
+                      exec = "firefox -p work";
+                      inherit terminal categories icon;
+                    };
+                    "firefox_${user1}" = {
+                      name = "Firefox (${user1})";
+                      genericName = "Firefox ${user1}";
+                      exec = "firefox -p ${user1}";
+                      inherit terminal categories icon;
+                    };
+
+                    "firefox_${user2}" = {
+                      name = "Firefox (${user2})";
+                      genericName = "Firefox ${user2}";
+                      exec = "firefox -p ${user2}";
+                      inherit terminal categories icon;
+                    };
+
+                    "firefox_${user3}" = {
+                      name = "Firefox (${user3})";
+                      genericName = "Firefox ${user3}";
+                      exec = "firefox -p ${user3}";
+                      inherit terminal categories icon;
+                    };
+
+
+                  };
+              };
+            swarselsystems = {
+              startup = [
+                # { command = "nextcloud --background"; }
+                # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+                # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+                # { command = "anki"; }
+                # { command = "obsidian"; }
+                # { command = "nm-applet"; }
+                # { command = "feishin"; }
+                # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+                # { command = "1password"; }
+              ];
+              monitors = {
+                work_back_middle = rec {
+                  name = "LG Electronics LG Ultra HD 0x000305A6";
+                  mode = "2560x1440";
+                  scale = "1";
+                  position = "5120,0";
+                  workspace = "1:一";
+                  # output = "DP-10";
+                  output = name;
+                };
+                work_front_left = rec {
+                  name = "LG Electronics LG Ultra HD 0x0007AB45";
+                  mode = "3840x2160";
+                  scale = "1";
+                  position = "5120,0";
+                  workspace = "1:一";
+                  # output = "DP-7";
+                  output = name;
+                };
+                work_middle_middle_main = rec {
+                  name = "HP Inc. HP Z32 CN41212T55";
+                  mode = "3840x2160";
+                  scale = "1";
+                  position = "-1280,0";
+                  workspace = "1:一";
+                  # output = "DP-3";
+                  output = name;
+                };
+                # work_middle_middle_main = rec {
+                #   name = "HP Inc. HP 732pk CNC4080YL5";
+                #   mode = "3840x2160";
+                #   scale = "1";
+                #   position = "-1280,0";
+                #   workspace = "11:M";
+                #   # output = "DP-8";
+                #   output = name;
+                # };
+                work_middle_middle_side = rec {
+                  name = "HP Inc. HP 732pk CNC4080YL5";
+                  mode = "3840x2160";
+                  transform = "270";
+                  scale = "1";
+                  position = "-3440,-1050";
+                  workspace = "12:S";
+                  # output = "DP-8";
+                  output = name;
+                };
+                work_middle_middle_old = rec {
+                  name = "Hewlett Packard HP Z24i CN44250RDT";
+                  mode = "1920x1200";
+                  transform = "270";
+                  scale = "1";
+                  position = "-2480,0";
+                  workspace = "12:S";
+                  # output = "DP-9";
+                  output = name;
+                };
+                work_seminary = rec {
+                  name = "Applied Creative Technology Transmitter QUATTRO201811";
+                  mode = "1280x720";
+                  scale = "1";
+                  position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+                  workspace = "14:T";
+                  # output = "DP-4";
+                  output = name;
+                };
+              };
+              inputs = {
+                "1133:45081:MX_Master_2S_Keyboard" = {
+                  xkb_layout = "us";
+                  xkb_variant = "altgr-intl";
+                };
+                # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+                #   dwt = "enabled";
+                #   tap = "enabled";
+                #   natural_scroll = "enabled";
+                #   middle_emulation = "enabled";
+                #   drag_lock = "disabled";
+                # };
+                "1133:50504:Logitech_USB_Receiver" = {
+                  xkb_layout = "us";
+                  xkb_variant = "altgr-intl";
+                };
+                "1133:45944:MX_KEYS_S" = {
+                  xkb_layout = "us";
+                  xkb_variant = "altgr-intl";
+                };
+              };
+
+            };
+          };
+        };
+    };
+  in
+  {
+    den = {
+      aspects.work = {
+        includes = [
+          hostContext
+          homeContext
+          (den.provides.sops { name = "harica-root-ca"; args = { sopsFile = certsSopsFile; path = "/home/swarsel/.aws/certs/harica-root.pem"; }; })
+          (den.provides.sops { name = "yubikey-1"; args = { inherit sopsFile; }; })
+          (den.provides.sops { name = "ucKey"; args = { inherit sopsFile; }; })
+        ];
+      };
+    };
+  }
+
+#+end_src
+**** Shell
+
+#+begin_src nix-ts :tangle aspects/shell.nix
+  { den, ... }:
+  {
+    den.aspects.shell = {
+      provides.zsh = {
+        includes = [
+          (den.provides.sops { name = "croc-password"; args = { }; })
+          (den.provides.sops { name = "github-nixpkgs-review-token"; args = { }; })
+        ];
+        nixos = { pkgs, ... }: {
+          programs.zsh = {
+            enable = true;
+            enableCompletion = false;
+          };
+          users.defaultUserShell = pkgs.zsh;
+          environment = {
+            shells = with pkgs; [ zsh ];
+            pathsToLink = [ "/share/zsh" ];
+          };
+        };
+        homeManager = { self, config, pkgs, lib, minimal, globals, confLib, arch, ... }:
+          let
+            inherit (config.swarselsystems) flakePath isNixos homeDir;
+            crocDomain = globals.services.croc.domain;
+          in
+          {
+            programs.zsh = {
+              enable = true;
+            } // lib.optionalAttrs (!minimal) {
+              shellAliases =
+                {
+                  nb = "nix build";
+                  nbl = "nix build --builders \"\"";
+                  nbo = "nix build --offline --builders \"\"";
+                  nd = "nix develop";
+                  ns = "nix shell";
+                  hmswitch = lib.mkIf (!isNixos) "${lib.getExe pkgs.home-manager} --flake ${flakePath}#$(hostname) switch |& nom";
+                  nswitch = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+                  ntest = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) test; cd -;";
+                  nboot = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
+                  ndry = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
+                  magit = "emacsclient -nc -e \"(magit-status)\"";
+                  config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+                  g = "git";
+                  c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
+                  passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
+                  passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+                  hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
+                  youtube-dl = "yt-dlp";
+                  cat-orig = "cat";
+                  # cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+                  cdr = "source cdr";
+                  nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+                  nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+                  nix-ldd-locate = "nix-locate --minimal --top-level -w ";
+                  nix-store-search = "ls /nix/store | grep";
+                  fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
+                  lt = "eza -las modified --total-size";
+                  boot-diff = "nix store diff-closures /run/*-system";
+                  gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
+                  cc = "wl-copy";
+                  build-topology = "nix build --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
+                  build-topology-dev = "nix build --show-trace --override-input nix-topology ${homeDir}/Documents/Private/nix-topology --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
+                  build-iso = "nix build --print-out-paths .#live-iso";
+                  nix-review-local = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
+                  nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";
+                };
+              autosuggestion.enable = true;
+              enableCompletion = true;
+              syntaxHighlighting.enable = true;
+              autocd = false;
+              cdpath = [
+                "~/.dotfiles"
+              ];
+              defaultKeymap = "emacs";
+              dirHashes = {
+                dl = "$HOME/Downloads";
+                gh = "$HOME/Documents/GitHub";
+              };
+              history = {
+                expireDuplicatesFirst = true;
+                append = true;
+                ignoreSpace = true;
+                ignoreDups = true;
+                path = "${config.home.homeDirectory}/.histfile";
+                save = 100000;
+                size = 100000;
+              };
+              historySubstringSearch = {
+                enable = true;
+                searchDownKey = "^[OB";
+                searchUpKey = "^[OA";
+              };
+              initContent = ''
+                my-forward-word() {
+                  local WORDCHARS=$WORDCHARS
+                  WORDCHARS="''${WORDCHARS//:}"
+                  WORDCHARS="''${WORDCHARS//\/}"
+                  WORDCHARS="''${WORDCHARS//.}"
+                  zle forward-word
+                }
+                zle -N my-forward-word
+                # ctrl + right
+                bindkey "^[[1;5C" my-forward-word
+
+                # shift + right
+                bindkey "^[[1;2C" forward-word
+
+                my-backward-word() {
+                  local WORDCHARS=$WORDCHARS
+                  WORDCHARS="''${WORDCHARS//:}"
+                  WORDCHARS="''${WORDCHARS//\/}"
+                  WORDCHARS="''${WORDCHARS//.}"
+                  zle backward-word
+                }
+                zle -N my-backward-word
+                # ctrl + left
+                bindkey "^[[1;5D" my-backward-word
+
+                # shift + left
+                bindkey "^[[1;2D" backward-word
+
+                my-backward-delete-word() {
+                  local WORDCHARS=$WORDCHARS
+                  WORDCHARS="''${WORDCHARS//:}"
+                  WORDCHARS="''${WORDCHARS//\/}"
+                  WORDCHARS="''${WORDCHARS//.}"
+                  zle backward-delete-word
+                }
+                zle -N my-backward-delete-word
+                # ctrl + del
+                bindkey '^H' my-backward-delete-word
+              '';
+              sessionVariables = lib.mkIf (!config.swarselsystems.isPublic) {
+                CROC_RELAY = crocDomain;
+                CROC_PASS = "$(cat ${confLib.getConfig.sops.secrets.croc-password.path or ""})";
+                GITHUB_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.github-nixpkgs-review-token.path or ""})";
+                QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
+              };
+            };
+          };
+      };
+    };
+  }
+
+
+
+#+end_src
+*** Hosts
+**** Pyramid
+
+#+begin_src nix-ts :tangle aspects/hosts/pyramid.nix
+  { mkNixos, lib, den, ... }:
+  let
+    hostContext = { host }:
+      let
+        inherit (host) mainUser;
+      in
+      {
+        nixos = { self, inputs, lib, ... }: {
+
+          imports = [
+            inputs.nixos-hardware.nixosModules.framework-16-7040-amd
+
+            "${self}/hosts/nixos/x86_64-linux/pyramid/disk-config.nix"
+            "${self}/hosts/nixos/x86_64-linux/pyramid/hardware-configuration.nix"
+
+            "${self}/modules/nixos/optional/amdcpu.nix"
+            "${self}/modules/nixos/optional/amdgpu.nix"
+            "${self}/modules/nixos/optional/framework.nix"
+            "${self}/modules/nixos/optional/gaming.nix"
+            "${self}/modules/nixos/optional/hibernation.nix"
+            "${self}/modules/nixos/optional/nswitch-rcm.nix"
+            "${self}/modules/nixos/optional/virtualbox.nix"
+            "${self}/modules/nixos/optional/work.nix"
+            "${self}/modules/nixos/optional/niri.nix"
+            "${self}/modules/nixos/optional/noctalia.nix"
+          ];
+
+          topology.self = {
+            interfaces = {
+              eth1.network = lib.mkForce "home";
+              wifi = { };
+              fritz-wg.network = "fritz-wg";
+            };
+          };
+
+          swarselsystems = {
+            lowResolution = "1280x800";
+            highResolution = "2560x1600";
+            isLaptop = true;
+            isNixos = true;
+            isBtrfs = true;
+            isLinux = true;
+            sharescreen = "eDP-2";
+            info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
+            firewall = lib.mkForce true;
+            wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+            hasBluetooth = true;
+            hasFingerprint = true;
+            isImpermanence = false;
+            isSecureBoot = true;
+            isCrypted = true;
+            inherit (host.repo.secrets.local) hostName;
+            inherit (host.repo.secrets.local) fqdn;
+            hibernation.offset = 533760;
+          };
+        };
+
+        home-manager = { lib, minimal, ... }: {
+          users."${mainUser}" = {
+            swarselsystems = {
+              isSecondaryGpu = true;
+              SecondaryGpuCard = "pci-0000_03_00_0";
+              cpuCount = 16;
+              temperatureHwmon = {
+                isAbsolutePath = true;
+                path = "/sys/devices/virtual/thermal/thermal_zone0/";
+                input-filename = "temp4_input";
+              };
+              monitors = {
+                main = {
+                  # name = "BOE 0x0BC9 Unknown";
+                  name = "BOE 0x0BC9";
+                  mode = "2560x1600";
+                  scale = "1";
+                  position = "2560,0";
+                  workspace = "15:L";
+                  output = "eDP-2";
+                };
+              };
+            };
+          };
+        } // lib.optionalAttrs (!minimal) {
+          swarselprofiles = {
+            personal = true;
+          };
+
+          networking.nftables.firewall.zones.untrusted.interfaces = [ "wlan*" "enp*" ];
+        };
+      };
+  in
+  lib.recursiveUpdate (mkNixos
+    {
+      name = "pyramid";
+      system = "x86_64-linux";
+    }) {
+    den.aspects.pyramid = {
+      includes = [
+        hostContext
+        den.aspects.work
+      ];
+    };
+  }
+#+end_src
 ** NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:6da812f5-358c-49cb-aff2-0a94f20d70b3
@@ -9680,6 +11139,7 @@ Here I set some general boot options, mostly enabling an emergency shell and som
   {
     options.swarselmodules.boot = lib.mkEnableOption "boot config";
     config = lib.mkIf config.swarselmodules.boot {
+
       boot = {
         initrd.systemd = {
           enable = true;
@@ -12457,8 +13917,7 @@ I also take some precautions in how I get networking information during stage 1.
         '';
         deps = [
           "users"
-          "createPersistentStorageDirs"
-        ];
+        ] ++ lib.optional config.swarselsystems.isImpermanence "createPersistentStorageDirs";
       };
 
       environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselprofiles.server || minimal)) {

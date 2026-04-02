@@ -2,6 +2,7 @@
 {
   options.swarselmodules.boot = lib.mkEnableOption "boot config";
   config = lib.mkIf config.swarselmodules.boot {
+
     boot = {
       initrd.systemd = {
         enable = true;
