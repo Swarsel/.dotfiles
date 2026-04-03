@@ -20,7 +20,6 @@
       impermanence = lib.mkDefault true;
       interceptionTools = lib.mkDefault true;
       keyboards = lib.mkDefault true;
-      lanzaboote = lib.mkDefault true;
       ledger = lib.mkDefault true;
       lid = lib.mkDefault true;
       login = lib.mkDefault true;

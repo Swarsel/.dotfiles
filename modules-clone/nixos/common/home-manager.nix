@@ -15,8 +15,8 @@
         inputs.swarsel-nix.homeModules.default
         {
           imports = [
-            "${self}/profiles/home"
-            "${self}/modules/home"
+            "${self}/profiles-clone/home"
+            "${self}/modules-clone/home"
             {
               swarselprofiles = {
                 minimal = lib.mkIf minimal true;

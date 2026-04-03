@@ -13,6 +13,7 @@
       };
       includes = [
         den.provides.define-user
+        den.provides.nixpkgs
       ];
     };
   };

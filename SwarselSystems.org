@@ -51,7 +51,7 @@ This project manages my entire IT infrastructure. In particular:
 - My work workstation ([[#h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0][Treehouse (DGX Spark)]])
 - My phone ([[#h:729af373-37e7-4379-9a3d-b09792219415][Magicant (Phone)]])
 
-  This is a system that grew organically over {{{days-since(2021,11,27)}}} days and has reached considerable complexity at this point. This documents exists to try and make it understandable to other people as well.
+  This is a system that grew organically over {{{days-since(2021,11,27)}}} days (as of {{{revision-date}}}) and has reached considerable complexity at this point. This documents exists to try and make it understandable to other people as well.
 
 ** How to use this document
 :PROPERTIES:
@@ -3149,7 +3149,6 @@ This exposes all of my modular configuration as modules. Other people can use th
           inputs.disko.nixosModules.disko
           inputs.home-manager.nixosModules.home-manager
           inputs.impermanence.nixosModules.impermanence
-          inputs.lanzaboote.nixosModules.lanzaboote
           inputs.microvm.nixosModules.host
           inputs.microvm.nixosModules.microvm
           inputs.nix-index-database.nixosModules.nix-index
@@ -3166,6 +3165,7 @@ This exposes all of my modular configuration as modules. Other people can use th
           inputs.noctoggle.nixosModules.default
           (inputs.nixos-extra-modules + "/modules/guests")
           (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+          "${self}/hosds/nixos/${arch}/${configName}"
           "${self}/profiles-clone/nixos"
           "${self}/modules-clone/nixos"
           {
@@ -8692,6 +8692,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
         };
         includes = [
           den.provides.define-user
+          den.provides.nixpkgs
         ];
       };
     };
@@ -8703,13 +8704,35 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 #+begin_src nix-ts :tangle aspects/shared.nix
   {
     den = {
-      schema.conf = { lib, ... }: {
-        options = {
-          isPublic = lib.mkEnableOption "mark this as a public config (= without secrets)";
-          isMicroVM = lib.mkEnableOption "mark this config as a microvm";
-          mainUser = lib.mkOption {
-            type = lib.types.str;
-            default = "swarsel";
+      schema = {
+        host = { lib, ... }: {
+
+        };
+        conf = { config, lib, ... }: {
+          options = {
+            isPublic = lib.mkEnableOption "mark this as a public config (= without secrets)";
+            isMicroVM = lib.mkEnableOption "mark this config as a microvm";
+            mainUser = lib.mkOption {
+              type = lib.types.str;
+              default = "swarsel";
+            };
+            node = {
+              secretsDir = lib.mkOption {
+                description = "Path to the secrets directory for this node.";
+                type = lib.types.path;
+                default = ../hosts/${config.class}/${config.system}/${config.name}/secrets;
+              };
+              configDir = lib.mkOption {
+                description = "Path to the base directory for this node.";
+                type = lib.types.path;
+                default = ../hosts/${config.class}/${config.system}/${config.name};
+              };
+              lockFromBootstrapping = lib.mkOption {
+                description = "Whether this host should be marked to not be bootstrapped again using swarsel-bootstrap.";
+                type = lib.types.bool;
+                default = true;
+              };
+            };
           };
         };
       };
@@ -10014,36 +10037,106 @@ This is the battery for PII
 
 
 #+end_src
+**** Boot
+
+#+begin_src nix-ts :tangle aspects/boot.nix
+  { inputs, ...}:
+  {
+    den.aspects.boot = { lib, pkgs, ... }: {
+      nixos = {
+        imports = [
+          inputs.lanzaboote.nixosModules.lanzaboote
+        ];
+
+        environment.systemPackages = [
+          pkgs.sbctl
+        ];
+
+        boot = {
+          lanzaboote = {
+            enable = true;
+            pkiBundle = "/var/lib/sbctl";
+            configurationLimit = 6;
+          };
+        };
+      };
+    };
+  }
+#+end_src
+**** nixpkgs
+
+#+begin_src nix-ts :tangle aspects/nixpkgs.nix
+  { self, den, lib, ... }:
+  let
+    nixpkgsModule = from:
+      let
+        config = if (from ? host) then from.host else if (from ? home) then from.home else { };
+      in
+      {
+        nixpkgs = {
+          overlays = [
+            self.outputs.overlays.default
+            self.outputs.overlays.stables
+            self.outputs.overlays.modifications
+          ] ++ lib.optionals ((from ? user) || (from ? home)) [
+            (final: prev:
+              let
+                additions = final: _: import "${self}/pkgs/config" {
+                  inherit self config lib;
+                  pkgs = final;
+                  homeConfig = if (from ? user) then from.user else if (from ? home) then from.home else { };
+                };
+              in
+              additions final prev
+            )
+          ];
+          config = lib.mkIf (!config.isMicroVM) {
+            allowUnfree = true;
+          };
+        };
+      };
+
+    hostAspect =
+      { host }:
+      {
+        ${host.class} = nixpkgsModule { inherit host; };
+      };
+
+    hostUserAspect =
+      { host, user }:
+      {
+        ${host.class} = nixpkgsModule { inherit host user; };
+      };
+
+    homeAspect =
+      { home }:
+      {
+        ${home.class} = nixpkgsModule { inherit home; };
+      };
+
+  in
+  {
+    den.provides.nixpkgs = den.lib.parametric.exactly {
+      includes = [
+        hostAspect
+        hostUserAspect
+        homeAspect
+      ];
+    };
+  }
+#+end_src
 *** Hosts
 **** Pyramid
 
 #+begin_src nix-ts :tangle aspects/hosts/pyramid.nix
   { mkNixos, lib, den, ... }:
   let
-    hostContext = { host }:
+    hostContext = { host, ... }:
       let
         inherit (host) mainUser;
       in
       {
         nixos = { self, inputs, lib, ... }: {
-
-          imports = [
-            inputs.nixos-hardware.nixosModules.framework-16-7040-amd
-
-            "${self}/hosts/nixos/x86_64-linux/pyramid/disk-config.nix"
-            "${self}/hosts/nixos/x86_64-linux/pyramid/hardware-configuration.nix"
-
-            "${self}/modules/nixos/optional/amdcpu.nix"
-            "${self}/modules/nixos/optional/amdgpu.nix"
-            "${self}/modules/nixos/optional/framework.nix"
-            "${self}/modules/nixos/optional/gaming.nix"
-            "${self}/modules/nixos/optional/hibernation.nix"
-            "${self}/modules/nixos/optional/nswitch-rcm.nix"
-            "${self}/modules/nixos/optional/virtualbox.nix"
-            "${self}/modules/nixos/optional/work.nix"
-            "${self}/modules/nixos/optional/niri.nix"
-            "${self}/modules/nixos/optional/noctalia.nix"
-          ];
 
           topology.self = {
             interfaces = {
@@ -10099,7 +10192,7 @@ This is the battery for PII
               };
             };
           };
-        } // lib.optionalAttrs (!minimal) {
+        } // {
           swarselprofiles = {
             personal = true;
           };
@@ -10117,6 +10210,7 @@ This is the battery for PII
       includes = [
         hostContext
         den.aspects.work
+        den.aspects.boot
       ];
     };
   }

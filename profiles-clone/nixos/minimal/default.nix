@@ -6,7 +6,6 @@
       general = lib.mkDefault true;
       home-manager = lib.mkDefault true;
       xserver = lib.mkDefault true;
-      lanzaboote = lib.mkDefault true;
       time = lib.mkDefault true;
       impermanence = lib.mkDefault true;
       security = lib.mkDefault true;

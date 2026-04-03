@@ -1,29 +1,11 @@
 { mkNixos, lib, den, ... }:
 let
-  hostContext = { host }:
+  hostContext = { host, ... }:
     let
       inherit (host) mainUser;
     in
     {
-      nixos = { self, inputs, lib, ... }: {
-
-        imports = [
-          inputs.nixos-hardware.nixosModules.framework-16-7040-amd
-
-          "${self}/hosts/nixos/x86_64-linux/pyramid/disk-config.nix"
-          "${self}/hosts/nixos/x86_64-linux/pyramid/hardware-configuration.nix"
-
-          "${self}/modules/nixos/optional/amdcpu.nix"
-          "${self}/modules/nixos/optional/amdgpu.nix"
-          "${self}/modules/nixos/optional/framework.nix"
-          "${self}/modules/nixos/optional/gaming.nix"
-          "${self}/modules/nixos/optional/hibernation.nix"
-          "${self}/modules/nixos/optional/nswitch-rcm.nix"
-          "${self}/modules/nixos/optional/virtualbox.nix"
-          "${self}/modules/nixos/optional/work.nix"
-          "${self}/modules/nixos/optional/niri.nix"
-          "${self}/modules/nixos/optional/noctalia.nix"
-        ];
+      nixos = { self, lib, ... }: {
 
         topology.self = {
           interfaces = {
@@ -55,7 +37,7 @@ let
         };
       };
 
-      home-manager = { lib, minimal, ... }: {
+      home-manager = _: {
         users."${mainUser}" = {
           swarselsystems = {
             isSecondaryGpu = true;
@@ -79,7 +61,7 @@ let
             };
           };
         };
-      } // lib.optionalAttrs (!minimal) {
+      } // {
         swarselprofiles = {
           personal = true;
         };
@@ -99,6 +81,7 @@ lib.recursiveUpdate
     includes = [
       hostContext
       den.aspects.work
+      den.aspects.boot
     ];
   };
 }

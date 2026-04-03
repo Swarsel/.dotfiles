@@ -21,7 +21,6 @@
           inputs.disko.nixosModules.disko
           inputs.home-manager.nixosModules.home-manager
           inputs.impermanence.nixosModules.impermanence
-          inputs.lanzaboote.nixosModules.lanzaboote
           inputs.microvm.nixosModules.host
           inputs.microvm.nixosModules.microvm
           inputs.nix-index-database.nixosModules.nix-index
@@ -38,6 +37,7 @@
           inputs.noctoggle.nixosModules.default
           (inputs.nixos-extra-modules + "/modules/guests")
           (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+          "${self}/hosds/nixos/${arch}/${configName}"
           "${self}/profiles-clone/nixos"
           "${self}/modules-clone/nixos"
           {
