@@ -1,5 +1,6 @@
-{ self, den, lib, ... }:
+{ self, den, ... }:
 let
+  inherit (self.outputs) lib;
   nixpkgsModule = from:
     let
       config = if (from ? host) then from.host else if (from ? home) then from.home else { };

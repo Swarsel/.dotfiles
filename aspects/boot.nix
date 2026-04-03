@@ -1,7 +1,7 @@
 { inputs, ... }:
 {
-  den.aspects.boot = { pkgs, ... }: {
-    nixos = {
+  den.aspects.boot = {
+    nixos = { pkgs, ... }: {
       imports = [
         inputs.lanzaboote.nixosModules.lanzaboote
       ];

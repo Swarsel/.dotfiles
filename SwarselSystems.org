@@ -10042,8 +10042,8 @@ This is the battery for PII
 #+begin_src nix-ts :tangle aspects/boot.nix
   { inputs, ...}:
   {
-    den.aspects.boot = { lib, pkgs, ... }: {
-      nixos = {
+    den.aspects.boot = {
+      nixos = { pkgs, ... }: {
         imports = [
           inputs.lanzaboote.nixosModules.lanzaboote
         ];
@@ -10066,8 +10066,9 @@ This is the battery for PII
 **** nixpkgs
 
 #+begin_src nix-ts :tangle aspects/nixpkgs.nix
-  { self, den, lib, ... }:
+  { self, den, ... }:
   let
+    inherit (self.outputs) lib;
     nixpkgsModule = from:
       let
         config = if (from ? host) then from.host else if (from ? home) then from.home else { };
