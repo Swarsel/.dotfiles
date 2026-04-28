@@ -10,7 +10,9 @@
     ];
     services = {
       upower.enable = true; # needed for battery percentage
-      gnome.evolution-data-server.enable = true; # needed for calendar integration
+      gnome.evolution-data-server = {
+        enable = false; # needed for calendar integration
+      };
 
       noctoggle = {
         enable = true;
@@ -20,7 +22,7 @@
     };
     programs = {
       gpu-screen-recorder.enable = true;
-      evolution.enable = true;
+      evolution.enable = false;
     };
   };
 }

@@ -82,6 +82,8 @@ in
               "firezone-server-web"
               "firezone-server-api"
               "firezone-server-domain"
+              "_1password-gui"
+              "_1password-gui-beta"
             ])
             // (mkUsePkgsFrom (from "stable24_05") [
               "awscli2"
@@ -114,6 +116,7 @@ in
               "teams-for-linux"
               # "vesktop"
               "virtualbox"
+              "inkscape"
             ]);
 
           modifications = final: prev:

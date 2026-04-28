@@ -75,7 +75,7 @@
       # "big" programs
       # obs-studio
       gimp
-      inkscape
+      stable.inkscape
       zoom-us
       # nomacs
       libreoffice-qt

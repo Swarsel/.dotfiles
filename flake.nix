@@ -96,7 +96,7 @@
     microvm.url = "github:astro/microvm.nix";
     treefmt-nix.url = "github:numtide/treefmt-nix";
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
-    simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
+    simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     pia.url = "github:Swarsel/pia.nix/custom";
     niritiling.url = "github:Swarsel/niritiling";

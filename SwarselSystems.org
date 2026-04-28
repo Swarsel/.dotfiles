@@ -11,8 +11,9 @@
 #+MACRO: revision-date (eval (format-time-string "%F %T %z"))
 #+MACRO: count-words (eval (count-words (point-min) (point-max)))
 #+MACRO: count-lines (eval (count-lines (point-min) (point-max)))
+#+MACRO: count-src-lines (eval (let ((total 0)) (org-babel-map-src-blocks nil (setq total (+ total (1- (length (split-string body "\n")))))) total))
 #+MACRO: days-since (eval (number-to-string (- (org-today) (org-time-string-to-absolute (format "%s-%s-%s" $1 $2 $3)))))
-#+MACRO: NOTE (eval "This file has {{{count-words}}} words spanning {{{count-lines}}} lines and was last revised on {{{revision-date}}}.")
+#+MACRO: NOTE (eval "This file has {{{count-words}}} words spanning {{{count-lines}}} lines (of which {{{count-src-lines}}} are code) and was last revised on {{{revision-date}}}.")
 
 *{{{NOTE(If you can see this, you might want to switch to [[https://swarsel.github.io/.dotfiles/][the hmtl version of this document]] in order to have working links and other QoL functions while reading this file.)}}}*
 
@@ -1809,7 +1810,7 @@ A short overview over each input and what it does:
       microvm.url = "github:astro/microvm.nix";
       treefmt-nix.url = "github:numtide/treefmt-nix";
       nix-minecraft.url = "github:Infinidoge/nix-minecraft";
-      simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
+      simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
       nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
       pia.url = "github:Swarsel/pia.nix/custom";
       niritiling.url = "github:Swarsel/niritiling";
@@ -3282,6 +3283,8 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 "firezone-server-web"
                 "firezone-server-api"
                 "firezone-server-domain"
+                "_1password-gui"
+                "_1password-gui-beta"
               ])
               // (mkUsePkgsFrom (from "stable24_05") [
                 "awscli2"
@@ -3314,6 +3317,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 "teams-for-linux"
                 # "vesktop"
                 "virtualbox"
+                "inkscape"
               ]);
 
             modifications = final: prev:
@@ -3390,9 +3394,9 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
               "${self}/install/installer-config.nix"
             ];
             format = {
-                x86_64-linux = "install-iso";
-                aarch64-linux = "sd-aarch64-installer";
-              }.${system};
+              x86_64-linux = "install-iso";
+              aarch64-linux = "sd-aarch64-installer";
+            }.${system};
           };
 
           keygen = inputs.nixos-generators.nixosGenerate {
@@ -3402,9 +3406,9 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
               "${self}/install/keygen-config.nix"
             ];
             format = {
-                x86_64-linux = "install-iso";
-                aarch64-linux = "sd-aarch64-installer";
-              }.${system};
+              x86_64-linux = "install-iso";
+              aarch64-linux = "sd-aarch64-installer";
+            }.${system};
           };
 
           # nix build --print-out-paths --no-link .#pnap-kexec --system <system>
@@ -8081,7 +8085,7 @@ Steps to recover using live ISO:
   }
 #+end_src
 
-**** Policestation (live ISO key generator config)
+**** Policestation (live ISO key generator config, keygen)
 :PROPERTIES:
 :CUSTOM_ID: h:ab5924ed-9c36-4bda-9b90-d6ae1143f5c8
 :END:
@@ -8198,8 +8202,8 @@ This live ISO config provides a secure environment for setting up cryptographic 
         hostName = "policestation";
         resolvconf.enable = false;
         dhcpcd.enable = false;
-        dhcpcd.allowInterfaces = [];
-        interfaces = {};
+        dhcpcd.allowInterfaces = [ ];
+        interfaces = { };
         firewall.enable = true;
         useDHCP = false;
         useNetworkd = false;
@@ -19781,7 +19785,9 @@ Auto login for the initial session.
       ];
       services = {
         upower.enable = true; # needed for battery percentage
-        gnome.evolution-data-server.enable = true; # needed for calendar integration
+        gnome.evolution-data-server = {
+          enable = false; # needed for calendar integration
+        };
 
         noctoggle = {
           enable = true;
@@ -19791,7 +19797,7 @@ Auto login for the initial session.
       };
       programs = {
         gpu-screen-recorder.enable = true;
-        evolution.enable = true;
+        evolution.enable = false;
       };
     };
   }
@@ -21160,7 +21166,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         # "big" programs
         # obs-studio
         gimp
-        inkscape
+        stable.inkscape
         zoom-us
         # nomacs
         libreoffice-qt
@@ -21441,6 +21447,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
   {
     options.swarselmodules.stylix = lib.mkEnableOption "stylix settings";
     config = lib.mkIf config.swarselmodules.stylix {
+      gtk.gtk4.theme = lib.mkForce config.gtk.theme;
       stylix = lib.mkIf (!config.swarselsystems.isNixos && config.swarselmodules.stylix) (lib.recursiveUpdate
         {
           enable = true;
@@ -22008,6 +22015,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
         signing = {
           key = "0x76FD3810215AE097";
           signByDefault = true;
+          format = "openpgp";
         };
         lfs.enable = true;
         includes = [
@@ -24211,7 +24219,9 @@ The rest of the related configuration is found here:
         enable = true;
         systemd = {
           enable = false;
-          target = "sway-session.target";
+          targets = [
+            "sway-session.target"
+          ];
           # inherit (config.wayland.systemd) target;
         };
         settings = {

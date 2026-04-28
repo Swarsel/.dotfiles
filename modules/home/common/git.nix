@@ -33,6 +33,7 @@ in
       signing = {
         key = "0x76FD3810215AE097";
         signByDefault = true;
+        format = "openpgp";
       };
       lfs.enable = true;
       includes = [
