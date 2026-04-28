@@ -59,8 +59,20 @@ in
   config = lib.mkIf config.swarselmodules.general
     (lib.recursiveUpdate
       {
-        sops.secrets = lib.mkIf (!minimal) {
-          github-api-token = { owner = mainUser; };
+        sops = lib.mkIf (!minimal) {
+          secrets = {
+            github-api-token = { owner = mainUser; };
+            attic-cache-key = { owner = mainUser; };
+          };
+          templates = {
+            netrc = {
+              content = ''
+                machine ${globals.services.attic.domain}
+                password ${config.sops.placeholder.attic-cache-key}
+              '';
+              owner = mainUser;
+            };
+          };
         };
 
         nix =
@@ -80,6 +92,9 @@ in
               substituters = [
                 "https://${globals.services.attic.domain}/${mainUser}"
               ];
+              trusted-substituters = [
+                "https://${globals.services.attic.domain}/${mainUser}"
+              ];
               trusted-public-keys = [
                 atticPublicKey
               ];
@@ -88,6 +103,7 @@ in
                 "${config.swarselsystems.mainUser}"
                 (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
               ];
+              netrc-file = config.sops.templates.netrc.path;
             };
             # extraOptions = ''
             #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
