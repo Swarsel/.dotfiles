@@ -3,7 +3,16 @@
   imports = lib.optionals (type != "nixos") [
     inputs.niri-flake.homeModules.niri
   ];
+
+  options = {
+    swarselmodules.optional-niri = lib.swarselsystems.mkTrueOption;
+  };
+
   config = {
+    home.sessionVariables = {
+      EDITOR = lib.mkDefault "e-niri -w";
+    };
+
     programs.niri = {
       package = pkgs.niri-stable; # which package to use for niri validation
       settings = {

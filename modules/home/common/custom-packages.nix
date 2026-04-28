@@ -3,17 +3,13 @@
 {
   options.swarselmodules.ownpackages = lib.mkEnableOption "own packages settings";
   config = lib.mkIf config.swarselmodules.ownpackages {
-    home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
+    home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) ([
       pass-fuzzel
       cdw
       cdb
       cdr
       bak
       timer
-      e
-      niri-resize
-      swarselcheck
-      swarselcheck-niri
       waybarupdate
       opacitytoggle
       fs-diff
@@ -37,6 +33,12 @@
       swarsel-gens
       swarsel-switch
       swarsel-sops
-    ];
+    ] ++ lib.optionals config.swarselmodules.sway [
+      e
+      swarselcheck
+    ] ++ lib.optionals (config.swarselmodules ? optional-niri) [
+      e-niri
+      swarselcheck-niri
+    ]);
   };
 }

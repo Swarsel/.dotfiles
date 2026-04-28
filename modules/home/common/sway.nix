@@ -86,6 +86,10 @@ in
       swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
     };
 
+    home.sessionVariables = {
+      EDITOR = lib.mkDefault "e -w";
+    };
+
     wayland.windowManager.sway = {
       enable = true;
       # checkConfig = false; # delete this line once SwayFX is fixed upstream

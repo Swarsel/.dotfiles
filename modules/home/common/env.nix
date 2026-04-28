@@ -12,7 +12,6 @@ in
   config = lib.mkIf config.swarselmodules.env {
     home.sessionVariables = {
       inherit DISPLAY;
-      EDITOR = "e -w";
     } // (lib.optionalAttrs (!isPublic) { });
     systemd.user.sessionVariables = {
       DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";

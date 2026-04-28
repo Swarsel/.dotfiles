@@ -9075,8 +9075,6 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
           }) // (lib.optionalAttrs modules.anki {
             anki-user = { owner = mainUser; };
             anki-pw = { owner = mainUser; };
-          }) // (lib.optionalAttrs modules.general {
-            attic-cache-key = { owner = mainUser; };
           });
           templates = {
             authinfo = lib.mkIf modules.emacs {
@@ -9085,16 +9083,6 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
                 machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
               '';
               owner = mainUser;
-            };
-
-            templates = lib.mkIf modules.general {
-              netrc = {
-                content = ''
-                  machine ${globals.services.attic.domain}
-                  password ${config.sops.placeholder.attic-cache-key}
-                '';
-                owner = mainUser;
-              };
             };
           };
         };
@@ -21344,17 +21332,13 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
   {
     options.swarselmodules.ownpackages = lib.mkEnableOption "own packages settings";
     config = lib.mkIf config.swarselmodules.ownpackages {
-      home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
+      home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) ([
         pass-fuzzel
         cdw
         cdb
         cdr
         bak
         timer
-        e
-        niri-resize
-        swarselcheck
-        swarselcheck-niri
         waybarupdate
         opacitytoggle
         fs-diff
@@ -21378,7 +21362,13 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         swarsel-gens
         swarsel-switch
         swarsel-sops
-      ];
+      ] ++ lib.optionals config.swarselmodules.sway [
+        e
+        swarselcheck
+      ] ++ lib.optionals (config.swarselmodules ? optional-niri) [
+        e-niri
+        swarselcheck-niri
+      ]);
     };
   }
 #+end_src
@@ -21705,7 +21695,6 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
     config = lib.mkIf config.swarselmodules.env {
       home.sessionVariables = {
         inherit DISPLAY;
-        EDITOR = "e -w";
       } // (lib.optionalAttrs (!isPublic) { });
       systemd.user.sessionVariables = {
         DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
@@ -25356,6 +25345,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
       };
 
+      home.sessionVariables = {
+        EDITOR = lib.mkDefault "e -w";
+      };
+
       wayland.windowManager.sway = {
         enable = true;
         # checkConfig = false; # delete this line once SwayFX is fixed upstream
@@ -26761,7 +26754,16 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
     imports = lib.optionals (type != "nixos") [
       inputs.niri-flake.homeModules.niri
     ];
+
+    options = {
+      swarselmodules.optional-niri = lib.swarselsystems.mkTrueOption;
+    };
+
     config = {
+      home.sessionVariables = {
+        EDITOR = lib.mkDefault "e-niri -w";
+      };
+
       programs.niri = {
         package = pkgs.niri-stable; # which package to use for niri validation
         settings = {
@@ -29614,32 +29616,44 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
   }
 #+end_src
 
-***** niri-resize
-:PROPERTIES:
-:CUSTOM_ID: h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d
-:END:
+***** e-niri
 
-This helper adjusts focused-column behavior in Niri based on the current tiling state, so single-window layouts become easier to read without manual resizing.
+A version of =e= for usage with niri
 
-#+begin_src nix-ts :tangle pkgs/flake/niri-resize/default.nix
-  { name, writeShellApplication, jq, ... }:
+#+begin_src nix-ts :tangle pkgs/flake/e-niri/default.nix
+  { self, name, writeShellApplication, emacs30-pgtk, kitty, jq, ... }:
   writeShellApplication {
     inherit name;
-    runtimeInputs = [ jq ];
+    runtimeInputs = [ emacs30-pgtk kitty jq ];
     text = ''
-      WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select(.is_focused == true) | .id')
-
-      COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
-
-      while [[ $COUNT == "0" || $COUNT == "2" ]]; do
-          COUNT=$(niri msg -j windows | jq --argjson ws "$WORKSPACE" -r '.[] | select(.workspace_id == $ws and .is_floating == false) | .app_id' | wc -l)
+      wait=0
+      while :; do
+          case ''${1:-} in
+          -w | --wait)
+              wait=1
+              ;;
+          ,*) break ;;
+          esac
+          shift
       done
 
-      if [[ $COUNT == "1" ]]; then
-          niri msg action maximize-column
+      WIN_INFO=$(niri msg -j windows | jq '.[] | select(.app_id | test("kittyterm")) | { id, is_focused, workspace_id }')
+      ID=$(echo "$WIN_INFO" | jq -r '.id // empty')
+
+      if [ -n "$ID" ]; then
+          niri msg action close-window --id "$ID"
+          emacsclient -c -a "" "$@"
+          niri msg action spawn -- sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${self}/files/zellij/config-kittyterm.kdl attach --create kittyterm' '&'
+      else
+          if [[ $wait -eq 0 ]]; then
+              emacsclient -n -c -a "" "$@"
+          else
+              emacsclient -c -a "" "$@"
+          fi
       fi
     '';
   }
+
 #+end_src
 
 ***** swarselcheck
