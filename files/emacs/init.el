@@ -1743,6 +1743,14 @@ create a new one."
   :config
   (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo"))))
 
+(defun swarsel/clear-undo-tree ()
+  (interactive)
+  (setq buffer-undo-tree nil))
+
+(define-advice undo-list-transfer-to-tree (:around (orig-fun &rest args) ignore-gc)
+  (cl-letf (((symbol-function 'garbage-collect) #'ignore))
+    (apply orig-fun args)))
+
 (use-package hydra)
 
 ;; change the text size of the current buffer
