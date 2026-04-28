@@ -50,7 +50,7 @@ in
         };
         "${loc1}" = {
           path = "/sync/${loc1}";
-          type = "receiveonly";
+          type = "sendreceive";
           versioning = {
             type = "simple";
             params.keep = "3";
