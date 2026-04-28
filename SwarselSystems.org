@@ -1814,7 +1814,7 @@ A short overview over each input and what it does:
       nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
       pia.url = "github:Swarsel/pia.nix/custom";
       niritiling.url = "github:Swarsel/niritiling";
-      noctoggle.url = "git+ssh://git@github.com/Swarsel/noctoggle.git?ref=main";
+      noctoggle.url = "github:Swarsel/noctoggle";
     };
 
     outputs =
@@ -9141,6 +9141,7 @@ A breakdown of the flags being set:
   - warn-dirty: I do not need to see the warning when I have uncommited changes
   - max-jobs: How many build jobs should be run in parallel. =auto= sets this to the number of CPUs (which is all) - on systems with many cores this can lead to OOM situations. The default is now =1=, but used to be =auto=, I set this manually just to be safe in the future.
   - use-cgroups: Actually run builds within cgroups
+  - netrc-file: sets the netrc file that is used to authenticate to remote machines (used during e.g. nix build) - this is needed for my attic cache
 - nix.channel.enable: whether to use channels
 - nix.registry: Sets the registry for this flake, which I set to its inputs. This allows me to use e.g. =nixpkgs= directly in =nix repl=
 - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
@@ -12481,6 +12482,9 @@ By default, attic only provides a cli client to authenticate to caches. I want a
           EnvironmentFile = [
             config.sops.templates.attic-env.path
           ];
+          Restart = "on-failure";
+          RestartSec = 60;
+          RemainAfterExit = true;
         };
         script =
           let
@@ -19220,6 +19224,7 @@ This has some state:
 
       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
         { directory = serviceDir; mode = "0700"; }
+        { directory = "${serviceDir}-relay"; mode = "0700"; }
       ];
 
       services.firezone = {
@@ -20414,7 +20419,7 @@ When setting up a new machine:
 :CUSTOM_ID: h:ded3276e-3e97-4863-a29e-b978d8aae1c9
 :END:
 
-Some standard options that should be set for every microvm host.
+There is only one thing of interest here; by default, my setup (where microvms use macvtaps on a certain vlan) creates a race condition between the setting up of said vlan devices and the bringing up of the macvtap interface of the microvm in systemd. Hence, the most important snippet here is fixing that ordering.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/microvm-host.nix
   { config, lib, confLib, ... }:
@@ -20435,6 +20440,15 @@ Some standard options that should be set for every microvm host.
           })
           (builtins.attrNames config.guests)
       );
+
+      systemd.services = lib.concatMapAttrs
+        (guestName: _: {
+          "microvm-macvtap-interfaces@${guestName}" = {
+            after = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
+            bindsTo = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
+          };
+        })
+        config.guests;
 
       users.persistentIds.microvm = confLib.mkIds 999;
 
@@ -25240,6 +25254,8 @@ Normally, I want to push all nix build artifacts to my main cache automatically,
 
         Service = {
           ExecStart = "${lib.getExe pkgs.attic-client} watch-store ${config.swarselsystems.mainUser}:${config.swarselsystems.mainUser}";
+          Restart = "always";
+          RestartSec = 30;
         };
       };
     };

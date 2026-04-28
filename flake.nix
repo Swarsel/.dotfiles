@@ -100,7 +100,7 @@
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     pia.url = "github:Swarsel/pia.nix/custom";
     niritiling.url = "github:Swarsel/niritiling";
-    noctoggle.url = "git+ssh://git@github.com/Swarsel/noctoggle.git?ref=main";
+    noctoggle.url = "github:Swarsel/noctoggle";
   };
 
   outputs =

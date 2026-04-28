@@ -31,6 +31,9 @@
         EnvironmentFile = [
           config.sops.templates.attic-env.path
         ];
+        Restart = "on-failure";
+        RestartSec = 60;
+        RemainAfterExit = true;
       };
       script =
         let

@@ -75,6 +75,7 @@ in
 
     environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
       { directory = serviceDir; mode = "0700"; }
+      { directory = "${serviceDir}-relay"; mode = "0700"; }
     ];
 
     services.firezone = {

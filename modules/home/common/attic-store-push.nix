@@ -17,6 +17,8 @@
 
       Service = {
         ExecStart = "${lib.getExe pkgs.attic-client} watch-store ${config.swarselsystems.mainUser}:${config.swarselsystems.mainUser}";
+        Restart = "always";
+        RestartSec = 30;
       };
     };
   };
