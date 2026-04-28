@@ -44,6 +44,7 @@
           { matches = [{ app-id = "^pavucontrol$"; }]; open-floating = true; }
           { matches = [{ app-id = "^syncthingtray$"; }]; open-floating = true; }
           { matches = [{ app-id = "^Element$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; }
+          { matches = [{ title = "^Element"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; } # crutch while element has appid set to "electron"
           # { matches = [{ app-id = "^Element$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
           { matches = [{ app-id = "^vesktop$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; }
           # { matches = [{ app-id = "^vesktop$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }

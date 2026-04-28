@@ -1,4 +1,4 @@
-{ self, outputs, lib, pkgs, config, globals, confLib, ... }:
+{ self, outputs, lib, pkgs, config, globals, confLib, minimal, type, ... }:
 let
   inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
   inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
@@ -9,7 +9,7 @@ in
     let
       nix-version = "2_30";
     in
-    lib.mkIf config.swarselmodules.general {
+    lib.mkIf config.swarselmodules.general ({
       nix = lib.mkIf (!config.swarselsystems.isNixos) {
         package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
         # extraOptions = ''
@@ -25,6 +25,8 @@ in
           ''
             plugin-files = ${nix-plugins}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
+          '' + lib.optionalString (!minimal) ''
+            !include ${config.sops.secrets.github-api-token.path}
           '';
         settings = {
           experimental-features = [
@@ -37,6 +39,9 @@ in
           substituters = [
             "https://${globals.services.attic.domain}/${mainUser}"
           ];
+          trusted-substituters = [
+            "https://${globals.services.attic.domain}/${mainUser}"
+          ];
           trusted-public-keys = [
             atticPublicKey
           ];
@@ -45,6 +50,7 @@ in
             "${mainUser}"
             (lib.mkIf ((config.swarselmodules ? server) ? ssh-builder) "builder")
           ];
+          netrc-file = config.sops.templates.netrc.path;
           connect-timeout = 5;
           bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";
           bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
@@ -108,12 +114,29 @@ in
             buildInputs = [ pkgs.makeWrapper ];
             paths = [ pkgs.home-manager ];
             postBuild = ''
-                  wrapProgram $out/bin/home-manager \
+              wrapProgram $out/bin/home-manager \
               --append-flags '--flake ${flakePath}#$(hostname)'
             '';
           })
         ];
       };
-    };
+    } // lib.optionalAttrs (type != "nixos") {
+      sops = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos)
+        {
+          secrets = {
+            github-api-token = { owner = mainUser; };
+            attic-cache-key = { owner = mainUser; };
+          };
+          templates = {
+            netrc = {
+              content = ''
+                machine ${globals.services.attic.domain}
+                password ${config.sops.placeholder.attic-cache-key}
+              '';
+              owner = mainUser;
+            };
+          };
+        };
+    });
 
 }

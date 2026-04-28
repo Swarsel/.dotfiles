@@ -3544,6 +3544,11 @@ In order to keep track of these changes, I gather them here in a similar style t
 #+begin_export html
 Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
 
+- <2026-04-28 Di>:
+  - element sets appid as "electron"
+    - > match window-rule in niri to "title"
+    - > set searchelement in swarselcheck-niri to "title"
+  - evolution data server broken > turn off in noctalia config
 - 20260302:
   - navidrome is having build issues and set to stable
   - noto-fonts is having build issues and set to stable
@@ -6396,6 +6401,8 @@ This machine used to be my proxy server, a functionality that is now provided by
       restic = true;
       diskEncryption = lib.mkForce false;
     };
+
+    networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
   }
 
 #+end_src
@@ -9068,6 +9075,8 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
           }) // (lib.optionalAttrs modules.anki {
             anki-user = { owner = mainUser; };
             anki-pw = { owner = mainUser; };
+          }) // (lib.optionalAttrs modules.general {
+            attic-cache-key = { owner = mainUser; };
           });
           templates = {
             authinfo = lib.mkIf modules.emacs {
@@ -9076,6 +9085,16 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
                 machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
               '';
               owner = mainUser;
+            };
+
+            templates = lib.mkIf modules.general {
+              netrc = {
+                content = ''
+                  machine ${globals.services.attic.domain}
+                  password ${config.sops.placeholder.attic-cache-key}
+                '';
+                owner = mainUser;
+              };
             };
           };
         };
@@ -20922,7 +20941,7 @@ This section sets up all the imports that are used in the home-manager section.
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix-ts :tangle modules/home/common/settings.nix
-  { self, outputs, lib, pkgs, config, globals, confLib, ... }:
+  { self, outputs, lib, pkgs, config, globals, confLib, minimal, type, ... }:
   let
     inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
     inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
@@ -20933,7 +20952,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
       let
         nix-version = "2_30";
       in
-      lib.mkIf config.swarselmodules.general {
+      lib.mkIf config.swarselmodules.general ({
         nix = lib.mkIf (!config.swarselsystems.isNixos) {
           package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
           # extraOptions = ''
@@ -20949,6 +20968,8 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
             ''
               plugin-files = ${nix-plugins}/lib/nix/plugins
               extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            '' + lib.optionalString (!minimal) ''
+              !include ${config.sops.secrets.github-api-token.path}
             '';
           settings = {
             experimental-features = [
@@ -20961,6 +20982,9 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
             substituters = [
               "https://${globals.services.attic.domain}/${mainUser}"
             ];
+            trusted-substituters = [
+              "https://${globals.services.attic.domain}/${mainUser}"
+            ];
             trusted-public-keys = [
               atticPublicKey
             ];
@@ -20969,6 +20993,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
               "${mainUser}"
               (lib.mkIf ((config.swarselmodules ? server) ? ssh-builder) "builder")
             ];
+            netrc-file = config.sops.templates.netrc.path;
             connect-timeout = 5;
             bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";
             bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
@@ -21032,13 +21057,30 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
               buildInputs = [ pkgs.makeWrapper ];
               paths = [ pkgs.home-manager ];
               postBuild = ''
-                    wrapProgram $out/bin/home-manager \
+                wrapProgram $out/bin/home-manager \
                 --append-flags '--flake ${flakePath}#$(hostname)'
               '';
             })
           ];
         };
-      };
+      } // lib.optionalAttrs (type != "nixos") {
+        sops = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos)
+          {
+            secrets = {
+              github-api-token = { owner = mainUser; };
+              attic-cache-key = { owner = mainUser; };
+            };
+            templates = {
+              netrc = {
+                content = ''
+                  machine ${globals.services.attic.domain}
+                  password ${config.sops.placeholder.attic-cache-key}
+                '';
+                owner = mainUser;
+              };
+            };
+          };
+      });
 
   }
 #+end_src
@@ -26760,6 +26802,7 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
             { matches = [{ app-id = "^pavucontrol$"; }]; open-floating = true; }
             { matches = [{ app-id = "^syncthingtray$"; }]; open-floating = true; }
             { matches = [{ app-id = "^Element$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; }
+            { matches = [{ title = "^Element"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; } # crutch while element has appid set to "electron"
             # { matches = [{ app-id = "^Element$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
             { matches = [{ app-id = "^vesktop$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screen-capture"; }
             # { matches = [{ app-id = "^vesktop$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
@@ -29696,25 +29739,29 @@ This is the Niri-native variant of my scratchpad toggler: it inspects running wi
           -k | --kitty)
               cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${self}/files/zellij/config-kittyterm.kdl attach --create kittyterm' '&')
               searchapp="kittyterm"
+              searchelement="app_id"
               ;;
           -e | --element)
               cmd=(element-desktop)
               searchapp="Element"
+              searchelement="title"
               ;;
           -d | --vesktop)
               cmd=(vesktop)
               searchapp="vesktop"
+              searchelement="app_id"
               ;;
           -s | --spotifyplayer)
               cmd=(sh -c 'kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&')
               searchapp="spotifytui"
+              searchelement="app_id"
               ;;
           *) break ;;
           esac
           shift
       done
 
-      WIN_INFO=$(niri msg -j windows | jq --arg search "$searchapp" '.[] | select (.app_id | test($search)) | { id, is_focused, workspace_id }')
+      WIN_INFO=$(niri msg -j windows | jq --arg element "$searchelement" --arg search "$searchapp" '.[] | select (.[$element] | test($search)) | { id, is_focused, workspace_id }')
       ID=$(echo "$WIN_INFO" | jq -r '.id // empty')
 
       if [ -z "$ID" ]; then

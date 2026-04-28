@@ -37,6 +37,8 @@ in
         }) // (lib.optionalAttrs modules.anki {
           anki-user = { owner = mainUser; };
           anki-pw = { owner = mainUser; };
+        }) // (lib.optionalAttrs modules.general {
+          attic-cache-key = { owner = mainUser; };
         });
         templates = {
           authinfo = lib.mkIf modules.emacs {
@@ -45,6 +47,16 @@ in
               machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
             '';
             owner = mainUser;
+          };
+
+          templates = lib.mkIf modules.general {
+            netrc = {
+              content = ''
+                machine ${globals.services.attic.domain}
+                password ${config.sops.placeholder.attic-cache-key}
+              '';
+              owner = mainUser;
+            };
           };
         };
       };

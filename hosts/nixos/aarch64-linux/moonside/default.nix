@@ -111,4 +111,6 @@ in
     restic = true;
     diskEncryption = lib.mkForce false;
   };
+
+  networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
 }
