@@ -215,6 +215,14 @@
           # { command = [ "noctalia-shell" ]; }
           # { argv = [ "pkill" "mako" ]; }
           { argv = [ "systemctl" "--user" "restart" "noctalia-shell.target" ]; }
+          # { command = [ "noctalia-shell" ]; }
+          # { argv = [ "systemctl" "--user" "restart" "anki-applet.service" ]; }
+          # { argv = [ "systemctl" "--user" "restart" "firezone-applet.service" ]; }
+          # { argv = [ "systemctl" "--user" "restart" "teams-applet.service" ]; }
+          # { argv = [ "systemctl" "--user" "restart" "obsidian-applet.service" ]; }
+          # { argv = [ "systemctl" "--user" "restart" "element-applet.service" ]; }
+          # { argv = [ "systemctl" "--user" "restart" "vesktop-applet.service" ]; }
+          # { argv = [ "systemctl" "--user" "restart" "onepassword-applet.service" ]; }
         ];
         # workspaces = {
         # "01-Main" = {

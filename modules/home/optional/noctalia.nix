@@ -7,9 +7,12 @@ in
   imports = [
     inputs.noctalia.homeModules.default
   ];
-  options.swarselmodules.optional-noctalia = lib.swarselsystems.mkTrueOption;
+  options = {
+    swarselmodules.optional-noctalia = lib.swarselsystems.mkTrueOption;
+    swarselsystems.noctalia-systemd = lib.swarselsystems.mkTrueOption;
+  };
   config = {
-    systemd.user = {
+    systemd.user = lib.mkIf config.swarselsystems.noctalia-systemd {
       targets = {
         noctalia-shell.Unit = {
           After = [ "graphical-session.target" ];
@@ -26,9 +29,40 @@ in
         };
       };
       services = {
-        noctalia-shell = {
-          Unit.PartOf = [ "noctalia-shell.target" ];
-          Install.WantedBy = [ "noctalia-shell.target" ];
+        # upstream noctalia-shell deprecated systemd for no reason - we bring it back
+        noctalia-shell = lib.mkIf config.swarselsystems.noctalia-systemd {
+          Unit = {
+            Description = "Noctalia Shell - Wayland desktop shell";
+            Documentation = "https://docs.noctalia.dev";
+            PartOf = [
+              config.wayland.systemd.target
+              "noctalia-shell.target"
+            ];
+            After = [ config.wayland.systemd.target ];
+            X-Restart-Triggers =
+              lib.optional (config.programs.noctalia-shell.settings != { }) "${config.xdg.configFile."noctalia/settings.json".source}"
+                ++ lib.optional (config.programs.noctalia-shell.colors != { }) "${config.xdg.configFile."noctalia/colors.json".source}"
+                ++ lib.optional (config.programs.noctalia-shell.plugins != { }) "${config.xdg.configFile."noctalia/plugins.json".source}"
+                ++ lib.optional
+                (
+                  config.programs.noctalia-shell.user-templates != { }
+                ) "${config.xdg.configFile."noctalia/user-templates.toml".source}"
+                ++ lib.mapAttrsToList
+                (
+                  name: _: "${config.xdg.configFile."noctalia/plugins/${name}/settings.json".source}"
+                )
+                config.programs.noctalia-shell.pluginSettings;
+          };
+
+          Service = {
+            ExecStart = lib.getExe config.programs.noctalia-shell.package;
+            Restart = "on-failure";
+          };
+
+          Install.WantedBy = [
+            config.wayland.systemd.target
+            "noctalia-shell.target"
+          ];
         };
         noctalia-init = {
 
@@ -55,7 +89,7 @@ in
       noctalia-shell = {
         enable = true;
         package = pkgs.noctalia-shell;
-        systemd.enable = true;
+        systemd.enable = false; # we fake this using our own option
         settings = {
           bar = {
             barType = "simple";

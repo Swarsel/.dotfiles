@@ -25781,7 +25781,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     options.swarselmodules.shikane = lib.mkEnableOption "kanshi settings";
     config = lib.mkIf config.swarselmodules.shikane {
 
-      systemd.user.services.shikane = confLib.overrideTarget "noctalia-shell.target";
+      systemd.user.services.shikane = lib.mkIf config.swarselsystems.noctalia-systemd (confLib.overrideTarget "noctalia-shell.target");
       services.shikane = {
         enable = true;
         settings =
@@ -26931,6 +26931,14 @@ Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
             # { command = [ "noctalia-shell" ]; }
             # { argv = [ "pkill" "mako" ]; }
             { argv = [ "systemctl" "--user" "restart" "noctalia-shell.target" ]; }
+            # { command = [ "noctalia-shell" ]; }
+            # { argv = [ "systemctl" "--user" "restart" "anki-applet.service" ]; }
+            # { argv = [ "systemctl" "--user" "restart" "firezone-applet.service" ]; }
+            # { argv = [ "systemctl" "--user" "restart" "teams-applet.service" ]; }
+            # { argv = [ "systemctl" "--user" "restart" "obsidian-applet.service" ]; }
+            # { argv = [ "systemctl" "--user" "restart" "element-applet.service" ]; }
+            # { argv = [ "systemctl" "--user" "restart" "vesktop-applet.service" ]; }
+            # { argv = [ "systemctl" "--user" "restart" "onepassword-applet.service" ]; }
           ];
           # workspaces = {
           # "01-Main" = {
@@ -26992,9 +27000,12 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
     imports = [
       inputs.noctalia.homeModules.default
     ];
-    options.swarselmodules.optional-noctalia = lib.swarselsystems.mkTrueOption;
+    options = {
+      swarselmodules.optional-noctalia = lib.swarselsystems.mkTrueOption;
+      swarselsystems.noctalia-systemd = lib.swarselsystems.mkTrueOption;
+    };
     config = {
-      systemd.user = {
+      systemd.user = lib.mkIf config.swarselsystems.noctalia-systemd {
         targets = {
           noctalia-shell.Unit = {
             After = [ "graphical-session.target" ];
@@ -27011,9 +27022,40 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
           };
         };
         services = {
-          noctalia-shell = {
-            Unit.PartOf = [ "noctalia-shell.target" ];
-            Install.WantedBy = [ "noctalia-shell.target" ];
+          # upstream noctalia-shell deprecated systemd for no reason - we bring it back
+          noctalia-shell = lib.mkIf config.swarselsystems.noctalia-systemd {
+            Unit = {
+              Description = "Noctalia Shell - Wayland desktop shell";
+              Documentation = "https://docs.noctalia.dev";
+              PartOf = [
+                config.wayland.systemd.target
+                "noctalia-shell.target"
+              ];
+              After = [ config.wayland.systemd.target ];
+              X-Restart-Triggers =
+                lib.optional (config.programs.noctalia-shell.settings != { }) "${config.xdg.configFile."noctalia/settings.json".source}"
+                  ++ lib.optional (config.programs.noctalia-shell.colors != { }) "${config.xdg.configFile."noctalia/colors.json".source}"
+                  ++ lib.optional (config.programs.noctalia-shell.plugins != { }) "${config.xdg.configFile."noctalia/plugins.json".source}"
+                  ++ lib.optional
+                  (
+                    config.programs.noctalia-shell.user-templates != { }
+                  ) "${config.xdg.configFile."noctalia/user-templates.toml".source}"
+                  ++ lib.mapAttrsToList
+                  (
+                    name: _: "${config.xdg.configFile."noctalia/plugins/${name}/settings.json".source}"
+                  )
+                  config.programs.noctalia-shell.pluginSettings;
+            };
+
+            Service = {
+              ExecStart = lib.getExe config.programs.noctalia-shell.package;
+              Restart = "on-failure";
+            };
+
+            Install.WantedBy = [
+              config.wayland.systemd.target
+              "noctalia-shell.target"
+            ];
           };
           noctalia-init = {
 
@@ -27040,7 +27082,7 @@ Apart from configuring Noctalia, I here also add some systemd chains to make sur
         noctalia-shell = {
           enable = true;
           package = pkgs.noctalia-shell;
-          systemd.enable = true;
+          systemd.enable = false; # we fake this using our own option
           settings = {
             bar = {
               barType = "simple";
