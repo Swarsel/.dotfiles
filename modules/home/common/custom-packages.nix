@@ -22,7 +22,6 @@
       project
       fhs
       swarsel-bootstrap
-      swarsel-displaypower
       swarsel-deploy
       swarsel-instantiate
       swarselzellij
@@ -36,6 +35,7 @@
     ] ++ lib.optionals config.swarselmodules.sway [
       e
       swarselcheck
+      swarsel-displaypower
     ] ++ lib.optionals (config.swarselmodules ? optional-niri) [
       e-niri
       swarselcheck-niri

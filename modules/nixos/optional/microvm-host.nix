@@ -17,14 +17,10 @@
         (builtins.attrNames config.guests)
     );
 
-    systemd.services = lib.concatMapAttrs
-      (guestName: _: {
-        "microvm-macvtap-interfaces@${guestName}" = {
-          after = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
-          bindsTo = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
-        };
-      })
-      config.guests;
+    systemd.services."microvm-macvtap-interfaces@" = {
+      after = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
+      bindsTo = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
+    };
 
     users.persistentIds.microvm = confLib.mkIds 999;
 

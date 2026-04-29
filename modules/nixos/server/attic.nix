@@ -98,7 +98,8 @@ in
             bucket = serviceName;
             # attic must be patched to never serve pre-signed s3 urls directly
             # otherwise it will redirect clients to this localhost endpoint
-            endpoint = "http://127.0.0.1:3900"; # garage port
+            # endpoint = "http://127.0.0.1:3900"; # garage port
+            endpoint = "https://${globals.services."garage-${config.node.name}".domain}";
           } else {
             type = "local";
             path = serviceDir;

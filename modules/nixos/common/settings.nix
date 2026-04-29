@@ -67,7 +67,7 @@ in
           templates = {
             netrc = {
               content = ''
-                machine ${globals.services.attic.domain}
+                  machine ${globals.services.attic.domain}
                 password ${config.sops.placeholder.attic-cache-key}
               '';
               owner = mainUser;
@@ -126,7 +126,7 @@ in
                 };
               in
               ''
-                plugin-files = ${nix-plugins}/lib/nix/plugins
+                      plugin-files = ${nix-plugins}/lib/nix/plugins
                 extra-builtins-file = ${self + /nix/extra-builtins.nix}
               '' + lib.optionalString (!minimal) ''
                 !include ${config.sops.secrets.github-api-token.path}
@@ -140,6 +140,12 @@ in
             outputs.overlays.default
             outputs.overlays.stables
             outputs.overlays.modifications
+            # TEMP
+            (_: prev: {
+              openldap = prev.openldap.overrideAttrs {
+                doCheck = !prev.stdenv.hostPlatform.isi686;
+              };
+            })
           ] ++ lib.optionals withHomeManager [
             (final: prev:
               let

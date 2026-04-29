@@ -3549,6 +3549,7 @@ Currently, these adaptions are made to the configuration to account for bugs in 
     - > match window-rule in niri to "title"
     - > set searchelement in swarselcheck-niri to "title"
   - evolution data server broken > turn off in noctalia config
+  - openldap test fails in lutris build chain > overlay that skips test (# TEMP comment)
 - 20260302:
   - navidrome is having build issues and set to stable
   - noto-fonts is having build issues and set to stable
@@ -9161,39 +9162,39 @@ A breakdown of the flags being set:
         let
           flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
         in
-        {
-          settings = {
-            connect-timeout = 5;
-            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
-            fallback = true;
-            min-free = 128000000;
-            max-free = 1000000000;
-            flake-registry = "";
-            auto-optimise-store = true;
-            warn-dirty = false;
-            max-jobs = 1;
-            use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+          {
+            settings = {
+              connect-timeout = 5;
+              bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+              bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+              fallback = true;
+              min-free = 128000000;
+              max-free = 1000000000;
+              flake-registry = "";
+              auto-optimise-store = true;
+              warn-dirty = false;
+              max-jobs = 1;
+              use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+            };
+            gc = {
+              automatic = true;
+              dates = "weekly";
+              options = "--delete-older-than 10d";
+            };
+            optimise = {
+              automatic = true;
+              dates = "weekly";
+            };
+            channel.enable = false;
+            registry = rec {
+              nixpkgs.flake = inputs.nixpkgs;
+              # swarsel.flake = inputs.swarsel;
+              swarsel.flake = self;
+              n = nixpkgs;
+              s = swarsel;
+            };
+            nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
           };
-          gc = {
-            automatic = true;
-            dates = "weekly";
-            options = "--delete-older-than 10d";
-          };
-          optimise = {
-            automatic = true;
-            dates = "weekly";
-          };
-          channel.enable = false;
-          registry = rec {
-            nixpkgs.flake = inputs.nixpkgs;
-            # swarsel.flake = inputs.swarsel;
-            swarsel.flake = self;
-            n = nixpkgs;
-            s = swarsel;
-          };
-          nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-        };
 
       services.dbus.implementation = "broker";
 
@@ -9203,94 +9204,100 @@ A breakdown of the flags being set:
 
     };
   in
-  {
-    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
-    config = lib.mkIf config.swarselmodules.general
-      (lib.recursiveUpdate
-        {
-          sops = lib.mkIf (!minimal) {
-            secrets = {
-              github-api-token = { owner = mainUser; };
-              attic-cache-key = { owner = mainUser; };
-            };
-            templates = {
-              netrc = {
-                content = ''
-                  machine ${globals.services.attic.domain}
+    {
+      options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+      config = lib.mkIf config.swarselmodules.general
+        (lib.recursiveUpdate
+          {
+            sops = lib.mkIf (!minimal) {
+              secrets = {
+                github-api-token = { owner = mainUser; };
+                attic-cache-key = { owner = mainUser; };
+              };
+              templates = {
+                netrc = {
+                  content = ''
+                    machine ${globals.services.attic.domain}
                   password ${config.sops.placeholder.attic-cache-key}
-                '';
-                owner = mainUser;
+                  '';
+                  owner = mainUser;
+                };
               };
             };
-          };
 
-          nix =
-            let
-              nix-version = "2_30";
-            in
-            {
-              package = pkgs.nixVersions."nix_${nix-version}";
-              settings = {
-                experimental-features = [
-                  "nix-command"
-                  "flakes"
-                  "ca-derivations"
-                  "cgroups"
-                  "pipe-operators"
-                ];
-                substituters = [
-                  "https://${globals.services.attic.domain}/${mainUser}"
-                ];
-                trusted-substituters = [
-                  "https://${globals.services.attic.domain}/${mainUser}"
-                ];
-                trusted-public-keys = [
-                  atticPublicKey
-                ];
-                trusted-users = [
-                  "@wheel"
-                  "${config.swarselsystems.mainUser}"
-                  (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
-                ];
-                netrc-file = config.sops.templates.netrc.path;
-              };
-              # extraOptions = ''
-              #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-              # '' + lib.optionalString (!minimal) ''
-              #   !include ${config.sops.secrets.github-api-token.path}
-              # '';
-              # extraOptions = ''
-              #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-              #     buildInputs = [config.nix.package pkgs.boost];
-              #     patches = o.patches or [];
-              #   })}/lib/nix/plugins
-              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-              # '';
-
-              extraOptions =
-                let
-                  nix-plugins = pkgs.nix-plugins.override {
-                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+            nix =
+              let
+                nix-version = "2_30";
+              in
+                {
+                  package = pkgs.nixVersions."nix_${nix-version}";
+                  settings = {
+                    experimental-features = [
+                      "nix-command"
+                      "flakes"
+                      "ca-derivations"
+                      "cgroups"
+                      "pipe-operators"
+                    ];
+                    substituters = [
+                      "https://${globals.services.attic.domain}/${mainUser}"
+                    ];
+                    trusted-substituters = [
+                      "https://${globals.services.attic.domain}/${mainUser}"
+                    ];
+                    trusted-public-keys = [
+                      atticPublicKey
+                    ];
+                    trusted-users = [
+                      "@wheel"
+                      "${config.swarselsystems.mainUser}"
+                      (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+                    ];
+                    netrc-file = config.sops.templates.netrc.path;
                   };
-                in
-                ''
-                  plugin-files = ${nix-plugins}/lib/nix/plugins
+                  # extraOptions = ''
+                  #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+                  #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                  # '' + lib.optionalString (!minimal) ''
+                  #   !include ${config.sops.secrets.github-api-token.path}
+                  # '';
+                  # extraOptions = ''
+                  #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+                  #     buildInputs = [config.nix.package pkgs.boost];
+                  #     patches = o.patches or [];
+                  #   })}/lib/nix/plugins
+                  #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                  # '';
+
+                  extraOptions =
+                    let
+                      nix-plugins = pkgs.nix-plugins.override {
+                        nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                      };
+                    in
+                      ''
+                        plugin-files = ${nix-plugins}/lib/nix/plugins
                   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                '' + lib.optionalString (!minimal) ''
-                  !include ${config.sops.secrets.github-api-token.path}
-                '';
-            };
+                      '' + lib.optionalString (!minimal) ''
+                        !include ${config.sops.secrets.github-api-token.path}
+                      '';
+                };
 
-          system.stateVersion = lib.mkDefault "23.05";
+            system.stateVersion = lib.mkDefault "23.05";
 
-          nixpkgs = {
-            overlays = [
-              outputs.overlays.default
-              outputs.overlays.stables
-              outputs.overlays.modifications
-            ] ++ lib.optionals withHomeManager [
-              (final: prev:
+            nixpkgs = {
+              overlays = [
+                outputs.overlays.default
+                outputs.overlays.stables
+                outputs.overlays.modifications
+                # TEMP
+                (_: prev: {
+                  openldap = prev.openldap.overrideAttrs {
+                    doCheck = !prev.stdenv.hostPlatform.isi686;
+                  };
+                })
+              ] ++ lib.optionals withHomeManager [
+                (final: prev:
                 let
                   additions = final: _: import "${self}/pkgs/config" {
                     inherit self config lib;
@@ -9298,17 +9305,17 @@ A breakdown of the flags being set:
                     homeConfig = config.home-manager.users.${config.swarselsystems.mainUser} or { };
                   };
                 in
-                additions final prev
-              )
-            ];
-            config = lib.mkIf (!config.swarselsystems.isMicroVM) {
-              allowUnfree = true;
+                  additions final prev
+                )
+              ];
+              config = lib.mkIf (!config.swarselsystems.isMicroVM) {
+                allowUnfree = true;
+              };
             };
-          };
 
-        }
-        settings);
-  }
+          }
+          settings);
+    }
 #+end_src
 
 **** Setup home-manager base
@@ -18726,7 +18733,8 @@ $ attic cache create hello
               bucket = serviceName;
               # attic must be patched to never serve pre-signed s3 urls directly
               # otherwise it will redirect clients to this localhost endpoint
-              endpoint = "http://127.0.0.1:3900"; # garage port
+              # endpoint = "http://127.0.0.1:3900"; # garage port
+              endpoint = "https://${globals.services."garage-${config.node.name}".domain}";
             } else {
               type = "local";
               path = serviceDir;
@@ -20441,14 +20449,10 @@ There is only one thing of interest here; by default, my setup (where microvms u
           (builtins.attrNames config.guests)
       );
 
-      systemd.services = lib.concatMapAttrs
-        (guestName: _: {
-          "microvm-macvtap-interfaces@${guestName}" = {
-            after = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
-            bindsTo = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
-          };
-        })
-        config.guests;
+      systemd.services."microvm-macvtap-interfaces@" = {
+        after = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
+        bindsTo = [ "sys-subsystem-net-devices-vlan\\x2dservices.device" ];
+      };
 
       users.persistentIds.microvm = confLib.mkIds 999;
 
@@ -21365,7 +21369,6 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         project
         fhs
         swarsel-bootstrap
-        swarsel-displaypower
         swarsel-deploy
         swarsel-instantiate
         swarselzellij
@@ -21379,6 +21382,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       ] ++ lib.optionals config.swarselmodules.sway [
         e
         swarselcheck
+        swarsel-displaypower
       ] ++ lib.optionals (config.swarselmodules ? optional-niri) [
         e-niri
         swarselcheck-niri
