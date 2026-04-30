@@ -5,7 +5,7 @@ let
   settings = if minimal then { } else {
     environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
       assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
-      { }
+        { }
     '';
 
     nix =
@@ -77,7 +77,7 @@ in
 
         nix =
           let
-            nix-version = "2_30";
+            nix-version = "2_34";
           in
           {
             package = pkgs.nixVersions."nix_${nix-version}";
@@ -121,9 +121,24 @@ in
 
             extraOptions =
               let
-                nix-plugins = pkgs.nix-plugins.override {
-                  nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
-                };
+                # nix-plugins = pkgs.nix-plugins.override {
+                #   nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                # };
+                nix-plugins = pkgs.nix-plugins.overrideAttrs (old: {
+                  buildInputs = [ pkgs.nixVersions."nix_${nix-version}" pkgs.boost ];
+                  postPatch = (old.postPatch or "") + lib.optionalString (nix-version == "2_34") ''
+                    substituteInPlace extra-builtins.cc \
+                    --replace-fail 'Setting<Path> extraBuiltinsFile{this,' 'Setting<std::string> extraBuiltinsFile{this,' \
+                    --replace-fail 'settings.nixConfDir + "/extra-builtins.nix",' '"/etc/nix/extra-builtins.nix",' \
+                    --replace-fail '.fun = prim_exec,' '.impl = prim_exec,' \
+                    --replace-fail '.fun = prim_importNative,' '.impl = prim_importNative,' \
+                    --replace-fail '.fun = extraBuiltins,' '.impl = extraBuiltins,' \
+                    --replace-fail '.fun = cflags,' '.impl = cflags,' \
+                    --replace-fail 'attrs.alloc("NIX_INCLUDE_DIRS").mkString(NIX_INCLUDE_DIRS);' 'attrs.alloc("NIX_INCLUDE_DIRS").mkString(NIX_INCLUDE_DIRS, state.mem);' \
+                    --replace-fail 'attrs.alloc("NIX_CFLAGS_OTHER").mkString(NIX_CFLAGS_OTHER);' 'attrs.alloc("NIX_CFLAGS_OTHER").mkString(NIX_CFLAGS_OTHER, state.mem);' \
+                    --replace-fail 'attrs.alloc("BOOST_INCLUDE_DIR").mkString(BOOST_INCLUDE_DIR);' 'attrs.alloc("BOOST_INCLUDE_DIR").mkString(BOOST_INCLUDE_DIR, state.mem);'
+                  '';
+                });
               in
               ''
                       plugin-files = ${nix-plugins}/lib/nix/plugins

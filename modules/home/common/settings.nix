@@ -7,7 +7,7 @@ in
   options.swarselmodules.general = lib.mkEnableOption "general nix settings";
   config =
     let
-      nix-version = "2_30";
+      nix-version = "2_34";
     in
     lib.mkIf config.swarselmodules.general ({
       nix = lib.mkIf (!config.swarselsystems.isNixos) {
@@ -18,12 +18,28 @@ in
         # '';
         extraOptions =
           let
-            nix-plugins = pkgs.nix-plugins.override {
-              nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
-            };
+            # nix-plugins = pkgs.nix-plugins.override {
+            #   nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+            # };
+
+            nix-plugins = pkgs.nix-plugins.overrideAttrs (old: {
+              buildInputs = [ pkgs.nixVersions."nix_${nix-version}" pkgs.boost ];
+              postPatch = (old.postPatch or "") + lib.optionalString (nix-version == "2_34") ''
+                substituteInPlace extra-builtins.cc \
+                --replace-fail 'Setting<Path> extraBuiltinsFile{this,' 'Setting<std::string> extraBuiltinsFile{this,' \
+                --replace-fail 'settings.nixConfDir + "/extra-builtins.nix",' '"/etc/nix/extra-builtins.nix",' \
+                --replace-fail '.fun = prim_exec,' '.impl = prim_exec,' \
+                --replace-fail '.fun = prim_importNative,' '.impl = prim_importNative,' \
+                --replace-fail '.fun = extraBuiltins,' '.impl = extraBuiltins,' \
+                --replace-fail '.fun = cflags,' '.impl = cflags,' \
+                --replace-fail 'attrs.alloc("NIX_INCLUDE_DIRS").mkString(NIX_INCLUDE_DIRS);' 'attrs.alloc("NIX_INCLUDE_DIRS").mkString(NIX_INCLUDE_DIRS, state.mem);' \
+                --replace-fail 'attrs.alloc("NIX_CFLAGS_OTHER").mkString(NIX_CFLAGS_OTHER);' 'attrs.alloc("NIX_CFLAGS_OTHER").mkString(NIX_CFLAGS_OTHER, state.mem);' \
+                --replace-fail 'attrs.alloc("BOOST_INCLUDE_DIR").mkString(BOOST_INCLUDE_DIR);' 'attrs.alloc("BOOST_INCLUDE_DIR").mkString(BOOST_INCLUDE_DIR, state.mem);'
+              '';
+            });
           in
           ''
-            plugin-files = ${nix-plugins}/lib/nix/plugins
+                  plugin-files = ${nix-plugins}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
           '' + lib.optionalString (!minimal) ''
             !include ${config.sops.secrets.github-api-token.path}
@@ -114,7 +130,7 @@ in
             buildInputs = [ pkgs.makeWrapper ];
             paths = [ pkgs.home-manager ];
             postBuild = ''
-              wrapProgram $out/bin/home-manager \
+                  wrapProgram $out/bin/home-manager \
               --append-flags '--flake ${flakePath}#$(hostname)'
             '';
           })
@@ -130,7 +146,7 @@ in
           templates = {
             netrc = {
               content = ''
-                machine ${globals.services.attic.domain}
+                    machine ${globals.services.attic.domain}
                 password ${config.sops.placeholder.attic-cache-key}
               '';
               owner = mainUser;
