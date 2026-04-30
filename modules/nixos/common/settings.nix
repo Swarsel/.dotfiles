@@ -67,7 +67,7 @@ in
           templates = {
             netrc = {
               content = ''
-                  machine ${globals.services.attic.domain}
+                machine ${globals.services.attic.domain}
                 password ${config.sops.placeholder.attic-cache-key}
               '';
               owner = mainUser;
@@ -103,7 +103,7 @@ in
                 "${config.swarselsystems.mainUser}"
                 (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
               ];
-              netrc-file = config.sops.templates.netrc.path;
+              netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
             };
             # extraOptions = ''
             #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins

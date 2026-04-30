@@ -3,7 +3,7 @@ with dns.lib.combinators; {
   SOA = {
     nameServer = "soa";
     adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-    serial = 2026010201; # update this on changes for secondary dns
+    serial = 2026042901; # update this on changes for secondary dns
   };
 
   useOrigin = false;

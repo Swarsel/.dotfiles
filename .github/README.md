@@ -156,7 +156,7 @@
   |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/minecraft.nix)                 |
   |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/garage.nix)                       |
   |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/attic.nix)                         |
-  |🐙 **Nix Build farm**       | [Hydra](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix)                         |
+  |🐙 **Nix Build farm**       | previously [<del>Hydra</del>](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix), now using  [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/buildbot.nix)                   |
   |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
   |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
   |👀 **DNS Records**          | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |

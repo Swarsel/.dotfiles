@@ -22,6 +22,7 @@
       project
       fhs
       swarsel-bootstrap
+      swarsel-build
       swarsel-deploy
       swarsel-instantiate
       swarselzellij

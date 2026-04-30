@@ -6,8 +6,8 @@ in
   imports = [
   ];
 
-  options.swarselmodules.optional.darwin = lib.mkEnableOption "optional darwin settings";
-  config = lib.mkIf config.swarselmodules.optional.darwin
+  options.swarselmodules.optional-darwin = lib.mkEnableOption "optional darwin settings";
+  config = lib.mkIf config.swarselmodules.optional-darwin
     {
       nix.settings.experimental-features = "nix-command flakes";
       nixpkgs = {

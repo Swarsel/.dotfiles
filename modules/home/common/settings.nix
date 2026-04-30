@@ -50,7 +50,7 @@ in
             "${mainUser}"
             (lib.mkIf ((config.swarselmodules ? server) ? ssh-builder) "builder")
           ];
-          netrc-file = config.sops.templates.netrc.path;
+          netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
           connect-timeout = 5;
           bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";
           bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";

@@ -114,7 +114,7 @@ in
 
             ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
             ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
-            ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
+            ${pkgs.coreutils}/bin/install -d -m 0755 ${privateDir}
             ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
 
             need_gen=0
@@ -249,6 +249,7 @@ in
             "slink.access" = { };
             "opkssh.access" = { };
             "adguardhome.access" = { };
+            "buildbot.access" = { };
           };
 
           inherit (config.repo.secrets.local) persons;
@@ -396,6 +397,11 @@ in
                     "email"
                     "profile"
                   ];
+                  "buildbot.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
                 };
                 preferShortUsername = true;
                 claimMaps.groups = {
@@ -407,6 +413,7 @@ in
                     "radicale.access" = [ "radicale_access" ];
                     "slink.access" = [ "slink_access" ];
                     "adguardhome.access" = [ "adguardhome_access" ];
+                    "buildbot.access" = [ "buildbot_access" ];
                   };
                 };
               };

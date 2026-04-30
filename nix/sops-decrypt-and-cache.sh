@@ -28,7 +28,13 @@ mkdir -p "$(dirname "$out")"
 
 # Decrypt only if necessary
 if [[ ! -e $out ]]; then
-    agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key || sudo ssh-to-age -private-key -i ~/.ssh/sops)
+    if [[ -n ${SOPS_AGE_KEY:-} ]]; then
+        agekey="$SOPS_AGE_KEY"
+    elif [[ -f ${SOPS_AGE_KEY_FILE:-} ]]; then
+        agekey=$(cat "$SOPS_AGE_KEY_FILE")
+    else
+        agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key || sudo ssh-to-age -private-key -i ~/.ssh/sops)
+    fi
     SOPS_AGE_KEY="$agekey" sops decrypt --output "$out" "$file"
 fi
 

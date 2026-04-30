@@ -61,7 +61,8 @@
     postgresql = true;
     attic = true;
     garage = true;
-    hydra = false;
+    hydra = false; # we use buildbot instead
+    buildbot = true;
   };
 
 }
