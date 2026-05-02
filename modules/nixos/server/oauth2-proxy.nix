@@ -1,12 +1,14 @@
-{ lib, config, pkgs, globals, dns, nodes, confLib, ... }:
+{ self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
 
-  kanidmDomain = globals.services.kanidm.domain;
   mainDomain = globals.domains.main;
 
   inherit (config.swarselsystems) sopsFile;
+
+  kanidmDomain = globals.services.kanidm.domain;
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   options = {
@@ -123,13 +125,13 @@ in
     sops = {
       secrets = {
         "oauth2-cookie-secret" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-oauth2-proxy-client" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-oauth2-proxy" = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       templates = {
         "kanidm-oauth2-proxy-client-env" = {
           content = ''
-            OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
+            OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy}"
               OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
           '';
           owner = serviceUser;
@@ -226,17 +228,14 @@ in
       in
       {
         ${idmServer} =
-          let
-            nodeCfg = nodes.${idmServer}.config;
-          in
           {
-            sops.secrets.kanidm-oauth2-proxy = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            sops.secrets.kanidm-oauth2-proxy = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
             services.kanidm.provision = {
               systems.oauth2.oauth2-proxy = {
                 displayName = "Oauth2-Proxy";
                 originUrl = "https://${serviceDomain}/oauth2/callback";
                 originLanding = "https://${serviceDomain}/";
-                basicSecretFile = nodeCfg.sops.secrets.kanidm-oauth2-proxy.path;
+                basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
                 preferShortUsername = true;
                 claimMaps.groups = {
                   joinType = "array";

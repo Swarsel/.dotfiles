@@ -8,7 +8,7 @@ let
   }) servicePort serviceName serviceUser serviceGroup;
 
   inherit (config.swarselsystems) sopsFile;
-  wgSopsFile = self + "/secrets/repo/wg.yaml";
+  wgSopsFilePrefix = self + "/secrets/wireguard";
 
   cfg = config.swarselsystems.server.wireguard;
   inherit (cfg) interfaces;
@@ -124,7 +124,7 @@ in
               clientSecrets =
                 lib.optionalAttrs i.isClient {
                   "wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey" = {
-                    sopsFile = wgSopsFile;
+                    sopsFile = wgSopsFilePrefix + "/${i.serverName}-${config.node.name}.yaml";
                     owner = serviceUser;
                     group = serviceGroup;
                     mode = "0600";
@@ -136,7 +136,7 @@ in
                   (clientName: {
                     name = "wireguard-${config.node.name}-${clientName}-${i.ifName}-presharedKey";
                     value = {
-                      sopsFile = wgSopsFile;
+                      sopsFile = wgSopsFilePrefix + "/${config.node.name}-${clientName}.yaml";
                       owner = serviceUser;
                       group = serviceGroup;
                       mode = "0600";

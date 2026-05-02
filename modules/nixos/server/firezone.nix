@@ -17,6 +17,8 @@ let
       description = "Allow ${group} access to ${resource}";
     };
   };
+
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   options = {
@@ -66,7 +68,7 @@ in
 
     sops = {
       secrets = {
-        kanidm-firezone-client = { inherit sopsFile; mode = "0400"; };
+        kanidm-firezone = { sopsFile = kanidmSopsFile; mode = "0400"; };
         firezone-relay-token = { inherit sopsFile; mode = "0400"; };
         firezone-smtp-password = { inherit sopsFile; mode = "0440"; };
         firezone-adapter-config = { inherit sopsFile; mode = "0440"; };
@@ -121,7 +123,7 @@ in
                   response_type = "code";
                   inherit client_id;
                   discovery_document_uri = "https://${globals.services.kanidm.domain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
-                  clientSecretFile = config.sops.secrets.kanidm-firezone-client.path;
+                  clientSecretFile = config.sops.secrets.kanidm-firezone.path;
                 };
               };
 
@@ -370,12 +372,11 @@ in
           };
         ${idmServer} =
           let
-            nodeCfg = nodes.${idmServer}.config;
             accountId = "3e996ad9-c100-40e8-807a-282a5c5e8b6c";
             externalId = "31e7f702-28a7-4bbc-9690-b6db9d4a162a";
           in
           {
-            sops.secrets.kanidm-firezone = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            sops.secrets.kanidm-firezone = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
             services.kanidm.provision = {
               groups."firezone.access" = { };
               systems.oauth2.firezone = {
@@ -386,7 +387,7 @@ in
                   "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
                 ];
                 originLanding = "https://${serviceDomain}/";
-                basicSecretFile = nodeCfg.sops.secrets.kanidm-firezone.path;
+                basicSecretFile = config.sops.secrets.kanidm-firezone.path; # dirty but saves a cross-evaluation
                 preferShortUsername = true;
                 scopeMaps."firezone.access" = [
                   "openid"

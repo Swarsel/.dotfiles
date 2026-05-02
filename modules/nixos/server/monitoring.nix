@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, nodes, confLib, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -9,11 +9,11 @@ let
   grafanaUpstream = "grafana";
   prometheusUpstream = "prometheus";
   prometheusWebRoot = "prometheus";
-  kanidmDomain = globals.services.kanidm.domain;
 
   inherit (config.swarselsystems) sopsFile;
 
-  # sopsFile2 = config.node.secretsDir + "/secrets2.yaml";
+  kanidmDomain = globals.services.kanidm.domain;
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -23,7 +23,7 @@ in
       secrets = {
         grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         prometheus-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        kanidm-grafana-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-grafana = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         # prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
         prometheus-admin-hash = { inherit sopsFile; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
 
@@ -146,7 +146,7 @@ in
             allow_sign_up = true;
             #auto_login = true;
             client_id = "grafana";
-            client_secret = "$__file{${config.sops.secrets.kanidm-grafana-client.path}}";
+            client_secret = "$__file{${config.sops.secrets.kanidm-grafana.path}}";
             scopes = "openid email profile";
             login_attribute_path = "preferred_username";
             auth_url = "https://${kanidmDomain}/ui/oauth2";
@@ -284,41 +284,37 @@ in
         };
       in
       {
-        ${idmServer} =
-          let
-            nodeCfg = nodes.${idmServer}.config;
-          in
-          {
-            sops.secrets.kanidm-grafana = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups = {
-                "grafana.access" = { };
-                "grafana.editors" = { };
-                "grafana.admins" = { };
-                "grafana.server-admins" = { };
-              };
-              systems.oauth2.grafana = {
-                displayName = "Grafana";
-                originUrl = "https://${serviceDomain}/login/generic_oauth";
-                originLanding = "https://${serviceDomain}/";
-                basicSecretFile = nodeCfg.sops.secrets.kanidm-grafana.path;
-                preferShortUsername = true;
-                scopeMaps."grafana.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "grafana.editors" = [ "editor" ];
-                    "grafana.admins" = [ "admin" ];
-                    "grafana.server-admins" = [ "server_admin" ];
-                  };
+        ${idmServer} = {
+          sops.secrets.kanidm-grafana = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          services.kanidm.provision = {
+            groups = {
+              "grafana.access" = { };
+              "grafana.editors" = { };
+              "grafana.admins" = { };
+              "grafana.server-admins" = { };
+            };
+            systems.oauth2.grafana = {
+              displayName = "Grafana";
+              originUrl = "https://${serviceDomain}/login/generic_oauth";
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = config.sops.secrets.kanidm-grafana.path; # dirty but saves a cross-evaluation
+              preferShortUsername = true;
+              scopeMaps."grafana.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
+              claimMaps.groups = {
+                joinType = "array";
+                valuesByGroup = {
+                  "grafana.editors" = [ "editor" ];
+                  "grafana.admins" = [ "admin" ];
+                  "grafana.server-admins" = [ "server_admin" ];
                 };
               };
             };
           };
+        };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

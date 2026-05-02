@@ -1,4 +1,4 @@
-{ lib, pkgs, config, dns, globals, nodes, confLib, ... }:
+{ self, lib, pkgs, config, dns, globals, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
@@ -7,6 +7,7 @@ let
   tikaPort = 9998;
   gotenbergPort = 3002;
   kanidmDomain = globals.services.kanidm.domain;
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -23,7 +24,7 @@ in
 
     sops.secrets = {
       paperless-admin-pw = { inherit sopsFile; owner = serviceUser; };
-      kanidm-paperless-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      kanidm-paperless = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     # networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -115,7 +116,7 @@ in
 
     # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
     systemd.services.paperless-web.script = lib.mkBefore ''
-        oidcSecret=$(< ${config.sops.secrets.kanidm-paperless-client.path})
+        oidcSecret=$(< ${config.sops.secrets.kanidm-paperless.path})
       export PAPERLESS_SOCIALACCOUNT_PROVIDERS=$(
         ${pkgs.jq}/bin/jq <<< "$PAPERLESS_SOCIALACCOUNT_PROVIDERS" \
           --compact-output \
@@ -133,30 +134,26 @@ in
         '';
       in
       {
-        ${idmServer} =
-          let
-            nodeCfg = nodes.${idmServer}.config;
-          in
-          {
-            sops.secrets.kanidm-paperless = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups = {
-                "paperless.access" = { };
-              };
-              systems.oauth2.paperless = {
-                displayName = "Paperless";
-                originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
-                originLanding = "https://${serviceDomain}/";
-                basicSecretFile = nodeCfg.sops.secrets.kanidm-paperless.path;
-                preferShortUsername = true;
-                scopeMaps."paperless.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
+        ${idmServer} = {
+          sops.secrets.kanidm-paperless = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          services.kanidm.provision = {
+            groups = {
+              "paperless.access" = { };
+            };
+            systems.oauth2.paperless = {
+              displayName = "Paperless";
+              originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = config.sops.secrets.kanidm-paperless.path; # dirty but saves a cross-evaluation
+              preferShortUsername = true;
+              scopeMaps."paperless.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
             };
           };
+        };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

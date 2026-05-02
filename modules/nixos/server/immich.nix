@@ -1,11 +1,15 @@
-{ lib, pkgs, config, globals, dns, nodes, confLib, ... }:
+{ self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    sops.secrets.kanidm-immich = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
 
     swarselmodules.server = {
       postgresql = true;
@@ -75,11 +79,8 @@ in
       in
       {
         ${idmServer} =
-          let
-            nodeCfg = nodes.${idmServer}.config;
-          in
           {
-            sops.secrets.kanidm-immich = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            sops.secrets.kanidm-immich = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
             services.kanidm.provision = {
               groups = {
                 "immich.access" = { };
@@ -93,7 +94,7 @@ in
                   "https://${serviceDomain}/api/oauth/mobile-redirect"
                 ];
                 originLanding = "https://${serviceDomain}/";
-                basicSecretFile = nodeCfg.sops.secrets.kanidm-immich.path;
+                basicSecretFile = config.sops.secrets.kanidm-immich.path; # dirty but saves a cross-evaluation
                 preferShortUsername = true;
                 enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
                 scopeMaps."immich.access" = [
