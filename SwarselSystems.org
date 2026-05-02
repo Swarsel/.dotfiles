@@ -13346,11 +13346,13 @@ My video streaming service of choice. In the past I used plex, but I prefer usin
 
 My music streaming service. In the past I used subsonic and gonic, but I prefer the tag based management. Sadly the jukebox seems not to work on NixOS (TODO?)
 
+After the first login when setting up, you need to add a password to the user that is created using OIDC. This is so that login using DSub2 becomes possible.
+
 #+begin_src nix-ts :tangle modules/nixos/server/navidrome.nix
   { pkgs, config, lib, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -13526,6 +13528,28 @@ My music streaming service. In the past I used subsonic and gonic, but I prefer 
           };
         in
         {
+          ${idmServer} =
+            {
+              services.kanidm.provision = {
+                groups = {
+                  "navidrome.access" = { };
+                };
+                systems.oauth2.oauth2-proxy = {
+                  scopeMaps = {
+                    "navidrome.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                  };
+                  claimMaps.groups = {
+                    valuesByGroup = {
+                      "navidrome.access" = [ "navidrome_access" ];
+                    };
+                  };
+                };
+              };
+            };
           ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
@@ -14217,78 +14241,111 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
 My file server. I aim to decomission this as soon as I can, however, I need a replacement for the cospend plugin (a shared expense manager).
 
 #+begin_src nix-ts :tangle modules/nixos/server/nextcloud.nix
-      { pkgs, lib, config, globals, dns, confLib, ... }:
-      let
-        inherit (config.repo.secrets.local.nextcloud) adminuser;
-        inherit (config.swarselsystems) sopsFile;
-        inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-        inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+  { pkgs, lib, config, globals, dns, nodes, confLib, ... }:
+  let
+    inherit (config.repo.secrets.local.nextcloud) adminuser;
+    inherit (config.swarselsystems) sopsFile;
+    inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome idmServer dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
-        nextcloudVersion = "33";
-      in
-      {
-        options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-        config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    nextcloudVersion = "33";
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-          sops.secrets = {
-            nextcloud-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      sops.secrets = {
+        nextcloud-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      };
+
+      users.persistentIds = {
+        nextcloud = confLib.mkIds 990;
+        redis-nextcloud = confLib.mkIds 976;
+      };
+
+      globals.services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+      };
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/lib/redis-${serviceName}"; user = serviceUser; group = serviceGroup; }
+        ];
+      };
+
+      services = {
+        ${serviceName} = {
+          enable = true;
+          settings = {
+            trusted_proxies = [ "0.0.0.0" ];
+            overwriteprotocol = "https";
           };
-
-          users.persistentIds = {
-            nextcloud = confLib.mkIds 990;
-            redis-nextcloud = confLib.mkIds 976;
+          package = pkgs."nextcloud${nextcloudVersion}";
+          hostName = serviceDomain;
+          home = "/var/lib/${serviceName}";
+          datadir = "/var/lib/${serviceName}";
+          https = true;
+          configureRedis = true;
+          maxUploadSize = "4G";
+          extraApps = {
+            inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
           };
-
-          globals.services.${serviceName} = {
-            domain = serviceDomain;
-            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          extraAppsEnable = true;
+          config = {
+            inherit adminuser;
+            adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
+            dbtype = "sqlite";
           };
-
-          environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-            directories = [
-              { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
-              { directory = "/var/lib/redis-${serviceName}"; user = serviceUser; group = serviceGroup; }
-            ];
-          };
-
-          services = {
-            ${serviceName} = {
-              enable = true;
-              settings = {
-                trusted_proxies = [ "0.0.0.0" ];
-                overwriteprotocol = "https";
-              };
-              package = pkgs."nextcloud${nextcloudVersion}";
-              hostName = serviceDomain;
-              home = "/var/lib/${serviceName}";
-              datadir = "/var/lib/${serviceName}";
-              https = true;
-              configureRedis = true;
-              maxUploadSize = "4G";
-              extraApps = {
-                inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
-              };
-              extraAppsEnable = true;
-              config = {
-                inherit adminuser;
-                adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
-                dbtype = "sqlite";
-              };
-            };
-          };
-
-          nodes = {
-            ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-              "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-            };
-            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-          };
-
         };
-      }
+      };
+
+      nodes = {
+        ${idmServer} =
+          let
+            nodeCfg = nodes.${idmServer}.config;
+          in
+          {
+
+            sops.secrets.kanidm-nextcloud = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            services.kanidm.provision = {
+              groups = {
+                "nextcloud.access" = { };
+                "nextcloud.admins" = { };
+              };
+              systems.oauth2.nextcloud = {
+                displayName = "Nextcloud";
+                originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+                originLanding = "https://${serviceDomain}/";
+                basicSecretFile = nodeCfg.sops.secrets.kanidm-nextcloud.path;
+                allowInsecureClientDisablePkce = true;
+                scopeMaps."nextcloud.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+                preferShortUsername = true;
+                claimMaps.groups = {
+                  joinType = "array";
+                  valuesByGroup = {
+                    "nextcloud.admins" = [ "admin" ];
+                  };
+                };
+              };
+            };
+          };
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+      };
+
+    };
+  }
 #+end_src
 
 **** immich (use db)
@@ -14299,91 +14356,121 @@ My file server. I aim to decomission this as soon as I can, however, I need a re
 My photo service. It does some cool things like face recognition automatically (locally).
 
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
-    { lib, pkgs, config, globals, dns, confLib, ... }:
-    let
-      inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
-    in
-    {
-      options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-      config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  { lib, pkgs, config, globals, dns, nodes, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-        swarselmodules.server = {
-          postgresql = true;
-        };
-
-        users = {
-          persistentIds = {
-            immich = confLib.mkIds 989;
-            redis-immich = confLib.mkIds 977;
-          };
-          users.${serviceUser} = {
-            extraGroups = [ "video" "render" "users" ];
-          };
-        };
-
-        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-        globals = {
-          networks = {
-            ${webProxyIf}.hosts = lib.mkIf isProxied {
-              ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-            };
-            ${homeProxyIf}.hosts = lib.mkIf isHome {
-              ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-            };
-          };
-          services.${serviceName} = {
-            domain = serviceDomain;
-            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-          };
-        };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
-            { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
-            { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
-          ];
-        };
-
-        services.${serviceName} = {
-          enable = true;
-          package = pkgs.immich;
-          host = "0.0.0.0";
-          port = servicePort;
-          # openFirewall = true;
-          mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
-          environment = {
-            IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
-          };
-        };
-
-        nodes =
-          let
-            extraConfigLoc = ''
-              proxy_http_version 1.1;
-              proxy_set_header   Upgrade    $http_upgrade;
-              proxy_set_header   Connection "upgrade";
-              proxy_redirect     off;
-
-              proxy_read_timeout 600s;
-              proxy_send_timeout 600s;
-              send_timeout       600s;
-            '';
-          in
-          {
-            ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-              "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-            };
-            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-          };
-
+      swarselmodules.server = {
+        postgresql = true;
       };
-    }
+
+      users = {
+        persistentIds = {
+          immich = confLib.mkIds 989;
+          redis-immich = confLib.mkIds 977;
+        };
+        users.${serviceUser} = {
+          extraGroups = [ "video" "render" "users" ];
+        };
+      };
+
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+      # networking.firewall.allowedTCPPorts = [ servicePort ];
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+      };
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [
+          { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+          { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
+        ];
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        package = pkgs.immich;
+        host = "0.0.0.0";
+        port = servicePort;
+        # openFirewall = true;
+        mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
+        environment = {
+          IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
+        };
+      };
+
+      nodes =
+        let
+          extraConfigLoc = ''
+            proxy_http_version 1.1;
+            proxy_set_header   Upgrade    $http_upgrade;
+            proxy_set_header   Connection "upgrade";
+            proxy_redirect     off;
+
+            proxy_read_timeout 600s;
+            proxy_send_timeout 600s;
+            send_timeout       600s;
+          '';
+        in
+        {
+          ${idmServer} =
+            let
+              nodeCfg = nodes.${idmServer}.config;
+            in
+            {
+              sops.secrets.kanidm-immich = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+              services.kanidm.provision = {
+                groups = {
+                  "immich.access" = { };
+                };
+                systems.oauth2.immich = {
+                  displayName = "Immich";
+                  originUrl = [
+                    "https://${serviceDomain}/auth/login"
+                    "https://${serviceDomain}/user-settings"
+                    "app.immich:///oauth-callback"
+                    "https://${serviceDomain}/api/oauth/mobile-redirect"
+                  ];
+                  originLanding = "https://${serviceDomain}/";
+                  basicSecretFile = nodeCfg.sops.secrets.kanidm-immich.path;
+                  preferShortUsername = true;
+                  enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
+                  scopeMaps."immich.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+              };
+            };
+          ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+            "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          };
+          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+        };
+
+    };
+  }
 #+end_src
 
 **** paperless (tika, gotenberg)
@@ -14396,11 +14483,11 @@ This is my personal document management system. It automatically pulls documents
 Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml='s. This is needed for e.g. online services that only send their invoices through email body text.
 
 #+begin_src nix-ts :tangle modules/nixos/server/paperless.nix
-  { lib, pkgs, config, dns, globals, confLib, ... }:
+  { lib, pkgs, config, dns, globals, nodes, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
     tikaPort = 9998;
     gotenbergPort = 3002;
@@ -14531,6 +14618,30 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           '';
         in
         {
+          ${idmServer} =
+            let
+              nodeCfg = nodes.${idmServer}.config;
+            in
+            {
+              sops.secrets.kanidm-paperless = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+              services.kanidm.provision = {
+                groups = {
+                  "paperless.access" = { };
+                };
+                systems.oauth2.paperless = {
+                  displayName = "Paperless";
+                  originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
+                  originLanding = "https://${serviceDomain}/";
+                  basicSecretFile = nodeCfg.sops.secrets.kanidm-paperless.path;
+                  preferShortUsername = true;
+                  scopeMaps."paperless.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+              };
+            };
           ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
@@ -15062,10 +15173,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 This section exposes several metrics that I use to check the health of my server. I need to expand on the exporters section at some point, but for now I have everything I need.
 
 #+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, nodes, confLib, ... }:
   let
     inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
     prometheusPort = 9090;
     prometheusUser = "prometheus";
@@ -15348,6 +15459,41 @@ This section exposes several metrics that I use to check the health of my server
           };
         in
         {
+          ${idmServer} =
+            let
+              nodeCfg = nodes.${idmServer}.config;
+            in
+            {
+              sops.secrets.kanidm-grafana = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+              services.kanidm.provision = {
+                groups = {
+                  "grafana.access" = { };
+                  "grafana.editors" = { };
+                  "grafana.admins" = { };
+                  "grafana.server-admins" = { };
+                };
+                systems.oauth2.grafana = {
+                  displayName = "Grafana";
+                  originUrl = "https://${serviceDomain}/login/generic_oauth";
+                  originLanding = "https://${serviceDomain}/";
+                  basicSecretFile = nodeCfg.sops.secrets.kanidm-grafana.path;
+                  preferShortUsername = true;
+                  scopeMaps."grafana.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup = {
+                      "grafana.editors" = [ "editor" ];
+                      "grafana.admins" = [ "admin" ];
+                      "grafana.server-admins" = [ "server_admin" ];
+                    };
+                  };
+                };
+              };
+            };
           ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
@@ -15462,7 +15608,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome webProxy homeWebProxy idmServer dnsServer homeServiceAddress nginxAccessRules;
 
     inherit (config.swarselsystems) sopsFile;
   in
@@ -15486,7 +15632,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       sops = {
         secrets = {
           freshrss-pw = { inherit sopsFile; owner = serviceUser; };
-          kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          # kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
 
@@ -15578,6 +15724,28 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           };
         in
         {
+          ${idmServer} =
+            {
+              services.kanidm.provision = {
+                groups = {
+                  "freshrss.access" = { };
+                };
+                systems.oauth2.oauth2-proxy = {
+                  scopeMaps = {
+                    "freshrss.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                  };
+                  claimMaps.groups = {
+                    valuesByGroup = {
+                      "freshrss.access" = [ "ttrss_access" ];
+                    };
+                  };
+                };
+              };
+            };
           ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
@@ -15597,11 +15765,11 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 My selfhosted git solution. TODO: federate
 
 #+begin_src nix-ts :tangle modules/nixos/server/forgejo.nix
-  { lib, config, pkgs, globals, dns, confLib, ... }:
+  { lib, config, pkgs, globals, dns, nodes, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
     kanidmDomain = globals.services.kanidm.domain;
   in
@@ -15747,6 +15915,38 @@ My selfhosted git solution. TODO: federate
       };
 
       nodes = {
+        ${idmServer} =
+          let
+            nodeCfg = nodes.${idmServer}.config;
+          in
+          {
+            sops.secrets.kanidm-forgejo = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            services.kanidm.provision = {
+              groups = {
+                "forgejo.access" = { };
+                "forgejo.admins" = { };
+              };
+              systems.oauth2.forgejo = {
+                displayName = "Forgejo";
+                originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+                originLanding = "https://${serviceDomain}/";
+                basicSecretFile = nodeCfg.sops.secrets.kanidm-forgejo.path;
+                scopeMaps."forgejo.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+                # XXX: PKCE is currently not supported by gitea/forgejo,
+                # see https://github.com/go-gitea/gitea/issues/21376.
+                allowInsecureClientDisablePkce = true;
+                preferShortUsername = true;
+                claimMaps.groups = {
+                  joinType = "array";
+                  valuesByGroup."forgejo.admins" = [ "admin" ];
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
@@ -15859,13 +16059,6 @@ kanidm person credential create-reset-token <user>
     inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf dnsServer homeServiceAddress nginxAccessRules;
 
-    oauth2ProxyDomain = globals.services.oauth2-proxy.domain;
-    immichDomain = globals.services.immich.domain;
-    paperlessDomain = globals.services.paperless.domain;
-    forgejoDomain = globals.services.forgejo.domain;
-    grafanaDomain = globals.services.grafana.domain;
-    nextcloudDomain = globals.services.nextcloud.domain;
-
     certBase = "/etc/ssl";
     certsDir = "${certBase}/certs";
     privateDir = "${certBase}/private";
@@ -15905,13 +16098,7 @@ kanidm person credential create-reset-token <user>
           "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           "kanidm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           "kanidm-idm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-immich" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-paperless" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-forgejo" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-grafana" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-nextcloud" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-oauth2-proxy" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
       };
 
@@ -16008,55 +16195,6 @@ kanidm person credential create-reset-token <user>
 
 
 
-      # system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
-      #   deps = [ "generateSSLCert-${serviceName}" "users" "groups" ];
-      # };
-      # system.activationScripts."generateSSLCert-${serviceName}" =
-      #   let
-      #     daysValid = 3650;
-      #     renewBeforeDays = 365;
-      #   in
-      #   {
-      #     text = ''
-      #       set -eu
-
-      #       ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
-      #       ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
-      #       ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
-      #       ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
-
-      #       need_gen=0
-      #       if [ ! -f "${certPathBase}" ] || [ ! -f "${keyPathBase}" ]; then
-      #         need_gen=1
-      #       else
-      #         enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPathBase}" | cut -d= -f2)"
-      #         end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
-      #         now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
-      #         seconds_left=$(( end_epoch - now_epoch ))
-      #         days_left=$(( seconds_left / 86400 ))
-      #         if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
-      #           need_gen=1
-      #         fi
-      #       fi
-
-      #       if [ "$need_gen" -eq 1 ]; then
-      #         ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
-      #           -keyout "${keyPath}" \
-      #           -out "${certPath}" \
-      #           -subj "/CN=${serviceDomain}" \
-      #           -addext "subjectAltName=DNS:${serviceDomain}"
-
-      #         chmod 0644 "${certPath}"
-      #         chmod 0600 "${keyPath}"
-      #         chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
-      #       fi
-      #     '';
-      #     deps = [
-      #       "etc"
-      #       (lib.mkIf config.swarselsystems.isImpermanence "specialfs")
-      #     ];
-      #   };
-
       services = {
         ${serviceName} = {
           package = pkgs.kanidmWithSecretProvisioning_1_9;
@@ -16085,194 +16223,10 @@ kanidm person credential create-reset-token <user>
             enable = true;
             adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
             idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
-            groups = {
-              "immich.access" = { };
-              "paperless.access" = { };
-              "forgejo.access" = { };
-              "forgejo.admins" = { };
-              "grafana.access" = { };
-              "grafana.editors" = { };
-              "grafana.admins" = { };
-              "grafana.server-admins" = { };
-              "nextcloud.access" = { };
-              "nextcloud.admins" = { };
-              "navidrome.access" = { };
-              "freshrss.access" = { };
-              "firefly.access" = { };
-              "radicale.access" = { };
-              "slink.access" = { };
-              "opkssh.access" = { };
-              "adguardhome.access" = { };
-              "buildbot.access" = { };
-            };
+
+            # oauth2 systems config is in the respective modules
 
             inherit (config.repo.secrets.local) persons;
-
-            systems = {
-              oauth2 = {
-                immich = {
-                  displayName = "Immich";
-                  originUrl = [
-                    "https://${immichDomain}/auth/login"
-                    "https://${immichDomain}/user-settings"
-                    "app.immich:///oauth-callback"
-                    "https://${immichDomain}/api/oauth/mobile-redirect"
-                  ];
-                  originLanding = "https://${immichDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-immich.path;
-                  preferShortUsername = true;
-                  enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
-                  scopeMaps."immich.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                paperless = {
-                  displayName = "Paperless";
-                  originUrl = "https://${paperlessDomain}/accounts/oidc/kanidm/login/callback/";
-                  originLanding = "https://${paperlessDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-paperless.path;
-                  preferShortUsername = true;
-                  scopeMaps."paperless.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                forgejo = {
-                  displayName = "Forgejo";
-                  originUrl = "https://${forgejoDomain}/user/oauth2/kanidm/callback";
-                  originLanding = "https://${forgejoDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
-                  scopeMaps."forgejo.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  # XXX: PKCE is currently not supported by gitea/forgejo,
-                  # see https://github.com/go-gitea/gitea/issues/21376.
-                  allowInsecureClientDisablePkce = true;
-                  preferShortUsername = true;
-                  claimMaps.groups = {
-                    joinType = "array";
-                    valuesByGroup."forgejo.admins" = [ "admin" ];
-                  };
-                };
-                grafana = {
-                  displayName = "Grafana";
-                  originUrl = "https://${grafanaDomain}/login/generic_oauth";
-                  originLanding = "https://${grafanaDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-grafana.path;
-                  preferShortUsername = true;
-                  scopeMaps."grafana.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  claimMaps.groups = {
-                    joinType = "array";
-                    valuesByGroup = {
-                      "grafana.editors" = [ "editor" ];
-                      "grafana.admins" = [ "admin" ];
-                      "grafana.server-admins" = [ "server_admin" ];
-                    };
-                  };
-                };
-                nextcloud = {
-                  displayName = "Nextcloud";
-                  originUrl = " https://${nextcloudDomain}/apps/sociallogin/custom_oidc/kanidm";
-                  originLanding = "https://${nextcloudDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
-                  allowInsecureClientDisablePkce = true;
-                  scopeMaps."nextcloud.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  preferShortUsername = true;
-                  claimMaps.groups = {
-                    joinType = "array";
-                    valuesByGroup = {
-                      "nextcloud.admins" = [ "admin" ];
-                    };
-                  };
-                };
-                opkssh = {
-                  displayName = "OPKSSH";
-                  originUrl = [
-                    "http://localhost:3000"
-                    "http://localhost:3000/login-callback"
-                    "http://localhost:10001/login-callback"
-                    "http://localhost:11110/login-callback"
-                  ];
-                  originLanding = "http://localhost:3000";
-                  public = true;
-                  enableLocalhostRedirects = true;
-                  scopeMaps."opkssh.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                oauth2-proxy = {
-                  displayName = "Oauth2-Proxy";
-                  originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
-                  originLanding = "https://${oauth2ProxyDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path;
-                  scopeMaps = {
-                    "freshrss.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                    "navidrome.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                    "firefly.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                    "radicale.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                    "slink.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                    "adguardhome.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                    "buildbot.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                  };
-                  preferShortUsername = true;
-                  claimMaps.groups = {
-                    joinType = "array";
-                    valuesByGroup = {
-                      "freshrss.access" = [ "ttrss_access" ];
-                      "navidrome.access" = [ "navidrome_access" ];
-                      "firefly.access" = [ "firefly_access" ];
-                      "radicale.access" = [ "radicale_access" ];
-                      "slink.access" = [ "slink_access" ];
-                      "adguardhome.access" = [ "adguardhome_access" ];
-                      "buildbot.access" = [ "buildbot_access" ];
-                    };
-                  };
-                };
-              };
-            };
           };
         };
       };
@@ -16306,10 +16260,10 @@ This can be used to add OIDC in a way to services that do not support it nativel
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
-  { lib, config, pkgs, globals, dns, confLib, ... }:
+  { lib, config, pkgs, globals, dns, nodes, confLib, ... }:
   let
     inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
 
     kanidmDomain = globals.services.kanidm.domain;
     mainDomain = globals.domains.main;
@@ -16332,7 +16286,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
                   default = [ ];
                   description = ''
                     A list of kanidm groups that are allowed to access this resource, or the
-                    empty list to allow any authenticated client.
+                      empty list to allow any authenticated client.
                   '';
                 };
                 X-User = lib.mkOption {
@@ -16369,11 +16323,11 @@ This can be used to add OIDC in a way to services that do not support it nativel
                     config = lib.mkIf config.oauth2.enable {
                       extraConfig = lib.optionalString locationSubmodule.config.setOauth2Headers ''
                         proxy_set_header X-User         $user;
-                        proxy_set_header Remote-User    $user;
-                        proxy_set_header X-Remote-User  $user;
-                        proxy_set_header X-Email        $email;
-                        # proxy_set_header X-Access-Token $token;
-                        add_header Set-Cookie           $auth_cookie;
+                          proxy_set_header Remote-User    $user;
+                          proxy_set_header X-Remote-User  $user;
+                          proxy_set_header X-Email        $email;
+                          # proxy_set_header X-Access-Token $token;
+                          add_header Set-Cookie           $auth_cookie;
                       '' + lib.optionalString locationSubmodule.config.bypassAuth ''
                         auth_request off;
                       '';
@@ -16384,17 +16338,17 @@ This can be used to add OIDC in a way to services that do not support it nativel
               config = lib.mkIf config.oauth2.enable {
                 extraConfig = ''
                   auth_request /oauth2/auth;
-                  error_page 401 = /oauth2/sign_in;
+                    error_page 401 = /oauth2/sign_in;
 
-                  # set variables that can be used in locations.<name>.extraConfig
-                  # pass information via X-User and X-Email headers to backend,
-                  # requires running with --set-xauthrequest flag
-                  auth_request_set $user  ${config.oauth2.X-User};
-                  auth_request_set $email ${config.oauth2.X-Email};
-                  # if you enabled --pass-access-token, this will pass the token to the backend
-                  # auth_request_set $token ${config.oauth2.X-Access-Token};
-                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
-                  auth_request_set $auth_cookie $upstream_http_set_cookie;
+                    # set variables that can be used in locations.<name>.extraConfig
+                    # pass information via X-User and X-Email headers to backend,
+                    # requires running with --set-xauthrequest flag
+                    auth_request_set $user  ${config.oauth2.X-User};
+                    auth_request_set $email ${config.oauth2.X-Email};
+                    # if you enabled --pass-access-token, this will pass the token to the backend
+                    # auth_request_set $token ${config.oauth2.X-Access-Token};
+                    # if you enabled --cookie-refresh, this is needed for it to work with auth_request
+                    auth_request_set $auth_cookie $upstream_http_set_cookie;
                 '';
                 locations = {
                   "/oauth2/" = {
@@ -16403,7 +16357,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
                     bypassAuth = true;
                     extraConfig = ''
                       proxy_set_header X-Scheme                $scheme;
-                      proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+                        proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
                     '';
                   };
                   "= /oauth2/auth" = {
@@ -16413,10 +16367,10 @@ This can be used to add OIDC in a way to services that do not support it nativel
                     extraConfig = ''
                       internal;
 
-                      proxy_set_header X-Scheme       $scheme;
-                      # nginx auth_request includes headers but not body
-                      proxy_set_header Content-Length "";
-                      proxy_pass_request_body         off;
+                        proxy_set_header X-Scheme       $scheme;
+                        # nginx auth_request includes headers but not body
+                        proxy_set_header Content-Length "";
+                        proxy_pass_request_body         off;
                     '';
                   };
                 };
@@ -16438,7 +16392,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
           "kanidm-oauth2-proxy-client-env" = {
             content = ''
               OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
-              OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
+                OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
             '';
             owner = serviceUser;
             group = serviceGroup;
@@ -16527,12 +16481,31 @@ This can be used to add OIDC in a way to services that do not support it nativel
         let
           extraConfig = ''
             proxy_set_header X-Scheme                $scheme;
-            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-            allow ${globals.networks.home-lan.vlans.services.cidrv4};
-            allow ${globals.networks.home-lan.vlans.services.cidrv6};
+              proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+              allow ${globals.networks.home-lan.vlans.services.cidrv4};
+              allow ${globals.networks.home-lan.vlans.services.cidrv6};
           '';
         in
         {
+          ${idmServer} =
+            let
+              nodeCfg = nodes.${idmServer}.config;
+            in
+            {
+              sops.secrets.kanidm-oauth2-proxy = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+              services.kanidm.provision = {
+                systems.oauth2.oauth2-proxy = {
+                  displayName = "Oauth2-Proxy";
+                  originUrl = "https://${serviceDomain}/oauth2/callback";
+                  originLanding = "https://${serviceDomain}/";
+                  basicSecretFile = nodeCfg.sops.secrets.kanidm-oauth2-proxy.path;
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                  };
+                };
+              };
+            };
           ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
@@ -16554,7 +16527,7 @@ My expenses tracker.
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome idmServer dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
     nginxGroup = "nginx";
 
@@ -16675,6 +16648,28 @@ My expenses tracker.
           };
         in
         {
+          ${idmServer} =
+            {
+              services.kanidm.provision = {
+                groups = {
+                  "firefly.access" = { };
+                };
+                systems.oauth2.oauth2-proxy = {
+                  scopeMaps = {
+                    "firefly.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                  };
+                  claimMaps.groups = {
+                    valuesByGroup = {
+                      "firefly.access" = [ "firefly_access" ];
+                    };
+                  };
+                };
+              };
+            };
           ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
@@ -16912,7 +16907,7 @@ Selfhosted calendar and contacts.
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
     inherit (config.swarselsystems) sopsFile;
 
     cfg = config.services.${serviceName};
@@ -17018,6 +17013,28 @@ Selfhosted calendar and contacts.
       # networking.firewall.allowedTCPPorts = [ servicePort ];
 
       nodes = {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "radicale.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "radicale.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "radicale.access" = [ "radicale_access" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
@@ -17385,129 +17402,151 @@ Deployment notes:
   - finally, disable new user registration in web ui
 
 #+begin_src nix-ts :tangle modules/nixos/server/slink.nix
-  { lib, config, dns, globals, confLib, ... }:
-  let
-    inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+{ lib, config, dns, globals, confLib, ... }:
+let
+  inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
-    containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
-  in
-  {
-    options = {
-      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
+in
+{
+  options = {
+    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  };
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselmodules.server = {
+      podman = true;
     };
-    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-      swarselmodules.server = {
-        podman = true;
+    topology.nodes.${topologyContainerName}.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "services.not-available";
+    };
+
+    virtualisation.oci-containers.containers.${serviceName} = {
+      image = "anirdev/slink@${containerRev}";
+      environment = {
+        "ORIGIN" = "https://${serviceDomain}";
+        "TZ" = config.repo.secrets.common.location.timezone;
+        "STORAGE_PROVIDER" = "local";
+        "IMAGE_MAX_SIZE" = "50M";
+        "USER_APPROVAL_REQUIRED" = "true";
       };
-
-      topology.nodes.${topologyContainerName}.services.${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
-        info = "https://${serviceDomain}";
-        icon = "services.not-available";
-      };
-
-      virtualisation.oci-containers.containers.${serviceName} = {
-        image = "anirdev/slink@${containerRev}";
-        environment = {
-          "ORIGIN" = "https://${serviceDomain}";
-          "TZ" = config.repo.secrets.common.location.timezone;
-          "STORAGE_PROVIDER" = "local";
-          "IMAGE_MAX_SIZE" = "50M";
-          "USER_APPROVAL_REQUIRED" = "true";
-        };
-        ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
-        volumes = [
-          "${serviceDir}/var/data:/app/var/data"
-          "${serviceDir}/images:/app/slink/images"
-        ];
-      };
-
-      systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
-        map
-          (path: {
-            name = "${serviceDir}/${path}";
-            value = {
-              d = {
-                group = "root";
-                user = "root";
-                mode = "0750";
-              };
-            };
-          }) [
-          "var/data"
-          "images"
-        ]
-      );
-
-      # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-        { directory = serviceDir; }
+      ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
+      volumes = [
+        "${serviceDir}/var/data:/app/var/data"
+        "${serviceDir}/images:/app/slink/images"
       ];
+    };
 
-      globals = {
-        networks = {
-          ${webProxyIf}.hosts = lib.mkIf isProxied {
-            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+    systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
+      map
+        (path: {
+          name = "${serviceDir}/${path}";
+          value = {
+            d = {
+              group = "root";
+              user = "root";
+              mode = "0750";
+            };
           };
-          ${homeProxyIf}.hosts = lib.mkIf isHome {
-            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-          };
+        }) [
+        "var/data"
+        "images"
+      ]
+    );
+
+    # networking.firewall.allowedTCPPorts = [ servicePort ];
+
+    environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+      { directory = serviceDir; }
+    ];
+
+    globals = {
+      networks = {
+        ${webProxyIf}.hosts = lib.mkIf isProxied {
+          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        ${homeProxyIf}.hosts = lib.mkIf isHome {
+          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
         };
       };
-
-      nodes =
-        let
-          genNginx = toAddress: extraConfig: {
-            upstreams = {
-              ${serviceName} = {
-                servers = {
-                  "${toAddress}:${builtins.toString servicePort}" = { };
-                };
-              };
-            };
-            virtualHosts = {
-              "${serviceDomain}" = {
-                useACMEHost = globals.domains.main;
-
-                forceSSL = true;
-                acmeRoot = null;
-                oauth2 = {
-                  enable = true;
-                  allowedGroups = [ "slink_access" ];
-                };
-                inherit extraConfig;
-                locations = {
-                  "/" = {
-                    proxyPass = "http://${serviceName}";
-                  };
-                  "/image" = {
-                    proxyPass = "http://${serviceName}";
-                    setOauth2Headers = false;
-                    bypassAuth = true;
-                  };
-                };
-              };
-            };
-          };
-        in
-        {
-          ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-            "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-          };
-          ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-        };
-
+      services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+      };
     };
-  }
+
+    nodes =
+      let
+        genNginx = toAddress: extraConfig: {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${toAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
+          };
+          virtualHosts = {
+            "${serviceDomain}" = {
+              useACMEHost = globals.domains.main;
+
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2 = {
+                enable = true;
+                allowedGroups = [ "slink_access" ];
+              };
+              inherit extraConfig;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}";
+                };
+                "/image" = {
+                  proxyPass = "http://${serviceName}";
+                  setOauth2Headers = false;
+                  bypassAuth = true;
+                };
+              };
+            };
+          };
+        };
+      in
+      {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "slink.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "slink.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "slink.access" = [ "slink_access" ];
+                  };
+                };
+              };
+            };
+          };
+        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        ${webProxy}.services.nginx = genNginx serviceAddress "";
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+      };
+
+  };
+}
 #+end_src
 
 **** Snipe-IT (currently unused)
@@ -17672,6 +17711,7 @@ Allows certificate based SSH logins easily. I use this to be able to quickly giv
   { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "opkssh"; user = "opksshuser"; group = "opksshuser"; }) serviceName serviceUser serviceGroup;
+    inherit (confLib.static) idmServer;
 
     kanidmDomain = globals.services.kanidm.domain;
 
@@ -17704,6 +17744,34 @@ Allows certificate based SSH logins easily. I use this to be able to quickly giv
             inherit (config.services.opkssh.providers.kanidm) issuer;
           }
         ];
+      };
+
+      nodes = {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "opkssh.access" = { };
+              };
+              systems.oauth2.opkssh = {
+                displayName = "OPKSSH";
+                originUrl = [
+                  "http://localhost:3000"
+                  "http://localhost:3000/login-callback"
+                  "http://localhost:10001/login-callback"
+                  "http://localhost:11110/login-callback"
+                ];
+                originLanding = "http://localhost:3000";
+                public = true;
+                enableLocalhostRedirects = true;
+                scopeMaps."opkssh.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+            };
+          };
       };
 
     };
@@ -19575,10 +19643,10 @@ This has some state:
                   displayName = "Firezone VPN";
                   # NOTE: state: both uuids are runtime values
                   originUrl = [
-                    "https://${globals.services.firezone.domain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
-                    "https://${globals.services.firezone.domain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
+                    "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
+                    "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
                   ];
-                  originLanding = "https://${globals.services.firezone.domain}/";
+                  originLanding = "https://${serviceDomain}/";
                   basicSecretFile = nodeCfg.sops.secrets.kanidm-firezone.path;
                   preferShortUsername = true;
                   scopeMaps."firezone.access" = [
@@ -19611,7 +19679,7 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "adguardhome"; port = 3000; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy dnsServer homeDnsServer homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy idmServer dnsServer homeDnsServer homeServiceAddress nginxAccessRules;
 
     homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
     homeDomains = map (name: globals.services.${name}.domain) homeServices;
@@ -19713,6 +19781,28 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
       ];
 
       nodes = {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "adguardhome.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "adguardhome.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "adguardhome.access" = [ "adguardhome_access" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
@@ -19730,7 +19820,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
   { self, lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "buildbot"; port = 8010; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
     inherit (config.swarselsystems) mainUser sopsFile;
 
     nixosHostsForArch = arch:
@@ -19947,6 +20037,28 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       ];
 
       nodes = {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "buildbot.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "buildbot.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "buildbot.access" = [ "buildbot_access" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

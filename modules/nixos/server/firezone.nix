@@ -382,10 +382,10 @@ in
                 displayName = "Firezone VPN";
                 # NOTE: state: both uuids are runtime values
                 originUrl = [
-                  "https://${globals.services.firezone.domain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
-                  "https://${globals.services.firezone.domain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
+                  "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
+                  "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
                 ];
-                originLanding = "https://${globals.services.firezone.domain}/";
+                originLanding = "https://${serviceDomain}/";
                 basicSecretFile = nodeCfg.sops.secrets.kanidm-firezone.path;
                 preferShortUsername = true;
                 scopeMaps."firezone.access" = [

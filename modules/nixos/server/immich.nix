@@ -1,7 +1,7 @@
-{ lib, pkgs, config, globals, dns, confLib, ... }:
+{ lib, pkgs, config, globals, dns, nodes, confLib, ... }:
 let
   inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -74,6 +74,36 @@ in
         '';
       in
       {
+        ${idmServer} =
+          let
+            nodeCfg = nodes.${idmServer}.config;
+          in
+          {
+            sops.secrets.kanidm-immich = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            services.kanidm.provision = {
+              groups = {
+                "immich.access" = { };
+              };
+              systems.oauth2.immich = {
+                displayName = "Immich";
+                originUrl = [
+                  "https://${serviceDomain}/auth/login"
+                  "https://${serviceDomain}/user-settings"
+                  "app.immich:///oauth-callback"
+                  "https://${serviceDomain}/api/oauth/mobile-redirect"
+                ];
+                originLanding = "https://${serviceDomain}/";
+                basicSecretFile = nodeCfg.sops.secrets.kanidm-immich.path;
+                preferShortUsername = true;
+                enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
+                scopeMaps."immich.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

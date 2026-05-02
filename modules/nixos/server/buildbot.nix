@@ -1,7 +1,7 @@
 { self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "buildbot"; port = 8010; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   inherit (config.swarselsystems) mainUser sopsFile;
 
   nixosHostsForArch = arch:
@@ -218,6 +218,28 @@ in
     ];
 
     nodes = {
+      ${idmServer} =
+        {
+          services.kanidm.provision = {
+            groups = {
+              "buildbot.access" = { };
+            };
+            systems.oauth2.oauth2-proxy = {
+              scopeMaps = {
+                "buildbot.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+              claimMaps.groups = {
+                valuesByGroup = {
+                  "buildbot.access" = [ "buildbot_access" ];
+                };
+              };
+            };
+          };
+        };
       ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };

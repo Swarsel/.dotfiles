@@ -1,8 +1,8 @@
-{ lib, config, pkgs, globals, dns, confLib, ... }:
+{ lib, config, pkgs, globals, dns, nodes, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   kanidmDomain = globals.services.kanidm.domain;
 in
@@ -148,6 +148,38 @@ in
     };
 
     nodes = {
+      ${idmServer} =
+        let
+          nodeCfg = nodes.${idmServer}.config;
+        in
+        {
+          sops.secrets.kanidm-forgejo = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          services.kanidm.provision = {
+            groups = {
+              "forgejo.access" = { };
+              "forgejo.admins" = { };
+            };
+            systems.oauth2.forgejo = {
+              displayName = "Forgejo";
+              originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = nodeCfg.sops.secrets.kanidm-forgejo.path;
+              scopeMaps."forgejo.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
+              # XXX: PKCE is currently not supported by gitea/forgejo,
+              # see https://github.com/go-gitea/gitea/issues/21376.
+              allowInsecureClientDisablePkce = true;
+              preferShortUsername = true;
+              claimMaps.groups = {
+                joinType = "array";
+                valuesByGroup."forgejo.admins" = [ "admin" ];
+              };
+            };
+          };
+        };
       ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };

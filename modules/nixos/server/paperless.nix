@@ -1,8 +1,8 @@
-{ lib, pkgs, config, dns, globals, confLib, ... }:
+{ lib, pkgs, config, dns, globals, nodes, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   tikaPort = 9998;
   gotenbergPort = 3002;
@@ -133,6 +133,30 @@ in
         '';
       in
       {
+        ${idmServer} =
+          let
+            nodeCfg = nodes.${idmServer}.config;
+          in
+          {
+            sops.secrets.kanidm-paperless = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            services.kanidm.provision = {
+              groups = {
+                "paperless.access" = { };
+              };
+              systems.oauth2.paperless = {
+                displayName = "Paperless";
+                originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
+                originLanding = "https://${serviceDomain}/";
+                basicSecretFile = nodeCfg.sops.secrets.kanidm-paperless.path;
+                preferShortUsername = true;
+                scopeMaps."paperless.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

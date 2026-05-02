@@ -1,7 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "adguardhome"; port = 3000; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy dnsServer homeDnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy idmServer dnsServer homeDnsServer homeServiceAddress nginxAccessRules;
 
   homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
   homeDomains = map (name: globals.services.${name}.domain) homeServices;
@@ -103,6 +103,28 @@ in
     ];
 
     nodes = {
+      ${idmServer} =
+        {
+          services.kanidm.provision = {
+            groups = {
+              "adguardhome.access" = { };
+            };
+            systems.oauth2.oauth2-proxy = {
+              scopeMaps = {
+                "adguardhome.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+              claimMaps.groups = {
+                valuesByGroup = {
+                  "adguardhome.access" = [ "adguardhome_access" ];
+                };
+              };
+            };
+          };
+        };
       ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };

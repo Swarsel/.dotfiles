@@ -1,7 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   inherit (config.swarselsystems) sopsFile;
 
   cfg = config.services.${serviceName};
@@ -107,6 +107,28 @@ in
     # networking.firewall.allowedTCPPorts = [ servicePort ];
 
     nodes = {
+      ${idmServer} =
+        {
+          services.kanidm.provision = {
+            groups = {
+              "radicale.access" = { };
+            };
+            systems.oauth2.oauth2-proxy = {
+              scopeMaps = {
+                "radicale.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+              claimMaps.groups = {
+                valuesByGroup = {
+                  "radicale.access" = [ "radicale_access" ];
+                };
+              };
+            };
+          };
+        };
       ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };

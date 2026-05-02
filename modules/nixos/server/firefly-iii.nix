@@ -1,7 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome idmServer dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   nginxGroup = "nginx";
 
@@ -122,6 +122,28 @@ in
         };
       in
       {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "firefly.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "firefly.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "firefly.access" = [ "firefly_access" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

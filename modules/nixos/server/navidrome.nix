@@ -1,7 +1,7 @@
 { pkgs, config, lib, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -177,6 +177,28 @@ in
         };
       in
       {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "navidrome.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "navidrome.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "navidrome.access" = [ "navidrome_access" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

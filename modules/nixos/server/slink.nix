@@ -1,7 +1,7 @@
 { lib, config, dns, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
 in
@@ -112,6 +112,28 @@ in
         };
       in
       {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "slink.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "slink.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "slink.access" = [ "slink_access" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

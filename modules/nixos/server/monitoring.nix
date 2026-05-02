@@ -1,7 +1,7 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, nodes, confLib, ... }:
 let
   inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   prometheusPort = 9090;
   prometheusUser = "prometheus";
@@ -284,6 +284,41 @@ in
         };
       in
       {
+        ${idmServer} =
+          let
+            nodeCfg = nodes.${idmServer}.config;
+          in
+          {
+            sops.secrets.kanidm-grafana = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            services.kanidm.provision = {
+              groups = {
+                "grafana.access" = { };
+                "grafana.editors" = { };
+                "grafana.admins" = { };
+                "grafana.server-admins" = { };
+              };
+              systems.oauth2.grafana = {
+                displayName = "Grafana";
+                originUrl = "https://${serviceDomain}/login/generic_oauth";
+                originLanding = "https://${serviceDomain}/";
+                basicSecretFile = nodeCfg.sops.secrets.kanidm-grafana.path;
+                preferShortUsername = true;
+                scopeMaps."grafana.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+                claimMaps.groups = {
+                  joinType = "array";
+                  valuesByGroup = {
+                    "grafana.editors" = [ "editor" ];
+                    "grafana.admins" = [ "admin" ];
+                    "grafana.server-admins" = [ "server_admin" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

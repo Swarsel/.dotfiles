@@ -1,7 +1,7 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome webProxy homeWebProxy dnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy idmServer dnsServer homeServiceAddress nginxAccessRules;
 
   inherit (config.swarselsystems) sopsFile;
 in
@@ -25,7 +25,7 @@ in
     sops = {
       secrets = {
         freshrss-pw = { inherit sopsFile; owner = serviceUser; };
-        kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        # kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
@@ -117,6 +117,28 @@ in
         };
       in
       {
+        ${idmServer} =
+          {
+            services.kanidm.provision = {
+              groups = {
+                "freshrss.access" = { };
+              };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps = {
+                  "freshrss.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                claimMaps.groups = {
+                  valuesByGroup = {
+                    "freshrss.access" = [ "ttrss_access" ];
+                  };
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

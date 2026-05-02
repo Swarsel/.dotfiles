@@ -1,7 +1,7 @@
-{ lib, config, pkgs, globals, dns, confLib, ... }:
+{ lib, config, pkgs, globals, dns, nodes, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
 
   kanidmDomain = globals.services.kanidm.domain;
   mainDomain = globals.domains.main;
@@ -24,7 +24,7 @@ in
                 default = [ ];
                 description = ''
                   A list of kanidm groups that are allowed to access this resource, or the
-                  empty list to allow any authenticated client.
+                    empty list to allow any authenticated client.
                 '';
               };
               X-User = lib.mkOption {
@@ -61,11 +61,11 @@ in
                   config = lib.mkIf config.oauth2.enable {
                     extraConfig = lib.optionalString locationSubmodule.config.setOauth2Headers ''
                       proxy_set_header X-User         $user;
-                      proxy_set_header Remote-User    $user;
-                      proxy_set_header X-Remote-User  $user;
-                      proxy_set_header X-Email        $email;
-                      # proxy_set_header X-Access-Token $token;
-                      add_header Set-Cookie           $auth_cookie;
+                        proxy_set_header Remote-User    $user;
+                        proxy_set_header X-Remote-User  $user;
+                        proxy_set_header X-Email        $email;
+                        # proxy_set_header X-Access-Token $token;
+                        add_header Set-Cookie           $auth_cookie;
                     '' + lib.optionalString locationSubmodule.config.bypassAuth ''
                       auth_request off;
                     '';
@@ -76,17 +76,17 @@ in
             config = lib.mkIf config.oauth2.enable {
               extraConfig = ''
                 auth_request /oauth2/auth;
-                error_page 401 = /oauth2/sign_in;
+                  error_page 401 = /oauth2/sign_in;
 
-                # set variables that can be used in locations.<name>.extraConfig
-                # pass information via X-User and X-Email headers to backend,
-                # requires running with --set-xauthrequest flag
-                auth_request_set $user  ${config.oauth2.X-User};
-                auth_request_set $email ${config.oauth2.X-Email};
-                # if you enabled --pass-access-token, this will pass the token to the backend
-                # auth_request_set $token ${config.oauth2.X-Access-Token};
-                # if you enabled --cookie-refresh, this is needed for it to work with auth_request
-                auth_request_set $auth_cookie $upstream_http_set_cookie;
+                  # set variables that can be used in locations.<name>.extraConfig
+                  # pass information via X-User and X-Email headers to backend,
+                  # requires running with --set-xauthrequest flag
+                  auth_request_set $user  ${config.oauth2.X-User};
+                  auth_request_set $email ${config.oauth2.X-Email};
+                  # if you enabled --pass-access-token, this will pass the token to the backend
+                  # auth_request_set $token ${config.oauth2.X-Access-Token};
+                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
+                  auth_request_set $auth_cookie $upstream_http_set_cookie;
               '';
               locations = {
                 "/oauth2/" = {
@@ -95,7 +95,7 @@ in
                   bypassAuth = true;
                   extraConfig = ''
                     proxy_set_header X-Scheme                $scheme;
-                    proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+                      proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
                   '';
                 };
                 "= /oauth2/auth" = {
@@ -105,10 +105,10 @@ in
                   extraConfig = ''
                     internal;
 
-                    proxy_set_header X-Scheme       $scheme;
-                    # nginx auth_request includes headers but not body
-                    proxy_set_header Content-Length "";
-                    proxy_pass_request_body         off;
+                      proxy_set_header X-Scheme       $scheme;
+                      # nginx auth_request includes headers but not body
+                      proxy_set_header Content-Length "";
+                      proxy_pass_request_body         off;
                   '';
                 };
               };
@@ -130,7 +130,7 @@ in
         "kanidm-oauth2-proxy-client-env" = {
           content = ''
             OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
-            OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
+              OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
           '';
           owner = serviceUser;
           group = serviceGroup;
@@ -219,12 +219,31 @@ in
       let
         extraConfig = ''
           proxy_set_header X-Scheme                $scheme;
-          proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-          allow ${globals.networks.home-lan.vlans.services.cidrv4};
-          allow ${globals.networks.home-lan.vlans.services.cidrv6};
+            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+            allow ${globals.networks.home-lan.vlans.services.cidrv4};
+            allow ${globals.networks.home-lan.vlans.services.cidrv6};
         '';
       in
       {
+        ${idmServer} =
+          let
+            nodeCfg = nodes.${idmServer}.config;
+          in
+          {
+            sops.secrets.kanidm-oauth2-proxy = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+            services.kanidm.provision = {
+              systems.oauth2.oauth2-proxy = {
+                displayName = "Oauth2-Proxy";
+                originUrl = "https://${serviceDomain}/oauth2/callback";
+                originLanding = "https://${serviceDomain}/";
+                basicSecretFile = nodeCfg.sops.secrets.kanidm-oauth2-proxy.path;
+                preferShortUsername = true;
+                claimMaps.groups = {
+                  joinType = "array";
+                };
+              };
+            };
+          };
         ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

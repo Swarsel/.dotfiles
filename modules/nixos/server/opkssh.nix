@@ -1,6 +1,7 @@
 { lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "opkssh"; user = "opksshuser"; group = "opksshuser"; }) serviceName serviceUser serviceGroup;
+  inherit (confLib.static) idmServer;
 
   kanidmDomain = globals.services.kanidm.domain;
 
@@ -33,6 +34,34 @@ in
           inherit (config.services.opkssh.providers.kanidm) issuer;
         }
       ];
+    };
+
+    nodes = {
+      ${idmServer} =
+        {
+          services.kanidm.provision = {
+            groups = {
+              "opkssh.access" = { };
+            };
+            systems.oauth2.opkssh = {
+              displayName = "OPKSSH";
+              originUrl = [
+                "http://localhost:3000"
+                "http://localhost:3000/login-callback"
+                "http://localhost:10001/login-callback"
+                "http://localhost:11110/login-callback"
+              ];
+              originLanding = "http://localhost:3000";
+              public = true;
+              enableLocalhostRedirects = true;
+              scopeMaps."opkssh.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
+            };
+          };
+        };
     };
 
   };

@@ -1,9 +1,9 @@
-{ pkgs, lib, config, globals, dns, confLib, ... }:
+{ pkgs, lib, config, globals, dns, nodes, confLib, ... }:
 let
   inherit (config.repo.secrets.local.nextcloud) adminuser;
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "nextcloud"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome idmServer dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   nextcloudVersion = "33";
 in
@@ -61,6 +61,39 @@ in
     };
 
     nodes = {
+      ${idmServer} =
+        let
+          nodeCfg = nodes.${idmServer}.config;
+        in
+        {
+
+          sops.secrets.kanidm-nextcloud = { inherit (nodeCfg.swarselsystems) sopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          services.kanidm.provision = {
+            groups = {
+              "nextcloud.access" = { };
+              "nextcloud.admins" = { };
+            };
+            systems.oauth2.nextcloud = {
+              displayName = "Nextcloud";
+              originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = nodeCfg.sops.secrets.kanidm-nextcloud.path;
+              allowInsecureClientDisablePkce = true;
+              scopeMaps."nextcloud.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
+              preferShortUsername = true;
+              claimMaps.groups = {
+                joinType = "array";
+                valuesByGroup = {
+                  "nextcloud.admins" = [ "admin" ];
+                };
+              };
+            };
+          };
+        };
       ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
