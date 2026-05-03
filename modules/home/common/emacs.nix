@@ -44,11 +44,11 @@ in
         extraEmacsPackages = epkgs: [
           epkgs.mu4e
           epkgs.use-package
-          epkgs.lsp-bridge
+          # epkgs.lsp-bridge
           epkgs.doom-themes
           epkgs.vterm
           # pkgs.stable.emacs.pkgs.elpaPackages.tramp # use the unstable version from elpa
-          pkgs.stable.emacs.pkgs.treesit-grammars.with-all-grammars
+          epkgs.treesit-grammars.with-all-grammars
 
           # build the rest of the packages myself
           # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup

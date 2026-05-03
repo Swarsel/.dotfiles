@@ -39,7 +39,7 @@ in
             });
           in
           ''
-                  plugin-files = ${nix-plugins}/lib/nix/plugins
+            plugin-files = ${nix-plugins}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
           '' + lib.optionalString (!minimal) ''
             !include ${config.sops.secrets.github-api-token.path}
@@ -140,7 +140,7 @@ in
       sops = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos)
         {
           secrets = {
-            github-api-token = { owner = mainUser; };
+            github-api-token = { owner = mainUser; group = "builder"; mode = "0440"; };
             attic-cache-key = { owner = mainUser; };
           };
           templates = {
