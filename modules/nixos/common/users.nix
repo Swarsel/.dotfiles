@@ -30,7 +30,7 @@
           description = "Leon S";
           password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
           hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
-          extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "input" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+          extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "input" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "builder" "libvirtd" "scanner" ];
           packages = with pkgs; [ ];
         };
       };

@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, outputs, inputs, minimal, globals, withHomeManager, ... }:
+{ self, lib, pkgs, config, outputs, inputs, minimal, globals, withHomeManager, confLib, ... }:
 let
   inherit (config.swarselsystems) mainUser;
   inherit (config.repo.secrets.common) atticPublicKey;
@@ -61,7 +61,7 @@ in
       {
         sops = lib.mkIf (!minimal) {
           secrets = {
-            github-api-token = { owner = mainUser; };
+            github-api-token = { owner = mainUser; group = "builder"; mode = "0440"; };
             attic-cache-key = { owner = mainUser; };
           };
           templates = {
@@ -141,12 +141,17 @@ in
                 });
               in
               ''
-                      plugin-files = ${nix-plugins}/lib/nix/plugins
+                plugin-files = ${nix-plugins}/lib/nix/plugins
                 extra-builtins-file = ${self + /nix/extra-builtins.nix}
               '' + lib.optionalString (!minimal) ''
                 !include ${config.sops.secrets.github-api-token.path}
               '';
           };
+
+        users = {
+          persistentIds.builder = confLib.mkIds 965;
+          groups.builder = { };
+        };
 
         system.stateVersion = lib.mkDefault "23.05";
 

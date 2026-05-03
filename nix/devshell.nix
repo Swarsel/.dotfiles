@@ -76,6 +76,8 @@
                 }
               ];
           };
+
+        hooks.devshell.startup.pre-commit.text = config.pre-commit.installationScript;
         default =
           let
             nix-version = "2_30";
