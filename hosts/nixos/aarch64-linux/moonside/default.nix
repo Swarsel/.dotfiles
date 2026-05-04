@@ -76,12 +76,6 @@ in
     isCloud = true;
     proxyHost = "twothreetunnel";
     server = {
-      wireguard.interfaces = {
-        wgProxy = {
-          isClient = true;
-          serverName = "twothreetunnel";
-        };
-      };
       restic.targets = {
         SwarselMoonside = {
           repository = config.repo.secrets.local.resticRepo;

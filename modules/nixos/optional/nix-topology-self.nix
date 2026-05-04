@@ -1,6 +1,6 @@
-{ lib, config, globals, confLib, ... }:
+{ lib, config, globals, ... }:
 let
-  inherit (confLib.static) webProxy;
+  isWgParticipant = ifName: globals.wireguard ? ${ifName} && (builtins.elem config.node.name globals.wireguard.${ifName}.clients || globals.wireguard.${ifName}.server == config.node.name);
 in
 {
   topology.self = {
@@ -8,14 +8,14 @@ in
     interfaces = {
       wan = lib.mkIf (config.swarselsystems.isCloud && config.swarselsystems.server.localNetwork == "wan") { };
       lan = lib.mkIf (config.swarselsystems.isCloud && config.swarselsystems.server.localNetwork == "lan") { };
-      wgProxy = lib.mkIf (config.swarselsystems.server.wireguard ? wgHome) {
-        addresses = [ globals.networks."${webProxy}-wg.hosts".${config.node.name}.ipv4 ];
+      wgProxy = lib.mkIf (isWgParticipant "wgProxy") {
+        addresses = [ globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4 ];
         renderer.hidePhysicalConnections = true;
         virtual = true;
         type = "wireguard";
       };
-      wgHome = lib.mkIf (config.swarselsystems.server.wireguard ? wgHome) {
-        addresses = [ globals.networks.home-wgHome.hosts.${config.node.name}.ipv4 ];
+      wgHome = lib.mkIf (isWgParticipant "wgHome") {
+        addresses = [ globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4 ];
         renderer.hidePhysicalConnections = true;
         virtual = true;
         type = "wireguard";

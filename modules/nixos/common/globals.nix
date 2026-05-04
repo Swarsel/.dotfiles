@@ -259,6 +259,38 @@ in
             );
           };
 
+          wireguard = mkOption {
+            default = { };
+            description = "WireGuard network definitions. Each key is a WireGuard interface name.";
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  server = mkOption {
+                    type = types.str;
+                    description = "Node name of the WireGuard server for this network.";
+                  };
+
+                  netConfigPrefix = mkOption {
+                    type = types.str;
+                    description = "Prefix used to look up the network in globals.networks.\"<prefix>-<ifName>\".";
+                  };
+
+                  port = mkOption {
+                    type = types.int;
+                    default = 52829;
+                    description = "WireGuard listen port on the server.";
+                  };
+
+                  clients = mkOption {
+                    type = types.listOf types.str;
+                    default = [ ];
+                    description = "List of client node names participating in this WireGuard network.";
+                  };
+                };
+              }
+            );
+          };
+
           domains = {
             main = mkOption {
               type = types.str;

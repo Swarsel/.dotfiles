@@ -43,16 +43,6 @@
     localVLANs = [ "services" "home" ]; # devices is only provided on interface for bmc
     initrdVLAN = "home";
     server = {
-      wireguard.interfaces = {
-        wgProxy = {
-          isClient = true;
-          serverName = "twothreetunnel";
-        };
-        wgHome = {
-          isClient = true;
-          serverName = "hintbooth";
-        };
-      };
       restic.targets = {
         SwarselState = {
           repository = config.repo.secrets.local.resticRepoState;

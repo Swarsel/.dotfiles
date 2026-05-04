@@ -27,14 +27,7 @@
     isNixos = true;
     isLinux = true;
     proxyHost = "twothreetunnel"; # mail shall not be proxied through twothreetunnel
-    server = {
-      wireguard.interfaces = {
-        wgProxy = {
-          isClient = true;
-          serverName = "twothreetunnel";
-        };
-      };
-    };
+
   };
 } // lib.optionalAttrs (!minimal) {
 

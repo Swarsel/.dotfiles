@@ -18,9 +18,41 @@
     };
   };
 
-  globals.general = {
-    homeProxy = config.node.name;
-    routerServer = config.node.name;
+  globals = {
+    general = {
+      homeProxy = config.node.name;
+      routerServer = config.node.name;
+    };
+
+    wireguard.wgHome = {
+      server = config.node.name;
+      netConfigPrefix = "home";
+      clients = [
+        "hintbooth-adguardhome"
+        "hintbooth-nginx"
+        "summers"
+        "summers-ankisync"
+        "summers-atuin"
+        "summers-audio"
+        "summers-firefly"
+        "summers-forgejo"
+        "summers-freshrss"
+        "summers-homebox"
+        "summers-immich"
+        "summers-jellyfin"
+        "summers-kanidm"
+        "summers-kavita"
+        "summers-koillection"
+        "summers-matrix"
+        "summers-monitoring"
+        "summers-nextcloud"
+        "summers-paperless"
+        "summers-radicale"
+        "summers-storage"
+        "summers-transmission"
+        "winters"
+      ];
+    };
   };
 
   swarselsystems = {
@@ -38,38 +70,6 @@
     withMicroVMs = true;
     localVLANs = map (name: "${name}") (builtins.attrNames globals.networks.home-lan.vlans);
     initrdVLAN = "home";
-    server = {
-      wireguard.interfaces = {
-        wgHome = {
-          isServer = true;
-          peers = [
-            "hintbooth-adguardhome"
-            "hintbooth-nginx"
-            "summers"
-            "summers-ankisync"
-            "summers-atuin"
-            "summers-audio"
-            "summers-firefly"
-            "summers-forgejo"
-            "summers-freshrss"
-            "summers-homebox"
-            "summers-immich"
-            "summers-jellyfin"
-            "summers-kanidm"
-            "summers-kavita"
-            "summers-koillection"
-            "summers-matrix"
-            "summers-monitoring"
-            "summers-nextcloud"
-            "summers-paperless"
-            "summers-radicale"
-            "summers-storage"
-            "summers-transmission"
-            "winters"
-          ];
-        };
-      };
-    };
   };
 
 } // lib.optionalAttrs (!minimal) {

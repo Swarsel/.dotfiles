@@ -12,9 +12,42 @@
     icon = "devices.cloud-server";
   };
 
-  globals.general = {
-    webProxy = config.node.name;
-    oauthServer = config.node.name;
+  globals = {
+    general = {
+      webProxy = config.node.name;
+      oauthServer = config.node.name;
+    };
+
+    wireguard.wgProxy = {
+      server = config.node.name;
+      netConfigPrefix = config.node.name;
+      clients = [
+        "moonside"
+        "winters"
+        "summers"
+        "summers-ankisync"
+        "summers-atuin"
+        "summers-audio"
+        "summers-firefly"
+        "summers-forgejo"
+        "summers-freshrss"
+        "summers-homebox"
+        "summers-immich"
+        "summers-jellyfin"
+        "summers-kanidm"
+        "summers-kavita"
+        "summers-koillection"
+        "summers-matrix"
+        "summers-monitoring"
+        "summers-nextcloud"
+        "summers-paperless"
+        "summers-radicale"
+        "summers-storage"
+        "belchsfactory"
+        "eagleland"
+        "hintbooth-adguardhome"
+      ];
+    };
   };
 
   swarselsystems = {
@@ -29,39 +62,6 @@
     isNixos = true;
     isLinux = true;
     isCloud = true;
-    server = {
-      wireguard.interfaces = {
-        wgProxy = {
-          isServer = true;
-          peers = [
-            "moonside"
-            "winters"
-            "summers"
-            "summers-ankisync"
-            "summers-atuin"
-            "summers-audio"
-            "summers-firefly"
-            "summers-forgejo"
-            "summers-freshrss"
-            "summers-homebox"
-            "summers-immich"
-            "summers-jellyfin"
-            "summers-kanidm"
-            "summers-kavita"
-            "summers-koillection"
-            "summers-matrix"
-            "summers-monitoring"
-            "summers-nextcloud"
-            "summers-paperless"
-            "summers-radicale"
-            "summers-storage"
-            "belchsfactory"
-            "eagleland"
-            "hintbooth-adguardhome"
-          ];
-        };
-      };
-    };
   };
 } // lib.optionalAttrs (!minimal) {
   swarselprofiles = {

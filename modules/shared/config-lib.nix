@@ -3,14 +3,16 @@ let
   domainDefault = service: config.repo.secrets.common.services.domains.${service};
   proxyDefault = config.swarselsystems.proxyHost;
 
+  isWgProxyClient = globals.wireguard ? wgProxy && builtins.elem config.node.name globals.wireguard.wgProxy.clients;
+
   addressDefault =
     if
       config.swarselsystems.proxyHost != config.node.name
     then
       if
-        config.swarselsystems.server.wireguard.interfaces.wgProxy.isClient
+        isWgProxyClient
       then
-        globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgProxy.serverNetConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
+        globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
       else
         globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
     else
@@ -52,7 +54,8 @@ in
           allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
           deny all;
         '';
-        homeServiceAddress = lib.optionalString (config.swarselsystems.server.wireguard.interfaces ? wgHome) globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgHome.serverNetConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
+        isWgHomeParticipant = globals.wireguard ? wgHome && (builtins.elem config.node.name globals.wireguard.wgHome.clients || globals.wireguard.wgHome.server == config.node.name);
+        homeServiceAddress = lib.optionalString isWgHomeParticipant globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
       };
 
       mkIds = id: {

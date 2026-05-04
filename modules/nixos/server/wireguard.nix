@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, confLib, nodes, globals, ... }:
+{ self, lib, pkgs, config, confLib, globals, ... }:
 let
   inherit (confLib.gen {
     name = "wireguard";
@@ -10,8 +10,29 @@ let
   inherit (config.swarselsystems) sopsFile;
   wgSopsFilePrefix = self + "/secrets/wireguard";
 
-  cfg = config.swarselsystems.server.wireguard;
-  inherit (cfg) interfaces;
+  # Derive interfaces from globals.wireguard based on this node's name
+  interfaces = lib.mapAttrs
+    (ifName: wgCfg:
+      let
+        isServer = wgCfg.server == config.node.name;
+        isClient = builtins.elem config.node.name wgCfg.clients;
+      in
+      {
+        inherit isServer isClient ifName;
+        serverName = wgCfg.server;
+        serverNetConfigPrefix = wgCfg.netConfigPrefix;
+        inherit (wgCfg) port;
+        peers =
+          if isServer then wgCfg.clients
+          else [ wgCfg.server ];
+      }
+    )
+    (lib.filterAttrs
+      (_: wgCfg:
+        wgCfg.server == config.node.name || builtins.elem config.node.name wgCfg.clients
+      )
+      globals.wireguard);
+
   ifaceList = builtins.attrValues interfaces;
 in
 {
@@ -19,58 +40,12 @@ in
     swarselmodules.server.${serviceName} =
       lib.mkEnableOption "enable ${serviceName} settings";
 
-    swarselsystems.server.wireguard = {
-      interfaces =
-        let
-          topConfig = config;
-        in
-        lib.mkOption {
-          type = lib.types.attrsOf (lib.types.submodule ({ config, name, ... }: {
-            options = {
-              isServer = lib.mkEnableOption "set this interface as a wireguard server";
-              isClient = lib.mkEnableOption "set this interface as a wireguard client";
-
-              serverName = lib.mkOption {
-                type = lib.types.str;
-                default = if config.isServer then topConfig.node.name else "";
-                description = "Hostname of the WireGuard server this interface connects to (when isClient = true).";
-              };
-
-              serverNetConfigPrefix = lib.mkOption {
-                type = lib.types.str;
-                default =
-                  let
-                    serverCfg = nodes.${config.serverName}.config;
-                  in
-                  if serverCfg.swarselsystems.isCloud
-                  then serverCfg.node.name
-                  else "home";
-                readOnly = true;
-                description = "Prefix used to look up the server network in globals.networks.\"<prefix>-wg\".";
-              };
-
-              ifName = lib.mkOption {
-                type = lib.types.str;
-                default = name;
-                description = "Name of the WireGuard interface.";
-              };
-
-              port = lib.mkOption {
-                type = lib.types.int;
-                default = servicePort;
-                description = "Port of the WireGuard interface.";
-              };
-
-              peers = lib.mkOption {
-                type = lib.types.listOf lib.types.str;
-                default = lib.attrNames (lib.filterAttrs (name: _: name != topConfig.node.name) globals.networks."${config.serverNetConfigPrefix}-${config.ifName}".hosts);
-                description = "WireGuard peer config names of this wireguardinterface.";
-              };
-            };
-          }));
-          default = { };
-          description = "WireGuard interfaces defined on this host.";
-        };
+    swarselsystems.server.wireguard.interfaces = lib.mkOption {
+      type = lib.types.unspecified;
+      readOnly = true;
+      internal = true;
+      default = interfaces;
+      description = "Derived from globals.wireguard. Do not set directly.";
     };
   };
 
@@ -84,8 +59,8 @@ in
           in
           [
             {
-              assertion = ifCfg.isServer || (ifCfg.isClient && ifCfg.serverName != "");
-              message = "${assertionPrefix}: This node must either be a server for the wireguard network or a client with serverName set.";
+              assertion = ifCfg.isServer || ifCfg.isClient;
+              message = "${assertionPrefix}: This node must either be a server or a client for the wireguard network.";
             }
             {
               assertion = lib.stringLength ifName < 16;

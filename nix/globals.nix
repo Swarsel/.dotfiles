@@ -69,6 +69,7 @@
             user
             root
             general
+            wireguard
             ;
         };
     };

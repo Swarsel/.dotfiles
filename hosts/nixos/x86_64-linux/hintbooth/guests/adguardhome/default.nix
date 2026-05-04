@@ -10,18 +10,6 @@
     isMicroVM = true;
     isImpermanence = true;
     proxyHost = "twothreetunnel";
-    server = {
-      wireguard.interfaces = {
-        wgHome = {
-          isClient = true;
-          serverName = "hintbooth";
-        };
-        wgProxy = {
-          isClient = true;
-          serverName = "twothreetunnel";
-        };
-      };
-    };
   };
 
   globals.general.homeDnsServer = config.node.name;

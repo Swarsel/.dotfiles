@@ -28,12 +28,6 @@
     isCloud = true;
     proxyHost = "twothreetunnel";
     server = {
-      wireguard.interfaces = {
-        wgProxy = {
-          isClient = true;
-          serverName = "twothreetunnel";
-        };
-      };
       garage = {
         data_dir = {
           capacity = "150G";

@@ -9,14 +9,6 @@
   swarselsystems = {
     isMicroVM = true;
     isImpermanence = true;
-    server = {
-      wireguard.interfaces = {
-        wgHome = {
-          isClient = true;
-          serverName = "hintbooth";
-        };
-      };
-    };
   };
 
 

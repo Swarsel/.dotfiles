@@ -33,6 +33,7 @@
       swarsel-gens
       swarsel-switch
       swarsel-sops
+      sync-org-from-files
     ] ++ lib.optionals config.swarselmodules.sway [
       e
       swarselcheck

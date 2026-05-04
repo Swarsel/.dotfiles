@@ -30,18 +30,7 @@
     isLinux = true;
     isNixos = true;
     proxyHost = "twothreetunnel";
-    server = {
-      wireguard.interfaces = {
-        wgProxy = {
-          isClient = true;
-          serverName = "twothreetunnel";
-        };
-        wgHome = {
-          isClient = true;
-          serverName = "hintbooth";
-        };
-      };
-    };
+
   };
 
 } // lib.optionalAttrs (!minimal) {

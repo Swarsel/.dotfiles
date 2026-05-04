@@ -13,14 +13,6 @@ in
     isMicroVM = true;
     isImpermanence = true;
     proxyHost = config.node.name;
-    server = {
-      wireguard.interfaces = {
-        wgHome = {
-          isClient = true;
-          serverName = "hintbooth";
-        };
-      };
-    };
   };
 
   globals.general.homeWebProxy = config.node.name;
