@@ -3,7 +3,6 @@
   imports = [
 
     "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos"
   ];
 
   swarselsystems = {

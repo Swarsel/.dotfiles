@@ -224,7 +224,7 @@ in
               sslVerify = false;
               scrapeUri = "http://localhost/nginx_status";
             };
-            nextcloud = lib.mkIf config.swarselmodules.server.nextcloud {
+            nextcloud = lib.mkIf (config.swarselmodules.server.nextcloud or false) {
               enable = true;
               port = 9205;
               url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";

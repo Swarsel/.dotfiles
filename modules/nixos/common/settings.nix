@@ -101,7 +101,7 @@ in
               trusted-users = [
                 "@wheel"
                 "${config.swarselsystems.mainUser}"
-                (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+                (lib.mkIf (config.swarselmodules.server.ssh-builder or false) "builder")
               ];
               netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
             };

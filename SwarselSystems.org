@@ -4747,7 +4747,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -4786,7 +4785,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -4824,7 +4822,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -4864,7 +4861,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -4902,7 +4898,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -4942,7 +4937,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -4980,7 +4974,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5019,7 +5012,6 @@ This is my current main server at home; all services except filesystem backups r
     imports = [
 
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5056,7 +5048,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5095,7 +5086,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5133,7 +5123,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5173,7 +5162,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5211,7 +5199,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5251,7 +5238,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5289,7 +5275,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5327,7 +5312,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5365,7 +5349,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5403,7 +5386,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5441,7 +5423,6 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
     ];
 
     swarselsystems = {
@@ -5756,7 +5737,6 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
       "${self}/modules/nixos/optional/microvm-guest-shares.nix"
     ];
 
@@ -5799,7 +5779,6 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos"
       "${self}/modules/nixos/optional/microvm-guest-shares.nix"
     ];
 
@@ -8954,7 +8933,7 @@ A breakdown of the flags being set:
                 trusted-users = [
                   "@wheel"
                   "${config.swarselsystems.mainUser}"
-                  (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+                  (lib.mkIf (config.swarselmodules.server.ssh-builder or false) "builder")
                 ];
                 netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
               };
@@ -9153,7 +9132,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
   { lib, config, ... }:
   {
     options.swarselmodules.xserver = lib.mkEnableOption "xserver keymap";
-    config = lib.mkIf config.swarselmodules.packages {
+    config = lib.mkIf config.swarselmodules.xserver {
       services.xserver = {
         xkb = {
           layout = "us";
@@ -9371,6 +9350,34 @@ Here I set some general boot options, mostly enabling an emergency shell and som
 
       console.earlySetup = true;
 
+    };
+  }
+#+end_src
+
+**** sops
+:PROPERTIES:
+:CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
+:END:
+
+I use sops-nix to handle secrets that I want to have available on my machines at all times. For some reason validateSopsFiles needs to be turned off, probably because my age keys are not real age keys but just the host ssh keys being read in by =ssh-go-age=. The default sopsfile is the one that is available to all systems - if the secret in question is not in that file, we need to override =sopsFile= in the respective secret.
+
+Do note that we have to account for impermanent file systems here, otherwise system activation will fail because the secret files cannot be found.
+
+#+begin_src nix-ts :tangle modules/nixos/common/sops.nix
+  { self, config, lib, ... }:
+  {
+    options.swarselmodules.sops = lib.mkEnableOption "sops config";
+    config = lib.mkIf config.swarselmodules.sops {
+      sops = {
+
+        # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+        age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key" ];
+        # defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/repo/common.yaml";
+        defaultSopsFile = self + "/secrets/repo/common.yaml";
+
+        validateSopsFiles = false;
+
+      };
     };
   }
 #+end_src
@@ -10131,34 +10138,6 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
       };
 
       systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
-    };
-  }
-#+end_src
-
-**** sops
-:PROPERTIES:
-:CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
-:END:
-
-I use sops-nix to handle secrets that I want to have available on my machines at all times. For some reason validateSopsFiles needs to be turned off, probably because my age keys are not real age keys but just the host ssh keys being read in by =ssh-go-age=. The default sopsfile is the one that is available to all systems - if the secret in question is not in that file, we need to override =sopsFile= in the respective secret.
-
-Do note that we have to account for impermanent file systems here, otherwise system activation will fail because the secret files cannot be found.
-
-#+begin_src nix-ts :tangle modules/nixos/client/sops.nix
-  { self, config, lib, ... }:
-  {
-    options.swarselmodules.sops = lib.mkEnableOption "sops config";
-    config = lib.mkIf config.swarselmodules.sops {
-      sops = {
-
-        # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-        age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key" ];
-        # defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/repo/common.yaml";
-        defaultSopsFile = self + "/secrets/repo/common.yaml";
-
-        validateSopsFiles = false;
-
-      };
     };
   }
 #+end_src
@@ -15060,7 +15039,7 @@ This section exposes several metrics that I use to check the health of my server
                 sslVerify = false;
                 scrapeUri = "http://localhost/nginx_status";
               };
-              nextcloud = lib.mkIf config.swarselmodules.server.nextcloud {
+              nextcloud = lib.mkIf (config.swarselmodules.server.nextcloud or false) {
                 enable = true;
                 port = 9205;
                 url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
@@ -20656,7 +20635,7 @@ There is only one thing of interest here; by default, my setup (where microvms u
 Some standard options that should be set for every microvm guest. We set the default
 
 #+begin_src nix-ts :tangle modules/nixos/optional/microvm-guest.nix
-  { self, config, inputs, ... }:
+  { self, lib, config, inputs, ... }:
   {
     imports = [
       inputs.disko.nixosModules.disko
@@ -20678,7 +20657,9 @@ Some standard options that should be set for every microvm guest. We set the def
       (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
 
       "${self}/modules/shared/meta.nix"
-    ];
+    ] ++ lib.swarselsystems.mkImports (lib.swarselsystems.readNix "modules/nixos/common") "modules/nixos/common"
+    ++ lib.swarselsystems.mkImports (lib.swarselsystems.readNix "modules/shared") "modules/shared"
+    ++ lib.swarselsystems.mkImports (lib.swarselsystems.readNix "modules/nixos/server") "modules/nixos/server";
 
     config = {
       _module.args.dns = inputs.dns;
