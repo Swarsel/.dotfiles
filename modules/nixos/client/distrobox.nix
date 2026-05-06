@@ -1,7 +1,9 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, confLib, ... }:
 {
-  options.swarselmodules.distrobox = lib.mkEnableOption "distrobox config";
-  config = lib.mkIf config.swarselmodules.distrobox {
+  config = {
+
+    users.persistentIds.podman = confLib.mkIds 969;
+
     environment.systemPackages = with pkgs; [
       distrobox
       boxbuddy

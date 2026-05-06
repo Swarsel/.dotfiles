@@ -1,10 +1,10 @@
-{ lib, config, ... }:
+_:
 let
   moduleName = "obs-studio";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "obs-studio" ];
     programs.${moduleName} = {
       enable = true;
     };

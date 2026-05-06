@@ -9,6 +9,12 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
     "${self}/modules/nixos/optional/microvm-host.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/localserver"
+    "${self}/modules/nixos/server/wireguard.nix"
+    "${self}/modules/nixos/server/restic.nix"
+    "${self}/modules/nixos/server/podman.nix"
+    "${self}/modules/nixos/server/opkssh.nix"
   ];
 
   topology.self = {
@@ -61,17 +67,6 @@
   };
 
 } // lib.optionalAttrs (!minimal) {
-
-  swarselprofiles = {
-    server = true;
-  };
-
-  swarselmodules.server = {
-    wireguard = true;
-    restic = true;
-    podman = true;
-    opkssh = true;
-  };
 
   guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
     { }

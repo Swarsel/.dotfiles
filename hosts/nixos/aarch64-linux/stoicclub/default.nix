@@ -6,6 +6,9 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     "${self}/modules/nixos/optional/nix-topology-self.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/localserver"
+    "${self}/modules/nixos/server/nsd"
   ];
 
   topology.self = {
@@ -29,13 +32,6 @@
 
   globals.general.dnsServer = config.node.name;
 } // lib.optionalAttrs (!minimal) {
-  swarselprofiles = {
-    server = true;
-  };
-
-  swarselmodules.server = {
-    nsd = true;
-  };
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
 }

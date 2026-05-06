@@ -101,5 +101,15 @@
       type = lib.types.str;
       default = "";
     };
+    enabledServerModules = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "List of enabled server module names, populated automatically by each module when imported. Used for cross-module checks.";
+    };
+    enabledHomeModules = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "List of enabled home module names, populated automatically by each module when imported. Used for cross-module checks.";
+    };
   };
 }

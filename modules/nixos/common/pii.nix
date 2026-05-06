@@ -58,9 +58,8 @@ in
         description = "Exposes the loaded repo secrets. This option is read-only.";
       };
     };
-    swarselmodules.pii = lib.mkEnableOption "enable pii management";
   };
-  config = lib.mkIf config.swarselmodules.pii {
+  config = {
     repo.secretFiles =
       let
         local = config.node.secretsDir + "/pii.nix.enc";

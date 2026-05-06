@@ -1,7 +1,9 @@
-{ self, lib, config, withHomeManager, ... }:
+{ self, lib, config, confLib, withHomeManager, ... }:
 {
   config = {
-
+    users.persistentIds = {
+      fwupd-refresh = confLib.mkIds 959;
+    };
 
     services = {
       fwupd = {

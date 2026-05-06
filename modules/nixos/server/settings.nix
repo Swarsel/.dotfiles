@@ -4,14 +4,14 @@ let
 in
 {
 
-  options.swarselmodules.server.general = lib.mkEnableOption "general setting on server";
   options.swarselsystems = {
     shellAliases = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   };
-  config = lib.mkIf config.swarselmodules.server.general {
+  config = {
+    swarselsystems.enabledServerModules = [ "general" ];
 
     environment.shellAliases = lib.recursiveUpdate
       {

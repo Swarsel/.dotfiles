@@ -5,8 +5,8 @@ let
   sopsFile = self + "/secrets/nginx/acme.json";
 in
 {
-  options.swarselmodules.server.acme = lib.mkEnableOption "enable acme on server";
-  config = lib.mkIf config.swarselmodules.server.acme {
+  config = {
+    swarselsystems.enabledServerModules = [ "acme" ];
     environment.systemPackages = with pkgs; [
       lego
     ];
@@ -23,7 +23,7 @@ in
 
     users = {
       persistentIds.acme = confLib.mkIds 967;
-      groups.acme.members = lib.mkIf config.swarselmodules.server.nginx [ "nginx" ];
+      groups.acme.members = lib.mkIf (builtins.elem "nginx" config.swarselsystems.enabledServerModules) [ "nginx" ];
     };
 
     security.acme = {

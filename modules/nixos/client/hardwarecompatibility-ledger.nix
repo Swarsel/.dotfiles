@@ -1,7 +1,6 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.ledger = lib.mkEnableOption "ledger config";
-  config = lib.mkIf config.swarselmodules.ledger {
+  config = {
     hardware.ledger.enable = true;
 
     services.udev.packages = with pkgs; [

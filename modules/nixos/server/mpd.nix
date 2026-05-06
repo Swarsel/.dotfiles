@@ -1,11 +1,15 @@
-{ lib, config, pkgs, confLib, ... }:
+{ self, lib, config, pkgs, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "mpd"; port = 3254; }) servicePort serviceName serviceUser serviceGroup;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  imports = [
+    "${self}/modules/nixos/server/pipewire.nix"
+  ];
+
+  config = {
+    swarselsystems.enabledServerModules = [ "mpd" ];
     users = {
       groups = {
         mpd = { };

@@ -1,7 +1,6 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, ... }:
 {
-  options.swarselmodules.lowBattery = lib.mkEnableOption "low battery notification config";
-  config = lib.mkIf config.swarselmodules.lowBattery {
+  config = {
     systemd.user.services."battery-low" =
       let
         target = "sway-session.target";

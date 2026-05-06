@@ -1,7 +1,6 @@
-{ lib, pkgs, config, globals, ... }:
+{ lib, pkgs, globals, ... }:
 {
-  options.swarselmodules.boot = lib.mkEnableOption "boot config";
-  config = lib.mkIf config.swarselmodules.boot {
+  config = {
     boot = {
       initrd.systemd = {
         enable = true;

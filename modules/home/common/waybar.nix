@@ -22,7 +22,6 @@ let
   ];
 in
 {
-  options.swarselmodules.waybar = lib.mkEnableOption "waybar settings";
   options.swarselsystems = {
     cpuCount = lib.mkOption {
       type = lib.types.int;
@@ -52,7 +51,8 @@ in
       internal = true;
     };
   };
-  config = lib.mkIf config.swarselmodules.waybar ({
+  config = {
+    swarselsystems.enabledHomeModules = [ "waybar" ];
 
     swarselsystems = {
       waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
@@ -326,5 +326,5 @@ in
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
       github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
     };
-  });
+  };
 }

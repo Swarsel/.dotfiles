@@ -1,7 +1,8 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, confLib, ... }:
 {
-  options.swarselmodules.keyboards = lib.mkEnableOption "keyboards config";
-  config = lib.mkIf config.swarselmodules.keyboards {
+  config = {
+    users.persistentIds.plugdev = confLib.mkIds 953;
+
     services.udev.packages = with pkgs; [
       qmk-udev-rules
       vial

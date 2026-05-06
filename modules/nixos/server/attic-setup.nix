@@ -1,8 +1,8 @@
 { lib, config, pkgs, globals, ... }:
 
 {
-  options.swarselmodules.server.attic-setup = lib.mkEnableOption "enable attic setup";
-  config = lib.mkIf config.swarselmodules.server.attic-setup {
+  config = {
+    swarselsystems.enabledServerModules = [ "attic-setup" ];
 
     environment.systemPackages = with pkgs; [
       attic-client

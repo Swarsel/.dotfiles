@@ -1,21 +1,20 @@
 { self, lib, config, dns, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  imports = [
+    "${self}/modules/nixos/server/podman.nix"
+  ];
 
-    swarselmodules.server = {
-      podman = true;
-    };
+  config = {
+    swarselsystems.enabledServerModules = [ "shlink" ];
+
 
     sops = {
       secrets = {
@@ -99,10 +98,11 @@ in
       };
     };
 
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes = {
-      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

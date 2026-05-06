@@ -1,7 +1,7 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.vesktop-tray = lib.mkEnableOption "enable vesktop applet for tray";
-  config = lib.mkIf config.swarselmodules.vesktop-tray {
+  config = {
+    swarselsystems.enabledHomeModules = [ "vesktop-tray" ];
 
     systemd.user.services.vesktop-applet = {
       Unit = {

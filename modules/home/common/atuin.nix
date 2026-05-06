@@ -1,10 +1,10 @@
-{ lib, config, globals, ... }:
+{ globals, ... }:
 let
   atuinDomain = globals.services.atuin.domain;
 in
 {
-  options.swarselmodules.atuin = lib.mkEnableOption "atuin settings";
-  config = lib.mkIf config.swarselmodules.atuin {
+  config = {
+    swarselsystems.enabledHomeModules = [ "atuin" ];
     programs.atuin = {
       enable = true;
       enableZshIntegration = true;

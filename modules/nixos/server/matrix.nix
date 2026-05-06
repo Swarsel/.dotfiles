@@ -1,8 +1,8 @@
-{ lib, config, pkgs, globals, dns, confLib, ... }:
+{ self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   federationPort = 8448;
   whatsappPort = 29318;
@@ -18,12 +18,13 @@ let
   '';
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  imports = [
+    "${self}/modules/nixos/server/postgresql.nix"
+  ];
 
-    swarselmodules.server = {
-      postgresql = true;
-    };
+  config = {
+    swarselsystems.enabledServerModules = [ "matrix" ];
+
 
     environment.systemPackages = with pkgs; [
       matrix-synapse
@@ -319,6 +320,11 @@ in
       mautrix-telegram = confLib.mkIds 991;
     };
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         genNginx = toAddress: extraConfig: {
@@ -379,9 +385,6 @@ in
         };
       in
       {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };

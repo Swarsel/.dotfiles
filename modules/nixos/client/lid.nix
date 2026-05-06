@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.lid = lib.mkEnableOption "lid config";
-  config = lib.mkIf config.swarselmodules.lid {
+  config = {
     services.logind.settings.Login = {
       HandleLidSwitch = "suspend";
       HandleLidSwitchDocked = "ignore";

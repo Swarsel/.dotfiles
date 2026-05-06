@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselmodules.attic-store-push = lib.mkEnableOption "enable automatic attic store push";
-  config = lib.mkIf config.swarselmodules.attic-store-push {
+  config = {
+    swarselsystems.enabledHomeModules = [ "attic-store-push" ];
 
     systemd.user.services.attic-store-push = {
       Unit = {

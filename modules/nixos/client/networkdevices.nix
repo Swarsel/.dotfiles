@@ -1,7 +1,6 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, confLib, ... }:
 {
-  options.swarselmodules.networkDevices = lib.mkEnableOption "network device config";
-  config = lib.mkIf config.swarselmodules.networkDevices {
+  config = {
     # enable scanners over network
     hardware.sane = {
       enable = true;
@@ -22,6 +21,11 @@
         CreateIPPPrinterQueues All
         BrowseProtocols all
       '';
+    };
+
+    users.persistentIds = {
+      avahi = confLib.mkIds 978;
+      lpadmin = confLib.mkIds 954;
     };
 
     services.avahi = {

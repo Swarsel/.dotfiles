@@ -1,7 +1,7 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.element-tray = lib.mkEnableOption "enable element applet for tray";
-  config = lib.mkIf config.swarselmodules.element-tray {
+  config = {
+    swarselsystems.enabledHomeModules = [ "element-tray" ];
 
     systemd.user.services.element-applet = {
       Unit = {

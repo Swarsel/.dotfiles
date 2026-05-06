@@ -1,14 +1,12 @@
 { inputs, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "hydra" ];
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
@@ -112,6 +110,11 @@ in
       '';
     };
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         extraConfigLoc = ''
@@ -119,9 +122,6 @@ in
         '';
       in
       {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };

@@ -6,6 +6,12 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     "${self}/modules/nixos/optional/nix-topology-self.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/localserver"
+    "${self}/modules/nixos/server/nginx.nix"
+    "${self}/modules/nixos/server/oauth2-proxy.nix"
+    "${self}/modules/nixos/server/wireguard.nix"
+    "${self}/modules/nixos/server/firezone.nix"
   ];
 
   topology.self = {
@@ -64,16 +70,6 @@
     isCloud = true;
   };
 } // lib.optionalAttrs (!minimal) {
-  swarselprofiles = {
-    server = true;
-  };
-
-  swarselmodules.server = {
-    nginx = true;
-    oauth2-proxy = true;
-    wireguard = true;
-    firezone = true;
-  };
 
   networking.nftables = {
     firewall.zones.untrusted.interfaces = [ "lan" ];

@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselmodules.obsidian-tray = lib.mkEnableOption "enable obsidian applet for tray";
-  config = lib.mkIf config.swarselmodules.obsidian-tray {
+  config = {
+    swarselsystems.enabledHomeModules = [ "obsidian-tray" ];
 
     systemd.user.services.obsidian-applet = {
       Unit = {

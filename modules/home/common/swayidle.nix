@@ -3,8 +3,8 @@ let
   moduleName = "swayidle";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "swayidle" ];
     services.${moduleName} =
       let
         brightnessctl = "${lib.getExe pkgs.brightnessctl}";

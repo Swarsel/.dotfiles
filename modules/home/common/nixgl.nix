@@ -1,6 +1,5 @@
 { lib, config, inputs, ... }:
 {
-  options.swarselmodules.nixgl = lib.mkEnableOption "nixgl settings";
   options.swarselsystems = {
     isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
     SecondaryGpuCard = lib.mkOption {
@@ -8,7 +7,8 @@
       default = "";
     };
   };
-  config = lib.mkIf config.swarselmodules.nixgl {
+  config = {
+    swarselsystems.enabledHomeModules = [ "nixgl" ];
     nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
       inherit (inputs.nixgl) packages;
       defaultWrapper = lib.mkDefault "mesa";

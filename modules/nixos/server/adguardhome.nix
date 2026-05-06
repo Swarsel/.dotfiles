@@ -1,16 +1,14 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "adguardhome"; port = 3000; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy idmServer dnsServer homeDnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy idmServer homeDnsServer homeServiceAddress nginxAccessRules;
 
   homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
   homeDomains = map (name: globals.services.${name}.domain) homeServices;
 in
 {
-  options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "adguardhome" ];
 
 
     globals = {
@@ -102,6 +100,11 @@ in
       }
     ];
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes = {
       ${idmServer} =
         {
@@ -125,9 +128,6 @@ in
             };
           };
         };
-      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

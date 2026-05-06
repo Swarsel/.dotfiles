@@ -1,10 +1,10 @@
-{ lib, config, ... }:
+_:
 let
   moduleName = "spotify-player";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "spotify-player" ];
     programs.${moduleName} = {
       enable = true;
     };

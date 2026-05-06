@@ -1,65 +1,64 @@
-{ lib, config, ... }:
+{ self, config, ... }:
+let
+  m = "${self}/modules";
+in
 {
-  options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
-  config = lib.mkIf config.swarselprofiles.personal {
-    swarselmodules = {
-      # keyd = lib.mkDefault true;
-      appimage = lib.mkDefault true;
-      autologin = lib.mkDefault true;
-      blueman = lib.mkDefault true;
-      boot = lib.mkDefault true;
-      btrfs = lib.mkDefault true;
-      distrobox = lib.mkDefault true;
-      env = lib.mkDefault true;
-      firezone-client = lib.mkDefault true;
-      general = lib.mkDefault true;
-      gnome-keyring = lib.mkDefault true;
-      gvfs = lib.mkDefault true;
-      hardware = lib.mkDefault true;
-      home-manager = lib.mkDefault true;
-      impermanence = lib.mkDefault true;
-      interceptionTools = lib.mkDefault true;
-      keyboards = lib.mkDefault true;
-      lanzaboote = lib.mkDefault true;
-      ledger = lib.mkDefault true;
-      lid = lib.mkDefault true;
-      login = lib.mkDefault true;
-      lowBattery = lib.mkDefault false;
-      nautilus = lib.mkDefault true;
-      network = lib.mkDefault true;
-      networkDevices = lib.mkDefault true;
-      nftables = lib.mkDefault true;
-      nix-ld = lib.mkDefault true;
-      nvd = lib.mkDefault true;
-      packages = lib.mkDefault true;
-      pii = lib.mkDefault true;
-      pipewire = lib.mkDefault true;
-      ppd = lib.mkDefault true;
-      programs = lib.mkDefault true;
-      pulseaudio = lib.mkDefault true;
-      remotebuild = lib.mkDefault true;
-      security = lib.mkDefault true;
-      sops = lib.mkDefault true;
-      stylix = lib.mkDefault true;
-      sway = lib.mkDefault false; # niri
-      swayosd = lib.mkDefault false; # niri
-      syncthing = lib.mkDefault true;
-      systemdTimeout = lib.mkDefault true;
-      time = lib.mkDefault true;
-      users = lib.mkDefault true;
-      uwsm = lib.mkDefault true;
-      xdg-portal = lib.mkDefault true;
-      xserver = lib.mkDefault true;
-      yubikey = lib.mkDefault true;
-      zsh = lib.mkDefault true;
+  imports = [
+    # common modules
+    "${m}/nixos/common/settings.nix"
+    "${m}/nixos/common/lanzaboote.nix"
+    "${m}/nixos/common/pii.nix"
+    "${m}/nixos/common/home-manager.nix"
+    "${m}/nixos/common/xserver.nix"
+    "${m}/nixos/common/time.nix"
+    "${m}/nixos/common/users.nix"
+    "${m}/nixos/common/impermanence.nix"
+    "${m}/nixos/common/sops.nix"
+    "${m}/nixos/common/boot.nix"
+    # client modules
+    "${m}/nixos/client/appimage.nix"
+    "${m}/nixos/client/autologin.nix"
+    "${m}/nixos/client/blueman.nix"
+    "${m}/nixos/client/distrobox.nix"
+    "${m}/nixos/client/env.nix"
+    "${m}/nixos/client/firezone-client.nix"
+    "${m}/nixos/client/gnome-keyring.nix"
+    "${m}/nixos/client/gvfs.nix"
+    "${m}/nixos/client/hardware.nix"
+    "${m}/nixos/client/interceptiontools.nix"
+    "${m}/nixos/client/hardwarecompatibility-keyboards.nix"
+    "${m}/nixos/client/hardwarecompatibility-ledger.nix"
+    "${m}/nixos/client/lid.nix"
+    "${m}/nixos/client/login.nix"
+    "${m}/nixos/client/nautilus.nix"
+    "${m}/nixos/client/network.nix"
+    "${m}/nixos/client/networkdevices.nix"
+    "${m}/nixos/client/nix-ld.nix"
+    "${m}/nixos/client/nvd-rebuild.nix"
+    "${m}/nixos/client/packages.nix"
+    "${m}/nixos/client/pipewire.nix"
+    "${m}/nixos/client/polkit.nix"
+    "${m}/nixos/client/power-profiles-daemon.nix"
+    "${m}/nixos/client/programs.nix"
+    "${m}/nixos/client/pulseaudio.nix"
+    "${m}/nixos/client/remotebuild.nix"
+    "${m}/nixos/client/stylix.nix"
+    "${m}/nixos/client/syncthing.nix"
+    "${m}/nixos/client/systemd.nix"
+    "${m}/nixos/client/uwsm.nix"
+    "${m}/nixos/client/xdg-portal.nix"
+    "${m}/nixos/client/zsh.nix"
+    "${m}/nixos/client/hardwarecompatibility-yubikey.nix"
+    # server modules (shared with servers)
+    "${m}/nixos/server/btrfs.nix"
+    # "${m}/nixos/server/disk-encrypt.nix"
+    "${m}/nixos/server/nftables.nix"
+    "${m}/nixos/server/ssh.nix"
+  ];
 
-    };
-    home-manager.users."${config.swarselsystems.mainUser}" = {
-      swarselprofiles = {
-        personal = lib.mkDefault true;
-      };
-    };
-
+  config.home-manager.users."${config.swarselsystems.mainUser}" = {
+    imports = [
+      "${m}/../profiles/home/personal"
+    ];
   };
-
 }

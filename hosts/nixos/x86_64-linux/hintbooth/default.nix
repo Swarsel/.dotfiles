@@ -7,6 +7,10 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
     "${self}/modules/nixos/optional/microvm-host.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/modules/nixos/server/wireguard.nix"
+    "${self}/profiles/nixos/localserver"
+    "${self}/profiles/nixos/router"
   ];
 
   topology.self = {
@@ -73,17 +77,6 @@
   };
 
 } // lib.optionalAttrs (!minimal) {
-
-  swarselprofiles = {
-    server = true;
-    router = true;
-  };
-
-  swarselmodules = {
-    server = {
-      wireguard = true;
-    };
-  };
 
   guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
     { }

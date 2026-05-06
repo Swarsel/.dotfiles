@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.blueman = lib.mkEnableOption "blueman config";
-  config = lib.mkIf config.swarselmodules.blueman {
+  config = {
     services.blueman.enable = true;
     services.hardware.bolt.enable = true;
   };

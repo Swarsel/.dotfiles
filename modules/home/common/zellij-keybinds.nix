@@ -1,6 +1,6 @@
 { lib, config, ... }:
 {
-  config = lib.mkIf config.swarselmodules.zellij {
+  config = lib.mkIf (builtins.elem "zellij" config.swarselsystems.enabledHomeModules) {
     programs.zellij = {
       settings.keybinds = {
         _props.clear-defaults = true;

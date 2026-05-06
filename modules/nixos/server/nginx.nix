@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ self, pkgs, lib, config, ... }:
 let
   serviceUser = "nginx";
   serviceGroup = serviceUser;
@@ -12,7 +12,9 @@ let
       "${dhParamsPathBase}";
 in
 {
-  options.swarselmodules.server.nginx = lib.mkEnableOption "enable nginx on server";
+  imports = [
+    "${self}/modules/nixos/server/acme.nix"
+  ];
   options.services.nginx = {
     recommendedSecurityHeaders = lib.mkEnableOption "additional security headers by default in each location block.";
     defaultStapling = lib.mkEnableOption "add ssl stapling in each location block..";
@@ -78,9 +80,9 @@ in
       );
     };
   };
-  config = lib.mkIf config.swarselmodules.server.nginx {
+  config = {
+    swarselsystems.enabledServerModules = [ "nginx" ];
 
-    swarselmodules.server.acme = lib.mkDefault true;
 
     networking.firewall.allowedTCPPorts = [ 80 443 ];
 

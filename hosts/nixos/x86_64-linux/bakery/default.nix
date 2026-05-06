@@ -10,10 +10,11 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/personal"
     "${self}/modules/nixos/optional/gaming.nix"
     "${self}/modules/nixos/optional/nswitch-rcm.nix"
     "${self}/modules/nixos/optional/virtualbox.nix"
-
   ];
 
   topology.self.interfaces = {
@@ -57,8 +58,4 @@ in
       };
     };
   };
-} // lib.optionalAttrs (!minimal) {
-  swarselprofiles = {
-    personal = true;
-  };
-}
+} // lib.optionalAttrs (!minimal) { }

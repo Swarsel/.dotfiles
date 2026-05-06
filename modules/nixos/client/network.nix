@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, globals, ... }:
+{ self, lib, pkgs, config, confLib, globals, ... }:
 let
   certsSopsFile = self + /secrets/repo/certs.yaml;
   clientSopsFile = config.node.secretsDir + "/secrets.yaml";
@@ -11,9 +11,11 @@ in
   options.swarselsystems = {
     firewall = lib.swarselsystems.mkTrueOption;
   };
-  options.swarselmodules.network = lib.mkEnableOption "network config";
-  config = lib.mkIf config.swarselmodules.network {
+  config = {
 
+    users.persistentIds = {
+      nm-iodine = confLib.mkIds 957;
+    };
     sops = {
       secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         wlan1-pw = { };

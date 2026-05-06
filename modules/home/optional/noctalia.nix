@@ -8,10 +8,10 @@ in
     inputs.noctalia.homeModules.default
   ];
   options = {
-    swarselmodules.optional-noctalia = lib.swarselsystems.mkTrueOption;
     swarselsystems.noctalia-systemd = lib.swarselsystems.mkTrueOption;
   };
   config = {
+    swarselsystems.enabledHomeModules = [ "optional-noctalia" ];
     systemd.user = lib.mkIf config.swarselsystems.noctalia-systemd {
       targets = {
         noctalia-shell.Unit = {

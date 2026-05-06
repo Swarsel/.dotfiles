@@ -1,7 +1,7 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.desktop = lib.mkEnableOption "desktop settings";
-  config = lib.mkIf config.swarselmodules.desktop {
+  config = {
+    swarselsystems.enabledHomeModules = [ "desktop" ];
     xdg.desktopEntries = {
 
       cura = {

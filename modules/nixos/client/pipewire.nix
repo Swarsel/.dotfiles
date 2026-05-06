@@ -1,8 +1,9 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, confLib, ... }:
 {
-  options.swarselmodules.pipewire = lib.mkEnableOption "pipewire config";
-  config = lib.mkIf config.swarselmodules.pipewire {
+  config = {
     security.rtkit.enable = true; # this is required for pipewire real-time access
+
+    users.persistentIds.rtkit = confLib.mkIds 996;
 
     services.pipewire = {
       enable = true;

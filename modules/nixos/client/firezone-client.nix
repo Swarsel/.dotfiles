@@ -1,11 +1,12 @@
-{ lib, config, ... }:
+{ config, confLib, ... }:
 let
-  moduleName = "firezone-client";
   inherit (config.swarselsystems) mainUser;
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+
+    users.persistentIds.firezone-client = confLib.mkIds 955;
+
     services.firezone.gui-client = {
       enable = true;
       inherit (config.node) name;

@@ -5,7 +5,6 @@ let
 in
 {
   options = {
-    swarselmodules.server.network = lib.mkEnableOption "enable server network config";
     swarselsystems.server = {
       localNetwork = lib.mkOption {
         type = lib.types.str;
@@ -23,7 +22,8 @@ in
       };
     };
   };
-  config = lib.mkIf config.swarselmodules.server.network {
+  config = {
+    swarselsystems.enabledServerModules = [ "network" ];
 
     swarselsystems.server.localNetwork = netConfig.localNetwork or "";
 

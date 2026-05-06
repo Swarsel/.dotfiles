@@ -1,10 +1,6 @@
-{ lib, config, ... }:
-let
-  moduleName = "keyd";
-in
+_:
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} tools config";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
     services.keyd = {
       enable = true;
       keyboards = {

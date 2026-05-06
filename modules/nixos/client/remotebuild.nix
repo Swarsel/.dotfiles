@@ -3,8 +3,7 @@ let
   inherit (config.swarselsystems) homeDir mainUser isClient;
 in
 {
-  options.swarselmodules.remotebuild = lib.mkEnableOption "enable remote builds on this machine";
-  config = lib.mkIf config.swarselmodules.remotebuild {
+  config = {
 
     sops.secrets = {
       builder-key = lib.mkIf isClient { owner = mainUser; path = "${homeDir}/.ssh/builder"; mode = "0600"; };

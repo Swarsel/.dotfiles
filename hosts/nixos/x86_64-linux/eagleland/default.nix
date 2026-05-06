@@ -6,12 +6,15 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     "${self}/modules/nixos/optional/nix-topology-self.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/localserver"
+    "${self}/modules/nixos/server/mailserver.nix"
+    "${self}/modules/nixos/server/wireguard.nix"
   ];
 
   topology.self = {
     icon = "devices.cloud-server";
   };
-
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -30,17 +33,6 @@
 
   };
 } // lib.optionalAttrs (!minimal) {
-
-  swarselmodules.server = {
-    mailserver = true;
-    postgresql = true;
-    nginx = true;
-    wireguard = true;
-  };
-
-  swarselprofiles = {
-    server = true;
-  };
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "wan" ];
 

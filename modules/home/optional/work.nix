@@ -8,8 +8,8 @@ let
   certsSopsFile = self + /secrets/repo/certs.yaml;
 in
 {
-  options.swarselmodules.optional-work = lib.swarselsystems.mkTrueOption;
   config = {
+    swarselsystems.enabledHomeModules = [ "optional-work" ];
     home = {
       packages = with pkgs; [
         teams-for-linux

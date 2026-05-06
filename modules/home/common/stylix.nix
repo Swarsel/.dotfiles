@@ -1,13 +1,14 @@
 { self, lib, config, vars, ... }:
 {
-  options.swarselmodules.stylix = lib.mkEnableOption "stylix settings";
-  config = lib.mkIf config.swarselmodules.stylix {
+  config = {
+    swarselsystems.enabledHomeModules = [ "stylix" ];
     gtk.gtk4.theme = lib.mkForce config.gtk.theme;
-    stylix = lib.mkIf (!config.swarselsystems.isNixos && config.swarselmodules.stylix) (lib.recursiveUpdate
+    stylix = {
+      targets = vars.stylixHomeTargets;
+    } // lib.optionalAttrs (!config.swarselsystems.isNixos) (lib.recursiveUpdate
       {
         enable = true;
         base16Scheme = "${self}/files/stylix/swarsel.yaml";
-        targets = vars.stylixHomeTargets;
       }
       vars.stylix);
   };

@@ -1,7 +1,7 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.eza = lib.mkEnableOption "eza settings";
-  config = lib.mkIf config.swarselmodules.eza {
+  config = {
+    swarselsystems.enabledHomeModules = [ "eza" ];
     programs.eza = {
       enable = true;
       icons = "auto";

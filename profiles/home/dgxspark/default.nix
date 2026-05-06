@@ -1,30 +1,30 @@
-{ lib, config, ... }:
+{ self, ... }:
+let
+  m = "${self}/modules";
+in
 {
-  options.swarselprofiles.dgxspark = lib.mkEnableOption "is this a dgx spark host";
-  config = lib.mkIf config.swarselprofiles.dgxspark {
-    swarselmodules = {
-      atuin = lib.mkDefault true;
-      bash = lib.mkDefault true;
-      blueman-applet = lib.mkDefault true;
-      direnv = lib.mkDefault true;
-      eza = lib.mkDefault true;
-      firefox = lib.mkDefault true;
-      fuzzel = lib.mkDefault true;
-      general = lib.mkDefault true;
-      git = lib.mkDefault true;
-      gpgagent = lib.mkDefault true;
-      kitty = lib.mkDefault true;
-      nix-index = lib.mkDefault true;
-      nixgl = lib.mkDefault true;
-      nix-your-shell = lib.mkDefault true;
-      nm-applet = lib.mkDefault true;
-      sops = lib.mkDefault true;
-      starship = lib.mkDefault true;
-      stylix = lib.mkDefault true;
-      tmux = lib.mkDefault true;
-      zellij = lib.mkDefault true;
-      zsh = lib.mkDefault true;
-    };
-  };
-
+  imports = [
+    "${m}/home/common/atuin.nix"
+    "${m}/home/common/bash.nix"
+    "${m}/home/common/blueman-applet.nix"
+    "${m}/home/common/direnv.nix"
+    "${m}/home/common/eza.nix"
+    "${m}/home/common/firefox.nix"
+    "${m}/home/common/fuzzel.nix"
+    "${m}/home/common/settings.nix"
+    "${m}/home/common/git.nix"
+    "${m}/home/common/gpg-agent.nix"
+    "${m}/home/common/kitty.nix"
+    "${m}/home/common/nix-index.nix"
+    "${m}/home/common/nixgl.nix"
+    "${m}/home/common/nix-your-shell.nix"
+    "${m}/home/common/network-manager-applet.nix"
+    "${m}/home/common/sops.nix"
+    "${m}/home/common/starship.nix"
+    "${m}/home/common/stylix.nix"
+    "${m}/home/common/tmux.nix"
+    "${m}/home/common/zellij.nix"
+    "${m}/home/common/zellij-keybinds.nix"
+    "${m}/home/common/zsh.nix"
+  ];
 }

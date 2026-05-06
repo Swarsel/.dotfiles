@@ -1,12 +1,11 @@
 { lib, config, pkgs, confLib, ... }:
 let
-  moduleName = "obsidian";
   inherit (confLib.getConfig.repo.secrets.common.obsidian) userIgnoreFilters;
   name = "Main";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} with settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "obsidian" ];
 
     home.file = {
       "${config.programs.obsidian.vaults.${name}.target}/.obsidian/app.json".force = true;

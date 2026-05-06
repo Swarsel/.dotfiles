@@ -1,7 +1,7 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.nix-index = lib.mkEnableOption "nix-index settings";
-  config = lib.mkIf config.swarselmodules.nix-index {
+  config = {
+    swarselsystems.enabledHomeModules = [ "nix-index" ];
     programs.nix-index =
       let
         commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''

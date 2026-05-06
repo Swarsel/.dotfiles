@@ -70,6 +70,7 @@
             root
             general
             wireguard
+            dns
             ;
         };
     };

@@ -1,7 +1,7 @@
 { self, lib, pkgs, config, globals, confLib, dns, nodes, ... }:
 let
   inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied homeProxy webProxy homeWebProxy homeProxyIf webProxyIf idmServer dnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied homeProxy webProxy homeWebProxy homeProxyIf webProxyIf idmServer homeServiceAddress nginxAccessRules;
   inherit (config.swarselsystems) sopsFile;
 
   apiPort = 8081;
@@ -21,10 +21,8 @@ let
   kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
-  options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "firezone" ];
 
     globals = {
       networks = {
@@ -258,6 +256,11 @@ in
     #   };
 
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         genNginx = toAddress: extraConfig: {
@@ -398,9 +401,6 @@ in
 
             };
           };
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };

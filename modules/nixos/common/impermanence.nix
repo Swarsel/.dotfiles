@@ -4,8 +4,7 @@ let
   inherit (config.swarselsystems) isImpermanence isCrypted isBtrfs;
 in
 {
-  options.swarselmodules.impermanence = lib.mkEnableOption "impermanence config";
-  config = lib.mkIf config.swarselmodules.impermanence {
+  config = {
 
 
     security.sudo.extraConfig = lib.mkIf isImpermanence ''

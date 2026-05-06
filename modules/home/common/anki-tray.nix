@@ -1,7 +1,7 @@
-{ lib, config, ... }:
+{ config, ... }:
 {
-  options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
-  config = lib.mkIf config.swarselmodules.anki-tray {
+  config = {
+    swarselsystems.enabledHomeModules = [ "anki-tray" ];
 
     systemd.user.services.anki-applet = {
       Unit = {

@@ -6,6 +6,13 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     "${self}/modules/nixos/optional/nix-topology-self.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/localserver"
+    "${self}/modules/nixos/server/wireguard.nix"
+    "${self}/modules/nixos/server/ssh-builder.nix"
+    "${self}/modules/nixos/server/attic.nix"
+    "${self}/modules/nixos/server/garage.nix"
+    "${self}/modules/nixos/server/buildbot.nix"
   ];
 
   node.lockFromBootstrapping = lib.mkForce false;
@@ -44,19 +51,4 @@
       };
     };
   };
-} // lib.optionalAttrs (!minimal) {
-  swarselprofiles = {
-    server = true;
-  };
-
-  swarselmodules.server = {
-    wireguard = true;
-    ssh-builder = true;
-    postgresql = true;
-    attic = true;
-    garage = true;
-    hydra = false; # we use buildbot instead
-    buildbot = true;
-  };
-
 }

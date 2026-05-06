@@ -1,31 +1,26 @@
-{ lib, config, ... }:
+{ self, ... }:
+let
+  m = "${self}/modules";
+in
 {
-  options.swarselprofiles.minimal = lib.mkEnableOption "declare this a minimal host";
-  config = lib.mkIf config.swarselprofiles.minimal {
-    swarselmodules = {
-      general = lib.mkDefault true;
-      home-manager = lib.mkDefault true;
-      xserver = lib.mkDefault true;
-      lanzaboote = lib.mkDefault true;
-      time = lib.mkDefault true;
-      users = lib.mkDefault true;
-      impermanence = lib.mkDefault true;
-      security = lib.mkDefault true;
-      sops = lib.mkDefault true;
-      pii = lib.mkDefault true;
-      zsh = lib.mkDefault true;
-      yubikey = lib.mkDefault true;
-      autologin = lib.mkDefault true;
-      boot = lib.mkDefault true;
-      btrfs = lib.mkDefault true;
-      nftables = lib.mkDefault true;
-
-      server = {
-        ssh = lib.mkDefault true;
-        diskEncryption = lib.mkDefault true;
-      };
-    };
-
-  };
-
+  imports = [
+    # common modules
+    "${m}/nixos/common/settings.nix"
+    "${m}/nixos/common/home-manager.nix"
+    "${m}/nixos/common/xserver.nix"
+    "${m}/nixos/common/lanzaboote.nix"
+    "${m}/nixos/common/time.nix"
+    "${m}/nixos/common/users.nix"
+    "${m}/nixos/common/impermanence.nix"
+    "${m}/nixos/common/sops.nix"
+    "${m}/nixos/common/pii.nix"
+    "${m}/nixos/common/boot.nix"
+    # client modules
+    # "${m}/nixos/client/polkit.nix"
+    "${m}/nixos/client/autologin.nix"
+    # server modules
+    "${m}/nixos/server/btrfs.nix"
+    "${m}/nixos/server/ssh.nix"
+    "${m}/nixos/server/disk-encrypt.nix"
+  ];
 }

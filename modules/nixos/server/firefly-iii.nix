@@ -1,7 +1,7 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome idmServer dnsServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   nginxGroup = "nginx";
 
@@ -9,8 +9,11 @@ let
   cfg = config.services.firefly-iii;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  imports = [
+    "${self}/modules/nixos/server/nginx.nix"
+  ];
+  config = {
+    swarselsystems.enabledServerModules = [ "firefly-iii" ];
 
     users = {
       persistentIds = {
@@ -73,7 +76,7 @@ in
           "${serviceDomain}" = {
             locations = {
               "/api" = {
-                setOauth2Headers = false;
+                # setOauth2Headers = false;
                 extraConfig = ''
                   index index.php;
                   try_files $uri $uri/ /index.php?$query_string;
@@ -84,6 +87,11 @@ in
           };
         };
       };
+    };
+
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
     nodes =
@@ -144,9 +152,6 @@ in
               };
             };
           };
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };

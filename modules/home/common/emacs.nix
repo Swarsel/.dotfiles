@@ -4,8 +4,8 @@ let
   inherit (config.repo.secrets.common.emacs) radicaleUser;
 in
 {
-  options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
-  config = lib.mkIf config.swarselmodules.emacs ({
+  config = {
+    swarselsystems.enabledHomeModules = [ "emacs" ];
     # needed for elfeed
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
@@ -122,5 +122,5 @@ in
       };
     };
 
-  });
+  };
 }

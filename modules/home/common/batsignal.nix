@@ -1,10 +1,10 @@
-{ lib, config, ... }:
+_:
 let
   moduleName = "batsignal";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "batsignal" ];
     services.${moduleName} = {
       enable = true;
       extraArgs = [

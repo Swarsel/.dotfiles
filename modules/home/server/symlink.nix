@@ -1,7 +1,7 @@
-{ self, lib, config, ... }:
+{ self, lib, ... }:
 {
-  options.swarselmodules.server.dotfiles = lib.mkEnableOption "server dotfiles settings";
-  config = lib.mkIf config.swarselmodules.server.dotfiles {
+  config = {
+    swarselsystems.enabledHomeModules = [ "server-dotfiles" ];
     home.file = {
       "init.el" = lib.mkForce {
         source = self + /files/emacs/server.el;

@@ -1,7 +1,7 @@
 { self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "buildbot"; port = 8010; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   inherit (config.swarselsystems) mainUser sopsFile;
 
   nixosHostsForArch = arch:
@@ -10,7 +10,7 @@ let
 
   allNixosHosts = nixosHostsForArch "aarch64-linux" ++ nixosHostsForArch "x86_64-linux";
 
-  excludedHosts = [ "summers" ];
+  excludedHosts = [ ];
   buildbotHosts = builtins.filter (h: !builtins.elem h excludedHosts) allNixosHosts;
 
   buildbotHome = config.services.buildbot-master.home;
@@ -242,11 +242,12 @@ let
   '';
 in
 {
-  options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  };
+  imports = [
+    "${self}/modules/nixos/server/attic-setup.nix"
+  ];
 
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "buildbot" ];
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
@@ -302,7 +303,6 @@ in
       };
     };
 
-    swarselmodules.server.attic-setup = true;
 
     sops.secrets = {
       buildbot-github-key = {
@@ -327,9 +327,9 @@ in
 
     programs.ssh.extraConfig = lib.mkAfter ''
       Host github.com
-        IdentityFile ${config.sops.secrets.buildbot-github-key.path}
-        IdentitiesOnly yes
-        StrictHostKeyChecking accept-new
+          IdentityFile ${config.sops.secrets.buildbot-github-key.path}
+          IdentitiesOnly yes
+          StrictHostKeyChecking accept-new
     '';
 
     nix.settings.trusted-users = [ "buildbot" ];
@@ -359,7 +359,7 @@ in
     systemd.services.buildbot-master = {
       environment.SOPS_AGE_KEY_FILE = config.sops.secrets.buildbot-age-key.path;
       serviceConfig = {
-        MemoryMax = "16G";
+        MemoryMax = "20G";
         Restart = "always";
       };
     };
@@ -367,6 +367,11 @@ in
     environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
       { directory = "/home/buildbot"; user = "buildbot"; group = "buildbot"; mode = "0750"; }
     ];
+
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     nodes = {
       ${idmServer} =
@@ -391,9 +396,6 @@ in
             };
           };
         };
-      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "buildbot_access" ]; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2Groups = [ "buildbot_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

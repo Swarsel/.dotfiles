@@ -4,15 +4,15 @@ let
   crocDomain = globals.services.croc.domain;
 in
 {
-  options.swarselmodules.zsh = lib.mkEnableOption "zsh settings";
   options.swarselsystems = {
     shellAliases = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   };
-  config = lib.mkIf config.swarselmodules.zsh
-    ({
+  config =
+    {
+      swarselsystems.enabledHomeModules = [ "zsh" ];
 
       programs.zsh = {
         enable = true;
@@ -145,5 +145,5 @@ in
         github-nixpkgs-review-token = { };
       };
 
-    });
+    };
 }

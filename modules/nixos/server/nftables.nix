@@ -1,12 +1,7 @@
-{ lib, config, confLib, ... }:
-let
-  inherit (confLib.gen { name = "nftables"; }) serviceName;
-in
+{ lib, config, ... }:
 {
-  options = {
-    swarselmodules.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  };
-  config = lib.mkIf config.swarselmodules.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "nftables" ];
 
     networking.nftables = {
       stopRuleset = lib.mkDefault ''

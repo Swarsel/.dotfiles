@@ -1,8 +1,8 @@
 { lib, config, pkgs, ... }:
 
 {
-  options.swarselmodules.ownpackages = lib.mkEnableOption "own packages settings";
-  config = lib.mkIf config.swarselmodules.ownpackages {
+  config = {
+    swarselsystems.enabledHomeModules = [ "ownpackages" ];
     home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) ([
       pass-fuzzel
       cdw
@@ -34,11 +34,11 @@
       swarsel-switch
       swarsel-sops
       sync-org-from-files
-    ] ++ lib.optionals config.swarselmodules.sway [
+    ] ++ lib.optionals (builtins.elem "sway" config.swarselsystems.enabledHomeModules) [
       e
       swarselcheck
       swarsel-displaypower
-    ] ++ lib.optionals (config.swarselmodules ? optional-niri) [
+    ] ++ lib.optionals (builtins.elem "optional-niri" config.swarselsystems.enabledHomeModules) [
       e-niri
       swarselcheck-niri
     ]);

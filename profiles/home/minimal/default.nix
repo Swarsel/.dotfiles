@@ -1,14 +1,13 @@
-{ lib, config, ... }:
+{ self, ... }:
+let
+  m = "${self}/modules";
+in
 {
-  options.swarselprofiles.minimal = lib.mkEnableOption "is this a personal host";
-  config = lib.mkIf config.swarselprofiles.minimal {
-    swarselmodules = {
-      general = lib.mkDefault true;
-      sops = lib.mkDefault true;
-      kitty = lib.mkDefault true;
-      zsh = lib.mkDefault true;
-      git = lib.mkDefault true;
-    };
-  };
-
+  imports = [
+    "${m}/home/common/settings.nix"
+    "${m}/home/common/sops.nix"
+    "${m}/home/common/kitty.nix"
+    "${m}/home/common/zsh.nix"
+    "${m}/home/common/git.nix"
+  ];
 }

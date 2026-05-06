@@ -4,22 +4,8 @@ let
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    swarselsystems.server.dns = lib.mkOption {
-      type = lib.types.attrsOf (
-        lib.types.submodule {
-          options = {
-            subdomainRecords = lib.mkOption {
-              type = lib.types.attrsOf dns.lib.types.subzone;
-              default = { };
-            };
-          };
-        }
-      );
-    };
-  };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "nsd" ];
 
     sops.secrets = {
       tsig-key = { inherit sopsFile; };

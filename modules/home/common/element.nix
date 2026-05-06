@@ -1,10 +1,7 @@
-{ lib, config, globals, ... }:
-let
-  moduleName = "element-desktop";
-in
+{ globals, ... }:
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "element-desktop" ];
     programs.element-desktop = {
       enable = true;
       settings = {

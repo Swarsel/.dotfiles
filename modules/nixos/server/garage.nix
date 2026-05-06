@@ -2,7 +2,7 @@
 { self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "garage"; port = 3900; domain = config.repo.secrets.common.services.domains."garage-${config.node.name}"; }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
   inherit (config.swarselsystems) sopsFile mainUser;
@@ -21,7 +21,6 @@ let
 in
 {
   options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     swarselsystems.server.${serviceName} = {
       data_dir = {
         path = lib.mkOption {
@@ -47,7 +46,8 @@ in
       };
     };
   };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "garage" ];
     assertions = [
       {
         assertion = config.swarselsystems.server.${serviceName}.buckets != [ ];
@@ -315,6 +315,15 @@ in
       };
     };
 
+
+    globals.dns.${baseDomain}.subdomainRecords = {
+      "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         genNginx = toAddress: extraConfig: {
@@ -385,13 +394,6 @@ in
         };
       in
       {
-        ${dnsServer}.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
-          "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-          "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-          "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-          "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-          "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };

@@ -10,6 +10,8 @@ in
     {
       _module.args.diskDevice = config.swarselsystems.rootDisk;
     }
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/hotel"
   ];
 
   environment.variables = {
@@ -31,13 +33,6 @@ in
     firewall.enable = true;
   };
 
-  swarselmodules = {
-    server = {
-      network = lib.mkForce false;
-      diskEncryption = lib.mkForce false;
-    };
-  };
-
   swarselsystems = {
     info = "~SwarselSystems~ demo host";
     wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
@@ -54,9 +49,4 @@ in
     isNixos = true;
   };
 
-} // lib.optionalAttrs (!minimal) {
-  swarselprofiles = {
-    hotel = true;
-    minimal = true;
-  };
 }

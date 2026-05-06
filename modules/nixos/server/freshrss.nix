@@ -1,13 +1,16 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome webProxy homeWebProxy idmServer dnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
 
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  imports = [
+    "${self}/modules/nixos/server/nginx.nix"
+  ];
+  config = {
+    swarselsystems.enabledServerModules = [ "freshrss" ];
 
     users = {
       persistentIds = {
@@ -83,6 +86,11 @@ in
     #   config.sops.templates.freshrss-env.path
     # ];
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         genNginx = toAddress: extraConfig: {
@@ -139,9 +147,6 @@ in
               };
             };
           };
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };

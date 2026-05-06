@@ -1,10 +1,10 @@
-{ lib, pkgs, config, ... }:
+{ pkgs, ... }:
 let
   moduleName = "vesktop";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "vesktop" ];
     programs.${moduleName} = {
       enable = true;
       package = pkgs.vesktop;

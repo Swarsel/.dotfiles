@@ -1,11 +1,14 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, confLib, pkgs, ... }:
 let
   inherit (config.swarselsystems) mainUser;
   inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
 in
 {
-  options.swarselmodules.yubikey = lib.mkEnableOption "yubikey config";
-  config = lib.mkIf config.swarselmodules.yubikey {
+  config = {
+
+    users.persistentIds = {
+      pcscd = confLib.mkIds 956;
+    };
     programs.ssh = {
       startAgent = false; # yes we want this to use FIDO2 keys
       # enableAskPassword = true;

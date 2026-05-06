@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.gvfs = lib.mkEnableOption "gvfs config for nautilus";
-  config = lib.mkIf config.swarselmodules.gvfs {
+  config = {
     services.gvfs.enable = true;
   };
 }

@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.ppd = lib.mkEnableOption "power profiles daemon config";
-  config = lib.mkIf config.swarselmodules.ppd {
+  config = {
     services.power-profiles-daemon.enable = true;
   };
 }

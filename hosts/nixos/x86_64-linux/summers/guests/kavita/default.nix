@@ -2,6 +2,7 @@
 {
   imports = [
     "${self}/profiles/nixos/microvm"
+    "${self}/modules/nixos/server/kavita.nix"
   ];
 
   swarselsystems = {
@@ -10,21 +11,12 @@
     proxyHost = "twothreetunnel";
   };
 
-
 } // lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 1024 * 1;
     vcpu = 2;
 
-  };
-
-  swarselprofiles = {
-    microvm = true;
-  };
-
-  swarselmodules.server = {
-    kavita = true;
   };
 
 }

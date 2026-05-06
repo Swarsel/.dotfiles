@@ -1,4 +1,4 @@
-{ lib, config, globals, confLib, ... }:
+{ config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "opkssh"; user = "opksshuser"; group = "opksshuser"; }) serviceName serviceUser serviceGroup;
   inherit (confLib.static) idmServer;
@@ -9,8 +9,8 @@ let
   mailAddress = config.repo.secrets.common.mail.address4;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "opkssh" ];
 
     users.persistentIds = {
       opksshuser = confLib.mkIds 980;

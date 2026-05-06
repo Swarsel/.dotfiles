@@ -14,7 +14,6 @@ let
 in
 {
   options = {
-    swarselmodules.server.ids = lib.mkEnableOption "enable persistent ids on server";
     users = {
       persistentIds = mkOption {
         default = { };
@@ -72,7 +71,7 @@ in
       };
     };
   };
-  config = lib.mkIf config.swarselmodules.server.ids {
+  config = {
     assertions =
       concatLists
         (

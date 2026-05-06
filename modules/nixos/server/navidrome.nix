@@ -1,11 +1,15 @@
-{ pkgs, config, lib, globals, dns, confLib, ... }:
+{ self, pkgs, config, lib, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  imports = [
+    "${self}/modules/nixos/server/pipewire.nix"
+  ];
+
+  config = {
+    swarselsystems.enabledServerModules = [ "navidrome" ];
 
 
     environment.systemPackages = with pkgs; [
@@ -120,6 +124,11 @@ in
       };
     };
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         genNginx = toAddress: extraConfigPre: {
@@ -199,9 +208,6 @@ in
               };
             };
           };
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };

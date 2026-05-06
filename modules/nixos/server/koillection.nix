@@ -1,7 +1,7 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   serviceDB = "koillection";
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
@@ -11,13 +11,14 @@ let
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  imports = [
+    "${self}/modules/nixos/server/postgresql.nix"
+    "${self}/modules/nixos/server/podman.nix"
+  ];
 
-    swarselmodules.server = {
-      podman = true;
-      postgresql = true;
-    };
+  config = {
+    swarselsystems.enabledServerModules = [ "koillection" ];
+
 
     sops.secrets = {
       koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
@@ -124,6 +125,11 @@ in
       };
     };
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         extraConfigLoc = ''
@@ -133,9 +139,6 @@ in
         '';
       in
       {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };

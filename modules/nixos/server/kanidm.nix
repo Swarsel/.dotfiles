@@ -3,7 +3,7 @@ let
   certsSopsFile = self + /secrets/repo/certs.yaml;
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf dnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   certBase = "/etc/ssl";
   certsDir = "${certBase}/certs";
@@ -22,8 +22,8 @@ let
       "${keyPathBase}";
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "kanidm" ];
 
 
     users = {
@@ -178,6 +178,11 @@ in
     };
 
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         extraConfig = ''
@@ -186,9 +191,6 @@ in
         '';
       in
       {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; };
         ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; extraConfig = extraConfig + nginxAccessRules; serviceAddress = homeServiceAddress; };
       };

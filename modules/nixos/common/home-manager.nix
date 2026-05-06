@@ -1,8 +1,13 @@
-{ self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, withHomeManager, ... }:
+{ self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, ... }:
+let
+  inherit (config.swarselsystems) isServer isMicroVM;
+in
 {
-  options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
-  config = lib.mkIf config.swarselmodules.home-manager {
-    home-manager = lib.mkIf withHomeManager {
+  imports = [
+    "${self}/modules/nixos/common/home-manager-secrets.nix"
+  ];
+  config = {
+    home-manager = lib.mkIf (!isServer && !isMicroVM) {
       useGlobalPkgs = true;
       useUserPackages = true;
       verbose = true;
@@ -15,13 +20,9 @@
         inputs.swarsel-nix.homeModules.default
         {
           imports = [
-            "${self}/profiles/home"
             "${self}/modules/home"
-            {
-              swarselprofiles = {
-                minimal = lib.mkIf minimal true;
-              };
-            }
+          ] ++ lib.optionals minimal [
+            "${self}/profiles/home/minimal"
           ];
           # node = {
           #   secretsDir = if (!config.swarselsystems.isNixos) then ../../../hosts/home/${configName}/secrets else ../../../hosts/nixos/${configName}/secrets;

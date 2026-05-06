@@ -6,6 +6,9 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     "${self}/modules/nixos/optional/nix-topology-self.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/localserver"
+    "${self}/modules/nixos/server/bastion.nix"
   ];
 
   topology.self = {
@@ -37,14 +40,6 @@
     mainUser = "jump";
   };
 } // lib.optionalAttrs (!minimal) {
-  swarselprofiles = {
-    server = true;
-  };
-
-  swarselmodules.server = {
-    bastion = true;
-    # ssh = false;
-  };
 
   # users.users.swarsel.enable = lib.mkForce false;
   # home-manager.users.swarsel.enable = lib.mkForce false

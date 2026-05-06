@@ -1,15 +1,15 @@
 { self, lib, config, dns, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   inherit (config.swarselsystems) sopsFile;
 
   cfg = config.services.${serviceName};
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "microbin" ];
 
     users = {
       persistentIds.${serviceName} = confLib.mkIds 964;
@@ -114,10 +114,11 @@ in
       { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
     ];
 
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes = {
-      ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

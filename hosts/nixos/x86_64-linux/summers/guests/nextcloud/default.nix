@@ -2,6 +2,7 @@
 {
   imports = [
     "${self}/profiles/nixos/microvm"
+    "${self}/modules/nixos/server/nextcloud.nix"
   ];
 
   swarselsystems = {
@@ -10,22 +11,11 @@
     proxyHost = "twothreetunnel";
   };
 
-
 } // lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 1024 * 3;
     vcpu = 2;
-  };
-
-  swarselprofiles = {
-    microvm = true;
-  };
-
-  swarselmodules.server = {
-    nextcloud = true;
-    nginx = true;
-    acme = false;
   };
 
 }

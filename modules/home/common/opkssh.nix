@@ -1,10 +1,10 @@
-{ lib, config, globals, ... }:
+{ globals, ... }:
 let
   moduleName = "opkssh";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "opkssh" ];
     programs.${moduleName} = {
       enable = true;
       settings = {

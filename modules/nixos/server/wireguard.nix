@@ -5,7 +5,7 @@ let
     port = 52829;
     user = "systemd-network";
     group = "systemd-network";
-  }) servicePort serviceName serviceUser serviceGroup;
+  }) servicePort serviceUser serviceGroup;
 
   inherit (config.swarselsystems) sopsFile;
   wgSopsFilePrefix = self + "/secrets/wireguard";
@@ -37,9 +37,6 @@ let
 in
 {
   options = {
-    swarselmodules.server.${serviceName} =
-      lib.mkEnableOption "enable ${serviceName} settings";
-
     swarselsystems.server.wireguard.interfaces = lib.mkOption {
       type = lib.types.unspecified;
       readOnly = true;
@@ -49,7 +46,8 @@ in
     };
   };
 
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "wireguard" ];
 
     assertions = lib.concatLists (
       lib.flip lib.mapAttrsToList interfaces (

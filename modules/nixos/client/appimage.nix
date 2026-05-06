@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.appimage = lib.mkEnableOption "appimage config";
-  config = lib.mkIf config.swarselmodules.appimage {
+  config = {
     programs.appimage = {
       enable = true;
       binfmt = true;

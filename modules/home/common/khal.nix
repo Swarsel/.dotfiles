@@ -1,10 +1,10 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 let
   moduleName = "khal";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "khal" ];
     programs.${moduleName} = {
       enable = true;
       package = pkgs.khal;

@@ -1,7 +1,7 @@
-{ config, pkgs, lib, vars, ... }:
+{ pkgs, lib, vars, ... }:
 {
-  options.swarselmodules.firefox = lib.mkEnableOption "firefox settings";
-  config = lib.mkIf config.swarselmodules.firefox {
+  config = {
+    swarselsystems.enabledHomeModules = [ "firefox" ];
 
     programs.zsh.sessionVariables = {
       MOZ_DISABLE_RDD_SANDBOX = "1";

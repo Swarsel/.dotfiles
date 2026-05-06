@@ -1,9 +1,10 @@
-{ lib, options, ... }:
+{ lib, inputs, options, ... }:
 let
   inherit (lib)
     mkOption
     types
     ;
+  inherit (inputs) dns;
 
   firewallOptions = {
     allowedTCPPorts = mkOption {
@@ -201,6 +202,10 @@ in
                     type = types.bool;
                     default = false;
                   };
+                  extraConfig = mkOption {
+                    type = types.attrs;
+                    default = { };
+                  };
                 };
               })
             );
@@ -305,6 +310,20 @@ in
             type = types.submodule {
               freeformType = types.unspecified;
             };
+          };
+
+          dns = mkOption {
+            default = { };
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  subdomainRecords = mkOption {
+                    type = types.attrsOf dns.lib.types.subzone;
+                    default = { };
+                  };
+                };
+              }
+            );
           };
 
         };

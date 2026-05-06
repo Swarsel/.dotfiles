@@ -1,12 +1,12 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, globals, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir;
-  devices = config.swarselsystems.syncthing.syncDevices;
+  syncthingConfig = globals.services.syncthing-summers-storage.extraConfig;
+  devices = syncthingConfig.syncDevices;
   servicePort = 8384;
 in
 {
-  options.swarselmodules.syncthing = lib.mkEnableOption "syncthing config";
-  config = lib.mkIf config.swarselmodules.syncthing {
+  config = {
     services.syncthing = {
       enable = true;
       systemService = true;
@@ -22,7 +22,7 @@ in
         options = {
           urAccepted = -1;
         };
-        inherit (config.swarselsystems.syncthing) devices;
+        inherit (syncthingConfig) devices;
         folders = {
           "Default Folder" = lib.mkDefault {
             path = "${homeDir}/Sync";

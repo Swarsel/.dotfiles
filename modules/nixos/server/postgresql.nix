@@ -5,8 +5,8 @@ let
   postgresDirPrefix = "/var/lib";
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "postgresql" ];
 
     services = {
       ${serviceName} = {

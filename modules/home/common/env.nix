@@ -8,8 +8,8 @@ let
   DISPLAY = ":0";
 in
 {
-  options.swarselmodules.env = lib.mkEnableOption "env settings";
-  config = lib.mkIf config.swarselmodules.env {
+  config = {
+    swarselsystems.enabledHomeModules = [ "env" ];
     home.sessionVariables = {
       inherit DISPLAY;
     } // (lib.optionalAttrs (!isPublic) { });

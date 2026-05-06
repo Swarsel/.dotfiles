@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.gnome-keyring = lib.mkEnableOption "gnome-keyring config";
-  config = lib.mkIf config.swarselmodules.gnome-keyring {
+  config = {
     services.gnome.gnome-keyring = {
       enable = true;
     };

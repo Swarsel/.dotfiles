@@ -3,6 +3,8 @@
 
   imports = [
     "${self}/modules/home"
+    "${self}/profiles/home/dgxspark"
+    "${self}/modules/nixos/common/pii.nix"
   ];
 
   services.xcape = {
@@ -20,16 +22,10 @@
   # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
   # gpgconf --launch gpg-agent
   #       ";
-  swarselmodules.pii = true;
-
   swarselsystems = {
     isLaptop = false;
     isNixos = false;
     wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
-  };
-
-  swarselprofiles = {
-    dgxspark = true;
   };
 
 }

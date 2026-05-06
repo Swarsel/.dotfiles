@@ -1,15 +1,15 @@
 { self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome dnsServer;
+  inherit (confLib.static) isHome;
   inherit (config.swarselsystems) mainUser;
   worldName = "${mainUser}craft";
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "minecraft" ];
 
-    nodes.${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 

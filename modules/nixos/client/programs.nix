@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.programs = lib.mkEnableOption "small program modules config";
-  config = lib.mkIf config.swarselmodules.programs {
+  config = {
     programs = {
       dconf.enable = true;
       evince.enable = true;

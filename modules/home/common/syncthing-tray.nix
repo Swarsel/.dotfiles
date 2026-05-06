@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselmodules.syncthing-tray = lib.mkEnableOption "enable syncthing applet for tray";
-  config = lib.mkIf config.swarselmodules.syncthing-tray {
+  config = {
+    swarselsystems.enabledHomeModules = [ "syncthing-tray" ];
 
     home.activation.setupSyncthingIni =
       let

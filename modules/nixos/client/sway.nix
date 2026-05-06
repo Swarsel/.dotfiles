@@ -3,8 +3,7 @@ let
   inherit (config.swarselsystems) mainUser;
 in
 {
-  options.swarselmodules.sway = lib.mkEnableOption "sway config";
-  config = lib.mkIf config.swarselmodules.sway
+  config =
     {
       programs.sway = {
         enable = true;
@@ -15,6 +14,6 @@ in
         };
       };
     } // lib.optionalAttrs withHomeManager {
-    inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
-  };
+      inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
+    };
 }

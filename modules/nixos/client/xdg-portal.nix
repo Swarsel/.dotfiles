@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.xdg-portal = lib.mkEnableOption "xdg portal config";
-  config = lib.mkIf config.swarselmodules.xdg-portal {
+  config = {
     xdg.portal = {
       enable = true;
       # config = {

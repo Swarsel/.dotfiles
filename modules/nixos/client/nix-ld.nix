@@ -1,7 +1,6 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.nix-ld = lib.mkEnableOption "nix-ld config";
-  config = lib.mkIf config.swarselmodules.nix-ld {
+  config = {
     programs.nix-ld = {
       enable = true;
       libraries = with pkgs; [

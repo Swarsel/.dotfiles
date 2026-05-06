@@ -39,7 +39,6 @@
             (inputs.nixos-extra-modules + "/modules/guests")
             (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
             "${self}/hosts/nixos/${arch}/${configName}"
-            "${self}/profiles/nixos"
             "${self}/modules/nixos"
             {
               _module.args.dns = inputs.dns;
@@ -57,18 +56,12 @@
                 lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
               };
 
-              swarselprofiles = {
-                minimal = lib.mkIf minimal (lib.swarselsystems.mkStrong true);
-              };
-
-              swarselmodules.server = {
-                ssh = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
-              };
-
               swarselsystems = {
                 mainUser = lib.swarselsystems.mkStrong "swarsel";
               };
             }
+          ] ++ lib.optionals minimal [
+            "${self}/profiles/nixos/minimal"
           ];
         };
 

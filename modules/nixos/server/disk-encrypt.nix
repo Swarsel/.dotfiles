@@ -14,12 +14,12 @@ let
   '';
 in
 {
-  options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
   options.swarselsystems.networkKernelModules = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     default = [ ];
   };
-  config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
+  config = lib.mkIf config.swarselsystems.isCrypted {
+    swarselsystems.enabledServerModules = [ "diskEncryption" ];
 
 
     # as soon as we hit a stable system, we will use a persisted key
@@ -30,11 +30,10 @@ in
       '';
       deps = [
         "users"
-        "createPersistentStorageDirs"
-      ];
+      ] ++ lib.optional config.swarselsystems.isImpermanence "createPersistentStorageDirs";
     };
 
-    environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselprofiles.server || minimal)) {
+    environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselsystems.isServer || minimal)) {
       files = [ hostKeyPathBase ];
     };
 

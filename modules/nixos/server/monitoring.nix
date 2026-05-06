@@ -1,7 +1,7 @@
 { self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
   prometheusPort = 9090;
   prometheusUser = "prometheus";
@@ -16,8 +16,8 @@ let
   kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "grafana" ];
 
     sops = {
       secrets = {
@@ -224,7 +224,7 @@ in
               sslVerify = false;
               scrapeUri = "http://localhost/nginx_status";
             };
-            nextcloud = lib.mkIf (config.swarselmodules.server.nextcloud or false) {
+            nextcloud = lib.mkIf (builtins.elem "nextcloud" config.swarselsystems.enabledServerModules) {
               enable = true;
               port = 9205;
               url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
@@ -235,6 +235,11 @@ in
         };
     };
 
+
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     nodes =
       let
@@ -314,9 +319,6 @@ in
               };
             };
           };
-        };
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress (extraConfig + nginxAccessRules);

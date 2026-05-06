@@ -1,10 +1,10 @@
-{ lib, config, ... }:
+_:
 let
   moduleName = "nix-your-shell";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "nix-your-shell" ];
     programs.${moduleName} = {
       enable = true;
       enableZshIntegration = true;

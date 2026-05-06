@@ -1,7 +1,6 @@
-{ lib, config, minimal, ... }:
+{ lib, minimal, ... }:
 {
-  options.swarselmodules.security = lib.mkEnableOption "security config";
-  config = lib.mkIf config.swarselmodules.security {
+  config = {
 
     security = {
       # pki.certificateFiles = [

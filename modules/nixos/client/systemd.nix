@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
-  config = lib.mkIf config.swarselmodules.systemdTimeout {
+  config = {
     # systemd
     systemd.settings.Manager = {
       DefaultTimeoutStartSec = "60s";

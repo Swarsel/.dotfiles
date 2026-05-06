@@ -3,6 +3,7 @@
   imports = [
     "${self}/profiles/nixos/microvm"
     "${self}/modules/nixos/optional/microvm-guest-shares.nix"
+    "${self}/modules/nixos/server/adguardhome.nix"
   ];
 
   swarselsystems = {
@@ -18,14 +19,6 @@
   microvm = {
     mem = 1024 * 1;
     vcpu = 1;
-  };
-
-  swarselprofiles = {
-    microvm = true;
-  };
-
-  swarselmodules.server = {
-    adguardhome = true;
   };
 
 }

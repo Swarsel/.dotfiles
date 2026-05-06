@@ -1,7 +1,7 @@
 { lib, config, confLib, type, ... }:
 {
-  options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
-  config = lib.mkIf config.swarselmodules.ssh ({
+  config = {
+    swarselsystems.enabledHomeModules = [ "ssh" ];
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
@@ -28,5 +28,5 @@
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
       builder-key = { path = "${config.home.homeDirectory}/.ssh/builder"; mode = "0600"; };
     };
-  });
+  };
 }

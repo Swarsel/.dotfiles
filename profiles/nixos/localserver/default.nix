@@ -1,31 +1,29 @@
-{ lib, config, ... }:
+{ self, ... }:
+let
+  m = "${self}/modules";
+in
 {
-  options.swarselprofiles.server = lib.mkEnableOption "is this a server";
-  config = lib.mkIf config.swarselprofiles.server {
-    swarselmodules = {
-      general = lib.mkDefault true;
-      lanzaboote = lib.mkDefault true;
-      pii = lib.mkDefault true;
-      home-manager = lib.mkDefault true;
-      xserver = lib.mkDefault true;
-      time = lib.mkDefault true;
-      users = lib.mkDefault true;
-      impermanence = lib.mkDefault true;
-      btrfs = lib.mkDefault true;
-      sops = lib.mkDefault true;
-      boot = lib.mkDefault true;
-      nftables = lib.mkDefault true;
-      server = {
-        general = lib.mkDefault true;
-        ids = lib.mkDefault true;
-        network = lib.mkDefault true;
-        diskEncryption = lib.mkDefault true;
-        packages = lib.mkDefault true;
-        ssh = lib.mkDefault true;
-        attic-setup = lib.mkDefault true;
-        dns-hostrecord = lib.mkDefault true;
-      };
-    };
-  };
-
+  imports = [
+    # common modules
+    "${m}/nixos/common/settings.nix"
+    "${m}/nixos/common/lanzaboote.nix"
+    "${m}/nixos/common/pii.nix"
+    "${m}/nixos/common/xserver.nix"
+    "${m}/nixos/common/time.nix"
+    "${m}/nixos/common/users.nix"
+    "${m}/nixos/common/impermanence.nix"
+    "${m}/nixos/common/sops.nix"
+    "${m}/nixos/common/boot.nix"
+    # server modules
+    "${m}/nixos/server/btrfs.nix"
+    "${m}/nixos/server/nftables.nix"
+    "${m}/nixos/server/settings.nix"
+    "${m}/nixos/server/id.nix"
+    "${m}/nixos/server/network.nix"
+    "${m}/nixos/server/disk-encrypt.nix"
+    "${m}/nixos/server/packages.nix"
+    "${m}/nixos/server/ssh.nix"
+    "${m}/nixos/server/attic-setup.nix"
+    "${m}/nixos/server/dns-hostrecord.nix"
+  ];
 }

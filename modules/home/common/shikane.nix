@@ -1,9 +1,9 @@
 { lib, config, confLib, ... }:
 {
-  options.swarselmodules.shikane = lib.mkEnableOption "kanshi settings";
-  config = lib.mkIf config.swarselmodules.shikane {
+  config = {
+    swarselsystems.enabledHomeModules = [ "shikane" ];
 
-    systemd.user.services.shikane = lib.mkIf (config.swarselmodules ? optional-noctalia && config.swarselsystems.noctalia-systemd) (confLib.overrideTarget "noctalia-shell.target");
+    systemd.user.services.shikane = lib.mkIf (builtins.elem "optional-noctalia" config.swarselsystems.enabledHomeModules && config.swarselsystems.noctalia-systemd) (confLib.overrideTarget "noctalia-shell.target");
     services.shikane = {
       enable = true;
       settings =

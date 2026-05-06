@@ -1,7 +1,6 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.nvd = lib.mkEnableOption "nvd config";
-  config = lib.mkIf config.swarselmodules.nvd {
+  config = {
 
     environment.systemPackages = [
       pkgs.nvd

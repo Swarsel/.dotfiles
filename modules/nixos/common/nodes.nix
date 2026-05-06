@@ -32,7 +32,6 @@ let
     (splitPath "services.kanidm.provision.groups")
     (splitPath "services.kanidm.provision.systems.oauth2")
     (splitPath "sops.secrets")
-    (splitPath "swarselsystems.server.dns")
     (splitPath "topology.self.services")
     (splitPath "environment.persistence")
   ]

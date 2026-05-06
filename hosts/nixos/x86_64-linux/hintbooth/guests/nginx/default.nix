@@ -6,6 +6,7 @@ in
   imports = [
     "${self}/profiles/nixos/microvm"
     "${self}/modules/nixos/optional/microvm-guest-shares.nix"
+    "${self}/modules/nixos/server/nginx.nix"
   ];
 
   swarselsystems = {
@@ -21,14 +22,6 @@ in
   microvm = {
     mem = 3072 * 1;
     vcpu = 1;
-  };
-
-  swarselprofiles = {
-    microvm = true;
-  };
-
-  swarselmodules.server = {
-    nginx = true;
   };
 
   services.nginx = {

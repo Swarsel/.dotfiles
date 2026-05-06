@@ -4,7 +4,6 @@ let
   inherit (config.swarselsystems.server.restic) targets;
 in
 {
-  options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
   options.swarselsystems.server.restic = {
     targets = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
@@ -29,7 +28,8 @@ in
     };
   };
 
-  config = lib.mkIf config.swarselmodules.server.restic {
+  config = {
+    swarselsystems.enabledServerModules = [ "restic" ];
 
     sops = {
       secrets =

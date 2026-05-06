@@ -1,7 +1,7 @@
 { self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer dnsServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
 
   mainDomain = globals.domains.main;
 
@@ -12,7 +12,6 @@ let
 in
 {
   options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     # largely based on https://github.com/oddlama/nix-config/blob/main/modules/oauth2-proxy.nix
     services.nginx.virtualHosts = lib.mkOption {
       type = lib.types.attrsOf (
@@ -120,7 +119,8 @@ in
       );
     };
   };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "oauth2-proxy" ];
 
     sops = {
       secrets = {
@@ -217,6 +217,11 @@ in
       };
     };
 
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     nodes =
       let
         extraConfig = ''
@@ -243,9 +248,6 @@ in
               };
             };
           };
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceAddress serviceDomain serviceName extraConfig; };
         ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; extraConfig = extraConfig + nginxAccessRules; serviceAddress = globals.hosts.${oauthServer}.wanAddress4; };
       };

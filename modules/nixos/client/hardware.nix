@@ -1,7 +1,6 @@
-{ pkgs, config, lib, ... }:
+{ pkgs, config, confLib, lib, ... }:
 {
 
-  options.swarselmodules.hardware = lib.mkEnableOption "hardware config";
   options.swarselsystems = {
     hasBluetooth = lib.mkEnableOption "bluetooth availability";
     hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
@@ -13,7 +12,10 @@
       };
     };
   };
-  config = lib.mkIf config.swarselmodules.hardware {
+  config = {
+
+    users.persistentIds.plugdev = confLib.mkIds 953;
+
     hardware = {
       # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
       graphics = {

@@ -3,8 +3,8 @@ let
   nfsUser = globals.user.name;
 in
 {
-  options.swarselmodules.server.nfs = lib.mkEnableOption "enable nfs on server";
-  config = lib.mkIf config.swarselmodules.server.nfs {
+  config = {
+    swarselsystems.enabledServerModules = [ "nfs" ];
 
     users.persistentIds = {
       avahi = confLib.mkIds 978;

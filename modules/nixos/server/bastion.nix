@@ -1,7 +1,7 @@
 { self, lib, config, withHomeManager, confLib, ... }:
 {
-  options.swarselmodules.server.bastion = lib.mkEnableOption "enable bastion on server";
-  config = lib.mkIf config.swarselmodules.server.bastion ({
+  config = {
+    swarselsystems.enabledServerModules = [ "bastion" ];
 
     users = {
       persistentIds.jump = confLib.mkIds 1001;
@@ -45,7 +45,7 @@
           "jump"
         ];
       };
-      hostKeys = lib.mkIf (!config.swarselmodules.server.ssh) [
+      hostKeys = lib.mkIf (!(builtins.elem "ssh" config.swarselsystems.enabledServerModules)) [
         {
           path = "/etc/ssh/ssh_host_ed25519_key";
           type = "ed25519";
@@ -66,5 +66,5 @@
         } // config.repo.secrets.local.ssh.hosts;
       };
     };
-  });
+  };
 }

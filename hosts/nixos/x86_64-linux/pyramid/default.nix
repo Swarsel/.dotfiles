@@ -10,6 +10,8 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/personal"
     "${self}/modules/nixos/optional/amdcpu.nix"
     "${self}/modules/nixos/optional/amdgpu.nix"
     "${self}/modules/nixos/optional/framework.nix"
@@ -75,9 +77,6 @@ in
     };
   };
 } // lib.optionalAttrs (!minimal) {
-  swarselprofiles = {
-    personal = true;
-  };
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "wlan*" "enp*" ];
   # networking.nftables = {

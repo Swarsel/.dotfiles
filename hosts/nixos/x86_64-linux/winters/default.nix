@@ -6,6 +6,8 @@
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     "${self}/modules/nixos/optional/nix-topology-self.nix"
+  ] ++ lib.optionals (!minimal) [
+    "${self}/profiles/nixos/localserver"
   ];
 
   topology.self.interfaces."eth1" = { };
@@ -34,14 +36,6 @@
   };
 
 } // lib.optionalAttrs (!minimal) {
-
-  swarselprofiles = {
-    server = true;
-  };
-
-  swarselmodules.server = {
-    diskEncryption = lib.mkForce false;
-  };
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "enp3s0" ];
 

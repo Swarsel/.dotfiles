@@ -1,10 +1,7 @@
 { config, lib, confLib, ... }:
-let
-  serviceName = "podman";
-in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "podman" ];
 
     users.persistentIds = {
       podman = confLib.mkIds 969;

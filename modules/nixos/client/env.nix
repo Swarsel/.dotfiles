@@ -1,7 +1,6 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselmodules.env = lib.mkEnableOption "environment config";
-  config = lib.mkIf config.swarselmodules.env {
+  config = {
 
     environment = {
       wordlist.enable = true;

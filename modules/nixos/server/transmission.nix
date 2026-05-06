@@ -1,6 +1,6 @@
 { self, pkgs, lib, config, confLib, ... }:
 let
-  inherit (confLib.gen { name = "transmission"; port = 9091; }) serviceName servicePort serviceDomain;
+  inherit (confLib.gen { name = "transmission"; port = 9091; }) servicePort serviceDomain;
   inherit (confLib.static) isHome homeServiceAddress homeWebProxy nginxAccessRules;
   inherit (config.swarselsystems) sopsFile;
 
@@ -21,8 +21,8 @@ let
   prowlarrPort = 9696;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "transmission" ];
 
     sops.secrets = {
       pia = { inherit sopsFile; };

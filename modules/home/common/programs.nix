@@ -1,7 +1,7 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.programs = lib.mkEnableOption "programs settings";
-  config = lib.mkIf config.swarselmodules.programs {
+  config = {
+    swarselsystems.enabledHomeModules = [ "programs" ];
     programs = {
       bat = {
         enable = true;

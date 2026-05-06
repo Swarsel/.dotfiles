@@ -1,7 +1,7 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.kdeconnect = lib.mkEnableOption "kdeconnect settings";
-  config = lib.mkIf config.swarselmodules.kdeconnect {
+  config = {
+    swarselsystems.enabledHomeModules = [ "kdeconnect" ];
     services.kdeconnect = {
       enable = true;
       indicator = true;

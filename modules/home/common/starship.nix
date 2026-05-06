@@ -1,7 +1,7 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.starship = lib.mkEnableOption "starship settings";
-  config = lib.mkIf config.swarselmodules.starship {
+  config = {
+    swarselsystems.enabledHomeModules = [ "starship" ];
     programs.starship = {
       enable = true;
       enableZshIntegration = true;

@@ -55,9 +55,8 @@ let
   };
 in
 {
-  options.swarselmodules.general = lib.mkEnableOption "general nix settings";
-  config = lib.mkIf config.swarselmodules.general
-    (lib.recursiveUpdate
+  config =
+    lib.recursiveUpdate
       {
         sops = lib.mkIf (!minimal) {
           secrets = {
@@ -101,7 +100,7 @@ in
               trusted-users = [
                 "@wheel"
                 "${config.swarselsystems.mainUser}"
-                (lib.mkIf (config.swarselmodules.server.ssh-builder or false) "builder")
+                (lib.mkIf (builtins.elem "ssh-builder" config.swarselsystems.enabledServerModules) "builder")
               ];
               netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
             };
@@ -184,5 +183,5 @@ in
         };
 
       }
-      settings);
+      settings;
 }

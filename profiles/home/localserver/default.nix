@@ -1,13 +1,10 @@
-{ lib, config, ... }:
+{ self, ... }:
+let
+  m = "${self}/modules";
+in
 {
-  options.swarselprofiles.server.local = lib.mkEnableOption "is this a local server";
-  config = lib.mkIf config.swarselprofiles.server.local {
-    swarselmodules = {
-      general = lib.mkDefault true;
-      server = {
-        dotfiles = lib.mkDefault true;
-      };
-    };
-  };
-
+  imports = [
+    "${m}/home/common/settings.nix"
+    "${m}/home/server/symlink.nix"
+  ];
 }

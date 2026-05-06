@@ -1,7 +1,7 @@
-{ lib, config, pkgs, withHomeManager, ... }:
+{ lib, pkgs, withHomeManager, ... }:
 {
-  options.swarselmodules.server.packages = lib.mkEnableOption "enable packages on server";
-  config = lib.mkIf config.swarselmodules.server.packages {
+  config = {
+    swarselsystems.enabledServerModules = [ "packages" ];
     environment.systemPackages = with pkgs; [
       gnupg
       nvd

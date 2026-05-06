@@ -1,7 +1,7 @@
-{ lib, pkgs, config, confLib, ... }:
+{ pkgs, confLib, ... }:
 {
-  options.swarselmodules.swayosd = lib.mkEnableOption "swayosd settings";
-  config = lib.mkIf config.swarselmodules.swayosd {
+  config = {
+    swarselsystems.enabledHomeModules = [ "swayosd" ];
     systemd.user.services.swayosd = confLib.overrideTarget "sway-session.target";
     services.swayosd = {
       enable = true;

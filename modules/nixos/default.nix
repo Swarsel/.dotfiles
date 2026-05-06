@@ -1,8 +1,13 @@
-# @ future me: dont panic, optionals and darwin are not read in  by readNix
-{ lib, ... }:
+{ self, lib, ... }:
 let
-  importNames = lib.swarselsystems.readNix "modules/nixos";
+  m = "${self}/modules";
+  sharedNames = lib.swarselsystems.readNix "modules/shared";
 in
 {
-  imports = lib.swarselsystems.mkImports importNames "modules/nixos";
+  imports = lib.swarselsystems.mkImports sharedNames "modules/shared" ++ [
+    "${m}/nixos/common/globals.nix"
+    "${m}/nixos/common/nodes.nix"
+    "${m}/nixos/common/topology.nix"
+    "${m}/nixos/server/id.nix"
+  ];
 }

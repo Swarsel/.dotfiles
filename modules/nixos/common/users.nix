@@ -1,7 +1,6 @@
 { pkgs, config, lib, globals, minimal, ... }:
 {
-  options.swarselmodules.users = lib.mkEnableOption "user config";
-  config = lib.mkIf config.swarselmodules.users {
+  config = {
     sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
 
     users = {

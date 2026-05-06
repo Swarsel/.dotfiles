@@ -1,6 +1,5 @@
 { lib, config, globals, ... }:
 let
-  serviceName = "router";
   bridgeVLANs = lib.mapAttrsToList
     (_: vlan: {
       VLAN = vlan.id;
@@ -16,9 +15,9 @@ let
   inherit (globals.general) homeDnsServer;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName}
+  config =
     {
+      swarselsystems.enabledServerModules = [ "router" ];
       services.avahi.reflector = true;
 
       topology.self.interfaces = (lib.mapAttrs'

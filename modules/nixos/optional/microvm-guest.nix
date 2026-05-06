@@ -1,4 +1,4 @@
-{ self, lib, config, inputs, ... }:
+{ self, config, inputs, ... }:
 {
   imports = [
     inputs.disko.nixosModules.disko
@@ -20,9 +20,9 @@
     (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
 
     "${self}/modules/shared/meta.nix"
-  ] ++ lib.swarselsystems.mkImports (lib.swarselsystems.readNix "modules/nixos/common") "modules/nixos/common"
-  ++ lib.swarselsystems.mkImports (lib.swarselsystems.readNix "modules/shared") "modules/shared"
-  ++ lib.swarselsystems.mkImports (lib.swarselsystems.readNix "modules/nixos/server") "modules/nixos/server";
+
+    "${self}/modules/nixos"
+  ];
 
   config = {
     _module.args.dns = inputs.dns;

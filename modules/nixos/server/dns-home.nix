@@ -1,11 +1,10 @@
-{ lib, config, globals, confLib, ... }:
+{ globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "dns-home"; }) serviceName;
   inherit (confLib.static) homeProxy;
 in
 {
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "dns-home" ];
 
     networking.hosts = {
       ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4} = [ "server.${homeProxy}.${globals.domains.main}" ];

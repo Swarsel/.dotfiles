@@ -4,12 +4,13 @@ let
   inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
 in
 {
-  options.swarselmodules.general = lib.mkEnableOption "general nix settings";
   config =
     let
       nix-version = "2_34";
     in
-    lib.mkIf config.swarselmodules.general ({
+    {
+      swarselsystems.enabledHomeModules = [ "general" ];
+
       nix = lib.mkIf (!config.swarselsystems.isNixos) {
         package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
         # extraOptions = ''
@@ -64,7 +65,7 @@ in
           trusted-users = [
             "@wheel"
             "${mainUser}"
-            (lib.mkIf ((config.swarselmodules ? server) ? ssh-builder) "builder")
+            # builder user only relevant on NixOS server hosts
           ];
           netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
           connect-timeout = 5;
@@ -153,6 +154,6 @@ in
             };
           };
         };
-    });
+    };
 
 }

@@ -2,6 +2,7 @@
 {
   imports = [
     "${self}/profiles/nixos/microvm"
+    "${self}/modules/nixos/server/matrix.nix"
   ];
 
   swarselsystems = {
@@ -10,20 +11,11 @@
     proxyHost = "twothreetunnel";
   };
 
-
 } // lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 1024 * 6;
     vcpu = 2;
-  };
-
-  swarselprofiles = {
-    microvm = true;
-  };
-
-  swarselmodules.server = {
-    matrix = true;
   };
 
 }

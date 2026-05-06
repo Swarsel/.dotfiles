@@ -1,7 +1,7 @@
 { config, lib, ... }:
 {
-  options.swarselmodules.bash = lib.mkEnableOption "bash settings";
-  config = lib.mkIf config.swarselmodules.bash {
+  config = {
+    swarselsystems.enabledHomeModules = [ "bash" ];
 
     programs.bash = {
       enable = true;

@@ -5,9 +5,9 @@ let
   inherit (config.swarselsystems) xdgDir;
 in
 {
-  options.swarselmodules.mail = lib.mkEnableOption "mail settings";
-  config = lib.mkIf config.swarselmodules.mail
-    ({
+  config =
+    {
+      swarselsystems.enabledHomeModules = [ "mail" ];
 
       programs = {
         mbsync = {
@@ -207,5 +207,5 @@ in
         address3-token = { path = "${xdgDir}/secrets/address3-token"; };
         address4-token = { path = "${xdgDir}/secrets/address4-token"; };
       };
-    });
+    };
 }

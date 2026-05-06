@@ -1,4 +1,4 @@
-{ self, lib, config, outputs, globals, withHomeManager, ... }:
+{ self, lib, outputs, globals, withHomeManager, ... }:
 let
   macUser = globals.user.work;
 in
@@ -6,8 +6,7 @@ in
   imports = [
   ];
 
-  options.swarselmodules.optional-darwin = lib.mkEnableOption "optional darwin settings";
-  config = lib.mkIf config.swarselmodules.optional-darwin
+  config =
     {
       nix.settings.experimental-features = "nix-command flakes";
       nixpkgs = {
@@ -24,9 +23,9 @@ in
 
       system.stateVersion = 4;
     } // lib.optionalAttrs withHomeManager {
-    home-manager.users."${macUser}".imports = [
-      "${self}/modules/home/darwin"
-    ];
+      home-manager.users."${macUser}".imports = [
+        "${self}/modules/home/darwin"
+      ];
 
-  };
+    };
 }

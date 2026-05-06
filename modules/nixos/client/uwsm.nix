@@ -1,11 +1,9 @@
 { lib, config, pkgs, ... }:
 let
-  moduleName = "uwsm";
   cfg = config.programs.uwsm;
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
     programs.uwsm = {
       enable = true;
       waylandCompositors = {

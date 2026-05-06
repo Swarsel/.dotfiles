@@ -1,10 +1,10 @@
-{ self, lib, config, pkgs, ... }:
+{ self, config, pkgs, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir;
 in
 {
-  options.swarselmodules.gpgagent = lib.mkEnableOption "gpg agent settings";
-  config = lib.mkIf config.swarselmodules.gpgagent {
+  config = {
+    swarselsystems.enabledHomeModules = [ "gpgagent" ];
     services.gpg-agent = {
       enable = true;
       verbose = true;

@@ -1,7 +1,7 @@
 { self, lib, config, withHomeManager, confLib, ... }:
 {
-  options.swarselmodules.server.ssh = lib.mkEnableOption "enable ssh on server";
-  config = lib.mkIf config.swarselmodules.server.ssh {
+  config = {
+    swarselsystems.enabledServerModules = [ "ssh" ];
     services.openssh = {
       enable = true;
       startWhenNeeded = lib.mkForce false;
@@ -23,7 +23,7 @@
     };
     users = {
       persistentIds = {
-        sshd = lib.mkIf config.swarselmodules.server.ids (confLib.mkIds 979);
+        sshd = confLib.mkIds 979;
       };
       users = {
         "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [

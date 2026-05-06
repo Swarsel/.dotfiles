@@ -1,7 +1,6 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.interceptionTools = lib.mkEnableOption "interception tools config";
-  config = lib.mkIf config.swarselmodules.interceptionTools {
+  config = {
     # Make CAPS work as a dual function ESC/CTRL key
     services.interception-tools = {
       enable = true;

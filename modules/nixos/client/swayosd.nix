@@ -1,7 +1,6 @@
-{ lib, pkgs, config, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.swayosd = lib.mkEnableOption "swayosd settings";
-  config = lib.mkIf config.swarselmodules.swayosd {
+  config = {
     environment.systemPackages = [ pkgs.swayosd ];
     services.udev.packages = [ pkgs.swayosd ];
     systemd.services.swayosd-libinput-backend = {

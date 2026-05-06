@@ -3,7 +3,7 @@ with dns.lib.combinators; {
   SOA = {
     nameServer = "soa";
     adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-    serial = 2026042901; # update this on changes for secondary dns
+    serial = 2026050601; # update this on changes for secondary dns
   };
 
   useOrigin = false;
@@ -108,7 +108,7 @@ with dns.lib.combinators; {
     }
   ];
 
-  subdomains = config.swarselsystems.server.dns.${globals.domains.main}.subdomainRecords // {
+  subdomains = globals.dns.${globals.domains.main}.subdomainRecords // {
     "www".CNAME = [ "${globals.domains.main}." ];
     "_acme-challenge".CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
     "soa" = host proxyAddress4 proxyAddress6;

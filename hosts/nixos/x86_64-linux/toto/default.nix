@@ -1,9 +1,10 @@
-{ self, lib, ... }:
+{ self, ... }:
 {
 
   imports = [
     ./disk-config.nix
     ./hardware-configuration.nix
+    "${self}/profiles/nixos/minimal"
   ];
 
   topology.self.interfaces."bootstrapper" = { };
@@ -11,17 +12,6 @@
   networking = {
     hostName = "toto";
     firewall.enable = false;
-  };
-
-  swarselprofiles = {
-    minimal = lib.mkForce true;
-  };
-
-  swarselmodules = {
-    server = {
-      network = lib.mkForce false;
-      diskEncryption = lib.mkForce false;
-    };
   };
 
   swarselsystems = {

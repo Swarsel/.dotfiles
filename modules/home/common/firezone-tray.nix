@@ -1,7 +1,7 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 {
-  options.swarselmodules.firezone-tray = lib.mkEnableOption "enable firezone applet for tray";
-  config = lib.mkIf config.swarselmodules.firezone-tray {
+  config = {
+    swarselsystems.enabledHomeModules = [ "firezone-tray" ];
 
     systemd.user.services.firezone-applet = {
       Unit = {

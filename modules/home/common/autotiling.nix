@@ -1,10 +1,10 @@
-{ lib, config, ... }:
+_:
 let
   moduleName = "autotiling";
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName} {
+  config = {
+    swarselsystems.enabledHomeModules = [ "autotiling" ];
     services.${moduleName} = {
       enable = true;
       systemdTarget = "sway-session.target";

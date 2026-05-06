@@ -1,15 +1,13 @@
 { lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy dnsServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
   inherit (config.swarselsystems) mainUser isPublic sopsFile;
   serviceDB = "atticd";
 in
 {
-  options = {
-    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  };
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+  config = {
+    swarselsystems.enabledServerModules = [ "attic" ];
 
     topology.self.services.${serviceName} = {
       name = lib.swarselsystems.toCapitalized serviceName;
@@ -92,7 +90,7 @@ in
         database.url = "postgresql:///atticd?host=/run/postgresql";
 
         storage =
-          if config.swarselmodules.server.garage then {
+          if builtins.elem "garage" config.swarselsystems.enabledServerModules then {
             type = "s3";
             region = mainUser;
             bucket = serviceName;
@@ -111,7 +109,7 @@ in
         };
 
         chunking = {
-          nar-size-threshold = if config.swarselmodules.server.garage then 0 else 64 * 1024; # garage using s3
+          nar-size-threshold = if builtins.elem "garage" config.swarselsystems.enabledServerModules then 0 else 64 * 1024; # garage using s3
 
           min-size = 16 * 1024;
           avg-size = 64 * 1024;
@@ -132,9 +130,14 @@ in
       ];
     };
 
-    systemd.services.atticd = lib.mkIf config.swarselmodules.server.garage {
+    systemd.services.atticd = lib.mkIf (builtins.elem "garage" config.swarselsystems.enabledServerModules) {
       requires = [ "garage.service" ];
       after = [ "garage.service" ];
+    };
+
+
+    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
     nodes =
@@ -148,9 +151,6 @@ in
         '';
       in
       {
-        ${dnsServer}.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };

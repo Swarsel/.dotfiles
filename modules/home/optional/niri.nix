@@ -1,14 +1,13 @@
-{ inputs, config, pkgs, lib, vars, type, ... }:
+{ self, inputs, config, pkgs, lib, vars, type, ... }:
 {
-  imports = lib.optionals (type != "nixos") [
+  imports = [
+    "${self}/modules/home/common/gnome-keyring.nix"
+  ] ++ lib.optionals (type != "nixos") [
     inputs.niri-flake.homeModules.niri
   ];
 
-  options = {
-    swarselmodules.optional-niri = lib.swarselsystems.mkTrueOption;
-  };
-
   config = {
+    swarselsystems.enabledHomeModules = [ "optional-niri" ];
     home.sessionVariables = {
       EDITOR = lib.mkDefault "e-niri -w";
     };
@@ -266,8 +265,6 @@
         pkgs.xdg-desktop-portal-gnome
       ];
     };
-
-    swarselmodules.gnome-keyring = lib.swarselsystems.mkStrong true;
 
     home.packages = [
       pkgs.nirius

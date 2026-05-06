@@ -1,7 +1,7 @@
-{ lib, config, ... }:
+{ lib, ... }:
 {
-  options.swarselmodules.mako = lib.mkEnableOption "mako settings";
-  config = lib.mkIf config.swarselmodules.mako {
+  config = {
+    swarselsystems.enabledHomeModules = [ "mako" ];
     services.mako = {
       enable = true;
       settings = {

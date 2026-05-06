@@ -1,12 +1,11 @@
 { lib, config, pkgs, globals, confLib, type, ... }:
 let
-  moduleName = "anki";
   inherit (config.swarselsystems) isPublic isNixos;
 in
 {
-  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-  config = lib.mkIf config.swarselmodules.${moduleName}
-    ({
+  config =
+    {
+      swarselsystems.enabledHomeModules = [ "anki" ];
 
       programs.anki = {
         enable = true;
@@ -61,6 +60,6 @@ in
           anki-pw = { };
         };
       };
-    });
+    };
 
 }

@@ -3,8 +3,7 @@ let
   inherit (config.swarselsystems) isSecureBoot isImpermanence;
 in
 {
-  options.swarselmodules.lanzaboote = lib.mkEnableOption "lanzaboote config";
-  config = lib.mkIf config.swarselmodules.lanzaboote {
+  config = {
 
     environment.systemPackages = lib.mkIf isSecureBoot [
       pkgs.sbctl

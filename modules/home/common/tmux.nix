@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ pkgs, ... }:
 let
   tmux-super-fingers = pkgs.tmuxPlugins.mkTmuxPlugin
     {
@@ -13,8 +13,8 @@ let
     };
 in
 {
-  options.swarselmodules.tmux = lib.mkEnableOption "tmux settings";
-  config = lib.mkIf config.swarselmodules.tmux {
+  config = {
+    swarselsystems.enabledHomeModules = [ "tmux" ];
     home.packages = with pkgs; [
       lsof
       sesh
