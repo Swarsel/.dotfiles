@@ -3344,6 +3344,10 @@ On the structure of overlays: as you notice, all of the attributes within overla
                     ];
                   };
 
+                  openldap = prev.openldap.overrideAttrs {
+                    doCheck = !prev.stdenv.hostPlatform.isi686;
+                  };
+
                   isync = prev.isync.override {
                     withCyrusSaslXoauth2 = true;
                   };
@@ -8738,11 +8742,6 @@ A breakdown of the flags being set:
               outputs.overlays.stables
               outputs.overlays.modifications
               # TEMP
-              (_: prev: {
-                openldap = prev.openldap.overrideAttrs {
-                  doCheck = !prev.stdenv.hostPlatform.isi686;
-                };
-              })
             ] ++ lib.optionals withHomeManager [
               (final: prev:
                 let

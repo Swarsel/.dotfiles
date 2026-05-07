@@ -160,11 +160,6 @@ in
             outputs.overlays.stables
             outputs.overlays.modifications
             # TEMP
-            (_: prev: {
-              openldap = prev.openldap.overrideAttrs {
-                doCheck = !prev.stdenv.hostPlatform.isi686;
-              };
-            })
           ] ++ lib.optionals withHomeManager [
             (final: prev:
               let

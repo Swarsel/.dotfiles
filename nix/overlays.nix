@@ -139,6 +139,10 @@ in
                   ];
                 };
 
+                openldap = prev.openldap.overrideAttrs {
+                  doCheck = !prev.stdenv.hostPlatform.isi686;
+                };
+
                 isync = prev.isync.override {
                   withCyrusSaslXoauth2 = true;
                 };
