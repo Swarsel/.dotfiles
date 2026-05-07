@@ -24,6 +24,7 @@ in
   system.stateVersion = "23.11";
 
   swarselsystems = {
+    nodeRoles = [ "webSyncthingServer" ];
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
     isImpermanence = true;

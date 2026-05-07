@@ -9,6 +9,7 @@
   ] ++ lib.optionals (!minimal) [
     "${self}/profiles/nixos/localserver"
     "${self}/modules/nixos/server/nginx.nix"
+    "${self}/modules/nixos/server/acme.nix"
     "${self}/modules/nixos/server/oauth2-proxy.nix"
     "${self}/modules/nixos/server/wireguard.nix"
     "${self}/modules/nixos/server/firezone.nix"
@@ -19,11 +20,6 @@
   };
 
   globals = {
-    general = {
-      webProxy = config.node.name;
-      oauthServer = config.node.name;
-    };
-
     wireguard.wgProxy = {
       server = config.node.name;
       netConfigPrefix = config.node.name;
@@ -57,6 +53,7 @@
   };
 
   swarselsystems = {
+    nodeRoles = [ "webProxy" "oauthServer" ];
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 2 vCPUs, 8GB RAM";
     isImpermanence = true;

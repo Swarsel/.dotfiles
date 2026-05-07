@@ -84,7 +84,7 @@ in
       enableImapSsl = true;
       x509.useACMEHost = globals.domains.main;
 
-      loginAccounts = {
+      accounts = {
         "${user1}@${baseDomain}" = {
           hashedPasswordFile = config.sops.secrets.user1-hashed-pw.path;
           aliases = [

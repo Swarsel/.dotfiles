@@ -13,7 +13,10 @@
     extraModulePackages = [ ];
 
     supportedFilesystems = [ "zfs" ];
-    zfs.extraPools = [ "Vault" ];
+    zfs = {
+      extraPools = [ "Vault" ];
+      forceImportRoot = false;
+    };
   };
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking

@@ -7,15 +7,15 @@ in
     "${self}/profiles/nixos/microvm"
     "${self}/modules/nixos/optional/microvm-guest-shares.nix"
     "${self}/modules/nixos/server/nginx.nix"
+    "${self}/modules/nixos/server/acme.nix"
   ];
 
   swarselsystems = {
+    nodeRoles = [ "homeWebProxy" ];
     isMicroVM = true;
     isImpermanence = true;
     proxyHost = config.node.name;
   };
-
-  globals.general.homeWebProxy = config.node.name;
 
 } // lib.optionalAttrs (!minimal) {
 

@@ -44,6 +44,7 @@ in
         domain = lib.mkDefault config.repo.secrets.common.services.domains.${specificServiceName};
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        extraConfig.devices = baseDevices;
       };
       dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;

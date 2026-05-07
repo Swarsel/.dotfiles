@@ -1,4 +1,4 @@
-{ self, pkgs, lib, config, ... }:
+{ pkgs, lib, config, ... }:
 let
   serviceUser = "nginx";
   serviceGroup = serviceUser;
@@ -12,9 +12,6 @@ let
       "${dhParamsPathBase}";
 in
 {
-  imports = [
-    "${self}/modules/nixos/server/acme.nix"
-  ];
   options.services.nginx = {
     recommendedSecurityHeaders = lib.mkEnableOption "additional security headers by default in each location block.";
     defaultStapling = lib.mkEnableOption "add ssl stapling in each location block..";

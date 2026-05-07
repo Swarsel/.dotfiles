@@ -101,6 +101,11 @@
       type = lib.types.str;
       default = "";
     };
+    nodeRoles = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "List of roles this server fulfills in the infrastructure. Will set `globals.general.<itemName>` to the nodeName for each item.";
+    };
     enabledServerModules = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];

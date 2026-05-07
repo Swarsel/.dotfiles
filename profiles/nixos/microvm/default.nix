@@ -22,6 +22,8 @@ in
     "${m}/nixos/server/wireguard.nix"
     "${m}/nixos/server/dns-home.nix"
     "${m}/nixos/server/opkssh.nix"
+    # "${m}/nixos/server/oauth2-proxy.nix"
+    "${m}/nixos/server/node-roles.nix"
   ];
 
   config.swarselsystems = {

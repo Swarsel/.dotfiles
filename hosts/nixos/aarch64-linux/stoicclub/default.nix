@@ -1,4 +1,4 @@
-{ self, config, lib, minimal, ... }:
+{ self, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -16,6 +16,7 @@
   };
 
   swarselsystems = {
+    nodeRoles = [ "dnsServer" ];
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 1 vCPUs, 8GB RAM";
     isImpermanence = true;
@@ -30,7 +31,6 @@
     isBastionTarget = true;
   };
 
-  globals.general.dnsServer = config.node.name;
 } // lib.optionalAttrs (!minimal) {
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];

@@ -1,4 +1,4 @@
-{ self, config, lib, minimal, ... }:
+{ self, lib, minimal, ... }:
 {
   imports = [
     "${self}/profiles/nixos/microvm"
@@ -7,12 +7,11 @@
   ];
 
   swarselsystems = {
+    nodeRoles = [ "homeDnsServer" ];
     isMicroVM = true;
     isImpermanence = true;
     proxyHost = "twothreetunnel";
   };
-
-  globals.general.homeDnsServer = config.node.name;
 
 } // lib.optionalAttrs (!minimal) {
 

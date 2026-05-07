@@ -4563,7 +4563,10 @@ This is my current main server at home; all services except filesystem backups r
       extraModulePackages = [ ];
 
       supportedFilesystems = [ "zfs" ];
-      zfs.extraPools = [ "Vault" ];
+      zfs = {
+        extraPools = [ "Vault" ];
+        forceImportRoot = false;
+      };
     };
 
     # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
@@ -4966,6 +4969,7 @@ This is my current main server at home; all services except filesystem backups r
     ];
 
     swarselsystems = {
+      nodeRoles = [ "homeSyncthingServer" ];
       isMicroVM = true;
       isImpermanence = true;
       proxyHost = "twothreetunnel";
@@ -5308,11 +5312,6 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
     };
 
     globals = {
-      general = {
-        homeProxy = config.node.name;
-        routerServer = config.node.name;
-      };
-
       wireguard.wgHome = {
         server = config.node.name;
         netConfigPrefix = "home";
@@ -5345,6 +5344,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
     };
 
     swarselsystems = {
+      nodeRoles = [ "homeProxy" "routerServer" ];
       info = "HUNSN RM02, 8GB RAM";
       flakePath = "/root/.dotfiles";
       isImpermanence = true;
@@ -5547,7 +5547,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/guests/adguardhome/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -5556,12 +5556,11 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
     ];
 
     swarselsystems = {
+      nodeRoles = [ "homeDnsServer" ];
       isMicroVM = true;
       isImpermanence = true;
       proxyHost = "twothreetunnel";
     };
-
-    globals.general.homeDnsServer = config.node.name;
 
   } // lib.optionalAttrs (!minimal) {
 
@@ -5588,15 +5587,15 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
       "${self}/profiles/nixos/microvm"
       "${self}/modules/nixos/optional/microvm-guest-shares.nix"
       "${self}/modules/nixos/server/nginx.nix"
+      "${self}/modules/nixos/server/acme.nix"
     ];
 
     swarselsystems = {
+      nodeRoles = [ "homeWebProxy" ];
       isMicroVM = true;
       isImpermanence = true;
       proxyHost = config.node.name;
     };
-
-    globals.general.homeWebProxy = config.node.name;
 
   } // lib.optionalAttrs (!minimal) {
 
@@ -5802,6 +5801,7 @@ This machine used to be my proxy server, a functionality that is now provided by
     system.stateVersion = "23.11";
 
     swarselsystems = {
+      nodeRoles = [ "webSyncthingServer" ];
       flakePath = "/root/.dotfiles";
       info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
       isImpermanence = true;
@@ -6251,7 +6251,7 @@ This machine is the authoritative DNS server for my domain and is responsible fo
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -6269,6 +6269,7 @@ This machine is the authoritative DNS server for my domain and is responsible fo
     };
 
     swarselsystems = {
+      nodeRoles = [ "dnsServer" ];
       flakePath = "/root/.dotfiles";
       info = "VM.Standard.A1.Flex, 1 vCPUs, 8GB RAM";
       isImpermanence = true;
@@ -6283,7 +6284,6 @@ This machine is the authoritative DNS server for my domain and is responsible fo
       isBastionTarget = true;
     };
 
-    globals.general.dnsServer = config.node.name;
   } // lib.optionalAttrs (!minimal) {
 
     networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
@@ -6673,6 +6673,7 @@ This host acts as my main http proxy for external access.
     ] ++ lib.optionals (!minimal) [
       "${self}/profiles/nixos/localserver"
       "${self}/modules/nixos/server/nginx.nix"
+      "${self}/modules/nixos/server/acme.nix"
       "${self}/modules/nixos/server/oauth2-proxy.nix"
       "${self}/modules/nixos/server/wireguard.nix"
       "${self}/modules/nixos/server/firezone.nix"
@@ -6683,11 +6684,6 @@ This host acts as my main http proxy for external access.
     };
 
     globals = {
-      general = {
-        webProxy = config.node.name;
-        oauthServer = config.node.name;
-      };
-
       wireguard.wgProxy = {
         server = config.node.name;
         netConfigPrefix = config.node.name;
@@ -6721,6 +6717,7 @@ This host acts as my main http proxy for external access.
     };
 
     swarselsystems = {
+      nodeRoles = [ "webProxy" "oauthServer" ];
       flakePath = "/root/.dotfiles";
       info = "VM.Standard.A1.Flex, 2 vCPUs, 8GB RAM";
       isImpermanence = true;
@@ -10071,8 +10068,8 @@ This is the syncthing client configuration. Contrary to the [[#h:ad2787a2-7b1c-4
   { lib, config, pkgs, globals, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
-    syncthingConfig = globals.services.syncthing-summers-storage.extraConfig;
-    devices = syncthingConfig.syncDevices;
+    inherit (globals.services."syncthing-${globals.general.homeSyncthingServer}".extraConfig) devices;
+    syncDevices = builtins.attrNames devices;
     servicePort = 8384;
   in
   {
@@ -10092,26 +10089,26 @@ This is the syncthing client configuration. Contrary to the [[#h:ad2787a2-7b1c-4
           options = {
             urAccepted = -1;
           };
-          inherit (syncthingConfig) devices;
+          inherit devices;
           folders = {
             "Default Folder" = lib.mkDefault {
               path = "${homeDir}/Sync";
-              inherit devices;
+              devices = syncDevices;
               id = "default";
             };
             "Obsidian" = {
               path = "${homeDir}/Obsidian";
-              inherit devices;
+              devices = syncDevices;
               id = "yjvni-9eaa7";
             };
             "Org" = {
               path = "${homeDir}/Org";
-              inherit devices;
+              devices = syncDevices;
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
               path = "${homeDir}/Vpn";
-              inherit devices;
+              devices = syncDevices;
               id = "hgp9s-fyq3p";
             };
           };
@@ -11330,7 +11327,7 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
 This is the general NGINX config usind on [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]] and the [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][Nginx]] guest on [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]. The virtualhosts themselves are declared in the respective service modules.
 
 #+begin_src nix-ts :tangle modules/nixos/server/nginx.nix
-  { self, pkgs, lib, config, ... }:
+  { pkgs, lib, config, ... }:
   let
     serviceUser = "nginx";
     serviceGroup = serviceUser;
@@ -11344,9 +11341,6 @@ This is the general NGINX config usind on [[#h:19300583-322b-4e0b-b657-857fbf23d
         "${dhParamsPathBase}";
   in
   {
-    imports = [
-      "${self}/modules/nixos/server/acme.nix"
-    ];
     options.services.nginx = {
       recommendedSecurityHeaders = lib.mkEnableOption "additional security headers by default in each location block.";
       defaultStapling = lib.mkEnableOption "add ssl stapling in each location block..";
@@ -14350,6 +14344,7 @@ This is the server syncthings config, which makes sure that the servers nevers o
           domain = lib.mkDefault config.repo.secrets.common.services.domains.${specificServiceName};
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          extraConfig.devices = baseDevices;
         };
         dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -15558,7 +15553,7 @@ kanidm person credential create-reset-token <user>
 
       services = {
         ${serviceName} = {
-          package = pkgs.kanidmWithSecretProvisioning_1_9;
+          package = pkgs.kanidmWithSecretProvisioning_1_10;
           server = {
             enable = true;
             settings = {
@@ -17630,6 +17625,25 @@ This makes sure that my servers at home know about the home NGINX endpoint and u
   }
 #+end_src
 
+**** Set node role global entries
+
+
+#+begin_src nix-ts :tangle modules/nixos/server/node-roles.nix
+  { lib, config, ... }:
+  {
+    config = {
+      globals.general = lib.listToAttrs (map
+        (name:
+          {
+            inherit name;
+            value = config.node.name;
+          }
+        )
+        config.swarselsystems.nodeRoles);
+    };
+  }
+#+end_src
+
 **** nsd (dns)
 :PROPERTIES:
 :CUSTOM_ID: h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a
@@ -18229,6 +18243,11 @@ $ attic cache create hello
           };
         };
       };
+
+      # we use s3 storage and hence do not need to persist this
+      # environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+      #   { directory = "/var/lib/private/atticd"; }
+      # ];
 
       services.postgresql = {
         enable = true;
@@ -19492,6 +19511,11 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
         };
       };
 
+      nix.gc = {
+        automatic = true;
+        dates = lib.mkForce "20:00";
+        options = lib.mkForce "--delete-older-than 15w";
+      };
 
       sops.secrets = {
         buildbot-github-key = {
@@ -24096,7 +24120,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
           extraEmacsPackages = epkgs: [
             epkgs.mu4e
             epkgs.use-package
-            # epkgs.lsp-bridge
+            epkgs.lsp-bridge
             epkgs.doom-themes
             epkgs.vterm
             # pkgs.stable.emacs.pkgs.elpaPackages.tramp # use the unstable version from elpa
@@ -28671,6 +28695,11 @@ TODO: check which of these can be replaced but builtin functions.
         type = lib.types.str;
         default = "";
       };
+      nodeRoles = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "List of roles this server fulfills in the infrastructure. Will set `globals.general.<itemName>` to the nodeName for each item.";
+      };
       enabledServerModules = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
@@ -31344,6 +31373,8 @@ This script quickly generates a block in =.sops.yaml= for a guest host.
 
 This script can be used to sync changes done to files back into the literate SwarselSystems.org. This is rarely but sometimes useful when trying out bigger changes. An example would be the time when I was debugging why my [[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]] configuration took >90G of memory during eval. For that it was annoying to having to go through the org file all the time. Instead I fixed the problem in the code files and then funneled it back using this script.
 
+Another usecase for this (and the main point motivating me to do it) was to streamline implementing the changes automatically applied to the nix files by my pre-commit-hooks, so linting etc.
+
 #+begin_src python-ts :eval no :tangle files/scripts/sync-org-from-files.py :shebang #!/usr/bin/env/python3
   import argparse
   import re
@@ -31911,6 +31942,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       "${m}/nixos/server/ssh.nix"
       "${m}/nixos/server/attic-setup.nix"
       "${m}/nixos/server/dns-hostrecord.nix"
+      # "${m}/nixos/server/oauth2-proxy.nix"
+      "${m}/nixos/server/node-roles.nix"
     ];
   }
 #+end_src
@@ -31944,6 +31977,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       "${m}/nixos/server/wireguard.nix"
       "${m}/nixos/server/dns-home.nix"
       "${m}/nixos/server/opkssh.nix"
+      # "${m}/nixos/server/oauth2-proxy.nix"
+      "${m}/nixos/server/node-roles.nix"
     ];
 
     config.swarselsystems = {

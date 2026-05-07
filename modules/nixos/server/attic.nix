@@ -118,6 +118,11 @@ in
       };
     };
 
+    # we use s3 storage and hence do not need to persist this
+    # environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+    #   { directory = "/var/lib/private/atticd"; }
+    # ];
+
     services.postgresql = {
       enable = true;
       enableTCPIP = true;

@@ -23,11 +23,6 @@
   };
 
   globals = {
-    general = {
-      homeProxy = config.node.name;
-      routerServer = config.node.name;
-    };
-
     wireguard.wgHome = {
       server = config.node.name;
       netConfigPrefix = "home";
@@ -60,6 +55,7 @@
   };
 
   swarselsystems = {
+    nodeRoles = [ "homeProxy" "routerServer" ];
     info = "HUNSN RM02, 8GB RAM";
     flakePath = "/root/.dotfiles";
     isImpermanence = true;

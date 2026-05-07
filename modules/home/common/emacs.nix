@@ -44,7 +44,7 @@ in
         extraEmacsPackages = epkgs: [
           epkgs.mu4e
           epkgs.use-package
-          # epkgs.lsp-bridge
+          epkgs.lsp-bridge
           epkgs.doom-themes
           epkgs.vterm
           # pkgs.stable.emacs.pkgs.elpaPackages.tramp # use the unstable version from elpa

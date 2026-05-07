@@ -25,5 +25,7 @@ in
     "${m}/nixos/server/ssh.nix"
     "${m}/nixos/server/attic-setup.nix"
     "${m}/nixos/server/dns-hostrecord.nix"
+    # "${m}/nixos/server/oauth2-proxy.nix"
+    "${m}/nixos/server/node-roles.nix"
   ];
 }

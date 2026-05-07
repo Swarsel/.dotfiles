@@ -1,8 +1,8 @@
 { lib, config, pkgs, globals, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir;
-  syncthingConfig = globals.services.syncthing-summers-storage.extraConfig;
-  devices = syncthingConfig.syncDevices;
+  inherit (globals.services."syncthing-${globals.general.homeSyncthingServer}".extraConfig) devices;
+  syncDevices = builtins.attrNames devices;
   servicePort = 8384;
 in
 {
@@ -22,26 +22,26 @@ in
         options = {
           urAccepted = -1;
         };
-        inherit (syncthingConfig) devices;
+        inherit devices;
         folders = {
           "Default Folder" = lib.mkDefault {
             path = "${homeDir}/Sync";
-            inherit devices;
+            devices = syncDevices;
             id = "default";
           };
           "Obsidian" = {
             path = "${homeDir}/Obsidian";
-            inherit devices;
+            devices = syncDevices;
             id = "yjvni-9eaa7";
           };
           "Org" = {
             path = "${homeDir}/Org";
-            inherit devices;
+            devices = syncDevices;
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
             path = "${homeDir}/Vpn";
-            inherit devices;
+            devices = syncDevices;
             id = "hgp9s-fyq3p";
           };
         };

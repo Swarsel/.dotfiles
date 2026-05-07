@@ -303,6 +303,11 @@ in
       };
     };
 
+    nix.gc = {
+      automatic = true;
+      dates = lib.mkForce "20:00";
+      options = lib.mkForce "--delete-older-than 15w";
+    };
 
     sops.secrets = {
       buildbot-github-key = {
