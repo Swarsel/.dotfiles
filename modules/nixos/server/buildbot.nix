@@ -17,9 +17,10 @@ let
   flakeDir = "${buildbotHome}/flake";
   flakeRepo = "https://github.com/Swarsel/.dotfiles.git";
   flakeRepoSSH = "git@github.com:Swarsel/.dotfiles.git";
-  lockFile = "${flakeDir}/.flake-update.lock";
-  updateStatusFile = "${flakeDir}/.update-status";
-  retryFile = "${flakeDir}/.flake-update-retry";
+  lockFile = "${buildbotHome}/.flake-update.lock";
+  updateStatusFile = "${buildbotHome}/.update-status";
+  retryFile = "${buildbotHome}/.flake-update-retry";
+  githubKeyPath = config.sops.secrets.buildbot-github-key.path;
   githubTokenPath = config.sops.secrets.buildbot-github-token.path;
 
   buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
@@ -41,7 +42,7 @@ let
     echo "=== Building nixosConfiguration: $HOST ==="
 
     result=$(nix build \
-      "path:${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
+      "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
       --no-link \
       --max-jobs 3 \
       --print-out-paths \
@@ -61,20 +62,33 @@ let
       flock -x 9
       if [ -d "${flakeDir}/.git" ]; then
         cd ${flakeDir}
-        if [ "''${BUILDBOT_SCHEDULER:-}" != "force" ] && [ "$(date +%u)" != "1" ] && [ ! -f ${retryFile} ]; then
-          echo "Not Monday and no retry pending, skipping flake update run."
-          echo "no-changes" > ${updateStatusFile}
-          exit 0
-        fi
-        git fetch origin
-        git reset --hard origin/main
+        git fetch --prune origin
       else
         git clone --branch main ${flakeRepo} ${flakeDir}
       fi
     ) 9>"${lockFile}"
     cd ${flakeDir}
+
     git remote set-url --push origin ${flakeRepoSSH}
-    git checkout -B flake-update
+    git checkout --detach origin/main
+    git reset --hard origin/main
+    git clean -fdx
+    if git show-ref --verify --quiet refs/heads/flake-update; then
+      git branch -D flake-update
+    fi
+    git checkout -b flake-update
+  '';
+
+  shouldRunFlakeUpdate = pkgs.writeShellScript "buildbot-should-run-flake-update" ''
+    set -euo pipefail
+    SCHEDULER="''${BUILDBOT_SCHEDULER:-}"
+    if [ "$SCHEDULER" = "force" ] || [ "$(date +%u)" = "1" ] || [ -f ${retryFile} ]; then
+      echo "1"
+    else
+      echo "Not Monday and no retry pending, skipping flake update run." >&2
+      echo "no-changes" > ${updateStatusFile}
+      echo "0"
+    fi
   '';
 
   flakeUpdateScript = pkgs.writeShellScript "buildbot-flake-update" ''
@@ -85,6 +99,9 @@ let
 
     git config user.name "buildbot"
     git config user.email "buildbot@swarsel.win"
+    git config gpg.format ssh
+    git config user.signingkey "${githubKeyPath}"
+    git config commit.gpgsign true
     nix flake update --accept-flake-config
     if git diff --quiet flake.lock; then
       echo "No flake.lock changes, nothing to do."
@@ -109,7 +126,7 @@ let
     HOST="$1"
     echo "=== Building nixosConfiguration: $HOST ==="
     result=$(nix build \
-      "path:${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
+      "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
       --no-link \
       --max-jobs 3 \
       --print-out-paths \
@@ -176,18 +193,26 @@ let
         build_builder_names.append(f'build-{host}')
 
     flake_update_factory = util.BuildFactory()
+    flake_update_factory.addStep(steps.SetPropertyFromCommand(
+      name='should-run-flake-update',
+      command=['${shouldRunFlakeUpdate}'],
+      property='run_flake_update',
+      env={
+        'BUILDBOT_SCHEDULER': util.Interpolate('%(prop:scheduler:-)s'),
+      },
+      haltOnFailure=True,
+    ))
     flake_update_factory.addStep(steps.ShellCommand(
         name='prepare-update-branch',
         command=['${prepareUpdateBranch}'],
+        doStepIf=lambda step: step.build.getProperty('run_flake_update') == '1',
         haltOnFailure=True,
         timeout=600,
     ))
     flake_update_factory.addStep(steps.ShellCommand(
         name='flake-update',
         command=['${flakeUpdateScript}'],
-      env={
-        'BUILDBOT_SCHEDULER': util.Interpolate('%(prop:scheduler)s'),
-      },
+      doStepIf=lambda step: step.build.getProperty('run_flake_update') == '1',
         haltOnFailure=True,
         timeout=3600,
     ))
@@ -195,12 +220,14 @@ let
         flake_update_factory.addStep(steps.ShellCommand(
             name=f'build-update-{host}',
             command=['${buildFlakeUpdate}', host],
+            doStepIf=lambda step: step.build.getProperty('run_flake_update') == '1',
             haltOnFailure=True,
             timeout=28800,
         ))
     flake_update_factory.addStep(steps.ShellCommand(
         name='create-pr',
         command=['${createPR}'],
+        doStepIf=lambda step: step.build.getProperty('run_flake_update') == '1',
         timeout=300,
     ))
     builders.append(util.BuilderConfig(
