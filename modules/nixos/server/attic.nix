@@ -1,4 +1,4 @@
-{ lib, config, pkgs, globals, dns, confLib, ... }:
+{ self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -6,6 +6,9 @@ let
   serviceDB = "atticd";
 in
 {
+  imports = [
+    "${self}/modules/nixos/server/postgresql.nix"
+  ];
   config = {
     swarselsystems.enabledServerModules = [ "attic" ];
 

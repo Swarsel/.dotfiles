@@ -6,6 +6,7 @@ in
   imports = [
     "${self}/profiles/nixos/microvm"
     "${self}/modules/nixos/optional/microvm-guest-shares.nix"
+    "${self}/modules/nixos/server/oauth2-proxy.nix"
     "${self}/modules/nixos/server/nginx.nix"
     "${self}/modules/nixos/server/acme.nix"
   ];

@@ -119,7 +119,7 @@ in
       );
     };
   };
-  config = {
+  config = lib.mkIf (config.node.name == "twothreetunnel") {
     swarselsystems.enabledServerModules = [ "oauth2-proxy" ];
 
     sops = {
