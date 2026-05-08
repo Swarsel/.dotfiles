@@ -3,7 +3,7 @@
   imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 
   boot = {
-    binfmt.emulatedSystems = [ "x86_64-linux" ];
+    binfmt.emulatedSystems = [ "x86_64-linux" "i686-linux" ];
     initrd = {
       availableKernelModules = [ "xhci_pci" "virtio_pci" "virtio_scsi" "usbhid" ];
       kernelModules = [ ];
