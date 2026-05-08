@@ -14,6 +14,7 @@ in
   imports = [
     "${self}/modules/nixos/server/postgresql.nix"
     "${self}/modules/nixos/server/nginx.nix"
+    "${self}/modules/nixos/server/acme.nix"
   ];
 
   config = {

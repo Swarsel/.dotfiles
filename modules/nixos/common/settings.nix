@@ -70,6 +70,7 @@ in
                 password ${config.sops.placeholder.attic-cache-key}
               '';
               owner = mainUser;
+              group = "builder";
             };
           };
         };

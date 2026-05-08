@@ -99,6 +99,8 @@ in
       systemd-oom = confLib.mkIds 997;
       polkituser = confLib.mkIds 973;
       nscd = confLib.mkIds 972;
+      dhcpcd = lib.mkIf config.networking.useDHCP (confLib.mkIds 952);
+      resolvconf = lib.mkIf config.networking.resolvconf.enable (confLib.mkIds 951);
     };
   };
 }
