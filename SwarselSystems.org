@@ -10128,7 +10128,7 @@ This is the syncthing client configuration. Contrary to the [[#h:ad2787a2-7b1c-4
 
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
 
-***** blueman
+***** Bluetooth
 :PROPERTIES:
 :CUSTOM_ID: h:b91df05b-113d-4d09-93d1-b271e5b76810
 :END:
@@ -10139,8 +10139,13 @@ Enables the blueman service including the nice system tray icon.
   _:
   {
     config = {
-      services.blueman.enable = true;
-      services.hardware.bolt.enable = true;
+      services = {
+        blueman = {
+          enable = true;
+          withApplet = false;
+        };
+        hardware.bolt.enable = true;
+      };
     };
   }
 #+end_src

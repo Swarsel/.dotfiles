@@ -99,7 +99,7 @@
     simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     pia.url = "github:Swarsel/pia.nix/custom";
-    niritiling.url = "github:Swarsel/niritiling";
+    niritiling.url = "github:Swarsel/niritiling/feat/resize";
     noctoggle.url = "github:Swarsel/noctoggle";
   };
 
