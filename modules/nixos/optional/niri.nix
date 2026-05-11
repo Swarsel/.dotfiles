@@ -19,7 +19,10 @@
       xwayland-satellite-unstable
     ];
 
-    services.niritiling.enable = true;
+    services.niritiling = {
+      enable = true;
+      resizeColumns = true;
+    };
 
     programs = {
       niri = {
