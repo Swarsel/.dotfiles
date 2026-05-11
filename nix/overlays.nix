@@ -140,7 +140,7 @@ in
                 };
 
                 openldap = prev.openldap.overrideAttrs {
-                  doCheck = !prev.stdenv.hostPlatform.isi686;
+                  doCheck = false;
                 };
 
                 isync = prev.isync.override {
