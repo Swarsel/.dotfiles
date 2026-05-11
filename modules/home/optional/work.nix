@@ -3,9 +3,8 @@ let
   inherit (config.swarselsystems) homeDir mainUser;
   inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
   inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
-
-  sopsFile = self + /secrets/work/secrets.yaml;
   certsSopsFile = self + /secrets/repo/certs.yaml;
+  workSopsFile = self + /secrets/work/secrets.yaml;
 in
 {
   config = {
@@ -731,8 +730,10 @@ in
         path = "${homeDir}/.aws/certs/harica-root.pem";
         owner = mainUser;
       };
-      yubikey-1 = { inherit sopsFile; owner = mainUser; };
-      ucKey = { inherit sopsFile; owner = mainUser; };
+      yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
+      yubikey-2 = { sopsFile = workSopsFile; owner = mainUser; };
+      yubikey-3 = { sopsFile = workSopsFile; owner = mainUser; };
+      ucKey = { sopsFile = workSopsFile; owner = mainUser; };
     };
 
   };

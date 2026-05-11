@@ -8504,6 +8504,8 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
         }) // (lib.optionalAttrs (hm "optional-work" modules) {
           harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
           yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
+          yubikey-2 = { sopsFile = workSopsFile; owner = mainUser; };
+          yubikey-3 = { sopsFile = workSopsFile; owner = mainUser; };
           ucKey = { sopsFile = workSopsFile; owner = mainUser; };
         }) // (lib.optionalAttrs (hm "optional-noctalia" modules) {
           radicale-token = { owner = mainUser; };
@@ -27847,6 +27849,7 @@ When setting up a new machine:
 
     sopsFile = self + /secrets/work/secrets.yaml;
     certsSopsFile = self + /secrets/repo/certs.yaml;
+    workSopsFile = self + /secrets/work/secrets.yaml;
   in
   {
     config = {
@@ -28572,8 +28575,10 @@ When setting up a new machine:
           path = "${homeDir}/.aws/certs/harica-root.pem";
           owner = mainUser;
         };
-        yubikey-1 = { inherit sopsFile; owner = mainUser; };
-        ucKey = { inherit sopsFile; owner = mainUser; };
+        yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
+        yubikey-2 = { sopsFile = workSopsFile; owner = mainUser; };
+        yubikey-3 = { sopsFile = workSopsFile; owner = mainUser; };
+        ucKey = { sopsFile = workSopsFile; owner = mainUser; };
       };
 
     };

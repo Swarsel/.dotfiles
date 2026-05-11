@@ -31,6 +31,8 @@ in
       }) // (lib.optionalAttrs (hm "optional-work" modules) {
         harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
         yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
+        yubikey-2 = { sopsFile = workSopsFile; owner = mainUser; };
+        yubikey-3 = { sopsFile = workSopsFile; owner = mainUser; };
         ucKey = { sopsFile = workSopsFile; owner = mainUser; };
       }) // (lib.optionalAttrs (hm "optional-noctalia" modules) {
         radicale-token = { owner = mainUser; };
