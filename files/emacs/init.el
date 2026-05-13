@@ -1808,7 +1808,7 @@ create a new one."
 
   ;; this does the equivalent of (setq mu4e-user-mail-address-list '(address1@about.com address2@about.com [...])))
   (setq mu4e-user-mail-address-list
-    (mapcar #'intern (split-string (or (getenv "SWARSEL_MAIL_ALL") "") "[ ,]+" t)))
+        (mapcar #'intern (split-string (or (getenv "SWARSEL_MAIL_ALL") "") "[ ,]+" t)))
 
   (setq mu4e--log-max-size 1000)
 
@@ -1832,6 +1832,23 @@ create a new one."
                ("~/Certificates/harica-root.pem"
                 "~/Certificates/harica-intermediate.pem"))))
       ))
+
+  (setq mu4e-bookmarks
+        `((:name "Unread messages" :query "flag:unread AND NOT flag:trashed" :key 117)
+          (:name "Undeleted messages" :query "NOT flag:trashed" :key 103)
+          (:name "Today's messages" :query "date:today..now" :key 116)
+          (:name "Today's undeleted messages" :query "date:today..now AND NOT flag:trashed" :key 100)
+          (:name "Last 7 days" :query "date:7d..now" :hide-unread t :key 119)
+          (:name "Messages with images" :query "mime:image/*" :key 112))
+        )
+  ;; hide deleted messages from view
+  ;; (setq mu4e-search-hide-predicate
+  ;;       (lambda (msg)
+  ;;         (member 'trashed (mu4e-message-field msg :flags))))
+
+  ;; if needing to check deleted local messages for some reason, run this one
+  ;; (setq mu4e-search-hide-predicate nil)
+
   )
 
 (use-package mu4e-alert

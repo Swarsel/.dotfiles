@@ -3,6 +3,7 @@ let
   inherit (config.swarselsystems) homeDir mainUser;
   inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
   inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
+
   certsSopsFile = self + /secrets/repo/certs.yaml;
   workSopsFile = self + /secrets/work/secrets.yaml;
 in
