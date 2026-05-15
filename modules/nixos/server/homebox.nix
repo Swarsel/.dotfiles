@@ -44,7 +44,7 @@ in
 
     services.${serviceName} = {
       enable = true;
-      package = pkgs.bisect.homebox;
+      package = pkgs.homebox;
       database.createLocally = true;
       settings = {
         HBOX_WEB_PORT = builtins.toString servicePort;

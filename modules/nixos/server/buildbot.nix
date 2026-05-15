@@ -183,7 +183,7 @@ let
         f.addStep(steps.ShellCommand(
             name='build-and-push',
             command=['${buildAndPush}', host],
-            timeout=7200,
+            timeout=28800,
         ))
         builders.append(util.BuilderConfig(
             name=f'build-{host}',
