@@ -10,6 +10,7 @@
     programs.firefox = {
       enable = true;
       package = pkgs.firefox; # uses overrides
+      configPath = ".mozilla/firefox";
       policies = {
         # CaptivePortal = false;
         AppAutoUpdate = false;

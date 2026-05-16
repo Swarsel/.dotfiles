@@ -399,6 +399,7 @@ This is a comprehensive list of the services/components ran by my server machine
   |🚇 **VPN Access**           | [Firezone](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firezone.nix)                   |
   |🛡️ **Local DNS Resolver**   | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/adguardhome.nix)                     |
   |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
+  |🔎 **Search Engine**        | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                           |
 #+end_src
 
 * An introduction to nix
@@ -5783,6 +5784,7 @@ This machine used to be my proxy server, a functionality that is now provided by
       "${self}/modules/nixos/server/syncthing.nix"
       "${self}/modules/nixos/server/minecraft"
       "${self}/modules/nixos/server/restic.nix"
+      "${self}/modules/nixos/server/searx.nix"
     ];
 
     system.stateVersion = "23.11";
@@ -17765,7 +17767,7 @@ These are the specific records in use for my main domain.
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2026050601; # update this on changes for secondary dns
+      serial = 2026051501; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -24627,6 +24629,7 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
       programs.firefox = {
         enable = true;
         package = pkgs.firefox; # uses overrides
+        configPath = ".mozilla/firefox";
         policies = {
           # CaptivePortal = false;
           AppAutoUpdate = false;
@@ -28784,7 +28787,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
 In short, the options defined here are passed to the modules systems using =_modules.args= - they can then be used by passing =vars= as an attribute in the input attribute set of a modules system file (=basically all files in this configuration)
 
 #+begin_src nix-ts :noweb yes :tangle modules/shared/vars.nix
-  { self, pkgs, ... }:
+  { self, pkgs, globals, ... }:
   {
     _module.args = {
       vars = rec {
@@ -28936,10 +28939,21 @@ In short, the options defined here are passed to the modules systems using =_mod
 
           search = {
             # default = "Kagi";
-            default = "google";
+            default = "SearXNG";
             # privateDefault = "Kagi";
             privateDefault = "google";
             engines = {
+              "SearXNG" = {
+                urls = [{
+                  template = "https://${globals.services.searx.domain}/search";
+                  params = [
+                    { name = "q"; value = "{searchTerms}"; }
+                  ];
+                }];
+                icon = "https://search.swarsel.win/favicon.ico";
+                updateInterval = 24 * 60 * 60 * 1000; # every day
+                definedAliases = [ "@sx" ];
+              };
               "Kagi" = {
                 urls = [{
                   template = "https://kagi.com/search";
@@ -32283,6 +32297,244 @@ This holds modules that are to be used on most hosts. These are also the most im
       "${m}/home/common/settings.nix"
       "${m}/home/server/symlink.nix"
     ];
+  }
+#+end_src
+
+**** SearX
+
+I really love Kagi. However, I do not love it for it's AI features, or particularly for it's search results. What I always really enjoyed from it was the ability to manipulate the search results in a way that I saw fit.
+
+However, I was not ready to pay 10€ per month just for that; using SearXNG, I get the capability of blocking some really annoying sites, which is already really good. I have however not found a way to provide weights to hostnames yet
+
+#+begin_src nix-ts :tangle modules/nixos/server/searx.nix
+  { lib, config, dns, globals, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "searx"; port = 3002; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied idmServer webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+
+    inherit (config.swarselsystems) sopsFile;
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ "searx" ];
+
+      sops = {
+        secrets = {
+          searx-secret = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        };
+
+        templates = {
+          "searx-env" = {
+            content = ''
+              SEARXNG_SECRET="${config.sops.placeholder.searx-secret}"
+            '';
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
+        };
+      };
+
+      users.persistentIds = {
+        searx = confLib.mkIds 950;
+      };
+
+      topology.self.services.${serviceName} = {
+        info = "https://${serviceDomain}";
+      };
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        redisCreateLocally = true;
+        environmentFile = config.sops.templates.searx-env.path;
+        settings = {
+
+          general = {
+            privacypolicy_url = false;
+            enable_metrics = true;
+            instance_name = "SwarselSearX";
+            donation_url = false;
+            contact_url = false;
+            debug = false;
+          };
+
+          ui = {
+            static_use_hash = true;
+            default_locale = "en";
+            query_in_title = true;
+            infinite_scroll = false;
+            center_alignment = true;
+            default_theme = "simple";
+            theme_args.simple_style = "auto";
+            search_on_category_select = true;
+          };
+
+          doi_resolvers = {
+            "oadoi.org" = "https://oadoi.org/";
+            "doi.org" = "https://doi.org/";
+            "doai.io" = "https://dissem.in/";
+            "sci-hub.se" = "https://sci-hub.se/";
+            "sci-hub.st" = "https://sci-hub.st/";
+            "sci-hub.ru" = "https://sci-hub.ru/";
+          };
+          default_doi_resolver = "sci-hub.se";
+
+          server = {
+            port = servicePort;
+            bind_address = "0.0.0.0";
+            image_proxy = true;
+            base_url = "https://${globals.services.${serviceName}.domain}";
+            limiter = false;
+            public_instance = false;
+          };
+
+          engines = lib.mapAttrsToList (name: value: { inherit name; } // value) {
+            "aol images".disabled = true;
+            "brave".disabled = true;
+            "brave.images".disabled = true;
+            "deviantart".disabled = true;
+            "duckduckgo images".disabled = true;
+            "google images".disabled = true;
+            "karmasearch images".disabled = true;
+            "karmasearch videos".disabled = true;
+            "karmasearch".disabled = true;
+            "pexels".disabled = true;
+            "qwant images".disabled = true;
+            "startpage images".disabled = true;
+            "startpage".disabled = true;
+            "unsplash".disabled = true;
+          };
+
+          # hostname_replace = {
+          #   "pinterest\.com" = false;
+          # };
+          hostnames = {
+            remove = [
+              "(.*\.)?answers.microsoft.com$"
+              "(.*\.)?breitbart.com$"
+              "(.*\.)?dailymail.co.uk$"
+              "(.*\.)?etsy.com$"
+              "(.*\.)?facebook.com$"
+              "(.*\.)?foxnews.com$"
+              "(.*\.)?geeksforgeeks.org$"
+              "(.*\.)?githubplus.com$"
+              "(.*\.)?instagram.com$"
+              "(.*\.)?linkedin.com$"
+              "(.*\.)?medium.com$"
+              "(.*\.)?msn.com$"
+              "(.*\.)?pinterest.ca$"
+              "(.*\.)?pinterest.co.uk$"
+              "(.*\.)?pinterest.com$"
+              "(.*\.)?pinterest.com.au$"
+              "(.*\.)?pinterest.de$"
+              "(.*\.)?pinterest.es$"
+              "(.*\.)?pinterest.fr$"
+              "(.*\.)?play.google.com$"
+              "(.*\.)?quora.com$"
+              "(.*\.)?tiktok.com$"
+              "(.*\.)?twitter.com$"
+              "(.*\.)?w3schools.com$"
+              "(.*\.)?wikihow.com$"
+            ];
+          };
+
+          enabled_plugins = [
+            "Calculator"
+            "Self information"
+            "Hash plugin"
+            "Hostname replace"
+            "Open Access DOI rewrite"
+            "Timezones plugin"
+            "Tor check plugin"
+            "Tracker URL remover"
+            "Unit converter plugin"
+          ];
+
+          search = {
+            safe_search = 0; # 0 = None, 1 = Moderate, 2 = Strict
+            favicon_resolver = "google";
+            formats = [
+              "html"
+              "json"
+              "rss"
+            ];
+            autocomplete = "google"; # "dbpedia", "duckduckgo", "google", "startpage", "swisscows", "qwant", "wikipedia" - leave blank to turn it off by default
+            autocomplete_min = 3;
+            default_lang = "en";
+          };
+
+          faviconsSettings = {
+            favicons = {
+              cfg_schema = 1;
+              cache = {
+                db_url = "/run/searx/faviconcache.db";
+                LIMIT_TOTAL_BYTES = 2147483648;
+                HOLD_TIME = 5184000;
+                BLOB_MAX_BYTES = 40960;
+                MAINTENANCE_MODE = "auto";
+                MAINTENANCE_PERIOD = 600;
+              };
+
+              proxy = {
+                max_age = 5184000;
+              };
+            };
+          };
+
+        };
+      };
+
+      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        { directory = "/var/lib/redis-${serviceName}"; user = serviceUser; group = serviceGroup; mode = "0700"; }
+      ];
+
+      nodes = {
+        ${idmServer} = {
+          services.kanidm.provision = {
+            groups = {
+              "searx.access" = { };
+            };
+            systems.oauth2.oauth2-proxy = {
+              scopeMaps = {
+                "searx.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+              claimMaps.groups = {
+                valuesByGroup = {
+                  "searx.access" = [ "searx_access" ];
+                };
+              };
+            };
+          };
+        };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+      };
+
+    };
+
   }
 #+end_src
 

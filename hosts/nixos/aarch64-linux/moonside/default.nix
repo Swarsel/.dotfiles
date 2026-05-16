@@ -19,6 +19,7 @@ in
     "${self}/modules/nixos/server/syncthing.nix"
     "${self}/modules/nixos/server/minecraft"
     "${self}/modules/nixos/server/restic.nix"
+    "${self}/modules/nixos/server/searx.nix"
   ];
 
   system.stateVersion = "23.11";

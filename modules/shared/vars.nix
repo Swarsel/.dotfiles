@@ -1,4 +1,4 @@
-{ self, pkgs, ... }:
+{ self, pkgs, globals, ... }:
 {
   _module.args = {
     vars = rec {
@@ -150,10 +150,21 @@
 
         search = {
           # default = "Kagi";
-          default = "google";
+          default = "SearXNG";
           # privateDefault = "Kagi";
           privateDefault = "google";
           engines = {
+            "SearXNG" = {
+              urls = [{
+                template = "https://${globals.services.searx.domain}/search";
+                params = [
+                  { name = "q"; value = "{searchTerms}"; }
+                ];
+              }];
+              icon = "https://search.swarsel.win/favicon.ico";
+              updateInterval = 24 * 60 * 60 * 1000; # every day
+              definedAliases = [ "@sx" ];
+            };
             "Kagi" = {
               urls = [{
                 template = "https://kagi.com/search";

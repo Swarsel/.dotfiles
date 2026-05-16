@@ -164,6 +164,7 @@
   |🚇 **VPN Access**           | [Firezone](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firezone.nix)                   |
   |🛡️ **Local DNS Resolver**   | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/adguardhome.nix)                     |
   |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
+  |🔎 **Search Engine**        | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                           |
 
   ### Hosts
 
