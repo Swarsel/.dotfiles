@@ -164,7 +164,8 @@
   |🚇 **VPN Access**           | [Firezone](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firezone.nix)                   |
   |🛡️ **Local DNS Resolver**   | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/adguardhome.nix)                     |
   |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
-  |🔎 **Search Engine**        | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                           |
+  |🔎 **Search Engine**        | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                       |
+  |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious-companion.nix)        |
 
   ### Hosts
 

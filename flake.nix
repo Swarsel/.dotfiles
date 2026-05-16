@@ -48,6 +48,10 @@
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    invidious-companion = {
+      url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
+      flake = false;
+    };
 
 
     topologyPrivate.url = "./files/topology/public";
@@ -83,6 +87,7 @@
     pia.url = "github:Swarsel/pia.nix/custom";
     niritiling.url = "github:Swarsel/niritiling/feat/resize";
     noctoggle.url = "github:Swarsel/noctoggle";
+
   };
 
   outputs =

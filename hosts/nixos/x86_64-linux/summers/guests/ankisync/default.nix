@@ -3,6 +3,7 @@
   imports = [
     "${self}/profiles/nixos/microvm"
     "${self}/modules/nixos/server/ankisync.nix"
+    "${self}/modules/nixos/server/invidious-companion.nix"
   ];
 
   swarselsystems = {
