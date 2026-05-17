@@ -102,9 +102,27 @@ writeShellApplication {
           toplevel="''${TOPLEVEL_FLAKE_PATHS["$host"]}"
           # Make sudo call to get prompt out of the way
           sudo echo "[1;36m    Building [m📦 [34m$host[m"
-          nix build --no-link "''${OPTIONS[@]}" --show-trace --log-format internal-json -v "$toplevel" |& ${nix-output-monitor}/bin/nom --json ||
-              die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
-          TOPLEVEL_STORE_PATHS["$host"]=$(nix build --no-link --print-out-paths "''${OPTIONS[@]}" "$toplevel")
+          build_log=$(mktemp)
+          store_path_file=$(mktemp)
+          set +e
+          nix build --no-link --print-out-paths "''${OPTIONS[@]}" --show-trace --log-format internal-json -v "$toplevel" >"$store_path_file" 2> >(tee "$build_log" | ${nix-output-monitor}/bin/nom --json >&2)
+          build_rc=$?
+          set -e
+          wait 2>/dev/null || true
+          if [[ $build_rc -ne 0 ]]; then
+              if grep -q '\[nixbuild\.net\] error: Authorization failed' "$build_log"; then
+                  echo -e "\033[1;36m    nixbuild.net failed: retrying locally... \033[m"
+                  nix build --builders "" --no-link --print-out-paths "''${OPTIONS[@]}" --show-trace --log-format internal-json -v "$toplevel" >"$store_path_file" 2> >(${nix-output-monitor}/bin/nom --json >&2) ||
+                      die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
+                  wait 2>/dev/null || true
+              else
+                  rm -f "$build_log" "$store_path_file"
+                  die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
+              fi
+          fi
+          store_path=$(<"$store_path_file")
+          rm -f "$build_log" "$store_path_file"
+          TOPLEVEL_STORE_PATHS["$host"]="$store_path"
           time_next
           echo "[1;32m       Built [m✅ [34m$host[m [33m''${TOPLEVEL_STORE_PATHS["$host"]}[m [90min ''${T_LAST}s[m"
       done

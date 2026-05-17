@@ -1,4 +1,4 @@
-{ self, lib, minimal, ... }:
+{ self, config, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -13,6 +13,7 @@
     "${self}/modules/nixos/server/attic.nix"
     "${self}/modules/nixos/server/garage.nix"
     "${self}/modules/nixos/server/buildbot.nix"
+    "${self}/modules/nixos/client/remotebuild.nix"
   ];
 
   node.lockFromBootstrapping = lib.mkForce false;
@@ -20,6 +21,9 @@
   topology.self = {
     icon = "devices.cloud-server";
   };
+
+  # use SSH key with own limits for nixbuild.net instead of the general one in remotebuild.nix
+  sops.secrets.nixbuild-net-key = lib.mkForce { inherit (config.swarselsystems) sopsFile; mode = "0400"; };
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";

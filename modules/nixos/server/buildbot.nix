@@ -22,6 +22,8 @@ let
   retryFile = "${buildbotHome}/.flake-update-retry";
   githubKeyPath = config.sops.secrets.buildbot-github-key.path;
   githubTokenPath = config.sops.secrets.buildbot-github-token.path;
+  buildCommand = ''nix build "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" --no-link --keep-going --max-jobs 3 --print-out-paths --accept-flake-config'';
+  nixBuilders = systems: ''--builders "'' + lib.foldl (acc: system: acc + ''ssh://eu.nixbuild.net ${system} - 100 1 big-parallel,benchmark;'') "" systems + ''"'';
 
   buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
     set -euo pipefail
@@ -41,12 +43,7 @@ let
 
     echo "=== Building nixosConfiguration: $HOST ==="
 
-    result=$(nix build \
-      "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
-      --no-link \
-      --max-jobs 3 \
-      --print-out-paths \
-      --accept-flake-config)
+    result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
 
     echo "Build output: $result"
     echo "=== Pushing $HOST to binary cache ==="
@@ -125,12 +122,7 @@ let
     fi
     HOST="$1"
     echo "=== Building nixosConfiguration: $HOST ==="
-    result=$(nix build \
-      "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
-      --no-link \
-      --max-jobs 3 \
-      --print-out-paths \
-      --accept-flake-config)
+    result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
     echo "Build output: $result"
     echo "=== Pushing $HOST to binary cache ==="
     echo "$result" | xargs attic push ${mainUser}

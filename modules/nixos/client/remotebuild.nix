@@ -27,13 +27,13 @@ in
           speedFactor = 2;
           protocol = "ssh-ng";
         })
-        {
+        (lib.mkIf isClient {
           hostName = "eu.nixbuild.net";
           system = "x86_64-linux";
           maxJobs = 100;
           speedFactor = 2;
-          supportedFeatures = [ "big-parallel" ];
-        }
+          supportedFeatures = [ "benchmark" "big-parallel" ];
+        })
       ];
     };
 

@@ -6029,7 +6029,7 @@ This machine acts as my build farm and nix binary cache. It also provides an S3 
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/belchsfactory/default.nix
-  { self, lib, minimal, ... }:
+  { self, config, lib, minimal, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -6044,6 +6044,7 @@ This machine acts as my build farm and nix binary cache. It also provides an S3 
       "${self}/modules/nixos/server/attic.nix"
       "${self}/modules/nixos/server/garage.nix"
       "${self}/modules/nixos/server/buildbot.nix"
+      "${self}/modules/nixos/client/remotebuild.nix"
     ];
 
     node.lockFromBootstrapping = lib.mkForce false;
@@ -6051,6 +6052,9 @@ This machine acts as my build farm and nix binary cache. It also provides an S3 
     topology.self = {
       icon = "devices.cloud-server";
     };
+
+    # use SSH key with own limits for nixbuild.net instead of the general one in remotebuild.nix
+    sops.secrets.nixbuild-net-key = lib.mkForce { inherit (config.swarselsystems) sopsFile; mode = "0400"; };
 
     swarselsystems = {
       flakePath = "/root/.dotfiles";
@@ -9912,13 +9916,13 @@ This defines all remote builds that I want to use on client machines. This inclu
             speedFactor = 2;
             protocol = "ssh-ng";
           })
-          {
+          (lib.mkIf isClient {
             hostName = "eu.nixbuild.net";
             system = "x86_64-linux";
             maxJobs = 100;
             speedFactor = 2;
-            supportedFeatures = [ "big-parallel" ];
-          }
+            supportedFeatures = [ "benchmark" "big-parallel" ];
+          })
         ];
       };
 
@@ -19261,6 +19265,8 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
     retryFile = "${buildbotHome}/.flake-update-retry";
     githubKeyPath = config.sops.secrets.buildbot-github-key.path;
     githubTokenPath = config.sops.secrets.buildbot-github-token.path;
+    buildCommand = ''nix build "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" --no-link --keep-going --max-jobs 3 --print-out-paths --accept-flake-config'';
+    nixBuilders = systems: ''--builders "'' + lib.foldl (acc: system: acc + ''ssh://eu.nixbuild.net ${system} - 100 1 big-parallel,benchmark;'') "" systems + ''"'';
 
     buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
       set -euo pipefail
@@ -19280,12 +19286,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
 
       echo "=== Building nixosConfiguration: $HOST ==="
 
-      result=$(nix build \
-        "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
-        --no-link \
-        --max-jobs 3 \
-        --print-out-paths \
-        --accept-flake-config)
+      result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
 
       echo "Build output: $result"
       echo "=== Pushing $HOST to binary cache ==="
@@ -19364,12 +19365,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       fi
       HOST="$1"
       echo "=== Building nixosConfiguration: $HOST ==="
-      result=$(nix build \
-        "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" \
-        --no-link \
-        --max-jobs 3 \
-        --print-out-paths \
-        --accept-flake-config)
+      result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
       echo "Build output: $result"
       echo "=== Pushing $HOST to binary cache ==="
       echo "$result" | xargs attic push ${mainUser}
@@ -31154,7 +31150,7 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
                     exit 1
                     ;;
                 -*) OPTIONS+=("$1") ;;
-                *)
+                ,*)
                     POSITIONAL_ARGS+=("$1")
                     shift
                     POSITIONAL_ARGS+=("$@")
@@ -31185,9 +31181,27 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
             toplevel="''${TOPLEVEL_FLAKE_PATHS["$host"]}"
             # Make sudo call to get prompt out of the way
             sudo echo "[1;36m    Building [m📦 [34m$host[m"
-            nix build --no-link "''${OPTIONS[@]}" --show-trace --log-format internal-json -v "$toplevel" |& ${nix-output-monitor}/bin/nom --json ||
-                die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
-            TOPLEVEL_STORE_PATHS["$host"]=$(nix build --no-link --print-out-paths "''${OPTIONS[@]}" "$toplevel")
+            build_log=$(mktemp)
+            store_path_file=$(mktemp)
+            set +e
+            nix build --no-link --print-out-paths "''${OPTIONS[@]}" --show-trace --log-format internal-json -v "$toplevel" >"$store_path_file" 2> >(tee "$build_log" | ${nix-output-monitor}/bin/nom --json >&2)
+            build_rc=$?
+            set -e
+            wait 2>/dev/null || true
+            if [[ $build_rc -ne 0 ]]; then
+                if grep -q '\[nixbuild\.net\] error: Authorization failed' "$build_log"; then
+                    echo -e "\033[1;36m    nixbuild.net failed: retrying locally... \033[m"
+                    nix build --builders "" --no-link --print-out-paths "''${OPTIONS[@]}" --show-trace --log-format internal-json -v "$toplevel" >"$store_path_file" 2> >(${nix-output-monitor}/bin/nom --json >&2) ||
+                        die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
+                    wait 2>/dev/null || true
+                else
+                    rm -f "$build_log" "$store_path_file"
+                    die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
+                fi
+            fi
+            store_path=$(<"$store_path_file")
+            rm -f "$build_log" "$store_path_file"
+            TOPLEVEL_STORE_PATHS["$host"]="$store_path"
             time_next
             echo "[1;32m       Built [m✅ [34m$host[m [33m''${TOPLEVEL_STORE_PATHS["$host"]}[m [90min ''${T_LAST}s[m"
         done
