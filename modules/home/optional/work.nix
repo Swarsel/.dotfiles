@@ -25,7 +25,6 @@ in
         step-cli
 
         vscode-fhs
-        copilot-cli
         antigravity
 
 
