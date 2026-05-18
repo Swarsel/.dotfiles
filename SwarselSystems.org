@@ -14886,12 +14886,12 @@ This section exposes several metrics that I use to check the health of my server
   }
 #+end_src
 
-**** Jenkins (currently unused)
+**** [UNUSED] Jenkins
 :PROPERTIES:
 :CUSTOM_ID: h:23452a18-a0a1-4515-8612-ceb19bb5fc22
 :END:
 
-This is a WIP Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I do not use this however, as I actually prefer to build them using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]].
+This is my Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I do not use this however, as I actually prefer to build them using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]]. At least that was the case in the past - nowadays [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]] is the tool of choice.
 
 #+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, globals, dns, confLib, ... }:
@@ -14945,7 +14945,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
   }
 #+end_src
 
-**** Emacs elfeed (RSS Server, unused)
+**** [UNUSED] Emacs elfeed (RSS Server setup)
 :PROPERTIES:
 :CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
 :END:
@@ -16953,7 +16953,7 @@ Deployment notes:
   }
 #+end_src
 
-**** Snipe-IT (currently unused)
+**** [UNUSED] Snipe-IT
 :PROPERTIES:
 :CUSTOM_ID: h:470f7ee3-3307-4949-b0fa-403171e3859a
 :END:
@@ -17112,7 +17112,7 @@ My asset manager. I use it to track tools, cables and boardgames mostly.
 :CUSTOM_ID: h:6e30509a-1320-4993-a9c7-70d28ef2906a
 :END:
 
-Allows certificate based SSH logins easily. I use this to be able to quickly give people access to my server when needed (by giving them the permissions in [[#h:ee625136-29ab-4696-919f-7b0d0042f6dd][kanidm]])
+Allows certificate based SSH logins easily. I use this to be able to quickly give people access to my server when needed (by giving them the permissions in [[#h:ee625136-29ab-4696-919f-7b0d0042f6dd][kanidm]]) - not that this happens ever. But it might be useful at some point.
 
 #+begin_src nix-ts :tangle modules/nixos/server/opkssh.nix
   { config, globals, confLib, ... }:
@@ -17196,6 +17196,8 @@ Garage acts as my s3 endpoint. I use it on two of my servers:
 
 Generate the admin token using =openssl rand -base64 32=.
 Generate the rpc token using =openssl rand -hex 32=.
+
+Interact like  =aws s3 ls s3://<bucket> --endpoint-url https://<domain> --profile <name> --region <name> --no-verify-ssl= (--no-verify-ssl is needed if the corresponding root CA certificate is not installed/trusted)
 
 If a website is to be deployed using a s3 bucket, add the corresponding files in one of two ways:
 
@@ -17658,6 +17660,10 @@ This makes sure that my servers at home know about the home NGINX endpoint and u
 
 **** Set node role global entries
 
+Before, I had a mechanism for defining system roles that worked by simply setting =<roleDescriptor> = true;= in the =globals.general= host config; this was a little cumbersome.
+
+Now, I have a separate setting for this (=nodeRoles=) in which I can define ALL those roles. Still, this list then fills the corresponding global entries.
+
 
 #+begin_src nix-ts :tangle modules/nixos/server/node-roles.nix
   { lib, config, ... }:
@@ -17772,6 +17778,10 @@ This is the setup of my authoritative dns server. This here is the general confi
 :END:
 
 These are the specific records in use for my main domain.
+
+IMPORTANT: In order for any changes here to take effect, the =serial= MUST be updated to a greater number. The format that should be followed it =<YEAR><MONTH><DAY><ITERATION>=, which allows for 99 iterations on a single day.
+
+The options for A/AAAA records themselves should usually be defined in the respective service modules, using =globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords=. The NSD host will then merge these and create the corresponding records.
 
 #+begin_src nix-ts :tangle modules/nixos/server/nsd/site1.nix
   { config, globals, dns, proxyAddress4, proxyAddress6, ... }:
@@ -17965,6 +17975,8 @@ This runs a mailserver using simple-nixos-mailserver.
 
 When changing the hashed passwords, =dovecot= needs to be restarted manually, it will not happen upon rebuild.
 
+Currently, the web UI for this is a bit wonky and requires reloading the page sometimes in order to show anything (this is because my security settings are too strict - even with the security headers off! - , but I do not have time to look into it) - in any case, I do rather use [[#h:b92a18cf-eec3-4605-a8c2-37133ade3574][mu4e]] along with =pizauth=, with the web UI just being a fallback in case I need to acccess special fringe accounts.
+
 #+begin_src nix-ts :tangle modules/nixos/server/mailserver.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
@@ -18144,7 +18156,7 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
 :CUSTOM_ID: h:092593d2-0ca0-4f86-9951-6127a3594e25
 :END:
 
-This is my nix binary cache (similar to cachix).
+This is my nix binary cache (similar to cachix). It is what I use in conjunction with [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]] in order to save time when rebuilding. All packages that are built by Client machines are pushed using [[#h:79ebe062-d5f5-46a4-9e7b-bd3df0c8699b][attic store push service]], and system configurations in the above are as well.
 
 Generate the attic server token using =openssl genrsa -traditional 4096 | base64 -w0=
 
@@ -18154,6 +18166,8 @@ $ attic login local http://localhost:8080 eyJ...
 
 $ attic cache create hello
 ✨ Created cache "hello" on "local"
+
+My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][Garage]]), hence we set the nar threshold to 0.
 
 #+begin_src nix-ts :tangle modules/nixos/server/attic.nix
   { self, lib, config, pkgs, globals, dns, confLib, ... }:
@@ -18324,7 +18338,7 @@ $ attic cache create hello
     };
   }
 #+end_src
-**** Hydra
+**** [UNUSED] Hydra
 :PROPERTIES:
 :CUSTOM_ID: h:59f9ba07-8f63-4317-8def-83855a2a2ac1
 :END:
@@ -18336,6 +18350,8 @@ Need to create user manually:
 # su - hydra
 $ hydra-create-user alice --full-name 'Alice Q. User' \
     --email-address 'alice@example.org' --password-prompt --role admin
+
+I used this for the short timeframe before I started using nix-plugins for [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]]. Ever since, I was never again able to get it to work, even when building hydra on the correct nix version in regards to nix-plugins. Nowadays, I have moved to [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]].
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/hydra.nix
@@ -18476,6 +18492,10 @@ $ hydra-create-user alice --full-name 'Alice Q. User' \
 :END:
 
 This is the dhcp config that runs on my router.
+
+IPv4 and v6 require slightly different configurations each, hence I keep the bulk of it as a function that can simply check the version for the few areas where it matters.
+
+Apart from that, the only interesting bit here is the advertised dns-server which makes sure [[#h:ecb66cb8-12b5-44e8-ad6b-7848711e1ffe][Adguardhome]] can route requests to home services efficiently.
 
 #+begin_src nix-ts :tangle modules/nixos/server/kea.nix
   { self, lib, config, globals, confLib, ... }:
@@ -19237,6 +19257,12 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
 :PROPERTIES:
 :CUSTOM_ID: h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32
 :END:
+
+As my configuration grows, the chance that an odd package is broken on unstable grows with it; manually pushing the flake versions hence bears the risk of running into broken builds; also, many of my configurations take a considerable time to build.
+
+Both of these problems can be alleviated by using a service that runs builds for all of my configurations automatically. This setup runs a build of the current configuration state every day; additionally, once per week, we will also update the inputs, and if all confgurations build, a PR will be opened in my project repository. If a build failed, it will instead try again the next day - the failed build might then be fixed.
+
+Using this mechanisms, I can quite simply jump between working states of all configurations. Additionally, by pushing to [[#h:092593d2-0ca0-4f86-9951-6127a3594e25][Attic (nix binary cache)]] as part of the jobs, I also make sure that the configurations I move to are already fully cached either in the public cache or my own.
 
 Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to build my machine configurations; however, after adopting [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]]/nix-plugins for [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]], it became a chore to use and I never managed to make it use the correct nix version that nix-plugins would be compiled for. Buildbot in this regards is way easier to use, as it is meant to run arbitrary commands and I can more easily pass it the correct nix version.
 
