@@ -99,6 +99,7 @@
             don-t-fuck-with-paste
             # plasma-integration
             noscript
+            redirector
 
             # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
             # (buildFirefoxXpiAddon {
