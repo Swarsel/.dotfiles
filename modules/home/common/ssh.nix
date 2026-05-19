@@ -9,7 +9,7 @@
         SetEnv TERM=xterm-256color
         ServerAliveInterval 20
       '';
-      matchBlocks = {
+      settings = {
         "*" = {
           forwardAgent = false;
           addKeysToAgent = "no";

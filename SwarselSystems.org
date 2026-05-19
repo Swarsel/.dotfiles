@@ -1314,7 +1314,7 @@ It is also possible to only update specific inputs:
 
 #+RESULTS:
 
-To lock an input from ever updating, a nice trick is to pin it to a specific revision in the inputs' source url like I do in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton (inputs)]] for the =nixpkgs-kernel= input.
+To lock an input from ever updating, a nice trick is to pin it to a specific revision in the inputs' source url like I do in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton (inputs)]] for the =nixpkgs-kernelpin= input.
 
 ****** nix flake check
 :PROPERTIES:
@@ -1732,7 +1732,7 @@ A short overview over each input and what it does:
       nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
       nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
       nixpkgs-master.url = "github:nixos/nixpkgs/master";
-      nixpkgs-kernel.url = "github:nixos/nixpkgs/dd9b079222d43e1943b6ebd802f04fd959dc8e61?narHash=sha256-I45esRSssFtJ8p/gLHUZ1OUaaTaVLluNkABkk6arQwE%3D"; #specifically pinned for kernel version
+      nixpkgs-kernelpin.url = "github:nixos/nixpkgs/dd9b079222d43e1943b6ebd802f04fd959dc8e61?narHash=sha256-I45esRSssFtJ8p/gLHUZ1OUaaTaVLluNkABkk6arQwE%3D"; #specifically pinned for kernel version
       nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
       nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -3933,8 +3933,8 @@ This system is built with support for arm emulation, so it can build configurati
     #   '';
 
     boot = {
-      # kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
-      kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages_latest;
+      # kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages;
+      kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages_latest;
       # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
       binfmt.emulatedSystems = [ "aarch64-linux" ];
       initrd = {
@@ -11626,7 +11626,7 @@ Some extra config to harden the config on my ssh bastion host. It makes it so th
         programs.ssh = {
           enable = true;
           enableDefaultConfig = false;
-          matchBlocks = {
+          settings = {
             "*" = {
               forwardAgent = false;
             };
@@ -22272,7 +22272,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
           SetEnv TERM=xterm-256color
           ServerAliveInterval 20
         '';
-        matchBlocks = {
+        settings = {
           "*" = {
             forwardAgent = false;
             addKeysToAgent = "no";
@@ -28790,7 +28790,7 @@ When setting up a new machine:
             };
           };
 
-          ssh.matchBlocks = confLib.getConfig.repo.secrets.local.work.sshConfig;
+          ssh.settings = confLib.getConfig.repo.secrets.local.work.sshConfig;
 
           firefox = {
             profiles =

@@ -6,6 +6,7 @@ in
   config = {
     swarselsystems.enabledHomeModules = [ "gpgagent" ];
 
+    # we need the normal ssh agent for cert based login as well as support for sk keys, both of which are not present for gpg-agent
     services.ssh-agent = {
       enable = true;
     };

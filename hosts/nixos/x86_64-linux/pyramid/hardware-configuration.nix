@@ -22,8 +22,8 @@
   #   '';
 
   boot = {
-    # kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
-    kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages_latest;
+    # kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages;
+    kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages_latest;
     # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     binfmt.emulatedSystems = [ "aarch64-linux" ];
     initrd = {

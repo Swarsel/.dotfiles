@@ -203,7 +203,7 @@ in
           };
         };
 
-        ssh.matchBlocks = confLib.getConfig.repo.secrets.local.work.sshConfig;
+        ssh.settings = confLib.getConfig.repo.secrets.local.work.sshConfig;
 
         firefox = {
           profiles =
