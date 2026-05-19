@@ -26664,7 +26664,7 @@ When setting up a new machine:
 #+end_src
 
 #+begin_src nix-ts :tangle modules/home/common/gpg-agent.nix
-  { self, config, pkgs, ... }:
+  { self, lib, options, config, pkgs, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
   in
@@ -26713,9 +26713,81 @@ When setting up a new machine:
         ];
       };
 
-      systemd.user.tmpfiles.rules = [
-        "d ${homeDir}/.gnupg 0700 ${mainUser} users - -"
-      ];
+      systemd.user = {
+        sockets.gpg-agent-ssh =
+          let
+            inherit (config.programs.gpg) homedir;
+            # Act like `xxd -r -p | base32` but with z-base-32 alphabet and no trailing padding.
+            # Written in Nix for purity.
+            hexStringToBase32 =
+              let
+                mod = a: b: a - a / b * b;
+                pow2 = lib.elemAt [ 1 2 4 8 16 32 64 128 256 ];
+
+                base32Alphabet = lib.stringToCharacters "ybndrfg8ejkmcpqxot1uwisza345h769";
+                hexToIntTable = lib.listToAttrs (
+                  lib.genList
+                    (x: {
+                      name = lib.toLower (lib.toHexString x);
+                      value = x;
+                    }) 16
+                );
+
+                initState = {
+                  ret = "";
+                  buf = 0;
+                  bufBits = 0;
+                };
+                go = { ret, buf, bufBits, }: hex:
+                  let
+                    buf' = buf * pow2 4 + hexToIntTable.${hex};
+                    bufBits' = bufBits + 4;
+                    extraBits = bufBits' - 5;
+                  in
+                  if bufBits >= 5 then
+                    {
+                      ret = ret + lib.elemAt base32Alphabet (buf' / pow2 extraBits);
+                      buf = mod buf' (pow2 extraBits);
+                      bufBits = bufBits' - 5;
+                    }
+                  else
+                    {
+                      inherit ret;
+                      buf = buf';
+                      bufBits = bufBits';
+                    };
+              in
+              hexString: (lib.foldl' go initState (lib.stringToCharacters hexString)).ret;
+            gpgconf = dir:
+              let
+                hash = lib.substring 0 24 (hexStringToBase32 (builtins.hashString "sha1" homedir));
+                subdir = if homedir == options.programs.gpg.homedir.default then "${dir}" else "d.${hash}/${dir}";
+              in
+              "%t/gnupg/${subdir}";
+          in
+          {
+            Unit = {
+              Description = "GnuPG cryptographic agent (ssh-agent emulation)";
+              Documentation = "man:gpg-agent(1) man:ssh-add(1) man:ssh-agent(1) man:ssh(1)";
+            };
+
+            Socket = {
+              ListenStream = gpgconf "S.gpg-agent.ssh";
+              FileDescriptorName = "ssh";
+              Service = "gpg-agent.service";
+              SocketMode = "0600";
+              DirectoryMode = "0700";
+            };
+
+            Install = {
+              WantedBy = [ "sockets.target" ];
+            };
+          };
+
+        tmpfiles.rules = [
+          "d ${homeDir}/.gnupg 0700 ${mainUser} users - -"
+        ];
+      };
 
       # assure correct permissions
       # systemd.user.tmpfiles.settings."30-gpgagent".rules = {
@@ -35684,7 +35756,8 @@ The following settings are needed to make sure emacs works for magit commits and
     :config
     (pinentry-start)
     (setq epg-pinentry-mode 'loopback)
-    (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket"))))
+    ;; (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
+    )
 #+end_src
 
 *** Forge
