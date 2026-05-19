@@ -21,6 +21,7 @@ in
     "${self}/modules/nixos/server/restic.nix"
     "${self}/modules/nixos/server/searx.nix"
     "${self}/modules/nixos/server/invidious.nix"
+    "${self}/modules/nixos/server/firefox-syncserver.nix"
   ];
 
   system.stateVersion = "23.11";

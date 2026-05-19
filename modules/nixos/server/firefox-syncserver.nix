@@ -1,9 +1,9 @@
-{ self, lib, config, dns, globals, confLib, ... }:
+{ self, lib, pkgs, config, dns, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
-  sopsFile = self + /secrets/general/invidious-companion.yaml;
+  inherit (config.swarselsystems) sopsFile;
 in
 {
   imports = [
@@ -13,8 +13,13 @@ in
   config = {
     swarselsystems.enabledServerModules = [ "firefox-syncserver" ];
 
-    users.persistentIds = {
-      firefox-syncserver = confLib.mkIds 949;
+    users = {
+      persistentIds.firefox-syncserver = confLib.mkIds 949;
+      users.firefox-syncserver = {
+        group = "firefox-syncserver";
+        isSystemUser = true;
+      };
+      groups.firefox-syncserver = { };
     };
 
     sops = {

@@ -5793,6 +5793,7 @@ This machine used to be my proxy server, a functionality that is now provided by
       "${self}/modules/nixos/server/restic.nix"
       "${self}/modules/nixos/server/searx.nix"
       "${self}/modules/nixos/server/invidious.nix"
+      "${self}/modules/nixos/server/firefox-syncserver.nix"
     ];
 
     system.stateVersion = "23.11";
@@ -20304,12 +20305,12 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
 I only use firefox sync for bookmarks and history; to me, those are not "important" information, hence I keep this service in the cloud.
 
 #+begin_src nix-ts :tangle modules/nixos/server/firefox-syncserver.nix
-  { self, lib, config, dns, globals, confLib, ... }:
+  { self, lib, pkgs, config, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
 
-    sopsFile = self + /secrets/general/invidious-companion.yaml;
+    inherit (config.swarselsystems) sopsFile;
   in
   {
     imports = [
@@ -20319,8 +20320,13 @@ I only use firefox sync for bookmarks and history; to me, those are not "importa
     config = {
       swarselsystems.enabledServerModules = [ "firefox-syncserver" ];
 
-      users.persistentIds = {
-        firefox-syncserver = confLib.mkIds 949;
+      users = {
+        persistentIds.firefox-syncserver = confLib.mkIds 949;
+        users.firefox-syncserver = {
+          group = "firefox-syncserver";
+          isSystemUser = true;
+        };
+        groups.firefox-syncserver = { };
       };
 
       sops = {
