@@ -5,12 +5,17 @@ in
 {
   config = {
     swarselsystems.enabledHomeModules = [ "gpgagent" ];
+
+    services.ssh-agent = {
+      enable = true;
+    };
+
     services.gpg-agent = {
       enable = true;
       verbose = true;
       enableZshIntegration = true;
       enableScDaemon = true;
-      enableSshSupport = true;
+      enableSshSupport = false; # so that the SSH_AUTH_SOCK can still default to ssh-agent. however we want the capability of doing gpg ssh logins, hence the extraConfig
       enableExtraSocket = true;
       pinentry.package = pkgs.wayprompt;
       pinentry.program = "pinentry-wayprompt";
@@ -18,6 +23,7 @@ in
       defaultCacheTtl = 600;
       maxCacheTtl = 7200;
       extraConfig = ''
+        enable-ssh-support
         allow-loopback-pinentry
         allow-emacs-pinentry
       '';

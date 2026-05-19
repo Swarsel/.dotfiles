@@ -26650,6 +26650,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
 Settings that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
 
+In recent times, I often need support for SK keys (on HSKs) as well as certificate based login using step CA. Both of these are not present in gpg-agent, which is why in the new setup I run on ssh-agent per default, and only use gpg-agents' ssh login for hosts that need it. Interestingly, the other way around (which I would prefer) does not seem to work.
+
 When setting up a new machine:
 
 #+begin_src markdown :noweb-ref worksetup :exports both :results html
@@ -26669,12 +26671,18 @@ When setting up a new machine:
   {
     config = {
       swarselsystems.enabledHomeModules = [ "gpgagent" ];
+
+      # we need the normal ssh agent for cert based login as well as support for sk keys, both of which are not present for gpg-agent
+      services.ssh-agent = {
+        enable = true;
+      };
+
       services.gpg-agent = {
         enable = true;
         verbose = true;
         enableZshIntegration = true;
         enableScDaemon = true;
-        enableSshSupport = true;
+        enableSshSupport = false; # so that the SSH_AUTH_SOCK can still default to ssh-agent. however we want the capability of doing gpg ssh logins, hence the extraConfig
         enableExtraSocket = true;
         pinentry.package = pkgs.wayprompt;
         pinentry.program = "pinentry-wayprompt";
@@ -26682,6 +26690,7 @@ When setting up a new machine:
         defaultCacheTtl = 600;
         maxCacheTtl = 7200;
         extraConfig = ''
+          enable-ssh-support
           allow-loopback-pinentry
           allow-emacs-pinentry
         '';
