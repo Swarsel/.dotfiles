@@ -93,6 +93,18 @@ in
             packageRequires = [ ];
           })
 
+          (epkgs.trivialBuild rec {
+            pname = "claude-code-ide";
+            version = "20260402";
+            src = pkgs.fetchFromGitHub {
+              owner = "manzaltu";
+              repo = "claude-code-ide.el";
+              rev = "56db02ee386d009ddb8b1482310f1f9beeefb810";
+              hash = "sha256-qH1QnG5G+0UiH/v0KaS7oSpQZY+BkUMZvrjbx6kyFhg=";
+            };
+            packageRequires = [ epkgs.websocket epkgs.transient epkgs.web-server epkgs.vterm ];
+          })
+
         ];
       };
     };

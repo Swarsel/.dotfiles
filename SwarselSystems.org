@@ -24964,6 +24964,18 @@ Lastly, I am defining some more packages here that the parser has problems findi
               packageRequires = [ ];
             })
 
+            (epkgs.trivialBuild rec {
+              pname = "claude-code-ide";
+              version = "20260402";
+              src = pkgs.fetchFromGitHub {
+                owner = "manzaltu";
+                repo = "claude-code-ide.el";
+                rev = "56db02ee386d009ddb8b1482310f1f9beeefb810";
+                hash = "sha256-qH1QnG5G+0UiH/v0KaS7oSpQZY+BkUMZvrjbx6kyFhg=";
+              };
+              packageRequires = [ epkgs.websocket epkgs.transient epkgs.web-server epkgs.vterm ];
+            })
+
           ];
         };
       };
@@ -34264,6 +34276,8 @@ Also, I setup initial modes for several major-modes depending on what I deem fit
     (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
     (evil-set-initial-state 'mu4e-headers-mode 'normal)
     (evil-set-initial-state 'python-inferior-mode 'normal)
+    (evil-set-initial-state 'claude-code-vterm-mode 'emacs)
+    (evil-set-initial-state 'vterm-mode 'emacs)
     (add-hook 'org-capture-mode-hook 'evil-insert-state)
     (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
 
@@ -36473,7 +36487,6 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 
 #+end_src
 
-
 *** Calendar
 :PROPERTIES:
 :CUSTOM_ID: h:c760f04e-622f-4b3e-8916-53ca8cce6edc
@@ -36721,6 +36734,25 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
       ;;;###autoload (autoload 'prot-window-popup-org-agenda "prot-window")
   (prot-window-define-with-popup-frame org-agenda)
 
+#+end_src
+*** Claude
+
+#+begin_src emacs-lisp
+  (use-package claude-code-ide
+    :ensure nil
+    :bind ("C-c c" . claude-code-ide-menu) ; Set your favorite keybinding
+    :config
+    (claude-code-ide-emacs-tools-setup))
+#+end_src
+*** Close pane when closing buffer
+
+#+begin_src emacs-lisp
+  (defun swarsel/kill-buffer-delete-window ()
+    (let ((win (get-buffer-window (current-buffer))))
+      (when (and win (not (one-window-p)))
+        (delete-window win))))
+
+  (add-hook 'kill-buffer-hook #'swarsel/kill-buffer-delete-window)
 #+end_src
 * Tofu
 

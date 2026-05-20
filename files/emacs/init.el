@@ -610,6 +610,8 @@ create a new one."
   (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
   (evil-set-initial-state 'mu4e-headers-mode 'normal)
   (evil-set-initial-state 'python-inferior-mode 'normal)
+  (evil-set-initial-state 'claude-code-vterm-mode 'emacs)
+  (evil-set-initial-state 'vterm-mode 'emacs)
   (add-hook 'org-capture-mode-hook 'evil-insert-state)
   (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
 
@@ -2060,3 +2062,16 @@ Also see `prot-window-delete-popup-frame'." command)
 (declare-function org-agenda "org-agenda" (&optional goto keys))
     ;;;###autoload (autoload 'prot-window-popup-org-agenda "prot-window")
 (prot-window-define-with-popup-frame org-agenda)
+
+(use-package claude-code-ide
+  :ensure nil
+  :bind ("C-c c" . claude-code-ide-menu) ; Set your favorite keybinding
+  :config
+  (claude-code-ide-emacs-tools-setup))
+
+(defun swarsel/kill-buffer-delete-window ()
+  (let ((win (get-buffer-window (current-buffer))))
+    (when (and win (not (one-window-p)))
+      (delete-window win))))
+
+(add-hook 'kill-buffer-hook #'swarsel/kill-buffer-delete-window)
