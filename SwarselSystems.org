@@ -19316,11 +19316,28 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
 
       echo "Build output: $result"
-      echo "=== Pushing $HOST to binary cache ==="
 
-      echo "$result" | xargs attic push ${mainUser}
+      attempt=1
+      max_attempts=3
+      upload_success=0
+      while [ $attempt -le $max_attempts ]; do
+        echo "=== Pushing $HOST to binary cache (attempt $attempt/$max_attempts) ==="
+        if echo "$result" | xargs attic push ${mainUser}; then
+          upload_success=1
+          break
+        fi
+        echo "Upload attempt $attempt for $HOST failed."
+        attempt=$((attempt + 1))
+        if [ $attempt -le $max_attempts ]; then
+          sleep 10
+        fi
+      done
 
-      echo "=== Successfully built and pushed $HOST ==="
+      if [ $upload_success -eq 1 ]; then
+        echo "=== Successfully built and pushed $HOST ==="
+      else
+        echo "=== Build of $HOST succeeded but upload failed after $max_attempts attempts (continuing) ==="
+      fi
     '';
 
     prepareUpdateBranch = pkgs.writeShellScript "buildbot-prepare-update-branch" ''
@@ -19394,9 +19411,28 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       echo "=== Building nixosConfiguration: $HOST ==="
       result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
       echo "Build output: $result"
-      echo "=== Pushing $HOST to binary cache ==="
-      echo "$result" | xargs attic push ${mainUser}
-      echo "=== Successfully built and pushed $HOST ==="
+
+      attempt=1
+      max_attempts=3
+      upload_success=0
+      while [ $attempt -le $max_attempts ]; do
+        echo "=== Pushing $HOST to binary cache (attempt $attempt/$max_attempts) ==="
+        if echo "$result" | xargs attic push ${mainUser}; then
+          upload_success=1
+          break
+        fi
+        echo "Upload attempt $attempt for $HOST failed."
+        attempt=$((attempt + 1))
+        if [ $attempt -le $max_attempts ]; then
+          sleep 10
+        fi
+      done
+
+      if [ $upload_success -eq 1 ]; then
+        echo "=== Successfully built and pushed $HOST ==="
+      else
+        echo "=== Build of $HOST succeeded but upload failed after $max_attempts attempts (continuing) ==="
+      fi
     '';
 
     createPR = pkgs.writeShellScript "buildbot-create-pr" ''
