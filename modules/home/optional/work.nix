@@ -25,6 +25,7 @@ in
         step-cli
 
         vscode-fhs
+        claude-code
         antigravity
 
 
