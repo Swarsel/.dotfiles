@@ -42455,10 +42455,56 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
         - name: Checkout
           uses: actions/checkout@v4
 
+        - name: Install Nix
+          uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3  # v31.10.6
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable
+
         - name: Install Emacs
+          run: nix profile install nixpkgs#emacs
+
+        - name: Install supporting packages
           run: |
             sudo apt-get update
-            sudo apt-get install -y emacs-nox elpa-htmlize
+            sudo apt-get install -y build-essential git
+
+        - name: Expose system libstdc++ for tree-sitter grammars
+          run: |
+            mkdir -p "$HOME/cxx-shim"
+            ln -sf /usr/lib/x86_64-linux-gnu/libstdc++.so.6 "$HOME/cxx-shim/libstdc++.so.6"
+            echo "CXX_SHIM=$HOME/cxx-shim" >> "$GITHUB_ENV"
+
+        - name: Install tree-sitter language grammars
+          env:
+            LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
+          run: |
+            emacs --batch \
+              --eval "(require 'treesit)" \
+              --eval "(setq treesit-language-source-alist
+                       '((bash       . (\"https://github.com/tree-sitter/tree-sitter-bash\"))
+                         (css        . (\"https://github.com/tree-sitter/tree-sitter-css\"))
+                         (javascript . (\"https://github.com/tree-sitter/tree-sitter-javascript\"))
+                         (json       . (\"https://github.com/tree-sitter/tree-sitter-json\"))
+                         (markdown   . (\"https://github.com/ikatyang/tree-sitter-markdown\"))
+                         (nix        . (\"https://github.com/nix-community/tree-sitter-nix\"))
+                         (python     . (\"https://github.com/tree-sitter/tree-sitter-python\"))
+                         (hcl        . (\"https://github.com/MichaHoffmann/tree-sitter-hcl\"))
+                         (yaml       . (\"https://github.com/ikatyang/tree-sitter-yaml\"))))" \
+              --eval "(dolist (lang (mapcar #'car treesit-language-source-alist))
+                       (unless (treesit-language-available-p lang)
+                         (treesit-install-language-grammar lang)))"
+
+        - name: Install htmlize
+          env:
+            LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
+          run: |
+            emacs --batch \
+              --eval "(require 'package)" \
+              --eval "(add-to-list 'package-archives '(\"gnu\" . \"https://elpa.gnu.org/packages/\") t)" \
+              --eval "(add-to-list 'package-archives '(\"nongnu\" . \"https://elpa.nongnu.org/nongnu/\") t)" \
+              --eval "(package-initialize)" \
+              --eval "(package-refresh-contents)" \
+              --eval "(package-install 'htmlize)"
 
         - name: Prepare site images
           run: |
@@ -42466,10 +42512,16 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
             cp files/topology/topology_small.png site/files/topology/topology_small.png
 
         - name: Tangle files & export to HTML
+          env:
+            LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
           run: |
             emacs --batch \
+              --eval "(require 'package)" \
+              --eval "(package-initialize)" \
+              --eval "(require 'htmlize)" \
               --eval "(require 'org)" \
               --eval "(setq org-confirm-babel-evaluate nil
+                       org-export-use-babel nil
                        org-html-validation-link nil
                        org-export-headline-levels 6
                        org-export-with-broken-links 'mark)" \
@@ -42562,7 +42614,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
 :CUSTOM_ID: h:b6bcb9a1-d8fb-498e-a460-f1af583ad610
 :END:
 
-#+begin_src json :tangle files/grafana/service-status.json :mkdirp yes
+#+begin_src json-ts :tangle files/grafana/service-status.json :mkdirp yes
   {
     "annotations": [
       {
