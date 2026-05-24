@@ -8,6 +8,7 @@
     "${self}/modules/nixos/optional/nix-topology-self.nix"
   ] ++ lib.optionals (!minimal) [
     "${self}/profiles/nixos/localserver"
+    "${self}/modules/nixos/server/smartctl-exporter.nix"
   ];
 
   topology.self.interfaces."eth1" = { };

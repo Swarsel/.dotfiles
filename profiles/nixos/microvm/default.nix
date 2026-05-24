@@ -24,6 +24,8 @@ in
     "${m}/nixos/server/opkssh.nix"
     # "${m}/nixos/server/oauth2-proxy.nix"
     "${m}/nixos/server/node-roles.nix"
+    "${m}/nixos/server/alloy.nix"
+    "${m}/nixos/server/blackbox.nix"
   ];
 
   config.swarselsystems = {

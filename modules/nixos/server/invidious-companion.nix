@@ -105,7 +105,7 @@ in
       in
       {
         ${webProxy}.services.nginx = genNginx serviceAddress "";
-        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };
 
   };

@@ -11,6 +11,7 @@
     "${self}/modules/nixos/server/wireguard.nix"
     "${self}/profiles/nixos/localserver"
     "${self}/profiles/nixos/router"
+    "${self}/modules/nixos/server/smartctl-exporter.nix"
   ];
 
   topology.self = {

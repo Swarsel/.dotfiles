@@ -46,6 +46,11 @@ in
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         extraConfig.devices = baseDevices;
       };
+      monitoring.http.${specificServiceName} = {
+        url = "http://127.0.0.1:${toString servicePort}/rest/noauth/health";
+        expectedBodyRegex = ''"status":\s*"OK"'';
+        network = "local-${config.node.name}";
+      };
       dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };

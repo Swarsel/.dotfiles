@@ -171,6 +171,8 @@ in
                 options = {
                   domain = mkOption {
                     type = types.str;
+                    default = "";
+                    description = "The domain under which this service can be reached (empty for internal-only services).";
                   };
                   subDomain = mkOption {
                     readOnly = true;
@@ -324,6 +326,88 @@ in
                 };
               }
             );
+          };
+
+          monitoring = mkOption {
+            default = { };
+            description = "Active probes consumed by the blackbox exporters and the central Alloy.";
+            type = types.submodule {
+              options = {
+                http = mkOption {
+                  default = { };
+                  type = types.attrsOf (
+                    types.submodule {
+                      options = {
+                        url = mkOption {
+                          type = types.str;
+                          description = "HTTP(S) URL to probe.";
+                        };
+                        expectedStatus = mkOption {
+                          type = types.int;
+                          default = 200;
+                          description = "Status code that signals a healthy response.";
+                        };
+                        expectedBodyRegex = mkOption {
+                          type = types.nullOr types.str;
+                          default = null;
+                          description = "Optional regex that must match the response body.";
+                        };
+                        failIfBodyMatchesRegex = mkOption {
+                          type = types.nullOr types.str;
+                          default = null;
+                          description = "Optional regex that marks the probe as failed.";
+                        };
+                        hostHeader = mkOption {
+                          type = types.nullOr types.str;
+                          default = null;
+                          description = "Optional Host header to send (e.g. for phpfm services).";
+                        };
+                        network = mkOption {
+                          type = types.str;
+                          description = ''
+                            Logical network tag. The probe is only executed by blackbox sources
+                            whose `monitoring.hostNetworks` contains this value.
+                          '';
+                        };
+                      };
+                    }
+                  );
+                };
+
+                ping = mkOption {
+                  default = { };
+                  type = types.attrsOf (
+                    types.submodule {
+                      options = {
+                        host = mkOption {
+                          type = types.str;
+                          description = "Hostname or IP address to ping.";
+                        };
+                        network = mkOption {
+                          type = types.str;
+                          description = "Logical network tag; see monitoring.http.<name>.network.";
+                        };
+                      };
+                    }
+                  );
+                };
+
+                blackboxHosts = mkOption {
+                  default = [ ];
+                  type = types.listOf types.str;
+                  description = "Hostnames that run a local blackbox_exporter and should be scraped by the central Alloy.";
+                };
+
+                hostNetworks = mkOption {
+                  default = { };
+                  description = ''
+                    Map from hostname to the list of logical monitoring networks that host can
+                    probe in; see monitoring.http.<name>.network.
+                  '';
+                  type = types.attrsOf (types.listOf types.str);
+                };
+              };
+            };
           };
 
         };

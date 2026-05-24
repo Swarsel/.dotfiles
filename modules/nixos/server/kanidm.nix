@@ -65,6 +65,11 @@ in
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
+      monitoring.http.${serviceName} = {
+        url = "https://127.0.0.1:${toString servicePort}/status";
+        expectedBodyRegex = "true";
+        network = "local-${config.node.name}";
+      };
     };
 
     environment.persistence = {

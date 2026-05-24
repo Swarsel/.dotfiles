@@ -46,6 +46,11 @@ in
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
+      monitoring.http.${serviceName} = {
+        url = "http://127.0.0.1:${toString servicePort}/";
+        expectedBodyRegex = "Invidious";
+        network = "local-${config.node.name}";
+      };
       dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
@@ -147,7 +152,7 @@ in
           };
         };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
-        ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
 
       };
 

@@ -15,6 +15,8 @@
     "${self}/modules/nixos/server/restic.nix"
     "${self}/modules/nixos/server/podman.nix"
     "${self}/modules/nixos/server/opkssh.nix"
+    "${self}/modules/nixos/server/smartctl-exporter.nix"
+    "${self}/modules/nixos/server/zfs-exporter.nix"
   ];
 
   topology.self = {
