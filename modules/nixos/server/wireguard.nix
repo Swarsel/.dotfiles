@@ -16,15 +16,21 @@ let
       let
         isServer = wgCfg.server == config.node.name;
         isClient = builtins.elem config.node.name wgCfg.clients;
-      in
-      {
-        inherit isServer isClient ifName;
-        serverName = wgCfg.server;
-        serverNetConfigPrefix = wgCfg.netConfigPrefix;
-        inherit (wgCfg) port;
         peers =
           if isServer then wgCfg.clients
           else [ wgCfg.server ];
+        netCfg = globals.networks."${wgCfg.netConfigPrefix}-${ifName}";
+        ruleSources = lib.attrNames (netCfg.hosts.${config.node.name}.firewallRuleForNode or { });
+      in
+      {
+        inherit isServer isClient ifName peers;
+        serverName = wgCfg.server;
+        serverNetConfigPrefix = wgCfg.netConfigPrefix;
+        inherit (wgCfg) port;
+        # we need to add the node-port rules to "clients" without doing it generically for all nodes
+        # (because that blows up memory requirements enormously)
+        # e.g. summers eval needs ~80G if we do this for all hosts, but less than 20G like this
+        zonePeers = lib.unique (peers ++ ruleSources);
       }
     )
     (lib.filterAttrs
@@ -151,7 +157,7 @@ in
                     ipv6Addresses = lib.optional (peerNet.ipv6 != null) peerNet.ipv6;
                   }
                 )
-                ifCfg.peers)
+                ifCfg.zonePeers)
           )
         );
       rules = lib.mkMerge (
@@ -169,6 +175,13 @@ in
                 ignoreEmptyRule = true;
               };
             }
+            // lib.optionalAttrs ifCfg.isServer {
+              "${ifName}-to-${ifName}" = {
+                from = [ ifName ];
+                to = [ ifName ];
+                verdict = "accept";
+              };
+            }
             // lib.listToAttrs (map
               (peer:
                 lib.nameValuePair "${ifName}-node-${peer}-to-${localZoneName}" (
@@ -180,9 +193,14 @@ in
                   }
                 )
               )
-              ifCfg.peers)
+              ifCfg.zonePeers)
         )
       );
+    };
+
+    boot.kernel.sysctl = lib.mkIf (lib.any (i: i.isServer) ifaceList) {
+      "net.ipv4.conf.all.forwarding" = lib.mkDefault true;
+      "net.ipv6.conf.all.forwarding" = lib.mkDefault true;
     };
 
     systemd.network = {

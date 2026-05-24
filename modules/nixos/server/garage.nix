@@ -111,6 +111,11 @@ in
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
+      monitoring.http.${specificServiceName} = {
+        url = "http://127.0.0.1:${toString garageAdminPort}/health";
+        expectedBodyRegex = "fully operational";
+        network = "local-${config.node.name}";
+      };
     };
 
 

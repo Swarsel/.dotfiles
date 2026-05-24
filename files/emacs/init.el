@@ -2069,6 +2069,22 @@ Also see `prot-window-delete-popup-frame'." command)
   :config
   (claude-code-ide-emacs-tools-setup))
 
+(defun diego--vterm-font-setup ()
+  "Configure font settings specifically for vterm buffers, workaround claude-code."
+
+  ;; Apply ASCII replacements for vterm specifically
+  (let ((tbl (or buffer-display-table (setq buffer-display-table (make-display-table)))))
+    (dolist (pair
+             '((#x273B . ?*) ; ✻ TEARDROP-SPOKED ASTERISK
+               (#x273D . ?*) ; ✽ HEAVY TEARDROP-SPOKED ASTERISK
+               (#x2722 . ?+) ; ✢ FOUR TEARDROP-SPOKED ASTERISK
+               (#x2736 . ?+) ; ✶ SIX-POINTED BLACK STAR
+               (#x2733 . ?*) ; ✳ EIGHT SPOKED ASTERISK
+               ))
+      (aset tbl (car pair) (vector (cdr pair))))))
+
+(add-hook 'vterm-mode-hook #'diego--vterm-font-setup)
+
 (defun swarsel/kill-buffer-delete-window ()
   (let ((win (get-buffer-window (current-buffer))))
     (when (and win (not (one-window-p)))

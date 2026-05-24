@@ -52,6 +52,13 @@ let
                 {
                   name = if (intX == 4) then "domain-name-servers" else "dns-servers";
                   data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
+                }
+              ++
+              lib.optional
+                (lib.elem vlanName globals.general.internetVLANs)
+                {
+                  name = "domain-search";
+                  data = globals.domains.main;
                 };
             reservations = lib.concatLists (
               lib.forEach (builtins.attrValues vlanCfg.hosts) (

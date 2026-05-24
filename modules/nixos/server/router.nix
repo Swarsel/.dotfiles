@@ -82,12 +82,6 @@ in
               allowedUDPPorts = [ 52829 547 ];
             };
 
-            # Forward traffic between wireguard participants
-            forward-proxy-home-vpn-traffic = {
-              from = [ "wgHome" ];
-              to = [ "wgHome" ];
-              verdict = "accept";
-            };
           };
         };
 

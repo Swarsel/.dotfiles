@@ -71,6 +71,7 @@
             general
             wireguard
             dns
+            monitoring
             ;
         };
     };

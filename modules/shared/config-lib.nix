@@ -43,19 +43,46 @@ in
 
       static = rec {
         inherit (globals.hosts.${config.node.name}) isHome;
-        inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer;
+        inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer monitoringServer;
         webProxyIf = "${webProxy}-wgProxy";
         homeProxyIf = "home-wgHome";
         isProxied = config.node.name != webProxy;
-        nginxAccessRules = ''
-          allow ${globals.networks.home-lan.vlans.home.cidrv4};
-          allow ${globals.networks.home-lan.vlans.home.cidrv6};
-          allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4};
-          allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
-          deny all;
-        '';
-        isWgHomeParticipant = globals.wireguard ? wgHome && (builtins.elem config.node.name globals.wireguard.wgHome.clients || globals.wireguard.wgHome.server == config.node.name);
-        homeServiceAddress = lib.optionalString isWgHomeParticipant globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
+        nginxAccessRules =
+          let
+            wgHomeNet = globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome";
+          in
+          ''
+            allow ${globals.networks.home-lan.vlans.home.cidrv4};
+            allow ${globals.networks.home-lan.vlans.home.cidrv6};
+            allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4};
+            allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
+            allow ${wgHomeNet.cidrv4};
+            allow ${wgHomeNet.cidrv6};
+            deny all;
+          '';
+        wgProxyMembers = lib.optionals (globals.wireguard ? wgProxy) (globals.wireguard.wgProxy.clients ++ [ globals.wireguard.wgProxy.server ]);
+        wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]);
+        inWgProxy = builtins.elem config.node.name wgProxyMembers;
+        inWgHome = builtins.elem config.node.name wgHomeMembers;
+        homeServiceAddress = lib.optionalString inWgHome globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
+
+        wgProxyAccessRules =
+          let
+            wgProxyNet = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy";
+            extraAllows = lib.concatMapStrings
+              (host:
+                let cfg = globals.hosts.${host}; in
+                lib.optionalString (cfg.wanAddress4 != null) "allow ${cfg.wanAddress4};\n"
+                + lib.optionalString (cfg.wanAddress6 != null) "allow ${cfg.wanAddress6};\n"
+              )
+              (lib.filter (h: !(builtins.elem h wgProxyMembers)) (lib.attrNames globals.hosts));
+          in
+          ''
+            allow ${wgProxyNet.cidrv4};
+            allow ${wgProxyNet.cidrv6};
+          '' + extraAllows + ''
+            deny all;
+          '';
       };
 
       mkIds = id: {

@@ -42,6 +42,12 @@ in
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
+      monitoring.http.${serviceName} = {
+        url = "http://127.0.0.1:${toString servicePort}/api/healthz";
+        expectedBodyRegex = ''"status":\s*"pass"'';
+        failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"'';
+        network = "local-${config.node.name}";
+      };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {

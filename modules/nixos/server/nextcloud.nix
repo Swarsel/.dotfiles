@@ -27,10 +27,21 @@ in
       redis-nextcloud = confLib.mkIds 976;
     };
 
-    globals.services.${serviceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-      homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+    globals = {
+      services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+      };
+      monitoring.http.${serviceName} = {
+        url = "http://127.0.0.1:${toString servicePort}/status.php";
+        expectedBodyRegex = ''"installed":\s*true'';
+        hostHeader = serviceDomain;
+        network = "local-${config.node.name}";
+      };
+      dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -67,9 +78,6 @@ in
     };
 
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     nodes = {
       ${idmServer} = {

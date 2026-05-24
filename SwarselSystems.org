@@ -2252,6 +2252,7 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
               general
               wireguard
               dns
+              monitoring
               ;
           };
       };
@@ -4709,8 +4710,8 @@ This is my current main server at home; all services except filesystem backups r
 #+end_src
 
 #+RESULTS:
-: Currently using 54272 MB out of 128GB RAM
-: Currently using 40 vCPUs. 48 threads are available.
+: Currently using 91136 MB out of 128GB RAM
+: Currently using 52 vCPUs. 48 threads are available.
 
 ****** Kavita
 :PROPERTIES:
@@ -4988,20 +4989,24 @@ This is my current main server at home; all services except filesystem backups r
   {
     imports = [
       "${self}/profiles/nixos/microvm"
-      "${self}/modules/nixos/server/monitoring.nix"
+      "${self}/modules/nixos/server/grafana.nix"
+      "${self}/modules/nixos/server/mimir.nix"
+      "${self}/modules/nixos/server/loki.nix"
+      "${self}/modules/nixos/server/tempo.nix"
     ];
 
     swarselsystems = {
       isMicroVM = true;
       isImpermanence = true;
       proxyHost = "twothreetunnel";
+      nodeRoles = [ "monitoringServer" ];
     };
 
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 3;
-      vcpu = 2;
+      mem = 1024 * 24;
+      vcpu = 8;
     };
 
   }
@@ -8286,6 +8291,8 @@ Do note that the below does not achieve anything on its own - as is, these would
                   options = {
                     domain = mkOption {
                       type = types.str;
+                      default = "";
+                      description = "The domain under which this service can be reached (empty for internal-only services).";
                     };
                     subDomain = mkOption {
                       readOnly = true;
@@ -8439,6 +8446,88 @@ Do note that the below does not achieve anything on its own - as is, these would
                   };
                 }
               );
+            };
+
+            monitoring = mkOption {
+              default = { };
+              description = "Active probes consumed by the blackbox exporters and the central Alloy.";
+              type = types.submodule {
+                options = {
+                  http = mkOption {
+                    default = { };
+                    type = types.attrsOf (
+                      types.submodule {
+                        options = {
+                          url = mkOption {
+                            type = types.str;
+                            description = "HTTP(S) URL to probe.";
+                          };
+                          expectedStatus = mkOption {
+                            type = types.int;
+                            default = 200;
+                            description = "Status code that signals a healthy response.";
+                          };
+                          expectedBodyRegex = mkOption {
+                            type = types.nullOr types.str;
+                            default = null;
+                            description = "Optional regex that must match the response body.";
+                          };
+                          failIfBodyMatchesRegex = mkOption {
+                            type = types.nullOr types.str;
+                            default = null;
+                            description = "Optional regex that marks the probe as failed.";
+                          };
+                          hostHeader = mkOption {
+                            type = types.nullOr types.str;
+                            default = null;
+                            description = "Optional Host header to send (e.g. for phpfm services).";
+                          };
+                          network = mkOption {
+                            type = types.str;
+                            description = ''
+                              Logical network tag. The probe is only executed by blackbox sources
+                              whose `monitoring.hostNetworks` contains this value.
+                            '';
+                          };
+                        };
+                      }
+                    );
+                  };
+
+                  ping = mkOption {
+                    default = { };
+                    type = types.attrsOf (
+                      types.submodule {
+                        options = {
+                          host = mkOption {
+                            type = types.str;
+                            description = "Hostname or IP address to ping.";
+                          };
+                          network = mkOption {
+                            type = types.str;
+                            description = "Logical network tag; see monitoring.http.<name>.network.";
+                          };
+                        };
+                      }
+                    );
+                  };
+
+                  blackboxHosts = mkOption {
+                    default = [ ];
+                    type = types.listOf types.str;
+                    description = "Hostnames that run a local blackbox_exporter and should be scraped by the central Alloy.";
+                  };
+
+                  hostNetworks = mkOption {
+                    default = { };
+                    description = ''
+                      Map from hostname to the list of logical monitoring networks that host can
+                      probe in; see monitoring.http.<name>.network.
+                    '';
+                    type = types.attrsOf (types.listOf types.str);
+                  };
+                };
+              };
             };
 
           };
@@ -12001,15 +12090,21 @@ In order to define a new wireguard interface, I have to:
         let
           isServer = wgCfg.server == config.node.name;
           isClient = builtins.elem config.node.name wgCfg.clients;
-        in
-        {
-          inherit isServer isClient ifName;
-          serverName = wgCfg.server;
-          serverNetConfigPrefix = wgCfg.netConfigPrefix;
-          inherit (wgCfg) port;
           peers =
             if isServer then wgCfg.clients
             else [ wgCfg.server ];
+          netCfg = globals.networks."${wgCfg.netConfigPrefix}-${ifName}";
+          ruleSources = lib.attrNames (netCfg.hosts.${config.node.name}.firewallRuleForNode or { });
+        in
+        {
+          inherit isServer isClient ifName peers;
+          serverName = wgCfg.server;
+          serverNetConfigPrefix = wgCfg.netConfigPrefix;
+          inherit (wgCfg) port;
+          # we need to add the node-port rules to "clients" without doing it generically for all nodes
+          # (because that blows up memory requirements enormously)
+          # e.g. summers eval needs ~80G if we do this for all hosts, but less than 20G like this
+          zonePeers = lib.unique (peers ++ ruleSources);
         }
       )
       (lib.filterAttrs
@@ -12136,7 +12231,7 @@ In order to define a new wireguard interface, I have to:
                       ipv6Addresses = lib.optional (peerNet.ipv6 != null) peerNet.ipv6;
                     }
                   )
-                  ifCfg.peers)
+                  ifCfg.zonePeers)
             )
           );
         rules = lib.mkMerge (
@@ -12154,6 +12249,13 @@ In order to define a new wireguard interface, I have to:
                   ignoreEmptyRule = true;
                 };
               }
+              // lib.optionalAttrs ifCfg.isServer {
+                "${ifName}-to-${ifName}" = {
+                  from = [ ifName ];
+                  to = [ ifName ];
+                  verdict = "accept";
+                };
+              }
               // lib.listToAttrs (map
                 (peer:
                   lib.nameValuePair "${ifName}-node-${peer}-to-${localZoneName}" (
@@ -12165,9 +12267,14 @@ In order to define a new wireguard interface, I have to:
                     }
                   )
                 )
-                ifCfg.peers)
+                ifCfg.zonePeers)
           )
         );
+      };
+
+      boot.kernel.sysctl = lib.mkIf (lib.any (i: i.isServer) ifaceList) {
+        "net.ipv4.conf.all.forwarding" = lib.mkDefault true;
+        "net.ipv6.conf.all.forwarding" = lib.mkDefault true;
       };
 
       systemd.network = {
@@ -12396,12 +12503,6 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 allowedUDPPorts = [ 52829 547 ];
               };
 
-              # Forward traffic between wireguard participants
-              forward-proxy-home-vpn-traffic = {
-                from = [ "wgHome" ];
-                to = [ "wgHome" ];
-                verdict = "accept";
-              };
             };
           };
 
@@ -12628,6 +12729,11 @@ Kavita is the service I use for my library management. It seems more tailored to
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "<title>Kavita</title>";
+          network = "local-${config.node.name}";
+        };
       };
 
       services.${serviceName} = {
@@ -12703,6 +12809,11 @@ My video streaming service of choice. In the past I used plex, but I prefer usin
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/health";
+          expectedBodyRegex = "Healthy";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -12800,6 +12911,11 @@ After the first login when setting up, you need to add a password to the user th
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/ping";
+          expectedBodyRegex = ''^\.$'';
+          network = "local-${config.node.name}";
         };
       };
 
@@ -13352,6 +13468,11 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/health";
+          expectedBodyRegex = "OK";
+          network = "local-${config.node.name}";
+        };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -13675,10 +13796,21 @@ My file server. I aim to decomission this as soon as I can, however, I need a re
         redis-nextcloud = confLib.mkIds 976;
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+      globals = {
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/status.php";
+          expectedBodyRegex = ''"installed":\s*true'';
+          hostHeader = serviceDomain;
+          network = "local-${config.node.name}";
+        };
+        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -13715,9 +13847,6 @@ My file server. I aim to decomission this as soon as I can, however, I need a re
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
 
       nodes = {
         ${idmServer} = {
@@ -13808,6 +13937,11 @@ My photo service. It does some cool things like face recognition automatically (
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/api/server/ping";
+          expectedBodyRegex = ''"res":\s*"pong"'';
+          network = "local-${config.node.name}";
         };
       };
 
@@ -13939,6 +14073,11 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/accounts/login/";
+          expectedBodyRegex = "Paperless";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -14378,6 +14517,11 @@ This is the server syncthings config, which makes sure that the servers nevers o
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
           extraConfig.devices = baseDevices;
         };
+        monitoring.http.${specificServiceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/rest/noauth/health";
+          expectedBodyRegex = ''"status":\s*"OK"'';
+          network = "local-${config.node.name}";
+        };
         dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
@@ -14550,25 +14694,20 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   }
 #+end_src
 
-**** monitoring (Grafana, Prometheus)
+**** grafana
 :PROPERTIES:
 :CUSTOM_ID: h:a31c7192-e11d-4a26-915d-1bbc38e373d3
 :END:
 
-This section exposes several metrics that I use to check the health of my server. I need to expand on the exporters section at some point, but for now I have everything I need.
-
-#+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
+#+begin_src nix-ts :tangle modules/nixos/server/grafana.nix
   { self, lib, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.gen {
+      name = "grafana";
+      port = 3000;
+      dir = "/var/lib/grafana";
+    }) servicePort serviceName serviceUser serviceGroup serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
-
-    prometheusPort = 9090;
-    prometheusUser = "prometheus";
-    prometheusGroup = prometheusUser;
-    grafanaUpstream = "grafana";
-    prometheusUpstream = "prometheus";
-    prometheusWebRoot = "prometheus";
 
     inherit (config.swarselsystems) sopsFile;
 
@@ -14577,60 +14716,27 @@ This section exposes several metrics that I use to check the health of my server
   in
   {
     config = {
-      swarselsystems.enabledServerModules = [ "grafana" ];
+      swarselsystems.enabledServerModules = [ serviceName ];
 
-      sops = {
-        secrets = {
-          grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          prometheus-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          kanidm-grafana = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          # prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
-          prometheus-admin-hash = { inherit sopsFile; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
-
-        };
-        templates = {
-          "web-config" = {
-            content = ''
-              basic_auth_users:
-                admin: ${config.sops.placeholder.prometheus-admin-hash}
-            '';
-            owner = prometheusUser;
-            group = prometheusGroup;
-            mode = "0440";
-          };
-        };
+      sops.secrets = {
+        grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-grafana = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       users = {
-        persistentIds = {
-          nextcloud-exporter = confLib.mkIds 988;
-          node-exporter = confLib.mkIds 987;
-          grafana = confLib.mkIds 974;
-        };
-        groups.nextcloud-exporter = { };
-        users = {
-          nextcloud-exporter = {
-            group = "nextcloud-exporter";
-            extraGroups = [ "nextcloud" ];
-          };
-
-          ${serviceUser} = {
-            extraGroups = [ "users" ];
-          };
-        };
+        persistentIds.grafana = confLib.mkIds 974;
+        users.${serviceUser}.extraGroups = [ "users" ];
       };
 
-      # networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
-
-      topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
       globals = {
         networks = {
           ${webProxyIf}.hosts = lib.mkIf isProxied {
-            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort prometheusPort ];
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
           };
           ${homeProxyIf}.hosts = lib.mkIf isHome {
-            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort prometheusPort ];
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
         services.${serviceName} = {
@@ -14638,164 +14744,272 @@ This section exposes several metrics that I use to check the health of my server
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/api/health";
+          expectedBodyRegex = "ok|database";
+          network = "local-${config.node.name}";
+        };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
         directories = [
-          { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
-          { directory = "/var/lib/prometheus2"; user = prometheusUser; group = prometheusGroup; }
+          { directory = serviceDir; user = serviceUser; group = serviceGroup; }
         ];
       };
 
-      services = {
-        ${serviceName} = {
+      services.${serviceName} = {
+        enable = true;
+        dataDir = serviceDir;
+        provision = {
           enable = true;
-          dataDir = "/var/lib/${serviceName}";
-          provision = {
-            enable = true;
-            datasources.settings = {
-              datasources = [
-                {
-                  name = "prometheus";
-                  type = "prometheus";
-                  url = "https://${serviceDomain}/prometheus";
-                  editable = false;
-                  access = "proxy";
-                  basicAuth = true;
-                  basicAuthUser = "admin";
-                  jsonData = {
-                    httpMethod = "POST";
-                    manageAlerts = true;
-                    prometheusType = "Prometheus";
-                    prometheusVersion = "> 2.50.x";
-                    cacheLevel = "High";
-                    disableRecordingRules = false;
-                    incrementalQueryOverlapWindow = "10m";
-                  };
-                  secureJsonData = {
-                    basicAuthPassword = "$__file{/run/secrets/prometheus-admin-pw}";
-                  };
-                }
-              ];
+          datasources.settings.datasources =
+            let
+              hasMimir = builtins.elem "mimir" config.swarselsystems.enabledServerModules;
+              hasLoki = builtins.elem "loki" config.swarselsystems.enabledServerModules;
+              hasTempo = builtins.elem "tempo" config.swarselsystems.enabledServerModules;
+              mimirUrl =
+                if hasMimir
+                then "http://127.0.0.1:${toString globals.services.mimir.extraConfig.port}/prometheus"
+                else "https://${globals.services.mimir.domain}/prometheus";
+              lokiUrl =
+                if hasLoki
+                then "http://127.0.0.1:${toString globals.services.loki.extraConfig.port}"
+                else "https://${globals.services.loki.domain}";
+              tempoUrl =
+                if hasTempo
+                then "http://127.0.0.1:3200"
+                else "https://${globals.services.tempo.domain}";
+            in
+            lib.optional hasMimir
+              {
+                name = "Mimir";
+                uid = "mimir";
+                type = "prometheus";
+                access = "proxy";
+                url = mimirUrl;
+                isDefault = true;
+                jsonData = {
+                  httpMethod = "POST";
+                  manageAlerts = true;
+                  prometheusType = "Mimir";
+                  cacheLevel = "High";
+                  incrementalQueryOverlapWindow = "10m";
+                };
+              }
+            ++ lib.optional hasLoki {
+              name = "Loki";
+              uid = "loki";
+              type = "loki";
+              access = "proxy";
+              url = lokiUrl;
+            }
+            ++ lib.optional hasTempo {
+              name = "Tempo";
+              uid = "tempo";
+              type = "tempo";
+              access = "proxy";
+              url = tempoUrl;
+              jsonData = {
+                nodeGraph.enabled = true;
+                search.hide = false;
+              } // lib.optionalAttrs hasLoki {
+                tracesToLogsV2 = {
+                  datasourceUid = "loki";
+                  filterByTraceID = true;
+                  filterBySpanID = false;
+                };
+              } // lib.optionalAttrs hasMimir {
+                serviceMap.datasourceUid = "mimir";
+              };
             };
-          };
 
-          settings = {
-            analytics.reporting_enabled = false;
-            users.allow_sign_up = false;
-            security = {
-              # admin_password = "$__file{/run/secrets/grafana-admin-pw}";
-              disable_initial_admin_creation = true;
-              secret_key = "$__file{${config.sops.secrets.grafana-admin-pw.path}}";
-              cookie_secure = true;
-              disable_gravatar = true;
+          dashboards.settings.providers = [{
+            name = "default";
+            options.path = self + "/files/grafana";
+          }];
+        };
+
+        settings = {
+          analytics.reporting_enabled = false;
+          users.allow_sign_up = false;
+          security = {
+            disable_initial_admin_creation = true;
+            secret_key = "$__file{${config.sops.secrets.grafana-admin-pw.path}}";
+            cookie_secure = true;
+            disable_gravatar = true;
+            hide_version = true;
+          };
+          server = {
+            domain = serviceDomain;
+            root_url = "https://${serviceDomain}";
+            http_port = servicePort;
+            http_addr = "0.0.0.0";
+            protocol = "http";
+            enforce_domain = true;
+            enable_gzip = true;
+          };
+          "auth.generic_oauth" = {
+            enabled = true;
+            name = "Kanidm";
+            icon = "signin";
+            allow_sign_up = true;
+            client_id = "grafana";
+            client_secret = "$__file{${config.sops.secrets.kanidm-grafana.path}}";
+            scopes = "openid email profile";
+            login_attribute_path = "preferred_username";
+            auth_url = "https://${kanidmDomain}/ui/oauth2";
+            token_url = "https://${kanidmDomain}/oauth2/token";
+            api_url = "https://${kanidmDomain}/oauth2/openid/grafana/userinfo";
+            use_pkce = true;
+            use_refresh_token = true;
+            allow_assign_grafana_admin = true;
+            role_attribute_path = "contains(groups[*], 'server_admin') && 'GrafanaAdmin' || contains(groups[*], 'admin') && 'Admin' || contains(groups[*], 'editor') && 'Editor' || 'Viewer'";
+          };
+        };
+      };
+
+      systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
+
+      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+      nodes = {
+        ${idmServer} = {
+          sops.secrets.kanidm-grafana = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          services.kanidm.provision = {
+            groups = {
+              "grafana.access" = { };
+              "grafana.editors" = { };
+              "grafana.admins" = { };
+              "grafana.server-admins" = { };
             };
-            server = {
-              domain = serviceDomain;
-              root_url = "https://${serviceDomain}";
-              http_port = servicePort;
-              http_addr = "0.0.0.0";
-              protocol = "http";
-              enforce_domain = true;
-              enable_gzip = true;
-            };
-            "auth.generic_oauth" = {
-              enabled = true;
-              name = "Kanidm";
-              icon = "signin";
-              allow_sign_up = true;
-              #auto_login = true;
-              client_id = "grafana";
-              client_secret = "$__file{${config.sops.secrets.kanidm-grafana.path}}";
-              scopes = "openid email profile";
-              login_attribute_path = "preferred_username";
-              auth_url = "https://${kanidmDomain}/ui/oauth2";
-              token_url = "https://${kanidmDomain}/oauth2/token";
-              api_url = "https://${kanidmDomain}/oauth2/openid/grafana/userinfo";
-              use_pkce = true;
-              use_refresh_token = true;
-              # Allow mapping oauth2 roles to server admin
-              allow_assign_grafana_admin = true;
-              role_attribute_path = "contains(groups[*], 'server_admin') && 'GrafanaAdmin' || contains(groups[*], 'admin') && 'Admin' || contains(groups[*], 'editor') && 'Editor' || 'Viewer'";
+            systems.oauth2.grafana = {
+              displayName = "Grafana";
+              originUrl = "https://${serviceDomain}/login/generic_oauth";
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = config.sops.secrets.kanidm-grafana.path;
+              preferShortUsername = true;
+              scopeMaps."grafana.access" = [ "openid" "email" "profile" ];
+              claimMaps.groups = {
+                joinType = "array";
+                valuesByGroup = {
+                  "grafana.editors" = [ "editor" ];
+                  "grafana.admins" = [ "admin" ];
+                  "grafana.server-admins" = [ "server_admin" ];
+                };
+              };
             };
           };
         };
+        ${webProxy}.services.nginx = confLib.genNginx {
+          inherit serviceAddress servicePort serviceDomain serviceName;
+          proxyWebsockets = true;
+        };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
+          inherit servicePort serviceDomain serviceName;
+          serviceAddress = homeServiceAddress;
+          proxyWebsockets = true;
+          extraConfig = nginxAccessRules;
+        });
+      };
+    };
+  }
+#+end_src
 
-        prometheus =
-          let
-            nextcloudUser = config.repo.secrets.local.nextcloud.adminuser;
-          in
-          {
-            enable = true;
-            webExternalUrl = "https://${serviceDomain}/${prometheusWebRoot}";
-            port = prometheusPort;
-            listenAddress = "0.0.0.0";
-            globalConfig = {
-              scrape_interval = "10s";
-            };
-            webConfigFile = config.sops.templates.web-config.path;
-            scrapeConfigs = [
-              {
-                job_name = "node";
-                static_configs = [{
-                  targets = [ "localhost:${toString config.services.prometheus.exporters.node.port}" ];
-                }];
-              }
-              {
-                job_name = "zfs";
-                static_configs = [{
-                  targets = [ "localhost:${toString config.services.prometheus.exporters.zfs.port}" ];
-                }];
-              }
-              {
-                job_name = "nginx";
-                static_configs = [{
-                  targets = [ "localhost:${toString config.services.prometheus.exporters.nginx.port}" ];
-                }];
-              }
-              {
-                job_name = "nextcloud";
-                static_configs = [{
-                  targets = [ "localhost:${toString config.services.prometheus.exporters.nextcloud.port}" ];
-                }];
-              }
-            ];
-            exporters = {
-              node = {
-                enable = true;
-                port = 9000;
-                enabledCollectors = [ "systemd" ];
-                extraFlags = [ "--collector.ethtool" "--collector.softirqs" "--collector.tcpstat" "--collector.wifi" ];
-              };
-              zfs = {
-                enable = true;
-                port = 9134;
-                pools = [
-                  "Vault"
-                ];
-              };
-              restic = {
-                enable = false;
-                port = 9753;
-              };
-              nginx = {
-                enable = true;
-                port = 9113;
-                sslVerify = false;
-                scrapeUri = "http://localhost/nginx_status";
-              };
-              nextcloud = lib.mkIf (builtins.elem "nextcloud" config.swarselsystems.enabledServerModules) {
-                enable = true;
-                port = 9205;
-                url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
-                username = nextcloudUser;
-                passwordFile = config.sops.secrets.nextcloud-admin-pw.path;
-              };
-            };
+**** tempo
+
+#+begin_src nix-ts :tangle modules/nixos/server/tempo.nix
+  { lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen {
+      name = "tempo";
+      port = 14318;
+      dir = "/var/lib/private/tempo";
+    }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules wgProxyAccessRules;
+
+    tempoHttpApiPort = 3200;
+    tempoOtlpGrpcPort = 14317;
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort tempoHttpApiPort ];
           };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort tempoHttpApiPort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          extraConfig.port = servicePort;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString tempoHttpApiPort}/ready";
+          expectedBodyRegex = "ready";
+          network = "local-${config.node.name}";
+        };
       };
 
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = serviceDir; mode = "0700"; }];
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        settings = {
+          server = {
+            http_listen_address = "0.0.0.0";
+            http_listen_port = tempoHttpApiPort;
+            grpc_listen_port = 9097;
+            log_level = "warn";
+          };
+
+          distributor.receivers.otlp.protocols = {
+            grpc.endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
+            http.endpoint = "0.0.0.0:${toString servicePort}";
+          };
+
+          storage.trace = {
+            backend = "local";
+            local.path = "${serviceDir}/blocks";
+            wal.path = "${serviceDir}/wal";
+          };
+
+          compactor.compaction = {
+            block_retention = "168h";
+          };
+
+          metrics_generator = {
+            registry.external_labels.source = "tempo";
+            storage = {
+              path = "${serviceDir}/generator/wal";
+              remote_write = [{
+                url = "https://${globals.services.mimir.domain}/api/v1/push";
+                send_exemplars = true;
+              }];
+            };
+            traces_storage.path = "${serviceDir}/generator/traces";
+          };
+
+          overrides.defaults.metrics_generator = {
+            processors = [ "service-graphs" "span-metrics" ];
+          };
+
+          usage_report.reporting_enabled = false;
+        };
+      };
+
+      systemd.services.tempo.serviceConfig.RestartSec = lib.mkForce "60";
 
       globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -14803,86 +15017,654 @@ This section exposes several metrics that I use to check the health of my server
 
       nodes =
         let
-          extraConfig = ''
-            allow ${globals.networks.home-lan.vlans.services.cidrv4};
-            allow ${globals.networks.home-lan.vlans.services.cidrv6};
-          '';
-          genNginx = toAddress: extraConfigPre: {
+          ingestUpstream = "${serviceName}-ingest";
+          queryUpstream = "${serviceName}-query";
+          genNginx = addr: extraConfig: {
             upstreams = {
-              "${grafanaUpstream}" = {
-                servers = {
-                  "${toAddress}:${builtins.toString servicePort}" = { };
-                };
-              };
-              "${prometheusUpstream}" = {
-                servers = {
-                  "${toAddress}:${builtins.toString prometheusPort}" = { };
-                };
-              };
+              ${ingestUpstream}.servers."${addr}:${toString servicePort}" = { };
+              ${queryUpstream}.servers."${addr}:${toString tempoHttpApiPort}" = { };
             };
-            virtualHosts = {
-              "${serviceDomain}" = {
-                useACMEHost = globals.domains.main;
-
-                forceSSL = true;
-                acmeRoot = null;
-                extraConfig = extraConfigPre;
-                locations =
-                  let
-                    extraConfig = ''
-                      client_max_body_size 0;
-                    '';
-                  in
-                  {
-                    "/" = {
-                      proxyPass = "http://${grafanaUpstream}";
-                      proxyWebsockets = true;
-                      inherit extraConfig;
-                    };
-                    "/${prometheusWebRoot}" = {
-                      proxyPass = "http://${prometheusUpstream}";
-                      inherit extraConfig;
-                    };
-                  };
+            virtualHosts.${serviceDomain} = {
+              useACMEHost = globals.domains.main;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/v1/" = {
+                  proxyPass = "http://${ingestUpstream}";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+                "/" = {
+                  proxyPass = "http://${queryUpstream}";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
               };
+              inherit extraConfig;
             };
           };
         in
         {
-          ${idmServer} = {
-            sops.secrets.kanidm-grafana = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups = {
-                "grafana.access" = { };
-                "grafana.editors" = { };
-                "grafana.admins" = { };
-                "grafana.server-admins" = { };
-              };
-              systems.oauth2.grafana = {
-                displayName = "Grafana";
-                originUrl = "https://${serviceDomain}/login/generic_oauth";
-                originLanding = "https://${serviceDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-grafana.path; # dirty but saves a cross-evaluation
-                preferShortUsername = true;
-                scopeMaps."grafana.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "grafana.editors" = [ "editor" ];
-                    "grafana.admins" = [ "admin" ];
-                    "grafana.server-admins" = [ "server_admin" ];
-                  };
-                };
-              };
-            };
-          };
-          ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = genNginx homeServiceAddress (extraConfig + nginxAccessRules);
+          ${webProxy}.services.nginx = genNginx serviceAddress wgProxyAccessRules;
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
         };
+    };
+  }
+#+end_src
+
+**** loki
+
+#+begin_src nix-ts :tangle modules/nixos/server/loki.nix
+  { lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen {
+      name = "loki";
+      port = 3100;
+      dir = "/var/lib/loki";
+    }) servicePort serviceName serviceUser serviceGroup serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules wgProxyAccessRules;
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      users.persistentIds.loki = confLib.mkIds 948;
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          extraConfig.port = servicePort;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/ready";
+          expectedBodyRegex = "ready";
+          network = "local-${config.node.name}";
+        };
+      };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = serviceDir; user = serviceUser; group = serviceGroup; }];
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        dataDir = serviceDir;
+        configuration = {
+          analytics.reporting_enabled = false;
+          auth_enabled = false;
+
+          server = {
+            http_listen_address = "0.0.0.0";
+            http_listen_port = servicePort;
+            grpc_listen_port = 9094;
+            log_level = "warn";
+          };
+
+          common = {
+            path_prefix = serviceDir;
+            storage.filesystem = {
+              chunks_directory = "${serviceDir}/chunks";
+              rules_directory = "${serviceDir}/rules";
+            };
+            replication_factor = 1;
+            ring.kvstore.store = "inmemory";
+            instance_addr = "127.0.0.1";
+          };
+
+          schema_config.configs = [{
+            from = "2026-01-01";
+            store = "tsdb";
+            object_store = "filesystem";
+            schema = "v13";
+            index = {
+              prefix = "index_";
+              period = "24h";
+            };
+          }];
+
+          ingester = {
+            chunk_idle_period = "5m";
+            chunk_retain_period = "30s";
+          };
+
+          limits_config = {
+            reject_old_samples = true;
+            reject_old_samples_max_age = "168h";
+            allow_structured_metadata = true;
+          };
+
+          compactor = {
+            working_directory = "${serviceDir}/compactor";
+            compactor_ring.kvstore.store = "inmemory";
+            retention_enabled = false;
+          };
+        };
+      };
+
+      systemd.services.loki.serviceConfig.RestartSec = lib.mkForce "60";
+
+      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+      nodes = {
+        ${webProxy}.services.nginx = confLib.genNginx {
+          inherit serviceAddress servicePort serviceDomain serviceName;
+          maxBody = 0;
+          extraConfig = wgProxyAccessRules;
+        };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
+          inherit servicePort serviceDomain serviceName;
+          serviceAddress = homeServiceAddress;
+          maxBody = 0;
+          extraConfig = nginxAccessRules;
+        });
+      };
+    };
+  }
+#+end_src
+
+**** alloy
+
+#+begin_src nix-ts :tangle modules/nixos/server/alloy.nix
+  { lib, config, globals, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "alloy"; port = 12345; })
+      servicePort serviceName;
+    inherit (confLib.static) isHome monitoringServer webProxy homeWebProxy inWgProxy inWgHome wgProxyMembers wgHomeMembers;
+
+    otlpGrpcPort = 4317;
+    otlpHttpPort = 4318;
+
+    wgProxyHosts = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts;
+    wgHomeHosts = globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts;
+
+    isCentral = config.node.name == monitoringServer;
+
+    mimirDomain = globals.services.mimir.domain;
+    lokiDomain = globals.services.loki.domain;
+    tempoDomain = globals.services.tempo.domain;
+
+    config-alloy =
+      let
+        mkPushUrl = domain: port: path:
+          if isCentral then "http://127.0.0.1:${toString port}${path}"
+          else if isHome then "http://${globals.networks.home-lan.vlans.services.hosts.${monitoringServer}.ipv4}:${toString port}${path}"
+          else "https://${domain}${path}";
+
+        targetsFor = host: targets:
+          let netList = globals.monitoring.hostNetworks.${host} or [ ]; in
+          map (t: removeAttrs t [ "network" ]) (lib.filter (t: builtins.elem t.network netList) targets);
+
+        textfileDir = "/etc/alloy/textfiles";
+
+        blackboxHostIp = host:
+          # @ future me: yes, keep this to handle cloud hosts that are homeWgMembers
+          if globals.hosts.${host}.isHome && builtins.elem host wgHomeMembers
+          then wgHomeHosts.${host}.ipv4
+          else if builtins.elem host wgProxyMembers
+          then wgProxyHosts.${host}.ipv4
+          else if builtins.elem host wgHomeMembers
+          then wgHomeHosts.${host}.ipv4
+          else null;
+
+        mkBlackboxBlock =
+          let
+            mkAlloyMap = attrs:
+              let
+                esc = lib.replaceStrings [ ''\'' ''"'' ] [ ''\\'' ''\"'' ];
+                pairs = lib.mapAttrsToList (k: v: ''"${k}" = "${esc v}"'') attrs;
+              in
+              "{${lib.concatStringsSep ", " pairs}}";
+
+            mkAlloyTargets = items:
+              "[\n" + lib.concatMapStrings (m: "      " + mkAlloyMap m + ",\n") items + "    ]";
+          in
+          { host, probeLabel, targets }:
+          let
+            hostIp = blackboxHostIp host;
+            hostSlug = lib.replaceStrings [ "-" "." ] [ "_" "_" ] host;
+          in
+          ''
+
+              discovery.relabel "blackbox_${probeLabel}_${hostSlug}" {
+                targets = ${mkAlloyTargets targets}
+
+                rule {
+                  source_labels = ["__address__"]
+                  target_label  = "__param_target"
+                }
+                rule {
+                  source_labels = ["__param_target"]
+                  target_label  = "instance"
+                }
+                rule {
+                  target_label = "__address__"
+                  replacement  = "${hostIp}:${toString globals.services.blackbox.extraConfig.port}"
+                }
+                rule {
+                  target_label = "probe_from"
+                  replacement  = "${host}"
+                }
+              }
+
+              prometheus.scrape "blackbox_${probeLabel}_${hostSlug}" {
+                targets      = discovery.relabel.blackbox_${probeLabel}_${hostSlug}.output
+                metrics_path = "/probe"
+                job_name     = "blackbox_${probeLabel}"
+                forward_to   = [prometheus.remote_write.mimir.receiver]
+              }
+            '';
+
+        reachableBlackboxHosts = lib.filter (h: blackboxHostIp h != null) globals.monitoring.blackboxHosts;
+
+        httpTargets = lib.mapAttrsToList
+          (name: cfg: {
+            __address__ = cfg.url;
+            __param_module = "http_${name}";
+            inherit name;
+            probe = "http";
+            inherit (cfg) network;
+          }
+          // lib.optionalAttrs (cfg.expectedBodyRegex != null) {
+            expected_body_regex = cfg.expectedBodyRegex;
+          }
+          // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
+            fail_if_body_matches_regex = cfg.failIfBodyMatchesRegex;
+          })
+          globals.monitoring.http;
+
+        pingTargets = lib.filter (t: t != null)
+          (
+            map
+              (host:
+                let
+                  cfg = globals.hosts.${host};
+                  inH = builtins.elem host wgHomeMembers;
+                  inP = builtins.elem host wgProxyMembers;
+                in
+                if cfg.isHome && inH then {
+                  __address__ = wgHomeHosts.${host}.ipv4;
+                  __param_module = "icmp";
+                  name = host;
+                  probe = "ping";
+                  network = "wgHome";
+                }
+                else if inP then {
+                  __address__ = wgProxyHosts.${host}.ipv4;
+                  __param_module = "icmp";
+                  name = host;
+                  probe = "ping";
+                  network = "wgProxy";
+                }
+                else if inH then {
+                  __address__ = wgHomeHosts.${host}.ipv4;
+                  __param_module = "icmp";
+                  name = host;
+                  probe = "ping";
+                  network = "wgHome";
+                }
+                else null
+              )
+              (lib.attrNames globals.hosts)
+          ) ++ lib.mapAttrsToList
+          (name: cfg: {
+            __address__ = cfg.host;
+            __param_module = "icmp";
+            inherit name;
+            probe = "ping";
+            inherit (cfg) network;
+          })
+          globals.monitoring.ping;
+      in
+      ''
+        logging {
+          level  = "warn"
+          format = "logfmt"
+        }
+
+        prometheus.exporter.unix "node" {${lib.optionalString isCentral ''
+
+          textfile {
+            directory = "${textfileDir}"
+          }
+        ''}}
+
+        prometheus.scrape "node" {
+          targets    = prometheus.exporter.unix.node.targets
+          forward_to = [prometheus.remote_write.mimir.receiver]
+          job_name   = "node"
+        }
+
+        prometheus.remote_write "mimir" {
+          endpoint {
+            url = "${mkPushUrl mimirDomain globals.services.mimir.extraConfig.port "/api/v1/push"}"
+          }
+          external_labels = {
+            host = "${config.node.name}",
+          }
+        }
+
+        loki.relabel "journal" {
+          forward_to = []
+          rule {
+            source_labels = ["__journal__systemd_unit"]
+            target_label  = "unit"
+          }
+          rule {
+            source_labels = ["__journal_priority_keyword"]
+            target_label  = "level"
+          }
+        }
+
+        loki.source.journal "journal" {
+          max_age       = "12h"
+          relabel_rules = loki.relabel.journal.rules
+          forward_to    = [loki.write.central.receiver]
+          labels        = {
+            host = "${config.node.name}",
+            job  = "systemd-journal",
+          }
+        }
+
+        loki.write "central" {
+          endpoint {
+            url = "${mkPushUrl lokiDomain globals.services.loki.extraConfig.port "/loki/api/v1/push"}"
+          }
+        }
+
+        otelcol.receiver.otlp "local" {
+          grpc { endpoint = "127.0.0.1:${toString otlpGrpcPort}" }
+          http { endpoint = "127.0.0.1:${toString otlpHttpPort}" }
+
+          output {
+            traces = [otelcol.exporter.otlphttp.tempo.input]
+          }
+        }
+
+        otelcol.exporter.otlphttp "tempo" {
+          client {
+            endpoint = "${mkPushUrl tempoDomain globals.services.tempo.extraConfig.port ""}"
+          }
+        }
+      ''
+      + lib.optionalString isCentral (
+        lib.concatMapStrings
+          (host:
+            let ts = targetsFor host httpTargets; in
+            lib.optionalString (ts != [ ]) (mkBlackboxBlock {
+              inherit host;
+              probeLabel = "http";
+              targets = ts;
+            })
+          )
+          reachableBlackboxHosts
+        +
+        lib.concatMapStrings
+          (host:
+            let ts = targetsFor host pingTargets; in
+            lib.optionalString (ts != [ ]) (mkBlackboxBlock {
+              inherit host;
+              probeLabel = "ping";
+              targets = ts;
+            })
+          )
+          reachableBlackboxHosts
+      );
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      globals = {
+        services.${serviceName}.extraConfig = {
+          httpPort = servicePort;
+          inherit otlpGrpcPort otlpHttpPort;
+        };
+        monitoring.hostNetworks.${config.node.name} = [ "local-${config.node.name}" ]
+          ++ lib.optional inWgHome "wgHome"
+          ++ lib.optional inWgProxy "wgProxy"
+          ++ lib.optional
+          (globals.hosts.${config.node.name}.wanAddress4 != null
+            || globals.hosts.${config.node.name}.wanAddress6 != null) "internet";
+      };
+
+      networking.hosts =
+        let
+          proxyIp =
+            if isHome && inWgHome
+            then wgHomeHosts.${homeWebProxy}.ipv4
+            else if inWgProxy
+            then wgProxyHosts.${webProxy}.ipv4
+            else null;
+        in
+        lib.optionalAttrs (proxyIp != null) {
+          ${proxyIp} = [ mimirDomain lokiDomain tempoDomain ];
+        };
+
+      environment = {
+        etc = {
+          "alloy/config.alloy".text = config-alloy;
+          "alloy/textfiles/host_expected.prom" = lib.mkIf isCentral {
+            text = lib.concatStrings (map
+              (h: ''host_expected{host="${h}"} 1
+              '')
+              (lib.attrNames globals.hosts));
+          };
+        };
+        persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [{ directory = "/var/lib/private/alloy"; mode = "0700"; }];
+        };
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        extraFlags = [ "--server.http.listen-addr=127.0.0.1:${toString servicePort}" ];
+      };
+
+      systemd.services.alloy.serviceConfig.RestartSec = lib.mkForce "60";
+
+    };
+  }
+#+end_src
+
+**** blackbox
+
+#+begin_src nix-ts :tangle modules/nixos/server/blackbox.nix
+  { lib, config, globals, confLib, pkgs, ... }:
+  let
+    inherit (confLib.gen { name = "blackbox"; port = 9115; })
+      servicePort serviceName;
+    inherit (confLib.static) isHome monitoringServer webProxyIf homeProxyIf inWgProxy inWgHome;
+
+    mkHttpModule = cfg: {
+      prober = "http";
+      timeout = "10s";
+      http = {
+        method = "GET";
+        follow_redirects = true;
+        preferred_ip_protocol = "ip4";
+        tls_config.insecure_skip_verify = true;
+        valid_status_codes = [ cfg.expectedStatus ];
+      }
+      // lib.optionalAttrs (cfg.expectedBodyRegex != null) {
+        fail_if_body_not_matches_regexp = [ cfg.expectedBodyRegex ];
+      }
+      // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
+        fail_if_body_matches_regexp = [ cfg.failIfBodyMatchesRegex ];
+      }
+      // lib.optionalAttrs (cfg.hostHeader != null) {
+        headers.Host = cfg.hostHeader;
+      };
+    };
+
+    blackboxConfig = pkgs.writeText "blackbox.yml" (builtins.toJSON {
+      modules = {
+        icmp = {
+          prober = "icmp";
+          timeout = "5s";
+          icmp.preferred_ip_protocol = "ip4";
+        };
+      } // lib.mapAttrs' (name: cfg: lib.nameValuePair "http_${name}" (mkHttpModule cfg)) globals.monitoring.http;
+    });
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      globals = {
+        services.${serviceName}.extraConfig.port = servicePort;
+        monitoring.blackboxHosts = [ config.node.name ];
+        networks = lib.mkIf (config.node.name != monitoringServer) {
+          ${webProxyIf}.hosts = lib.mkIf inWgProxy {
+            ${config.node.name}.firewallRuleForNode.${monitoringServer}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf (isHome && inWgHome) {
+            ${config.node.name}.firewallRuleForNode.${monitoringServer}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+      };
+
+      services.prometheus.exporters.blackbox = {
+        enable = true;
+        port = servicePort;
+        listenAddress = "0.0.0.0";
+        configFile = blackboxConfig;
+      };
+    };
+  }
+#+end_src
+
+**** mimir
+
+#+begin_src nix-ts :tangle modules/nixos/server/mimir.nix
+  { lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen {
+      name = "mimir";
+      port = 9009;
+      dir = "/var/lib/private/mimir";
+    }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules wgProxyAccessRules;
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          extraConfig.port = servicePort;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/services";
+          expectedBodyRegex = "Running";
+          failIfBodyMatchesRegex = "(Starting|Stopping|Failed|Terminated|New|Stuck)";
+          network = "local-${config.node.name}";
+        };
+      };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = serviceDir; mode = "0700"; }];
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        configuration = {
+          multitenancy_enabled = false;
+
+          server = {
+            http_listen_address = "0.0.0.0";
+            http_listen_port = servicePort;
+            grpc_listen_port = 9095;
+            log_level = "warn";
+          };
+
+          common.storage = {
+            backend = "filesystem";
+            filesystem.dir = "${serviceDir}/data";
+          };
+
+          blocks_storage = {
+            backend = "filesystem";
+            filesystem.dir = "${serviceDir}/blocks";
+            bucket_store.sync_dir = "${serviceDir}/tsdb-sync";
+            tsdb.dir = "${serviceDir}/tsdb";
+          };
+
+          compactor = {
+            data_dir = "${serviceDir}/compactor";
+            sharding_ring.kvstore.store = "memberlist";
+          };
+
+          distributor.ring.instance_addr = "127.0.0.1";
+
+          ingester.ring = {
+            instance_addr = "127.0.0.1";
+            kvstore.store = "memberlist";
+            replication_factor = 1;
+          };
+
+          ruler.rule_path = "${serviceDir}/rules";
+          ruler_storage = {
+            backend = "filesystem";
+            filesystem.dir = "${serviceDir}/ruler";
+          };
+
+          store_gateway.sharding_ring = {
+            instance_addr = "127.0.0.1";
+            replication_factor = 1;
+          };
+
+          limits.max_global_series_per_user = 0;
+        };
+      };
+
+      systemd.services.mimir.serviceConfig.RestartSec = lib.mkForce "60";
+
+      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+      nodes = {
+        ${webProxy}.services.nginx = confLib.genNginx {
+          inherit serviceAddress servicePort serviceDomain serviceName;
+          maxBody = 0;
+          extraConfig = wgProxyAccessRules;
+        };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
+          inherit servicePort serviceDomain serviceName;
+          serviceAddress = homeServiceAddress;
+          maxBody = 0;
+          extraConfig = nginxAccessRules;
+        });
+      };
     };
   }
 #+end_src
@@ -14917,6 +15699,11 @@ This is my Jenkins instance. It is used to automatically build a new system when
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/login";
+          expectedBodyRegex = "Jenkins";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -15049,10 +15836,22 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       #   icon = "${self}/files/topology-images/${serviceName}.png";
       # };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+      globals = {
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "FreshRSS";
+          hostHeader = serviceDomain;
+          network = "local-${config.node.name}";
+        };
+        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -15077,10 +15876,6 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       #   config.sops.templates.freshrss-env.path
       # ];
 
-
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
 
       nodes =
         let
@@ -15197,6 +15992,12 @@ My selfhosted git solution. TODO: federate
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/api/healthz";
+          expectedBodyRegex = ''"status":\s*"pass"'';
+          failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"'';
+          network = "local-${config.node.name}";
         };
       };
 
@@ -15389,6 +16190,11 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedStatus = 404;
+          network = "local-${config.node.name}";
+        };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -15506,6 +16312,11 @@ kanidm person credential create-reset-token <user>
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "https://127.0.0.1:${toString servicePort}/status";
+          expectedBodyRegex = "true";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -15956,10 +16767,21 @@ My expenses tracker.
       #   icon = "${self}/files/topology-images/${serviceName}.png";
       # };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+      globals = {
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/health";
+          expectedBodyRegex = "OK";
+          hostHeader = serviceDomain;
+          network = "local-${config.node.name}";
+        };
+        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -16006,10 +16828,6 @@ My expenses tracker.
         };
       };
 
-
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
 
       nodes =
         let
@@ -16131,6 +16949,11 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "Koillection";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -16273,6 +17096,11 @@ Used to sync shell history accross machines and have it backed up somewhere.
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = ''"version":'';
+          network = "local-${config.node.name}";
+        };
       };
 
       services.${serviceName} = {
@@ -16359,6 +17187,11 @@ Selfhosted calendar and contacts.
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "Radicale Web Interface";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -16605,6 +17438,11 @@ Basically a selfhosted pastebin that also offers syntax highlighting.
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "pasta-form";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -16999,6 +17837,11 @@ This is an asset management system. However, for my needs it is a bit too convol
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "Snipe-IT";
+          network = "local-${config.node.name}";
+        };
       };
 
       services.snipe-it = {
@@ -17075,6 +17918,11 @@ My asset manager. I use it to track tools, cables and boardgames mostly.
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/api/v1/status";
+          expectedBodyRegex = ''"health":\s*true'';
+          network = "local-${config.node.name}";
         };
       };
 
@@ -17319,6 +18167,11 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${specificServiceName} = {
+          url = "http://127.0.0.1:${toString garageAdminPort}/health";
+          expectedBodyRegex = "fully operational";
+          network = "local-${config.node.name}";
         };
       };
 
@@ -17790,7 +18643,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2026051801; # update this on changes for secondary dns
+      serial = 2026052201; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -18205,6 +19058,12 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "Attic Binary Cache";
+          hostHeader = serviceDomain;
+          network = "local-${config.node.name}";
+        };
       };
 
       sops = lib.mkIf (!isPublic) {
@@ -18382,6 +19241,10 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          network = "local-${config.node.name}";
+        };
       };
 
       sops = {
@@ -18553,6 +19416,13 @@ Apart from that, the only interesting bit here is the advertised dns-server whic
                   {
                     name = if (intX == 4) then "domain-name-servers" else "dns-servers";
                     data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
+                  }
+                ++
+                lib.optional
+                  (lib.elem vlanName globals.general.internetVLANs)
+                  {
+                    name = "domain-search";
+                    data = globals.domains.main;
                   };
               reservations = lib.concatLists (
                 lib.forEach (builtins.attrValues vlanCfg.hosts) (
@@ -19145,6 +20015,11 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/control/status";
+          expectedBodyRegex = ''"running":true'';
+          network = "local-${config.node.name}";
+        };
       };
 
       networking.firewall = {
@@ -19626,6 +20501,11 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "Buildbot Web UI";
+          network = "local-${config.node.name}";
+        };
       };
 
       nix.gc = {
@@ -19789,6 +20669,11 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/healthz";
+          expectedBodyRegex = "OK";
+          network = "local-${config.node.name}";
         };
         dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -20102,6 +20987,11 @@ I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Fi
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/";
+          expectedBodyRegex = "Invidious";
+          network = "local-${config.node.name}";
+        };
         dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
@@ -20203,7 +21093,7 @@ I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Fi
             };
           };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
 
         };
 
@@ -20328,7 +21218,7 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
         in
         {
           ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
         };
 
     };
@@ -20399,6 +21289,11 @@ I only use firefox sync for bookmarks and history; to me, those are not "importa
           domain = serviceDomain;
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/__heartbeat__";
+          expectedBodyRegex = ''"status":"Ok"'';
+          network = "local-${config.node.name}";
         };
         dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
           "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -26715,14 +27610,19 @@ When setting up a new machine:
   { self, lib, options, config, pkgs, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
+    withYubikeyAgent = false;
   in
   {
     config = {
       swarselsystems.enabledHomeModules = [ "gpgagent" ];
+      home.packages = [
+        (lib.mkIf withYubikeyAgent config.services.yubikey-agent.package)
+      ];
 
       # we need the normal ssh agent for cert based login as well as support for sk keys, both of which are not present for gpg-agent
-      services.ssh-agent = {
-        enable = true;
+      services = {
+        ssh-agent.enable = true;
+        yubikey-agent.enable = false; # we use it but do not want the SSH_AUTH_SOCK set
       };
 
       services.gpg-agent = {
@@ -26739,8 +27639,8 @@ When setting up a new machine:
         maxCacheTtl = 7200;
         extraConfig = ''
           enable-ssh-support
-          allow-loopback-pinentry
-          allow-emacs-pinentry
+            allow-loopback-pinentry
+            allow-emacs-pinentry
         '';
         sshKeys = [
           "4BE7925262289B476DBBC17B76FD3810215AE097"
@@ -26762,67 +27662,34 @@ When setting up a new machine:
       };
 
       systemd.user = {
-        sockets.gpg-agent-ssh =
-          let
-            inherit (config.programs.gpg) homedir;
-            # Act like `xxd -r -p | base32` but with z-base-32 alphabet and no trailing padding.
-            # Written in Nix for purity.
-            hexStringToBase32 =
-              let
-                mod = a: b: a - a / b * b;
-                pow2 = lib.elemAt [ 1 2 4 8 16 32 64 128 256 ];
-
-                base32Alphabet = lib.stringToCharacters "ybndrfg8ejkmcpqxot1uwisza345h769";
-                hexToIntTable = lib.listToAttrs (
-                  lib.genList
-                    (x: {
-                      name = lib.toLower (lib.toHexString x);
-                      value = x;
-                    }) 16
-                );
-
-                initState = {
-                  ret = "";
-                  buf = 0;
-                  bufBits = 0;
-                };
-                go = { ret, buf, bufBits, }: hex:
-                  let
-                    buf' = buf * pow2 4 + hexToIntTable.${hex};
-                    bufBits' = bufBits + 4;
-                    extraBits = bufBits' - 5;
-                  in
-                  if bufBits >= 5 then
-                    {
-                      ret = ret + lib.elemAt base32Alphabet (buf' / pow2 extraBits);
-                      buf = mod buf' (pow2 extraBits);
-                      bufBits = bufBits' - 5;
-                    }
-                  else
-                    {
-                      inherit ret;
-                      buf = buf';
-                      bufBits = bufBits';
-                    };
-              in
-              hexString: (lib.foldl' go initState (lib.stringToCharacters hexString)).ret;
-            gpgconf = dir:
-              let
-                hash = lib.substring 0 24 (hexStringToBase32 (builtins.hashString "sha1" homedir));
-                subdir = if homedir == options.programs.gpg.homedir.default then "${dir}" else "d.${hash}/${dir}";
-              in
-              "%t/gnupg/${subdir}";
-          in
-          {
+        services = {
+          yubikey-agent = lib.mkIf withYubikeyAgent {
             Unit = {
-              Description = "GnuPG cryptographic agent (ssh-agent emulation)";
-              Documentation = "man:gpg-agent(1) man:ssh-add(1) man:ssh-agent(1) man:ssh(1)";
+              Description = "Seamless ssh-agent for YubiKeys";
+              Documentation = "https://github.com/FiloSottile/yubikey-agent";
+              Requires = "yubikey-agent.socket";
+              After = "yubikey-agent.socket";
+              RefuseManualStart = true;
+            };
+
+            Service = {
+              ExecStart = "${config.services.yubikey-agent.package}/bin/yubikey-agent -l %t/yubikey-agent/yubikey-agent.sock";
+              Type = "simple";
+              ReadWritePaths = [ "%t" ];
+            };
+          };
+        };
+
+        sockets = {
+          yubikey-agent = lib.mkIf withYubikeyAgent {
+            Unit = {
+              Description = "Unix domain socket for Yubikey SSH agent";
+              Documentation = "https://github.com/FiloSottile/yubikey-agent";
             };
 
             Socket = {
-              ListenStream = gpgconf "S.gpg-agent.ssh";
-              FileDescriptorName = "ssh";
-              Service = "gpg-agent.service";
+              ListenStream = "%t/yubikey-agent/yubikey-agent.sock";
+              RuntimeDirectory = "yubikey-agent";
               SocketMode = "0600";
               DirectoryMode = "0700";
             };
@@ -26831,6 +27698,76 @@ When setting up a new machine:
               WantedBy = [ "sockets.target" ];
             };
           };
+          gpg-agent-ssh =
+            let
+              inherit (config.programs.gpg) homedir;
+              # Act like `xxd -r -p | base32` but with z-base-32 alphabet and no trailing padding.
+              # Written in Nix for purity.
+              hexStringToBase32 =
+                let
+                  mod = a: b: a - a / b * b;
+                  pow2 = lib.elemAt [ 1 2 4 8 16 32 64 128 256 ];
+
+                  base32Alphabet = lib.stringToCharacters "ybndrfg8ejkmcpqxot1uwisza345h769";
+                  hexToIntTable = lib.listToAttrs (
+                    lib.genList
+                      (x: {
+                        name = lib.toLower (lib.toHexString x);
+                        value = x;
+                      }) 16
+                  );
+
+                  initState = {
+                    ret = "";
+                    buf = 0;
+                    bufBits = 0;
+                  };
+                  go = { ret, buf, bufBits, }: hex:
+                    let
+                      buf' = buf * pow2 4 + hexToIntTable.${hex};
+                      bufBits' = bufBits + 4;
+                      extraBits = bufBits' - 5;
+                    in
+                    if bufBits >= 5 then
+                      {
+                        ret = ret + lib.elemAt base32Alphabet (buf' / pow2 extraBits);
+                        buf = mod buf' (pow2 extraBits);
+                        bufBits = bufBits' - 5;
+                      }
+                    else
+                      {
+                        inherit ret;
+                        buf = buf';
+                        bufBits = bufBits';
+                      };
+                in
+                hexString: (lib.foldl' go initState (lib.stringToCharacters hexString)).ret;
+              gpgconf = dir:
+                let
+                  hash = lib.substring 0 24 (hexStringToBase32 (builtins.hashString "sha1" homedir));
+                  subdir = if homedir == options.programs.gpg.homedir.default then "${dir}" else "d.${hash}/${dir}";
+                in
+                "%t/gnupg/${subdir}";
+            in
+            {
+              Unit = {
+                Description = "GnuPG cryptographic agent (ssh-agent emulation)";
+                Documentation = "man:gpg-agent(1) man:ssh-add(1) man:ssh-agent(1) man:ssh(1)";
+              };
+
+              Socket = {
+                ListenStream = gpgconf "S.gpg-agent.ssh";
+                FileDescriptorName = "ssh";
+                Service = "gpg-agent.service";
+                SocketMode = "0600";
+                DirectoryMode = "0700";
+              };
+
+              Install = {
+                WantedBy = [ "sockets.target" ];
+              };
+            };
+        };
 
         tmpfiles.rules = [
           "d ${homeDir}/.gnupg 0700 ${mainUser} users - -"
@@ -30004,19 +30941,46 @@ In short, the options defined here are passed to the modules systems using =_mod
 
         static = rec {
           inherit (globals.hosts.${config.node.name}) isHome;
-          inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer;
+          inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer monitoringServer;
           webProxyIf = "${webProxy}-wgProxy";
           homeProxyIf = "home-wgHome";
           isProxied = config.node.name != webProxy;
-          nginxAccessRules = ''
-            allow ${globals.networks.home-lan.vlans.home.cidrv4};
-            allow ${globals.networks.home-lan.vlans.home.cidrv6};
-            allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4};
-            allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
-            deny all;
-          '';
-          isWgHomeParticipant = globals.wireguard ? wgHome && (builtins.elem config.node.name globals.wireguard.wgHome.clients || globals.wireguard.wgHome.server == config.node.name);
-          homeServiceAddress = lib.optionalString isWgHomeParticipant globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
+          nginxAccessRules =
+            let
+              wgHomeNet = globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome";
+            in
+            ''
+              allow ${globals.networks.home-lan.vlans.home.cidrv4};
+              allow ${globals.networks.home-lan.vlans.home.cidrv6};
+              allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv4};
+              allow ${globals.networks.home-lan.vlans.services.hosts.${homeProxy}.ipv6};
+              allow ${wgHomeNet.cidrv4};
+              allow ${wgHomeNet.cidrv6};
+              deny all;
+            '';
+          wgProxyMembers = lib.optionals (globals.wireguard ? wgProxy) (globals.wireguard.wgProxy.clients ++ [ globals.wireguard.wgProxy.server ]);
+          wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]);
+          inWgProxy = builtins.elem config.node.name wgProxyMembers;
+          inWgHome = builtins.elem config.node.name wgHomeMembers;
+          homeServiceAddress = lib.optionalString inWgHome globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
+
+          wgProxyAccessRules =
+            let
+              wgProxyNet = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy";
+              extraAllows = lib.concatMapStrings
+                (host:
+                  let cfg = globals.hosts.${host}; in
+                  lib.optionalString (cfg.wanAddress4 != null) "allow ${cfg.wanAddress4};\n"
+                  + lib.optionalString (cfg.wanAddress6 != null) "allow ${cfg.wanAddress6};\n"
+                )
+                (lib.filter (h: !(builtins.elem h wgProxyMembers)) (lib.attrNames globals.hosts));
+            in
+            ''
+              allow ${wgProxyNet.cidrv4};
+              allow ${wgProxyNet.cidrv6};
+            '' + extraAllows + ''
+              deny all;
+            '';
         };
 
         mkIds = id: {
@@ -32901,6 +33865,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       "${m}/nixos/server/dns-hostrecord.nix"
       # "${m}/nixos/server/oauth2-proxy.nix"
       "${m}/nixos/server/node-roles.nix"
+      "${m}/nixos/server/alloy.nix"
+      "${m}/nixos/server/blackbox.nix"
     ];
   }
 #+end_src
@@ -32936,6 +33902,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       "${m}/nixos/server/opkssh.nix"
       # "${m}/nixos/server/oauth2-proxy.nix"
       "${m}/nixos/server/node-roles.nix"
+      "${m}/nixos/server/alloy.nix"
+      "${m}/nixos/server/blackbox.nix"
     ];
 
     config.swarselsystems = {
@@ -36779,7 +37747,26 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
     :bind ("C-c c" . claude-code-ide-menu) ; Set your favorite keybinding
     :config
     (claude-code-ide-emacs-tools-setup))
+
+  (defun diego--vterm-font-setup ()
+    "Configure font settings specifically for vterm buffers, workaround claude-code."
+
+    ;; Apply ASCII replacements for vterm specifically
+    (let ((tbl (or buffer-display-table (setq buffer-display-table (make-display-table)))))
+      (dolist (pair
+               '((#x273B . ?*) ; ✻ TEARDROP-SPOKED ASTERISK
+                 (#x273D . ?*) ; ✽ HEAVY TEARDROP-SPOKED ASTERISK
+                 (#x2722 . ?+) ; ✢ FOUR TEARDROP-SPOKED ASTERISK
+                 (#x2736 . ?+) ; ✶ SIX-POINTED BLACK STAR
+                 (#x2733 . ?*) ; ✳ EIGHT SPOKED ASTERISK
+                 ))
+        (aset tbl (car pair) (vector (cdr pair))))))
+
+  (add-hook 'vterm-mode-hook #'diego--vterm-font-setup)
+
 #+end_src
+
+
 *** Close pane when closing buffer
 
 #+begin_src emacs-lisp
@@ -41423,6 +42410,935 @@ This flake is loaded per default as an input to not obfuscate values that could 
     description = "Flake that sets topologyPrivate to false for general purpose.";
 
     outputs = _: { topologyPrivate = false; };
+  }
+#+end_src
+** Grafana dashboard
+
+#+begin_src json-ts :tangle files/grafana/service-status.json :mkdirp yes
+  {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "max by (host) (up) or max by (host) (host_expected * 0)",
+                        "instant": false,
+                        "legendFormat": "{{probe_from}}",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "Probes summary",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "fieldMinMax": false,
+                  "mappings": [
+                    {
+                      "options": {
+                        "0": {
+                          "color": "red",
+                          "index": 1,
+                          "text": "DOWN"
+                        },
+                        "1": {
+                          "color": "green",
+                          "index": 0,
+                          "text": "UP"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "percentage",
+                    "steps": [
+                      {
+                        "color": "orange",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 20,
+                  "valueSize": 20
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.0.1+security-01"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "min by (name) (probe_http_status_code)\n",
+                        "format": "table",
+                        "instant": true,
+                        "legendFormat": "__auto",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max by (name) (probe_failed_due_to_regex)",
+                        "format": "table",
+                        "instant": true,
+                        "legendFormat": "__auto"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "min by (name) (probe_success{probe=\"http\"})",
+                        "format": "table",
+                        "instant": true,
+                        "legendFormat": "__auto",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "joinByField",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "byField": "name",
+                      "mode": "outer"
+                    }
+                  }
+                },
+                {
+                  "group": "organize",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "Time": true,
+                        "Time 1": true,
+                        "Time 2": true,
+                        "Time 3": true,
+                        "Value #C": false
+                      },
+                      "includeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "Time 1": "",
+                        "Time 3": "",
+                        "Value #A": "regexCheck",
+                        "Value #B": "HTTP Status Code",
+                        "Value #C": "Status",
+                        "name": "Service"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "",
+          "id": 2,
+          "links": [],
+          "title": "Service health",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "mode": "basic",
+                      "type": "color-background"
+                    },
+                    "filterable": true,
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "red",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "name",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "transparent",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Value #A",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "0": {
+                                "color": "green",
+                                "index": 0,
+                                "text": "OK"
+                              },
+                              "1": {
+                                "color": "red",
+                                "index": 1,
+                                "text": "FAIL"
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "red",
+                              "value": 0
+                            },
+                            {
+                              "color": "green",
+                              "value": 0
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Value #B",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "transparent",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": []
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Value #C",
+                      "scope": "series"
+                    },
+                    "properties": [
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "0": {
+                                "color": "red",
+                                "index": 0,
+                                "text": "DOWN"
+                              },
+                              "1": {
+                                "color": "green",
+                                "index": 1,
+                                "text": "UP"
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Service"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 205
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "HTTP Status Code"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "expectedBodyRegex"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 154
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "regexCheck"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 112
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Status"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 72
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": false,
+                    "displayName": "name"
+                  }
+                ]
+              }
+            },
+            "version": "13.0.1+security-01"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "loki"
+                      },
+                      "group": "loki",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "direction": "backward",
+                        "editorMode": "builder",
+                        "expr": "{host=\"$Host\", unit=\"$Service\"}",
+                        "queryType": "range"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 3,
+          "links": [],
+          "title": "Logs",
+          "vizConfig": {
+            "group": "logs",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "dedupStrategy": "none",
+                "enableInfiniteScrolling": false,
+                "enableLogDetails": true,
+                "prettifyLogMessage": true,
+                "showControls": false,
+                "showFieldSelector": false,
+                "showLevel": true,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "timestampResolution": "ms",
+                "unwrappedColumns": false,
+                "wrapLogMessage": false
+              }
+            },
+            "version": "13.0.1+security-01"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "100 - (avg(irate(node_cpu_seconds_total{host=\"$Host\",mode=\"idle\"}[30m])) * 100)\n",
+                        "legendFormat": "__auto",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "$Host CPU",
+          "vizConfig": {
+            "group": "gauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.47,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "sparkline": true,
+                "textMode": "auto"
+              }
+            },
+            "version": "13.0.1+security-01"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "mimir"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "(node_memory_MemTotal_bytes{host=\"$Host\"} - node_memory_MemAvailable_bytes{host=\"$Host\"}) \n/ node_memory_MemTotal_bytes{host=\"$Host\"} * 100",
+                        "legendFormat": "__auto",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "$Host RAM",
+          "vizConfig": {
+            "group": "gauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.47,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "sparkline": true,
+                "textMode": "auto"
+              }
+            },
+            "version": "13.0.1+security-01"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        },
+                        "height": 17,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-1"
+                        },
+                        "height": 20,
+                        "width": 8,
+                        "x": 0,
+                        "y": 17
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
+                        },
+                        "height": 31,
+                        "width": 9,
+                        "x": 8,
+                        "y": 17
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
+                        },
+                        "height": 5,
+                        "repeat": {
+                          "direction": "h",
+                          "mode": "variable",
+                          "value": "Host"
+                        },
+                        "width": 10,
+                        "x": 0,
+                        "y": 48
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        },
+                        "height": 5,
+                        "repeat": {
+                          "direction": "h",
+                          "mode": "variable",
+                          "value": "Host"
+                        },
+                        "width": 10,
+                        "x": 14,
+                        "y": 48
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "New row"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "service-status",
+      "blackbox"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-30m",
+      "hideTimepicker": false,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "Overview",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          },
+          "definition": "",
+          "hide": "dontHide",
+          "includeAll": true,
+          "multi": false,
+          "name": "Host",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "loki"
+            },
+            "group": "loki",
+            "kind": "DataQuery",
+            "spec": {
+              "label": "host",
+              "refId": "LokiVariableQueryEditor-VariableQuery",
+              "stream": "",
+              "type": 1
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "",
+          "hide": "dontHide",
+          "includeAll": false,
+          "multi": false,
+          "name": "Service",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "loki"
+            },
+            "group": "loki",
+            "kind": "DataQuery",
+            "spec": {
+              "label": "unit",
+              "refId": "LokiVariableQueryEditor-VariableQuery",
+              "stream": "{host=\"$Host\"}",
+              "type": 1
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
   }
 #+end_src
 * Appendix C: Explanations to nix functions and operators
