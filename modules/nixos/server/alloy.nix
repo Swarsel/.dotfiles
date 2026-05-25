@@ -2,7 +2,7 @@
 let
   inherit (confLib.gen { name = "alloy"; port = 12345; })
     servicePort serviceName;
-  inherit (confLib.static) isHome monitoringServer webProxy homeWebProxy inWgProxy inWgHome wgProxyMembers wgHomeMembers;
+  inherit (confLib.static) isHome monitoringServer webProxy homeWebProxy inWgProxy inWgHome;
 
   otlpGrpcPort = 4317;
   otlpHttpPort = 4318;
@@ -29,16 +29,6 @@ let
 
       textfileDir = "/etc/alloy/textfiles";
 
-      blackboxHostIp = host:
-        # @ future me: yes, keep this to handle cloud hosts that are homeWgMembers
-        if globals.hosts.${host}.isHome && builtins.elem host wgHomeMembers
-        then wgHomeHosts.${host}.ipv4
-        else if builtins.elem host wgProxyMembers
-        then wgProxyHosts.${host}.ipv4
-        else if builtins.elem host wgHomeMembers
-        then wgHomeHosts.${host}.ipv4
-        else null;
-
       mkBlackboxBlock =
         let
           mkAlloyMap = attrs:
@@ -51,14 +41,10 @@ let
           mkAlloyTargets = items:
             "[\n" + lib.concatMapStrings (m: "      " + mkAlloyMap m + ",\n") items + "    ]";
         in
-        { host, probeLabel, targets }:
-        let
-          hostIp = blackboxHostIp host;
-          hostSlug = lib.replaceStrings [ "-" "." ] [ "_" "_" ] host;
-        in
+        { probeLabel, targets }:
         ''
 
-            discovery.relabel "blackbox_${probeLabel}_${hostSlug}" {
+            discovery.relabel "blackbox_${probeLabel}" {
               targets = ${mkAlloyTargets targets}
 
               rule {
@@ -71,25 +57,23 @@ let
               }
               rule {
                 target_label = "__address__"
-                replacement  = "${hostIp}:${toString globals.services.blackbox.extraConfig.port}"
+                replacement  = "127.0.0.1:${toString globals.services.blackbox.extraConfig.port}"
               }
               rule {
                 target_label = "probe_from"
-                replacement  = "${host}"
+                replacement  = "${config.node.name}"
               }
             }
 
-            prometheus.scrape "blackbox_${probeLabel}_${hostSlug}" {
-              targets      = discovery.relabel.blackbox_${probeLabel}_${hostSlug}.output
+            prometheus.scrape "blackbox_${probeLabel}" {
+              targets      = discovery.relabel.blackbox_${probeLabel}.output
               metrics_path = "/probe"
               job_name     = "blackbox_${probeLabel}"
               forward_to   = [prometheus.remote_write.mimir.receiver]
             }
           '';
 
-      reachableBlackboxHosts = lib.filter (h: blackboxHostIp h != null) globals.monitoring.blackboxHosts;
-
-      httpTargets = lib.mapAttrsToList
+      httpTargets = targetsFor config.node.name (lib.mapAttrsToList
         (name: cfg: {
           __address__ = cfg.url;
           __param_module = "http_${name}";
@@ -103,42 +87,9 @@ let
         // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
           fail_if_body_matches_regex = cfg.failIfBodyMatchesRegex;
         })
-        globals.monitoring.http;
+        globals.monitoring.http);
 
-      pingTargets = lib.filter (t: t != null)
-        (
-          map
-            (host:
-              let
-                cfg = globals.hosts.${host};
-                inH = builtins.elem host wgHomeMembers;
-                inP = builtins.elem host wgProxyMembers;
-              in
-              if cfg.isHome && inH then {
-                __address__ = wgHomeHosts.${host}.ipv4;
-                __param_module = "icmp";
-                name = host;
-                probe = "ping";
-                network = "wgHome";
-              }
-              else if inP then {
-                __address__ = wgProxyHosts.${host}.ipv4;
-                __param_module = "icmp";
-                name = host;
-                probe = "ping";
-                network = "wgProxy";
-              }
-              else if inH then {
-                __address__ = wgHomeHosts.${host}.ipv4;
-                __param_module = "icmp";
-                name = host;
-                probe = "ping";
-                network = "wgHome";
-              }
-              else null
-            )
-            (lib.attrNames globals.hosts)
-        ) ++ lib.mapAttrsToList
+      pingTargets = targetsFor config.node.name (lib.mapAttrsToList
         (name: cfg: {
           __address__ = cfg.host;
           __param_module = "icmp";
@@ -146,7 +97,8 @@ let
           probe = "ping";
           inherit (cfg) network;
         })
-        globals.monitoring.ping;
+        globals.monitoring.ping);
+
     in
     ''
             logging {
@@ -232,29 +184,14 @@ let
               }
             }
     ''
-    + lib.optionalString isCentral (
-      lib.concatMapStrings
-        (host:
-          let ts = targetsFor host httpTargets; in
-          lib.optionalString (ts != [ ]) (mkBlackboxBlock {
-            inherit host;
-            probeLabel = "http";
-            targets = ts;
-          })
-        )
-        reachableBlackboxHosts
-      +
-      lib.concatMapStrings
-        (host:
-          let ts = targetsFor host pingTargets; in
-          lib.optionalString (ts != [ ]) (mkBlackboxBlock {
-            inherit host;
-            probeLabel = "ping";
-            targets = ts;
-          })
-        )
-        reachableBlackboxHosts
-    );
+    + lib.optionalString (httpTargets != [ ]) (mkBlackboxBlock {
+      probeLabel = "http";
+      targets = httpTargets;
+    })
+    + lib.optionalString (pingTargets != [ ]) (mkBlackboxBlock {
+      probeLabel = "ping";
+      targets = pingTargets;
+    });
 in
 {
   config = {
@@ -266,11 +203,16 @@ in
         inherit otlpGrpcPort otlpHttpPort;
       };
       monitoring.hostNetworks.${config.node.name} = [ "local-${config.node.name}" ]
+        ++ lib.optional isHome "home-lan"
         ++ lib.optional inWgHome "wgHome"
         ++ lib.optional inWgProxy "wgProxy"
         ++ lib.optional
         (globals.hosts.${config.node.name}.wanAddress4 != null
-          || globals.hosts.${config.node.name}.wanAddress6 != null) "internet";
+          || globals.hosts.${config.node.name}.wanAddress6 != null) "internet"
+        ++ lib.mapAttrsToList (vlan: _: "${vlan}-vlan")
+        (lib.filterAttrs
+          (_: vlan: vlan ? hosts && vlan.hosts ? "${config.node.name}")
+          (globals.networks.home-lan.vlans or { }));
     };
 
     networking.hosts =
@@ -294,6 +236,18 @@ in
             (h: ''host_expected{host="${h}"} 1
                 '')
             (lib.attrNames globals.hosts));
+        };
+        "alloy/textfiles/probe_expected.prom" = lib.mkIf isCentral {
+          text = lib.concatStrings (
+            map
+              (n: ''probe_expected{name="${n}",probe="http"} 1
+                  '')
+              (lib.attrNames globals.monitoring.http)
+            ++ map
+              (n: ''probe_expected{name="${n}",probe="ping"} 1
+                  '')
+              (lib.attrNames globals.monitoring.ping)
+          );
         };
       };
       persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {

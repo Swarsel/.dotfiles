@@ -330,7 +330,7 @@ in
 
           monitoring = mkOption {
             default = { };
-            description = "Active probes consumed by the blackbox exporters and the central Alloy.";
+            description = "Active probes consumed by each host's local Alloy + blackbox exporter.";
             type = types.submodule {
               options = {
                 http = mkOption {
@@ -390,12 +390,6 @@ in
                       };
                     }
                   );
-                };
-
-                blackboxHosts = mkOption {
-                  default = [ ];
-                  type = types.listOf types.str;
-                  description = "Hostnames that run a local blackbox_exporter and should be scraped by the central Alloy.";
                 };
 
                 hostNetworks = mkOption {

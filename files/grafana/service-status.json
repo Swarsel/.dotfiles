@@ -43,7 +43,7 @@
                     "spec": {
                       "editorMode": "code",
                       "exemplar": false,
-                      "expr": "max by (host) (up) or max by (host) (host_expected * 0)",
+                      "expr": "max by (host) (up) or max by (host) (label_replace(probe_success{probe=\"ping\"}, \"host\", \"$1\", \"name\", \"(.+)\")) or max by (host) (host_expected * 0) or max by (host) (label_replace(probe_expected{probe=\"ping\"} * 0, \"host\", \"$1\", \"name\", \"(.+)\"))",
                       "instant": false,
                       "legendFormat": "{{probe_from}}",
                       "range": true
@@ -313,7 +313,7 @@
                     "spec": {
                       "editorMode": "code",
                       "exemplar": false,
-                      "expr": "min by (name) (probe_success{probe=\"http\"})",
+                      "expr": "min by (name) (probe_success{probe=\"http\"}) or on(name) (probe_expected{probe=\"http\"} * 0)\n",
                       "format": "table",
                       "instant": true,
                       "legendFormat": "__auto",
@@ -347,7 +347,11 @@
                       "Time 1": true,
                       "Time 2": true,
                       "Time 3": true,
-                      "Value #C": false
+                      "Value #C": false,
+                      "host": true,
+                      "instance": true,
+                      "job": true,
+                      "probe": true
                     },
                     "includeByName": {},
                     "indexByName": {},
@@ -450,7 +454,7 @@
                         "mode": "absolute",
                         "steps": [
                           {
-                            "color": "red",
+                            "color": "transparent",
                             "value": 0
                           },
                           {
@@ -567,7 +571,7 @@
                   "properties": [
                     {
                       "id": "custom.width",
-                      "value": 50
+                      "value": 57
                     }
                   ]
                 }

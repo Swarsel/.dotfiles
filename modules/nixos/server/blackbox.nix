@@ -1,8 +1,7 @@
-{ lib, config, globals, confLib, pkgs, ... }:
+{ lib, globals, confLib, pkgs, ... }:
 let
   inherit (confLib.gen { name = "blackbox"; port = 9115; })
     servicePort serviceName;
-  inherit (confLib.static) isHome monitoringServer webProxyIf homeProxyIf inWgProxy inWgHome;
 
   mkHttpModule = cfg: {
     prober = "http";
@@ -39,23 +38,12 @@ in
   config = {
     swarselsystems.enabledServerModules = [ serviceName ];
 
-    globals = {
-      services.${serviceName}.extraConfig.port = servicePort;
-      monitoring.blackboxHosts = [ config.node.name ];
-      networks = lib.mkIf (config.node.name != monitoringServer) {
-        ${webProxyIf}.hosts = lib.mkIf inWgProxy {
-          ${config.node.name}.firewallRuleForNode.${monitoringServer}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf (isHome && inWgHome) {
-          ${config.node.name}.firewallRuleForNode.${monitoringServer}.allowedTCPPorts = [ servicePort ];
-        };
-      };
-    };
+    globals.services.${serviceName}.extraConfig.port = servicePort;
 
     services.prometheus.exporters.blackbox = {
       enable = true;
       port = servicePort;
-      listenAddress = "0.0.0.0";
+      listenAddress = "127.0.0.1";
       configFile = blackboxConfig;
     };
   };

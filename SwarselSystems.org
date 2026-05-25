@@ -375,7 +375,7 @@ This is a comprehensive list of the services/components ran by my server machine
   |📄 **Documents**            | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                 |
   |🔄 **File Sync**            | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                 |
   |💾 **Backups**              | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                       |
-  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/monitoring.nix)                  |
+  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/alloy.nix) |
   |🍴 **RSS**                  | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                   |
   |🌳 **Git**                  | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                     |
   |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)                      |
@@ -8454,7 +8454,7 @@ Do note that the below does not achieve anything on its own - as is, these would
 
             monitoring = mkOption {
               default = { };
-              description = "Active probes consumed by the blackbox exporters and the central Alloy.";
+              description = "Active probes consumed by each host's local Alloy + blackbox exporter.";
               type = types.submodule {
                 options = {
                   http = mkOption {
@@ -8514,12 +8514,6 @@ Do note that the below does not achieve anything on its own - as is, these would
                         };
                       }
                     );
-                  };
-
-                  blackboxHosts = mkOption {
-                    default = [ ];
-                    type = types.listOf types.str;
-                    description = "Hostnames that run a local blackbox_exporter and should be scraped by the central Alloy.";
                   };
 
                   hostNetworks = mkOption {
@@ -15198,7 +15192,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   let
     inherit (confLib.gen { name = "alloy"; port = 12345; })
       servicePort serviceName;
-    inherit (confLib.static) isHome monitoringServer webProxy homeWebProxy inWgProxy inWgHome wgProxyMembers wgHomeMembers;
+    inherit (confLib.static) isHome monitoringServer webProxy homeWebProxy inWgProxy inWgHome;
 
     otlpGrpcPort = 4317;
     otlpHttpPort = 4318;
@@ -15225,16 +15219,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
         textfileDir = "/etc/alloy/textfiles";
 
-        blackboxHostIp = host:
-          # @ future me: yes, keep this to handle cloud hosts that are homeWgMembers
-          if globals.hosts.${host}.isHome && builtins.elem host wgHomeMembers
-          then wgHomeHosts.${host}.ipv4
-          else if builtins.elem host wgProxyMembers
-          then wgProxyHosts.${host}.ipv4
-          else if builtins.elem host wgHomeMembers
-          then wgHomeHosts.${host}.ipv4
-          else null;
-
         mkBlackboxBlock =
           let
             mkAlloyMap = attrs:
@@ -15247,14 +15231,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             mkAlloyTargets = items:
               "[\n" + lib.concatMapStrings (m: "      " + mkAlloyMap m + ",\n") items + "    ]";
           in
-          { host, probeLabel, targets }:
-          let
-            hostIp = blackboxHostIp host;
-            hostSlug = lib.replaceStrings [ "-" "." ] [ "_" "_" ] host;
-          in
+          { probeLabel, targets }:
           ''
 
-              discovery.relabel "blackbox_${probeLabel}_${hostSlug}" {
+              discovery.relabel "blackbox_${probeLabel}" {
                 targets = ${mkAlloyTargets targets}
 
                 rule {
@@ -15267,25 +15247,23 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 }
                 rule {
                   target_label = "__address__"
-                  replacement  = "${hostIp}:${toString globals.services.blackbox.extraConfig.port}"
+                  replacement  = "127.0.0.1:${toString globals.services.blackbox.extraConfig.port}"
                 }
                 rule {
                   target_label = "probe_from"
-                  replacement  = "${host}"
+                  replacement  = "${config.node.name}"
                 }
               }
 
-              prometheus.scrape "blackbox_${probeLabel}_${hostSlug}" {
-                targets      = discovery.relabel.blackbox_${probeLabel}_${hostSlug}.output
+              prometheus.scrape "blackbox_${probeLabel}" {
+                targets      = discovery.relabel.blackbox_${probeLabel}.output
                 metrics_path = "/probe"
                 job_name     = "blackbox_${probeLabel}"
                 forward_to   = [prometheus.remote_write.mimir.receiver]
               }
             '';
 
-        reachableBlackboxHosts = lib.filter (h: blackboxHostIp h != null) globals.monitoring.blackboxHosts;
-
-        httpTargets = lib.mapAttrsToList
+        httpTargets = targetsFor config.node.name (lib.mapAttrsToList
           (name: cfg: {
             __address__ = cfg.url;
             __param_module = "http_${name}";
@@ -15299,42 +15277,9 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
             fail_if_body_matches_regex = cfg.failIfBodyMatchesRegex;
           })
-          globals.monitoring.http;
+          globals.monitoring.http);
 
-        pingTargets = lib.filter (t: t != null)
-          (
-            map
-              (host:
-                let
-                  cfg = globals.hosts.${host};
-                  inH = builtins.elem host wgHomeMembers;
-                  inP = builtins.elem host wgProxyMembers;
-                in
-                if cfg.isHome && inH then {
-                  __address__ = wgHomeHosts.${host}.ipv4;
-                  __param_module = "icmp";
-                  name = host;
-                  probe = "ping";
-                  network = "wgHome";
-                }
-                else if inP then {
-                  __address__ = wgProxyHosts.${host}.ipv4;
-                  __param_module = "icmp";
-                  name = host;
-                  probe = "ping";
-                  network = "wgProxy";
-                }
-                else if inH then {
-                  __address__ = wgHomeHosts.${host}.ipv4;
-                  __param_module = "icmp";
-                  name = host;
-                  probe = "ping";
-                  network = "wgHome";
-                }
-                else null
-              )
-              (lib.attrNames globals.hosts)
-          ) ++ lib.mapAttrsToList
+        pingTargets = targetsFor config.node.name (lib.mapAttrsToList
           (name: cfg: {
             __address__ = cfg.host;
             __param_module = "icmp";
@@ -15342,7 +15287,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             probe = "ping";
             inherit (cfg) network;
           })
-          globals.monitoring.ping;
+          globals.monitoring.ping);
+
       in
       ''
               logging {
@@ -15428,29 +15374,14 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 }
               }
       ''
-      + lib.optionalString isCentral (
-        lib.concatMapStrings
-          (host:
-            let ts = targetsFor host httpTargets; in
-            lib.optionalString (ts != [ ]) (mkBlackboxBlock {
-              inherit host;
-              probeLabel = "http";
-              targets = ts;
-            })
-          )
-          reachableBlackboxHosts
-        +
-        lib.concatMapStrings
-          (host:
-            let ts = targetsFor host pingTargets; in
-            lib.optionalString (ts != [ ]) (mkBlackboxBlock {
-              inherit host;
-              probeLabel = "ping";
-              targets = ts;
-            })
-          )
-          reachableBlackboxHosts
-      );
+      + lib.optionalString (httpTargets != [ ]) (mkBlackboxBlock {
+        probeLabel = "http";
+        targets = httpTargets;
+      })
+      + lib.optionalString (pingTargets != [ ]) (mkBlackboxBlock {
+        probeLabel = "ping";
+        targets = pingTargets;
+      });
   in
   {
     config = {
@@ -15462,11 +15393,16 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           inherit otlpGrpcPort otlpHttpPort;
         };
         monitoring.hostNetworks.${config.node.name} = [ "local-${config.node.name}" ]
+          ++ lib.optional isHome "home-lan"
           ++ lib.optional inWgHome "wgHome"
           ++ lib.optional inWgProxy "wgProxy"
           ++ lib.optional
           (globals.hosts.${config.node.name}.wanAddress4 != null
-            || globals.hosts.${config.node.name}.wanAddress6 != null) "internet";
+            || globals.hosts.${config.node.name}.wanAddress6 != null) "internet"
+          ++ lib.mapAttrsToList (vlan: _: "${vlan}-vlan")
+          (lib.filterAttrs
+            (_: vlan: vlan ? hosts && vlan.hosts ? "${config.node.name}")
+            (globals.networks.home-lan.vlans or { }));
       };
 
       networking.hosts =
@@ -15491,6 +15427,18 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                   '')
               (lib.attrNames globals.hosts));
           };
+          "alloy/textfiles/probe_expected.prom" = lib.mkIf isCentral {
+            text = lib.concatStrings (
+              map
+                (n: ''probe_expected{name="${n}",probe="http"} 1
+                    '')
+                (lib.attrNames globals.monitoring.http)
+              ++ map
+                (n: ''probe_expected{name="${n}",probe="ping"} 1
+                    '')
+                (lib.attrNames globals.monitoring.ping)
+            );
+          };
         };
         persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [{ directory = "/var/lib/private/alloy"; mode = "0700"; }];
@@ -15514,11 +15462,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/blackbox.nix
-  { lib, config, globals, confLib, pkgs, ... }:
+  { lib, globals, confLib, pkgs, ... }:
   let
     inherit (confLib.gen { name = "blackbox"; port = 9115; })
       servicePort serviceName;
-    inherit (confLib.static) isHome monitoringServer webProxyIf homeProxyIf inWgProxy inWgHome;
 
     mkHttpModule = cfg: {
       prober = "http";
@@ -15555,23 +15502,12 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
     config = {
       swarselsystems.enabledServerModules = [ serviceName ];
 
-      globals = {
-        services.${serviceName}.extraConfig.port = servicePort;
-        monitoring.blackboxHosts = [ config.node.name ];
-        networks = lib.mkIf (config.node.name != monitoringServer) {
-          ${webProxyIf}.hosts = lib.mkIf inWgProxy {
-            ${config.node.name}.firewallRuleForNode.${monitoringServer}.allowedTCPPorts = [ servicePort ];
-          };
-          ${homeProxyIf}.hosts = lib.mkIf (isHome && inWgHome) {
-            ${config.node.name}.firewallRuleForNode.${monitoringServer}.allowedTCPPorts = [ servicePort ];
-          };
-        };
-      };
+      globals.services.${serviceName}.extraConfig.port = servicePort;
 
       services.prometheus.exporters.blackbox = {
         enable = true;
         port = servicePort;
-        listenAddress = "0.0.0.0";
+        listenAddress = "127.0.0.1";
         configFile = blackboxConfig;
       };
     };
@@ -42687,7 +42623,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                       "spec": {
                         "editorMode": "code",
                         "exemplar": false,
-                        "expr": "max by (host) (up) or max by (host) (host_expected * 0)",
+                        "expr": "max by (host) (up) or max by (host) (label_replace(probe_success{probe=\"ping\"}, \"host\", \"$1\", \"name\", \"(.+)\")) or max by (host) (host_expected * 0) or max by (host) (label_replace(probe_expected{probe=\"ping\"} * 0, \"host\", \"$1\", \"name\", \"(.+)\"))",
                         "instant": false,
                         "legendFormat": "{{probe_from}}",
                         "range": true
@@ -42957,7 +42893,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                       "spec": {
                         "editorMode": "code",
                         "exemplar": false,
-                        "expr": "min by (name) (probe_success{probe=\"http\"})",
+                        "expr": "min by (name) (probe_success{probe=\"http\"}) or on(name) (probe_expected{probe=\"http\"} * 0)\n",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "__auto",
@@ -42991,7 +42927,11 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "Time 1": true,
                         "Time 2": true,
                         "Time 3": true,
-                        "Value #C": false
+                        "Value #C": false,
+                        "host": true,
+                        "instance": true,
+                        "job": true,
+                        "probe": true
                       },
                       "includeByName": {},
                       "indexByName": {},
@@ -43094,7 +43034,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                           "mode": "absolute",
                           "steps": [
                             {
-                              "color": "red",
+                              "color": "transparent",
                               "value": 0
                             },
                             {
@@ -43211,7 +43151,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 50
+                        "value": 57
                       }
                     ]
                   }
