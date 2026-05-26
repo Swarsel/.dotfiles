@@ -15,6 +15,7 @@ in
     topology.self.services.${serviceName} = {
       name = lib.swarselsystems.toCapitalized serviceName;
       info = "https://${serviceDomain}";
+      icon = "services.not-available";
       # attic does not have a logo
     };
 

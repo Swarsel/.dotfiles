@@ -40,6 +40,11 @@ in
 
     globals.services.${serviceName}.extraConfig.port = servicePort;
 
+    topology.self.services.${serviceName} = {
+      name = "blackbox-exporter";
+      icon = "services.prometheus";
+    };
+
     services.prometheus.exporters.blackbox = {
       enable = true;
       port = servicePort;

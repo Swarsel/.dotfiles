@@ -304,7 +304,11 @@ in
   config = {
     swarselsystems.enabledServerModules = [ "buildbot" ];
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName} = {
+      name = "Buildbot";
+      info = "https://${serviceDomain}";
+      icon = "${self}/files/topology-images/${serviceName}.png";
+    };
 
     systemd.tmpfiles.settings."10-buildbot" = builtins.listToAttrs (
       map

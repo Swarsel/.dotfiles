@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen {
     name = "mimir";
@@ -10,6 +10,12 @@ in
 {
   config = {
     swarselsystems.enabledServerModules = [ serviceName ];
+
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/files/topology-images/${serviceName}.png";
+    };
 
     globals = {
       networks = {

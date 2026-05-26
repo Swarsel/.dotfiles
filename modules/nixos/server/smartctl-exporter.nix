@@ -15,6 +15,11 @@ in
       };
     };
 
+    topology.self.services.${serviceName} = {
+      name = serviceName;
+      icon = "services.prometheus";
+    };
+
     services.prometheus.exporters.smartctl = {
       enable = true;
       listenAddress = "127.0.0.1";

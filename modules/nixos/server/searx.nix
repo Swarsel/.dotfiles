@@ -30,7 +30,7 @@ in
       searx = confLib.mkIds 950;
     };
 
-    topology.self.services.${serviceName} = {
+    topology.self.services.searxng = {
       info = "https://${serviceDomain}";
     };
 

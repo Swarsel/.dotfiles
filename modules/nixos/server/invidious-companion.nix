@@ -41,7 +41,8 @@ in
 
     topology.self.services.${serviceName} = {
       name = "invidious-companion";
-      info = "https://${serviceDomain}";
+      info = "https://${serviceDomain}/companion";
+      icon = "services.invidious";
     };
 
     systemd.services.invidious-companion = {
