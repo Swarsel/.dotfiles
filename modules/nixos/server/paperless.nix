@@ -70,6 +70,7 @@ in
         passwordFile = config.sops.secrets.paperless-admin-pw.path;
         address = "0.0.0.0";
         settings = {
+          domain = serviceDomain;
           PAPERLESS_OCR_LANGUAGE = "deu+eng";
           PAPERLESS_URL = "https://${serviceDomain}";
           PAPERLESS_OCR_USER_ARGS = builtins.toJSON {

@@ -14117,6 +14117,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           passwordFile = config.sops.secrets.paperless-admin-pw.path;
           address = "0.0.0.0";
           settings = {
+            domain = serviceDomain;
             PAPERLESS_OCR_LANGUAGE = "deu+eng";
             PAPERLESS_URL = "https://${serviceDomain}";
             PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
@@ -15102,7 +15103,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/tempo.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "tempo";
@@ -15118,11 +15119,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
     config = {
       swarselsystems.enabledServerModules = [ serviceName ];
 
-      topology.self.services.${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
       globals = {
         networks = {
@@ -16088,7 +16085,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/mimir.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "mimir";
@@ -16101,11 +16098,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
     config = {
       swarselsystems.enabledServerModules = [ serviceName ];
 
-      topology.self.services.${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
       globals = {
         networks = {
@@ -42738,7 +42731,7 @@ Here lies defined the readme for GitHub and Forgejo:
     <details>
       <summary>Click here for a summary of my infrastructure</summary>
 
-  <img width="4250" height="9117" alt="topology" src="https://github.com/user-attachments/assets/582264cf-f239-4699-b90f-69f2cef5a7b2" />
+  <img width="4681" height="9890" alt="topology" src="https://github.com/user-attachments/assets/58742580-fb02-4b51-978a-364f5df1ddbd" />
 
 
     ### Programs

@@ -109,7 +109,7 @@
   <details>
     <summary>Click here for a summary of my infrastructure</summary>
 
-<img width="4250" height="9117" alt="topology" src="https://github.com/user-attachments/assets/582264cf-f239-4699-b90f-69f2cef5a7b2" />
+<img width="4681" height="9890" alt="topology" src="https://github.com/user-attachments/assets/58742580-fb02-4b51-978a-364f5df1ddbd" />
 
 
   ### Programs
