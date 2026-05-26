@@ -139,7 +139,10 @@ in
           '';
         };
       kanidm = {
-        environment.KANIDM_TRUST_X_FORWARD_FOR = "true";
+        environment = {
+          KANIDM_TRUST_X_FORWARD_FOR = "true";
+          OTEL_SERVICE_NAME = "kanidm-${config.node.name}";
+        };
         serviceConfig.RestartSec = "30";
       };
     };
@@ -160,6 +163,7 @@ in
             tls_key = keyPathBase;
             bindaddress = "0.0.0.0:${toString servicePort}";
             # trust_x_forward_for = true;
+            otel_grpc_url = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
           };
         };
         client = {

@@ -92,7 +92,15 @@ in
       };
     };
 
-    systemd.services.mimir.serviceConfig.RestartSec = lib.mkForce "60";
+    systemd.services.mimir = {
+      serviceConfig.RestartSec = lib.mkForce "60";
+      environment = {
+        OTEL_TRACES_EXPORTER = "otlp";
+        OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
+        OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+        OTEL_SERVICE_NAME = "mimir-${config.node.name}";
+      };
+    };
 
     globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;

@@ -53,8 +53,13 @@ in
         };
 
         distributor.receivers.otlp.protocols = {
-          grpc.endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
-          http.endpoint = "0.0.0.0:${toString servicePort}";
+          grpc = {
+            endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
+            max_recv_msg_size_mib = 20;
+          };
+          http = {
+            endpoint = "0.0.0.0:${toString servicePort}";
+          };
         };
 
         storage.trace = {
@@ -69,6 +74,10 @@ in
 
         metrics_generator = {
           registry.external_labels.source = "tempo";
+          processor.local_blocks = {
+            filter_server_spans = false;
+            flush_to_storage = true;
+          };
           storage = {
             path = "${serviceDir}/generator/wal";
             remote_write = [{
@@ -80,14 +89,24 @@ in
         };
 
         overrides.defaults.metrics_generator = {
-          processors = [ "service-graphs" "span-metrics" ];
+          processors = [ "service-graphs" "span-metrics" "local-blocks" ];
         };
 
         usage_report.reporting_enabled = false;
       };
     };
 
-    systemd.services.tempo.serviceConfig.RestartSec = lib.mkForce "60";
+    systemd.services.tempo = {
+      serviceConfig.RestartSec = lib.mkForce "60";
+      environment = {
+        OTEL_TRACES_EXPORTER = "otlp";
+        OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
+        OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+        OTEL_SERVICE_NAME = "tempo-${config.node.name}";
+        OTEL_TRACES_SAMPLER = "parentbased_traceidratio";
+        OTEL_TRACES_SAMPLER_ARG = "0.01";
+      };
+    };
 
     globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
