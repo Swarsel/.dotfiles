@@ -1,4 +1,4 @@
-{ self, config, lib, minimal, globals, confLib, ... }:
+{ self, config, lib, minimal, globals, confLib, inputs, ... }:
 let
   inherit (confLib.static) nginxAccessRules;
 in
@@ -9,6 +9,7 @@ in
     "${self}/modules/nixos/server/oauth2-proxy.nix"
     "${self}/modules/nixos/server/nginx.nix"
     "${self}/modules/nixos/server/acme.nix"
+    inputs.nginx-otel.nixosModules.default
   ];
 
   swarselsystems = {
@@ -26,6 +27,11 @@ in
   };
 
   services.nginx = {
+    otel = {
+      enable = true;
+      serviceName = "nginx-${config.node.name}";
+      endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+    };
     upstreams.fritzbox = {
       servers.${globals.networks.home-lan.hosts.fritzbox.ipv4} = { };
     };

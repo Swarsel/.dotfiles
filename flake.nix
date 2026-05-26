@@ -38,6 +38,10 @@
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nginx-otel = {
+      url = "github:djvcom/nix-nginx-otel";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     emacs-overlay = {
       # url = "github:swarsel/emacs-overlay/fix";
       # url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";

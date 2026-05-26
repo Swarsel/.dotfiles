@@ -1,4 +1,4 @@
-{ self, config, lib, minimal, ... }:
+{ self, config, lib, minimal, globals, inputs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -13,6 +13,7 @@
     "${self}/modules/nixos/server/oauth2-proxy.nix"
     "${self}/modules/nixos/server/wireguard.nix"
     "${self}/modules/nixos/server/firezone.nix"
+    inputs.nginx-otel.nixosModules.default
   ];
 
   topology.self = {
@@ -74,6 +75,12 @@
       after = [ "conntrack" ];
       rules = [ "ct status dnat accept" ];
     };
+  };
+
+  services.nginx.otel = {
+    enable = true;
+    serviceName = "nginx-${config.node.name}";
+    endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
   };
 
 }
