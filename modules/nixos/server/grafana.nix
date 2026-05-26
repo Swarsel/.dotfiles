@@ -19,6 +19,8 @@ in
     sops.secrets = {
       grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       kanidm-grafana = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      grafana-gotify-token = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      grafana-smtp-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     users = {
@@ -143,6 +145,130 @@ in
           name = "default";
           options.path = self + "/files/grafana";
         }];
+
+        alerting = {
+          contactPoints.settings = {
+            apiVersion = 1;
+            contactPoints = [{
+              orgId = 1;
+              name = "default";
+              receivers = [
+                {
+                  uid = "gotify_webhook";
+                  type = "webhook";
+                  settings = {
+                    url = "https://${globals.services.gotify.domain}/message?token=$__file{${config.sops.secrets.grafana-gotify-token.path}}";
+                    httpMethod = "POST";
+                    title = "{{ template \"default.title\" . }}";
+                    message = "{{ template \"default.message\" . }}";
+                  };
+                }
+                {
+                  uid = "email_default";
+                  type = "email";
+                  settings = {
+                    addresses = "monitoring@${globals.domains.main}";
+                    singleEmail = false;
+                  };
+                }
+              ];
+            }];
+          };
+
+          policies.settings = {
+            apiVersion = 1;
+            policies = [{
+              orgId = 1;
+              receiver = "default";
+              group_by = [ "grafana_folder" "alertname" ];
+              group_wait = "30s";
+              group_interval = "5m";
+              repeat_interval = "4h";
+            }];
+          };
+
+          rules.settings =
+            let
+              mkRule = { uid, title, expr, op ? "lt", threshold ? 1, forDuration ? "5m", severity ? "critical", summary }:
+                {
+                  inherit uid title;
+                  condition = "C";
+                  for = forDuration;
+                  noDataState = "NoData";
+                  execErrState = "Alerting";
+                  data = [
+                    {
+                      refId = "A";
+                      relativeTimeRange = { from = 600; to = 0; };
+                      datasourceUid = "mimir";
+                      model = {
+                        refId = "A";
+                        inherit expr;
+                        range = false;
+                        instant = true;
+                      };
+                    }
+                    {
+                      refId = "C";
+                      datasourceUid = "__expr__";
+                      model = {
+                        refId = "C";
+                        type = "threshold";
+                        expression = "A";
+                        conditions = [{
+                          evaluator = { type = op; params = [ threshold ]; };
+                        }];
+                      };
+                    }
+                  ];
+                  annotations.summary = summary;
+                  labels.severity = severity;
+                };
+            in
+            {
+              apiVersion = 1;
+              groups = [{
+                orgId = 1;
+                name = "core";
+                folder = "Infrastructure";
+                interval = "1m";
+                rules = [
+                  (mkRule {
+                    uid = "host_down";
+                    title = "Host down";
+                    expr = "max by (host) (up) or max by (host) (host_expected * 0)";
+                    summary = "{{ $labels.host }} stopped reporting (no `up` series and `host_expected` fallback fired)";
+                  })
+                  (mkRule {
+                    uid = "http_probe_failed";
+                    title = "HTTP probe failed";
+                    expr = ''min by (name) (probe_success{probe="http"}) or on(name) (probe_expected{probe="http"} * 0)'';
+                    forDuration = "3m";
+                    summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
+                  })
+                  (mkRule {
+                    uid = "disk_filling";
+                    title = "Disk above 80% used";
+                    expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
+                    op = "gt";
+                    threshold = 80;
+                    forDuration = "10m";
+                    severity = "warning";
+                    summary = "{{ $labels.host }}:{{ $labels.mountpoint }} is more than 80% full";
+                  })
+                  (mkRule {
+                    uid = "zfs_pool_unhealthy";
+                    title = "ZFS pool not online";
+                    expr = "max by (host, pool) (zfs_pool_health)";
+                    op = "gt";
+                    threshold = 0;
+                    forDuration = "5m";
+                    summary = "ZFS pool {{ $labels.host }}:{{ $labels.pool }} is not ONLINE";
+                  })
+                ];
+              }];
+            };
+        };
       };
 
       settings = {
@@ -163,6 +289,15 @@ in
           protocol = "http";
           enforce_domain = true;
           enable_gzip = true;
+        };
+        smtp = {
+          enabled = true;
+          host = "${globals.services.mailserver.domain}:587";
+          user = "notification@${globals.domains.main}";
+          password = "$__file{${config.sops.secrets.grafana-smtp-pw.path}}";
+          from_address = "monitoring@${globals.domains.main}";
+          from_name = "Monitoring";
+          startTLS_policy = "MandatoryStartTLS";
         };
         "tracing.opentelemetry" = {
           custom_attributes = "service.name:grafana-${config.node.name}";

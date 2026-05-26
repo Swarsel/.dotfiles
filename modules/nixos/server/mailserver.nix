@@ -3,7 +3,7 @@ let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
-  inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
+  inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 alias2_4 user3;
   baseDomain = globals.domains.main;
 
   roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
@@ -101,6 +101,7 @@ in
             "${alias2_1}@${baseDomain}"
             "${alias2_2}@${baseDomain}"
             "${alias2_3}@${baseDomain}"
+            "${alias2_4}@${baseDomain}"
           ];
           sendOnly = true;
         };
