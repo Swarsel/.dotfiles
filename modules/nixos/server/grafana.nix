@@ -65,6 +65,7 @@ in
             hasMimir = builtins.elem "mimir" config.swarselsystems.enabledServerModules;
             hasLoki = builtins.elem "loki" config.swarselsystems.enabledServerModules;
             hasTempo = builtins.elem "tempo" config.swarselsystems.enabledServerModules;
+            hasPyroscope = builtins.elem "pyroscope" config.swarselsystems.enabledServerModules;
             mimirUrl =
               if hasMimir
               then "http://127.0.0.1:${toString globals.services.mimir.extraConfig.port}/prometheus"
@@ -77,6 +78,10 @@ in
               if hasTempo
               then "http://127.0.0.1:3200"
               else "https://${globals.services.tempo.domain}";
+            pyroscopeUrl =
+              if hasPyroscope
+              then "http://127.0.0.1:${toString globals.services.pyroscope.extraConfig.port}"
+              else "https://${globals.services.pyroscope.domain}";
           in
           lib.optional hasMimir
             {
@@ -118,7 +123,20 @@ in
               };
             } // lib.optionalAttrs hasMimir {
               serviceMap.datasourceUid = "mimir";
+            } // lib.optionalAttrs hasPyroscope {
+              tracesToProfiles = {
+                datasourceUid = "pyroscope";
+                profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
+                tags = [{ key = "service.name"; value = "service_name"; }];
+              };
             };
+          }
+          ++ lib.optional hasPyroscope {
+            name = "Pyroscope";
+            uid = "pyroscope";
+            type = "grafana-pyroscope-datasource";
+            access = "proxy";
+            url = pyroscopeUrl;
           };
 
         dashboards.settings.providers = [{
@@ -145,6 +163,13 @@ in
           protocol = "http";
           enforce_domain = true;
           enable_gzip = true;
+        };
+        "tracing.opentelemetry" = {
+          custom_attributes = "service.name:grafana-${config.node.name}";
+        };
+        "tracing.opentelemetry.otlp" = {
+          address = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+          propagation = "w3c";
         };
         "auth.generic_oauth" = {
           enabled = true;

@@ -6,6 +6,7 @@
     "${self}/modules/nixos/server/mimir.nix"
     "${self}/modules/nixos/server/loki.nix"
     "${self}/modules/nixos/server/tempo.nix"
+    "${self}/modules/nixos/server/pyroscope.nix"
   ];
 
   swarselsystems = {

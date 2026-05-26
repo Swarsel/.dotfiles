@@ -15,6 +15,7 @@ let
   mimirDomain = globals.services.mimir.domain;
   lokiDomain = globals.services.loki.domain;
   tempoDomain = globals.services.tempo.domain;
+  pyroscopeDomain = globals.services.pyroscope.domain;
 
   config-alloy =
     let
@@ -170,7 +171,10 @@ let
             }
 
             otelcol.receiver.otlp "local" {
-              grpc { endpoint = "127.0.0.1:${toString otlpGrpcPort}" }
+              grpc {
+                endpoint              = "127.0.0.1:${toString otlpGrpcPort}"
+                max_recv_msg_size     = "20MiB"
+              }
               http { endpoint = "127.0.0.1:${toString otlpHttpPort}" }
 
               output {
@@ -181,6 +185,61 @@ let
             otelcol.exporter.otlphttp "tempo" {
               client {
                 endpoint = "${mkPushUrl tempoDomain globals.services.tempo.extraConfig.port ""}"
+              }
+            }
+
+            beyla.ebpf "auto" {
+              discovery {
+                instrument {
+                  open_ports = "*"
+                  exports = ["traces"]
+                }
+              }
+
+              output {
+                traces = [otelcol.exporter.otlphttp.tempo.input]
+              }
+            }
+
+            discovery.process "all" {
+              refresh_interval = "30s"
+              discover_config {
+                cwd          = false
+                exe          = true
+                commandline  = false
+                username     = false
+                uid          = false
+                container_id = true
+              }
+            }
+
+            discovery.relabel "process" {
+              targets = discovery.process.all.targets
+
+              rule {
+                source_labels = ["__meta_process_exe"]
+                regex         = "(?:.*/)?([^/]+)"
+                target_label  = "service_name"
+              }
+              rule {
+                source_labels = ["__meta_process_cgroup_id"]
+                regex         = ".*/([^/]+)\\.service"
+                target_label  = "service_name"
+              }
+            }
+
+            pyroscope.ebpf "auto" {
+              targets           = discovery.relabel.process.output
+              forward_to        = [pyroscope.write.central.receiver]
+              off_cpu_threshold = 0.01
+            }
+
+            pyroscope.write "central" {
+              endpoint {
+                url = "${mkPushUrl pyroscopeDomain globals.services.pyroscope.extraConfig.port ""}"
+              }
+              external_labels = {
+                host = "${config.node.name}",
               }
             }
     ''
@@ -225,7 +284,7 @@ in
           else null;
       in
       lib.optionalAttrs (proxyIp != null) {
-        ${proxyIp} = [ mimirDomain lokiDomain tempoDomain ];
+        ${proxyIp} = [ mimirDomain lokiDomain tempoDomain pyroscopeDomain ];
       };
 
     environment = {
@@ -260,7 +319,29 @@ in
       extraFlags = [ "--server.http.listen-addr=127.0.0.1:${toString servicePort}" ];
     };
 
-    systemd.services.alloy.serviceConfig.RestartSec = lib.mkForce "60";
+    systemd.services.alloy.serviceConfig = {
+      RestartSec = lib.mkForce "60";
+      AmbientCapabilities = [
+        "CAP_BPF"
+        "CAP_SYS_PTRACE"
+        "CAP_NET_RAW"
+        "CAP_CHECKPOINT_RESTORE"
+        "CAP_DAC_READ_SEARCH"
+        "CAP_PERFMON"
+        "CAP_SYS_RESOURCE"
+        "CAP_SYSLOG"
+      ];
+      CapabilityBoundingSet = [
+        "CAP_BPF"
+        "CAP_SYS_PTRACE"
+        "CAP_NET_RAW"
+        "CAP_CHECKPOINT_RESTORE"
+        "CAP_DAC_READ_SEARCH"
+        "CAP_PERFMON"
+        "CAP_SYS_RESOURCE"
+        "CAP_SYSLOG"
+      ];
+    };
 
   };
 }
