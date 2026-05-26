@@ -273,7 +273,10 @@ in
 
       settings = {
         analytics.reporting_enabled = false;
-        users.allow_sign_up = false;
+        users = {
+          allow_sign_up = false;
+          default_home_dashboard_path = self + "/files/grafana/service-status.json";
+        };
         security = {
           disable_initial_admin_creation = true;
           secret_key = "$__file{${config.sops.secrets.grafana-admin-pw.path}}";
