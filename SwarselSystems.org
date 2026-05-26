@@ -375,7 +375,7 @@ This is a comprehensive list of the services/components ran by my server machine
   |📄 **Documents**            | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                 |
   |🔄 **File Sync**            | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                 |
   |💾 **Backups**              | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                       |
-  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/alloy.nix) |
+  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/alloy.nix) [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/gotify.nix) |
   |🍴 **RSS**                  | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                   |
   |🌳 **Git**                  | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                     |
   |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)                      |
@@ -1754,6 +1754,10 @@ A short overview over each input and what it does:
       };
       nixos-generators = {
         url = "github:nix-community/nixos-generators";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nginx-otel = {
+        url = "github:djvcom/nix-nginx-otel";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       emacs-overlay = {
@@ -4996,6 +5000,8 @@ This is my current main server at home; all services except filesystem backups r
       "${self}/modules/nixos/server/mimir.nix"
       "${self}/modules/nixos/server/loki.nix"
       "${self}/modules/nixos/server/tempo.nix"
+      "${self}/modules/nixos/server/pyroscope.nix"
+      "${self}/modules/nixos/server/gotify.nix"
     ];
 
     swarselsystems = {
@@ -5581,7 +5587,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/guests/nginx/default.nix
-  { self, config, lib, minimal, globals, confLib, ... }:
+  { self, config, lib, minimal, globals, confLib, inputs, ... }:
   let
     inherit (confLib.static) nginxAccessRules;
   in
@@ -5592,6 +5598,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
       "${self}/modules/nixos/server/oauth2-proxy.nix"
       "${self}/modules/nixos/server/nginx.nix"
       "${self}/modules/nixos/server/acme.nix"
+      inputs.nginx-otel.nixosModules.default
     ];
 
     swarselsystems = {
@@ -5609,6 +5616,11 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
     };
 
     services.nginx = {
+      otel = {
+        enable = true;
+        serviceName = "nginx-${config.node.name}";
+        endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+      };
       upstreams.fritzbox = {
         servers.${globals.networks.home-lan.hosts.fritzbox.ipv4} = { };
       };
@@ -6673,7 +6685,7 @@ This host acts as my main http proxy for external access.
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/twothreetunnel/default.nix
-  { self, config, lib, minimal, ... }:
+  { self, config, lib, minimal, globals, inputs, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -6688,6 +6700,7 @@ This host acts as my main http proxy for external access.
       "${self}/modules/nixos/server/oauth2-proxy.nix"
       "${self}/modules/nixos/server/wireguard.nix"
       "${self}/modules/nixos/server/firezone.nix"
+      inputs.nginx-otel.nixosModules.default
     ];
 
     topology.self = {
@@ -6749,6 +6762,12 @@ This host acts as my main http proxy for external access.
         after = [ "conntrack" ];
         rules = [ "ct status dnat accept" ];
       };
+    };
+
+    services.nginx.otel = {
+      enable = true;
+      serviceName = "nginx-${config.node.name}";
+      endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
     };
 
   }
@@ -10226,7 +10245,6 @@ Enables the blueman service including the nice system tray icon.
       services = {
         blueman = {
           enable = true;
-          withApplet = false;
         };
         hardware.bolt.enable = true;
       };
@@ -14719,6 +14737,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
       sops.secrets = {
         grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         kanidm-grafana = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        grafana-gotify-token = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        grafana-smtp-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       users = {
@@ -14765,6 +14785,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
               hasMimir = builtins.elem "mimir" config.swarselsystems.enabledServerModules;
               hasLoki = builtins.elem "loki" config.swarselsystems.enabledServerModules;
               hasTempo = builtins.elem "tempo" config.swarselsystems.enabledServerModules;
+              hasPyroscope = builtins.elem "pyroscope" config.swarselsystems.enabledServerModules;
               mimirUrl =
                 if hasMimir
                 then "http://127.0.0.1:${toString globals.services.mimir.extraConfig.port}/prometheus"
@@ -14777,6 +14798,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 if hasTempo
                 then "http://127.0.0.1:3200"
                 else "https://${globals.services.tempo.domain}";
+              pyroscopeUrl =
+                if hasPyroscope
+                then "http://127.0.0.1:${toString globals.services.pyroscope.extraConfig.port}"
+                else "https://${globals.services.pyroscope.domain}";
             in
             lib.optional hasMimir
               {
@@ -14818,18 +14843,158 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 };
               } // lib.optionalAttrs hasMimir {
                 serviceMap.datasourceUid = "mimir";
+              } // lib.optionalAttrs hasPyroscope {
+                tracesToProfiles = {
+                  datasourceUid = "pyroscope";
+                  profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
+                  tags = [{ key = "service.name"; value = "service_name"; }];
+                };
               };
+            }
+            ++ lib.optional hasPyroscope {
+              name = "Pyroscope";
+              uid = "pyroscope";
+              type = "grafana-pyroscope-datasource";
+              access = "proxy";
+              url = pyroscopeUrl;
             };
 
           dashboards.settings.providers = [{
             name = "default";
             options.path = self + "/files/grafana";
           }];
+
+          alerting = {
+            contactPoints.settings = {
+              apiVersion = 1;
+              contactPoints = [{
+                orgId = 1;
+                name = "default";
+                receivers = [
+                  {
+                    uid = "gotify_webhook";
+                    type = "webhook";
+                    settings = {
+                      url = "https://${globals.services.gotify.domain}/message?token=$__file{${config.sops.secrets.grafana-gotify-token.path}}";
+                      httpMethod = "POST";
+                      title = "{{ template \"default.title\" . }}";
+                      message = "{{ template \"default.message\" . }}";
+                    };
+                  }
+                  {
+                    uid = "email_default";
+                    type = "email";
+                    settings = {
+                      addresses = "monitoring@${globals.domains.main}";
+                      singleEmail = false;
+                    };
+                  }
+                ];
+              }];
+            };
+
+            policies.settings = {
+              apiVersion = 1;
+              policies = [{
+                orgId = 1;
+                receiver = "default";
+                group_by = [ "grafana_folder" "alertname" ];
+                group_wait = "30s";
+                group_interval = "5m";
+                repeat_interval = "4h";
+              }];
+            };
+
+            rules.settings =
+              let
+                mkRule = { uid, title, expr, op ? "lt", threshold ? 1, forDuration ? "5m", severity ? "critical", summary }:
+                  {
+                    inherit uid title;
+                    condition = "C";
+                    for = forDuration;
+                    noDataState = "NoData";
+                    execErrState = "Alerting";
+                    data = [
+                      {
+                        refId = "A";
+                        relativeTimeRange = { from = 600; to = 0; };
+                        datasourceUid = "mimir";
+                        model = {
+                          refId = "A";
+                          inherit expr;
+                          range = false;
+                          instant = true;
+                        };
+                      }
+                      {
+                        refId = "C";
+                        datasourceUid = "__expr__";
+                        model = {
+                          refId = "C";
+                          type = "threshold";
+                          expression = "A";
+                          conditions = [{
+                            evaluator = { type = op; params = [ threshold ]; };
+                          }];
+                        };
+                      }
+                    ];
+                    annotations.summary = summary;
+                    labels.severity = severity;
+                  };
+              in
+              {
+                apiVersion = 1;
+                groups = [{
+                  orgId = 1;
+                  name = "core";
+                  folder = "Infrastructure";
+                  interval = "1m";
+                  rules = [
+                    (mkRule {
+                      uid = "host_down";
+                      title = "Host down";
+                      expr = "max by (host) (up) or max by (host) (host_expected * 0)";
+                      summary = "{{ $labels.host }} stopped reporting (no `up` series and `host_expected` fallback fired)";
+                    })
+                    (mkRule {
+                      uid = "http_probe_failed";
+                      title = "HTTP probe failed";
+                      expr = ''min by (name) (probe_success{probe="http"}) or on(name) (probe_expected{probe="http"} * 0)'';
+                      forDuration = "3m";
+                      summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
+                    })
+                    (mkRule {
+                      uid = "disk_filling";
+                      title = "Disk above 80% used";
+                      expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
+                      op = "gt";
+                      threshold = 80;
+                      forDuration = "10m";
+                      severity = "warning";
+                      summary = "{{ $labels.host }}:{{ $labels.mountpoint }} is more than 80% full";
+                    })
+                    (mkRule {
+                      uid = "zfs_pool_unhealthy";
+                      title = "ZFS pool not online";
+                      expr = "max by (host, pool) (zfs_pool_health)";
+                      op = "gt";
+                      threshold = 0;
+                      forDuration = "5m";
+                      summary = "ZFS pool {{ $labels.host }}:{{ $labels.pool }} is not ONLINE";
+                    })
+                  ];
+                }];
+              };
+          };
         };
 
         settings = {
           analytics.reporting_enabled = false;
-          users.allow_sign_up = false;
+          users = {
+            allow_sign_up = false;
+            default_home_dashboard_path = self + "/files/grafana/service-status.json";
+          };
           security = {
             disable_initial_admin_creation = true;
             secret_key = "$__file{${config.sops.secrets.grafana-admin-pw.path}}";
@@ -14845,6 +15010,22 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             protocol = "http";
             enforce_domain = true;
             enable_gzip = true;
+          };
+          smtp = {
+            enabled = true;
+            host = "${globals.services.mailserver.domain}:587";
+            user = "notification@${globals.domains.main}";
+            password = "$__file{${config.sops.secrets.grafana-smtp-pw.path}}";
+            from_address = "monitoring@${globals.domains.main}";
+            from_name = "Monitoring";
+            startTLS_policy = "MandatoryStartTLS";
+          };
+          "tracing.opentelemetry" = {
+            custom_attributes = "service.name:grafana-${config.node.name}";
+          };
+          "tracing.opentelemetry.otlp" = {
+            address = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+            propagation = "w3c";
           };
           "auth.generic_oauth" = {
             enabled = true;
@@ -14921,7 +15102,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/tempo.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "tempo";
@@ -14936,6 +15117,12 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   {
     config = {
       swarselsystems.enabledServerModules = [ serviceName ];
+
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/files/topology-images/${serviceName}.png";
+      };
 
       globals = {
         networks = {
@@ -14976,8 +15163,13 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           };
 
           distributor.receivers.otlp.protocols = {
-            grpc.endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
-            http.endpoint = "0.0.0.0:${toString servicePort}";
+            grpc = {
+              endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
+              max_recv_msg_size_mib = 20;
+            };
+            http = {
+              endpoint = "0.0.0.0:${toString servicePort}";
+            };
           };
 
           storage.trace = {
@@ -14992,6 +15184,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
           metrics_generator = {
             registry.external_labels.source = "tempo";
+            processor.local_blocks = {
+              filter_server_spans = false;
+              flush_to_storage = true;
+            };
             storage = {
               path = "${serviceDir}/generator/wal";
               remote_write = [{
@@ -15003,14 +15199,24 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           };
 
           overrides.defaults.metrics_generator = {
-            processors = [ "service-graphs" "span-metrics" ];
+            processors = [ "service-graphs" "span-metrics" "local-blocks" ];
           };
 
           usage_report.reporting_enabled = false;
         };
       };
 
-      systemd.services.tempo.serviceConfig.RestartSec = lib.mkForce "60";
+      systemd.services.tempo = {
+        serviceConfig.RestartSec = lib.mkForce "60";
+        environment = {
+          OTEL_TRACES_EXPORTER = "otlp";
+          OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
+          OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+          OTEL_SERVICE_NAME = "tempo-${config.node.name}";
+          OTEL_TRACES_SAMPLER = "parentbased_traceidratio";
+          OTEL_TRACES_SAMPLER_ARG = "0.01";
+        };
+      };
 
       globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -15051,6 +15257,202 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           ${webProxy}.services.nginx = genNginx serviceAddress wgProxyAccessRules;
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
         };
+    };
+  }
+#+end_src
+
+**** gotify
+
+#+begin_src nix-ts :tangle modules/nixos/server/gotify.nix
+  { self, lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen {
+      name = "gotify";
+      port = 8080;
+      dir = "/var/lib/private/gotify-server";
+    }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  in
+  {
+    imports = [
+      "${self}/modules/nixos/server/postgresql.nix"
+    ];
+
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/files/topology-images/${serviceName}.png";
+      };
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          extraConfig.port = servicePort;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/health";
+          expectedBodyRegex = "ok|green";
+          network = "local-${config.node.name}";
+        };
+      };
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = serviceDir; mode = "0700"; }];
+      };
+
+      services.postgresql = {
+        ensureDatabases = [ "gotify-server" ];
+        ensureUsers = [{
+          name = "gotify-server";
+          ensureDBOwnership = true;
+        }];
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        environment = {
+          GOTIFY_SERVER_PORT = servicePort;
+          GOTIFY_SERVER_LISTENADDR = "0.0.0.0";
+          GOTIFY_DATABASE_DIALECT = "postgres";
+          GOTIFY_DATABASE_CONNECTION = "host=/run/postgresql user=gotify-server dbname=gotify-server sslmode=disable";
+          GOTIFY_PASSSTRENGTH = 12;
+          GOTIFY_UPLOADEDIMAGESDIR = "${serviceDir}/images";
+          GOTIFY_PLUGINSDIR = "${serviceDir}/plugins";
+        };
+      };
+
+      systemd.services.gotify-server.serviceConfig.RestartSec = lib.mkForce "60";
+
+      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+      nodes = {
+        ${webProxy}.services.nginx = confLib.genNginx {
+          inherit serviceAddress servicePort serviceDomain serviceName;
+          proxyWebsockets = true;
+          maxBody = 50;
+          maxBodyUnit = "M";
+          # extraConfig = wgProxyAccessRules;
+        };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
+          inherit servicePort serviceDomain serviceName;
+          serviceAddress = homeServiceAddress;
+          proxyWebsockets = true;
+          maxBody = 50;
+          maxBodyUnit = "M";
+          extraConfig = nginxAccessRules;
+        });
+      };
+    };
+  }
+#+end_src
+
+**** pyroscope
+
+#+begin_src nix-ts :tangle modules/nixos/server/pyroscope.nix
+  { self, lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen {
+      name = "pyroscope";
+      port = 4040;
+      dir = "/var/lib/private/pyroscope";
+    }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules wgProxyAccessRules;
+
+    memberlistPort = 7948;
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/files/topology-images/${serviceName}.png";
+      };
+
+      globals = {
+        networks = {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
+          };
+          ${homeProxyIf}.hosts = lib.mkIf isHome {
+            ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
+          };
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          extraConfig.port = servicePort;
+        };
+        monitoring.http.${serviceName} = {
+          url = "http://127.0.0.1:${toString servicePort}/ready";
+          expectedBodyRegex = "ready";
+          network = "local-${config.node.name}";
+        };
+      };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = serviceDir; mode = "0700"; }];
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        settings = {
+          target = "all";
+          multitenancy_enabled = false;
+          analytics.reporting_enabled = false;
+          server = {
+            http_listen_address = "0.0.0.0";
+            http_listen_port = servicePort;
+            grpc_listen_port = 9098;
+            log_level = "warn";
+          };
+          storage = {
+            backend = "filesystem";
+            filesystem.dir = "${serviceDir}/data";
+          };
+          pyroscopedb.data_path = "${serviceDir}/pyroscope";
+          memberlist.bind_port = memberlistPort;
+        };
+      };
+
+      systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
+
+      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+      nodes = {
+        ${webProxy}.services.nginx = confLib.genNginx {
+          inherit serviceAddress servicePort serviceDomain serviceName;
+          maxBody = 0;
+          extraConfig = wgProxyAccessRules;
+        };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
+          inherit servicePort serviceDomain serviceName;
+          serviceAddress = homeServiceAddress;
+          maxBody = 0;
+          extraConfig = nginxAccessRules;
+        });
+      };
     };
   }
 #+end_src
@@ -15159,7 +15561,15 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
-      systemd.services.loki.serviceConfig.RestartSec = lib.mkForce "60";
+      systemd.services.loki = {
+        serviceConfig.RestartSec = lib.mkForce "60";
+        environment = {
+          OTEL_TRACES_EXPORTER = "otlp";
+          OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
+          OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+          OTEL_SERVICE_NAME = "loki-${config.node.name}";
+        };
+      };
 
       globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -15205,6 +15615,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
     mimirDomain = globals.services.mimir.domain;
     lokiDomain = globals.services.loki.domain;
     tempoDomain = globals.services.tempo.domain;
+    pyroscopeDomain = globals.services.pyroscope.domain;
 
     config-alloy =
       let
@@ -15360,7 +15771,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
               }
 
               otelcol.receiver.otlp "local" {
-                grpc { endpoint = "127.0.0.1:${toString otlpGrpcPort}" }
+                grpc {
+                  endpoint              = "127.0.0.1:${toString otlpGrpcPort}"
+                  max_recv_msg_size     = "20MiB"
+                }
                 http { endpoint = "127.0.0.1:${toString otlpHttpPort}" }
 
                 output {
@@ -15371,6 +15785,61 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
               otelcol.exporter.otlphttp "tempo" {
                 client {
                   endpoint = "${mkPushUrl tempoDomain globals.services.tempo.extraConfig.port ""}"
+                }
+              }
+
+              beyla.ebpf "auto" {
+                discovery {
+                  instrument {
+                    open_ports = "*"
+                    exports = ["traces"]
+                  }
+                }
+
+                output {
+                  traces = [otelcol.exporter.otlphttp.tempo.input]
+                }
+              }
+
+              discovery.process "all" {
+                refresh_interval = "30s"
+                discover_config {
+                  cwd          = false
+                  exe          = true
+                  commandline  = false
+                  username     = false
+                  uid          = false
+                  container_id = true
+                }
+              }
+
+              discovery.relabel "process" {
+                targets = discovery.process.all.targets
+
+                rule {
+                  source_labels = ["__meta_process_exe"]
+                  regex         = "(?:.*/)?([^/]+)"
+                  target_label  = "service_name"
+                }
+                rule {
+                  source_labels = ["__meta_process_cgroup_id"]
+                  regex         = ".*/([^/]+)\\.service"
+                  target_label  = "service_name"
+                }
+              }
+
+              pyroscope.ebpf "auto" {
+                targets           = discovery.relabel.process.output
+                forward_to        = [pyroscope.write.central.receiver]
+                off_cpu_threshold = 0.01
+              }
+
+              pyroscope.write "central" {
+                endpoint {
+                  url = "${mkPushUrl pyroscopeDomain globals.services.pyroscope.extraConfig.port ""}"
+                }
+                external_labels = {
+                  host = "${config.node.name}",
                 }
               }
       ''
@@ -15415,7 +15884,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             else null;
         in
         lib.optionalAttrs (proxyIp != null) {
-          ${proxyIp} = [ mimirDomain lokiDomain tempoDomain ];
+          ${proxyIp} = [ mimirDomain lokiDomain tempoDomain pyroscopeDomain ];
         };
 
       environment = {
@@ -15450,7 +15919,29 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         extraFlags = [ "--server.http.listen-addr=127.0.0.1:${toString servicePort}" ];
       };
 
-      systemd.services.alloy.serviceConfig.RestartSec = lib.mkForce "60";
+      systemd.services.alloy.serviceConfig = {
+        RestartSec = lib.mkForce "60";
+        AmbientCapabilities = [
+          "CAP_BPF"
+          "CAP_SYS_PTRACE"
+          "CAP_NET_RAW"
+          "CAP_CHECKPOINT_RESTORE"
+          "CAP_DAC_READ_SEARCH"
+          "CAP_PERFMON"
+          "CAP_SYS_RESOURCE"
+          "CAP_SYSLOG"
+        ];
+        CapabilityBoundingSet = [
+          "CAP_BPF"
+          "CAP_SYS_PTRACE"
+          "CAP_NET_RAW"
+          "CAP_CHECKPOINT_RESTORE"
+          "CAP_DAC_READ_SEARCH"
+          "CAP_PERFMON"
+          "CAP_SYS_RESOURCE"
+          "CAP_SYSLOG"
+        ];
+      };
 
     };
   }
@@ -15504,6 +15995,11 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
       globals.services.${serviceName}.extraConfig.port = servicePort;
 
+      topology.self.services.${serviceName} = {
+        name = "blackbox-exporter";
+        icon = "services.prometheus";
+      };
+
       services.prometheus.exporters.blackbox = {
         enable = true;
         port = servicePort;
@@ -15537,6 +16033,11 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
+      topology.self.services.${serviceName} = {
+        name = serviceName;
+        icon = "services.prometheus";
+      };
+
       services.prometheus.exporters.smartctl = {
         enable = true;
         listenAddress = "127.0.0.1";
@@ -15567,6 +16068,11 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
+      topology.self.services.${serviceName} = {
+        name = serviceName;
+        icon = "services.prometheus";
+      };
+
       services.prometheus.exporters.zfs = {
         enable = true;
         listenAddress = "127.0.0.1";
@@ -15582,7 +16088,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/mimir.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "mimir";
@@ -15594,6 +16100,12 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   {
     config = {
       swarselsystems.enabledServerModules = [ serviceName ];
+
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/files/topology-images/${serviceName}.png";
+      };
 
       globals = {
         networks = {
@@ -15676,7 +16188,15 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
-      systemd.services.mimir.serviceConfig.RestartSec = lib.mkForce "60";
+      systemd.services.mimir = {
+        serviceConfig.RestartSec = lib.mkForce "60";
+        environment = {
+          OTEL_TRACES_EXPORTER = "otlp";
+          OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
+          OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+          OTEL_SERVICE_NAME = "mimir-${config.node.name}";
+        };
+      };
 
       globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
         "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -16417,7 +16937,10 @@ kanidm person credential create-reset-token <user>
             '';
           };
         kanidm = {
-          environment.KANIDM_TRUST_X_FORWARD_FOR = "true";
+          environment = {
+            KANIDM_TRUST_X_FORWARD_FOR = "true";
+            OTEL_SERVICE_NAME = "kanidm-${config.node.name}";
+          };
           serviceConfig.RestartSec = "30";
         };
       };
@@ -16438,6 +16961,7 @@ kanidm person credential create-reset-token <user>
               tls_key = keyPathBase;
               bindaddress = "0.0.0.0:${toString servicePort}";
               # trust_x_forward_for = true;
+              otel_grpc_url = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
             };
           };
           client = {
@@ -17360,7 +17884,7 @@ P2P filesharing similar to what you might know from wormhole(/-rs), but fully se
 
 
       topology.self.services.${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
+        name = serviceName;
         info = "https://${serviceDomain}";
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
@@ -18676,7 +19200,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2026052201; # update this on changes for secondary dns
+      serial = 2026052601; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -18870,7 +19394,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
-    inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 user3;
+    inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 alias2_4 user3;
     baseDomain = globals.domains.main;
 
     roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
@@ -18968,6 +19492,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
               "${alias2_1}@${baseDomain}"
               "${alias2_2}@${baseDomain}"
               "${alias2_3}@${baseDomain}"
+              "${alias2_4}@${baseDomain}"
             ];
             sendOnly = true;
           };
@@ -19074,6 +19599,7 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
       topology.self.services.${serviceName} = {
         name = lib.swarselsystems.toCapitalized serviceName;
         info = "https://${serviceDomain}";
+        icon = "services.not-available";
         # attic does not have a logo
       };
 
@@ -20482,7 +21008,11 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
     config = {
       swarselsystems.enabledServerModules = [ "buildbot" ];
 
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName} = {
+        name = "Buildbot";
+        info = "https://${serviceDomain}";
+        icon = "${self}/files/topology-images/${serviceName}.png";
+      };
 
       systemd.tmpfiles.settings."10-buildbot" = builtins.listToAttrs (
         map
@@ -20688,7 +21218,7 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
         searx = confLib.mkIds 950;
       };
 
-      topology.self.services.${serviceName} = {
+      topology.self.services.searxng = {
         info = "https://${serviceDomain}";
       };
 
@@ -21196,7 +21726,8 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
 
       topology.self.services.${serviceName} = {
         name = "invidious-companion";
-        info = "https://${serviceDomain}";
+        info = "https://${serviceDomain}/companion";
+        icon = "services.invidious";
       };
 
       systemd.services.invidious-companion = {

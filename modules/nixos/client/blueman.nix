@@ -4,7 +4,6 @@ _:
     services = {
       blueman = {
         enable = true;
-        withApplet = false;
       };
       hardware.bolt.enable = true;
     };
