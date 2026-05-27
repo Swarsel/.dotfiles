@@ -26,7 +26,7 @@
               startGid = 1001;
             }
           ];
-          description = "Leon S";
+          description = config.repo.secrets.common.fullName or "User";
           password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
           hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
           extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "input" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "builder" "libvirtd" "scanner" ];

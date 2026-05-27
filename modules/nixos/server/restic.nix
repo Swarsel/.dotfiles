@@ -55,6 +55,9 @@ in
     services.restic.backups =
       lib.mapAttrs'
         (name: target:
+          let
+            postgresDumpDir = "/var/backup/restic-${name}";
+          in
           lib.nameValuePair target.bucketName {
             environmentFile =
               config.sops.templates."restic-env-${name}".path;
@@ -62,7 +65,8 @@ in
             passwordFile =
               config.sops.secrets."resticpw-${name}".path;
 
-            inherit (target) paths repository;
+            inherit (target) repository;
+            paths = target.paths ++ lib.optional target.withPostgres postgresDumpDir;
 
             pruneOpts = [
               "--keep-daily 3"
@@ -72,6 +76,12 @@ in
             ];
 
             backupPrepareCommand = ''
+              set -euo pipefail
+            '' + lib.optionalString target.withPostgres ''
+              ${pkgs.coreutils}/bin/install -d -m 0700 -o root -g root ${postgresDumpDir}
+              ${pkgs.util-linux}/bin/runuser -u postgres -- ${config.services.postgresql.package}/bin/pg_dumpall --clean --if-exists > ${postgresDumpDir}/dumpall.sql
+              ${pkgs.coreutils}/bin/chmod 0600 ${postgresDumpDir}/dumpall.sql
+            '' + ''
               ${pkgs.restic}/bin/restic prune
             '';
 

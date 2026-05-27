@@ -8960,7 +8960,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
                 startGid = 1001;
               }
             ];
-            description = "Leon S";
+            description = config.repo.secrets.common.fullName or "User";
             password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
             hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
             extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "input" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "builder" "libvirtd" "scanner" ];
@@ -11625,7 +11625,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         settings = {
           PasswordAuthentication = false;
           KbdInteractiveAuthentication = false;
-          PermitRootLogin = "yes";
+          PermitRootLogin = "prohibit-password";
           AllowUsers = [
             "root"
             config.swarselsystems.mainUser
@@ -14679,6 +14679,9 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
       services.restic.backups =
         lib.mapAttrs'
           (name: target:
+            let
+              postgresDumpDir = "/var/backup/restic-${name}";
+            in
             lib.nameValuePair target.bucketName {
               environmentFile =
                 config.sops.templates."restic-env-${name}".path;
@@ -14686,7 +14689,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
               passwordFile =
                 config.sops.secrets."resticpw-${name}".path;
 
-              inherit (target) paths repository;
+              inherit (target) repository;
+              paths = target.paths ++ lib.optional target.withPostgres postgresDumpDir;
 
               pruneOpts = [
                 "--keep-daily 3"
@@ -14696,6 +14700,12 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
               ];
 
               backupPrepareCommand = ''
+                set -euo pipefail
+              '' + lib.optionalString target.withPostgres ''
+                ${pkgs.coreutils}/bin/install -d -m 0700 -o root -g root ${postgresDumpDir}
+                ${pkgs.util-linux}/bin/runuser -u postgres -- ${config.services.postgresql.package}/bin/pg_dumpall --clean --if-exists > ${postgresDumpDir}/dumpall.sql
+                ${pkgs.coreutils}/bin/chmod 0600 ${postgresDumpDir}/dumpall.sql
+              '' + ''
                 ${pkgs.restic}/bin/restic prune
               '';
 
@@ -23652,27 +23662,21 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         cdb
         cdr
         bak
-        timer
         waybarupdate
         opacitytoggle
         fs-diff
         github-notifications
-        hm-specialisation
         t2ts
         ts2t
         vershell
-        eontimer
         project
-        fhs
         swarsel-bootstrap
         swarsel-build
         swarsel-deploy
         swarsel-instantiate
         swarselzellij
         sshrm
-        endme
         git-replace
-        prstatus
         swarsel-gens
         swarsel-switch
         swarsel-sops
@@ -31818,35 +31822,6 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
   }
 #+end_src
 
-***** quickpass
-:PROPERTIES:
-:CUSTOM_ID: h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9
-:END:
-
-This helper types a selected password entry directly into the active window, which is useful in places where clipboard pasting is blocked or inconvenient.
-
-#+begin_src nix-ts :tangle pkgs/flake/quickpass/default.nix
-  { name, writeShellApplication, libnotify, pass, wtype, ... }:
-  writeShellApplication {
-    inherit name;
-    runtimeInputs = [ libnotify pass wtype ];
-    text = ''
-      shopt -s nullglob globstar
-
-      notify-send "$(env | grep -E 'WAYLAND|SWAY')"
-
-      password="$1"
-
-      pass show "$password" | {
-          IFS= read -r pass
-          printf %s "$pass"
-      } | wtype -
-
-      notify-send -u critical -a pass -t 1000 "Typed Password"
-    '';
-  }
-#+end_src
-
 ***** cura5
 :PROPERTIES:
 :CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
@@ -31883,27 +31858,6 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
     done
     exec "${cura5}/bin/cura5" "''${args[@]}"
   ''
-#+end_src
-
-***** hm-specialisation
-:PROPERTIES:
-:CUSTOM_ID: h:e6612cff-0804-47ef-9f2b-d2cc6d81a896
-:END:
-
-This script allows for quick git home-manager specialisation switching.
-
-
-#+begin_src nix-ts :tangle pkgs/flake/hm-specialisation/default.nix
-  { name, writeShellApplication, fzf, findutils, home-manager, ... }:
-  writeShellApplication {
-    inherit name;
-    runtimeInputs = [ fzf findutils home-manager ];
-    text = ''
-      genpath=$(home-manager generations | head -1 | awk '{print $7}')
-      dirs=$(find "$genpath/specialisation" -type l 2>/dev/null; [ -d "$genpath" ] && echo "$genpath")
-      "$(echo "$dirs" | fzf --prompt="Choose home-manager specialisation to activate")"/activate
-    '';
-  }
 #+end_src
 
 ***** cdw
@@ -31943,24 +31897,6 @@ This script allows for quick git branch switching.
   }
 #+end_src
 
-***** prstatus
-:PROPERTIES:
-:CUSTOM_ID: h:bc5be0e7-2dab-4185-9a52-eb98afe3159f
-:END:
-
-This script allows for quick checking of nixpkgs PR statuses.
-
-#+begin_src nix-ts :tangle pkgs/flake/prstatus/default.nix
-  { name, writeShellApplication, curl, ... }:
-  writeShellApplication {
-    inherit name;
-    runtimeInputs = [ curl ];
-    text = ''
-      curl https://nixpkgs.molybdenum.software/api/v2/landings/"$1"
-    '';
-  }
-#+end_src
-
 ***** bak
 :PROPERTIES:
 :CUSTOM_ID: h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3
@@ -31976,26 +31912,6 @@ This script lets me quickly backup files by appending =.bak= to the filename.
     inherit name;
     text = ''
       cp -r "$1"{,.bak}
-    '';
-  }
-#+end_src
-
-***** timer
-:PROPERTIES:
-:CUSTOM_ID: h:3c72d263-411c-44f0-90ff-55f14d4d9d49
-:END:
-
-A timer that uses TTS to say something once the timer runs out.
-
-
-#+begin_src nix-ts :tangle pkgs/flake/timer/default.nix
-  { name, writeShellApplication, speechd, ... }:
-
-  writeShellApplication {
-    inherit name;
-    runtimeInputs = [ speechd ];
-    text = ''
-      sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
     '';
   }
 #+end_src
@@ -32767,8 +32683,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           echo "just sync $target_user $target_destination"
           echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
           echo "cd nix-config"
-          # see above FIXME:(bootstrap)
-          echo "sudo nixos-rebuild .pre-commit-config.yaml show-trace --flake .#$target_hostname switch"
+          echo "sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
           # echo "just rebuild"
           echo
         fi
@@ -32778,8 +32693,8 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
         cd "''${git_root}"
         deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
-        nixpkgs--fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
-        (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
+        nixpkgs-fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
+        (pre-commit run --all-files 2> /dev/null || true) &&
           git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix" &&
           git add "$git_root/.sops.yaml" &&
           git add "$git_root/secrets" &&
@@ -33273,111 +33188,6 @@ Quick utility to open an ephemeral shell from an explicitly selected nixpkgs rev
   }
 #+end_src
 
-***** eontimer
-:PROPERTIES:
-:CUSTOM_ID: h:9fda7829-09a4-4b8f-86f6-08b078ab2874
-:END:
-
-A derivation for eontimer :)
-
-#+begin_src nix-ts :tangle pkgs/flake/eontimer/default.nix
-  { lib
-  , python3
-  , fetchFromGitHub
-  , makeDesktopItem
-  , writeShellScript
-  , ...
-  }:
-  let
-    wrapper = writeShellScript "eontimer-wrapper" ''
-      export QT_QPA_PLATFORM=xcb
-      exec @out@/bin/EonTimer
-    '';
-  in
-  python3.pkgs.buildPythonApplication rec {
-    pname = "eontimer";
-    version = "3.0.0-rc.6";
-    pyproject = true;
-
-    src = fetchFromGitHub {
-      owner = "DasAmpharos";
-      repo = "EonTimer";
-      rev = version;
-      hash = "sha256-+XN/VGGlEg2gVncRZrWDOZ2bfxt8xyIu22F2wHlG6YI=";
-    };
-
-    build-system = [
-      python3.pkgs.setuptools
-      python3.pkgs.wheel
-    ];
-
-    dependencies = with python3.pkgs; [
-      altgraph
-      certifi
-      charset-normalizer
-      idna
-      libsass
-      macholib
-      packaging
-      pillow
-      pipdeptree
-      platformdirs
-      pyinstaller
-      pyinstaller-hooks-contrib
-      pyside6
-      requests
-      setuptools
-      shiboken6
-      urllib3
-    ];
-
-    nativeBuildInputs = [
-      python3.pkgs.pyinstaller
-    ];
-
-    buildPhase = ''
-      runHook preBuild
-
-      pyinstaller --clean --noconfirm EonTimer.spec
-
-      runHook postBuild
-    '';
-
-    installPhase = ''
-      runHook preInstall
-
-      mkdir -p $out/bin
-      mkdir -p $out/share/applications
-      cp dist/EonTimer $out/bin/
-      install -Dm755 -T ${wrapper} $out/bin/eontimer
-      substituteInPlace $out/bin/eontimer --subst-var out
-
-      runHook postInstall
-    '';
-
-    postInstall = ''
-      install -Dm755 -t $out/share/applications ${
-           makeDesktopItem {
-             name = "eontimer";
-             desktopName = "EonTimer";
-             comment = "Start EonTimer";
-             exec = "eontimer";
-           }
-         }/share/applications/eontimer.desktop
-    '';
-
-
-
-    meta = {
-      description = "Pokémon RNG Timer";
-      homepage = "https://github.com/DasAmpharos/EonTimer";
-      license = lib.licenses.mit;
-      maintainers = with lib.maintainers; [ ];
-      mainProgram = "eon-timer";
-    };
-  }
-#+end_src
-
 ***** project
 :PROPERTIES:
 :CUSTOM_ID: h:154b6df4-dd50-4f60-9794-05a140d02994
@@ -33399,28 +33209,6 @@ This helper bootstraps a new project directory by initializing git, applying one
       direnv allow
     '';
   }
-#+end_src
-
-***** fhs
-:PROPERTIES:
-:CUSTOM_ID: h:36d6c17c-6d91-4297-b76d-9d7feab6c1a0
-:END:
-
-
-General-purpose FHS development shell wrapper for tools that still assume a traditional Linux filesystem layout.
-
-#+begin_src nix-ts :tangle pkgs/flake/fhs/default.nix
-  { name, pkgs, ... }:
-  let
-    base = pkgs.appimageTools.defaultFhsEnvArgs;
-  in
-  pkgs.buildFHSEnv (base // {
-    inherit name;
-    targetPkgs = pkgs: (base.targetPkgs pkgs) ++ [ pkgs.pkg-config ];
-    profile = "export FHS=1";
-    runScript = "zsh";
-    extraOutputsToInstall = [ "dev" ];
-  })
 #+end_src
 
 ***** swarsel-displaypower
@@ -33729,25 +33517,6 @@ This programs simply runs ssh-keygen on the last host that I tried to ssh into. 
     '';
   }
 #+end_src
-***** endme
-:PROPERTIES:
-:CUSTOM_ID: h:abbd18a2-73ae-4ee4-8487-06fef23638bb
-:END:
-
-Sometimes my DE crashes after putting it to suspend - to be precise, it happens when I put it into suspend when I have multiple screens plugged in. I have never taken the time to debug the issue, but instead just switch to a different TTY and then use this script to kill the hanging session.
-
-#+begin_src nix-ts :tangle pkgs/flake/endme/default.nix
-  { name, writeShellApplication, ... }:
-  writeShellApplication {
-    inherit name;
-    text = ''
-      set -euo pipefail
-      systemctl --user stop graphical-session.target
-      systemctl --user stop graphical-session-pre.target
-    '';
-  }
-#+end_src
-
 ***** git-replace
 :PROPERTIES:
 :CUSTOM_ID: h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2
@@ -33819,46 +33588,6 @@ This script allows for quick git replace of a string.
         grep -rl "$1" . | xargs sed -i "s/$1/$2/g"
       fi
         '';
-  }
-#+end_src
-
-***** gen-sops-guest
-:PROPERTIES:
-:CUSTOM_ID: h:c9f65ba6-f24e-4855-ad17-28315b63d086
-:END:
-
-This script quickly generates a block in =.sops.yaml= for a guest host.
-
-#+begin_src nix-ts :tangle pkgs/flake/gen-sops-guest/default.nix
-  { name, writeShellApplication, ... }:
-
-  writeShellApplication {
-    inherit name;
-    text = ''
-
-      if [ "$#" -lt 3 ]; then
-        echo "Usage: $0 <host> <arch_path> <service1> [service2 ...]" >&2
-        echo "Example: $0 hintbooth hosts/nixos/x86_64-linux adguardhome nginx" >&2
-        exit 1
-      fi
-
-      HOST="$1"
-      ARCH_PATH="$2"
-      shift 2
-
-      for service in "$@"; do
-        cat <<EOF
-        - path_regex: ''${ARCH_PATH}/''${HOST}/secrets/''${service}/[^/]+\.(yaml|json|env|ini|enc)\$
-          key_groups:
-          - pgp:
-            - *swarsel
-            age:
-            - *''${HOST}
-            - *''${HOST}-''${service}
-
-      EOF
-      done
-    '';
   }
 #+end_src
 

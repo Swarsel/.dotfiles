@@ -8,7 +8,7 @@
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
-        PermitRootLogin = "yes";
+        PermitRootLogin = "prohibit-password";
         AllowUsers = [
           "root"
           config.swarselsystems.mainUser

@@ -9,27 +9,21 @@
       cdb
       cdr
       bak
-      timer
       waybarupdate
       opacitytoggle
       fs-diff
       github-notifications
-      hm-specialisation
       t2ts
       ts2t
       vershell
-      eontimer
       project
-      fhs
       swarsel-bootstrap
       swarsel-build
       swarsel-deploy
       swarsel-instantiate
       swarselzellij
       sshrm
-      endme
       git-replace
-      prstatus
       swarsel-gens
       swarsel-switch
       swarsel-sops

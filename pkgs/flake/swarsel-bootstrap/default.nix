@@ -373,8 +373,7 @@ writeShellApplication {
         echo "just sync $target_user $target_destination"
         echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
         echo "cd nix-config"
-        # see above FIXME:(bootstrap)
-        echo "sudo nixos-rebuild .pre-commit-config.yaml show-trace --flake .#$target_hostname switch"
+        echo "sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
         # echo "just rebuild"
         echo
       fi
@@ -384,8 +383,8 @@ writeShellApplication {
     if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
       cd "''${git_root}"
       deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
-      nixpkgs--fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
-      (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
+      nixpkgs-fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
+      (pre-commit run --all-files 2> /dev/null || true) &&
         git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix" &&
         git add "$git_root/.sops.yaml" &&
         git add "$git_root/secrets" &&
