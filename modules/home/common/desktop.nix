@@ -92,6 +92,7 @@ _:
           "video/mkv" = [ "umpv.desktop" ];
           "video/mp4" = [ "umpv.desktop" ];
           "x-scheme-handler/chrome" = [ "firefox.desktop" ];
+          "x-scheme-handler/firezone-fd0020211111" = [ "firezone-client-gui-deep-link.desktop" ];
           "x-scheme-handler/http" = [ "firefox.desktop" ];
           "x-scheme-handler/https" = [ "firefox.desktop" ];
         };

@@ -9,8 +9,33 @@ let
   relayPort = 3478;
   domainPort = 9003;
 
+  firezoneTargetVLANs = [ "services" "home" "devices" ];
+  firezoneTargetZones = map (v: "vlan-${v}") firezoneTargetVLANs;
+
   homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
   homeDomains = map (name: globals.services.${name}.domain) homeServices;
+  vlanCidrResources = lib.listToAttrs (lib.concatMap
+    (vlan: [
+      {
+        name = "home.vlan-${vlan}.v4";
+        value = {
+          type = "cidr";
+          name = "home.vlan-${vlan}.v4";
+          address = globals.networks.home-lan.vlans.${vlan}.cidrv4;
+          gatewayGroups = [ "home" ];
+        };
+      }
+      {
+        name = "home.vlan-${vlan}.v6";
+        value = {
+          type = "cidr";
+          name = "home.vlan-${vlan}.v6";
+          address = globals.networks.home-lan.vlans.${vlan}.cidrv6;
+          gatewayGroups = [ "home" ];
+        };
+      }
+    ])
+    firezoneTargetVLANs);
   allow = group: resource: {
     "${group}@${resource}" = {
       inherit group resource;
@@ -147,27 +172,16 @@ in
                     }
                   ];
                 })
-              // {
-                "home.vlan-services.v4" = {
-                  type = "cidr";
-                  name = "home.vlan-services.v4";
-                  address = globals.networks.home-lan.vlans.services.cidrv4;
-                  gatewayGroups = [ "home" ];
-                };
-                "home.vlan-services.v6" = {
-                  type = "cidr";
-                  name = "home.vlan-services.v6";
-                  address = globals.networks.home-lan.vlans.services.cidrv6;
-                  gatewayGroups = [ "home" ];
-                };
-              };
+              // vlanCidrResources;
 
             policies =
               { }
-              // allow "everyone" "home.vlan-services.v4"
-              // allow "anyone" "home.vlan-services.v4"
-              // allow "everyone" "home.vlan-services.v6"
-              // allow "anyone" "home.vlan-services.v6"
+              // lib.mergeAttrsList (lib.concatMap
+                (resource: [
+                  (allow "everyone" resource)
+                  (allow "anyone" resource)
+                ])
+                (lib.attrNames vlanCidrResources))
               // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains)
               // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains);
           };
@@ -309,7 +323,7 @@ in
                   # masquerade firezone traffic
                   masquerade-firezone = {
                     from = [ "firezone" ];
-                    to = [ "vlan-services" ];
+                    to = firezoneTargetZones;
                     # masquerade = true; NOTE: custom rule below for ip4 + ip6
                     late = true; # Only accept after any rejects have been processed
                     verdict = "accept";
@@ -317,13 +331,13 @@ in
                   # forward firezone traffic
                   forward-incoming-firezone-traffic = {
                     from = [ "firezone" ];
-                    to = [ "vlan-services" ];
+                    to = firezoneTargetZones;
                     verdict = "accept";
                   };
 
                   # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
                   forward-outgoing-firezone-traffic = {
-                    from = [ "vlan-services" ];
+                    from = firezoneTargetZones;
                     to = [ "firezone" ];
                     verdict = "accept";
                   };
@@ -334,19 +348,18 @@ in
                   after = [ "hook" ];
                   late = true;
                   rules =
-                    lib.forEach
-                      [
-                        "firezone"
-                      ]
-                      (
-                        zone:
-                        lib.concatStringsSep " " [
-                          "meta protocol { ip, ip6 }"
-                          (lib.head nodeCfg.networking.nftables.firewall.zones.${zone}.ingressExpression)
-                          (lib.head nodeCfg.networking.nftables.firewall.zones.vlan-services.egressExpression)
-                          "masquerade random"
-                        ]
-                      );
+                    lib.concatMap
+                      (sourceZone:
+                        lib.forEach firezoneTargetZones (
+                          targetZone:
+                          lib.concatStringsSep " " [
+                            "meta protocol { ip, ip6 }"
+                            (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
+                            (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
+                            "masquerade random"
+                          ]
+                        ))
+                      [ "firezone" ];
                 };
               };
             };
@@ -375,8 +388,8 @@ in
           };
         ${idmServer} =
           let
-            accountId = "3e996ad9-c100-40e8-807a-282a5c5e8b6c";
-            externalId = "31e7f702-28a7-4bbc-9690-b6db9d4a162a";
+            accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
+            externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
           in
           {
             sops.secrets.kanidm-firezone = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
