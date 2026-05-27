@@ -1,9 +1,12 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
 
   inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+
+  kanidmDomain = globals.services.kanidm.domain;
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   config = {
@@ -17,7 +20,10 @@ in
     };
 
 
-    sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
+    sops.secrets = {
+      kavita-token = { inherit sopsFile; owner = serviceUser; };
+      kanidm-kavita = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+    };
 
     # networking.firewall.allowedTCPPorts = [ servicePort ];
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
@@ -50,9 +56,26 @@ in
     services.${serviceName} = {
       enable = true;
       user = serviceUser;
-      settings.Port = servicePort;
+      settings = {
+        Port = servicePort;
+        OpenIdConnectSettings = {
+          Authority = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+          ClientId = serviceName;
+          Secret = "@OIDC_SECRET@";
+          CustomScopes = [ ];
+        };
+      };
       tokenKeyFile = config.sops.secrets.kavita-token.path;
       dataDir = "/var/lib/${serviceName}";
+    };
+
+    systemd.services.${serviceName} = {
+      serviceConfig.LoadCredential = [ "oidc-secret:${config.sops.secrets.kanidm-kavita.path}" ];
+      preStart = lib.mkAfter ''
+        ${pkgs.replace-secret}/bin/replace-secret '@OIDC_SECRET@' \
+          "''${CREDENTIALS_DIRECTORY}/oidc-secret" \
+          '/var/lib/${serviceName}/config/appsettings.json'
+      '';
     };
 
     globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
@@ -60,6 +83,24 @@ in
     };
 
     nodes = {
+      ${idmServer} = {
+        sops.secrets.kanidm-kavita = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        services.kanidm.provision = {
+          groups."kavita.access" = { };
+          systems.oauth2.${serviceName} = {
+            displayName = "Kavita";
+            originUrl = "https://${serviceDomain}/signin-oidc";
+            originLanding = "https://${serviceDomain}/";
+            basicSecretFile = config.sops.secrets.kanidm-kavita.path;
+            scopeMaps."kavita.access" = [
+              "openid"
+              "email"
+              "profile"
+            ];
+            preferShortUsername = true;
+          };
+        };
+      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

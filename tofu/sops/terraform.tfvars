@@ -4,19 +4,19 @@ kanidm_host      = "summers-kanidm"
 
 hosts = {
   bakery         = "age1mjgw3nxlnqdj04mgjz3wn7fj2nl2nxla4p2r2fn4nkvayfgp09pqllxzyh"
-  summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
   belchsfactory  = "age1k73gy5em3js9zklnnkzp5hme9k04lny32fgahmzddknjw5c295asdyr4x6"
   dgx            = "age1ax5hqk6e2ekgfx5u7pl8ayc3vvhrehyvtvf07llaxhs5azpnny0qpltrns"
   eagleland      = "age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8"
   hintbooth      = "age1wmx8y2hs83j2u5srdnfxljrzxm8jtxl6fr0mq7xf2ldxyglpzf2qq89rpx"
   liliputsteps   = "age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx"
+  machpizza      = "placeholder"
   moonside       = "age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh"
   pyramid        = "age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m"
   stoicclub      = "age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm"
+  summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
   toto           = "age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl"
   twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
   winters        = "age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza"
-  machpizza      = "placeholder"
 }
 
 guests = {
@@ -45,14 +45,15 @@ guests = {
 
 kanidm_clients = [
   "summers-forgejo",
-  "twothreetunnel",
   "summers-freshrss",
+  "summers-homebox",
   "summers-immich",
+  "summers-kavita",
+  "summers-matrix",
   "summers-monitoring",
   "summers-nextcloud",
   "summers-paperless",
-  "summers-matrix",
-  "summers-homebox",
+  "twothreetunnel",
 ]
 
 extra_rules = [
