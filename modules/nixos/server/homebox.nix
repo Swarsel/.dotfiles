@@ -1,7 +1,10 @@
 { self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+
+  kanidmDomain = globals.services.kanidm.domain;
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   imports = [
@@ -21,6 +24,18 @@ in
     users.persistentIds = {
       homebox = confLib.mkIds 981;
     };
+
+    sops = {
+      secrets.kanidm-homebox = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      templates.homebox-oidc-env = {
+        owner = serviceUser;
+        content = ''
+          HBOX_OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-homebox}
+        '';
+      };
+    };
+
+    systemd.services.${serviceName}.serviceConfig.EnvironmentFile = config.sops.templates.homebox-oidc-env.path;
 
     globals = {
       networks = {
@@ -54,8 +69,14 @@ in
       settings = {
         HBOX_WEB_PORT = builtins.toString servicePort;
         HBOX_OPTIONS_ALLOW_REGISTRATION = "false";
+        HBOX_OPTIONS_TRUST_PROXY = "true";
         HBOX_STORAGE_CONN_STRING = "file:///var/lib/homebox";
         HBOX_STORAGE_PREFIX_PATH = ".data";
+
+        HBOX_OIDC_ENABLED = "true";
+        HBOX_OIDC_ISSUER_URL = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+        HBOX_OIDC_CLIENT_ID = serviceName;
+        HBOX_OIDC_BUTTON_TEXT = "Sign in with Kanidm";
       };
     };
 
@@ -66,6 +87,24 @@ in
     };
 
     nodes = {
+      ${idmServer} = {
+        sops.secrets.kanidm-homebox = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        services.kanidm.provision = {
+          groups."homebox.access" = { };
+          systems.oauth2.${serviceName} = {
+            displayName = "Homebox";
+            originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
+            originLanding = "https://${serviceDomain}/";
+            basicSecretFile = config.sops.secrets.kanidm-homebox.path;
+            scopeMaps."homebox.access" = [
+              "openid"
+              "email"
+              "profile"
+            ];
+            preferShortUsername = true;
+          };
+        };
+      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

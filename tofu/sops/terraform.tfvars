@@ -52,6 +52,7 @@ kanidm_clients = [
   "summers-nextcloud",
   "summers-paperless",
   "summers-matrix",
+  "summers-homebox",
 ]
 
 extra_rules = [
