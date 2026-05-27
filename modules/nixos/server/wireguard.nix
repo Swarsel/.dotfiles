@@ -215,7 +215,7 @@ in
             "50-${ifName}" = {
               matchConfig.Name = ifName;
               linkConfig = {
-                MTUBytes = 1408; # TODO: figure out where we lose those 12 bits (8 from pppoe maybe + ???)
+                MTUBytes = 1500 - 4 - 8 - 40 - 8 - 32;
               };
 
               address = [

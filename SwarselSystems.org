@@ -12087,6 +12087,19 @@ In order to define a new wireguard interface, I have to:
   - make sure all members have their private keys in their secrets file and their public key under =secrets/public/wg=
   - make sure that all preshared keys exist in =secrets/repo/wg.yaml= TODO: maybe split wg.yaml into per-interface files with finer-grained acl
 
+    The MTU computes like this:
+
+| Component          | Bytes |
+|--------------------+-------|
+| Ethernet payload   |  1500 |
+| 802.1Q VLAN tag    |    -4 |
+| PPPoE header       |    -8 |
+| IPv6 header        |   -40 |
+| UDP header         |    -8 |
+| WireGuard          |   -32 |
+|--------------------+-------|
+| Inner MTU          |  1408 |
+
 #+begin_src nix-ts :tangle modules/nixos/server/wireguard.nix
   { self, lib, pkgs, config, confLib, globals, ... }:
   let
@@ -12305,7 +12318,7 @@ In order to define a new wireguard interface, I have to:
               "50-${ifName}" = {
                 matchConfig.Name = ifName;
                 linkConfig = {
-                  MTUBytes = 1408; # TODO: figure out where we lose those 12 bits (8 from pppoe maybe + ???)
+                  MTUBytes = 1500 - 4 - 8 - 40 - 8 - 32;
                 };
 
                 address = [
