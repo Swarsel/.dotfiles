@@ -21869,10 +21869,21 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
               };
             };
           };
+          homeInvidiousFallback = lib.optionalAttrs (!globals.services.invidious.isHome) {
+            virtualHosts.${serviceDomain}.locations."/" = {
+              proxyPass = "https://${globals.services.invidious.proxyAddress4}";
+              extraConfig = ''
+                proxy_ssl_server_name on;
+                proxy_ssl_name ${serviceDomain};
+              '';
+            };
+          };
         in
         {
           ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            lib.recursiveUpdate (genNginx homeServiceAddress nginxAccessRules) homeInvidiousFallback
+          );
         };
 
     };
