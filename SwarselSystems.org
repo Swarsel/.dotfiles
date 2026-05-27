@@ -30301,7 +30301,22 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
   }
 #+end_src
 
-**** Work (pizauth)
+**** Work
+
+#+begin_src nix-ts :tangle modules/home/optional/work.nix
+  { self, ... }:
+  {
+    imports = [
+      "${self}/modules/home/optional/work-mail.nix"
+      "${self}/modules/home/optional/work-dev.nix"
+      "${self}/modules/home/optional/work-desktop.nix"
+    ];
+
+    config.swarselsystems.enabledHomeModules = [ "optional-work" ];
+  }
+#+end_src
+
+***** Work (dev, pizauth)
 :PROPERTIES:
 :CUSTOM_ID: h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6
 :END:
@@ -30316,19 +30331,15 @@ When setting up a new machine:
     - `pizauth dump > ~/.pizauth.state`
 #+end_src
 
-#+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
+#+begin_src nix-ts :tangle modules/home/optional/work-dev.nix
   { self, config, pkgs, lib, vars, confLib, type, ... }:
   let
     inherit (config.swarselsystems) homeDir mainUser;
-    inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
-    inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
-
     certsSopsFile = self + /secrets/repo/certs.yaml;
     workSopsFile = self + /secrets/work/secrets.yaml;
   in
   {
     config = {
-      swarselsystems.enabledHomeModules = [ "optional-work" ];
       home = {
         packages = with pkgs; [
           teams-for-linux
@@ -30356,114 +30367,6 @@ When setting up a new machine:
       };
       systemd.user.sessionVariables = {
         DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
-      } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
-        SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
-        SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
-      };
-
-      accounts.email.accounts.work =
-        let
-          inherit (confLib.getConfig.repo.secrets.local.work) mailName;
-        in
-        {
-          primary = false;
-          address = mailAddress;
-          userName = mailAddress;
-          realName = mailName;
-          passwordCommand = "pizauth show work";
-          imap = {
-            host = "outlook.office365.com";
-            port = 993;
-            tls.enable = true; # SSL/TLS
-          };
-          smtp = {
-            host = "outlook.office365.com";
-            port = 587;
-            tls = {
-              enable = true; # SSL/TLS
-              useStartTls = true;
-            };
-          };
-          thunderbird = {
-            enable = true;
-            profiles = [ "default" ];
-            settings = id: {
-              "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
-              "mail.server.server_${id}.authMethod" = 10; # oauth
-              # "toolkit.telemetry.enabled" = false;
-              # "toolkit.telemetry.rejected" = true;
-              # "toolkit.telemetry.prompted" = 2;
-            };
-          };
-          msmtp = {
-            enable = true;
-            extraConfig = {
-              auth = "xoauth2";
-              host = "outlook.office365.com";
-              protocol = "smtp";
-              port = "587";
-              tls = "on";
-              tls_starttls = "on";
-              from = "${mailAddress}";
-              user = "${mailAddress}";
-              passwordeval = "pizauth show work";
-            };
-          };
-          mu.enable = true;
-          mbsync = {
-            enable = true;
-            expunge = "both";
-            patterns = [ "INBOX" ];
-            extraConfig = {
-              account = {
-                AuthMechs = "XOAUTH2";
-              };
-            };
-          };
-        };
-
-      # wayland.windowManager.sway.config = {
-      #   output = {
-      #     "Applied Creative Technology Transmitter QUATTRO201811" = {
-      #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
-      #     };
-      #     "Hewlett Packard HP Z24i CN44250RDT" = {
-      #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
-      #     };
-      #     "HP Inc. HP 732pk CNC4080YL5" = {
-      #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
-      #     };
-      #   };
-      # };
-
-      wayland.windowManager.sway =
-        let
-          inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long domain1 mailAddress;
-        in
-        {
-          config = {
-            keybindings =
-              let
-                inherit (config.wayland.windowManager.sway.config) modifier;
-              in
-              {
-                "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
-                "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
-              };
-          };
-        };
-
-      stylix = {
-        targets.firefox.profileNames =
-          let
-            inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
-          in
-          [
-            "${user1}"
-            "${user2}"
-            "${user3}"
-            "work"
-          ];
       };
 
       programs =
@@ -30478,19 +30381,7 @@ When setting up a new machine:
           awscli = {
             enable = true;
             package = pkgs.awscli2;
-            # settings = {
-            #   "default" = { };
-            #   "profile s3-imagebuilder-prod" = { };
-            # };
-            # credentials = {
-            #   "s3-imagebuilder-prod" = {
-            #     aws_access_key_id = "5OYXY4879EJG9I91K1B6";
-            #     credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
-            #   };
-            # };
           };
-          # this is no longer needed since moving away from bitbucket
-          # git.settings.user.email = lib.mkForce gitMail;
 
           zsh = {
             shellAliases = {
@@ -30585,6 +30476,254 @@ When setting up a new machine:
             ];
           };
         };
+
+      systemd.user.services = {
+        teams-applet = {
+          Unit = {
+            Description = "teams applet";
+            Requires = [ "graphical-session.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [
+              "tray.target"
+            ];
+          };
+
+          Install = {
+            WantedBy = [ "tray.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+          };
+        };
+
+        onepassword-applet = {
+          Unit = {
+            Description = "1password applet";
+            Requires = [ "graphical-session.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [
+              "tray.target"
+            ];
+          };
+
+          Install = {
+            WantedBy = [ "tray.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
+          };
+        };
+      };
+
+      xdg =
+        let
+          inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+        in
+        {
+          mimeApps = {
+            defaultApplications = {
+              "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+            };
+          };
+          desktopEntries =
+            let
+              terminal = false;
+              categories = [ "Application" ];
+              icon = "firefox";
+            in
+            {
+              firefox_work = {
+                name = "Firefox (work)";
+                genericName = "Firefox work";
+                exec = "firefox -p work";
+                inherit terminal categories icon;
+              };
+              "firefox_${user1}" = {
+                name = "Firefox (${user1})";
+                genericName = "Firefox ${user1}";
+                exec = "firefox -p ${user1}";
+                inherit terminal categories icon;
+              };
+
+              "firefox_${user2}" = {
+                name = "Firefox (${user2})";
+                genericName = "Firefox ${user2}";
+                exec = "firefox -p ${user2}";
+                inherit terminal categories icon;
+              };
+
+              "firefox_${user3}" = {
+                name = "Firefox (${user3})";
+                genericName = "Firefox ${user3}";
+                exec = "firefox -p ${user3}";
+                inherit terminal categories icon;
+              };
+            };
+        };
+    } // lib.optionalAttrs (type != "nixos") {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+        harica-root-ca = {
+          sopsFile = certsSopsFile;
+          path = "${homeDir}/.aws/certs/harica-root.pem";
+          owner = mainUser;
+        };
+        yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
+        yubikey-2 = { sopsFile = workSopsFile; owner = mainUser; };
+        yubikey-3 = { sopsFile = workSopsFile; owner = mainUser; };
+        ucKey = { sopsFile = workSopsFile; owner = mainUser; };
+      };
+    };
+  }
+#+end_src
+
+***** Work (mail)
+
+#+begin_src nix-ts :tangle modules/home/optional/work-mail.nix
+  { config, pkgs, lib, confLib, ... }:
+  let
+    inherit (config.swarselsystems) homeDir;
+    inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
+    inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
+  in
+  {
+    config = {
+      systemd.user.sessionVariables = lib.optionalAttrs (!config.swarselsystems.isPublic) {
+        SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
+        SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
+      };
+
+      accounts.email.accounts.work =
+        let
+          inherit (confLib.getConfig.repo.secrets.local.work) mailName;
+        in
+        {
+          primary = false;
+          address = mailAddress;
+          userName = mailAddress;
+          realName = mailName;
+          passwordCommand = "pizauth show work";
+          imap = {
+            host = "outlook.office365.com";
+            port = 993;
+            tls.enable = true;
+          };
+          smtp = {
+            host = "outlook.office365.com";
+            port = 587;
+            tls = {
+              enable = true;
+              useStartTls = true;
+            };
+          };
+          thunderbird = {
+            enable = true;
+            profiles = [ "default" ];
+            settings = id: {
+              "mail.smtpserver.smtp_${id}.authMethod" = 10;
+              "mail.server.server_${id}.authMethod" = 10;
+            };
+          };
+          msmtp = {
+            enable = true;
+            extraConfig = {
+              auth = "xoauth2";
+              host = "outlook.office365.com";
+              protocol = "smtp";
+              port = "587";
+              tls = "on";
+              tls_starttls = "on";
+              from = "${mailAddress}";
+              user = "${mailAddress}";
+              passwordeval = "pizauth show work";
+            };
+          };
+          mu.enable = true;
+          mbsync = {
+            enable = true;
+            expunge = "both";
+            patterns = [ "INBOX" ];
+            extraConfig = {
+              account = {
+                AuthMechs = "XOAUTH2";
+              };
+            };
+          };
+        };
+
+      services.pizauth = {
+        enable = true;
+        extraConfig = ''
+            auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+          error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+          token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
+        '';
+        accounts = {
+          work = {
+            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+            scopes = [
+              "https://outlook.office365.com/IMAP.AccessAsUser.All"
+              "https://outlook.office365.com/SMTP.Send"
+              "offline_access"
+            ];
+            loginHint = mailAddress;
+          };
+        };
+      };
+
+      systemd.user.services.pizauth.Service.ExecStartPost = [
+        "${pkgs.toybox}/bin/sleep 1"
+        "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
+      ];
+    };
+  }
+#+end_src
+
+***** Work (desktop)
+
+#+begin_src nix-ts :tangle modules/home/optional/work-desktop.nix
+  { self, config, pkgs, confLib, ... }:
+  {
+    config = {
+      wayland.windowManager.sway =
+        let
+          inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long domain1 mailAddress;
+        in
+        {
+          config = {
+            keybindings =
+              let
+                inherit (config.wayland.windowManager.sway.config) modifier;
+              in
+              {
+                "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
+                "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
+              };
+          };
+        };
+
+      stylix = {
+        targets.firefox.profileNames =
+          let
+            inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+          in
+          [
+            "${user1}"
+            "${user2}"
+            "${user3}"
+            "work"
+          ];
+      };
 
       services = {
 
@@ -30816,131 +30955,6 @@ When setting up a new machine:
         };
       };
 
-      systemd.user.services = {
-        pizauth.Service = {
-          ExecStartPost = [
-            "${pkgs.toybox}/bin/sleep 1"
-            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
-          ];
-        };
-
-        teams-applet = {
-          Unit = {
-            Description = "teams applet";
-            Requires = [ "graphical-session.target" ];
-            After = [
-              "graphical-session.target"
-              "tray.target"
-            ];
-            PartOf = [
-              "tray.target"
-            ];
-          };
-
-          Install = {
-            WantedBy = [ "tray.target" ];
-          };
-
-          Service = {
-            ExecStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
-          };
-        };
-
-        onepassword-applet = {
-          Unit = {
-            Description = "1password applet";
-            Requires = [ "graphical-session.target" ];
-            After = [
-              "graphical-session.target"
-              "tray.target"
-            ];
-            PartOf = [
-              "tray.target"
-            ];
-          };
-
-          Install = {
-            WantedBy = [ "tray.target" ];
-          };
-
-          Service = {
-            ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
-          };
-        };
-
-      };
-
-      services.pizauth = {
-        enable = true;
-        extraConfig = ''
-            auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
-          error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
-          token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
-        '';
-        accounts = {
-          work = {
-            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-            scopes = [
-              "https://outlook.office365.com/IMAP.AccessAsUser.All"
-              "https://outlook.office365.com/SMTP.Send"
-              "offline_access"
-            ];
-            loginHint = "${confLib.getConfig.repo.secrets.local.work.mailAddress}";
-          };
-        };
-
-      };
-
-      xdg =
-        let
-          inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
-        in
-        {
-          mimeApps = {
-            defaultApplications = {
-              "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
-            };
-          };
-          desktopEntries =
-            let
-              terminal = false;
-              categories = [ "Application" ];
-              icon = "firefox";
-            in
-            {
-              firefox_work = {
-                name = "Firefox (work)";
-                genericName = "Firefox work";
-                exec = "firefox -p work";
-                inherit terminal categories icon;
-              };
-              "firefox_${user1}" = {
-                name = "Firefox (${user1})";
-                genericName = "Firefox ${user1}";
-                exec = "firefox -p ${user1}";
-                inherit terminal categories icon;
-              };
-
-              "firefox_${user2}" = {
-                name = "Firefox (${user2})";
-                genericName = "Firefox ${user2}";
-                exec = "firefox -p ${user2}";
-                inherit terminal categories icon;
-              };
-
-              "firefox_${user3}" = {
-                name = "Firefox (${user3})";
-                genericName = "Firefox ${user3}";
-                exec = "firefox -p ${user3}";
-                inherit terminal categories icon;
-              };
-
-
-            };
-        };
       swarselsystems = {
         startup = [
           # { command = "nextcloud --background"; }
@@ -31041,23 +31055,8 @@ When setting up a new machine:
             xkb_variant = "altgr-intl";
           };
         };
-
       };
-    } // lib.optionalAttrs (type != "nixos") {
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
-        harica-root-ca = {
-          sopsFile = certsSopsFile;
-          path = "${homeDir}/.aws/certs/harica-root.pem";
-          owner = mainUser;
-        };
-        yubikey-1 = { sopsFile = workSopsFile; owner = mainUser; };
-        yubikey-2 = { sopsFile = workSopsFile; owner = mainUser; };
-        yubikey-3 = { sopsFile = workSopsFile; owner = mainUser; };
-        ucKey = { sopsFile = workSopsFile; owner = mainUser; };
-      };
-
     };
-
   }
 #+end_src
 
