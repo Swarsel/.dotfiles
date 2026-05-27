@@ -2,7 +2,10 @@
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+
+  kanidmDomain = globals.services.kanidm.domain;
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
   federationPort = 8448;
   whatsappPort = 29318;
@@ -39,6 +42,7 @@ in
         mautrix-telegram-hs-token = { inherit sopsFile; owner = serviceUser; };
         mautrix-telegram-api-id = { inherit sopsFile; owner = serviceUser; };
         mautrix-telegram-api-hash = { inherit sopsFile; owner = serviceUser; };
+        kanidm-matrix = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
       templates = {
         "matrix_user_register.sh".content = ''
@@ -126,24 +130,20 @@ in
 
     services = {
       postgresql = {
+        ensureDatabases = [
+          "matrix-synapse"
+          "mautrix-telegram"
+          "mautrix-whatsapp"
+          "mautrix-signal"
+        ];
+        ensureUsers = [
+          { name = "matrix-synapse"; ensureDBOwnership = true; }
+          { name = "mautrix-telegram"; ensureDBOwnership = true; }
+          { name = "mautrix-whatsapp"; ensureDBOwnership = true; }
+          { name = "mautrix-signal"; ensureDBOwnership = true; }
+        ];
         initialScript = pkgs.writeText "synapse-init.sql" ''
-          CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-          CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-            TEMPLATE template0
-            LC_COLLATE = "C"
-            LC_CTYPE = "C";
-          CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-          CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-            TEMPLATE template0
-            LC_COLLATE = "C"
-            LC_CTYPE = "C";
-          CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-          CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-            TEMPLATE template0
-            LC_COLLATE = "C"
-            LC_CTYPE = "C";
-          CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-          CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+          CREATE DATABASE "matrix-synapse"
             TEMPLATE template0
             LC_COLLATE = "C"
             LC_CTYPE = "C";
@@ -166,6 +166,25 @@ in
             ];
           server_name = serviceDomain;
           public_baseurl = "https://${serviceDomain}";
+          oidc_providers = [
+            {
+              idp_id = "kanidm";
+              idp_name = "Kanidm SSO";
+              issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+              client_id = serviceName;
+              client_secret_path = config.sops.secrets.kanidm-matrix.path;
+              scopes = [ "openid" "email" "profile" ];
+              user_profile_method = "userinfo_endpoint";
+              user_mapping_provider = {
+                config = {
+                  subject_claim = "sub";
+                  localpart_template = "{{ user.preferred_username }}";
+                  display_name_template = "{{ user.name }}";
+                  email_template = "{{ user.email }}";
+                };
+              };
+            }
+          ];
           listeners = [
             {
               port = servicePort;
@@ -390,6 +409,26 @@ in
         };
       in
       {
+        ${idmServer} = {
+          sops.secrets.kanidm-matrix = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          services.kanidm.provision = {
+            groups = {
+              "matrix.access" = { };
+            };
+            systems.oauth2.${serviceName} = {
+              displayName = "Matrix";
+              originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = config.sops.secrets.kanidm-matrix.path;
+              scopeMaps."matrix.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
+              preferShortUsername = true;
+            };
+          };
+        };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };

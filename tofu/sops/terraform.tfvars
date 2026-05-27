@@ -51,12 +51,17 @@ kanidm_clients = [
   "summers-monitoring",
   "summers-nextcloud",
   "summers-paperless",
+  "summers-matrix",
 ]
 
 extra_rules = [
   {
     path_regex = "secrets/work/[^/]+\\.(yaml|json|env|ini)$"
     age_keys   = ["pyramid"]
+  },
+  {
+    path_regex = "secrets/general/invidious-companion.yaml$"
+    age_keys   = ["moonside", "summers-ankisync"]
   },
   {
     path_regex = "secrets/nginx/acme.json"
