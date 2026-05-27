@@ -48,6 +48,7 @@ kanidm_clients = [
   "summers-freshrss",
   "summers-homebox",
   "summers-immich",
+  "summers-jellyfin",
   "summers-kavita",
   "summers-matrix",
   "summers-monitoring",

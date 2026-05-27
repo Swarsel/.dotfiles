@@ -12834,11 +12834,59 @@ Kavita is the service I use for my library management. It seems more tailored to
 
 My video streaming service of choice. In the past I used plex, but I prefer using jellyfin now, which looks more clean (and is not payment incentivised).
 
+Using the SSO Plugin is sadly not declarative:
+1) Login as admin
+2) Dashboard > Plugins > Manage repositories:
+   - add https://raw.githubusercontent.com/Buco7854/jellyfin-plugin-sso/manifest-release/manifest.json (community-fork after archival of root)
+3) Restart service to trigger discovery
+4) Install "SSO-Auth"
+5) Restart service to initialize plugin
+6) Dashboard > Plugins > SSO-Auth > Settings:
+
+| Field                               | Value                                                               |
+|---------------------------------   -+---------------------------------------------------------------------|
+| Name                                | kanidm ← must match the segment I hardcoded in the kanidm originUrl |
+| OID Endpoint                        | https://<kanidmDomain>/oauth2/openid/jellyfin                       |
+| OID Client ID                       | jellyfin                                                            |
+| OID Secret                          | <kanidm-secret>                                                     |
+| Enabled                             | yes                                                                 |
+| Enable Authorization by Plugin      | yes                                                                 |
+| Role Claim                          | groups                                                              |
+| Enable All Folders                  | yes                                                                 |
+| Default Provider                    | kanidm                                                              |
+| Preserve Existing Admin Permissions | yes                                                                 |
+
+7) In Dashboard > Branding:
+   - Login disclaimer:
+     #+begin_src html-ts :tangle no
+       <form action="https://<kanidmDomain>/sso/OID/start/kanidm">
+         <button class="raised block emby-button button-submit">
+           Sign in with Kanidm
+         </button>
+       </form>
+     #+end_src
+   - Custom CSS code:
+     #+begin_src css-ts
+       a.raised.emby-button {
+         padding: 0.9em 1em;
+         color: inherit !important;
+       }
+
+       .disclaimerContainer {
+         display: block;
+       }
+     #+end_src
+8) Dashboard > Networking:
+   - Known proxies: put in IPv4 and IPv6 of homeProxy/webProxy
+   - Published Server URLs: =https://<jellyfinDomain>=
+
+
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
-  { pkgs, lib, config, globals, dns, confLib, ... }:
+  { self, pkgs, lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+    inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+    kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
   in
   {
     config = {
@@ -12850,6 +12898,8 @@ My video streaming service of choice. In the past I used plex, but I prefer usin
           extraGroups = [ "video" "render" "users" ];
         };
       };
+
+      sops.secrets.kanidm-jellyfin = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       # nixpkgs.config.packageOverrides = pkgs: {
       #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
       # };
@@ -12905,8 +12955,32 @@ My video streaming service of choice. In the past I used plex, but I prefer usin
       };
 
       nodes = {
-        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+        ${idmServer} = {
+          sops.secrets.kanidm-jellyfin = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          services.kanidm.provision = {
+            groups."jellyfin.access" = { };
+            systems.oauth2.${serviceName} = {
+              displayName = "Jellyfin";
+              originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = config.sops.secrets.kanidm-jellyfin.path;
+              scopeMaps."jellyfin.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
+              preferShortUsername = true;
+            };
+          };
+        };
+        ${webProxy}.services.nginx = lib.recursiveUpdate
+          (confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; })
+          { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+          lib.recursiveUpdate
+            (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; })
+            { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
+        );
       };
 
     };
@@ -38479,6 +38553,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     "summers-freshrss",
     "summers-homebox",
     "summers-immich",
+    "summers-jellyfin",
     "summers-kavita",
     "summers-matrix",
     "summers-monitoring",

@@ -1,7 +1,8 @@
-{ pkgs, lib, config, globals, dns, confLib, ... }:
+{ self, pkgs, lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+  kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 in
 {
   config = {
@@ -13,6 +14,8 @@ in
         extraGroups = [ "video" "render" "users" ];
       };
     };
+
+    sops.secrets.kanidm-jellyfin = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     # nixpkgs.config.packageOverrides = pkgs: {
     #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
     # };
@@ -68,8 +71,32 @@ in
     };
 
     nodes = {
-      ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-      ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+      ${idmServer} = {
+        sops.secrets.kanidm-jellyfin = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        services.kanidm.provision = {
+          groups."jellyfin.access" = { };
+          systems.oauth2.${serviceName} = {
+            displayName = "Jellyfin";
+            originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
+            originLanding = "https://${serviceDomain}/";
+            basicSecretFile = config.sops.secrets.kanidm-jellyfin.path;
+            scopeMaps."jellyfin.access" = [
+              "openid"
+              "email"
+              "profile"
+            ];
+            preferShortUsername = true;
+          };
+        };
+      };
+      ${webProxy}.services.nginx = lib.recursiveUpdate
+        (confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; })
+        { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
+      ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+        lib.recursiveUpdate
+          (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; })
+          { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
+      );
     };
 
   };
