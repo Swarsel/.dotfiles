@@ -26615,199 +26615,58 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
   }
 #+end_src
 
-***** obsidian service for tray
+***** Tray applets
 :PROPERTIES:
 :CUSTOM_ID: h:7f943057-e0c8-4dbd-9875-67e55bc74a47
 :END:
 
-#+begin_src nix-ts :tangle modules/home/common/obsidian-tray.nix
-  { lib, config, ... }:
-  {
-    config = {
-      swarselsystems.enabledHomeModules = [ "obsidian-tray" ];
-
-      systemd.user.services.obsidian-applet = {
-        Unit = {
-          Description = "Obsidian applet";
-          Requires = [ "graphical-session.target" ];
-          After = [
-            "graphical-session.target"
-            "tray.target"
-          ];
-          PartOf = [
-            "tray.target"
-          ];
-        };
-
-        Install = {
-          WantedBy = [ "tray.target" ];
-        };
-
-        Service = {
-          ExecStart = "${lib.getExe config.programs.obsidian.package}";
-        };
-      };
-    };
-
-  }
-#+end_src
-
-***** anki service for tray
-:PROPERTIES:
-:CUSTOM_ID: h:872deae6-dc31-44ac-9c4a-95720fce0a53
-:END:
-
-Sets up a systemd user service for anki that does not stall the shutdown process. Note that the outcommented =ExecStart= does not work because the home-manager anki package builds a separate anki package that - I think - cannot be referenced as no such expression exists in the module.
-
-#+begin_src nix-ts :tangle modules/home/common/anki-tray.nix
-  { config, ... }:
-  {
-    config = {
-      swarselsystems.enabledHomeModules = [ "anki-tray" ];
-
-      systemd.user.services.anki-applet = {
-        Unit = {
-          Description = "Anki applet";
-          Requires = [ "graphical-session.target" ];
-          After = [
-            "graphical-session.target"
-            "tray.target"
-          ];
-          PartOf = [
-            "tray.target"
-          ];
-        };
-
-        Install = {
-          WantedBy = [ "tray.target" ];
-        };
-
-        Service = {
-          # ExecStart = "${lib.getExe config.programs.anki.package}";
+#+begin_src nix-ts :tangle modules/home/common/tray-applets.nix
+  { lib, pkgs, config, confLib, ... }:
+  let
+    applets = {
+      anki = {
+        description = "Anki applet";
+        execStart = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/anki";
+        extraService = {
           Type = "simple";
-          ExecStart = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/anki";
-          Environment = [
-            "QT_QPA_PLATFORM=xcb"
-          ];
+          Environment = [ "QT_QPA_PLATFORM=xcb" ];
           TimeoutStopSec = "2s";
           KillMode = "mixed";
           KillSignal = "SIGTERM";
           SendSIGKILL = "yes";
         };
       };
-
-    };
-  }
-#+end_src
-
-***** element service for tray
-:PROPERTIES:
-:CUSTOM_ID: h:2d0f1a35-cff5-4c24-b104-e431c05ae563
-:END:
-
-#+begin_src nix-ts :tangle modules/home/common/element-tray.nix
-  { pkgs, ... }:
-  {
-    config = {
-      swarselsystems.enabledHomeModules = [ "element-tray" ];
-
-      systemd.user.services.element-applet = {
-        Unit = {
-          Description = "Element applet";
-          Requires = [ "graphical-session.target" ];
-          After = [
-            "graphical-session.target"
-            "tray.target"
-          ];
-          PartOf = [
-            "tray.target"
-          ];
-        };
-
-        Install = {
-          WantedBy = [ "tray.target" ];
-        };
-
-        Service = {
-          ExecStart = "${pkgs.element-desktop}/bin/element-desktop --hidden --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-        };
+      element = {
+        description = "Element applet";
+        execStart = "${pkgs.element-desktop}/bin/element-desktop --hidden --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+      };
+      firezone = {
+        description = "Firezone applet";
+        execStart = "${pkgs.firezone-gui-client}/bin/firezone-client-gui";
+      };
+      obsidian = {
+        description = "Obsidian applet";
+        execStart = "${lib.getExe config.programs.obsidian.package}";
+      };
+      vesktop = {
+        description = "Vesktop applet";
+        execStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
       };
     };
-
-  }
-#+end_src
-
-***** vesktop service for tray
-:PROPERTIES:
-:CUSTOM_ID: h:ea741a3c-982e-4e23-8ecf-b30193a5c326
-:END:
-
-#+begin_src nix-ts :tangle modules/home/common/vesktop-tray.nix
-  { pkgs, ... }:
+    cfg = config.swarselsystems.trayApplets;
+    enabledApplets = lib.filterAttrs (n: _: cfg.${n}.enable) applets;
+  in
   {
+    options.swarselsystems.trayApplets =
+      lib.mapAttrs (_: _: { enable = lib.swarselsystems.mkTrueOption; }) applets;
+
     config = {
-      swarselsystems.enabledHomeModules = [ "vesktop-tray" ];
+      swarselsystems.enabledHomeModules = lib.mapAttrsToList (n: _: "${n}-tray") enabledApplets;
 
-      systemd.user.services.vesktop-applet = {
-        Unit = {
-          Description = "Vesktop applet";
-          Requires = [ "graphical-session.target" ];
-          After = [
-            "graphical-session.target"
-            "tray.target"
-          ];
-          PartOf = [
-            "tray.target"
-          ];
-        };
-
-        Install = {
-          WantedBy = [ "tray.target" ];
-        };
-
-        Service = {
-          ExecStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
-        };
-      };
+      systemd.user.services = lib.mapAttrs'
+        (n: appletDef: lib.nameValuePair "${n}-applet" (confLib.mkTrayApplet appletDef))
+        enabledApplets;
     };
-
-  }
-#+end_src
-
-***** firezone service for tray
-:PROPERTIES:
-:CUSTOM_ID: h:2690d49b-2b25-4204-b349-36e3efe2462a
-:END:
-
-#+begin_src nix-ts :tangle modules/home/common/firezone-tray.nix
-  { pkgs, ... }:
-  {
-    config = {
-      swarselsystems.enabledHomeModules = [ "firezone-tray" ];
-
-      systemd.user.services.firezone-applet = {
-        Unit = {
-          Description = "Firezone applet";
-          Requires = [ "graphical-session.target" ];
-          After = [
-            "graphical-session.target"
-            "tray.target"
-          ];
-          PartOf = [
-            "tray.target"
-          ];
-        };
-
-        Install = {
-          WantedBy = [ "tray.target" ];
-        };
-
-        Service = {
-          ExecStart = "${pkgs.firezone-gui-client}/bin/firezone-client-gui";
-        };
-      };
-    };
-
   }
 #+end_src
 
@@ -31112,6 +30971,22 @@ In short, the options defined here are passed to the modules systems using =_mod
             } // extra;
           };
 
+        mkTrayApplet =
+          { description
+          , execStart
+          , extraService ? { }
+          }:
+          {
+            Unit = {
+              Description = description;
+              Requires = [ "graphical-session.target" ];
+              After = [ "graphical-session.target" "tray.target" ];
+              PartOf = [ "tray.target" ];
+            };
+            Install.WantedBy = [ "tray.target" ];
+            Service = { ExecStart = execStart; } // extraService;
+          };
+
         mkDualFirewallRules =
           { tcpPorts ? [ ]
           , udpPorts ? [ ]
@@ -33768,7 +33643,7 @@ This holds modules that are to be used on most hosts. These are also the most im
   {
     imports = [
       "${m}/home/common/anki.nix"
-      "${m}/home/common/anki-tray.nix"
+      "${m}/home/common/tray-applets.nix"
       "${m}/home/common/attic-store-push.nix"
       "${m}/home/common/atuin.nix"
       "${m}/home/common/blueman-applet.nix"
@@ -33776,12 +33651,10 @@ This holds modules that are to be used on most hosts. These are also the most im
       "${m}/home/common/desktop.nix"
       "${m}/home/common/direnv.nix"
       "${m}/home/common/element.nix"
-      "${m}/home/common/element-tray.nix"
       "${m}/home/common/emacs.nix"
       "${m}/home/common/env.nix"
       "${m}/home/common/eza.nix"
       "${m}/home/common/firefox.nix"
-      "${m}/home/common/firezone-tray.nix"
       "${m}/home/common/fuzzel.nix"
       "${m}/home/common/settings.nix"
       "${m}/home/common/git.nix"
@@ -33798,7 +33671,6 @@ This holds modules that are to be used on most hosts. These are also the most im
       "${m}/home/common/network-manager-applet.nix"
       "${m}/home/common/obs-studio.nix"
       "${m}/home/common/obsidian.nix"
-      "${m}/home/common/obsidian-tray.nix"
       "${m}/home/common/opkssh.nix"
       "${m}/home/common/packages.nix"
       "${m}/home/common/password-store.nix"
@@ -33813,7 +33685,6 @@ This holds modules that are to be used on most hosts. These are also the most im
       "${m}/home/common/symlink.nix"
       "${m}/home/common/tmux.nix"
       "${m}/home/common/vesktop.nix"
-      "${m}/home/common/vesktop-tray.nix"
       "${m}/home/common/shikane.nix"
       "${m}/home/common/syncthing-tray.nix"
       "${m}/home/common/waybar.nix"
@@ -33897,7 +33768,7 @@ This holds modules that are to be used on most hosts. These are also the most im
   {
     imports = [
       "${m}/home/common/anki.nix"
-      "${m}/home/common/anki-tray.nix"
+      "${m}/home/common/tray-applets.nix"
       "${m}/home/common/attic-store-push.nix"
       "${m}/home/common/atuin.nix"
       "${m}/home/common/blueman-applet.nix"
@@ -33905,10 +33776,8 @@ This holds modules that are to be used on most hosts. These are also the most im
       "${m}/home/common/desktop.nix"
       "${m}/home/common/direnv.nix"
       "${m}/home/common/element.nix"
-      "${m}/home/common/element-tray.nix"
       "${m}/home/common/eza.nix"
       "${m}/home/common/firefox.nix"
-      "${m}/home/common/firezone-tray.nix"
       "${m}/home/common/fuzzel.nix"
       "${m}/home/common/settings.nix"
       "${m}/home/common/gnome-keyring.nix"
@@ -33935,7 +33804,6 @@ This holds modules that are to be used on most hosts. These are also the most im
       "${m}/home/common/symlink.nix"
       "${m}/home/common/tmux.nix"
       "${m}/home/common/vesktop.nix"
-      "${m}/home/common/vesktop-tray.nix"
       "${m}/home/common/shikane.nix"
       "${m}/home/common/syncthing-tray.nix"
       "${m}/home/common/waybar.nix"
@@ -33945,6 +33813,8 @@ This holds modules that are to be used on most hosts. These are also the most im
       "${m}/home/common/zsh.nix"
       # excluded: ssh, env, git, mail, emacs, obsidian, obsidian-tray, yubikey
     ];
+
+    swarselsystems.trayApplets.obsidian.enable = false;
   }
 #+end_src
 

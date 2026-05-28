@@ -5,7 +5,7 @@ in
 {
   imports = [
     "${m}/home/common/anki.nix"
-    "${m}/home/common/anki-tray.nix"
+    "${m}/home/common/tray-applets.nix"
     "${m}/home/common/attic-store-push.nix"
     "${m}/home/common/atuin.nix"
     "${m}/home/common/blueman-applet.nix"
@@ -13,10 +13,8 @@ in
     "${m}/home/common/desktop.nix"
     "${m}/home/common/direnv.nix"
     "${m}/home/common/element.nix"
-    "${m}/home/common/element-tray.nix"
     "${m}/home/common/eza.nix"
     "${m}/home/common/firefox.nix"
-    "${m}/home/common/firezone-tray.nix"
     "${m}/home/common/fuzzel.nix"
     "${m}/home/common/settings.nix"
     "${m}/home/common/gnome-keyring.nix"
@@ -43,7 +41,6 @@ in
     "${m}/home/common/symlink.nix"
     "${m}/home/common/tmux.nix"
     "${m}/home/common/vesktop.nix"
-    "${m}/home/common/vesktop-tray.nix"
     "${m}/home/common/shikane.nix"
     "${m}/home/common/syncthing-tray.nix"
     "${m}/home/common/waybar.nix"
@@ -53,4 +50,6 @@ in
     "${m}/home/common/zsh.nix"
     # excluded: ssh, env, git, mail, emacs, obsidian, obsidian-tray, yubikey
   ];
+
+  swarselsystems.trayApplets.obsidian.enable = false;
 }

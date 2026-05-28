@@ -248,6 +248,22 @@ in
           } // extra;
         };
 
+      mkTrayApplet =
+        { description
+        , execStart
+        , extraService ? { }
+        }:
+        {
+          Unit = {
+            Description = description;
+            Requires = [ "graphical-session.target" ];
+            After = [ "graphical-session.target" "tray.target" ];
+            PartOf = [ "tray.target" ];
+          };
+          Install.WantedBy = [ "tray.target" ];
+          Service = { ExecStart = execStart; } // extraService;
+        };
+
       mkDualFirewallRules =
         { tcpPorts ? [ ]
         , udpPorts ? [ ]
