@@ -1,4 +1,4 @@
-{ self, inputs, lib, pkgs, config, dns, globals, confLib, ... }:
+{ self, inputs, lib, pkgs, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "invidious-companion"; port = 8282; }) servicePort serviceName serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.gen { name = "invidious"; }) serviceDomain;
@@ -73,9 +73,7 @@ in
         inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
       };
-      dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     nodes =

@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, globals, confLib, dns, nodes, ... }:
+{ self, lib, pkgs, config, globals, confLib, nodes, ... }:
 let
   inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied homeProxy webProxy homeWebProxy homeProxyIf webProxyIf idmServer homeServiceAddress nginxAccessRules;
@@ -271,9 +271,7 @@ in
 
 
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
+    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes =
       let

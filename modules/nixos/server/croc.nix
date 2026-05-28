@@ -1,4 +1,4 @@
-{ self, lib, config, pkgs, dns, globals, confLib, ... }:
+{ self, lib, config, pkgs, confLib, ... }:
 let
   inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome;
@@ -18,9 +18,7 @@ in
   config = {
     swarselsystems.enabledServerModules = [ "croc" ];
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
+    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     sops = {
       secrets = {

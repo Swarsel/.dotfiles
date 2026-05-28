@@ -1,4 +1,4 @@
-{ self, lib, config, pkgs, globals, dns, confLib, ... }:
+{ self, lib, config, pkgs, confLib, ... }:
 let
   inherit (confLib.gen { name = "buildbot"; port = 8010; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -415,9 +415,7 @@ in
     ];
 
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
+    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };

@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen {
     name = "loki";
@@ -106,9 +106,7 @@ in
       };
     };
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
+    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${webProxy}.services.nginx = confLib.genNginx {

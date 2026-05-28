@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, dns, globals, confLib, ... }:
+{ self, lib, pkgs, config, confLib, ... }:
 let
   inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -62,9 +62,7 @@ in
         expectedBodyRegex = ''"status":"Ok"'';
         network = "local-${config.node.name}";
       };
-      dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     services = {

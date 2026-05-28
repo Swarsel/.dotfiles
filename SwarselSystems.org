@@ -12782,7 +12782,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
 Kavita is the service I use for my library management. It seems more tailored towards comics/graphic novels, but still I prefer its interface to what calibre offers.
 
 #+begin_src nix-ts :tangle modules/nixos/server/kavita.nix
-  { self, lib, pkgs, config, globals, dns, confLib, ... }:
+  { self, lib, pkgs, config, globals, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
 
@@ -12862,9 +12862,7 @@ Kavita is the service I use for my library management. It seems more tailored to
         '';
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOidcSystem {
@@ -12934,7 +12932,7 @@ Using the SSO Plugin is sadly not declarative:
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
-  { self, pkgs, lib, config, globals, dns, confLib, ... }:
+  { self, pkgs, lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
@@ -13002,9 +13000,7 @@ Using the SSO Plugin is sadly not declarative:
         ];
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOidcSystem {
@@ -13035,7 +13031,7 @@ My music streaming service. In the past I used subsonic and gonic, but I prefer 
 After the first login when setting up, you need to add a password to the user that is created using OIDC. This is so that login using DSub2 becomes possible.
 
 #+begin_src nix-ts :tangle modules/nixos/server/navidrome.nix
-  { self, pkgs, config, lib, globals, dns, confLib, ... }:
+  { self, pkgs, config, lib, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
@@ -13169,9 +13165,7 @@ After the first login when setting up, you need to add a password to the user th
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -13542,7 +13536,7 @@ Allows me to spin up containers for services that do not provide NixOS options.
 My messenger of choice. I use this mainly to bridge messages of whatsapp/telegram/signal into it, which allows me to only use a single app for all of my communication needs. TODO: add synapse oidc
 
 #+begin_src nix-ts :tangle modules/nixos/server/matrix.nix
-  { self, lib, config, pkgs, globals, dns, confLib, ... }:
+  { self, lib, config, pkgs, globals, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
@@ -13889,9 +13883,7 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -14002,7 +13994,7 @@ Social Login (OIDC) setup:
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/nextcloud.nix
-  { self, pkgs, lib, config, globals, dns, confLib, ... }:
+  { self, pkgs, lib, config, confLib, ... }:
   let
     inherit (config.repo.secrets.local.nextcloud) adminuser;
     inherit (config.swarselsystems) sopsFile;
@@ -14043,9 +14035,7 @@ Social Login (OIDC) setup:
           hostHeader = serviceDomain;
           network = "local-${config.node.name}";
         };
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -14115,7 +14105,7 @@ Social Login (OIDC) setup:
 My photo service. It does some cool things like face recognition automatically (locally).
 
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
-  { self, lib, pkgs, config, globals, dns, confLib, ... }:
+  { self, lib, pkgs, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -14188,9 +14178,7 @@ My photo service. It does some cool things like face recognition automatically (
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -14237,7 +14225,7 @@ This is my personal document management system. It automatically pulls documents
 Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml='s. This is needed for e.g. online services that only send their invoices through email body text.
 
 #+begin_src nix-ts :tangle modules/nixos/server/paperless.nix
-  { self, lib, pkgs, config, dns, globals, confLib, ... }:
+  { self, lib, pkgs, config, globals, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
@@ -14370,9 +14358,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
       '';
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -14662,7 +14648,7 @@ I use this configuration for sailing.
 This is the server syncthings config, which makes sure that the servers nevers override client data. They also store more folders that the clients.
 
 #+begin_src nix-ts :tangle modules/nixos/server/syncthing.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -14715,9 +14701,7 @@ This is the server syncthings config, which makes sure that the servers nevers o
           expectedBodyRegex = ''"status":\s*"OK"'';
           network = "local-${config.node.name}";
         };
-        dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { serviceName = specificServiceName; inherit proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -14903,7 +14887,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/grafana.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "grafana";
@@ -15236,9 +15220,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
       systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = lib.recursiveUpdate
@@ -15278,7 +15260,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/tempo.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "tempo";
@@ -15390,9 +15372,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -15436,7 +15416,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 **** gotify
 
 #+begin_src nix-ts :tangle modules/nixos/server/gotify.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "gotify";
@@ -15508,9 +15488,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
       systemd.services.gotify-server.serviceConfig.RestartSec = lib.mkForce "60";
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
@@ -15536,7 +15514,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 **** pyroscope
 
 #+begin_src nix-ts :tangle modules/nixos/server/pyroscope.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "pyroscope";
@@ -15608,9 +15586,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
       systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
@@ -15635,7 +15611,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/loki.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "loki";
@@ -15743,9 +15719,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
@@ -16260,7 +16234,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/mimir.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen {
       name = "mimir";
@@ -16366,9 +16340,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
@@ -16395,7 +16367,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 This is my Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I do not use this however, as I actually prefer to build them using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]]. At least that was the case in the past - nowadays [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]] is the tool of choice.
 
 #+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
-  { pkgs, lib, config, globals, dns, confLib, ... }:
+  { pkgs, lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -16438,9 +16410,7 @@ This is my Jenkins instance. It is used to automatically build a new system when
         home = "/var/lib/${serviceName}";
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -16494,7 +16464,7 @@ I am using this with CapyReader on my phone, set it up as a FreshRSS account wit
 FreshRSS claims to support HTTP header auth, but at least it does not work with my oauth2-proxy setup. Until this is fixed, I resorted to the "form" login, since I mostly do not use the web version anyways.
 
 #+begin_src nix-ts :tangle modules/nixos/server/freshrss.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
@@ -16566,9 +16536,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           hostHeader = serviceDomain;
           network = "local-${config.node.name}";
         };
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       };
 
@@ -16646,7 +16614,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 My selfhosted git solution. TODO: federate
 
 #+begin_src nix-ts :tangle modules/nixos/server/forgejo.nix
-  { self, lib, config, pkgs, globals, dns, confLib, ... }:
+  { self, lib, config, pkgs, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -16802,9 +16770,7 @@ My selfhosted git solution. TODO: federate
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = lib.recursiveUpdate
@@ -16840,7 +16806,7 @@ My selfhosted git solution. TODO: federate
 I am an extensive user of Anki, and this allows me to sync my collection on my own.
 
 #+begin_src nix-ts :tangle modules/nixos/server/ankisync.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, globals, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "ankisync"; port = 27701; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
@@ -16900,9 +16866,7 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
         ];
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -16932,7 +16896,7 @@ Create user:
 kanidm person credential create-reset-token <user>
 
 #+begin_src nix-ts :tangle modules/nixos/server/kanidm.nix
-  { self, lib, pkgs, config, globals, dns, confLib, ... }:
+  { self, lib, pkgs, config, globals, confLib, ... }:
   let
     certsSopsFile = self + /secrets/repo/certs.yaml;
     inherit (config.swarselsystems) sopsFile;
@@ -17122,9 +17086,7 @@ kanidm person credential create-reset-token <user>
 
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -17151,7 +17113,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
-  { self, lib, config, pkgs, globals, dns, confLib, ... }:
+  { self, lib, config, pkgs, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
@@ -17371,9 +17333,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -17416,7 +17376,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
 My expenses tracker.
 
 #+begin_src nix-ts :tangle modules/nixos/server/firefly-iii.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
@@ -17469,9 +17429,7 @@ My expenses tracker.
           hostHeader = serviceDomain;
           network = "local-${config.node.name}";
         };
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -17572,7 +17530,7 @@ My expenses tracker.
 My collection tracker. I am not too happy with its GUI, but the API is good, and I mostly use it to check what I have manually anyways.
 
 #+begin_src nix-ts :tangle modules/nixos/server/koillection.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -17705,9 +17663,7 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -17735,7 +17691,7 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
 Used to sync shell history accross machines and have it backed up somewhere.
 
 #+begin_src nix-ts :tangle modules/nixos/server/atuin.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { self, lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "atuin"; port = 8888; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -17780,9 +17736,7 @@ Used to sync shell history accross machines and have it backed up somewhere.
         openRegistration = false;
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -17802,7 +17756,7 @@ Used to sync shell history accross machines and have it backed up somewhere.
 Selfhosted calendar and contacts.
 
 #+begin_src nix-ts :tangle modules/nixos/server/radicale.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -17916,9 +17870,7 @@ Selfhosted calendar and contacts.
       # networking.firewall.allowedTCPPorts = [ servicePort ];
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -17938,7 +17890,7 @@ Selfhosted calendar and contacts.
 P2P filesharing similar to what you might know from wormhole(/-rs), but fully self-hosted.
 
 #+begin_src nix-ts :tangle modules/nixos/server/croc.nix
-  { self, lib, config, pkgs, dns, globals, confLib, ... }:
+  { self, lib, config, pkgs, confLib, ... }:
   let
     inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome;
@@ -17958,9 +17910,7 @@ P2P filesharing similar to what you might know from wormhole(/-rs), but fully se
     config = {
       swarselsystems.enabledServerModules = [ "croc" ];
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       sops = {
         secrets = {
@@ -18023,7 +17973,7 @@ P2P filesharing similar to what you might know from wormhole(/-rs), but fully se
 Basically a selfhosted pastebin that also offers syntax highlighting.
 
 #+begin_src nix-ts :tangle modules/nixos/server/microbin.nix
-  { self, lib, config, dns, globals, confLib, ... }:
+  { self, lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -18144,9 +18094,7 @@ Basically a selfhosted pastebin that also offers syntax highlighting.
         { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
       ];
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; };
@@ -18166,7 +18114,7 @@ Basically a selfhosted pastebin that also offers syntax highlighting.
 Self-hosted link shortener.
 
 #+begin_src nix-ts :tangle modules/nixos/server/shlink.nix
-  { self, lib, config, dns, globals, confLib, ... }:
+  { self, lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -18266,9 +18214,7 @@ Self-hosted link shortener.
         };
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -18292,7 +18238,7 @@ Deployment notes:
   - finally, disable new user registration in web ui
 
 #+begin_src nix-ts :tangle modules/nixos/server/slink.nix
-  { self, lib, config, dns, globals, confLib, ... }:
+  { self, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -18370,9 +18316,7 @@ Deployment notes:
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -18427,7 +18371,7 @@ Deployment notes:
 This is an asset management system. However, for my needs it is a bit too convoluted, so I use [[#h:5b4feb1b-e7a3-43f1-9930-8d00012742ad][Homebox (use db)]] instead.
 
 #+begin_src nix-ts :tangle modules/nixos/server/snipe-it.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy webProxyIf homeProxyIf homeServiceAddress nginxAccessRules;
@@ -18488,9 +18432,7 @@ This is an asset management system. However, for my needs it is a bit too convol
         };
       };
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -18508,7 +18450,7 @@ This is an asset management system. However, for my needs it is a bit too convol
 My asset manager. I use it to track tools, cables and boardgames mostly.
 
 #+begin_src nix-ts :tangle modules/nixos/server/homebox.nix
-  { self, lib, pkgs, config, globals, dns, confLib, ... }:
+  { self, lib, pkgs, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "homebox"; port = 7745; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -18592,9 +18534,7 @@ My asset manager. I use it to track tools, cables and boardgames mostly.
 
       # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOidcSystem {
@@ -19680,7 +19620,7 @@ $ attic cache create hello
 My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][Garage]]), hence we set the nar threshold to 0.
 
 #+begin_src nix-ts :tangle modules/nixos/server/attic.nix
-  { self, lib, config, pkgs, globals, dns, confLib, ... }:
+  { self, lib, config, pkgs, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -19833,9 +19773,7 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -19872,7 +19810,7 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/hydra.nix
-  { inputs, lib, config, globals, dns, confLib, ... }:
+  { inputs, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -19989,9 +19927,7 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -20227,7 +20163,7 @@ This has some state:
   - use OIDC login
 
 #+begin_src nix-ts :tangle modules/nixos/server/firezone.nix
-  { self, lib, pkgs, config, globals, confLib, dns, nodes, ... }:
+  { self, lib, pkgs, config, globals, confLib, nodes, ... }:
   let
     inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied homeProxy webProxy homeWebProxy homeProxyIf webProxyIf idmServer homeServiceAddress nginxAccessRules;
@@ -20500,9 +20436,7 @@ This has some state:
 
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -20644,7 +20578,7 @@ This has some state:
 Handles my home DNS server. It also provides some nice blocklists, but the main usecase is the rewrite of service records to the homeProxy IP, which circumvents bottlenecks by connecting out to the external proxy.
 
 #+begin_src nix-ts :tangle modules/nixos/server/adguardhome.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "adguardhome"; port = 3000; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy idmServer homeDnsServer homeServiceAddress nginxAccessRules;
@@ -20752,9 +20686,7 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
       ];
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -20778,7 +20710,7 @@ Using this mechanisms, I can quite simply jump between working states of all con
 Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to build my machine configurations; however, after adopting [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]]/nix-plugins for [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]], it became a chore to use and I never managed to make it use the correct nix version that nix-plugins would be compiled for. Buildbot in this regards is way easier to use, as it is meant to run arbitrary commands and I can more easily pass it the correct nix version.
 
 #+begin_src nix-ts :tangle modules/nixos/server/buildbot.nix
-  { self, lib, config, pkgs, globals, dns, confLib, ... }:
+  { self, lib, config, pkgs, confLib, ... }:
   let
     inherit (confLib.gen { name = "buildbot"; port = 8010; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -21195,9 +21127,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       ];
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -21218,7 +21148,7 @@ I really love Kagi. However, I do not love it for it's AI features, or particula
 However, I was not ready to pay 10€ per month just for that; using SearXNG, Thanks to the amazing hostnames plugin, I get the capability of blocking some really annoying sites, as well as increasing/decreasing the weight of some other sites.
 
 #+begin_src nix-ts :tangle modules/nixos/server/searx.nix
-  { lib, config, dns, globals, confLib, ... }:
+  { lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "searx"; port = 3002; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied idmServer webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -21273,9 +21203,7 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
           expectedBodyRegex = "OK";
           network = "local-${config.node.name}";
         };
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.${serviceName} = {
@@ -21520,7 +21448,7 @@ Apart from that, this has some nice features like the ability to turn off commen
 I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Firefox]] plugin "Redirector" to make sure that all YouTube URLs instead point to my Invidious instance.
 
 #+begin_src nix-ts :tangle modules/nixos/server/invidious.nix
-  { self, lib, config, dns, globals, confLib, ... }:
+  { self, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "invidious"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied idmServer webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -21573,9 +21501,7 @@ I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Fi
           expectedBodyRegex = "Invidious";
           network = "local-${config.node.name}";
         };
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.${serviceName} = {
@@ -21675,7 +21601,7 @@ The tool itself fetches a token that can then be used by Invidious to start a se
 YouTube in theory has the IP where the PO token was derived from; however, when watching the actual videos, those run through the Invidious proxy which protects most information.
 
 #+begin_src nix-ts :tangle modules/nixos/server/invidious-companion.nix
-  { self, inputs, lib, pkgs, config, dns, globals, confLib, ... }:
+  { self, inputs, lib, pkgs, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "invidious-companion"; port = 8282; }) servicePort serviceName serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.gen { name = "invidious"; }) serviceDomain;
@@ -21750,9 +21676,7 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
           inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
           homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         };
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       nodes =
@@ -21810,7 +21734,7 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
 I only use firefox sync for bookmarks and history; to me, those are not "important" information, hence I keep this service in the cloud.
 
 #+begin_src nix-ts :tangle modules/nixos/server/firefox-syncserver.nix
-  { self, lib, pkgs, config, dns, globals, confLib, ... }:
+  { self, lib, pkgs, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -21874,9 +21798,7 @@ I only use firefox sync for bookmarks and history; to me, those are not "importa
           expectedBodyRegex = ''"status":"Ok"'';
           network = "local-${config.node.name}";
         };
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services = {
@@ -31699,6 +31621,18 @@ In short, the options defined here are passed to the modules systems using =_mod
                 preferShortUsername = true;
               };
             };
+          };
+
+        mkDnsRecord =
+          { serviceName
+          , proxyAddress4
+          , proxyAddress6
+          }:
+          let svc = globals.services.${serviceName};
+          in
+          {
+            ${svc.baseDomain}.subdomainRecords.${svc.subDomain} =
+              inputs.dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
 
         mkKanidmOauth2ProxyAccess =

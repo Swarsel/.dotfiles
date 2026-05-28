@@ -1,4 +1,4 @@
-{ self, lib, config, globals, dns, confLib, ... }:
+{ self, lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
@@ -51,9 +51,7 @@ in
         hostHeader = serviceDomain;
         network = "local-${config.node.name}";
       };
-      dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {

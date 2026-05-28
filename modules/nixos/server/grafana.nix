@@ -1,4 +1,4 @@
-{ self, lib, config, globals, dns, confLib, ... }:
+{ self, lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen {
     name = "grafana";
@@ -331,9 +331,7 @@ in
 
     systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
+    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${idmServer} = lib.recursiveUpdate

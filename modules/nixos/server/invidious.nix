@@ -1,4 +1,4 @@
-{ self, lib, config, dns, globals, confLib, ... }:
+{ self, lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "invidious"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied idmServer webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -51,9 +51,7 @@ in
         expectedBodyRegex = "Invidious";
         network = "local-${config.node.name}";
       };
-      dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     services.${serviceName} = {

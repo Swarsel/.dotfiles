@@ -230,6 +230,18 @@ in
           };
         };
 
+      mkDnsRecord =
+        { serviceName
+        , proxyAddress4
+        , proxyAddress6
+        }:
+        let svc = globals.services.${serviceName};
+        in
+        {
+          ${svc.baseDomain}.subdomainRecords.${svc.subDomain} =
+            inputs.dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+
       mkKanidmOauth2ProxyAccess =
         { serviceName
         , proxyGroup ? "${serviceName}_access"

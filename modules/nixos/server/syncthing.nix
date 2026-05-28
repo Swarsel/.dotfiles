@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
@@ -51,9 +51,7 @@ in
         expectedBodyRegex = ''"status":\s*"OK"'';
         network = "local-${config.node.name}";
       };
-      dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
+      dns = confLib.mkDnsRecord { serviceName = specificServiceName; inherit proxyAddress4 proxyAddress6; };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
