@@ -1,7 +1,7 @@
 { self, lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
 
   containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
 in
@@ -60,14 +60,7 @@ in
     ];
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
     };
 

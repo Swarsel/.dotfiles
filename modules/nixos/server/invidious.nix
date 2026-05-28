@@ -1,7 +1,7 @@
 { self, lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "invidious"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied idmServer webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   sopsFile = self + /secrets/general/invidious-companion.yaml;
 in
@@ -33,14 +33,7 @@ in
     };
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Invidious"; };
       dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };

@@ -3,7 +3,7 @@ let
   inherit (config.swarselsystems) sopsFile;
 
   inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome webProxy homeWebProxy idmServer nginxAccessRules homeServiceAddress;
 
   kanidmDomain = globals.services.kanidm.domain;
   kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
@@ -33,14 +33,7 @@ in
     };
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "<title>Kavita</title>"; };
     };

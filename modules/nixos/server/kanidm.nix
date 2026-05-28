@@ -3,7 +3,7 @@ let
   certsSopsFile = self + /secrets/repo/certs.yaml;
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   certBase = "/etc/ssl";
   certsDir = "${certBase}/certs";
@@ -52,14 +52,7 @@ in
 
     globals = {
       general.idmServer = config.node.name;
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/status"; expectedBodyRegex = "true"; scheme = "https"; };
     };

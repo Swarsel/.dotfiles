@@ -5,7 +5,7 @@ let
     port = 14318;
     dir = "/var/lib/private/tempo";
   }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules wgProxyAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules wgProxyAccessRules;
 
   tempoHttpApiPort = 3200;
   tempoOtlpGrpcPort = 14317;
@@ -17,14 +17,7 @@ in
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort tempoHttpApiPort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort tempoHttpApiPort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort tempoHttpApiPort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName; servicePort = tempoHttpApiPort; path = "/ready"; expectedBodyRegex = "ready"; };
     };

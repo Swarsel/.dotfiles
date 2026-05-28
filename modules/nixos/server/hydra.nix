@@ -1,7 +1,7 @@
 { inputs, lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
   inherit (config.swarselsystems) sopsFile;
 in
 {
@@ -11,14 +11,7 @@ in
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
     };

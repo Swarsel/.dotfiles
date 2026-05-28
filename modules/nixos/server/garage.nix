@@ -2,7 +2,7 @@
 { self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "garage"; port = 3900; domain = config.repo.secrets.common.services.domains."garage-${config.node.name}"; }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
   inherit (config.swarselsystems) sopsFile mainUser;
@@ -98,14 +98,7 @@ in
     };
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort 3901 3902 3903 3904 ]; };
       services = confLib.mkServiceGlobal { serviceName = specificServiceName; inherit serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { serviceName = specificServiceName; servicePort = garageAdminPort; path = "/health"; expectedBodyRegex = "fully operational"; };
     };

@@ -248,6 +248,25 @@ in
           } // extra;
         };
 
+      mkDualFirewallRules =
+        { tcpPorts ? [ ]
+        , udpPorts ? [ ]
+        }:
+        let
+          rule = {
+            allowedTCPPorts = lib.mkIf (tcpPorts != [ ]) tcpPorts;
+            allowedUDPPorts = lib.mkIf (udpPorts != [ ]) udpPorts;
+          };
+        in
+        {
+          ${static.webProxyIf}.hosts = lib.mkIf static.isProxied {
+            ${config.node.name}.firewallRuleForNode.${static.webProxy} = rule;
+          };
+          ${static.homeProxyIf}.hosts = lib.mkIf static.isHome {
+            ${config.node.name}.firewallRuleForNode.${static.homeWebProxy} = rule;
+          };
+        };
+
       mkHttpMonitoring =
         { serviceName
         , servicePort

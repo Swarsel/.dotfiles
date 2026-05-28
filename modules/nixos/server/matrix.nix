@@ -2,7 +2,7 @@
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer webProxyIf homeServiceAddress nginxAccessRules;
 
   kanidmDomain = globals.services.kanidm.domain;
   kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
@@ -98,14 +98,14 @@ in
     };
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort federationPort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = lib.mkMerge [
+        (confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; })
+        {
+          ${webProxyIf}.hosts = lib.mkIf isProxied {
+            ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ federationPort ];
+          };
+        }
+      ];
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "OK"; };
     };

@@ -1,7 +1,7 @@
 { self, lib, config, pkgs, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer homeProxyIf webProxyIf oauthServer nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome webProxy homeWebProxy idmServer oauthServer nginxAccessRules homeServiceAddress;
 
   mainDomain = globals.domains.main;
 
@@ -149,14 +149,7 @@ in
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
     };
 

@@ -2,7 +2,7 @@
 let
   inherit (confLib.gen { name = "invidious-companion"; port = 8282; }) servicePort serviceName serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.gen { name = "invidious"; }) serviceDomain;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   sopsFile = self + /secrets/general/invidious-companion.yaml;
   companion = pkgs.stdenv.mkDerivation {
@@ -60,14 +60,7 @@ in
     programs.nix-ld.enable = true; # invidious-companion runs as an unpatched deno app
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };

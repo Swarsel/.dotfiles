@@ -1,7 +1,7 @@
 { lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "searx"; port = 3002; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied idmServer webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
 
   inherit (config.swarselsystems) sopsFile;
 in
@@ -35,14 +35,7 @@ in
     };
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/healthz"; expectedBodyRegex = "OK"; };
       dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };

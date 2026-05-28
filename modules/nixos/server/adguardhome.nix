@@ -1,7 +1,7 @@
 { lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "adguardhome"; port = 3000; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome isProxied homeProxyIf webProxy webProxyIf homeWebProxy idmServer homeDnsServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeDnsServer homeServiceAddress nginxAccessRules;
 
   homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
   homeDomains = map (name: globals.services.${name}.domain) homeServices;
@@ -12,14 +12,7 @@ in
 
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/control/status"; expectedBodyRegex = ''"running":true''; };
     };

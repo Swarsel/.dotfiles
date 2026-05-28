@@ -1,7 +1,7 @@
 { self, lib, config, confLib, ... }:
 let
   inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-  inherit (confLib.static) isHome isProxied webProxy homeWebProxy homeProxyIf webProxyIf homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
   serviceDB = "koillection";
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
@@ -32,14 +32,7 @@ in
     };
 
     globals = {
-      networks = {
-        ${webProxyIf}.hosts = lib.mkIf isProxied {
-          ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ servicePort postgresPort ];
-        };
-        ${homeProxyIf}.hosts = lib.mkIf isHome {
-          ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort postgresPort ];
-        };
-      };
+      networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort postgresPort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Koillection"; };
     };
