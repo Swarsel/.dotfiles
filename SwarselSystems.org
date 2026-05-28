@@ -139,18 +139,23 @@ An example of using a noweb-ref block:
 First we define the block:
 
 #+begin_src nix-ts :tangle no :noweb-ref blockName
+# source block headers: :tangle no :noweb-ref blockName
   enable = true;
 #+end_src
 
 which can then be used in a block like:
 
-#+begin_src markdown :tangle no :noweb no :results silent
+#+begin_src nix-ts :tangle no :noweb no :results silent
+# source block headers: :tangle no :noweb no :results silent
+  another_value = 1;
   <<blockName>>
 #+end_src
 
 and is finally parsed as:
 
-#+begin_src markdown :tangle no :noweb yes :results silent
+#+begin_src nix-ts :tangle no :noweb yes :results silent
+# source block headers: :tangle no :noweb yes :results silent
+  another_value = 1;
   <<blockName>>
 #+end_src
 
