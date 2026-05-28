@@ -18,6 +18,7 @@
       polkit.enable = lib.mkIf (!minimal) true;
 
       sudo.extraConfig = ''
+        Defaults insults
         Defaults    env_keep+=SSH_AUTH_SOCK
       '' + lib.optionalString (!minimal) ''
         Defaults    env_keep+=XDG_RUNTIME_DIR
