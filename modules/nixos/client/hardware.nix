@@ -33,6 +33,8 @@
 
       enableAllFirmware = lib.mkDefault true;
 
+      usbStorage.manageShutdown = true;
+
       bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
         enable = true;
         package = pkgs.bluez;
