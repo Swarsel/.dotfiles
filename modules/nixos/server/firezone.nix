@@ -76,11 +76,7 @@ in
           };
         };
       };
-      services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-      };
+      services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
     };
 
     topology.self.services.${serviceName} = {

@@ -230,6 +230,24 @@ in
           };
         };
 
+      mkServiceGlobal =
+        { serviceName
+        , serviceDomain
+        , proxyAddress4
+        , proxyAddress6
+        , isHome
+        , serviceAddress
+        , homeServiceAddress
+        , extra ? { }
+        }:
+        {
+          ${serviceName} = {
+            domain = serviceDomain;
+            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          } // extra;
+        };
+
       mkDnsRecord =
         { serviceName
         , proxyAddress4

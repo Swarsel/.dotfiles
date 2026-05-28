@@ -12825,11 +12825,7 @@ Kavita is the service I use for my library management. It seems more tailored to
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "<title>Kavita</title>";
@@ -12975,11 +12971,7 @@ Using the SSO Plugin is sadly not declarative:
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/health";
           expectedBodyRegex = "Healthy";
@@ -13083,11 +13075,7 @@ After the first login when setting up, you need to add a password to the user th
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/ping";
           expectedBodyRegex = ''^\.$'';
@@ -13644,11 +13632,7 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/health";
           expectedBodyRegex = "OK";
@@ -14024,11 +14008,7 @@ Social Login (OIDC) setup:
       };
 
       globals = {
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/status.php";
           expectedBodyRegex = ''"installed":\s*true'';
@@ -14145,11 +14125,7 @@ My photo service. It does some cool things like face recognition automatically (
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/api/server/ping";
           expectedBodyRegex = ''"res":\s*"pong"'';
@@ -14265,11 +14241,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/accounts/login/";
           expectedBodyRegex = "Paperless";
@@ -14928,11 +14900,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/api/health";
           expectedBodyRegex = "ok|database";
@@ -15287,12 +15255,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort tempoHttpApiPort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-          extraConfig.port = servicePort;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString tempoHttpApiPort}/ready";
           expectedBodyRegex = "ready";
@@ -15448,12 +15411,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-          extraConfig.port = servicePort;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/health";
           expectedBodyRegex = "ok|green";
@@ -15544,12 +15502,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-          extraConfig.port = servicePort;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/ready";
           expectedBodyRegex = "ready";
@@ -15635,12 +15588,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-          extraConfig.port = servicePort;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/ready";
           expectedBodyRegex = "ready";
@@ -16258,12 +16206,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-          extraConfig.port = servicePort;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/services";
           expectedBodyRegex = "Running";
@@ -16385,11 +16328,7 @@ This is my Jenkins instance. It is used to automatically build a new system when
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/login";
           expectedBodyRegex = "Jenkins";
@@ -16525,11 +16464,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       # };
 
       globals = {
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "FreshRSS";
@@ -16653,11 +16588,7 @@ My selfhosted git solution. TODO: federate
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/api/healthz";
           expectedBodyRegex = ''"status":\s*"pass"'';
@@ -16837,11 +16768,7 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedStatus = 404;
@@ -16958,11 +16885,7 @@ kanidm person credential create-reset-token <user>
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "https://127.0.0.1:${toString servicePort}/status";
           expectedBodyRegex = "true";
@@ -17272,11 +17195,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       };
 
       services = {
@@ -17418,11 +17337,7 @@ My expenses tracker.
       # };
 
       globals = {
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/health";
           expectedBodyRegex = "OK";
@@ -17572,11 +17487,7 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort postgresPort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "Koillection";
@@ -17716,11 +17627,7 @@ Used to sync shell history accross machines and have it backed up somewhere.
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = ''"version":'';
@@ -17806,11 +17713,7 @@ Selfhosted calendar and contacts.
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "Radicale Web Interface";
@@ -18032,11 +17935,7 @@ Basically a selfhosted pastebin that also offers syntax highlighting.
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "pasta-form";
@@ -18207,11 +18106,7 @@ Self-hosted link shortener.
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       };
 
       globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
@@ -18308,11 +18203,7 @@ Deployment notes:
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       };
 
 
@@ -18403,11 +18294,7 @@ This is an asset management system. However, for my needs it is a bit too convol
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "Snipe-IT";
@@ -18498,11 +18385,7 @@ My asset manager. I use it to track tools, cables and boardgames mostly.
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/api/v1/status";
           expectedBodyRegex = ''"health":\s*true'';
@@ -18755,11 +18638,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
           };
         };
-        services.${specificServiceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { serviceName = specificServiceName; inherit serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${specificServiceName} = {
           url = "http://127.0.0.1:${toString garageAdminPort}/health";
           expectedBodyRegex = "fully operational";
@@ -19650,11 +19529,7 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "Attic Binary Cache";
@@ -19831,11 +19706,7 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           network = "local-${config.node.name}";
@@ -20241,11 +20112,7 @@ This has some state:
             };
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       };
 
       topology.self.services.${serviceName} = {
@@ -20600,11 +20467,7 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/control/status";
           expectedBodyRegex = ''"running":true'';
@@ -21044,11 +20907,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "Buildbot Web UI";
@@ -21193,11 +21052,7 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/healthz";
           expectedBodyRegex = "OK";
@@ -21491,11 +21346,7 @@ I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Fi
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/";
           expectedBodyRegex = "Invidious";
@@ -21671,11 +21522,7 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
@@ -21788,11 +21635,7 @@ I only use firefox sync for bookmarks and history; to me, those are not "importa
             ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort ];
           };
         };
-        services.${serviceName} = {
-          domain = serviceDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-        };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http.${serviceName} = {
           url = "http://127.0.0.1:${toString servicePort}/__heartbeat__";
           expectedBodyRegex = ''"status":"Ok"'';
@@ -31621,6 +31464,24 @@ In short, the options defined here are passed to the modules systems using =_mod
                 preferShortUsername = true;
               };
             };
+          };
+
+        mkServiceGlobal =
+          { serviceName
+          , serviceDomain
+          , proxyAddress4
+          , proxyAddress6
+          , isHome
+          , serviceAddress
+          , homeServiceAddress
+          , extra ? { }
+          }:
+          {
+            ${serviceName} = {
+              domain = serviceDomain;
+              inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+              homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+            } // extra;
           };
 
         mkDnsRecord =

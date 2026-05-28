@@ -106,11 +106,7 @@ in
           ${config.node.name}.firewallRuleForNode.${homeWebProxy}.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
         };
       };
-      services.${specificServiceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-      };
+      services = confLib.mkServiceGlobal { serviceName = specificServiceName; inherit serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http.${specificServiceName} = {
         url = "http://127.0.0.1:${toString garageAdminPort}/health";
         expectedBodyRegex = "fully operational";
