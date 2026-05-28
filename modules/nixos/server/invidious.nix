@@ -130,27 +130,7 @@ in
         };
       in
       {
-        ${idmServer} = {
-          services.kanidm.provision = {
-            groups = {
-              "invidious.access" = { };
-            };
-            systems.oauth2.oauth2-proxy = {
-              scopeMaps = {
-                "invidious.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              claimMaps.groups = {
-                valuesByGroup = {
-                  "invidious.access" = [ "invidious_access" ];
-                };
-              };
-            };
-          };
-        };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
 

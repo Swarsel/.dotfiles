@@ -145,25 +145,9 @@ in
         '';
       in
       {
-        ${idmServer} = {
-          sops.secrets.kanidm-paperless = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups = {
-              "paperless.access" = { };
-            };
-            systems.oauth2.paperless = {
-              displayName = "Paperless";
-              originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-paperless.path; # dirty but saves a cross-evaluation
-              preferShortUsername = true;
-              scopeMaps."paperless.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
         };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });

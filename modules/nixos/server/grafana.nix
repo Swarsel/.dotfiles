@@ -336,33 +336,22 @@ in
     };
 
     nodes = {
-      ${idmServer} = {
-        sops.secrets.kanidm-grafana = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        services.kanidm.provision = {
-          groups = {
-            "grafana.access" = { };
-            "grafana.editors" = { };
-            "grafana.admins" = { };
-            "grafana.server-admins" = { };
-          };
-          systems.oauth2.grafana = {
-            displayName = "Grafana";
-            originUrl = "https://${serviceDomain}/login/generic_oauth";
-            originLanding = "https://${serviceDomain}/";
-            basicSecretFile = config.sops.secrets.kanidm-grafana.path;
-            preferShortUsername = true;
-            scopeMaps."grafana.access" = [ "openid" "email" "profile" ];
-            claimMaps.groups = {
-              joinType = "array";
-              valuesByGroup = {
-                "grafana.editors" = [ "editor" ];
-                "grafana.admins" = [ "admin" ];
-                "grafana.server-admins" = [ "server_admin" ];
-              };
+      ${idmServer} = lib.recursiveUpdate
+        (confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = "https://${serviceDomain}/login/generic_oauth";
+          extraGroups = [ "grafana.editors" "grafana.admins" "grafana.server-admins" ];
+        })
+        {
+          services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
+            joinType = "array";
+            valuesByGroup = {
+              "grafana.editors" = [ "editor" ];
+              "grafana.admins" = [ "admin" ];
+              "grafana.server-admins" = [ "server_admin" ];
             };
           };
         };
-      };
       ${webProxy}.services.nginx = confLib.genNginx {
         inherit serviceAddress servicePort serviceDomain serviceName;
         proxyWebsockets = true;

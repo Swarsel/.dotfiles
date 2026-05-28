@@ -159,34 +159,23 @@ in
     };
 
     nodes = {
-      ${idmServer} = {
-        sops.secrets.kanidm-forgejo = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        services.kanidm.provision = {
-          groups = {
-            "forgejo.access" = { };
-            "forgejo.admins" = { };
-          };
-          systems.oauth2.forgejo = {
-            displayName = "Forgejo";
-            originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
-            originLanding = "https://${serviceDomain}/";
-            basicSecretFile = config.sops.secrets.kanidm-forgejo.path; # dirty but saves a cross-evaluation
-            scopeMaps."forgejo.access" = [
-              "openid"
-              "email"
-              "profile"
-            ];
+      ${idmServer} = lib.recursiveUpdate
+        (confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+          extraGroups = [ "forgejo.admins" ];
+        })
+        {
+          services.kanidm.provision.systems.oauth2.forgejo = {
             # XXX: PKCE is currently not supported by gitea/forgejo,
             # see https://github.com/go-gitea/gitea/issues/21376.
             allowInsecureClientDisablePkce = true;
-            preferShortUsername = true;
             claimMaps.groups = {
               joinType = "array";
               valuesByGroup."forgejo.admins" = [ "admin" ];
             };
           };
         };
-      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

@@ -80,34 +80,21 @@ in
 
 
     nodes = {
-      ${idmServer} = {
-        sops.secrets.kanidm-nextcloud = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        services.kanidm.provision = {
-          groups = {
-            "nextcloud.access" = { };
-            "nextcloud.admins" = { };
-          };
-          systems.oauth2.nextcloud = {
-            displayName = "Nextcloud";
-            originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
-            originLanding = "https://${serviceDomain}/";
-            basicSecretFile = config.sops.secrets.kanidm-nextcloud.path; # dirty but saves a cross-evaluation
+      ${idmServer} = lib.recursiveUpdate
+        (confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+          extraGroups = [ "nextcloud.admins" ];
+        })
+        {
+          services.kanidm.provision.systems.oauth2.nextcloud = {
             allowInsecureClientDisablePkce = true;
-            scopeMaps."nextcloud.access" = [
-              "openid"
-              "email"
-              "profile"
-            ];
-            preferShortUsername = true;
             claimMaps.groups = {
               joinType = "array";
-              valuesByGroup = {
-                "nextcloud.admins" = [ "admin" ];
-              };
+              valuesByGroup."nextcloud.admins" = [ "admin" ];
             };
           };
         };
-      };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

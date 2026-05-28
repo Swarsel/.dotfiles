@@ -83,23 +83,9 @@ in
     };
 
     nodes = {
-      ${idmServer} = {
-        sops.secrets.kanidm-kavita = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        services.kanidm.provision = {
-          groups."kavita.access" = { };
-          systems.oauth2.${serviceName} = {
-            displayName = "Kavita";
-            originUrl = "https://${serviceDomain}/signin-oidc";
-            originLanding = "https://${serviceDomain}/";
-            basicSecretFile = config.sops.secrets.kanidm-kavita.path;
-            scopeMaps."kavita.access" = [
-              "openid"
-              "email"
-              "profile"
-            ];
-            preferShortUsername = true;
-          };
-        };
+      ${idmServer} = confLib.mkKanidmOidcSystem {
+        inherit serviceName serviceDomain kanidmSopsFile;
+        originUrl = "https://${serviceDomain}/signin-oidc";
       };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });

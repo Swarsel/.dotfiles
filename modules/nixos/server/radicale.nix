@@ -117,28 +117,7 @@ in
     };
 
     nodes = {
-      ${idmServer} =
-        {
-          services.kanidm.provision = {
-            groups = {
-              "radicale.access" = { };
-            };
-            systems.oauth2.oauth2-proxy = {
-              scopeMaps = {
-                "radicale.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              claimMaps.groups = {
-                valuesByGroup = {
-                  "radicale.access" = [ "radicale_access" ];
-                };
-              };
-            };
-          };
-        };
+      ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 16; maxBodyUnit = "M"; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 16; maxBodyUnit = "M"; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

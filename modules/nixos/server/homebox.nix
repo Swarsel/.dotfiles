@@ -87,23 +87,9 @@ in
     };
 
     nodes = {
-      ${idmServer} = {
-        sops.secrets.kanidm-homebox = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        services.kanidm.provision = {
-          groups."homebox.access" = { };
-          systems.oauth2.${serviceName} = {
-            displayName = "Homebox";
-            originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
-            originLanding = "https://${serviceDomain}/";
-            basicSecretFile = config.sops.secrets.kanidm-homebox.path;
-            scopeMaps."homebox.access" = [
-              "openid"
-              "email"
-              "profile"
-            ];
-            preferShortUsername = true;
-          };
-        };
+      ${idmServer} = confLib.mkKanidmOidcSystem {
+        inherit serviceName serviceDomain kanidmSopsFile;
+        originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
       };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });

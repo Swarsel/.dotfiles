@@ -116,28 +116,7 @@ in
         };
       in
       {
-        ${idmServer} =
-          {
-            services.kanidm.provision = {
-              groups = {
-                "slink.access" = { };
-              };
-              systems.oauth2.oauth2-proxy = {
-                scopeMaps = {
-                  "slink.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                claimMaps.groups = {
-                  valuesByGroup = {
-                    "slink.access" = [ "slink_access" ];
-                  };
-                };
-              };
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
       };

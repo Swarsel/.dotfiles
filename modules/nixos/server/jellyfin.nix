@@ -71,23 +71,9 @@ in
     };
 
     nodes = {
-      ${idmServer} = {
-        sops.secrets.kanidm-jellyfin = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        services.kanidm.provision = {
-          groups."jellyfin.access" = { };
-          systems.oauth2.${serviceName} = {
-            displayName = "Jellyfin";
-            originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
-            originLanding = "https://${serviceDomain}/";
-            basicSecretFile = config.sops.secrets.kanidm-jellyfin.path;
-            scopeMaps."jellyfin.access" = [
-              "openid"
-              "email"
-              "profile"
-            ];
-            preferShortUsername = true;
-          };
-        };
+      ${idmServer} = confLib.mkKanidmOidcSystem {
+        inherit serviceName serviceDomain kanidmSopsFile;
+        originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
       };
       ${webProxy}.services.nginx = lib.recursiveUpdate
         (confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; })

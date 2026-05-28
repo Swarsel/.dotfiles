@@ -111,28 +111,7 @@ in
     };
 
     nodes = {
-      ${idmServer} =
-        {
-          services.kanidm.provision = {
-            groups = {
-              "adguardhome.access" = { };
-            };
-            systems.oauth2.oauth2-proxy = {
-              scopeMaps = {
-                "adguardhome.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              claimMaps.groups = {
-                valuesByGroup = {
-                  "adguardhome.access" = [ "adguardhome_access" ];
-                };
-              };
-            };
-          };
-        };
+      ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

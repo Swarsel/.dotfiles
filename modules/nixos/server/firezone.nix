@@ -391,28 +391,14 @@ in
             accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
             externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
           in
-          {
-            sops.secrets.kanidm-firezone = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups."firezone.access" = { };
-              systems.oauth2.firezone = {
-                displayName = "Firezone VPN";
-                # NOTE: state: both uuids are runtime values
-                originUrl = [
-                  "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
-                  "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
-                ];
-                originLanding = "https://${serviceDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-firezone.path; # dirty but saves a cross-evaluation
-                preferShortUsername = true;
-                scopeMaps."firezone.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-
-            };
+          confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            displayName = "Firezone VPN";
+            # NOTE: state: both uuids are runtime values
+            originUrl = [
+              "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
+              "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
+            ];
           };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);

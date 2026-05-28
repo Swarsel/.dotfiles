@@ -89,32 +89,18 @@ in
         '';
       in
       {
-        ${idmServer} =
+        ${idmServer} = lib.recursiveUpdate
+          (confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = [
+              "https://${serviceDomain}/auth/login"
+              "https://${serviceDomain}/user-settings"
+              "app.immich:///oauth-callback"
+              "https://${serviceDomain}/api/oauth/mobile-redirect"
+            ];
+          })
           {
-            sops.secrets.kanidm-immich = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups = {
-                "immich.access" = { };
-              };
-              systems.oauth2.immich = {
-                displayName = "Immich";
-                originUrl = [
-                  "https://${serviceDomain}/auth/login"
-                  "https://${serviceDomain}/user-settings"
-                  "app.immich:///oauth-callback"
-                  "https://${serviceDomain}/api/oauth/mobile-redirect"
-                ];
-                originLanding = "https://${serviceDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-immich.path; # dirty but saves a cross-evaluation
-                preferShortUsername = true;
-                enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
-                scopeMaps."immich.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-            };
+            services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
           };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });

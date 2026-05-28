@@ -133,28 +133,7 @@ in
         };
       in
       {
-        ${idmServer} =
-          {
-            services.kanidm.provision = {
-              groups = {
-                "freshrss.access" = { };
-              };
-              systems.oauth2.oauth2-proxy = {
-                scopeMaps = {
-                  "freshrss.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                claimMaps.groups = {
-                  valuesByGroup = {
-                    "freshrss.access" = [ "ttrss_access" ];
-                  };
-                };
-              };
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; proxyGroup = "ttrss_access"; };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };

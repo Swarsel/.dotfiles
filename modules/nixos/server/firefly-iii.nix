@@ -137,28 +137,7 @@ in
         };
       in
       {
-        ${idmServer} =
-          {
-            services.kanidm.provision = {
-              groups = {
-                "firefly.access" = { };
-              };
-              systems.oauth2.oauth2-proxy = {
-                scopeMaps = {
-                  "firefly.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                claimMaps.groups = {
-                  valuesByGroup = {
-                    "firefly.access" = [ "firefly_access" ];
-                  };
-                };
-              };
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { serviceName = "firefly"; proxyGroup = "firefly_access"; };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
       };

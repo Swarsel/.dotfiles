@@ -409,25 +409,9 @@ in
         };
       in
       {
-        ${idmServer} = {
-          sops.secrets.kanidm-matrix = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups = {
-              "matrix.access" = { };
-            };
-            systems.oauth2.${serviceName} = {
-              displayName = "Matrix";
-              originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-matrix.path;
-              scopeMaps."matrix.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
-              preferShortUsername = true;
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
         };
         ${webProxy}.services.nginx = genNginx serviceAddress "";
         ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;

@@ -278,27 +278,7 @@ in
     ];
 
     nodes = {
-      ${idmServer} = {
-        services.kanidm.provision = {
-          groups = {
-            "searx.access" = { };
-          };
-          systems.oauth2.oauth2-proxy = {
-            scopeMaps = {
-              "searx.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
-            };
-            claimMaps.groups = {
-              valuesByGroup = {
-                "searx.access" = [ "searx_access" ];
-              };
-            };
-          };
-        };
-      };
+      ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; };
       ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
     };

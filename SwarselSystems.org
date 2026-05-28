@@ -12867,23 +12867,9 @@ Kavita is the service I use for my library management. It seems more tailored to
       };
 
       nodes = {
-        ${idmServer} = {
-          sops.secrets.kanidm-kavita = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups."kavita.access" = { };
-            systems.oauth2.${serviceName} = {
-              displayName = "Kavita";
-              originUrl = "https://${serviceDomain}/signin-oidc";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-kavita.path;
-              scopeMaps."kavita.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
-              preferShortUsername = true;
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = "https://${serviceDomain}/signin-oidc";
         };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
@@ -13021,23 +13007,9 @@ Using the SSO Plugin is sadly not declarative:
       };
 
       nodes = {
-        ${idmServer} = {
-          sops.secrets.kanidm-jellyfin = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups."jellyfin.access" = { };
-            systems.oauth2.${serviceName} = {
-              displayName = "Jellyfin";
-              originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-jellyfin.path;
-              scopeMaps."jellyfin.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
-              preferShortUsername = true;
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
         };
         ${webProxy}.services.nginx = lib.recursiveUpdate
           (confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; })
@@ -13258,28 +13230,7 @@ After the first login when setting up, you need to add a password to the user th
           };
         in
         {
-          ${idmServer} =
-            {
-              services.kanidm.provision = {
-                groups = {
-                  "navidrome.access" = { };
-                };
-                systems.oauth2.oauth2-proxy = {
-                  scopeMaps = {
-                    "navidrome.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                  };
-                  claimMaps.groups = {
-                    valuesByGroup = {
-                      "navidrome.access" = [ "navidrome_access" ];
-                    };
-                  };
-                };
-              };
-            };
+          ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
         };
@@ -14002,25 +13953,9 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
           };
         in
         {
-          ${idmServer} = {
-            sops.secrets.kanidm-matrix = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups = {
-                "matrix.access" = { };
-              };
-              systems.oauth2.${serviceName} = {
-                displayName = "Matrix";
-                originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
-                originLanding = "https://${serviceDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-matrix.path;
-                scopeMaps."matrix.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                preferShortUsername = true;
-              };
-            };
+          ${idmServer} = confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
           };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
           ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
@@ -14149,34 +14084,21 @@ Social Login (OIDC) setup:
 
 
       nodes = {
-        ${idmServer} = {
-          sops.secrets.kanidm-nextcloud = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups = {
-              "nextcloud.access" = { };
-              "nextcloud.admins" = { };
-            };
-            systems.oauth2.nextcloud = {
-              displayName = "Nextcloud";
-              originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-nextcloud.path; # dirty but saves a cross-evaluation
+        ${idmServer} = lib.recursiveUpdate
+          (confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+            extraGroups = [ "nextcloud.admins" ];
+          })
+          {
+            services.kanidm.provision.systems.oauth2.nextcloud = {
               allowInsecureClientDisablePkce = true;
-              scopeMaps."nextcloud.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
-              preferShortUsername = true;
               claimMaps.groups = {
                 joinType = "array";
-                valuesByGroup = {
-                  "nextcloud.admins" = [ "admin" ];
-                };
+                valuesByGroup."nextcloud.admins" = [ "admin" ];
               };
             };
           };
-        };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
@@ -14284,32 +14206,18 @@ My photo service. It does some cool things like face recognition automatically (
           '';
         in
         {
-          ${idmServer} =
+          ${idmServer} = lib.recursiveUpdate
+            (confLib.mkKanidmOidcSystem {
+              inherit serviceName serviceDomain kanidmSopsFile;
+              originUrl = [
+                "https://${serviceDomain}/auth/login"
+                "https://${serviceDomain}/user-settings"
+                "app.immich:///oauth-callback"
+                "https://${serviceDomain}/api/oauth/mobile-redirect"
+              ];
+            })
             {
-              sops.secrets.kanidm-immich = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-              services.kanidm.provision = {
-                groups = {
-                  "immich.access" = { };
-                };
-                systems.oauth2.immich = {
-                  displayName = "Immich";
-                  originUrl = [
-                    "https://${serviceDomain}/auth/login"
-                    "https://${serviceDomain}/user-settings"
-                    "app.immich:///oauth-callback"
-                    "https://${serviceDomain}/api/oauth/mobile-redirect"
-                  ];
-                  originLanding = "https://${serviceDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-immich.path; # dirty but saves a cross-evaluation
-                  preferShortUsername = true;
-                  enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
-                  scopeMaps."immich.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-              };
+              services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
             };
           ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
@@ -14476,25 +14384,9 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           '';
         in
         {
-          ${idmServer} = {
-            sops.secrets.kanidm-paperless = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-            services.kanidm.provision = {
-              groups = {
-                "paperless.access" = { };
-              };
-              systems.oauth2.paperless = {
-                displayName = "Paperless";
-                originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
-                originLanding = "https://${serviceDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-paperless.path; # dirty but saves a cross-evaluation
-                preferShortUsername = true;
-                scopeMaps."paperless.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-            };
+          ${idmServer} = confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
           };
           ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
@@ -15349,33 +15241,22 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
       };
 
       nodes = {
-        ${idmServer} = {
-          sops.secrets.kanidm-grafana = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups = {
-              "grafana.access" = { };
-              "grafana.editors" = { };
-              "grafana.admins" = { };
-              "grafana.server-admins" = { };
-            };
-            systems.oauth2.grafana = {
-              displayName = "Grafana";
-              originUrl = "https://${serviceDomain}/login/generic_oauth";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-grafana.path;
-              preferShortUsername = true;
-              scopeMaps."grafana.access" = [ "openid" "email" "profile" ];
-              claimMaps.groups = {
-                joinType = "array";
-                valuesByGroup = {
-                  "grafana.editors" = [ "editor" ];
-                  "grafana.admins" = [ "admin" ];
-                  "grafana.server-admins" = [ "server_admin" ];
-                };
+        ${idmServer} = lib.recursiveUpdate
+          (confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = "https://${serviceDomain}/login/generic_oauth";
+            extraGroups = [ "grafana.editors" "grafana.admins" "grafana.server-admins" ];
+          })
+          {
+            services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
+              joinType = "array";
+              valuesByGroup = {
+                "grafana.editors" = [ "editor" ];
+                "grafana.admins" = [ "admin" ];
+                "grafana.server-admins" = [ "server_admin" ];
               };
             };
           };
-        };
         ${webProxy}.services.nginx = confLib.genNginx {
           inherit serviceAddress servicePort serviceDomain serviceName;
           proxyWebsockets = true;
@@ -16748,28 +16629,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           };
         in
         {
-          ${idmServer} =
-            {
-              services.kanidm.provision = {
-                groups = {
-                  "freshrss.access" = { };
-                };
-                systems.oauth2.oauth2-proxy = {
-                  scopeMaps = {
-                    "freshrss.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                  };
-                  claimMaps.groups = {
-                    valuesByGroup = {
-                      "freshrss.access" = [ "ttrss_access" ];
-                    };
-                  };
-                };
-              };
-            };
+          ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; proxyGroup = "ttrss_access"; };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
           ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
         };
@@ -16947,34 +16807,23 @@ My selfhosted git solution. TODO: federate
       };
 
       nodes = {
-        ${idmServer} = {
-          sops.secrets.kanidm-forgejo = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups = {
-              "forgejo.access" = { };
-              "forgejo.admins" = { };
-            };
-            systems.oauth2.forgejo = {
-              displayName = "Forgejo";
-              originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-forgejo.path; # dirty but saves a cross-evaluation
-              scopeMaps."forgejo.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
+        ${idmServer} = lib.recursiveUpdate
+          (confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+            extraGroups = [ "forgejo.admins" ];
+          })
+          {
+            services.kanidm.provision.systems.oauth2.forgejo = {
               # XXX: PKCE is currently not supported by gitea/forgejo,
               # see https://github.com/go-gitea/gitea/issues/21376.
               allowInsecureClientDisablePkce = true;
-              preferShortUsername = true;
               claimMaps.groups = {
                 joinType = "array";
                 valuesByGroup."forgejo.admins" = [ "admin" ];
               };
             };
           };
-        };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
@@ -17706,28 +17555,7 @@ My expenses tracker.
           };
         in
         {
-          ${idmServer} =
-            {
-              services.kanidm.provision = {
-                groups = {
-                  "firefly.access" = { };
-                };
-                systems.oauth2.oauth2-proxy = {
-                  scopeMaps = {
-                    "firefly.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                  };
-                  claimMaps.groups = {
-                    valuesByGroup = {
-                      "firefly.access" = [ "firefly_access" ];
-                    };
-                  };
-                };
-              };
-            };
+          ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { serviceName = "firefly"; proxyGroup = "firefly_access"; };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
           ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
         };
@@ -18093,28 +17921,7 @@ Selfhosted calendar and contacts.
       };
 
       nodes = {
-        ${idmServer} =
-          {
-            services.kanidm.provision = {
-              groups = {
-                "radicale.access" = { };
-              };
-              systems.oauth2.oauth2-proxy = {
-                scopeMaps = {
-                  "radicale.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                claimMaps.groups = {
-                  valuesByGroup = {
-                    "radicale.access" = [ "radicale_access" ];
-                  };
-                };
-              };
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 16; maxBodyUnit = "M"; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 16; maxBodyUnit = "M"; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
@@ -18603,28 +18410,7 @@ Deployment notes:
           };
         in
         {
-          ${idmServer} =
-            {
-              services.kanidm.provision = {
-                groups = {
-                  "slink.access" = { };
-                };
-                systems.oauth2.oauth2-proxy = {
-                  scopeMaps = {
-                    "slink.access" = [
-                      "openid"
-                      "email"
-                      "profile"
-                    ];
-                  };
-                  claimMaps.groups = {
-                    valuesByGroup = {
-                      "slink.access" = [ "slink_access" ];
-                    };
-                  };
-                };
-              };
-            };
+          ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
         };
@@ -18811,23 +18597,9 @@ My asset manager. I use it to track tools, cables and boardgames mostly.
       };
 
       nodes = {
-        ${idmServer} = {
-          sops.secrets.kanidm-homebox = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          services.kanidm.provision = {
-            groups."homebox.access" = { };
-            systems.oauth2.${serviceName} = {
-              displayName = "Homebox";
-              originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
-              originLanding = "https://${serviceDomain}/";
-              basicSecretFile = config.sops.secrets.kanidm-homebox.path;
-              scopeMaps."homebox.access" = [
-                "openid"
-                "email"
-                "profile"
-              ];
-              preferShortUsername = true;
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOidcSystem {
+          inherit serviceName serviceDomain kanidmSopsFile;
+          originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
         };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
@@ -20848,28 +20620,14 @@ This has some state:
               accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
               externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
             in
-            {
-              sops.secrets.kanidm-firezone = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-              services.kanidm.provision = {
-                groups."firezone.access" = { };
-                systems.oauth2.firezone = {
-                  displayName = "Firezone VPN";
-                  # NOTE: state: both uuids are runtime values
-                  originUrl = [
-                    "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
-                    "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
-                  ];
-                  originLanding = "https://${serviceDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-firezone.path; # dirty but saves a cross-evaluation
-                  preferShortUsername = true;
-                  scopeMaps."firezone.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-
-              };
+            confLib.mkKanidmOidcSystem {
+              inherit serviceName serviceDomain kanidmSopsFile;
+              displayName = "Firezone VPN";
+              # NOTE: state: both uuids are runtime values
+              originUrl = [
+                "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
+                "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
+              ];
             };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
@@ -20999,28 +20757,7 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
       };
 
       nodes = {
-        ${idmServer} =
-          {
-            services.kanidm.provision = {
-              groups = {
-                "adguardhome.access" = { };
-              };
-              systems.oauth2.oauth2-proxy = {
-                scopeMaps = {
-                  "adguardhome.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                claimMaps.groups = {
-                  valuesByGroup = {
-                    "adguardhome.access" = [ "adguardhome_access" ];
-                  };
-                };
-              };
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
@@ -21486,28 +21223,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       };
 
       nodes = {
-        ${idmServer} =
-          {
-            services.kanidm.provision = {
-              groups = {
-                "buildbot.access" = { };
-              };
-              systems.oauth2.oauth2-proxy = {
-                scopeMaps = {
-                  "buildbot.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                claimMaps.groups = {
-                  valuesByGroup = {
-                    "buildbot.access" = [ "buildbot_access" ];
-                  };
-                };
-              };
-            };
-          };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "buildbot_access" ]; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2Groups = [ "buildbot_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
@@ -21805,27 +21521,7 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
       ];
 
       nodes = {
-        ${idmServer} = {
-          services.kanidm.provision = {
-            groups = {
-              "searx.access" = { };
-            };
-            systems.oauth2.oauth2-proxy = {
-              scopeMaps = {
-                "searx.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              claimMaps.groups = {
-                valuesByGroup = {
-                  "searx.access" = [ "searx_access" ];
-                };
-              };
-            };
-          };
-        };
+        ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; };
         ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
@@ -21979,27 +21675,7 @@ I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Fi
           };
         in
         {
-          ${idmServer} = {
-            services.kanidm.provision = {
-              groups = {
-                "invidious.access" = { };
-              };
-              systems.oauth2.oauth2-proxy = {
-                scopeMaps = {
-                  "invidious.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                claimMaps.groups = {
-                  valuesByGroup = {
-                    "invidious.access" = [ "invidious_access" ];
-                  };
-                };
-              };
-            };
-          };
+          ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
           ${webProxy}.services.nginx = genNginx serviceAddress "";
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
 
@@ -32020,6 +31696,47 @@ In short, the options defined here are passed to the modules systems using =_mod
           };
           Install.WantedBy = lib.mkForce [ target ];
         };
+
+        mkKanidmOidcSystem =
+          { serviceName
+          , displayName ? lib.swarselsystems.toCapitalized serviceName
+          , serviceDomain
+          , originUrl
+          , kanidmSopsFile
+          , extraGroups ? [ ]
+          }:
+          {
+            sops.secrets."kanidm-${serviceName}" = {
+              sopsFile = kanidmSopsFile;
+              owner = "kanidm";
+              group = "kanidm";
+              mode = "0440";
+            };
+            services.kanidm.provision = {
+              groups = lib.genAttrs ([ "${serviceName}.access" ] ++ extraGroups) (_: { });
+              systems.oauth2.${serviceName} = {
+                inherit displayName originUrl;
+                originLanding = "https://${serviceDomain}/";
+                basicSecretFile = config.sops.secrets."kanidm-${serviceName}".path;
+                scopeMaps."${serviceName}.access" = [ "openid" "email" "profile" ];
+                preferShortUsername = true;
+              };
+            };
+          };
+
+        mkKanidmOauth2ProxyAccess =
+          { serviceName
+          , proxyGroup ? "${serviceName}_access"
+          }:
+          {
+            services.kanidm.provision = {
+              groups."${serviceName}.access" = { };
+              systems.oauth2.oauth2-proxy = {
+                scopeMaps."${serviceName}.access" = [ "openid" "email" "profile" ];
+                claimMaps.groups.valuesByGroup."${serviceName}.access" = [ proxyGroup ];
+              };
+            };
+          };
 
         genNginx =
           { serviceAddress

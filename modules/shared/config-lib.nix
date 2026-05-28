@@ -203,6 +203,47 @@ in
         Install.WantedBy = lib.mkForce [ target ];
       };
 
+      mkKanidmOidcSystem =
+        { serviceName
+        , displayName ? lib.swarselsystems.toCapitalized serviceName
+        , serviceDomain
+        , originUrl
+        , kanidmSopsFile
+        , extraGroups ? [ ]
+        }:
+        {
+          sops.secrets."kanidm-${serviceName}" = {
+            sopsFile = kanidmSopsFile;
+            owner = "kanidm";
+            group = "kanidm";
+            mode = "0440";
+          };
+          services.kanidm.provision = {
+            groups = lib.genAttrs ([ "${serviceName}.access" ] ++ extraGroups) (_: { });
+            systems.oauth2.${serviceName} = {
+              inherit displayName originUrl;
+              originLanding = "https://${serviceDomain}/";
+              basicSecretFile = config.sops.secrets."kanidm-${serviceName}".path;
+              scopeMaps."${serviceName}.access" = [ "openid" "email" "profile" ];
+              preferShortUsername = true;
+            };
+          };
+        };
+
+      mkKanidmOauth2ProxyAccess =
+        { serviceName
+        , proxyGroup ? "${serviceName}_access"
+        }:
+        {
+          services.kanidm.provision = {
+            groups."${serviceName}.access" = { };
+            systems.oauth2.oauth2-proxy = {
+              scopeMaps."${serviceName}.access" = [ "openid" "email" "profile" ];
+              claimMaps.groups.valuesByGroup."${serviceName}.access" = [ proxyGroup ];
+            };
+          };
+        };
+
       genNginx =
         { serviceAddress
         , serviceName
