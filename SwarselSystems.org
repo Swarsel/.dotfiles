@@ -20805,26 +20805,10 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
     buildCommand = ''nix build "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" --no-link --keep-going --max-jobs 3 --print-out-paths --accept-flake-config'';
     nixBuilders = systems: ''--builders "'' + lib.foldl (acc: system: acc + ''ssh://eu.nixbuild.net ${system} - 100 1 big-parallel,benchmark;'') "" systems + ''"'';
 
-    buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
-      set -euo pipefail
+    buildAndPushBody = ''
       HOST="$1"
-
-      echo "=== Syncing flake repository ==="
-      (
-        flock -x 9
-        if [ -d "${flakeDir}/.git" ]; then
-          cd ${flakeDir}
-          git fetch origin
-          git reset --hard origin/main
-        else
-          git clone --branch main ${flakeRepo} ${flakeDir}
-        fi
-      ) 9>"${lockFile}"
-
       echo "=== Building nixosConfiguration: $HOST ==="
-
       result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
-
       echo "Build output: $result"
 
       attempt=1
@@ -20848,6 +20832,24 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       else
         echo "=== Build of $HOST succeeded but upload failed after $max_attempts attempts (continuing) ==="
       fi
+    '';
+
+    buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
+      set -euo pipefail
+
+      echo "=== Syncing flake repository ==="
+      (
+        flock -x 9
+        if [ -d "${flakeDir}/.git" ]; then
+          cd ${flakeDir}
+          git fetch origin
+          git reset --hard origin/main
+        else
+          git clone --branch main ${flakeRepo} ${flakeDir}
+        fi
+      ) 9>"${lockFile}"
+
+      ${buildAndPushBody}
     '';
 
     prepareUpdateBranch = pkgs.writeShellScript "buildbot-prepare-update-branch" ''
@@ -20917,32 +20919,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
         echo "No changes, skipping build."
         exit 0
       fi
-      HOST="$1"
-      echo "=== Building nixosConfiguration: $HOST ==="
-      result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
-      echo "Build output: $result"
-
-      attempt=1
-      max_attempts=3
-      upload_success=0
-      while [ $attempt -le $max_attempts ]; do
-        echo "=== Pushing $HOST to binary cache (attempt $attempt/$max_attempts) ==="
-        if echo "$result" | xargs attic push ${mainUser}; then
-          upload_success=1
-          break
-        fi
-        echo "Upload attempt $attempt for $HOST failed."
-        attempt=$((attempt + 1))
-        if [ $attempt -le $max_attempts ]; then
-          sleep 10
-        fi
-      done
-
-      if [ $upload_success -eq 1 ]; then
-        echo "=== Successfully built and pushed $HOST ==="
-      else
-        echo "=== Build of $HOST succeeded but upload failed after $max_attempts attempts (continuing) ==="
-      fi
+      ${buildAndPushBody}
     '';
 
     createPR = pkgs.writeShellScript "buildbot-create-pr" ''
