@@ -1,6 +1,7 @@
 { lib, config, confLib, ... }:
 let
-  inherit (confLib.gen { name = "spotifyd"; port = 1025; }) servicePort serviceUser serviceGroup;
+  inherit (confLib.gen { name = "spotifyd"; port = 1025; }) servicePort serviceName serviceUser serviceGroup;
+  inherit (confLib.static) routerServer;
 in
 {
   config = {
@@ -39,15 +40,19 @@ in
         global = {
           dbus_type = "session";
           use_mpris = false;
-          device = "sysdefault:CARD=PCH";
-          # device = "default";
           device_name = "SwarselSpot";
-          # backend = "pulseaudio";
-          backend = "alsa";
-          # mixer = "alsa";
+          backend = "pulseaudio";
           zeroconf_port = servicePort;
         };
       };
+    };
+
+    nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
+      from = [ "untrusted" ];
+      to = [ "vlan-services" ];
+      extraLines = [
+        "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
+      ];
     };
   };
 

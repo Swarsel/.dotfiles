@@ -41,8 +41,6 @@ in
       enableAllFirmware = lib.mkForce true;
     };
 
-    # networking.firewall.allowedTCPPorts = [ servicePort ];
-
     globals = {
       networks = {
         ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -64,24 +62,32 @@ in
       };
     };
 
-    services.snapserver = {
-      enable = true;
-      settings = {
-        stream = {
-          port = 1704;
-          source = "pipe:///tmp/snapfifo?name=default";
-          bind_to_address = "0.0.0.0";
-        };
-      };
-    };
+    # services.snapserver = {
+    #   enable = true;
+    #   settings = {
+    #     stream = {
+    #       port = 1704;
+    #       source = "pipe:///tmp/snapfifo?name=default";
+    #       bind_to_address = "0.0.0.0";
+    #     };
+    #   };
+    # };
 
     systemd.services = {
-      ${serviceName}.serviceConfig = {
-        PrivateDevices = lib.mkForce false;
-        PrivateUsers = lib.mkForce false;
-        RestrictRealtime = lib.mkForce false;
-        SystemCallFilter = lib.mkForce null;
-        RootDirectory = lib.mkForce null;
+      ${serviceName} = {
+        after = [ "pipewire.service" ];
+        wants = [ "pipewire.service" ];
+        environment = {
+          PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
+        };
+        serviceConfig = {
+          PrivateDevices = lib.mkForce false;
+          PrivateUsers = lib.mkForce false;
+          PrivateTmp = lib.mkForce false;
+          RestrictRealtime = lib.mkForce false;
+          SystemCallFilter = lib.mkForce null;
+          RootDirectory = lib.mkForce null;
+        };
       };
     };
 
@@ -102,9 +108,7 @@ in
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
         ScanSchedule = "@every 24h";
-        # MPVPath = "";
-        # MPVCommandTemplate = "${pkgs.mpv}/bin/mpv --audio-device=%d --input-ipc-server=%s --no-audio-display --log-file=/tmp/mpv.log --pause %f";
-        # MPVCmdTemplate = "${pkgs.mpv}/bin/mpv --no-audio-display --pause %f --input-ipc-server=%s --audio-channels=stereo --audio-samplerate=48000 --audio-format=s16 --ao=pcm --ao-pcm-file=/tmp/snapfifo --log-file=/tmp/mpv.log";
+        MPVPath = "${pkgs.mpv}/bin/mpv";
         ReverseProxyWhitelist = "0.0.0.0/0";
         ReverseProxyUserHeader = "X-User";
         Jukebox = {
@@ -112,11 +116,9 @@ in
           Default = "default";
           Devices = [
             # use mpv --audio-device=help to get these
-            [ "default" "alsa/sysdefault:CARD=PCH" ]
+            [ "default" "pipewire" ]
           ];
         };
-        # Switch using --impure as these credential files are not stored within the flake
-        # sops-nix is not supported for these which is why we need to resort to these
         LastFM = {
           inherit (config.repo.secrets.local.LastFM) ApiKey Secret;
         };

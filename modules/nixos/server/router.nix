@@ -1,4 +1,4 @@
-{ lib, config, globals, ... }:
+{ lib, config, confLib, globals, ... }:
 let
   bridgeVLANs = lib.mapAttrsToList
     (_: vlan: {
@@ -18,7 +18,17 @@ in
   config =
     {
       swarselsystems.enabledServerModules = [ "router" ];
-      services.avahi.reflector = true;
+
+      users.persistentIds = {
+        avahi = confLib.mkIds 978;
+      };
+      services.avahi = {
+        enable = true;
+        reflector = true;
+        openFirewall = true;
+      };
+
+      services.resolved.settings.Resolve.MulticastDNS = "no";
 
       topology.self.interfaces = (lib.mapAttrs'
         (vlanName: _:
@@ -73,6 +83,19 @@ in
               ];
               late = true;
               verdict = "accept";
+            };
+
+            # Allow mDNS from any VLAN (plus FritzBox-LAN) into the router
+            mdns-to-local = {
+              from = [
+                "vlan-services"
+                "vlan-home"
+                "vlan-devices"
+                "vlan-guests"
+                "untrusted"
+              ];
+              to = [ "local" ];
+              allowedUDPPorts = [ 5353 ];
             };
 
             # Allow the services VLAN to talk to our wireguard server

@@ -4475,6 +4475,21 @@ This is my current main server at home; all services except filesystem backups r
     boot = {
       loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
+
+      kernelParams = [
+        "intel_iommu=on"
+        "iommu=pt"
+        "vfio-pci.ids=13f6:8788"
+      ];
+      initrd.kernelModules = [
+        "vfio_pci"
+        "vfio_iommu_type1"
+        "vfio"
+      ];
+      blacklistedKernelModules = [
+        "snd_virtuoso"
+        "snd_oxygen"
+      ];
     };
 
     hardware.enableRedistributableFirmware = true;
@@ -4785,7 +4800,7 @@ This is my current main server at home; all services except filesystem backups r
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/audio/default.nix
-  { self, lib, minimal, ... }:
+  { self, lib, pkgs, minimal, ... }:
   {
     imports = [
       "${self}/profiles/nixos/microvm"
@@ -4805,6 +4820,26 @@ This is my current main server at home; all services except filesystem backups r
     microvm = {
       mem = 1024 * 4;
       vcpu = 2;
+      qemu.machine = "q35";
+      devices = [
+        { bus = "pci"; path = "0000:04:04.0"; }
+      ];
+    };
+
+    environment.persistence."/state".directories = [
+      { directory = "/var/lib/alsa"; user = "root"; group = "root"; }
+    ];
+
+    systemd.services.audio-mixer-init = {
+      wantedBy = [ "sound.target" ];
+      after = [ "sound.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        ${pkgs.alsa-utils}/bin/amixer -c 0 sset 'Analog Output' Multichannel
+      '';
     };
 
   }
@@ -12448,7 +12483,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
     - global IPv4/IPv6 forwarding is enabled via boot.kernel.sysctl so this host acts as the main router between all VLANs, the WireGuard network, and the WAN (untrusted)
 
 #+begin_src nix-ts :tangle modules/nixos/server/router.nix
-  { lib, config, globals, ... }:
+  { lib, config, confLib, globals, ... }:
   let
     bridgeVLANs = lib.mapAttrsToList
       (_: vlan: {
@@ -12468,7 +12503,17 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
     config =
       {
         swarselsystems.enabledServerModules = [ "router" ];
-        services.avahi.reflector = true;
+
+        users.persistentIds = {
+          avahi = confLib.mkIds 978;
+        };
+        services.avahi = {
+          enable = true;
+          reflector = true;
+          openFirewall = true;
+        };
+
+        services.resolved.settings.Resolve.MulticastDNS = "no";
 
         topology.self.interfaces = (lib.mapAttrs'
           (vlanName: _:
@@ -12523,6 +12568,19 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 ];
                 late = true;
                 verdict = "accept";
+              };
+
+              # Allow mDNS from any VLAN (plus FritzBox-LAN) into the router
+              mdns-to-local = {
+                from = [
+                  "vlan-services"
+                  "vlan-home"
+                  "vlan-devices"
+                  "vlan-guests"
+                  "untrusted"
+                ];
+                to = [ "local" ];
+                allowedUDPPorts = [ 5353 ];
               };
 
               # Allow the services VLAN to talk to our wireguard server
@@ -13040,8 +13098,6 @@ After the first login when setting up, you need to add a password to the user th
         enableAllFirmware = lib.mkForce true;
       };
 
-      # networking.firewall.allowedTCPPorts = [ servicePort ];
-
       globals = {
         networks = {
           ${webProxyIf}.hosts = lib.mkIf isProxied {
@@ -13063,24 +13119,32 @@ After the first login when setting up, you need to add a password to the user th
         };
       };
 
-      services.snapserver = {
-        enable = true;
-        settings = {
-          stream = {
-            port = 1704;
-            source = "pipe:///tmp/snapfifo?name=default";
-            bind_to_address = "0.0.0.0";
-          };
-        };
-      };
+      # services.snapserver = {
+      #   enable = true;
+      #   settings = {
+      #     stream = {
+      #       port = 1704;
+      #       source = "pipe:///tmp/snapfifo?name=default";
+      #       bind_to_address = "0.0.0.0";
+      #     };
+      #   };
+      # };
 
       systemd.services = {
-        ${serviceName}.serviceConfig = {
-          PrivateDevices = lib.mkForce false;
-          PrivateUsers = lib.mkForce false;
-          RestrictRealtime = lib.mkForce false;
-          SystemCallFilter = lib.mkForce null;
-          RootDirectory = lib.mkForce null;
+        ${serviceName} = {
+          after = [ "pipewire.service" ];
+          wants = [ "pipewire.service" ];
+          environment = {
+            PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
+          };
+          serviceConfig = {
+            PrivateDevices = lib.mkForce false;
+            PrivateUsers = lib.mkForce false;
+            PrivateTmp = lib.mkForce false;
+            RestrictRealtime = lib.mkForce false;
+            SystemCallFilter = lib.mkForce null;
+            RootDirectory = lib.mkForce null;
+          };
         };
       };
 
@@ -13101,9 +13165,7 @@ After the first login when setting up, you need to add a password to the user th
           EnableTranscodingConfig = true;
           Scanner.GroupAlbumReleases = true;
           ScanSchedule = "@every 24h";
-          # MPVPath = "";
-          # MPVCommandTemplate = "${pkgs.mpv}/bin/mpv --audio-device=%d --input-ipc-server=%s --no-audio-display --log-file=/tmp/mpv.log --pause %f";
-          # MPVCmdTemplate = "${pkgs.mpv}/bin/mpv --no-audio-display --pause %f --input-ipc-server=%s --audio-channels=stereo --audio-samplerate=48000 --audio-format=s16 --ao=pcm --ao-pcm-file=/tmp/snapfifo --log-file=/tmp/mpv.log";
+          MPVPath = "${pkgs.mpv}/bin/mpv";
           ReverseProxyWhitelist = "0.0.0.0/0";
           ReverseProxyUserHeader = "X-User";
           Jukebox = {
@@ -13111,11 +13173,9 @@ After the first login when setting up, you need to add a password to the user th
             Default = "default";
             Devices = [
               # use mpv --audio-device=help to get these
-              [ "default" "alsa/sysdefault:CARD=PCH" ]
+              [ "default" "pipewire" ]
             ];
           };
-          # Switch using --impure as these credential files are not stored within the flake
-          # sops-nix is not supported for these which is why we need to resort to these
           LastFM = {
             inherit (config.repo.secrets.local.LastFM) ApiKey Secret;
           };
@@ -13230,7 +13290,8 @@ Simple config for running spotifyd which allows me to remote play spotify songs 
 #+begin_src nix-ts :tangle modules/nixos/server/spotifyd.nix
   { lib, config, confLib, ... }:
   let
-    inherit (confLib.gen { name = "spotifyd"; port = 1025; }) servicePort serviceUser serviceGroup;
+    inherit (confLib.gen { name = "spotifyd"; port = 1025; }) servicePort serviceName serviceUser serviceGroup;
+    inherit (confLib.static) routerServer;
   in
   {
     config = {
@@ -13269,15 +13330,19 @@ Simple config for running spotifyd which allows me to remote play spotify songs 
           global = {
             dbus_type = "session";
             use_mpris = false;
-            device = "sysdefault:CARD=PCH";
-            # device = "default";
             device_name = "SwarselSpot";
-            # backend = "pulseaudio";
-            backend = "alsa";
-            # mixer = "alsa";
+            backend = "pulseaudio";
             zeroconf_port = servicePort;
           };
         };
+      };
+
+      nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
+        from = [ "untrusted" ];
+        to = [ "vlan-services" ];
+        extraLines = [
+          "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
+        ];
       };
     };
 
@@ -13295,7 +13360,8 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
   { self, lib, config, pkgs, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "mpd"; port = 3254; }) servicePort serviceName serviceUser serviceGroup;
+    inherit (confLib.gen { name = "mpd"; port = 6600; }) servicePort serviceName serviceUser serviceGroup;
+    inherit (confLib.static) routerServer;
   in
   {
     imports = [
@@ -13313,7 +13379,7 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
           ${serviceUser} = {
             isSystemUser = true;
             group = serviceGroup;
-            extraGroups = [ "audio" "utmp" ];
+            extraGroups = [ "audio" "utmp" "users" "pipewire" ];
           };
         };
       };
@@ -13344,6 +13410,12 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
           music_directory = "/storage/Music";
           bind_to_address = "any";
           port = servicePort;
+          audio_output = [
+            {
+              type = "pipewire";
+              name = "PipeWire";
+            }
+          ];
         };
         user = serviceUser;
         group = serviceGroup;
@@ -13357,6 +13429,14 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
               "admin"
             ];
           }
+        ];
+      };
+
+      nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
+        from = [ "untrusted" ];
+        to = [ "vlan-services" ];
+        extraLines = [
+          "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
         ];
       };
     };
@@ -31773,7 +31853,7 @@ In short, the options defined here are passed to the modules systems using =_mod
 
         static = rec {
           inherit (globals.hosts.${config.node.name}) isHome;
-          inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer monitoringServer;
+          inherit (globals.general) homeProxy routerServer webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer monitoringServer;
           webProxyIf = "${webProxy}-wgProxy";
           homeProxyIf = "home-wgHome";
           isProxied = config.node.name != webProxy;

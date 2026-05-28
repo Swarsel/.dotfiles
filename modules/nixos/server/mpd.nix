@@ -1,7 +1,8 @@
 { self, lib, config, pkgs, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "mpd"; port = 3254; }) servicePort serviceName serviceUser serviceGroup;
+  inherit (confLib.gen { name = "mpd"; port = 6600; }) servicePort serviceName serviceUser serviceGroup;
+  inherit (confLib.static) routerServer;
 in
 {
   imports = [
@@ -19,7 +20,7 @@ in
         ${serviceUser} = {
           isSystemUser = true;
           group = serviceGroup;
-          extraGroups = [ "audio" "utmp" ];
+          extraGroups = [ "audio" "utmp" "users" "pipewire" ];
         };
       };
     };
@@ -50,6 +51,12 @@ in
         music_directory = "/storage/Music";
         bind_to_address = "any";
         port = servicePort;
+        audio_output = [
+          {
+            type = "pipewire";
+            name = "PipeWire";
+          }
+        ];
       };
       user = serviceUser;
       group = serviceGroup;
@@ -63,6 +70,14 @@ in
             "admin"
           ];
         }
+      ];
+    };
+
+    nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
+      from = [ "untrusted" ];
+      to = [ "vlan-services" ];
+      extraLines = [
+        "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
       ];
     };
   };

@@ -43,7 +43,7 @@ in
 
       static = rec {
         inherit (globals.hosts.${config.node.name}) isHome;
-        inherit (globals.general) homeProxy webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer monitoringServer;
+        inherit (globals.general) homeProxy routerServer webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer monitoringServer;
         webProxyIf = "${webProxy}-wgProxy";
         homeProxyIf = "home-wgHome";
         isProxied = config.node.name != webProxy;

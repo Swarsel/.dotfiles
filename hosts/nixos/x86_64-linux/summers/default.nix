@@ -29,6 +29,21 @@
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
+
+    kernelParams = [
+      "intel_iommu=on"
+      "iommu=pt"
+      "vfio-pci.ids=13f6:8788"
+    ];
+    initrd.kernelModules = [
+      "vfio_pci"
+      "vfio_iommu_type1"
+      "vfio"
+    ];
+    blacklistedKernelModules = [
+      "snd_virtuoso"
+      "snd_oxygen"
+    ];
   };
 
   hardware.enableRedistributableFirmware = true;
