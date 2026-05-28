@@ -11,7 +11,7 @@ in
       _module.args.diskDevice = config.swarselsystems.rootDisk;
     }
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/hotel"
+    "${self}/profiles/nixos/public"
   ];
 
   environment.variables = {

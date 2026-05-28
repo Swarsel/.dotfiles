@@ -15,7 +15,7 @@ in
     "${m}/nixos/common/impermanence.nix"
     "${m}/nixos/common/sops.nix"
     "${m}/nixos/common/boot.nix"
-    # client modules (same as personal, minus yubikey)
+    # client modules
     "${m}/nixos/client/appimage.nix"
     "${m}/nixos/client/autologin.nix"
     "${m}/nixos/client/blueman.nix"
@@ -56,7 +56,7 @@ in
 
   config.home-manager.users."${config.swarselsystems.mainUser}" = {
     imports = [
-      "${m}/../profiles/home/hotel"
+      "${m}/../profiles/home/public"
     ];
   };
 }
