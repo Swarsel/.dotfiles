@@ -53,11 +53,7 @@ in
         };
       };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-      monitoring.http.${serviceName} = {
-        url = "http://127.0.0.1:${toString servicePort}/__heartbeat__";
-        expectedBodyRegex = ''"status":"Ok"'';
-        network = "local-${config.node.name}";
-      };
+      monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/__heartbeat__"; expectedBodyRegex = ''"status":"Ok"''; };
       dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 

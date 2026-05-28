@@ -21,11 +21,7 @@ in
         };
       };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-      monitoring.http.${serviceName} = {
-        url = "http://127.0.0.1:${toString servicePort}/control/status";
-        expectedBodyRegex = ''"running":true'';
-        network = "local-${config.node.name}";
-      };
+      monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/control/status"; expectedBodyRegex = ''"running":true''; };
     };
 
     networking.firewall = {

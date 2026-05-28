@@ -31,11 +31,7 @@ in
         };
       };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
-      monitoring.http.${serviceName} = {
-        url = "http://127.0.0.1:${toString servicePort}/health";
-        expectedBodyRegex = "ok|green";
-        network = "local-${config.node.name}";
-      };
+      monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "ok|green"; };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {

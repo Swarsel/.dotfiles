@@ -248,6 +248,27 @@ in
           } // extra;
         };
 
+      mkHttpMonitoring =
+        { serviceName
+        , servicePort
+        , path ? "/"
+        , scheme ? "http"
+        , expectedBodyRegex ? null
+        , expectedStatus ? null
+        , hostHeader ? null
+        , failIfBodyMatchesRegex ? null
+        }:
+        {
+          ${serviceName} = {
+            url = "${scheme}://127.0.0.1:${toString servicePort}${path}";
+            network = "local-${config.node.name}";
+          }
+          // lib.optionalAttrs (expectedBodyRegex != null) { inherit expectedBodyRegex; }
+          // lib.optionalAttrs (expectedStatus != null) { inherit expectedStatus; }
+          // lib.optionalAttrs (hostHeader != null) { inherit hostHeader; }
+          // lib.optionalAttrs (failIfBodyMatchesRegex != null) { inherit failIfBodyMatchesRegex; };
+        };
+
       mkDnsRecord =
         { serviceName
         , proxyAddress4

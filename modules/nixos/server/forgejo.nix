@@ -38,12 +38,7 @@ in
         };
       };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-      monitoring.http.${serviceName} = {
-        url = "http://127.0.0.1:${toString servicePort}/api/healthz";
-        expectedBodyRegex = ''"status":\s*"pass"'';
-        failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"'';
-        network = "local-${config.node.name}";
-      };
+      monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/healthz"; expectedBodyRegex = ''"status":\s*"pass"''; failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"''; };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {

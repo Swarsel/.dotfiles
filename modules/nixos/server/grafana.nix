@@ -40,11 +40,7 @@ in
         };
       };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-      monitoring.http.${serviceName} = {
-        url = "http://127.0.0.1:${toString servicePort}/api/health";
-        expectedBodyRegex = "ok|database";
-        network = "local-${config.node.name}";
-      };
+      monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/health"; expectedBodyRegex = "ok|database"; };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {

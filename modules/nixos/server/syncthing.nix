@@ -46,11 +46,7 @@ in
         homeServiceAddress = lib.mkIf isHome homeServiceAddress;
         extraConfig.devices = baseDevices;
       };
-      monitoring.http.${specificServiceName} = {
-        url = "http://127.0.0.1:${toString servicePort}/rest/noauth/health";
-        expectedBodyRegex = ''"status":\s*"OK"'';
-        network = "local-${config.node.name}";
-      };
+      monitoring.http = confLib.mkHttpMonitoring { serviceName = specificServiceName; inherit servicePort; path = "/rest/noauth/health"; expectedBodyRegex = ''"status":\s*"OK"''; };
       dns = confLib.mkDnsRecord { serviceName = specificServiceName; inherit proxyAddress4 proxyAddress6; };
     };
 
