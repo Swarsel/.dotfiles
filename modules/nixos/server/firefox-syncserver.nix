@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, confLib, ... }:
+{ lib, pkgs, config, confLib, ... }:
 let
   inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
@@ -6,10 +6,6 @@ let
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  imports = [
-    "${self}/modules/nixos/server/postgresql.nix"
-  ];
-
   config = {
     swarselsystems.enabledServerModules = [ "firefox-syncserver" ];
 
@@ -30,7 +26,7 @@ in
       templates = {
         "firefox-syncserver.env" = {
           content = ''
-            SYNC_MASTER_SECRET=${config.sops.placeholder."firefox-syncserver-secret"};
+            SYNC_MASTER_SECRET=${config.sops.placeholder."firefox-syncserver-secret"}
           '';
           owner = serviceUser;
           group = serviceGroup;

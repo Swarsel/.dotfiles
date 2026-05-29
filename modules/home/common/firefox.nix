@@ -1,4 +1,4 @@
-{ pkgs, lib, vars, ... }:
+{ pkgs, lib, vars, globals, ... }:
 {
   config = {
     swarselsystems.enabledHomeModules = [ "firefox" ];
@@ -147,6 +147,7 @@
             isDefault = true;
             settings = {
               "browser.startup.homepage" = "https://lobste.rs";
+              "identity.sync.tokenserver.uri" = "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
             };
           }
           vars.firefox;

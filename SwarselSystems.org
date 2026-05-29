@@ -21405,8 +21405,16 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
 
 I only use firefox sync for bookmarks and history; to me, those are not "important" information, hence I keep this service in the cloud.
 
+Setting it up on android:
+
+1) Sign out of any Mozilla account, then force close
+2) Settings > About Firefox: tap the Firefox logo 5 times.
+3) Settings > Sync Debug (at the top under sign in)
+4) Custom sync server: https://<ffsyncDomain>/1.0/sync/1.5.
+5) Force close
+
 #+begin_src nix-ts :tangle modules/nixos/server/firefox-syncserver.nix
-  { self, lib, pkgs, config, confLib, ... }:
+  { lib, pkgs, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "firefox-syncserver"; port = 5000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
     inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
@@ -21414,10 +21422,6 @@ I only use firefox sync for bookmarks and history; to me, those are not "importa
     inherit (config.swarselsystems) sopsFile;
   in
   {
-    imports = [
-      "${self}/modules/nixos/server/postgresql.nix"
-    ];
-
     config = {
       swarselsystems.enabledServerModules = [ "firefox-syncserver" ];
 
@@ -21438,7 +21442,7 @@ I only use firefox sync for bookmarks and history; to me, those are not "importa
         templates = {
           "firefox-syncserver.env" = {
             content = ''
-              SYNC_MASTER_SECRET=${config.sops.placeholder."firefox-syncserver-secret"};
+              SYNC_MASTER_SECRET=${config.sops.placeholder."firefox-syncserver-secret"}
             '';
             owner = serviceUser;
             group = serviceGroup;
@@ -26455,7 +26459,7 @@ Also, I setup some search aliases for functions I often use, such as NixOS optio
 I used to build the firefox addon =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
 
 #+begin_src nix-ts :tangle modules/home/common/firefox.nix
-  { pkgs, lib, vars, ... }:
+  { pkgs, lib, vars, globals, ... }:
   {
     config = {
       swarselsystems.enabledHomeModules = [ "firefox" ];
@@ -26604,6 +26608,7 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
               isDefault = true;
               settings = {
                 "browser.startup.homepage" = "https://lobste.rs";
+                "identity.sync.tokenserver.uri" = "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
               };
             }
             vars.firefox;
