@@ -12521,7 +12521,14 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
           openFirewall = true;
         };
 
-        services.resolved.settings.Resolve.MulticastDNS = "no";
+        networking.nameservers = [
+          globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4
+          globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
+        ];
+        services.resolved = {
+          settings.Resolve.MulticastDNS = "no";
+          fallbackDns = [ "1.1.1.1" "9.9.9.9" ];
+        };
 
         topology.self.interfaces = (lib.mapAttrs'
           (vlanName: _:

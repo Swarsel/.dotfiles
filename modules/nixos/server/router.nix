@@ -28,7 +28,14 @@ in
         openFirewall = true;
       };
 
-      services.resolved.settings.Resolve.MulticastDNS = "no";
+      networking.nameservers = [
+        globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4
+        globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
+      ];
+      services.resolved = {
+        settings.Resolve.MulticastDNS = "no";
+        fallbackDns = [ "1.1.1.1" "9.9.9.9" ];
+      };
 
       topology.self.interfaces = (lib.mapAttrs'
         (vlanName: _:
