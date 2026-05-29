@@ -267,6 +267,8 @@ in
       mkDualFirewallRules =
         { tcpPorts ? [ ]
         , udpPorts ? [ ]
+        , forWebProxy ? true
+        , forHomeProxy ? true
         }:
         let
           rule = {
@@ -275,10 +277,10 @@ in
           };
         in
         {
-          ${static.webProxyIf}.hosts = lib.mkIf static.isProxied {
+          ${static.webProxyIf}.hosts = lib.mkIf (forWebProxy && static.isProxied) {
             ${config.node.name}.firewallRuleForNode.${static.webProxy} = rule;
           };
-          ${static.homeProxyIf}.hosts = lib.mkIf static.isHome {
+          ${static.homeProxyIf}.hosts = lib.mkIf (forHomeProxy && static.isHome) {
             ${config.node.name}.firewallRuleForNode.${static.homeWebProxy} = rule;
           };
         };

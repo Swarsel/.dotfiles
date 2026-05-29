@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, confLib, globals, ... }:
+{ self, lib, pkgs, config, confLib, ... }:
 let
   certsSopsFile = self + /secrets/repo/certs.yaml;
   clientSopsFile = config.node.secretsDir + "/secrets.yaml";
@@ -53,9 +53,7 @@ in
 
     networking = {
       hostName = config.node.name;
-      hosts = {
-        "${globals.networks.home-lan.hosts.winters.ipv4}" = [ globals.services.transmission.domain ];
-      };
+      hosts = { };
       wireless.iwd = {
         enable = true;
         settings = {

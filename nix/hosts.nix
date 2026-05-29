@@ -33,7 +33,6 @@
             inputs.stylix.nixosModules.stylix
             inputs.swarsel-nix.nixosModules.default
             inputs.nixos-nftables-firewall.nixosModules.default
-            inputs.pia.nixosModules.default
             inputs.niritiling.nixosModules.default
             inputs.noctoggle.nixosModules.default
             (inputs.nixos-extra-modules + "/modules/guests")

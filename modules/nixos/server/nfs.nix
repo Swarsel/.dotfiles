@@ -1,6 +1,7 @@
 { lib, config, pkgs, globals, confLib, ... }:
 let
   nfsUser = globals.user.name;
+  inherit (config.swarselsystems) sopsFile;
 in
 {
   config = {
@@ -10,10 +11,32 @@ in
       avahi = confLib.mkIds 978;
     };
 
+    sops.secrets.samba-user-pw = { inherit sopsFile; mode = "0400"; };
+
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
       directories = [
         { directory = "/var/cache/samba"; }
+        { directory = "/var/lib/samba"; }
       ];
+    };
+
+    systemd.services.samba-ensure-user-pw = {
+      description = "Ensure SMB password is set for ${nfsUser}";
+      after = [ "samba-smbd.service" ];
+      wantedBy = [ "samba-smbd.service" ];
+      partOf = [ "samba-smbd.service" ];
+      path = with pkgs; [ samba4 coreutils gnugrep ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        if pdbedit -L 2>/dev/null | grep -q '^${nfsUser}:'; then
+          echo "${nfsUser} SMB account already exists"
+          exit 0
+        fi
+        echo "${nfsUser} SMB account missing — creating"
+        PW=$(cat ${config.sops.secrets.samba-user-pw.path})
+        printf '%s\n%s\n' "$PW" "$PW" | smbpasswd -a -s ${nfsUser}
+        echo "Created ${nfsUser} SMB account"
+      '';
     };
 
     services = {

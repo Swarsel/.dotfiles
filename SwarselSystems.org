@@ -1811,7 +1811,6 @@ A short overview over each input and what it does:
       nix-minecraft.url = "github:Infinidoge/nix-minecraft";
       simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
       nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
-      pia.url = "github:Swarsel/pia.nix/custom";
       niritiling.url = "github:Swarsel/niritiling/feat/resize";
       noctoggle.url = "github:Swarsel/noctoggle";
 
@@ -2334,7 +2333,6 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
               inputs.stylix.nixosModules.stylix
               inputs.swarsel-nix.nixosModules.default
               inputs.nixos-nftables-firewall.nixosModules.default
-              inputs.pia.nixosModules.default
               inputs.niritiling.nixosModules.default
               inputs.noctoggle.nixosModules.default
               (inputs.nixos-extra-modules + "/modules/guests")
@@ -4988,8 +4986,8 @@ This is my current main server at home; all services except filesystem backups r
   } // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 4;
-      vcpu = 2;
+      mem = 1024 * 6;
+      vcpu = 6;
     };
 
   }
@@ -9718,7 +9716,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 Here I only enable =networkmanager= and a few default networks. The rest of the network config is done separately in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/network.nix
-  { self, lib, pkgs, config, confLib, globals, ... }:
+  { self, lib, pkgs, config, confLib, ... }:
   let
     certsSopsFile = self + /secrets/repo/certs.yaml;
     clientSopsFile = config.node.secretsDir + "/secrets.yaml";
@@ -9773,9 +9771,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
       networking = {
         hostName = config.node.name;
-        hosts = {
-          "${globals.networks.home-lan.hosts.winters.ipv4}" = [ globals.services.transmission.domain ];
-        };
+        hosts = { };
         wireless.iwd = {
           enable = true;
           settings = {
@@ -11366,6 +11362,7 @@ Handles my main NFS share. User password setup is currently not declarative, I n
   { lib, config, pkgs, globals, confLib, ... }:
   let
     nfsUser = globals.user.name;
+    inherit (config.swarselsystems) sopsFile;
   in
   {
     config = {
@@ -11375,10 +11372,32 @@ Handles my main NFS share. User password setup is currently not declarative, I n
         avahi = confLib.mkIds 978;
       };
 
+      sops.secrets.samba-user-pw = { inherit sopsFile; mode = "0400"; };
+
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
         directories = [
           { directory = "/var/cache/samba"; }
+          { directory = "/var/lib/samba"; }
         ];
+      };
+
+      systemd.services.samba-ensure-user-pw = {
+        description = "Ensure SMB password is set for ${nfsUser}";
+        after = [ "samba-smbd.service" ];
+        wantedBy = [ "samba-smbd.service" ];
+        partOf = [ "samba-smbd.service" ];
+        path = with pkgs; [ samba4 coreutils gnugrep ];
+        serviceConfig.Type = "oneshot";
+        script = ''
+          if pdbedit -L 2>/dev/null | grep -q '^${nfsUser}:'; then
+            echo "${nfsUser} SMB account already exists"
+            exit 0
+          fi
+          echo "${nfsUser} SMB account missing — creating"
+          PW=$(cat ${config.sops.secrets.samba-user-pw.path})
+          printf '%s\n%s\n' "$PW" "$PW" | smbpasswd -a -s ${nfsUser}
+          echo "Created ${nfsUser} SMB account"
+        '';
       };
 
       services = {
@@ -14491,11 +14510,15 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 I use this configuration for sailing.
 
 #+begin_src nix-ts :tangle modules/nixos/server/transmission.nix
-  { self, pkgs, lib, config, confLib, ... }:
+  { self, pkgs, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "transmission"; port = 9091; }) servicePort serviceDomain;
     inherit (confLib.static) isHome homeServiceAddress homeWebProxy nginxAccessRules;
     inherit (config.swarselsystems) sopsFile;
+
+    piaNamespace = "pia";
+    piaNetnsPath = "/var/run/netns/${piaNamespace}";
+    piaPortFile = "/run/pia/forwarded-port";
 
     lidarrUser = "lidarr";
     lidarrGroup = lidarrUser;
@@ -14514,11 +14537,25 @@ I use this configuration for sailing.
     prowlarrPort = 9696;
   in
   {
+    imports = [
+      "${self}/modules/nixos/server/pia-netns.nix"
+    ];
+
     config = {
       swarselsystems.enabledServerModules = [ "transmission" ];
 
-      sops.secrets = {
-        pia = { inherit sopsFile; };
+      sops = {
+        secrets = {
+          pia = { inherit sopsFile; };
+          mam-id = { inherit sopsFile; };
+          transmission-rpc-password = { inherit sopsFile; };
+        };
+        templates."transmission-credentials.json" = {
+          content = ''
+            {"rpc-username":"${config.swarselsystems.mainUser}","rpc-password":"${config.sops.placeholder.transmission-rpc-password}"}
+          '';
+          mode = "0400";
+        };
       };
 
       # this user/group section is probably unneeded
@@ -14549,12 +14586,12 @@ I use this configuration for sailing.
             group = radarrGroup;
             extraGroups = [ "users" ];
           };
-          "${readarrGroup}" = {
+          "${readarrUser}" = {
             isSystemUser = true;
             group = readarrGroup;
             extraGroups = [ "users" ];
           };
-          "${sonarrGroup}" = {
+          "${sonarrUser}" = {
             isSystemUser = true;
             group = sonarrGroup;
             extraGroups = [ "users" ];
@@ -14564,11 +14601,12 @@ I use this configuration for sailing.
             group = lidarrGroup;
             extraGroups = [ "users" ];
           };
-          "${prowlarrGroup}" = {
+          "${prowlarrUser}" = {
             isSystemUser = true;
             group = prowlarrGroup;
             extraGroups = [ "users" ];
           };
+          transmission.extraGroups = [ "users" ];
         };
       };
 
@@ -14589,9 +14627,15 @@ I use this configuration for sailing.
         prowlarr.info = "https://${serviceDomain}/prowlarr";
       };
 
-      globals.services.transmission = {
-        domain = serviceDomain;
-        inherit isHome;
+      globals = {
+        networks = confLib.mkDualFirewallRules {
+          forWebProxy = false;
+          tcpPorts = [ servicePort radarrPort readarrPort sonarrPort lidarrPort prowlarrPort ];
+        };
+        services.transmission = {
+          domain = serviceDomain;
+          inherit isHome;
+        };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -14601,20 +14645,57 @@ I use this configuration for sailing.
           { directory = "/var/lib/sonarr"; user = sonarrUser; group = sonarrGroup; }
           { directory = "/var/lib/lidarr"; user = lidarrUser; group = lidarrGroup; }
           { directory = "/var/lib/private/prowlarr"; user = prowlarrUser; group = prowlarrGroup; }
+          { directory = "/var/lib/mam"; user = "root"; group = "root"; mode = "0700"; }
+          { directory = "/var/lib/transmission"; user = "transmission"; group = "transmission"; }
         ];
       };
 
       services = {
-        pia = {
+        pia-netns = {
           enable = true;
-          credentials.credentialsFile = config.sops.secrets.pia.path;
-          protocol = "wireguard";
-          autoConnect = {
+          namespace = piaNamespace;
+          region = "sweden";
+          credentialsFile = config.sops.secrets.pia.path;
+          dns = true;
+          portForwarding = {
             enable = true;
-            region = "sweden";
+            portFile = piaPortFile;
           };
-          portForwarding.enable = true;
-          dns.enable = true;
+        };
+        transmission = {
+          enable = true;
+          openRPCPort = false;
+          package = pkgs.transmission_3;
+          openPeerPorts = false;
+          credentialsFile = config.sops.templates."transmission-credentials.json".path;
+          settings = {
+            rpc-bind-address = "127.0.0.1";
+            rpc-port = servicePort;
+            rpc-whitelist-enabled = false;
+            rpc-host-whitelist-enabled = false;
+            peer-port-random-on-start = false;
+            port-forwarding-enabled = false;
+            rpc-authentication-required = true;
+            umask = 0;
+
+            download-dir = "/storage/CHANGEME/seed";
+            encryption = 2;
+            dht-enabled = false;
+            pex-enabled = false;
+
+            alt-speed-down = 12000;
+            alt-speed-up = 4000;
+            alt-speed-time-enabled = true;
+            alt-speed-time-begin = 120;
+            alt-speed-time-end = 480;
+
+            speed-limit-down = 6000;
+            speed-limit-down-enabled = true;
+            speed-limit-up = 2000;
+            speed-limit-up-enabled = true;
+
+            cache-size-mb = 1024;
+          };
         };
         radarr = {
           enable = true;
@@ -14655,6 +14736,142 @@ I use this configuration for sailing.
         };
       };
 
+      systemd = {
+        tmpfiles.rules = [
+          "d /storage/CHANGEME 0755 transmission transmission -"
+          "d /storage/CHANGEME/seed 0755 transmission transmission -"
+        ];
+
+        paths.transmission-peer-port = {
+          description = "Watch PIA forwarded-port file";
+          wantedBy = [ "multi-user.target" ];
+          pathConfig = {
+            PathChanged = piaPortFile;
+            Unit = "transmission-peer-port.service";
+          };
+        };
+
+        timers.mam-dynamic-seedbox = {
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnBootSec = "10min";
+            OnUnitActiveSec = "65min";
+            Unit = "mam-dynamic-seedbox.service";
+          };
+        };
+
+        services = {
+          transmission = {
+            after = [ "pia-netns.service" ];
+            requires = [ "pia-netns.service" ];
+            bindsTo = [ "pia-netns.service" ];
+            partOf = [ "pia-netns.service" ];
+            serviceConfig = {
+              NetworkNamespacePath = piaNetnsPath;
+              BindReadOnlyPaths = [ "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf" ];
+              BindPaths = [
+                "/storage/Music"
+                "/storage/Videos"
+                "/storage/Books"
+                "/storage/Software"
+              ];
+            };
+          };
+
+          transmission-rpc-forward =
+            let
+              inner = pkgs.writeShellScript "transmission-rpc-into-netns" ''
+                exec ${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} \
+                  ${pkgs.socat}/bin/socat - TCP:127.0.0.1:${toString servicePort}
+              '';
+            in
+            {
+              description = "Forward host 127.0.0.1:${toString servicePort} into the PIA netns";
+              after = [ "transmission.service" ];
+              bindsTo = [ "transmission.service" ];
+              partOf = [ "transmission.service" ];
+              wantedBy = [ "multi-user.target" ];
+              serviceConfig = {
+                Type = "simple";
+                ExecStart = pkgs.writeShellScript "transmission-rpc-forward" ''
+                  exec ${pkgs.socat}/bin/socat \
+                    TCP-LISTEN:${toString servicePort},reuseaddr,fork \
+                    EXEC:${inner}
+                '';
+                Restart = "on-failure";
+                RestartSec = "5s";
+              };
+            };
+
+          transmission-peer-port = {
+            description = "Apply PIA-forwarded port to transmission";
+            after = [ "transmission.service" "transmission-rpc-forward.service" ];
+            wants = [ "transmission-rpc-forward.service" ];
+            wantedBy = [ "transmission.service" ];
+            path = with pkgs; [ transmission_3 coreutils jq ];
+            serviceConfig = {
+              Type = "oneshot";
+              Restart = "on-failure";
+              RestartSec = "10s";
+            };
+            script = ''
+              CREDS=${config.sops.templates."transmission-credentials.json".path}
+              USER=$(jq -r '."rpc-username"' "$CREDS")
+              PASS=$(jq -r '."rpc-password"' "$CREDS")
+              PORT=$(cat "${piaPortFile}" 2>/dev/null || true)
+              [ -n "$PORT" ] || { echo "port file empty"; exit 0; }
+              transmission-remote 127.0.0.1:${toString servicePort} -n "$USER:$PASS" -p "$PORT"
+              echo "Set transmission peer port to $PORT"
+            '';
+          };
+
+          mam-dynamic-seedbox = {
+            after = [ "pia-netns.service" ];
+            requires = [ "pia-netns.service" ];
+            partOf = [ "pia-netns.service" ];
+            wantedBy = [ "pia-netns.service" ];
+            path = with pkgs; [ curl iproute2 coreutils ];
+            serviceConfig = {
+              Type = "oneshot";
+              Restart = "on-failure";
+              RestartSec = "5min";
+            };
+            script = ''
+              COOKIES=/var/lib/mam/cookies.txt
+              install -d -m 0700 /var/lib/mam
+
+              URL="${config.repo.secrets.local.mamUrl}"
+              EXEC="ip netns exec ${piaNamespace} curl -sS --max-time 30"
+
+              is_ok() {
+                # "Success":true              → Completed / No change
+                # "Last change too recent"    → 429, IP is already current
+                echo "$1" | grep -Eq '"Success":\s*true|Last change too recent'
+              }
+
+              if [ -s "$COOKIES" ]; then
+                RESP=$($EXEC -c "$COOKIES" -b "$COOKIES" "$URL" || true)
+              else
+                RESP=""
+              fi
+
+              if is_ok "$RESP"; then
+                echo "MAM: $RESP"
+                exit 0
+              fi
+
+              echo "MAM: cookie-jar call needs re-init (resp: $RESP)"
+              MAM_ID=$(cat "${config.sops.secrets.mam-id.path}")
+              RESP=$($EXEC -c "$COOKIES" -b "mam_id=$MAM_ID" "$URL" || true)
+              echo "MAM: $RESP"
+              is_ok "$RESP"
+            '';
+          };
+
+        };
+      };
+
+
       nodes = {
         ${homeWebProxy}.services.nginx = {
           upstreams = {
@@ -14691,8 +14908,8 @@ I use this configuration for sailing.
           };
           virtualHosts = {
             "${serviceDomain}" = {
-              enableACME = false;
-              forceSSL = false;
+              useACMEHost = globals.domains.main;
+              forceSSL = true;
               acmeRoot = null;
               extraConfig = nginxAccessRules;
               locations = {
@@ -14735,6 +14952,271 @@ I use this configuration for sailing.
               };
             };
           };
+        };
+      };
+    };
+  }
+#+end_src
+
+**** pia-netns
+
+#+begin_src nix-ts :tangle modules/nixos/server/pia-netns.nix
+  { lib, pkgs, config, ... }:
+  let
+    cfg = config.services.pia-netns;
+
+    piaCaCert = pkgs.writeText "pia-ca.rsa.4096.crt" ''
+      -----BEGIN CERTIFICATE-----
+      MIIHqzCCBZOgAwIBAgIJAJ0u+vODZJntMA0GCSqGSIb3DQEBDQUAMIHoMQswCQYD
+      VQQGEwJVUzELMAkGA1UECBMCQ0ExEzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNV
+      BAoTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIElu
+      dGVybmV0IEFjY2VzczEgMB4GA1UEAxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3Mx
+      IDAeBgNVBCkTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkB
+      FiBzZWN1cmVAcHJpdmF0ZWludGVybmV0YWNjZXNzLmNvbTAeFw0xNDA0MTcxNzQw
+      MzNaFw0zNDA0MTIxNzQwMzNaMIHoMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0Ex
+      EzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNVBAoTF1ByaXZhdGUgSW50ZXJuZXQg
+      QWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UE
+      AxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3MxIDAeBgNVBCkTF1ByaXZhdGUgSW50
+      ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkBFiBzZWN1cmVAcHJpdmF0ZWludGVy
+      bmV0YWNjZXNzLmNvbTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBALVk
+      hjumaqBbL8aSgj6xbX1QPTfTd1qHsAZd2B97m8Vw31c/2yQgZNf5qZY0+jOIHULN
+      De4R9TIvyBEbvnAg/OkPw8n/+ScgYOeH876VUXzjLDBnDb8DLr/+w9oVsuDeFJ9K
+      V2UFM1OYX0SnkHnrYAN2QLF98ESK4NCSU01h5zkcgmQ+qKSfA9Ny0/UpsKPBFqsQ
+      25NvjDWFhCpeqCHKUJ4Be27CDbSl7lAkBuHMPHJs8f8xPgAbHRXZOxVCpayZ2SND
+      fCwsnGWpWFoMGvdMbygngCn6jA/W1VSFOlRlfLuuGe7QFfDwA0jaLCxuWt/BgZyl
+      p7tAzYKR8lnWmtUCPm4+BtjyVDYtDCiGBD9Z4P13RFWvJHw5aapx/5W/CuvVyI7p
+      Kwvc2IT+KPxCUhH1XI8ca5RN3C9NoPJJf6qpg4g0rJH3aaWkoMRrYvQ+5PXXYUzj
+      tRHImghRGd/ydERYoAZXuGSbPkm9Y/p2X8unLcW+F0xpJD98+ZI+tzSsI99Zs5wi
+      jSUGYr9/j18KHFTMQ8n+1jauc5bCCegN27dPeKXNSZ5riXFL2XX6BkY68y58UaNz
+      meGMiUL9BOV1iV+PMb7B7PYs7oFLjAhh0EdyvfHkrh/ZV9BEhtFa7yXp8XR0J6vz
+      1YV9R6DYJmLjOEbhU8N0gc3tZm4Qz39lIIG6w3FDAgMBAAGjggFUMIIBUDAdBgNV
+      HQ4EFgQUrsRtyWJftjpdRM0+925Y6Cl08SUwggEfBgNVHSMEggEWMIIBEoAUrsRt
+      yWJftjpdRM0+925Y6Cl08SWhge6kgeswgegxCzAJBgNVBAYTAlVTMQswCQYDVQQI
+      EwJDQTETMBEGA1UEBxMKTG9zQW5nZWxlczEgMB4GA1UEChMXUHJpdmF0ZSBJbnRl
+      cm5ldCBBY2Nlc3MxIDAeBgNVBAsTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAw
+      HgYDVQQDExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UEKRMXUHJpdmF0
+      ZSBJbnRlcm5ldCBBY2Nlc3MxLzAtBgkqhkiG9w0BCQEWIHNlY3VyZUBwcml2YXRl
+      aW50ZXJuZXRhY2Nlc3MuY29tggkAnS7684Nkme0wDAYDVR0TBAUwAwEB/zANBgkq
+      hkiG9w0BAQ0FAAOCAgEAJsfhsPk3r8kLXLxY+v+vHzbr4ufNtqnL9/1Uuf8NrsCt
+      pXAoyZ0YqfbkWx3NHTZ7OE9ZRhdMP/RqHQE1p4N4Sa1nZKhTKasV6KhHDqSCt/dv
+      Em89xWm2MVA7nyzQxVlHa9AkcBaemcXEiyT19XdpiXOP4Vhs+J1R5m8zQOxZlV1G
+      tF9vsXmJqWZpOVPmZ8f35BCsYPvv4yMewnrtAC8PFEK/bOPeYcKN50bol22QYaZu
+      LfpkHfNiFTnfMh8sl/ablPyNY7DUNiP5DRcMdIwmfGQxR5WEQoHL3yPJ42LkB5zs
+      6jIm26DGNXfwura/mi105+ENH1CaROtRYwkiHb08U6qLXXJz80mWJkT90nr8Asj3
+      5xN2cUppg74nG3YVav/38P48T56hG1NHbYF5uOCske19F6wi9maUoto/3vEr0rnX
+      JUp2KODmKdvBI7co245lHBABWikk8VfejQSlCtDBXn644ZMtAdoxKNfR2WTFVEwJ
+      iyd1Fzx0yujuiXDROLhISLQDRjVVAvawrAtLZWYK31bY7KlezPlQnl/D9Asxe85l
+      8jO5+0LdJ6VyOs/Hd4w52alDW/MFySDZSfQHMTIc30hLBJ8OnCEIvluVQQ2UQvoW
+      +no177N9L2Y+M9TcTA62ZyMXShHQGeh20rb4kK8f+iFX8NxtdHVSkxMEFSfDDyQ=
+      -----END CERTIFICATE-----
+    '';
+
+    piaUp = pkgs.writeShellApplication {
+      name = "pia-netns-up";
+      runtimeInputs = with pkgs; [ iproute2 wireguard-tools curl jq coreutils gnused gawk systemd ];
+      text = ''
+        set -euo pipefail
+
+        NETNS="${cfg.namespace}"
+        WG_IFACE="wg-${cfg.namespace}"
+        STATE_DIR="/run/pia"
+        CA_CERT="${piaCaCert}"
+        REGION="${cfg.region}"
+
+        install -d -m 0700 "$STATE_DIR"
+        install -d -m 0755 "/etc/netns/$NETNS"
+
+        PIA_USER="$(head -n1 "${cfg.credentialsFile}")"
+        PIA_PASS="$(tail -n1 "${cfg.credentialsFile}")"
+
+        echo "Authenticating with PIA..."
+        TOKEN_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
+          --location --request POST \
+          --header "Content-Type: application/json" \
+          --data "{\"username\":\"$PIA_USER\",\"password\":\"$PIA_PASS\"}" \
+          "https://www.privateinternetaccess.com/api/client/v2/token")
+        TOKEN=$(echo "$TOKEN_RESP" | jq -er '.token')
+
+        echo "Fetching region servers..."
+        REGION_DATA=$(curl -sS --connect-timeout 10 --max-time 30 \
+          "https://serverlist.piaservers.net/vpninfo/servers/v6" \
+          | head -n1 | jq -er ".regions[] | select(.id==\"$REGION\")")
+
+        SERVER_IP=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].ip')
+        SERVER_HOST=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].cn')
+
+        echo "Generating WireGuard keys..."
+        WG_PRIV=$(wg genkey)
+        WG_PUB=$(echo "$WG_PRIV" | wg pubkey)
+
+        echo "Registering public key with PIA ($SERVER_HOST)..."
+        WG_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
+          --connect-to "$SERVER_HOST::$SERVER_IP:" \
+          --cacert "$CA_CERT" -G \
+          --data-urlencode "pt=$TOKEN" \
+          --data-urlencode "pubkey=$WG_PUB" \
+          "https://$SERVER_HOST:1337/addKey")
+
+        [ "$(echo "$WG_RESP" | jq -r '.status')" = "OK" ] || {
+          echo "addKey failed: $WG_RESP" >&2; exit 1;
+        }
+
+        PEER_IP=$(echo "$WG_RESP" | jq -r '.peer_ip')
+        SERVER_KEY=$(echo "$WG_RESP" | jq -r '.server_key')
+        SERVER_PORT=$(echo "$WG_RESP" | jq -r '.server_port')
+        DNS=$(echo "$WG_RESP" | jq -r '.dns_servers[0]')
+
+        ${lib.optionalString cfg.dns ''
+          echo "nameserver $DNS" > "/etc/netns/$NETNS/resolv.conf"
+        ''}
+
+        ip netns list | awk '{print $1}' | grep -qx "$NETNS" || ip netns add "$NETNS"
+        ip -n "$NETNS" link set lo up
+
+        ip link del "$WG_IFACE" 2>/dev/null || true
+        ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
+
+        ip link add "$WG_IFACE" type wireguard
+        wg set "$WG_IFACE" private-key <(echo "$WG_PRIV")
+        wg set "$WG_IFACE" peer "$SERVER_KEY" \
+          endpoint "$SERVER_IP:$SERVER_PORT" \
+          allowed-ips 0.0.0.0/0,::/0 \
+          persistent-keepalive 25
+
+        ip link set "$WG_IFACE" netns "$NETNS"
+        ip -n "$NETNS" addr add "$PEER_IP" dev "$WG_IFACE"
+        ip -n "$NETNS" link set mtu 1420 up dev "$WG_IFACE"
+        ip -n "$NETNS" route add default dev "$WG_IFACE"
+
+        echo "WireGuard tunnel up; peer_ip=$PEER_IP dns=$DNS"
+
+        ${lib.optionalString cfg.portForwarding.enable ''
+          echo "Requesting forwarded port..."
+          for attempt in 1 2 3 4 5; do
+            PF_RESP=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
+              --connect-to "$SERVER_HOST::$SERVER_IP:" \
+              --cacert "$CA_CERT" -G \
+              --data-urlencode "token=$TOKEN" \
+              "https://$SERVER_HOST:19999/getSignature") || PF_RESP=""
+            if [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ]; then
+              break
+            fi
+            echo "getSignature attempt $attempt failed; retrying..." >&2
+            sleep 3
+          done
+
+          [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ] || {
+            echo "getSignature failed after retries: $PF_RESP" >&2; exit 1;
+          }
+
+          PAYLOAD=$(echo "$PF_RESP" | jq -r '.payload')
+          SIGNATURE=$(echo "$PF_RESP" | jq -r '.signature')
+          PORT=$(echo "$PAYLOAD" | base64 -d | jq -r '.port')
+
+          echo -n "$PORT" > "${cfg.portForwarding.portFile}"
+          chmod 0644 "${cfg.portForwarding.portFile}"
+          echo "Forwarded port: $PORT"
+
+          bind_port() {
+            local resp
+            resp=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
+              --connect-to "$SERVER_HOST::$SERVER_IP:" \
+              --cacert "$CA_CERT" -G \
+              --data-urlencode "payload=$PAYLOAD" \
+              --data-urlencode "signature=$SIGNATURE" \
+              "https://$SERVER_HOST:19999/bindPort") || return 1
+            [ "$(echo "$resp" | jq -r '.status')" = "OK" ] || return 1
+            echo "bindPort ok: $(echo "$resp" | jq -r '.message')"
+          }
+
+          bind_port
+
+          systemd-notify --ready --status="PIA tunnel up, port $PORT forwarded"
+
+          while true; do
+            sleep 880
+            if ! bind_port; then
+              echo "bindPort failed; exiting to let systemd restart" >&2
+              exit 1
+            fi
+          done
+        ''}
+
+        ${lib.optionalString (!cfg.portForwarding.enable) ''
+          systemd-notify --ready --status="PIA tunnel up (no port forwarding)"
+          # No port forwarding requested; keep the unit alive so the netns stays up
+          while true; do sleep 86400; done
+        ''}
+      '';
+    };
+
+    piaDown = pkgs.writeShellApplication {
+      name = "pia-netns-down";
+      runtimeInputs = with pkgs; [ iproute2 coreutils ];
+      text = ''
+        NETNS="${cfg.namespace}"
+        WG_IFACE="wg-${cfg.namespace}"
+        ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
+        ip link del "$WG_IFACE" 2>/dev/null || true
+        ip netns del "$NETNS" 2>/dev/null || true
+        rm -f "/etc/netns/$NETNS/resolv.conf"
+        rmdir "/etc/netns/$NETNS" 2>/dev/null || true
+        ${lib.optionalString cfg.portForwarding.enable ''rm -f "${cfg.portForwarding.portFile}"''}
+      '';
+    };
+  in
+  {
+    options.services.pia-netns = {
+      enable = lib.mkEnableOption "PIA WireGuard VPN inside a Linux network namespace";
+
+      namespace = lib.mkOption {
+        type = lib.types.str;
+        default = "pia";
+      };
+
+      region = lib.mkOption {
+        type = lib.types.str;
+        example = "sweden";
+      };
+
+      credentialsFile = lib.mkOption {
+        type = lib.types.path;
+        description = "File with PIA username on line 1 and password on line 2.";
+      };
+
+      dns = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+
+      portForwarding = {
+        enable = lib.mkEnableOption "PIA port forwarding with keepalive";
+
+        portFile = lib.mkOption {
+          type = lib.types.path;
+          default = "/run/pia/forwarded-port";
+          description = "Where the forwarded port number is written (mode 0644).";
+        };
+      };
+    };
+
+    config = lib.mkIf cfg.enable {
+      boot.kernelModules = [ "wireguard" ];
+
+      systemd.services.pia-netns = {
+        description = "PIA WireGuard tunnel in network namespace";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+
+        serviceConfig = {
+          Type = "notify";
+          NotifyAccess = "exec";
+          ExecStart = lib.getExe piaUp;
+          ExecStop = lib.getExe piaDown;
+          Restart = "on-failure";
+          RestartSec = "30s";
+          TimeoutStartSec = "120s";
         };
       };
     };
@@ -22311,7 +22793,6 @@ Some standard options that should be set for every microvm guest. We set the def
       inputs.stylix.nixosModules.stylix
       inputs.swarsel-nix.nixosModules.default
       inputs.nixos-nftables-firewall.nixosModules.default
-      inputs.pia.nixosModules.default
 
       (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
 
@@ -31257,6 +31738,8 @@ In short, the options defined here are passed to the modules systems using =_mod
         mkDualFirewallRules =
           { tcpPorts ? [ ]
           , udpPorts ? [ ]
+          , forWebProxy ? true
+          , forHomeProxy ? true
           }:
           let
             rule = {
@@ -31265,10 +31748,10 @@ In short, the options defined here are passed to the modules systems using =_mod
             };
           in
           {
-            ${static.webProxyIf}.hosts = lib.mkIf static.isProxied {
+            ${static.webProxyIf}.hosts = lib.mkIf (forWebProxy && static.isProxied) {
               ${config.node.name}.firewallRuleForNode.${static.webProxy} = rule;
             };
-            ${static.homeProxyIf}.hosts = lib.mkIf static.isHome {
+            ${static.homeProxyIf}.hosts = lib.mkIf (forHomeProxy && static.isHome) {
               ${config.node.name}.firewallRuleForNode.${static.homeWebProxy} = rule;
             };
           };
@@ -34016,6 +34499,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+end_src
 
 * Emacs
+
 :PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
 :END:
