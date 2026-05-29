@@ -21152,6 +21152,8 @@ Apart from that, this has some nice features like the ability to turn off commen
 
 I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Firefox]] plugin "Redirector" to make sure that all YouTube URLs instead point to my Invidious instance.
 
+For sponsorblock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Firefox]] under Miscellaneous > Support 3rd Party YouTube-Sites > Add 3rd-Party Client Instance > <invidiousDomain>
+
 #+begin_src nix-ts :tangle modules/nixos/server/invidious.nix
   { self, lib, config, globals, confLib, ... }:
   let
@@ -26465,6 +26467,72 @@ Also, I setup some search aliases for functions I often use, such as NixOS optio
 
 I used to build the firefox addon =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
 
+Userstyle for the Stylus plugin that enables theatre mode on invidious:
+
+#+begin_src css-ts
+  /* ==UserStyle==
+  @name         Wide Invidious
+  @version      v1.0.0
+  @namespace    swarsel
+  @description  Wide view
+  @author       Swarsel
+  @license      MIT
+  ==/UserStyle== */
+  @-moz-document url-prefix("https://<invidiousDomain>/watch") {
+
+      body {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+      }
+
+      .pure-u-md-2-3,
+      .pure-u-lg-2-3,
+      .pure-u-md-1-3,
+      .pure-u-lg-1-3 {
+          width: 100% !important;
+      }
+
+      #contents,
+      .pure-g,
+      .pure-u-md-2-3 > .h-box,
+      .pure-u-lg-2-3 > .h-box {
+          max-width: 100% !important;
+          width: 100% !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+      }
+
+      #player-container {
+          width: 100% !important;
+          max-width: 100% !important;
+          aspect-ratio: 16 / 9;
+          height: auto !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          max-height: 90vh !important;
+      }
+
+      .video-js,
+      .video-js video,
+      .video-js .vjs-tech,
+      #player {
+          width: 100% !important;
+          height: 100% !important;
+          padding-top: 0 !important;
+      }
+
+      #player-container + .h-box,
+      #player-container + div {
+          margin-top: 0.5em !important;
+          padding-top: 0 !important;
+      }
+  }
+
+#+end_src
+
 #+begin_src nix-ts :tangle modules/home/common/firefox.nix
   { pkgs, lib, vars, globals, ... }:
   {
@@ -30617,7 +30685,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
 
 In short, the options defined here are passed to the modules systems using =_modules.args= - they can then be used by passing =vars= as an attribute in the input attribute set of a modules system file (=basically all files in this configuration)
 
-#+begin_src nix-ts :noweb yes :tangle modules/shared/vars.nix
+#+begin_src nix-ts :tangle modules/shared/vars.nix
   { self, pkgs, globals, ... }:
   {
     _module.args = {
@@ -30713,6 +30781,7 @@ In short, the options defined here are passed to the modules systems using =_mod
               web-archives
               onepassword-password-manager
               single-file
+              stylus
               widegithub
               enhanced-github
               unpaywall

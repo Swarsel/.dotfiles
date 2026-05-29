@@ -93,6 +93,7 @@
             web-archives
             onepassword-password-manager
             single-file
+            stylus
             widegithub
             enhanced-github
             unpaywall
