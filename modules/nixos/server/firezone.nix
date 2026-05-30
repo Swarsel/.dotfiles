@@ -14,6 +14,7 @@ let
 
   homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
   homeDomains = map (name: globals.services.${name}.domain) homeServices;
+  smbDomain = "smb.${globals.domains.main}";
   vlanCidrResources = lib.listToAttrs (lib.concatMap
     (vlan: [
       {
@@ -168,7 +169,25 @@ in
                     }
                   ];
                 })
-              // vlanCidrResources;
+              // vlanCidrResources
+              // {
+                ${smbDomain} = {
+                  type = "dns";
+                  name = smbDomain;
+                  address = smbDomain;
+                  gatewayGroups = [ "home" ];
+                  filters = [
+                    { protocol = "icmp"; }
+                    {
+                      protocol = "tcp";
+                      ports = [
+                        445
+                        139
+                      ];
+                    }
+                  ];
+                };
+              };
 
             policies =
               { }
@@ -179,7 +198,9 @@ in
                 ])
                 (lib.attrNames vlanCidrResources))
               // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains)
-              // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains);
+              // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains)
+              // (allow "everyone" smbDomain)
+              // (allow "anyone" smbDomain);
           };
         };
 

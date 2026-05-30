@@ -14767,6 +14767,7 @@ I use this configuration for sailing.
             bindsTo = [ "pia-netns.service" ];
             partOf = [ "pia-netns.service" ];
             serviceConfig = {
+              TimeoutStartSec = "3600s";
               NetworkNamespacePath = piaNetnsPath;
               BindReadOnlyPaths = [ "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf" ];
               BindPaths = [
@@ -20415,6 +20416,7 @@ This has some state:
 
     homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
     homeDomains = map (name: globals.services.${name}.domain) homeServices;
+    smbDomain = "smb.${globals.domains.main}";
     vlanCidrResources = lib.listToAttrs (lib.concatMap
       (vlan: [
         {
@@ -20569,7 +20571,25 @@ This has some state:
                       }
                     ];
                   })
-                // vlanCidrResources;
+                // vlanCidrResources
+                // {
+                  ${smbDomain} = {
+                    type = "dns";
+                    name = smbDomain;
+                    address = smbDomain;
+                    gatewayGroups = [ "home" ];
+                    filters = [
+                      { protocol = "icmp"; }
+                      {
+                        protocol = "tcp";
+                        ports = [
+                          445
+                          139
+                        ];
+                      }
+                    ];
+                  };
+                };
 
               policies =
                 { }
@@ -20580,7 +20600,9 @@ This has some state:
                   ])
                   (lib.attrNames vlanCidrResources))
                 // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains)
-                // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains);
+                // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains)
+                // (allow "everyone" smbDomain)
+                // (allow "anyone" smbDomain);
             };
           };
 

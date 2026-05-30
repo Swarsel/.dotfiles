@@ -255,6 +255,7 @@ in
           bindsTo = [ "pia-netns.service" ];
           partOf = [ "pia-netns.service" ];
           serviceConfig = {
+            TimeoutStartSec = "3600s";
             NetworkNamespacePath = piaNetnsPath;
             BindReadOnlyPaths = [ "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf" ];
             BindPaths = [
