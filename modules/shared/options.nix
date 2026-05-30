@@ -13,6 +13,10 @@
       type = lib.types.bool;
       default = false;
     };
+    isFullBuild = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
     isServer = lib.mkOption {
       type = lib.types.bool;
       default = config.swarselsystems.isCloud;

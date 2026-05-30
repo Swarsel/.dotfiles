@@ -31043,6 +31043,10 @@ TODO: check which of these can be replaced but builtin functions.
         type = lib.types.bool;
         default = false;
       };
+      isFullBuild = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
       isServer = lib.mkOption {
         type = lib.types.bool;
         default = config.swarselsystems.isCloud;
@@ -34146,19 +34150,18 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   }
 #+end_src
 
-**** Public
+**** Public Small
 :PROPERTIES:
 :CUSTOM_ID: h:b79fbb59-9cf2-48eb-b469-2589223dda95
 :END:
 
-#+begin_src nix-ts :tangle profiles/nixos/public/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/public-small/default.nix :mkdirp yes
   { self, config, ... }:
   let
     m = "${self}/modules";
   in
   {
     imports = [
-      # common modules
       "${m}/nixos/common/settings.nix"
       "${m}/nixos/common/lanzaboote.nix"
       "${m}/nixos/common/pii.nix"
@@ -34169,25 +34172,17 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       "${m}/nixos/common/impermanence.nix"
       "${m}/nixos/common/sops.nix"
       "${m}/nixos/common/boot.nix"
-      # client modules
-      "${m}/nixos/client/appimage.nix"
       "${m}/nixos/client/autologin.nix"
       "${m}/nixos/client/blueman.nix"
-      "${m}/nixos/client/distrobox.nix"
       "${m}/nixos/client/env.nix"
       "${m}/nixos/client/firezone-client.nix"
       "${m}/nixos/client/gnome-keyring.nix"
       "${m}/nixos/client/gvfs.nix"
       "${m}/nixos/client/hardware.nix"
       "${m}/nixos/client/interceptiontools.nix"
-      "${m}/nixos/client/hardwarecompatibility-keyboards.nix"
-      "${m}/nixos/client/hardwarecompatibility-ledger.nix"
-      "${m}/nixos/client/lid.nix"
       "${m}/nixos/client/login.nix"
       "${m}/nixos/client/nautilus.nix"
       "${m}/nixos/client/network.nix"
-      "${m}/nixos/client/networkdevices.nix"
-      "${m}/nixos/client/nix-ld.nix"
       "${m}/nixos/client/nvd-rebuild.nix"
       "${m}/nixos/client/packages.nix"
       "${m}/nixos/client/pipewire.nix"
@@ -34202,10 +34197,38 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       "${m}/nixos/client/uwsm.nix"
       "${m}/nixos/client/xdg-portal.nix"
       "${m}/nixos/client/zsh.nix"
-      # NO yubikey
-      # server modules
       "${m}/nixos/server/btrfs.nix"
       "${m}/nixos/server/nftables.nix"
+    ];
+
+    config.home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${m}/../profiles/home/public-small"
+      ];
+    };
+  }
+#+end_src
+
+**** Public
+:PROPERTIES:
+:CUSTOM_ID: h:b79fbb59-9cf2-48eb-b469-2589223dda95
+:END:
+
+#+begin_src nix-ts :tangle profiles/nixos/public/default.nix :mkdirp yes
+  { self, config, ... }:
+  let
+    m = "${self}/modules";
+  in
+  {
+    imports = [
+      "${self}/profiles/nixos/public-small"
+      "${m}/nixos/client/appimage.nix"
+      "${m}/nixos/client/distrobox.nix"
+      "${m}/nixos/client/hardwarecompatibility-keyboards.nix"
+      "${m}/nixos/client/hardwarecompatibility-ledger.nix"
+      "${m}/nixos/client/lid.nix"
+      "${m}/nixos/client/networkdevices.nix"
+      "${m}/nixos/client/nix-ld.nix"
     ];
 
     config.home-manager.users."${config.swarselsystems.mainUser}" = {
@@ -34417,6 +34440,53 @@ This holds modules that are to be used on most hosts. These are also the most im
   }
 #+end_src
 
+**** Public Small
+:PROPERTIES:
+:CUSTOM_ID: h:36a0209f-2c17-4808-a1d0-a9e1920c307a
+:END:
+
+#+begin_src nix-ts :tangle profiles/home/public-small/default.nix :mkdirp yes
+  { self, ... }:
+  let
+    m = "${self}/modules";
+  in
+  {
+    imports = [
+      "${m}/home/common/anki.nix"
+      "${m}/home/common/tray-applets.nix"
+      "${m}/home/common/blueman-applet.nix"
+      "${m}/home/common/custom-packages.nix"
+      "${m}/home/common/desktop.nix"
+      "${m}/home/common/direnv.nix"
+      "${m}/home/common/element.nix"
+      "${m}/home/common/eza.nix"
+      "${m}/home/common/firefox.nix"
+      "${m}/home/common/fuzzel.nix"
+      "${m}/home/common/settings.nix"
+      "${m}/home/common/gnome-keyring.nix"
+      "${m}/home/common/gpg-agent.nix"
+      "${m}/home/common/kitty.nix"
+      "${m}/home/common/nix-index.nix"
+      "${m}/home/common/nix-your-shell.nix"
+      "${m}/home/common/network-manager-applet.nix"
+      "${m}/home/common/packages.nix"
+      "${m}/home/common/password-store.nix"
+      "${m}/home/common/programs.nix"
+      "${m}/home/common/spicetify.nix"
+      "${m}/home/common/starship.nix"
+      "${m}/home/common/stylix.nix"
+      "${m}/home/common/swayidle.nix"
+      "${m}/home/common/symlink.nix"
+      "${m}/home/common/yubikey-touch-detector.nix"
+      "${m}/home/common/zellij.nix"
+      "${m}/home/common/zellij-keybinds.nix"
+      "${m}/home/common/zsh.nix"
+    ];
+
+    swarselsystems.trayApplets.obsidian.enable = false;
+  }
+#+end_src
+
 **** Public
 :PROPERTIES:
 :CUSTOM_ID: h:36a0209f-2c17-4808-a1d0-a9e1920c307a
@@ -34429,51 +34499,22 @@ This holds modules that are to be used on most hosts. These are also the most im
   in
   {
     imports = [
-      "${m}/home/common/anki.nix"
-      "${m}/home/common/tray-applets.nix"
+      "${self}/profiles/home/public-small"
       "${m}/home/common/attic-store-push.nix"
       "${m}/home/common/atuin.nix"
-      "${m}/home/common/blueman-applet.nix"
-      "${m}/home/common/custom-packages.nix"
-      "${m}/home/common/desktop.nix"
-      "${m}/home/common/direnv.nix"
-      "${m}/home/common/element.nix"
-      "${m}/home/common/eza.nix"
-      "${m}/home/common/firefox.nix"
-      "${m}/home/common/fuzzel.nix"
-      "${m}/home/common/settings.nix"
-      "${m}/home/common/gnome-keyring.nix"
-      "${m}/home/common/gpg-agent.nix"
       "${m}/home/common/hexchat.nix"
       "${m}/home/common/kdeconnect.nix"
-      "${m}/home/common/kitty.nix"
       "${m}/home/common/khal.nix"
-      "${m}/home/common/nix-index.nix"
       "${m}/home/common/nixgl.nix"
-      "${m}/home/common/nix-your-shell.nix"
-      "${m}/home/common/network-manager-applet.nix"
       "${m}/home/common/obs-studio.nix"
       "${m}/home/common/opkssh.nix"
-      "${m}/home/common/packages.nix"
-      "${m}/home/common/password-store.nix"
-      "${m}/home/common/programs.nix"
-      "${m}/home/common/spicetify.nix"
       "${m}/home/common/spotify-player.nix"
-      "${m}/home/common/starship.nix"
-      "${m}/home/common/stylix.nix"
-      "${m}/home/common/swayidle.nix"
       "${m}/home/common/swayosd.nix"
-      "${m}/home/common/symlink.nix"
       "${m}/home/common/tmux.nix"
       "${m}/home/common/vesktop.nix"
       "${m}/home/common/shikane.nix"
       "${m}/home/common/syncthing-tray.nix"
       "${m}/home/common/waybar.nix"
-      "${m}/home/common/yubikey-touch-detector.nix"
-      "${m}/home/common/zellij.nix"
-      "${m}/home/common/zellij-keybinds.nix"
-      "${m}/home/common/zsh.nix"
-      # excluded: ssh, env, git, mail, emacs, obsidian, obsidian-tray, yubikey
     ];
 
     swarselsystems.trayApplets.obsidian.enable = false;
