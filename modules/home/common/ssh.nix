@@ -5,6 +5,7 @@
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
+      includes = [ "~/.ssh/extra/*" ];
       extraConfig = ''
         SetEnv TERM=xterm-256color
         ServerAliveInterval 20
