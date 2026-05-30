@@ -164,7 +164,7 @@ in
           peer-port-random-on-start = false;
           port-forwarding-enabled = false;
           rpc-authentication-required = true;
-          umask = 0;
+          umask = 7;
 
           download-dir = "/storage/CHANGEME/seed";
           encryption = 2;
