@@ -12853,6 +12853,7 @@ Kavita is the service I use for my library management. It seems more tailored to
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "<title>Kavita</title>"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.${serviceName} = {
@@ -12880,7 +12881,6 @@ Kavita is the service I use for my library management. It seems more tailored to
         '';
       };
 
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOidcSystem {
@@ -12988,6 +12988,7 @@ Using the SSO Plugin is sadly not declarative:
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "Healthy"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.${serviceName} = {
@@ -13003,7 +13004,6 @@ Using the SSO Plugin is sadly not declarative:
         ];
       };
 
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOidcSystem {
@@ -13081,6 +13081,7 @@ After the first login when setting up, you need to add a password to the user th
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ping"; expectedBodyRegex = ''^\.$''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       # services.snapserver = {
@@ -13152,8 +13153,6 @@ After the first login when setting up, you need to add a password to the user th
         };
       };
 
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -13634,6 +13633,7 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
         ];
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "OK"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -13861,9 +13861,6 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
         mautrix-whatsapp = confLib.mkIds 992;
         mautrix-telegram = confLib.mkIds 991;
       };
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -14116,6 +14113,7 @@ My photo service. It does some cool things like face recognition automatically (
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/server/ping"; expectedBodyRegex = ''"res":\s*"pong"''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -14319,9 +14317,6 @@ My photo service. It does some cool things like face recognition automatically (
         };
       };
 
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes =
         let
           extraConfigLoc = ''
@@ -14402,6 +14397,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/accounts/login/"; expectedBodyRegex = "Paperless"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -14483,9 +14479,6 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
                        )
       '';
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -15510,6 +15503,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/health"; expectedBodyRegex = "ok|database"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -15792,8 +15786,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
       systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
 
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes = {
         ${idmServer} = lib.recursiveUpdate
           (confLib.mkKanidmOidcSystem {
@@ -15854,6 +15846,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort tempoHttpApiPort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName; servicePort = tempoHttpApiPort; path = "/ready"; expectedBodyRegex = "ready"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -15928,8 +15921,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes =
         let
           ingestUpstream = "${serviceName}-ingest";
@@ -15999,6 +15990,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "ok|green"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -16027,8 +16019,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
       };
 
       systemd.services.gotify-server.serviceConfig.RestartSec = lib.mkForce "60";
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
@@ -16079,6 +16069,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ready"; expectedBodyRegex = "ready"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -16109,8 +16100,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
       };
 
       systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
@@ -16154,6 +16143,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ready"; expectedBodyRegex = "ready"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -16226,8 +16216,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           OTEL_SERVICE_NAME = "loki-${config.node.name}";
         };
       };
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
@@ -16761,6 +16749,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/services"; expectedBodyRegex = "Running"; failIfBodyMatchesRegex = "(Starting|Stopping|Failed|Terminated|New|Stuck)"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -16831,8 +16820,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         };
       };
 
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx {
           inherit serviceAddress servicePort serviceDomain serviceName;
@@ -16871,6 +16858,7 @@ This is my Jenkins instance. It is used to automatically build a new system when
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/login"; expectedBodyRegex = "Jenkins"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -16885,8 +16873,6 @@ This is my Jenkins instance. It is used to automatically build a new system when
         listenAddress = "0.0.0.0";
         home = "/var/lib/${serviceName}";
       };
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -17115,6 +17101,7 @@ My selfhosted git solution. TODO: federate
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/healthz"; expectedBodyRegex = ''"status":\s*"pass"''; failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -17220,9 +17207,6 @@ My selfhosted git solution. TODO: federate
           '';
       };
 
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes = {
         ${idmServer} = lib.recursiveUpdate
           (confLib.mkKanidmOidcSystem {
@@ -17283,6 +17267,7 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedStatus = 404; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -17301,8 +17286,6 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
           }
         ];
       };
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -17389,6 +17372,7 @@ kanidm person credential create-reset-token <user>
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/status"; expectedBodyRegex = "true"; scheme = "https"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence = {
@@ -17504,10 +17488,6 @@ kanidm person credential create-reset-token <user>
           };
         };
       };
-
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -17687,6 +17667,8 @@ This can be used to add OIDC in a way to services that do not support it nativel
       globals = {
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort;path = "/ready"; expectedBodyRegex = ''OK''; };
       };
 
       services = {
@@ -17741,9 +17723,6 @@ This can be used to add OIDC in a way to services that do not support it nativel
           };
         };
       };
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -17968,6 +17947,7 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort postgresPort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Koillection"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -18048,9 +18028,6 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
         };
       };
 
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes =
         let
           extraConfigLoc = ''
@@ -18097,6 +18074,7 @@ Used to sync shell history accross machines and have it backed up somewhere.
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = ''"version":''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.${serviceName} = {
@@ -18106,8 +18084,6 @@ Used to sync shell history accross machines and have it backed up somewhere.
         # openFirewall = true;
         openRegistration = false;
       };
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -18172,6 +18148,7 @@ Selfhosted calendar and contacts.
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Radicale Web Interface"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.${serviceName} = {
@@ -18225,9 +18202,6 @@ Selfhosted calendar and contacts.
 
       # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes = {
         ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 16; maxBodyUnit = "M"; };
@@ -18266,8 +18240,6 @@ P2P filesharing similar to what you might know from wormhole(/-rs), but fully se
     config = {
       swarselsystems.enabledServerModules = [ "croc" ];
 
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       sops = {
         secrets = {
           croc-password = { inherit sopsFile; };
@@ -18289,9 +18261,12 @@ P2P filesharing similar to what you might know from wormhole(/-rs), but fully se
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       services.${serviceName} = {
@@ -18383,6 +18358,7 @@ Basically a selfhosted pastebin that also offers syntax highlighting.
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "pasta-form"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.${serviceName} = {
@@ -18434,8 +18410,6 @@ Basically a selfhosted pastebin that also offers syntax highlighting.
       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
         { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
       ];
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; };
@@ -18542,9 +18516,10 @@ Self-hosted link shortener.
       globals = {
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort;path = "/rest/health"; expectedBodyRegex = ''"status":"pass"''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -18632,10 +18607,8 @@ Deployment notes:
       globals = {
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+        # dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -18717,6 +18690,7 @@ This is an asset management system. However, for my needs it is a bit too convol
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Snipe-IT"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       services.snipe-it = {
@@ -18735,8 +18709,6 @@ This is an asset management system. However, for my needs it is a bit too convol
           createLocally = true;
         };
       };
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
@@ -18797,6 +18769,7 @@ My asset manager. I use it to track tools, cables and boardgames mostly.
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/v1/status"; expectedBodyRegex = ''"health":\s*true''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -18822,8 +18795,6 @@ My asset manager. I use it to track tools, cables and boardgames mostly.
       };
 
       # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOidcSystem {
@@ -19039,6 +19010,13 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort 3901 3902 3903 3904 ]; };
         services = confLib.mkServiceGlobal { serviceName = specificServiceName; inherit serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { serviceName = specificServiceName; servicePort = garageAdminPort; path = "/health"; expectedBodyRegex = "fully operational"; };
+        dns.${baseDomain}.subdomainRecords = {
+          "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+          "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
       };
 
 
@@ -19129,13 +19107,13 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 
             # Create buckets that should exist
             ${lib.concatMapStringsSep "\n" (bucket: ''
-                if [[ "$(garage bucket info ${lib.escapeShellArg bucket} 2>&1 >/dev/null)" == *"Bucket not found"* ]]; then
+              if [[ "$(garage bucket info ${lib.escapeShellArg bucket} 2>&1 >/dev/null)" == *"Bucket not found"* ]]; then
                   echo "Creating bucket ${lib.escapeShellArg bucket}"
                   garage bucket create ${lib.escapeShellArg bucket}
                 else
                   echo "Bucket ${lib.escapeShellArg bucket} already exists"
                 fi
-              '')
+            '')
               cfg.buckets}
 
             # Remove buckets that shouldn't exist
@@ -19146,7 +19124,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
                   should_exist=true
                 fi
               '')
-              cfg.buckets}
+                cfg.buckets}
 
               if [[ "$should_exist" == "false" ]]; then
                 echo "Removing bucket $bucket"
@@ -19181,29 +19159,29 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 
             # Create keys that should exist
             ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
-                if [[ "$(garage key info ${lib.escapeShellArg keyName} 2>&1)" == *"0 matching keys"* ]]; then
+              if [[ "$(garage key info ${lib.escapeShellArg keyName} 2>&1)" == *"0 matching keys"* ]]; then
                   echo "Creating key ${lib.escapeShellArg keyName}"
                   garage key create ${lib.escapeShellArg keyName}
                 else
                   echo "Key ${lib.escapeShellArg keyName} already exists"
                 fi
-              '')
+            '')
               cfg.keys)}
 
             # Set up key permissions for buckets
             ${lib.concatStringsSep "\n" (lib.mapAttrsToList (
-                keyName: buckets:
-                  lib.concatMapStringsSep "\n" (bucket: ''
-                    echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
+              keyName: buckets:
+              lib.concatMapStringsSep "\n" (bucket: ''
+                echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
                     garage bucket allow --read --write --owner --key ${lib.escapeShellArg keyName} ${lib.escapeShellArg bucket}
-                  '')
-                  buckets
-              )
+              '')
+                buckets
+            )
               cfg.keys)}
 
             # Remove permissions from buckets that are no longer associated with keys
             ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: buckets: ''
-                # Get current buckets this key has access to
+              # Get current buckets this key has access to
                 current_buckets=$(garage key info ${lib.escapeShellArg keyName} | grep -A 1000 "==== BUCKETS FOR THIS KEY ====" | tail -n +3 | awk '{print $3}' | grep -v '^$' || true)
 
                 # Remove access from buckets not in the desired list
@@ -19214,14 +19192,14 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
                       should_have_access=true
                     fi
                   '')
-                  buckets}
+                    buckets}
 
                   if [[ "$should_have_access" == "false" ]]; then
                     echo "Removing access for key ${lib.escapeShellArg keyName} from bucket $current_bucket"
                     garage bucket deny --key ${lib.escapeShellArg keyName} $current_bucket
                   fi
                 done
-              '')
+            '')
               cfg.keys)}
 
             # Remove keys that shouldn't exist
@@ -19232,7 +19210,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
                   should_exist=true
                 fi
               '')
-              cfg.keys)}
+                cfg.keys)}
 
               if [[ "$should_exist" == "false" ]]; then
                 echo "Removing key $key"
@@ -19241,15 +19219,6 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
             done
           '';
         };
-      };
-
-
-      globals.dns.${baseDomain}.subdomainRecords = {
-        "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
       nodes =
@@ -19644,9 +19613,6 @@ Handles my minecraft server. It runs forge, so the full server is not NixOS mana
     config = {
       swarselsystems.enabledServerModules = [ "minecraft" ];
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
 
       topology.self.services.${serviceName} = {
         name = "Minecraft";
@@ -19654,9 +19620,14 @@ Handles my minecraft server. It runs forge, so the full server is not NixOS mana
         icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6 isHome;
+      globals = {
+        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+        services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6 isHome;
+        };
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -19732,26 +19703,32 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
         };
       };
 
-      globals.services = {
-        ${serviceName} = {
-          domain = serviceDomain;
-          proxyAddress4 = endpointAddress4;
-          proxyAddress6 = endpointAddress6;
+      globals = {
+        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
+          "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };
-        roundcube = {
-          domain = roundcubeDomain;
-          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        services = {
+          ${serviceName} = {
+            domain = serviceDomain;
+            proxyAddress4 = endpointAddress4;
+            proxyAddress6 = endpointAddress6;
+          };
+          roundcube = {
+            domain = roundcubeDomain;
+            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+          };
         };
       };
 
       topology.self.services = lib.listToAttrs (map
         (service:
-          lib.nameValuePair "${service}" {
-            name = lib.swarselsystems.toCapitalized service;
-            info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
-            icon = "${self}/files/topology-images/${service}.png";
-          }
+        lib.nameValuePair "${service}" {
+          name = lib.swarselsystems.toCapitalized service;
+          info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
+          icon = "${self}/files/topology-images/${service}.png";
+        }
         )
         [ "postfix" "dovecot" "rspamd" "clamav" "roundcube" ]);
 
@@ -19855,10 +19832,6 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
       };
 
 
-      globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
-        "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      };
 
       nodes =
         let
@@ -19919,6 +19892,7 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Attic Binary Cache"; hostHeader = serviceDomain; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       sops = lib.mkIf (!isPublic) {
@@ -20030,9 +20004,6 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
         after = [ "garage.service" ];
       };
 
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes =
         let
           extraConfigLoc = ''
@@ -20084,6 +20055,7 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       sops = {
@@ -20169,9 +20141,6 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
           StrictHostKeyChecking no
         '';
       };
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes =
         let
@@ -20460,6 +20429,7 @@ This has some state:
       swarselsystems.enabledServerModules = [ "firezone" ];
 
       globals = {
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         networks = {
           ${webProxyIf}.hosts = lib.mkIf isProxied {
             ${config.node.name}.firewallRuleForNode.${webProxy} = {
@@ -20695,10 +20665,6 @@ This has some state:
       #     '';
       #   };
 
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
       nodes =
         let
           genNginx = toAddress: extraConfig: {
@@ -20856,6 +20822,7 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/control/status"; expectedBodyRegex = ''"running":true''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       networking.firewall = {
@@ -20930,9 +20897,6 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
           mode = "0700";
         }
       ];
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -21285,6 +21249,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Buildbot Web UI"; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       nix.gc = {
@@ -21356,9 +21321,6 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
         { directory = "/home/buildbot"; user = "buildbot"; group = "buildbot"; mode = "0750"; }
       ];
-
-
-      globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
       nodes = {
         ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -23604,6 +23566,14 @@ This holds packages that I can use as provided, or with small modifications (as 
         nix-inspect
         (nixpkgs-review.override { nix = config.nix.package; })
         manix
+
+        #nautilus
+        nautilus
+        tumbler
+        libgsf
+
+        claude-code
+
       ] ++ lib.optionals config.swarselsystems.isFullBuild [
 
         # audio stuff
@@ -23704,11 +23674,6 @@ This holds packages that I can use as provided, or with small modifications (as 
         imagemagick
         # poppler
         ffmpegthumbnailer
-
-        #nautilus
-        nautilus
-        tumbler
-        libgsf
 
         # wayland stuff
         wtype

@@ -36,6 +36,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "<title>Kavita</title>"; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     services.${serviceName} = {
@@ -63,7 +64,6 @@ in
       '';
     };
 
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${idmServer} = confLib.mkKanidmOidcSystem {

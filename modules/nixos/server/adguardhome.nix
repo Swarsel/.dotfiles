@@ -15,6 +15,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/control/status"; expectedBodyRegex = ''"running":true''; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     networking.firewall = {
@@ -89,9 +90,6 @@ in
         mode = "0700";
       }
     ];
-
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };

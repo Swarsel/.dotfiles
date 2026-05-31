@@ -51,6 +51,7 @@ in
     swarselsystems.enabledServerModules = [ "firezone" ];
 
     globals = {
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       networks = {
         ${webProxyIf}.hosts = lib.mkIf isProxied {
           ${config.node.name}.firewallRuleForNode.${webProxy} = {
@@ -285,10 +286,6 @@ in
     #       ${lib.getExe cfg.domain.package} eval "Domain.Release.migrate(manual: true)"
     #     '';
     #   };
-
-
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes =
       let

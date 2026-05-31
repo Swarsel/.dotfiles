@@ -41,6 +41,14 @@
       nix-inspect
       (nixpkgs-review.override { nix = config.nix.package; })
       manix
+
+      #nautilus
+      nautilus
+      tumbler
+      libgsf
+
+      claude-code
+
     ] ++ lib.optionals config.swarselsystems.isFullBuild [
 
       # audio stuff
@@ -141,11 +149,6 @@
       imagemagick
       # poppler
       ffmpegthumbnailer
-
-      #nautilus
-      nautilus
-      tumbler
-      libgsf
 
       # wayland stuff
       wtype

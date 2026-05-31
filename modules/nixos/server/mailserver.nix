@@ -29,16 +29,22 @@ in
       };
     };
 
-    globals.services = {
-      ${serviceName} = {
-        domain = serviceDomain;
-        proxyAddress4 = endpointAddress4;
-        proxyAddress6 = endpointAddress6;
+    globals = {
+      dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
+        "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
-      roundcube = {
-        domain = roundcubeDomain;
-        inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-        homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+      services = {
+        ${serviceName} = {
+          domain = serviceDomain;
+          proxyAddress4 = endpointAddress4;
+          proxyAddress6 = endpointAddress6;
+        };
+        roundcube = {
+          domain = roundcubeDomain;
+          inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+          homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+        };
       };
     };
 
@@ -152,10 +158,6 @@ in
     };
 
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
-      "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     nodes =
       let

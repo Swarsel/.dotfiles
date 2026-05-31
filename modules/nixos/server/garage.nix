@@ -101,6 +101,13 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort 3901 3902 3903 3904 ]; };
       services = confLib.mkServiceGlobal { serviceName = specificServiceName; inherit serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { serviceName = specificServiceName; servicePort = garageAdminPort; path = "/health"; expectedBodyRegex = "fully operational"; };
+      dns.${baseDomain}.subdomainRecords = {
+        "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
     };
 
 
@@ -191,13 +198,13 @@ in
 
           # Create buckets that should exist
           ${lib.concatMapStringsSep "\n" (bucket: ''
-              if [[ "$(garage bucket info ${lib.escapeShellArg bucket} 2>&1 >/dev/null)" == *"Bucket not found"* ]]; then
+            if [[ "$(garage bucket info ${lib.escapeShellArg bucket} 2>&1 >/dev/null)" == *"Bucket not found"* ]]; then
                 echo "Creating bucket ${lib.escapeShellArg bucket}"
                 garage bucket create ${lib.escapeShellArg bucket}
               else
                 echo "Bucket ${lib.escapeShellArg bucket} already exists"
               fi
-            '')
+          '')
             cfg.buckets}
 
           # Remove buckets that shouldn't exist
@@ -208,7 +215,7 @@ in
                 should_exist=true
               fi
             '')
-            cfg.buckets}
+              cfg.buckets}
 
             if [[ "$should_exist" == "false" ]]; then
               echo "Removing bucket $bucket"
@@ -243,29 +250,29 @@ in
 
           # Create keys that should exist
           ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
-              if [[ "$(garage key info ${lib.escapeShellArg keyName} 2>&1)" == *"0 matching keys"* ]]; then
+            if [[ "$(garage key info ${lib.escapeShellArg keyName} 2>&1)" == *"0 matching keys"* ]]; then
                 echo "Creating key ${lib.escapeShellArg keyName}"
                 garage key create ${lib.escapeShellArg keyName}
               else
                 echo "Key ${lib.escapeShellArg keyName} already exists"
               fi
-            '')
+          '')
             cfg.keys)}
 
           # Set up key permissions for buckets
           ${lib.concatStringsSep "\n" (lib.mapAttrsToList (
-              keyName: buckets:
-                lib.concatMapStringsSep "\n" (bucket: ''
-                  echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
+            keyName: buckets:
+            lib.concatMapStringsSep "\n" (bucket: ''
+              echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
                   garage bucket allow --read --write --owner --key ${lib.escapeShellArg keyName} ${lib.escapeShellArg bucket}
-                '')
-                buckets
-            )
+            '')
+              buckets
+          )
             cfg.keys)}
 
           # Remove permissions from buckets that are no longer associated with keys
           ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: buckets: ''
-              # Get current buckets this key has access to
+            # Get current buckets this key has access to
               current_buckets=$(garage key info ${lib.escapeShellArg keyName} | grep -A 1000 "==== BUCKETS FOR THIS KEY ====" | tail -n +3 | awk '{print $3}' | grep -v '^$' || true)
 
               # Remove access from buckets not in the desired list
@@ -276,14 +283,14 @@ in
                     should_have_access=true
                   fi
                 '')
-                buckets}
+                  buckets}
 
                 if [[ "$should_have_access" == "false" ]]; then
                   echo "Removing access for key ${lib.escapeShellArg keyName} from bucket $current_bucket"
                   garage bucket deny --key ${lib.escapeShellArg keyName} $current_bucket
                 fi
               done
-            '')
+          '')
             cfg.keys)}
 
           # Remove keys that shouldn't exist
@@ -294,7 +301,7 @@ in
                 should_exist=true
               fi
             '')
-            cfg.keys)}
+              cfg.keys)}
 
             if [[ "$should_exist" == "false" ]]; then
               echo "Removing key $key"
@@ -303,15 +310,6 @@ in
           done
         '';
       };
-    };
-
-
-    globals.dns.${baseDomain}.subdomainRecords = {
-      "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
     nodes =

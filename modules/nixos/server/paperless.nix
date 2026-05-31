@@ -33,6 +33,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/accounts/login/"; expectedBodyRegex = "Paperless"; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -114,9 +115,6 @@ in
           --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
                      )
     '';
-
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes =
       let

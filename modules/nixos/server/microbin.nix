@@ -52,6 +52,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "pasta-form"; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     services.${serviceName} = {
@@ -103,8 +104,6 @@ in
     environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
       { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
     ];
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; };

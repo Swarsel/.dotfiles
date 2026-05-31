@@ -23,6 +23,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ready"; expectedBodyRegex = "ready"; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -53,8 +54,6 @@ in
     };
 
     systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${webProxy}.services.nginx = confLib.genNginx {

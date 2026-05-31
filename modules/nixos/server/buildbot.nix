@@ -327,6 +327,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Buildbot Web UI"; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     nix.gc = {
@@ -398,9 +399,6 @@ in
     environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
       { directory = "/home/buildbot"; user = "buildbot"; group = "buildbot"; mode = "0750"; }
     ];
-
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };

@@ -32,6 +32,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/healthz"; expectedBodyRegex = ''"status":\s*"pass"''; failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"''; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -136,9 +137,6 @@ in
           fi
         '';
     };
-
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes = {
       ${idmServer} = lib.recursiveUpdate

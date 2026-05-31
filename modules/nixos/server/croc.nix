@@ -18,8 +18,6 @@ in
   config = {
     swarselsystems.enabledServerModules = [ "croc" ];
 
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
     sops = {
       secrets = {
         croc-password = { inherit sopsFile; };
@@ -41,9 +39,12 @@ in
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
-    globals.services.${serviceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6 isHome;
+    globals = {
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+      services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
     };
 
     services.${serviceName} = {

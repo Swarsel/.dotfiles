@@ -9,9 +9,6 @@ in
   config = {
     swarselsystems.enabledServerModules = [ "minecraft" ];
 
-    globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-    };
 
     topology.self.services.${serviceName} = {
       name = "Minecraft";
@@ -19,9 +16,14 @@ in
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
-    globals.services.${serviceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6 isHome;
+    globals = {
+      dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+      services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6 isHome;
+      };
     };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];

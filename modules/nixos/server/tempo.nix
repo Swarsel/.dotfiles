@@ -20,6 +20,7 @@ in
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort tempoHttpApiPort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName; servicePort = tempoHttpApiPort; path = "/ready"; expectedBodyRegex = "ready"; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -93,8 +94,6 @@ in
         OTEL_TRACES_SAMPLER_ARG = "0.01";
       };
     };
-
-    globals.dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
     nodes =
       let
