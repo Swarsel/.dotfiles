@@ -1,9 +1,47 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   config = {
     swarselsystems.enabledHomeModules = [ "packages" ];
     home.packages = with pkgs; [
+
+      vim
+      util-linux
+      findutils
+      fd
+      unzip
+      gnutar
+      psmisc # kill etc
+      lsof
+      hyprpicker # color picker
+      wl-mirror
+
+      # cache
+      attic-client
+
+      # mail related packages
+      mu
+
+      # sops-related
+      sops
+      ssh-to-age
+
+      nvd
+      nix-output-monitor
+
+      # nix
+      alejandra
+      nixpkgs-fmt
+      deadnix
+      statix
+      nix-tree
+      nix-diff
+      nix-visualize
+      nix-init
+      nix-inspect
+      (nixpkgs-review.override { nix = config.nix.package; })
+      manix
+    ] ++ lib.optionals config.swarselsystems.isFullBuild [
 
       # audio stuff
       spek # spectrum analyzer
@@ -24,9 +62,6 @@
       # ssh login using idm
       opkssh
 
-      # cache
-      attic-client
-
       # dict
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
@@ -35,32 +70,12 @@
       mgba
 
       # utilities
-      util-linux
       nmap
-      lsof
-      nvd
-      nix-output-monitor
-      hyprpicker # color picker
-      findutils
       units
-      vim
       sshfs
       fuse
       # ventoy
       poppler-utils
-
-      # nix
-      alejandra
-      nixpkgs-fmt
-      deadnix
-      statix
-      nix-tree
-      nix-diff
-      nix-visualize
-      nix-init
-      nix-inspect
-      (nixpkgs-review.override { nix = config.nix.package; })
-      manix
 
       # shellscripts
       shfmt
@@ -115,7 +130,6 @@
       sqlite
       speechd
       networkmanagerapplet
-      psmisc # kill etc
       lm_sensors
       # jq # used for searching the i3 tree in check<xxx>.sh files
 
@@ -124,13 +138,9 @@
       # anki-bin
 
       # dirvish file previews
-      fd
       imagemagick
       # poppler
       ffmpegthumbnailer
-      mediainfo
-      gnutar
-      unzip
 
       #nautilus
       nautilus
@@ -139,7 +149,6 @@
 
       # wayland stuff
       wtype
-      wl-mirror
       wl-clipboard
       wf-recorder
       kanshi
@@ -155,13 +164,6 @@
       qalculate-gtk
       gcr # needed for gnome-secrets to work
       seahorse
-
-      # sops-related
-      sops
-      ssh-to-age
-
-      # mail related packages
-      mu
 
       # latex and related packages
       (texlive.combine {

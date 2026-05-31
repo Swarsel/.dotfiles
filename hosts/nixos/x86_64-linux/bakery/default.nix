@@ -15,6 +15,8 @@ in
     "${self}/modules/nixos/optional/gaming.nix"
     "${self}/modules/nixos/optional/nswitch-rcm.nix"
     "${self}/modules/nixos/optional/virtualbox.nix"
+    "${self}/modules/nixos/optional/niri.nix"
+    "${self}/modules/nixos/optional/noctalia.nix"
   ];
 
   topology.self.interfaces = {
@@ -27,6 +29,7 @@ in
     isNixos = true;
     isBtrfs = true;
     isLinux = true;
+    isFullBuild = false;
     lowResolution = "1280x800";
     highResolution = "1920x1080";
     sharescreen = "eDP-1";

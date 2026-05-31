@@ -1,81 +1,79 @@
-{ lib, pkgs, minimal, ... }:
+{ lib, pkgs, config, minimal, ... }:
 {
   config = {
 
-    environment.systemPackages = with pkgs; lib.optionals (!minimal) [
-      # yubikey packages
-      gnupg
-      yubikey-personalization
-      yubico-pam
-      yubioath-flutter
-      yubikey-manager
-      yubikey-touch-detector
-      yubico-piv-tool
-      cfssl
-      pcsc-tools
-      pcscliteWithPolkit.out
+    environment.systemPackages = with pkgs; lib.optionals (!minimal)
+      ([
+        gnupg
+        yubikey-manager
 
+        # secure boot
+        sbctl
 
-      # ledger packages
-      ledger-live-desktop
+        # better make for general tasks
+        just
 
-      # pinentry
-      dbus
-      # swaylock-effects
-      syncthingtray-minimal
-      swayosd
+        # sops
+        ssh-to-age
+        sops
 
-      # secure boot
-      sbctl
+        # theme related
+        adwaita-icon-theme
 
-      libsForQt5.qt5.qtwayland
+        # bluetooth
+        bluez
+        wireguard-tools
+      ] ++ lib.optionals config.swarselsystems.isFullBuild [
+        # yubikey packages
+        yubikey-personalization
+        yubico-pam
+        yubioath-flutter
+        yubikey-touch-detector
+        yubico-piv-tool
+        cfssl
+        pcsc-tools
+        pcscliteWithPolkit.out
 
-      # do not do this! clashes with the flake
-      # nix-index
+        # ledger packages
+        ledger-live-desktop
 
-      nixos-generators
+        # pinentry
+        dbus
+        # swaylock-effects
+        syncthingtray-minimal
+        swayosd
 
-      # commit hooks
-      pre-commit
+        libsForQt5.qt5.qtwayland
 
-      # proc info
-      acpi
+        nixos-generators
 
-      # pci info
-      pciutils
-      usbutils
+        # commit hooks
+        pre-commit
 
-      # better make for general tasks
-      just
+        # proc info
+        acpi
 
-      # sops
-      ssh-to-age
-      sops
+        # pci info
+        pciutils
+        usbutils
 
-      # keyboards
-      qmk
-      vial
-      via
+        # keyboards
+        qmk
+        vial
+        via
 
-      # theme related
-      adwaita-icon-theme
+        # kde-connect
+        xdg-desktop-portal
+        xdg-desktop-portal-gtk
+        xdg-desktop-portal-wlr
 
-      # kde-connect
-      xdg-desktop-portal
-      xdg-desktop-portal-gtk
-      xdg-desktop-portal-wlr
+        ghostscript_headless
+        nixd
+        zig
+        zls
 
-      # bluetooth
-      bluez
-      ghostscript_headless
-      wireguard-tools
-      nixd
-      zig
-      zls
-
-      elk-to-svg
-
-    ] ++ lib.optionals minimal [
+        elk-to-svg
+      ]) ++ lib.optionals minimal [
       networkmanager
       curl
       git

@@ -4122,6 +4122,8 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
       "${self}/modules/nixos/optional/gaming.nix"
       "${self}/modules/nixos/optional/nswitch-rcm.nix"
       "${self}/modules/nixos/optional/virtualbox.nix"
+      "${self}/modules/nixos/optional/niri.nix"
+      "${self}/modules/nixos/optional/noctalia.nix"
     ];
 
     topology.self.interfaces = {
@@ -4134,6 +4136,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
       isNixos = true;
       isBtrfs = true;
       isLinux = true;
+      isFullBuild = false;
       lowResolution = "1280x800";
       highResolution = "1920x1080";
       sharescreen = "eDP-1";
@@ -9403,84 +9406,82 @@ This section is for setting things that should be used on clients that are using
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/packages.nix
-  { lib, pkgs, minimal, ... }:
+  { lib, pkgs, config, minimal, ... }:
   {
     config = {
 
-      environment.systemPackages = with pkgs; lib.optionals (!minimal) [
-        # yubikey packages
-        gnupg
-        yubikey-personalization
-        yubico-pam
-        yubioath-flutter
-        yubikey-manager
-        yubikey-touch-detector
-        yubico-piv-tool
-        cfssl
-        pcsc-tools
-        pcscliteWithPolkit.out
+      environment.systemPackages = with pkgs; lib.optionals (!minimal)
+        ([
+          gnupg
+          yubikey-manager
 
+          # secure boot
+          sbctl
 
-        # ledger packages
-        ledger-live-desktop
+          # better make for general tasks
+          just
 
-        # pinentry
-        dbus
-        # swaylock-effects
-        syncthingtray-minimal
-        swayosd
+          # sops
+          ssh-to-age
+          sops
 
-        # secure boot
-        sbctl
+          # theme related
+          adwaita-icon-theme
 
-        libsForQt5.qt5.qtwayland
+          # bluetooth
+          bluez
+          wireguard-tools
+        ] ++ lib.optionals config.swarselsystems.isFullBuild [
+          # yubikey packages
+          yubikey-personalization
+          yubico-pam
+          yubioath-flutter
+          yubikey-touch-detector
+          yubico-piv-tool
+          cfssl
+          pcsc-tools
+          pcscliteWithPolkit.out
 
-        # do not do this! clashes with the flake
-        # nix-index
+          # ledger packages
+          ledger-live-desktop
 
-        nixos-generators
+          # pinentry
+          dbus
+          # swaylock-effects
+          syncthingtray-minimal
+          swayosd
 
-        # commit hooks
-        pre-commit
+          libsForQt5.qt5.qtwayland
 
-        # proc info
-        acpi
+          nixos-generators
 
-        # pci info
-        pciutils
-        usbutils
+          # commit hooks
+          pre-commit
 
-        # better make for general tasks
-        just
+          # proc info
+          acpi
 
-        # sops
-        ssh-to-age
-        sops
+          # pci info
+          pciutils
+          usbutils
 
-        # keyboards
-        qmk
-        vial
-        via
+          # keyboards
+          qmk
+          vial
+          via
 
-        # theme related
-        adwaita-icon-theme
+          # kde-connect
+          xdg-desktop-portal
+          xdg-desktop-portal-gtk
+          xdg-desktop-portal-wlr
 
-        # kde-connect
-        xdg-desktop-portal
-        xdg-desktop-portal-gtk
-        xdg-desktop-portal-wlr
+          ghostscript_headless
+          nixd
+          zig
+          zls
 
-        # bluetooth
-        bluez
-        ghostscript_headless
-        wireguard-tools
-        nixd
-        zig
-        zls
-
-        elk-to-svg
-
-      ] ++ lib.optionals minimal [
+          elk-to-svg
+        ]) ++ lib.optionals minimal [
         networkmanager
         curl
         git
@@ -23554,12 +23555,50 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 This holds packages that I can use as provided, or with small modifications (as in the =texlive= package that needs special configuration).
 
 #+begin_src nix-ts :tangle modules/home/common/packages.nix
-  { config, pkgs, ... }:
+  { config, lib, pkgs, ... }:
 
   {
     config = {
       swarselsystems.enabledHomeModules = [ "packages" ];
       home.packages = with pkgs; [
+
+        vim
+        util-linux
+        findutils
+        fd
+        unzip
+        gnutar
+        psmisc # kill etc
+        lsof
+        hyprpicker # color picker
+        wl-mirror
+
+        # cache
+        attic-client
+
+        # mail related packages
+        mu
+
+        # sops-related
+        sops
+        ssh-to-age
+
+        nvd
+        nix-output-monitor
+
+        # nix
+        alejandra
+        nixpkgs-fmt
+        deadnix
+        statix
+        nix-tree
+        nix-diff
+        nix-visualize
+        nix-init
+        nix-inspect
+        (nixpkgs-review.override { nix = config.nix.package; })
+        manix
+      ] ++ lib.optionals config.swarselsystems.isFullBuild [
 
         # audio stuff
         spek # spectrum analyzer
@@ -23580,9 +23619,6 @@ This holds packages that I can use as provided, or with small modifications (as 
         # ssh login using idm
         opkssh
 
-        # cache
-        attic-client
-
         # dict
         (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
@@ -23591,32 +23627,12 @@ This holds packages that I can use as provided, or with small modifications (as 
         mgba
 
         # utilities
-        util-linux
         nmap
-        lsof
-        nvd
-        nix-output-monitor
-        hyprpicker # color picker
-        findutils
         units
-        vim
         sshfs
         fuse
         # ventoy
         poppler-utils
-
-        # nix
-        alejandra
-        nixpkgs-fmt
-        deadnix
-        statix
-        nix-tree
-        nix-diff
-        nix-visualize
-        nix-init
-        nix-inspect
-        (nixpkgs-review.override { nix = config.nix.package; })
-        manix
 
         # shellscripts
         shfmt
@@ -23671,7 +23687,6 @@ This holds packages that I can use as provided, or with small modifications (as 
         sqlite
         speechd
         networkmanagerapplet
-        psmisc # kill etc
         lm_sensors
         # jq # used for searching the i3 tree in check<xxx>.sh files
 
@@ -23680,13 +23695,9 @@ This holds packages that I can use as provided, or with small modifications (as 
         # anki-bin
 
         # dirvish file previews
-        fd
         imagemagick
         # poppler
         ffmpegthumbnailer
-        mediainfo
-        gnutar
-        unzip
 
         #nautilus
         nautilus
@@ -23695,7 +23706,6 @@ This holds packages that I can use as provided, or with small modifications (as 
 
         # wayland stuff
         wtype
-        wl-mirror
         wl-clipboard
         wf-recorder
         kanshi
@@ -23711,13 +23721,6 @@ This holds packages that I can use as provided, or with small modifications (as 
         qalculate-gtk
         gcr # needed for gnome-secrets to work
         seahorse
-
-        # sops-related
-        sops
-        ssh-to-age
-
-        # mail related packages
-        mu
 
         # latex and related packages
         (texlive.combine {
