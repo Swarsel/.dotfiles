@@ -9,6 +9,12 @@
       (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
+  # FIXME: remove when redeploying and instead increase swapSize
+  swapDevices = [{
+    device = "/swapfile";
+    size = 4 * 1024;
+  }];
+
   boot = {
     initrd = {
       availableKernelModules = [ "xhci_pci" "nvme" "usb_storage" "sd_mod" ];

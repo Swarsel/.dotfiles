@@ -4188,6 +4188,12 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
         (modulesPath + "/installer/scan/not-detected.nix")
       ];
 
+    # FIXME: remove when redeploying and instead increase swapSize
+    swapDevices = [{
+      device = "/swapfile";
+      size = 4*1024;
+    }];
+
     boot = {
       initrd = {
         availableKernelModules = [ "xhci_pci" "nvme" "usb_storage" "sd_mod" ];
