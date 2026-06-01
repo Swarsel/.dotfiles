@@ -12,7 +12,7 @@
   # FIXME: remove when redeploying and instead increase swapSize
   swapDevices = [{
     device = "/swapfile";
-    size = 4 * 1024;
+    size = 20 * 1024;
   }];
 
   boot = {
