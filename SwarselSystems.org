@@ -208,7 +208,7 @@ I also add this javascript to add header pinning functionality to the site, usin
 #+end_src
 
 
-** TODO Structure of this flake
+** Structure of this flake
 :PROPERTIES:
 :CUSTOM_ID: h:2c5529ed-e6d9-44b6-b0d3-5bf96a6bed64
 :END:
@@ -266,7 +266,7 @@ It is also possible to pass it as a function:
 
     The nixos and home folders further split up:
 
-      - common: Configuration that can be used by all hosts (TODO: this currently includes configuration used by my user devices, which will mostly not be used by servers)
+      - common: Configuration that can be used by all hosts
       - server: Configuration to be used on servers
       - darwin: Holds configuration for nix-darwin.
       - optional: Configuration that will be used rather rarely
@@ -290,7 +290,6 @@ It is also possible to pass it as a function:
     - The =flake= dir is used for the conventional packages that I described above.
 
   - =files=: This is kind of a catchall folder that holds (nearly) all non-nix files. It mostly holds blocks created in [[#h:8fc9f66a-7412-4091-8dee-a06f897baf67][Appendix B: Supplementary Files]], but also some more specific directories:
-    - =scripts=: This folder holds a bunch of shell scripts that I use for various tasks. Nearly all of these are made into a derivation using =pkgs.writeShellApplication=. In the future (TODO?), I might convert these to native nix, but in the past I kept the as true shellfiles in case I ever wanted to move away from nix. This is becoming less and less likely, however. And even in case that this would happen, I could retrieve these files from the nix store and would simply have to remove the nix store paths.
     - =wallpaper=: Holds my wallpapers and profile pictures :)
     - =topology-images=: Holds pictures used by [[#h:391e7712-fef3-4f13-a3ed-d36e228166fd][Topology]] :)
 
@@ -3529,7 +3528,7 @@ If the new machine is home-manager only, perform these steps:
   3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
 #+end_export
 
-** TODO Current issues
+** Current issues
 :PROPERTIES:
 :CUSTOM_ID: h:b562adaf-536c-4267-88a5-026d8a0cda61
 :END:
@@ -3538,7 +3537,7 @@ Besides the manual steps outlined above, sometimes things break when I update th
   - instead of the broken package, use the package from the latest stable nixpkgs release where the package is still functoning (this is why I pull all of these in as inputs)
   - if the broken component is critical, I perform manual patches/overrides.
 
-In order to keep track of these changes, I gather them here in a similar style to what you saw in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]. I simply prefix them with the date and check them after a while to see if things got better. TODO: this list is not comprehensive probably
+In order to keep track of these changes, I gather them here in a similar style to what you saw in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]. I simply prefix them with the date and check them after a while to see if things got better.
 
 #+begin_src markdown :noweb yes :exports results :results html
   Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
@@ -3595,14 +3594,14 @@ Currently, these adaptions are made to the configuration to account for bugs in 
 This section mainly exists to house different =default.nix= files to define some modules that should be loaded on respective systems.
 Every host is housed in the =hosts/= directory, which is then subdivided by each respective system (=nixos/=, =home-manager/=, =nix-on-droid/=, =darwin/=). As described earlier, some of these configurations (nixos and darwin) can be defined automatically in this flake. For home-manager and nix-on-droid, the system architecture must be defined manually.
 
-*** TODO Template
+*** Template
 :PROPERTIES:
 :CUSTOM_ID: h:373bd9e8-616e-434e-bfab-c216ce4470e9
 :END:
 
 This is the template that I use for new deployments of personal machines. Servers are usually highly tailored to their specific task and I do not consider it worth a time to craft a template for that. Also, at least at the current time, I only provide a template for NixOS hosts, as I rarely ever use anything else.
 
-TODO: I dont think this template would currently work out of the box
+[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: I dont think this template would currently work out of the box
 
 **** Main Configuration
 :PROPERTIES:
@@ -3980,7 +3979,6 @@ This system is built with support for arm emulation, so it can build configurati
         # "amd_pstate=passive"
 
         # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
-        # TODO: figure out if this is worth it
         # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
         # ref:
         # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
@@ -7371,7 +7369,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
     ];
   }
 #+end_src
-**** TODO Drugstore (live ISO installer config)
+**** Drugstore (live ISO installer config)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
 :END:
@@ -7380,7 +7378,7 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
 NOTE: Yes, the path to this system does not follow the scheme outlined above - I still consider this a 'config' however, so I keep it here.
 
-TODO: cleanup this mess
+[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: cleanup this mess
 
 Steps to recover using live ISO:
  - unlock LUKS: =cryptsetup luksOpen /dev/<crypted device> cryptroot=
@@ -7821,12 +7819,14 @@ This is a specialized kexec image that I use to have disko available on RAM-limi
   }
 #+end_src
 
-***** TODO Hotel (Demo Physical/VM)
+***** Hotel (Demo Physical/VM)
 :PROPERTIES:
 :CUSTOM_ID: h:e1498bef-ec67-483d-bf02-76264e30be8e
 :END:
 
-This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys). TODO: provide a public secret that can be used to test the environment
+This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
+
+[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: provide a public secret that can be used to test the environment
 
 I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
 ****** Main configuration
@@ -8718,7 +8718,7 @@ A breakdown of the flags being set:
   - experimental-features:
     - nix-command: Enables the =nix= command from nix 2.4
     - flakes: Enables flakes to be used
-    - ca-derivations: Enables content-addressed derivations, which stops unnecessary rebuiluds - to be used with my TODO private hydra and the binary cache =cache.ngi0.nixos.org= in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]
+    - ca-derivations: Enables content-addressed derivations, which stops unnecessary rebuilds
     - cgroups: allows the use of cgroups in builds
     - pipe-operators: Enables 'piping' instead of the classic currying syntax - =fun arg= can be expressed as =arg |> fun=. Associatively, it is weaker than functions: =a |> b |> d c |> e = e ((d c) (b a))=
   - trusted-users: these users have elevated privileges in nix (mostly used to acknowledge binary caches) - root is added per default here
@@ -9077,7 +9077,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
   }
 #+end_src
 
-**** TODO PII management
+**** PII management
 :PROPERTIES:
 :CUSTOM_ID: h:82b8ede2-02d8-4c43-8952-7200ebd4dc23
 :END:
@@ -9100,7 +9100,7 @@ In general, there are three types of pii file:
 This system, while highly pleasant to work with during everyday use, sometimes has quirks:
 - =nixos-rebuild= cannot be used
   - this is because we need to call =nix build= in a separate step where [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]] will be cached. Once we have a finished build we can switch to that (all of this is handled by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]])
-  - this is a bit cumbersome for hosts that are not supported by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]] (currently this is mostly home-manager only configurations). In principal, building their config locally should work without issue, however, sometimes the decrypt step hiccups. In that case I usually resort to scp'ing the decrypted secrets to the host in question using [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]]'s =just secrets= command. After that, the secrets in =/var/tmp/nix-import-encrypted= need to be moved to the correct dir depending on the build user uid (0/root or 1000/swarsel). After that I delete the cached secrets again. TODO: fix this behaviour.
+  - this is a bit cumbersome for hosts that are not supported by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]] (currently this is mostly home-manager only configurations). In principal, building their config locally should work without issue, however, sometimes the decrypt step hiccups. In that case I usually resort to scp'ing the decrypted secrets to the host in question using [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]]'s =just secrets= command. After that, the secrets in =/var/tmp/nix-import-encrypted= need to be moved to the correct dir depending on the build user uid (0/root or 1000/swarsel). After that I delete the cached secrets again.
 - the used nix version needs to be kept in sync with the version of nix that nix-plugins is compiled against
   - currently, this mostly poses an issue when provisioning new hosts - the version of nixos-anywhere that I am using uses nix =2.28.x=, so I wrote a dedicated [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks)]] (called =deploy=) that is used to set this environment up. This devshell is automatically used by the [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]] command =just bootstrap=.
 
@@ -12140,7 +12140,7 @@ By default, attic only provides a cli client to authenticate to caches. I want a
   }
 #+end_src
 
-**** TODO Wireguard
+**** Wireguard
 :PROPERTIES:
 :CUSTOM_ID: h:8cf0018d-00ba-4616-87d9-f91c614face9
 :END:
@@ -12149,7 +12149,7 @@ I use wireguard for two things:
 - proxying of my services (both internal and external) to my proxy node
 - proxying of my internal services to an internal [[#h:302468d2-106a-41c8-b2bc-9fdc40064a9c][NGINX]] in order to save on bandwidth
 
-At current, this means that I am running two wireguard interfaces - the following configuration allows me to define an arbitrary number of wireguard interfaces that each host can be part of (either as "client" or "server"). All of these connections are really point-to-point. On the client side, I set =persistentKeepalive= unconditionally, which is lazy (and a bit of a security issue). Also, I noticed that I lose 12 bits of MTU somewhere - I would have expected to be able to set MTU 1420, but that does not seem to be the case.  TODO:fix both
+At current, this means that I am running two wireguard interfaces - the following configuration allows me to define an arbitrary number of wireguard interfaces that each host can be part of (either as "client" or "server"). All of these connections are really point-to-point. On the client side, I set =persistentKeepalive= unconditionally, which is lazy (and a bit of a security issue).
 
 In order to define a new wireguard interface, I have to:
 
@@ -12157,7 +12157,7 @@ In order to define a new wireguard interface, I have to:
   - add its members under hosts
   - add the =wgInterfaceName= together with id to the server nodes local pii
   - make sure all members have their private keys in their secrets file and their public key under =secrets/public/wg=
-  - make sure that all preshared keys exist in =secrets/repo/wg.yaml= TODO: maybe split wg.yaml into per-interface files with finer-grained acl
+  - make sure that all preshared keys exist in =secrets/repo/wg.yaml=
 
     The MTU computes like this:
 
@@ -12518,6 +12518,8 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
           - the services VLAN is allowed to reach selected ports on local (currently wireguard)
           - WireGuard peers in wgHome are allowed to talk to each other (wgHome → wgHome)
     - global IPv4/IPv6 forwarding is enabled via boot.kernel.sysctl so this host acts as the main router between all VLANs, the WireGuard network, and the WAN (untrusted)
+
+      [[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: see code comment
 
 #+begin_src nix-ts :tangle modules/nixos/server/router.nix
   { lib, config, confLib, globals, ... }:
@@ -13032,7 +13034,7 @@ Using the SSO Plugin is sadly not declarative:
 :CUSTOM_ID: h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72
 :END:
 
-My music streaming service. In the past I used subsonic and gonic, but I prefer the tag based management. Sadly the jukebox seems not to work on NixOS (TODO?)
+My music streaming service. In the past I used subsonic and gonic, but I prefer the tag based management.
 
 After the first login when setting up, you need to add a password to the user that is created using OIDC. This is so that login using DSub2 becomes possible.
 
@@ -13523,7 +13525,7 @@ Allows me to spin up containers for services that do not provide NixOS options.
 :CUSTOM_ID: h:1e68d84a-8f99-422f-89ac-78f664ac0013
 :END:
 
-My messenger of choice. I use this mainly to bridge messages of whatsapp/telegram/signal into it, which allows me to only use a single app for all of my communication needs. TODO: add synapse oidc
+My messenger of choice. I use this mainly to bridge messages of whatsapp/telegram/signal into it, which allows me to only use a single app for all of my communication needs.
 
 #+begin_src nix-ts :tangle modules/nixos/server/matrix.nix
   { self, lib, config, pkgs, globals, confLib, ... }:
@@ -17079,7 +17081,9 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 :CUSTOM_ID: h:a9965660-4358-4b9a-8c46-d55f28598344
 :END:
 
-My selfhosted git solution. TODO: federate
+My selfhosted git solution.
+
+[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: federate
 
 #+begin_src nix-ts :tangle modules/nixos/server/forgejo.nix
   { self, lib, config, pkgs, globals, confLib, ... }:
@@ -17527,6 +17531,7 @@ kanidm person credential create-reset-token <user>
 
 This can be used to add OIDC in a way to services that do not support it natively, by tacking it onto the corresponding NGINX service config. In here, it is enabled by setting the =oauth2.enable= option on the respective =virtualHost=.
 
+[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: UNIX socket has upstream permission issues
 
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
   { self, lib, config, pkgs, globals, confLib, ... }:
@@ -22222,7 +22227,7 @@ This section sets up all the imports that are used in the home-manager section.
   }
 #+end_src
 
-*** TODO Optional
+*** Optional
 :PROPERTIES:
 :CUSTOM_ID: h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589
 :END:
@@ -22234,8 +22239,6 @@ These sets of configuration do not need to be deployed on every host, for a mult
 - There are some hosts that I do not want to autologin to.
 - =nswitch-rcm= is a tool I wrote for easy payload flashing of a Nintendo Switch in RCM mode. However, that is not needed on every machine.
 - The work profile is only used on my work laptop.
-
-TODO: evaluate whether I should keep using this structure.
 
   #+begin_src nix-ts :tangle modules/nixos/optional/default.nix
   # @ future me: dont panic, this file is not read in by readNix
@@ -23136,7 +23139,7 @@ Some standard options that should be set vor every microvm guest. We set the def
   }
 #+end_src
 
-**** TODO systemd-networkd (server home)
+**** systemd-networkd (server home)
 :PROPERTIES:
 :CUSTOM_ID: h:049fc27e-a28f-4ff0-b5f0-d81401bdd56f
 :END:
@@ -23153,8 +23156,7 @@ For a host with microvms the general idea is as follows:
 
 The principle is the same for a host without microvms, but we do not need the local =me-*= interfaces and can ignore =macvtap= config.
 
-A VLAN can also be used as the initrd network - this is however disabled for the router host. For that host, we need to connect from the =FritzBox!= side in case we need to reboot it (TODO: fix interface naming lan/wan which blocks this)
-
+A VLAN can also be used as the initrd network - this is however disabled for the router host. For that host, we need to connect from the =FritzBox!= side in case we need to reboot it - this also acts as a safety net.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/systemd-networkd-server-home.nix
   { self, lib, config, globals, ... }:
@@ -23381,12 +23383,10 @@ Steps to get a home-manager only setup up and running:
     3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
 #+end_src
 
-*** TODO Common
+*** Common
 :PROPERTIES:
 :CUSTOM_ID: h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e
 :END:
-
-TODO: split this into actual common and client sections
 
 **** Imports
 :PROPERTIES:
@@ -24095,8 +24095,6 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 :END:
 
 Some programs lack a dmenu launcher - I define them myself here.
-
-TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the programs prefixed with "nixGL". I need to figure out how to automate this process, as it is not feasible to write desktop entries for all programs installed on that machine.
 
 #+begin_src nix-ts :tangle modules/home/common/desktop.nix
   _:
@@ -27733,12 +27731,14 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
   }
 #+end_src
 
-***** TODO attic store push service
+***** attic store push service
 :PROPERTIES:
 :CUSTOM_ID: h:79ebe062-d5f5-46a4-9e7b-bd3df0c8699b
 :END:
 
-Normally, I want to push all nix build artifacts to my main cache automatically, which is realized here. Note that authentication to the cache must be done manually once on client nodes. TODO: fix that
+Normally, I want to push all nix build artifacts to my main cache automatically, which is realized here. Note that authentication to the cache must be done manually once on client nodes.
+
+[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: fix that
 
 #+begin_src nix-ts :tangle modules/home/common/attic-store-push.nix
   { lib, config, pkgs, ... }:
@@ -31206,14 +31206,12 @@ This holds configuration that is specific to framework laptops.
 
 This section is for modules that are to be used on =NixOS= and =home-manager= scopes alike. This is for example needed in order to allow me to define and set my own custom functions only once in the =NixOS= config and then mirror them into the corresponding =home-manager= option.
 
-*** TODO Configuration options
+*** Configuration options
 :PROPERTIES:
 :CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
 :END:
 
 These are my own configuration options that are used in multiple places throughout the configuration - for which reason I did not put them right where they are used for the first time.
-
-TODO: check which of these can be replaced but builtin functions.
 
 #+begin_src nix-ts :noweb yes :tangle modules/shared/options.nix
   { self, config, lib, ... }:
@@ -45238,3 +45236,20 @@ This replaced most of the =./path/to/[...].nix= relative imports with
 :END:
 
 This is the state of the repository when I decided to migrate to flakes. At this point I kind of considered this a new project and decided to start with a fresh git history (a move that I today find debatable).
+* Appendix E: Current TODOs
+:PROPERTIES:
+:CUSTOM_ID: h:15ee6287-207f-49a5-8bf0-cf66707b892c
+:END:
+
+- implement simple dendritic structure for clients
+- crowdsec monitoring in grafana
+- mealie
+- copyparty?
+- look into selfhosted cospend (spliit module?) to deprecate nextcloud
+- clean up the system template
+- federate forgejo
+- cleanup installer image
+- fix hotel configuration and add an example secret
+- fix router bridge interfaces after kitchen construction
+- check unix PR in oauth2-proxy
+- automatic client cache auth
