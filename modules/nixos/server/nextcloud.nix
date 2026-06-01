@@ -53,7 +53,7 @@ in
         datadir = "/var/lib/${serviceName}";
         https = true;
         configureRedis = true;
-        maxUploadSize = "4G";
+        maxUploadSize = "64G";
         extraApps = {
           inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
         };
@@ -68,25 +68,35 @@ in
 
 
 
-    nodes = {
-      ${idmServer} = lib.recursiveUpdate
-        (confLib.mkKanidmOidcSystem {
-          inherit serviceName serviceDomain kanidmSopsFile;
-          originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
-          extraGroups = [ "nextcloud.admins" ];
-        })
-        {
-          services.kanidm.provision.systems.oauth2.nextcloud = {
-            allowInsecureClientDisablePkce = true;
-            claimMaps.groups = {
-              joinType = "array";
-              valuesByGroup."nextcloud.admins" = [ "admin" ];
+    nodes =
+      let
+        extraConfigLoc = ''
+          proxy_request_buffering off;
+          client_body_timeout     7200s;
+          proxy_read_timeout      7200s;
+          proxy_send_timeout      7200s;
+          send_timeout            7200s;
+        '';
+      in
+      {
+        ${idmServer} = lib.recursiveUpdate
+          (confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+            extraGroups = [ "nextcloud.admins" ];
+          })
+          {
+            services.kanidm.provision.systems.oauth2.nextcloud = {
+              allowInsecureClientDisablePkce = true;
+              claimMaps.groups = {
+                joinType = "array";
+                valuesByGroup."nextcloud.admins" = [ "admin" ];
+              };
             };
           };
-        };
-      ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-      ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-    };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+      };
 
   };
 }

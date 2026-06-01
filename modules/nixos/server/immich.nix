@@ -250,9 +250,11 @@ in
           proxy_set_header   Connection "upgrade";
           proxy_redirect     off;
 
-          proxy_read_timeout 600s;
-          proxy_send_timeout 600s;
-          send_timeout       600s;
+          proxy_request_buffering off;
+          client_body_timeout     7200s;
+          proxy_read_timeout      7200s;
+          proxy_send_timeout      7200s;
+          send_timeout            7200s;
         '';
       in
       {
