@@ -26,6 +26,7 @@
   };
 
   swarselsystems = {
+    nodeRoles = [ "jumphost" ];
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 1 vCPUs, 8GB RAM";
     isImpermanence = true;
