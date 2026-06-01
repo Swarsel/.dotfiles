@@ -1,7 +1,7 @@
 { self, lib, config, pkgs, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-  inherit (confLib.static) isHome webProxy homeWebProxy idmServer oauthServer nginxAccessRules homeServiceAddress;
+  inherit (confLib.static) isHome webProxy homeWebProxy homeProxy idmServer oauthServer nginxAccessRules homeServiceAddress;
 
   mainDomain = globals.domains.main;
 
@@ -9,6 +9,12 @@ let
 
   kanidmDomain = globals.services.kanidm.domain;
   kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
+
+  homeProxyWan4 = globals.hosts.${homeProxy}.wanAddress4 or null;
+  homeProxyWan6 = globals.hosts.${homeProxy}.wanAddress6 or null;
+  trustedProxyIPs = [ "127.0.0.1" "::1" ]
+    ++ lib.optional (homeProxyWan4 != null) homeProxyWan4
+    ++ lib.optional (homeProxyWan6 != null) homeProxyWan6;
 in
 {
   options = {
@@ -167,6 +173,7 @@ in
         };
         clientSecretFile = null;
         reverseProxy = true;
+        trustedProxyIP = trustedProxyIPs;
         httpAddress = "0.0.0.0:${builtins.toString servicePort}";
         redirectURL = "https://${serviceDomain}/oauth2/callback";
         setXauthrequest = true;

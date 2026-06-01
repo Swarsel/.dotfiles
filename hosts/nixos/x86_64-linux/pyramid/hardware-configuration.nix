@@ -60,7 +60,6 @@
       # "amd_pstate=passive"
 
       # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
-      # TODO: figure out if this is worth it
       # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
       # ref:
       # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
