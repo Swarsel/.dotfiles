@@ -56,7 +56,10 @@ in
           DOMAIN = serviceDomain;
           ROOT_URL = "https://${serviceDomain}";
         };
-        # federation.ENABLED = true;
+        federation = {
+          ENABLED = true;
+          SHARE_USER_STATISTICS = false;
+        };
         service = {
           DISABLE_REGISTRATION = false;
           ALLOW_ONLY_INTERNAL_REGISTRATION = false;

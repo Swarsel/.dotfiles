@@ -17154,7 +17154,10 @@ My selfhosted git solution.
             DOMAIN = serviceDomain;
             ROOT_URL = "https://${serviceDomain}";
           };
-          # federation.ENABLED = true;
+          federation = {
+            ENABLED = true;
+            SHARE_USER_STATISTICS = false;
+          };
           service = {
             DISABLE_REGISTRATION = false;
             ALLOW_ONLY_INTERNAL_REGISTRATION = false;
@@ -45263,7 +45266,6 @@ This is the state of the repository when I decided to migrate to flakes. At this
 - mealie
 - copyparty?
 - look into selfhosted cospend (spliit module?) to deprecate nextcloud
-- federate forgejo
 - fix hotel configuration and add an example secret
 - fix router bridge interfaces after kitchen construction
 - automatic client cache auth
