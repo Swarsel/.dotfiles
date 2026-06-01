@@ -1,61 +1,68 @@
-{ self, config, inputs, pkgs, lib, ... }:
-let
-  primaryUser = config.swarselsystems.mainUser;
-  modulesPath = "${self}/modules";
-  sharedOptions = {
-    isBtrfs = true;
-  };
-in
+{ lib, minimal, ... }: # adapt as needed
 {
 
   imports = [
-    # ---- nixos-hardware here ----
+    #   inputs.nixos-hardware.nixosModules.<your-hardware>
 
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${modulesPath}/nixos/optional/virtualbox.nix"
-    # "${modulesPath}/nixos/optional/vmware.nix"
-    "${modulesPath}/nixos/optional/autologin.nix"
-    "${modulesPath}/nixos/optional/nswitch-rcm.nix"
-    "${modulesPath}/nixos/optional/gaming.nix"
+    # ---- SERVER-ONLY ----
+    # "${self}/modules/nixos/optional/systemd-networkd-server.nix"      # cloud / single-NIC
+    # "${self}/modules/nixos/optional/systemd-networkd-server-home.nix" # home server with VLANs
+    # "${self}/modules/nixos/optional/nix-topology-self.nix"
 
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users."${primaryUser}".imports = [
-        "${modulesPath}/home/optional/gaming.nix"
-      ];
-    }
+  ] ++ lib.optionals (!minimal) [
+    # "${self}/profiles/nixos/personal"
+    # "${self}/profiles/nixos/localserver"
   ];
 
-  boot = {
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+  # ---- CLIENT-ONLY ----
+  # topology.self.interfaces = {
+  #   eth1.network = lib.mkForce "home";
+  #   wifi = { };
+  # };
+
+  # ---- SERVER-ONLY ----
+  # topology.self = {
+  #   icon = "devices.cloud-server";
+  #   interfaces.lan = { };
+  # };
+
+  swarselsystems = {
+    info = "TEMPLATE";
+    rootDisk = "TEMPLATE"; # /dev/disk/by-id/[...]
+    isNixos = true;
+    isLinux = true;
+    isBtrfs = true;
+    isImpermanence = true;
+    isSecureBoot = true;
+    isCrypted = true;
+    isSwap = true;
+    swapSize = "16G";
+
+    # ---- CLIENT-ONLY ----
+    # isLaptop = true;
+    # hasBluetooth = true;
+    # hasFingerprint = true;
+    # wallpaper = self + <path>;
+    # lowResolution = "<resolution for sharing the screen>";
+    # highResolution = "<standard resolution>";
+    # sharescreen = "<output>";
+
+    # ---- SERVER-ONLY ----
+    # flakePath = "/root/.dotfiles";
+    # isCloud = true;
+    # proxyHost = "twothreetunnel";
+    # nodeRoles = [ ];
   };
 
-  networking = {
-    hostName = "TEMPLATE";
-    firewall.enable = true;
-  };
+} // lib.optionalAttrs (!minimal) {
 
-  swarselsystems = lib.recursiveUpdate
-    {
-      wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
-      hasBluetooth = true;
-      hasFingerprint = true;
-      isImpermanence = true;
-      isSecureBoot = true;
-      isCrypted = true;
-      isSwap = true;
-      swapSize = "32G";
-      rootDisk = "TEMPLATE";
-    }
-    sharedOptions;
+  # ---- PICK ----:
+  #   client:               [ "wlan*" "enp*" ]
+  #   common server:        [ "lan" ]
+  #   hetzner:              [ "wan" ]
+  # networking.nftables.firewall.zones.untrusted.interfaces = [ ];
 
-  home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
-    {
-      isLaptop = true;
-      isNixos = true;
-      cpuCount = 16;
-    }
-    sharedOptions;
 }

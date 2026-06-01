@@ -3601,74 +3601,79 @@ Every host is housed in the =hosts/= directory, which is then subdivided by each
 
 This is the template that I use for new deployments of personal machines. Servers are usually highly tailored to their specific task and I do not consider it worth a time to craft a template for that. Also, at least at the current time, I only provide a template for NixOS hosts, as I rarely ever use anything else.
 
-[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: I dont think this template would currently work out of the box
-
 **** Main Configuration
 :PROPERTIES:
 :CUSTOM_ID: h:859aec97-65a2-4633-b7d8-73d4ccf89cc5
 :END:
 
 #+begin_src nix-ts :tangle files/templates/hosts/nixos/default.nix
-  { self, config, inputs, pkgs, lib, ... }:
-  let
-    primaryUser = config.swarselsystems.mainUser;
-    modulesPath = "${self}/modules";
-    sharedOptions = {
-      isBtrfs = true;
-    };
-  in
+  { lib, minimal, ... }: # adapt as needed
   {
 
     imports = [
-      # ---- nixos-hardware here ----
+      #   inputs.nixos-hardware.nixosModules.<your-hardware>
 
       ./hardware-configuration.nix
       ./disk-config.nix
 
-      "${modulesPath}/nixos/optional/virtualbox.nix"
-      # "${modulesPath}/nixos/optional/vmware.nix"
-      "${modulesPath}/nixos/optional/autologin.nix"
-      "${modulesPath}/nixos/optional/nswitch-rcm.nix"
-      "${modulesPath}/nixos/optional/gaming.nix"
+      # ---- SERVER-ONLY ----
+      # "${self}/modules/nixos/optional/systemd-networkd-server.nix"      # cloud / single-NIC
+      # "${self}/modules/nixos/optional/systemd-networkd-server-home.nix" # home server with VLANs
+      # "${self}/modules/nixos/optional/nix-topology-self.nix"
 
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users."${primaryUser}".imports = [
-          "${modulesPath}/home/optional/gaming.nix"
-        ];
-      }
+    ] ++ lib.optionals (!minimal) [
+      # "${self}/profiles/nixos/personal"
+      # "${self}/profiles/nixos/localserver"
     ];
 
-    boot = {
-      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    # ---- CLIENT-ONLY ----
+    # topology.self.interfaces = {
+    #   eth1.network = lib.mkForce "home";
+    #   wifi = { };
+    # };
+
+    # ---- SERVER-ONLY ----
+    # topology.self = {
+    #   icon = "devices.cloud-server";
+    #   interfaces.lan = { };
+    # };
+
+    swarselsystems = {
+      info = "TEMPLATE";
+      rootDisk = "TEMPLATE"; # /dev/disk/by-id/[...]
+      isNixos = true;
+      isLinux = true;
+      isBtrfs = true;
+      isImpermanence = true;
+      isSecureBoot = true;
+      isCrypted = true;
+      isSwap = true;
+      swapSize = "16G";
+
+      # ---- CLIENT-ONLY ----
+      # isLaptop = true;
+      # hasBluetooth = true;
+      # hasFingerprint = true;
+      # wallpaper = self + <path>;
+      # lowResolution = "<resolution for sharing the screen>";
+      # highResolution = "<standard resolution>";
+      # sharescreen = "<output>";
+
+      # ---- SERVER-ONLY ----
+      # flakePath = "/root/.dotfiles";
+      # isCloud = true;
+      # proxyHost = "twothreetunnel";
+      # nodeRoles = [ ];
     };
 
-    networking = {
-      hostName = "TEMPLATE";
-      firewall.enable = true;
-    };
+  } // lib.optionalAttrs (!minimal) {
 
-    swarselsystems = lib.recursiveUpdate
-      {
-        wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
-        hasBluetooth = true;
-        hasFingerprint = true;
-        isImpermanence = true;
-        isSecureBoot = true;
-        isCrypted = true;
-        isSwap = true;
-        swapSize = "32G";
-        rootDisk = "TEMPLATE";
-      }
-      sharedOptions;
+    # ---- PICK ----:
+    #   client:               [ "wlan*" "enp*" ]
+    #   common server:        [ "lan" ]
+    #   hetzner:              [ "wan" ]
+    # networking.nftables.firewall.zones.untrusted.interfaces = [ ];
 
-    home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
-      {
-        isLaptop = true;
-        isNixos = true;
-        cpuCount = 16;
-      }
-      sharedOptions;
   }
 #+end_src
 **** disko
@@ -45258,7 +45263,6 @@ This is the state of the repository when I decided to migrate to flakes. At this
 - mealie
 - copyparty?
 - look into selfhosted cospend (spliit module?) to deprecate nextcloud
-- clean up the system template
 - federate forgejo
 - fix hotel configuration and add an example secret
 - fix router bridge interfaces after kitchen construction
