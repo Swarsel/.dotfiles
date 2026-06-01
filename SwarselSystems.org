@@ -17680,7 +17680,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
         dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort;path = "/ready"; expectedBodyRegex = ''OK''; };
+        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ready"; expectedBodyRegex = ''OK''; };
       };
 
       services = {
@@ -18444,7 +18444,7 @@ Self-hosted link shortener.
   { self, lib, config, confLib, ... }:
   let
     inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-    inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules scannerDropRules;
 
     containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
@@ -18528,14 +18528,14 @@ Self-hosted link shortener.
       globals = {
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort;path = "/rest/health"; expectedBodyRegex = ''"status":"pass"''; };
+        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/rest/health"; expectedBodyRegex = ''"status":"pass"''; };
         dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
 
       nodes = {
-        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; extraConfig = scannerDropRules; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = scannerDropRules + nginxAccessRules; serviceAddress = homeServiceAddress; });
       };
 
     };
@@ -18558,7 +18558,7 @@ Deployment notes:
   { self, lib, config, globals, confLib, ... }:
   let
     inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-    inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+    inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules scannerDropRules;
 
     containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
   in
@@ -18619,7 +18619,8 @@ Deployment notes:
       globals = {
         networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-        # dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/health"; expectedBodyRegex = "OK"; hostHeader = serviceDomain; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
       };
 
       nodes =
@@ -18659,8 +18660,8 @@ Deployment notes:
         in
         {
           ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-          ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+          ${webProxy}.services.nginx = genNginx serviceAddress scannerDropRules;
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress (scannerDropRules + nginxAccessRules));
         };
 
     };
@@ -19736,11 +19737,11 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
 
       topology.self.services = lib.listToAttrs (map
         (service:
-        lib.nameValuePair "${service}" {
-          name = lib.swarselsystems.toCapitalized service;
-          info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
-          icon = "${self}/files/topology-images/${service}.png";
-        }
+          lib.nameValuePair "${service}" {
+            name = lib.swarselsystems.toCapitalized service;
+            info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
+            icon = "${self}/files/topology-images/${service}.png";
+          }
         )
         [ "postfix" "dovecot" "rspamd" "clamav" "roundcube" ]);
 
@@ -31544,6 +31545,16 @@ In short, the options defined here are passed to the modules systems using =_mod
               allow ${wgHomeNet.cidrv6};
               deny all;
             '';
+          scannerDropRules = ''
+            location ~* "\.(php|aspx?|env|jsp|cgi|bak|sql|old)(\?|$|/)" {
+              access_log off;
+              return 444;
+            }
+            location ~* "(^|/)(\.git/|\.env|\.DS_Store|wp-admin|wp-login|wp-content|wp-includes|xmlrpc\.php|phpmy?admin|cgi-bin)" {
+              access_log off;
+              return 444;
+            }
+          '';
           wgProxyMembers = lib.optionals (globals.wireguard ? wgProxy) (globals.wireguard.wgProxy.clients ++ [ globals.wireguard.wgProxy.server ]);
           wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]);
           inWgProxy = builtins.elem config.node.name wgProxyMembers;

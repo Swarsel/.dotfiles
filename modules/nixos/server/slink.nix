@@ -1,7 +1,7 @@
 { self, lib, config, globals, confLib, ... }:
 let
   inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-  inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+  inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules scannerDropRules;
 
   containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
 in
@@ -62,7 +62,8 @@ in
     globals = {
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
       services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-      # dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+      monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/health"; expectedBodyRegex = "OK"; hostHeader = serviceDomain; };
+      dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
 
     nodes =
@@ -102,8 +103,8 @@ in
       in
       {
         ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-        ${webProxy}.services.nginx = genNginx serviceAddress "";
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+        ${webProxy}.services.nginx = genNginx serviceAddress scannerDropRules;
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress (scannerDropRules + nginxAccessRules));
       };
 
   };

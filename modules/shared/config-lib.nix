@@ -60,6 +60,16 @@ in
             allow ${wgHomeNet.cidrv6};
             deny all;
           '';
+        scannerDropRules = ''
+          location ~* "\.(php|aspx?|env|jsp|cgi|bak|sql|old)(\?|$|/)" {
+            access_log off;
+            return 444;
+          }
+          location ~* "(^|/)(\.git/|\.env|\.DS_Store|wp-admin|wp-login|wp-content|wp-includes|xmlrpc\.php|phpmy?admin|cgi-bin)" {
+            access_log off;
+            return 444;
+          }
+        '';
         wgProxyMembers = lib.optionals (globals.wireguard ? wgProxy) (globals.wireguard.wgProxy.clients ++ [ globals.wireguard.wgProxy.server ]);
         wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]);
         inWgProxy = builtins.elem config.node.name wgProxyMembers;
