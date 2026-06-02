@@ -100,6 +100,7 @@
     // confLib.mkMicrovm "kavita" { withZfs = true; eternorPaths = [ "Books" ]; }
     // confLib.mkMicrovm "koillection" { withZfs = true; }
     // confLib.mkMicrovm "matrix" { withZfs = true; }
+    // confLib.mkMicrovm "mealie" { withZfs = true; }
     // confLib.mkMicrovm "monitoring" { withZfs = true; }
     // confLib.mkMicrovm "nextcloud" { withZfs = true; }
     // confLib.mkMicrovm "paperless" { withZfs = true; eternorPaths = [ "Documents" ]; }

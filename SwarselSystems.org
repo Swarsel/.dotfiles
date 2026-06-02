@@ -257,6 +257,22 @@ It is also possible to pass it as a function:
       Using the mechanisms in [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]] (which in turn uses [[#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e][extra-builtins]] and [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]]), these files are decrypted during evaluation time and stored under a persistent directory. As the name suggests, I am using these files to store personally identifiable information - these "secrets" are stored world-readable in the nix store. As such, this should not be used to store important secrets, but rather information that you would not like everyone on the internet to easily find in your git repo.
 
       Other than that, the =secrets= folder will also be used to store conventional (decryted at activation-time) sops-encrypted secrets in the standard =.yaml= / =.toml= / =.ini= formats.
+      - a host might have a =guests/= subdirectory. That is telling of that host acting as a microvm hypervisor. Each microvm has it's own secret directory under the =secrets/= directory of the root host directory. Here is a rough outline on how to add a new microvm to a host:
+        1) update =secrets/repo/globals.nix.enc=, adding interface information to the new host (virtual MAC address as well as WireGuard interfaces mostly)
+        2) add a new entry under =guests= in the hypervisors main configuration
+        3) add a guest =default.nix= in =guests/<guestName>=
+        4) Add an entry to  =tofu/sops/terraform.tfvars=, using =placeholder= as the age key; add it to the main guests and to the hypervisor guests. Also, If the guest makes use of e.g. kanidm or is in a wireguard connection, add those as well to =tofu/sops/terraform.tfvars=
+        5) apply the tofu config
+        6) create the secrets.yaml file at =secrets/<guestName>=, using any secret just so that the file is created
+        6) Now rebuild once so that the host gets created and its ssh hostkey deployed
+        7) Add the age key to =tofu/sops/terraform.tfvars=
+        8) apply the tofu config
+        9) =just updatekeys=
+        9) update the guests' =secrets.yaml= with the wireguard private key
+        10) update secrets in =secrets/wireguard= / =secrets/kanidm= / whatever needed
+        11) add microvm name to peers of wgHome / wgProxy in the respective main host config
+        12) add WireGuard public key to =secrets/public/wg=
+        13) rebuild the hypervisor
 
   - =modules=
     This folder holds the most part of the actual system configuration done in this repository. At some point I thought it was cool to have my whole configuration exposed under the flakes =nixosModules=, which is indeed achieved (its usefulness is however debatable). In any way, this folder splits up as:
@@ -372,14 +388,14 @@ This is a comprehensive list of the services/components ran by my server machine
   |------------------------------|----------------------------------------------------------------------------------------------------------------|
   |📖 **Books**                | [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                       |
   |📼 **Videos**               | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                   |
-  |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                                                              |
+  |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                             |
   |🗨️ **Messaging**            | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                       |
-  |📁 **Filesharing**          | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix) and  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/copyparty.nix)                 |
+  |📁 **Filesharing**          | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix) +  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/copyparty.nix) +  [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
   |🎞️ **Photos**               | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                       |
   |📄 **Documents**            | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                 |
   |🔄 **File Sync**            | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                 |
   |💾 **Backups**              | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                       |
-  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/alloy.nix) [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/gotify.nix) |
+  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/alloy.nix) [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/gotify.nix)                       |
   |🍴 **RSS**                  | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                   |
   |🌳 **Git**                  | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                     |
   |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)                      |
@@ -388,14 +404,13 @@ This is a comprehensive list of the services/components ran by my server machine
   |🃏 **Collections**          | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)             |
   |🗃️ **Shell History**        | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                         |
   |📅 **CalDav/CardDav**       | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/radicale.nix)                   |
-  |↔️ **P2P Filesharing**      | [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
   |✂️ **Paste Tool**           | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                   |
   |📸 **Image Sharing**        | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/slink.nix)                         |
   |🔗 **Link Shortener**       | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                       |
   |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/minecraft.nix)                 |
   |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/garage.nix)                       |
   |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/attic.nix)                         |
-  |🐙 **Nix Build farm**       | previously [<del>Hydra</del>](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix), now using  [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/buildbot.nix)                   |
+  |🐙 **Nix Build farm**       | [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/buildbot.nix)                   |
   |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
   |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
   |👀 **DNS Records**          | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |
@@ -404,8 +419,9 @@ This is a comprehensive list of the services/components ran by my server machine
   |🛡️ **Local DNS Resolver**   | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/adguardhome.nix)                     |
   |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
   |🔎 **Search Engine**        | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                       |
-  |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious-companion.nix)        |
+  |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious-companion.nix)                     |
   |🐽 **Threat Detection**     | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/crowdsec.nix)                   |
+  |🍽️ **Recipes**              | [Mealie](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mealie.nix)                       |
 #+end_src
 
 * An introduction to nix
@@ -4566,6 +4582,7 @@ This is my current main server at home; all services except filesystem backups r
       // confLib.mkMicrovm "kavita" { withZfs = true; eternorPaths = [ "Books" ]; }
       // confLib.mkMicrovm "koillection" { withZfs = true; }
       // confLib.mkMicrovm "matrix" { withZfs = true; }
+      // confLib.mkMicrovm "mealie" { withZfs = true; }
       // confLib.mkMicrovm "monitoring" { withZfs = true; }
       // confLib.mkMicrovm "nextcloud" { withZfs = true; }
       // confLib.mkMicrovm "paperless" { withZfs = true; eternorPaths = [ "Documents" ]; }
@@ -5338,6 +5355,32 @@ This is my current main server at home; all services except filesystem backups r
   }
 #+end_src
 
+****** Mealie
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/mealie/default.nix
+  { self, lib, minimal, ... }:
+  {
+    imports = [
+      "${self}/profiles/nixos/microvm"
+      "${self}/modules/nixos/server/mealie.nix"
+    ];
+
+    swarselsystems = {
+      isMicroVM = true;
+      isImpermanence = true;
+      proxyHost = "twothreetunnel";
+    };
+
+  } // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 1;
+      vcpu = 1;
+    };
+
+  }
+#+end_src
+
 **** Hintbooth (Router: HUNSN RM02)
 :PROPERTIES:
 :CUSTOM_ID: h:58c7563e-6954-42e6-a622-9d06523e8e24
@@ -5396,6 +5439,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
           "summers-kavita"
           "summers-koillection"
           "summers-matrix"
+          "summers-mealie"
           "summers-monitoring"
           "summers-nextcloud"
           "summers-paperless"
@@ -6786,6 +6830,7 @@ This host acts as my main http proxy for external access.
           "summers-kavita"
           "summers-koillection"
           "summers-matrix"
+          "summers-mealie"
           "summers-monitoring"
           "summers-nextcloud"
           "summers-paperless"
@@ -19497,7 +19542,7 @@ This is the setup of my authoritative dns server. This here is the general confi
 
 These are the specific records in use for my main domain.
 
-IMPORTANT: In order for any changes here to take effect, the =serial= MUST be updated to a greater number. The format that should be followed it =<YEAR><MONTH><DAY><ITERATION>=, which allows for 99 iterations on a single day.
+IMPORTANT: In order for any changes here to take effect, the =serial= MUST be updated to a greater number. The format that should be followed it =<YEAR:4><MONTH:2><DAY:2><ITERATION:2>=, which allows for 99 iterations on a single day.
 
 The options for A/AAAA records themselves should usually be defined in the respective service modules, using =globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords=. The NSD host will then merge these and create the corresponding records.
 
@@ -19507,7 +19552,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2026060201; # update this on changes for secondary dns
+      serial = 2026060202; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -22310,6 +22355,84 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           });
         };
 
+    };
+  }
+#+end_src
+
+**** Mealie
+
+
+#+begin_src nix-ts :tangle modules/nixos/server/mealie.nix
+  { self, lib, config, globals, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "mealie"; port = 9000; }) servicePort serviceName serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+    inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+
+    kanidmDomain = globals.services.kanidm.domain;
+    kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
+  in
+  {
+    config = {
+      swarselsystems.enabledServerModules = [ serviceName ];
+
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "services.not-available";
+      };
+
+      sops = {
+        secrets.kanidm-mealie = { sopsFile = kanidmSopsFile; mode = "0400"; };
+        templates.mealie-oidc-env.content = ''
+          OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-mealie}
+        '';
+      };
+
+      globals = {
+        networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/app/about"; expectedBodyRegex = ''"production":\s*true''; };
+        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+      };
+
+      environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+        directories = [{ directory = "/var/lib/private/${serviceName}"; mode = "0700"; }];
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        credentialsFile = config.sops.templates.mealie-oidc-env.path;
+        settings = {
+          ALLOW_SIGNUP = "false";
+          BASE_URL = "https://${serviceDomain}";
+          TZ = config.repo.secrets.common.location.timezone;
+
+          OIDC_AUTH_ENABLED = "true";
+          OIDC_PROVIDER_NAME = "Kanidm";
+          OIDC_CONFIGURATION_URL = "https://${kanidmDomain}/oauth2/openid/${serviceName}/.well-known/openid-configuration";
+          OIDC_CLIENT_ID = serviceName;
+          OIDC_USER_GROUP = "${serviceName}.access@${kanidmDomain}";
+          OIDC_ADMIN_GROUP = "${serviceName}.admins@${kanidmDomain}";
+          OIDC_AUTO_REDIRECT = "true";
+          OIDC_SIGNUP_ENABLED = "true";
+          OIDC_GROUPS_CLAIM = "groups";
+        };
+      };
+
+      nodes = {
+        ${idmServer} = lib.recursiveUpdate
+          (confLib.mkKanidmOidcSystem {
+            inherit serviceName serviceDomain kanidmSopsFile;
+            originUrl = "https://${serviceDomain}/login";
+            extraGroups = [ "${serviceName}.admins" ];
+          })
+          {
+            services.kanidm.provision.systems.oauth2.${serviceName}.scopeMaps."${serviceName}.access" =
+              lib.mkForce [ "openid" "email" "profile" "groups" ];
+          };
+        ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
+        ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+      };
     };
   }
 #+end_src
@@ -34941,12 +35064,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 
 * Emacs
 :PROPERTIES:
-:CUSTOM_ID: h:912fb037-d07d-480f-b898-527be9b89a42
-:END:
-
-:PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
 :END:
+
 ** Initialization (early-init.el)
 :PROPERTIES:
 :CUSTOM_ID: h:2c331451-45ed-4592-9e00-d36b5bf31248
@@ -45483,7 +45603,6 @@ This is the state of the repository when I decided to migrate to flakes. At this
 :END:
 
 - implement simple dendritic structure for clients
-- mealie
 - split off invidious-companion into own vm(?)
 - look into selfhosted cospend (spliit module?) to deprecate nextcloud
 - fix hotel configuration and add an example secret

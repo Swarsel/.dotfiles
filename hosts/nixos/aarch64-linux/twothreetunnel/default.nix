@@ -42,6 +42,7 @@
         "summers-kavita"
         "summers-koillection"
         "summers-matrix"
+        "summers-mealie"
         "summers-monitoring"
         "summers-nextcloud"
         "summers-paperless"

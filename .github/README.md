@@ -133,14 +133,14 @@
   |------------------------------|----------------------------------------------------------------------------------------------------------------|
   |📖 **Books**                | [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                       |
   |📼 **Videos**               | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                   |
-  |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                                                              |
+  |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                             |
   |🗨️ **Messaging**            | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                       |
-  |📁 **Filesharing**          | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix) and  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/copyparty.nix)                 |
+  |📁 **Filesharing**          | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix) +  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/copyparty.nix) +  [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
   |🎞️ **Photos**               | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                       |
   |📄 **Documents**            | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                 |
   |🔄 **File Sync**            | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                 |
   |💾 **Backups**              | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                       |
-  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/alloy.nix) [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/gotify.nix) |
+  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/alloy.nix) [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/gotify.nix)                       |
   |🍴 **RSS**                  | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                   |
   |🌳 **Git**                  | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                     |
   |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)                      |
@@ -149,14 +149,13 @@
   |🃏 **Collections**          | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)             |
   |🗃️ **Shell History**        | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                         |
   |📅 **CalDav/CardDav**       | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/radicale.nix)                   |
-  |↔️ **P2P Filesharing**      | [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
   |✂️ **Paste Tool**           | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                   |
   |📸 **Image Sharing**        | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/slink.nix)                         |
   |🔗 **Link Shortener**       | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                       |
   |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/minecraft.nix)                 |
   |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/garage.nix)                       |
   |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/attic.nix)                         |
-  |🐙 **Nix Build farm**       | previously [<del>Hydra</del>](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix), now using  [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/buildbot.nix)                   |
+  |🐙 **Nix Build farm**       | [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/buildbot.nix)                   |
   |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
   |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
   |👀 **DNS Records**          | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |
@@ -165,8 +164,9 @@
   |🛡️ **Local DNS Resolver**   | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/adguardhome.nix)                     |
   |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
   |🔎 **Search Engine**        | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                       |
-  |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious-companion.nix)        |
+  |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious-companion.nix)                     |
   |🐽 **Threat Detection**     | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/crowdsec.nix)                   |
+  |🍽️ **Recipes**              | [Mealie](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mealie.nix)                       |
 
   ### Hosts
 
