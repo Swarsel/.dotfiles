@@ -34,6 +34,7 @@ in
         environmentFile = "${config.sops.templates."certs.secret".path}";
         reloadServices = [ "nginx" ];
         dnsPropagationCheck = true;
+        keyType = "ec384";
       };
       certs."${globals.domains.main}" = {
         domain = "*.${globals.domains.main}";
