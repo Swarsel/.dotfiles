@@ -34,6 +34,14 @@ in
         "${serviceDir}/var/data:/app/var/data"
         "${serviceDir}/images:/app/slink/images"
       ];
+      extraOptions = [
+        "--health-cmd=wget -O - -q http://127.0.0.1:${builtins.toString servicePort}/api/health | grep -q OK"
+        "--health-interval=30s"
+        "--health-retries=3"
+        "--health-timeout=10s"
+        "--health-start-period=60s"
+        "--health-on-failure=kill"
+      ];
     };
 
     systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
