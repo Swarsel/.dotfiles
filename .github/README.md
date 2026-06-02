@@ -166,7 +166,7 @@
   |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
   |🔎 **Search Engine**        | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                       |
   |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious-companion.nix)        |
-  |📺 **Threat Detection**     | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/crowdsec.nix)                   |
+  |🐽 **Threat Detection**     | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/crowdsec.nix)                   |
 
   ### Hosts
 

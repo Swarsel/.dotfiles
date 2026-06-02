@@ -8,6 +8,7 @@ let
   trustedWanAddresses = lib.filter (a: a != null) (lib.concatMap
     (h: [ (h.wanAddress4 or null) (h.wanAddress6 or null) ])
     (lib.attrValues globals.hosts));
+  atticDomain = globals.services.attic.domain or null;
 in
 {
   options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
@@ -85,7 +86,16 @@ in
               ];
             };
           }
-        ];
+        ] ++ lib.optional (atticDomain != null) {
+          name = "swarsel/attic-cache";
+          description = "Don't count cache lookups as probes";
+          whitelist = {
+            reason = "These are most likey failed Attic lookups";
+            expression = [
+              "evt.Meta.service == 'http' && evt.Parsed.target_fqdn == '${atticDomain}'"
+            ];
+          };
+        };
 
         postOverflows.s01Whitelist = [
           {

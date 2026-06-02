@@ -405,7 +405,7 @@ This is a comprehensive list of the services/components ran by my server machine
   |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kea.nix)                             |
   |🔎 **Search Engine**        | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/searx.nix)                       |
   |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/invidious-companion.nix)        |
-  |📺 **Threat Detection**     | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/crowdsec.nix)                   |
+  |🐽 **Threat Detection**     | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/crowdsec.nix)                   |
 #+end_src
 
 * An introduction to nix
@@ -22006,6 +22006,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
     trustedWanAddresses = lib.filter (a: a != null) (lib.concatMap
       (h: [ (h.wanAddress4 or null) (h.wanAddress6 or null) ])
       (lib.attrValues globals.hosts));
+    atticDomain = globals.services.attic.domain or null;
   in
   {
     options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
@@ -22083,7 +22084,16 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                 ];
               };
             }
-          ];
+          ] ++ lib.optional (atticDomain != null) {
+            name = "swarsel/attic-cache";
+            description = "Don't count cache lookups as probes";
+            whitelist = {
+              reason = "These are most likey failed Attic lookups";
+              expression = [
+                "evt.Meta.service == 'http' && evt.Parsed.target_fqdn == '${atticDomain}'"
+              ];
+            };
+          };
 
           postOverflows.s01Whitelist = [
             {
