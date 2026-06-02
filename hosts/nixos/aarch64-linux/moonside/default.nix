@@ -22,6 +22,7 @@ in
     "${self}/modules/nixos/server/searx.nix"
     "${self}/modules/nixos/server/invidious.nix"
     "${self}/modules/nixos/server/firefox-syncserver.nix"
+    "${self}/modules/nixos/server/copyparty.nix"
   ];
 
   system.stateVersion = "23.11";

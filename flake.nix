@@ -90,6 +90,10 @@
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     niritiling.url = "github:Swarsel/niritiling/feat/resize";
     noctoggle.url = "github:Swarsel/noctoggle";
+    copyparty = {
+      url = "github:9001/copyparty/hovudstraum";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
   };
 
