@@ -9,7 +9,6 @@ keys:
     - &eagleland age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8
     - &hintbooth age1wmx8y2hs83j2u5srdnfxljrzxm8jtxl6fr0mq7xf2ldxyglpzf2qq89rpx
     - &liliputsteps age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx
-    - &machpizza placeholder
     - &moonside age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh
     - &pyramid age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m
     - &stoicclub age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm
@@ -32,6 +31,7 @@ keys:
     - &summers-kavita age1d89878cvt7wsa07ydwtexspku5gppwstrpnpph4ufx5pcd4fadyqgf6lvl
     - &summers-koillection age1ayupuxlrkepyvjk7xwgrd0pvcj3tfcha688mcuc8ees2hg3g2ersd0q3nc
     - &summers-matrix age1cq7wxnugpfvjk6dgqpfmc8vemzhkg75drkgeaqjd9fuylz5qh40slazr4u
+    - &summers-mealie age1pxgecpe9fpsecdhjhv3cyct8z68t74kwl7qav0menlql9q5ev3wq8ffnda
     - &summers-monitoring age1vn6ya0japzpgc256jg57fldsqe4udmq50sj5hmkywn7rxfnskevsx2q96u
     - &summers-nextcloud age1t7zagjfddns4yltupk7nx8xps4gh7mupyz85uuys0wd22cxj5qsq2hw0p7
     - &summers-paperless age1rn0pxluh7m8dyeshek06d7scejqlrcewlk8xmyrwt5e5nev2dc2s3s78vq
@@ -74,6 +74,7 @@ creation_rules:
       - *summers-kavita
       - *summers-koillection
       - *summers-matrix
+      - *summers-mealie
       - *summers-monitoring
       - *summers-nextcloud
       - *summers-paperless
@@ -114,6 +115,7 @@ creation_rules:
       - *summers-kavita
       - *summers-koillection
       - *summers-matrix
+      - *summers-mealie
       - *summers-monitoring
       - *summers-nextcloud
       - *summers-paperless
@@ -192,6 +194,13 @@ creation_rules:
       age:
       - *summers-kanidm
       - *summers-matrix
+  - path_regex: secrets/kanidm/summers-mealie.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers-kanidm
+      - *summers-mealie
   - path_regex: secrets/kanidm/summers-monitoring.yaml
     key_groups:
     - pgp:
@@ -598,6 +607,21 @@ creation_rules:
       - *summers
       - *summers-matrix
       - *buildbot
+  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/mealie/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers
+      - *summers-mealie
+  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/mealie/[^/]+\.enc$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers
+      - *summers-mealie
+      - *buildbot
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/monitoring/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -806,6 +830,14 @@ creation_rules:
       - *hintbooth
       - *summers-matrix
       - *summers
+  - path_regex: secrets/wireguard/hintbooth-summers-mealie.yaml$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *hintbooth
+      - *summers-mealie
+      - *summers
   - path_regex: secrets/wireguard/hintbooth-summers-monitoring.yaml$
     key_groups:
     - pgp:
@@ -1008,6 +1040,14 @@ creation_rules:
       age:
       - *twothreetunnel
       - *summers-matrix
+      - *summers
+  - path_regex: secrets/wireguard/twothreetunnel-summers-mealie.yaml$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *twothreetunnel
+      - *summers-mealie
       - *summers
   - path_regex: secrets/wireguard/twothreetunnel-summers-monitoring.yaml$
     key_groups:

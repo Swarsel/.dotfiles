@@ -35,6 +35,7 @@ guests = {
   summers-kavita        = "age1d89878cvt7wsa07ydwtexspku5gppwstrpnpph4ufx5pcd4fadyqgf6lvl"
   summers-koillection   = "age1ayupuxlrkepyvjk7xwgrd0pvcj3tfcha688mcuc8ees2hg3g2ersd0q3nc"
   summers-matrix        = "age1cq7wxnugpfvjk6dgqpfmc8vemzhkg75drkgeaqjd9fuylz5qh40slazr4u"
+  summers-mealie        = "age1pxgecpe9fpsecdhjhv3cyct8z68t74kwl7qav0menlql9q5ev3wq8ffnda"
   summers-monitoring    = "age1vn6ya0japzpgc256jg57fldsqe4udmq50sj5hmkywn7rxfnskevsx2q96u"
   summers-nextcloud     = "age1t7zagjfddns4yltupk7nx8xps4gh7mupyz85uuys0wd22cxj5qsq2hw0p7"
   summers-paperless     = "age1rn0pxluh7m8dyeshek06d7scejqlrcewlk8xmyrwt5e5nev2dc2s3s78vq"
@@ -51,6 +52,7 @@ kanidm_clients = [
   "summers-jellyfin",
   "summers-kavita",
   "summers-matrix",
+  "summers-mealie",
   "summers-monitoring",
   "summers-nextcloud",
   "summers-paperless",
@@ -110,6 +112,7 @@ host_configs = {
       "kavita",
       "koillection",
       "matrix",
+      "mealie",
       "monitoring",
       "nextcloud",
       "paperless",
@@ -175,6 +178,7 @@ wireguard_networks = {
       "summers-kavita",
       "summers-koillection",
       "summers-matrix",
+      "summers-mealie",
       "summers-monitoring",
       "summers-nextcloud",
       "summers-paperless",
@@ -206,6 +210,7 @@ wireguard_networks = {
       "summers-kavita",
       "summers-koillection",
       "summers-matrix",
+      "summers-mealie",
       "summers-monitoring",
       "summers-nextcloud",
       "summers-paperless",

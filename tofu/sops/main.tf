@@ -1,4 +1,19 @@
 locals {
+  placeholder_value = "placeholder"
+
+  placeholder_names = toset(concat(
+    [for name, key in var.hosts : name if key == local.placeholder_value],
+    [for name, key in var.guests : name if key == local.placeholder_value],
+  ))
+
+  hosts_with_keys = {
+    for name, key in var.hosts : name => key if key != local.placeholder_value
+  }
+
+  guests_with_keys = {
+    for name, key in var.guests : name => key if key != local.placeholder_value
+  }
+
   repo_excluded = toset([
     for name, cfg in var.host_configs : coalesce(cfg.age_key_name, name)
     if !cfg.repo_access || !cfg.has_age_key
@@ -81,7 +96,7 @@ locals {
     ]
   ])
 
-  all_rules = concat(
+  all_rules_raw = concat(
     local.repo_rules,
     local.extra_rules,
     local.kanidm_rules,
@@ -89,4 +104,11 @@ locals {
     local.guest_rules,
     local.wireguard_rules,
     )
+
+  all_rules = [
+    for rule in local.all_rules_raw : {
+      path_regex = rule.path_regex
+      age_names  = [for n in rule.age_names : n if !contains(local.placeholder_names, n)]
+    }
+  ]
 }

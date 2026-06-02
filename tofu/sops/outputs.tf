@@ -4,8 +4,8 @@ resource "local_file" "sops_yaml" {
   content  = templatefile("${path.module}/templates/sops.yaml.tftpl", {
     pgp_key          = var.pgp_key
     buildbot_age_key = var.buildbot_age_key
-    hosts            = var.hosts
-    guests           = var.guests
+    hosts            = local.hosts_with_keys
+    guests           = local.guests_with_keys
     rules            = local.all_rules
   })
 }

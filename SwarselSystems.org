@@ -38601,6 +38601,21 @@ I have 5 main blocks of rules in my =.sops.yaml=:
 
 #+begin_src terraform :tangle tofu/sops/main.tf
   locals {
+    placeholder_value = "placeholder"
+
+    placeholder_names = toset(concat(
+      [for name, key in var.hosts : name if key == local.placeholder_value],
+      [for name, key in var.guests : name if key == local.placeholder_value],
+    ))
+
+    hosts_with_keys = {
+      for name, key in var.hosts : name => key if key != local.placeholder_value
+    }
+
+    guests_with_keys = {
+      for name, key in var.guests : name => key if key != local.placeholder_value
+    }
+
     repo_excluded = toset([
       for name, cfg in var.host_configs : coalesce(cfg.age_key_name, name)
       if !cfg.repo_access || !cfg.has_age_key
@@ -38683,7 +38698,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       ]
     ])
 
-    all_rules = concat(
+    all_rules_raw = concat(
       local.repo_rules,
       local.extra_rules,
       local.kanidm_rules,
@@ -38691,6 +38706,13 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       local.guest_rules,
       local.wireguard_rules,
       )
+
+    all_rules = [
+      for rule in local.all_rules_raw : {
+        path_regex = rule.path_regex
+        age_names  = [for n in rule.age_names : n if !contains(local.placeholder_names, n)]
+      }
+    ]
   }
 #+end_src
 
@@ -38805,6 +38827,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     summers-kavita        = "age1d89878cvt7wsa07ydwtexspku5gppwstrpnpph4ufx5pcd4fadyqgf6lvl"
     summers-koillection   = "age1ayupuxlrkepyvjk7xwgrd0pvcj3tfcha688mcuc8ees2hg3g2ersd0q3nc"
     summers-matrix        = "age1cq7wxnugpfvjk6dgqpfmc8vemzhkg75drkgeaqjd9fuylz5qh40slazr4u"
+    summers-mealie        = "age1pxgecpe9fpsecdhjhv3cyct8z68t74kwl7qav0menlql9q5ev3wq8ffnda"
     summers-monitoring    = "age1vn6ya0japzpgc256jg57fldsqe4udmq50sj5hmkywn7rxfnskevsx2q96u"
     summers-nextcloud     = "age1t7zagjfddns4yltupk7nx8xps4gh7mupyz85uuys0wd22cxj5qsq2hw0p7"
     summers-paperless     = "age1rn0pxluh7m8dyeshek06d7scejqlrcewlk8xmyrwt5e5nev2dc2s3s78vq"
@@ -38821,6 +38844,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     "summers-jellyfin",
     "summers-kavita",
     "summers-matrix",
+    "summers-mealie",
     "summers-monitoring",
     "summers-nextcloud",
     "summers-paperless",
@@ -38880,6 +38904,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
         "kavita",
         "koillection",
         "matrix",
+        "mealie",
         "monitoring",
         "nextcloud",
         "paperless",
@@ -38945,6 +38970,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
         "summers-kavita",
         "summers-koillection",
         "summers-matrix",
+        "summers-mealie",
         "summers-monitoring",
         "summers-nextcloud",
         "summers-paperless",
@@ -38976,6 +39002,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
         "summers-kavita",
         "summers-koillection",
         "summers-matrix",
+        "summers-mealie",
         "summers-monitoring",
         "summers-nextcloud",
         "summers-paperless",
@@ -39035,8 +39062,8 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     content  = templatefile("${path.module}/templates/sops.yaml.tftpl", {
       pgp_key          = var.pgp_key
       buildbot_age_key = var.buildbot_age_key
-      hosts            = var.hosts
-      guests           = var.guests
+      hosts            = local.hosts_with_keys
+      guests           = local.guests_with_keys
       rules            = local.all_rules
     })
   }
