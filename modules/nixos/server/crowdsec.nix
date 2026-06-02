@@ -133,6 +133,8 @@ in
         };
 
         crowdsec-firewall-bouncer.after = lib.mkIf bootstrap [ "crowdsec-firewall-bouncer-register.service" ];
+
+        crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce "+systemctl try-restart crowdsec.service";
       };
     };
 
