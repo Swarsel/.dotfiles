@@ -14917,6 +14917,9 @@ I use this configuration for sailing.
 #+end_src
 
 **** pia-netns
+:PROPERTIES:
+:CUSTOM_ID: h:8918a98f-a15c-40e3-983c-f629c926a8d7
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/pia-netns.nix
   { lib, pkgs, config, ... }:
@@ -15836,6 +15839,9 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 #+end_src
 
 **** gotify
+:PROPERTIES:
+:CUSTOM_ID: h:d7c3b89b-59de-4b8e-a183-3332af42cf12
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/gotify.nix
   { self, lib, config, confLib, ... }:
@@ -15917,6 +15923,9 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 #+end_src
 
 **** pyroscope
+:PROPERTIES:
+:CUSTOM_ID: h:229bed99-631a-404d-b7bf-e946aef92da9
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/pyroscope.nix
   { self, lib, config, globals, confLib, ... }:
@@ -21980,6 +21989,9 @@ Setting it up on android:
 #+end_src
 
 **** CrowdSec
+:PROPERTIES:
+:CUSTOM_ID: h:847e82a9-0777-4459-9314-a124384b70bd
+:END:
 
 The firewall bouncer module seems a bit broken in regards to deploying a new instance; half of this module is just working around these issues. For now, I fix this with the crowdsecBootstrap flag.
 
@@ -30373,6 +30385,9 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 #+end_src
 
 **** Work
+:PROPERTIES:
+:CUSTOM_ID: h:b669d726-852e-41e5-839a-d772467cdbbf
+:END:
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix
   { self, ... }:
@@ -30656,6 +30671,9 @@ When setting up a new machine:
 #+end_src
 
 ***** Work (mail)
+:PROPERTIES:
+:CUSTOM_ID: h:6945fee3-2130-43a0-9103-facca8021170
+:END:
 
 #+begin_src nix-ts :tangle modules/home/optional/work-mail.nix
   { config, pkgs, lib, confLib, ... }:
@@ -30761,6 +30779,9 @@ When setting up a new machine:
 #+end_src
 
 ***** Work (desktop)
+:PROPERTIES:
+:CUSTOM_ID: h:f5ca89a1-f3fc-4617-a289-099610a2d6b3
+:END:
 
 #+begin_src nix-ts :tangle modules/home/optional/work-desktop.nix
   { self, config, pkgs, confLib, ... }:
@@ -34781,6 +34802,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+end_src
 
 * Emacs
+:PROPERTIES:
+:CUSTOM_ID: h:912fb037-d07d-480f-b898-527be9b89a42
+:END:
 
 :PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
@@ -45176,6 +45200,13 @@ Note that the string cannot be preceded by 0 - =lib.toInt "01"= would yield ==> 
 
 In this section I try to add commits whenever they feel like they changed something about this repository (but often also other commits around the same time are important). I wanted to do this for a while already and always was too lazy. I will need to do another run through the history at another point, but for now here are some interesting states:
 
+** [[https://github.com/Swarsel/.dotfiles/tree/8b2fe83][8b2fe83 — feat[server]: modernize nginx/acme setup (2026-06-02)]]
+:PROPERTIES:
+:CUSTOM_ID: h:fba0310f-6dca-4fb8-98da-73628ff14485
+:END:
+
+In this commit I dropped the OCSP stapling and RSA, which also allowed me to drop the DH parameter generation block.
+
 ** [[https://github.com/Swarsel/.dotfiles/tree/9e2cb74][9e2cb74 — fix[server]: move away from full module load system (2026-05-06)]]
 :PROPERTIES:
 :CUSTOM_ID: h:2f0d7193-6b37-4eff-b81f-d19db0a7dfd3
@@ -45289,6 +45320,7 @@ This is the state of the repository when I decided to migrate to flakes. At this
 - implement simple dendritic structure for clients
 - mealie
 - copyparty?
+- split off invidious-companion into own vm(?)
 - look into selfhosted cospend (spliit module?) to deprecate nextcloud
 - fix hotel configuration and add an example secret
 - fix router bridge interfaces after kitchen construction
