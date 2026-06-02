@@ -4,6 +4,7 @@ let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+  inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
 
   certBase = "/etc/ssl";
   certsDir = "${certBase}/certs";
@@ -149,7 +150,7 @@ in
             tls_key = keyPathBase;
             bindaddress = "0.0.0.0:${toString servicePort}";
             # trust_x_forward_for = true;
-            otel_grpc_url = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+            otel_grpc_url = "http://127.0.0.1:${toString otlpGrpcPort}";
           };
         };
         client = {

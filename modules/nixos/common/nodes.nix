@@ -23,8 +23,8 @@ let
       '';
     };
 
-  expandOptions = basePath: optionNames: map (option: basePath ++ [ option ]) optionNames;
   splitPath = path: lib.splitString "." path;
+  expandOptions = basePath: optionNames: map (option: basePath ++ splitPath option) optionNames;
 
   forwardedOptions = [
     (splitPath "boot.kernel.sysctl")
@@ -33,12 +33,16 @@ let
     (splitPath "services.kanidm.provision.systems.oauth2")
     (splitPath "sops.secrets")
     (splitPath "topology.self.services")
-    (splitPath "environment.persistence")
   ]
+  ++ expandOptions [ "environment" ] [ "persistence" "etc" ]
   ++ expandOptions (splitPath "networking.nftables.firewall") [ "zones" "rules" ]
   ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]
   ++ expandOptions (splitPath "services.nginx") [ "upstreams" "virtualHosts" ]
-  ;
+  ++ expandOptions (splitPath "services.grafana") [
+    "settings"
+    "provision.datasources.settings.datasources"
+    "provision.alerting.rules.settings.groups"
+  ];
 
   attrsForEachOption =
     f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;

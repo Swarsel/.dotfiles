@@ -48,84 +48,6 @@ in
       dataDir = serviceDir;
       provision = {
         enable = true;
-        datasources.settings.datasources =
-          let
-            hasMimir = builtins.elem "mimir" config.swarselsystems.enabledServerModules;
-            hasLoki = builtins.elem "loki" config.swarselsystems.enabledServerModules;
-            hasTempo = builtins.elem "tempo" config.swarselsystems.enabledServerModules;
-            hasPyroscope = builtins.elem "pyroscope" config.swarselsystems.enabledServerModules;
-            mimirUrl =
-              if hasMimir
-              then "http://127.0.0.1:${toString globals.services.mimir.extraConfig.port}/prometheus"
-              else "https://${globals.services.mimir.domain}/prometheus";
-            lokiUrl =
-              if hasLoki
-              then "http://127.0.0.1:${toString globals.services.loki.extraConfig.port}"
-              else "https://${globals.services.loki.domain}";
-            tempoUrl =
-              if hasTempo
-              then "http://127.0.0.1:3200"
-              else "https://${globals.services.tempo.domain}";
-            pyroscopeUrl =
-              if hasPyroscope
-              then "http://127.0.0.1:${toString globals.services.pyroscope.extraConfig.port}"
-              else "https://${globals.services.pyroscope.domain}";
-          in
-          lib.optional hasMimir
-            {
-              name = "Mimir";
-              uid = "mimir";
-              type = "prometheus";
-              access = "proxy";
-              url = mimirUrl;
-              isDefault = true;
-              jsonData = {
-                httpMethod = "POST";
-                manageAlerts = true;
-                prometheusType = "Mimir";
-                cacheLevel = "High";
-                incrementalQueryOverlapWindow = "10m";
-              };
-            }
-          ++ lib.optional hasLoki {
-            name = "Loki";
-            uid = "loki";
-            type = "loki";
-            access = "proxy";
-            url = lokiUrl;
-          }
-          ++ lib.optional hasTempo {
-            name = "Tempo";
-            uid = "tempo";
-            type = "tempo";
-            access = "proxy";
-            url = tempoUrl;
-            jsonData = {
-              nodeGraph.enabled = true;
-              search.hide = false;
-            } // lib.optionalAttrs hasLoki {
-              tracesToLogsV2 = {
-                datasourceUid = "loki";
-                filterByTraceID = true;
-                filterBySpanID = false;
-              };
-            } // lib.optionalAttrs hasMimir {
-              serviceMap.datasourceUid = "mimir";
-            } // lib.optionalAttrs hasPyroscope {
-              tracesToProfiles = {
-                datasourceUid = "pyroscope";
-                profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
-                tags = [{ key = "service.name"; value = "service_name"; }];
-              };
-            };
-          }
-          ++ lib.optional hasPyroscope {
-            name = "Pyroscope";
-            uid = "pyroscope";
-            type = "grafana-pyroscope-datasource";
-            access = "proxy";
-            url = pyroscopeUrl;
-          };
 
         dashboards.settings.providers = [{
           name = "default";
@@ -173,87 +95,7 @@ in
             }];
           };
 
-          rules.settings =
-            let
-              mkRule = { uid, title, expr, op ? "lt", threshold ? 1, forDuration ? "5m", severity ? "critical", summary }:
-                {
-                  inherit uid title;
-                  condition = "C";
-                  for = forDuration;
-                  noDataState = "NoData";
-                  execErrState = "Alerting";
-                  data = [
-                    {
-                      refId = "A";
-                      relativeTimeRange = { from = 600; to = 0; };
-                      datasourceUid = "mimir";
-                      model = {
-                        refId = "A";
-                        inherit expr;
-                        range = false;
-                        instant = true;
-                      };
-                    }
-                    {
-                      refId = "C";
-                      datasourceUid = "__expr__";
-                      model = {
-                        refId = "C";
-                        type = "threshold";
-                        expression = "A";
-                        conditions = [{
-                          evaluator = { type = op; params = [ threshold ]; };
-                        }];
-                      };
-                    }
-                  ];
-                  annotations.summary = summary;
-                  labels.severity = severity;
-                };
-            in
-            {
-              apiVersion = 1;
-              groups = [{
-                orgId = 1;
-                name = "core";
-                folder = "Infrastructure";
-                interval = "1m";
-                rules = [
-                  (mkRule {
-                    uid = "host_down";
-                    title = "Host down";
-                    expr = "max by (host) (up) or max by (host) (host_expected * 0)";
-                    summary = "{{ $labels.host }} stopped reporting (no `up` series and `host_expected` fallback fired)";
-                  })
-                  (mkRule {
-                    uid = "http_probe_failed";
-                    title = "HTTP probe failed";
-                    expr = ''min by (name) (probe_success{probe="http"}) or on(name) (probe_expected{probe="http"} * 0)'';
-                    forDuration = "3m";
-                    summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
-                  })
-                  (mkRule {
-                    uid = "disk_filling";
-                    title = "Disk above 80% used";
-                    expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
-                    op = "gt";
-                    threshold = 80;
-                    forDuration = "10m";
-                    severity = "warning";
-                    summary = "{{ $labels.host }}:{{ $labels.mountpoint }} is more than 80% full";
-                  })
-                  (mkRule {
-                    uid = "zfs_pool_unhealthy";
-                    title = "ZFS pool not online";
-                    expr = "max by (host, pool) (zfs_pool_health)";
-                    op = "gt";
-                    threshold = 0;
-                    forDuration = "5m";
-                    summary = "ZFS pool {{ $labels.host }}:{{ $labels.pool }} is not ONLINE";
-                  })
-                ];
-              }];
-            };
+          rules.settings.apiVersion = 1;
         };
       };
 
@@ -287,13 +129,6 @@ in
           from_address = "monitoring@${globals.domains.main}";
           from_name = "Monitoring";
           startTLS_policy = "MandatoryStartTLS";
-        };
-        "tracing.opentelemetry" = {
-          custom_attributes = "service.name:grafana-${config.node.name}";
-        };
-        "tracing.opentelemetry.otlp" = {
-          address = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
-          propagation = "w3c";
         };
         "auth.generic_oauth" = {
           enabled = true;

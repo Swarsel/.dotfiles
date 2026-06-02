@@ -1,4 +1,4 @@
-{ lib, globals, confLib, pkgs, ... }:
+{ lib, config, globals, confLib, pkgs, ... }:
 let
   inherit (confLib.gen { name = "blackbox"; port = 9115; })
     servicePort serviceName;
@@ -33,6 +33,80 @@ let
       };
     } // lib.mapAttrs' (name: cfg: lib.nameValuePair "http_${name}" (mkHttpModule cfg)) globals.monitoring.http;
   });
+
+  targetsFor = host: targets:
+    let netList = globals.monitoring.hostNetworks.${host} or [ ]; in
+    map (t: removeAttrs t [ "network" ]) (lib.filter (t: builtins.elem t.network netList) targets);
+
+  mkBlackboxBlock =
+    let
+      mkAlloyMap = attrs:
+        let
+          esc = lib.replaceStrings [ ''\'' ''"'' ] [ ''\\'' ''\"'' ];
+          pairs = lib.mapAttrsToList (k: v: ''"${k}" = "${esc v}"'') attrs;
+        in
+        "{${lib.concatStringsSep ", " pairs}}";
+
+      mkAlloyTargets = items:
+        "[\n" + lib.concatMapStrings (m: "      " + mkAlloyMap m + ",\n") items + "    ]";
+    in
+    { probeLabel, targets }:
+    ''
+
+        discovery.relabel "blackbox_${probeLabel}" {
+          targets = ${mkAlloyTargets targets}
+
+          rule {
+            source_labels = ["__address__"]
+            target_label  = "__param_target"
+          }
+          rule {
+            source_labels = ["__param_target"]
+            target_label  = "instance"
+          }
+          rule {
+            target_label = "__address__"
+            replacement  = "127.0.0.1:${toString servicePort}"
+          }
+          rule {
+            target_label = "probe_from"
+            replacement  = "${config.node.name}"
+          }
+        }
+
+        prometheus.scrape "blackbox_${probeLabel}" {
+          targets      = discovery.relabel.blackbox_${probeLabel}.output
+          metrics_path = "/probe"
+          job_name     = "blackbox_${probeLabel}"
+          forward_to   = [prometheus.remote_write.mimir.receiver]
+        }
+      '';
+
+  httpTargets = targetsFor config.node.name (lib.mapAttrsToList
+    (name: cfg: {
+      __address__ = cfg.url;
+      __param_module = "http_${name}";
+      inherit name;
+      probe = "http";
+      inherit (cfg) network;
+    }
+    // lib.optionalAttrs (cfg.expectedBodyRegex != null) {
+      expected_body_regex = cfg.expectedBodyRegex;
+    }
+    // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
+      fail_if_body_matches_regex = cfg.failIfBodyMatchesRegex;
+    })
+    globals.monitoring.http);
+
+  pingTargets = targetsFor config.node.name (lib.mapAttrsToList
+    (name: cfg: {
+      __address__ = cfg.host;
+      __param_module = "icmp";
+      inherit name;
+      probe = "ping";
+      inherit (cfg) network;
+    })
+    globals.monitoring.ping);
 in
 {
   config = {
@@ -51,5 +125,33 @@ in
       listenAddress = "127.0.0.1";
       configFile = blackboxConfig;
     };
+
+    environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (lib.mkAfter (
+      lib.optionalString (httpTargets != [ ])
+        (mkBlackboxBlock {
+          probeLabel = "http";
+          targets = httpTargets;
+        })
+      + lib.optionalString (pingTargets != [ ]) (mkBlackboxBlock {
+        probeLabel = "ping";
+        targets = pingTargets;
+      })
+    ));
+
+    nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [{
+      orgId = 1;
+      name = "blackbox";
+      folder = "Infrastructure";
+      interval = "1m";
+      rules = [
+        (confLib.mkGrafanaAlertRule {
+          uid = "http_probe_failed";
+          title = "HTTP probe failed";
+          expr = ''min by (name) (probe_success{probe="http"}) or on(name) (probe_expected{probe="http"} * 0)'';
+          forDuration = "3m";
+          summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
+        })
+      ];
+    }];
   };
 }

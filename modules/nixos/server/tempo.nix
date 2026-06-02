@@ -6,6 +6,7 @@ let
     dir = "/var/lib/private/tempo";
   }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
   inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules wgProxyAccessRules;
+  inherit (globals.services.alloy.extraConfig) otlpGrpcPort otlpHttpPort;
 
   tempoHttpApiPort = 3200;
   tempoOtlpGrpcPort = 14317;
@@ -18,7 +19,7 @@ in
 
     globals = {
       networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort tempoHttpApiPort ]; };
-      services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig.port = servicePort; };
+      services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig = { port = servicePort; host = config.node.name; }; };
       monitoring.http = confLib.mkHttpMonitoring { inherit serviceName; servicePort = tempoHttpApiPort; path = "/ready"; expectedBodyRegex = "ready"; };
       dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
     };
@@ -88,7 +89,7 @@ in
       environment = {
         OTEL_TRACES_EXPORTER = "otlp";
         OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
-        OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+        OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString otlpGrpcPort}";
         OTEL_SERVICE_NAME = "tempo-${config.node.name}";
         OTEL_TRACES_SAMPLER = "parentbased_traceidratio";
         OTEL_TRACES_SAMPLER_ARG = "0.01";
@@ -126,9 +127,91 @@ in
           };
         };
       in
-      {
-        ${webProxy}.services.nginx = genNginx serviceAddress wgProxyAccessRules;
-        ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-      };
+      lib.mkMerge [
+        {
+          ${webProxy}.services.nginx = genNginx serviceAddress wgProxyAccessRules;
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+          ${globals.general.monitoringServer}.services.grafana = {
+            settings = {
+              "tracing.opentelemetry" = {
+                custom_attributes = "service.name:grafana-${globals.general.monitoringServer}";
+              };
+              "tracing.opentelemetry.otlp" = {
+                address = "127.0.0.1:${toString otlpGrpcPort}";
+                propagation = "w3c";
+              };
+            };
+            provision.datasources.settings.datasources = [{
+              name = "Tempo";
+              uid = "tempo";
+              type = "tempo";
+              access = "proxy";
+              url = confLib.mkAlloyPushUrl {
+                host = globals.general.monitoringServer;
+                domain = serviceDomain;
+                port = tempoHttpApiPort;
+                path = "";
+              };
+              jsonData = {
+                nodeGraph.enabled = true;
+                search.hide = false;
+              } // lib.optionalAttrs ((globals.services.loki.extraConfig.host or null) == globals.general.monitoringServer) {
+                tracesToLogsV2 = {
+                  datasourceUid = "loki";
+                  filterByTraceID = true;
+                  filterBySpanID = false;
+                };
+              } // lib.optionalAttrs ((globals.services.mimir.extraConfig.host or null) == globals.general.monitoringServer) {
+                serviceMap.datasourceUid = "mimir";
+              } // lib.optionalAttrs ((globals.services.pyroscope.extraConfig.host or null) == globals.general.monitoringServer) {
+                tracesToProfiles = {
+                  datasourceUid = "pyroscope";
+                  profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
+                  tags = [{ key = "service.name"; value = "service_name"; }];
+                };
+              };
+            }];
+          };
+        }
+        (lib.genAttrs (lib.attrNames globals.services.alloy.extraConfig.clients) (alloyHost: {
+          environment.etc."alloy/config.alloy".text = lib.mkAfter ''
+            otelcol.receiver.otlp "local_tempo" {
+              grpc {
+                endpoint              = "127.0.0.1:${toString otlpGrpcPort}"
+                max_recv_msg_size     = "20MiB"
+              }
+              http { endpoint = "127.0.0.1:${toString otlpHttpPort}" }
+
+              output {
+                traces = [otelcol.exporter.otlphttp.tempo.input]
+              }
+            }
+
+            otelcol.exporter.otlphttp "tempo" {
+              client {
+                endpoint = "${confLib.mkAlloyPushUrl {
+                  host = alloyHost;
+                  domain = serviceDomain;
+                  port = servicePort;
+                  path = "";
+                }}"
+              }
+            }
+
+            beyla.ebpf "auto" {
+              discovery {
+                instrument {
+                  open_ports = "*"
+                  exports = ["traces"]
+                }
+              }
+
+              output {
+                traces = [otelcol.exporter.otlphttp.tempo.input]
+              }
+            }
+          '';
+        }))
+      ];
   };
 }

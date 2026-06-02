@@ -295,6 +295,66 @@ in
           };
         };
 
+      mkGrafanaAlertRule =
+        { uid
+        , title
+        , expr
+        , op ? "lt"
+        , threshold ? 1
+        , forDuration ? "5m"
+        , severity ? "critical"
+        , summary
+        }:
+        {
+          inherit uid title;
+          condition = "C";
+          for = forDuration;
+          noDataState = "NoData";
+          execErrState = "Alerting";
+          data = [
+            {
+              refId = "A";
+              relativeTimeRange = { from = 600; to = 0; };
+              datasourceUid = "mimir";
+              model = {
+                refId = "A";
+                inherit expr;
+                range = false;
+                instant = true;
+              };
+            }
+            {
+              refId = "C";
+              datasourceUid = "__expr__";
+              model = {
+                refId = "C";
+                type = "threshold";
+                expression = "A";
+                conditions = [{
+                  evaluator = { type = op; params = [ threshold ]; };
+                }];
+              };
+            }
+          ];
+          annotations.summary = summary;
+          labels.severity = severity;
+        };
+
+      mkAlloyPushUrl =
+        { host
+        , domain
+        , port
+        , path
+        }:
+        let
+          monitoringServer = globals.general.monitoringServer;
+          isCentral = host == monitoringServer;
+          isHomeHost = globals.hosts.${host}.isHome or false;
+        in
+        if isCentral then "http://127.0.0.1:${toString port}${path}"
+        else if isHomeHost then "http://${globals.networks.home-lan.vlans.services.hosts.${monitoringServer}.ipv4}:${toString port}${path}"
+        else "https://${domain}${path}";
+
       mkHttpMonitoring =
         { serviceName
         , servicePort

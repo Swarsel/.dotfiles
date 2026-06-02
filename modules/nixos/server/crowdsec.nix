@@ -154,9 +154,19 @@ in
     '';
 
     environment = {
-      etc."crowdsec/config.yaml" = lib.mkIf bootstrap {
-        source = (pkgs.formats.yaml { }).generate "crowdsec.yaml"
-          config.services.crowdsec.settings.general;
+      etc = {
+        "crowdsec/config.yaml" = lib.mkIf bootstrap {
+          source = (pkgs.formats.yaml { }).generate "crowdsec.yaml"
+            config.services.crowdsec.settings.general;
+        };
+        "alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (lib.mkAfter ''
+          prometheus.scrape "crowdsec" {
+            targets         = [{"__address__" = "127.0.0.1:${toString config.services.crowdsec.settings.general.prometheus.listen_port}"}]
+            forward_to      = [prometheus.remote_write.mimir.receiver]
+            job_name        = "crowdsec"
+            scrape_interval = "30s"
+          }
+        '');
       };
       persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
         directories = [
