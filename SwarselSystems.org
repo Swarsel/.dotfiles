@@ -1737,129 +1737,106 @@ A short overview over each input and what it does:
   A flake that toggles the noctalia-shell bar when Super is pressed
 
 #+begin_src nix-ts :tangle flake.nix
+  # DO-NOT-EDIT. This file was auto-generated using github:vic/flake-file.
+  # Use `nix run .#write-flake` to regenerate it.
   {
     description = "SwarseFlake - Nix Flake for all SwarselSystems";
 
+    outputs = inputs: import ./nix/outputs.nix inputs;
+
     nixConfig = {
-      extra-substituters = [
-        "https://nix-community.cachix.org"
-      ];
+      extra-substituters = [ "https://nix-community.cachix.org" ];
       extra-trusted-public-keys = [
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       ];
     };
-    inputs = {
-      nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-      nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
-      nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-      nixpkgs-master.url = "github:nixos/nixpkgs/master";
-      nixpkgs-kernelpin.url = "github:nixos/nixpkgs/dd9b079222d43e1943b6ebd802f04fd959dc8e61?narHash=sha256-I45esRSssFtJ8p/gLHUZ1OUaaTaVLluNkABkk6arQwE%3D"; #specifically pinned for kernel version
-      nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
-      nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
-      nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
-      nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
-      nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
 
-      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
+    inputs = {
+      copyparty = {
+        url = "github:9001/copyparty/hovudstraum";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      devshell.url = "github:numtide/devshell";
+      disko.url = "github:nix-community/disko";
+      dns = {
+        url = "github:kirelagin/dns.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      emacs-overlay.url = "github:nix-community/emacs-overlay";
+      flake-file.url = "github:vic/flake-file";
+      flake-parts.url = "github:hercules-ci/flake-parts";
       home-manager = {
         url = "github:nix-community/home-manager";
         inputs.nixpkgs.follows = "nixpkgs";
+      };
+      hydra = {
+        url = "github:nixos/hydra/nix-2.30";
+        inputs.nix-eval-jobs.follows = "nix-eval-jobs";
+      };
+      impermanence.url = "github:nix-community/impermanence";
+      invidious-companion = {
+        url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
+        flake = false;
+      };
+      lanzaboote.url = "github:nix-community/lanzaboote";
+      microvm.url = "github:astro/microvm.nix";
+      nginx-otel = {
+        url = "github:djvcom/nix-nginx-otel";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      niri-flake.url = "github:sodiboo/niri-flake";
+      niritiling.url = "github:Swarsel/niritiling/feat/resize";
+      nix-darwin.url = "github:lnl7/nix-darwin";
+      nix-eval-jobs = {
+        url = "github:nix-community/nix-eval-jobs";
+        flake = false;
       };
       nix-index-database = {
         url = "github:nix-community/nix-index-database";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      dns = {
-        url = "github:kirelagin/dns.nix";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
+      nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+      nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
+      nix-topology.url = "github:oddlama/nix-topology";
+      nixgl.url = "github:guibou/nixGL";
+      nixos-extra-modules.url = "github:oddlama/nixos-extra-modules/main";
       nixos-generators = {
         url = "github:nix-community/nixos-generators";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      nginx-otel = {
-        url = "github:djvcom/nix-nginx-otel";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-      emacs-overlay = {
-        # url = "github:swarsel/emacs-overlay/fix";
-        # url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
-        url = "github:nix-community/emacs-overlay";
-        # inputs.nixpkgs.follows = "nixpkgs";
-      };
+      nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+      nixos-images.url = "github:Swarsel/nixos-images/main";
+      nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
+      nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+      nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
+      nixpkgs-kernelpin.url = "github:nixos/nixpkgs/dd9b079222d43e1943b6ebd802f04fd959dc8e61?narHash=sha256-I45esRSssFtJ8p/gLHUZ1OUaaTaVLluNkABkk6arQwE%3D";
+      nixpkgs-master.url = "github:nixos/nixpkgs/master";
+      nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+      nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
+      nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
+      nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
+      nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
+      nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
       noctalia = {
         url = "github:noctalia-dev/noctalia-shell";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      invidious-companion = {
-        url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
-        flake = false;
-      };
-
-
-      topologyPrivate.url = "./files/topology/public";
-
+      noctoggle.url = "github:Swarsel/noctoggle";
+      nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
+      nur.url = "github:nix-community/NUR";
+      pre-commit-hooks.url = "github:cachix/git-hooks.nix";
+      simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
+      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
+      sops.url = "github:Mic92/sops-nix";
+      spicetify-nix.url = "github:Gerg-l/spicetify-nix";
+      stylix.url = "github:danth/stylix";
       swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       systems.url = "github:nix-systems/default";
-      nur.url = "github:nix-community/NUR";
-      nixgl.url = "github:guibou/nixGL";
-      stylix.url = "github:danth/stylix";
-      sops.url = "github:Mic92/sops-nix";
-      lanzaboote.url = "github:nix-community/lanzaboote";
-      nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
-      nixos-images.url = "github:Swarsel/nixos-images/main";
-      nixos-hardware.url = "github:NixOS/nixos-hardware/master";
-      nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
-      disko.url = "github:nix-community/disko";
-      impermanence.url = "github:nix-community/impermanence";
-      zjstatus.url = "github:dj95/zjstatus";
-      nix-darwin.url = "github:lnl7/nix-darwin";
-      pre-commit-hooks.url = "github:cachix/git-hooks.nix";
-      vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
-      nix-topology.url = "github:oddlama/nix-topology";
-      flake-parts.url = "github:hercules-ci/flake-parts";
-      devshell.url = "github:numtide/devshell";
-      spicetify-nix.url = "github:Gerg-l/spicetify-nix";
-      niri-flake.url = "github:sodiboo/niri-flake";
-      nixos-extra-modules.url = "github:oddlama/nixos-extra-modules/main";
-      microvm.url = "github:astro/microvm.nix";
+      topologyPrivate.url = "./files/topology/public";
       treefmt-nix.url = "github:numtide/treefmt-nix";
-      nix-minecraft.url = "github:Infinidoge/nix-minecraft";
-      simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
-      nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
-      niritiling.url = "github:Swarsel/niritiling/feat/resize";
-      noctoggle.url = "github:Swarsel/noctoggle";
-      copyparty = {
-        url = "github:9001/copyparty/hovudstraum";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-
+      vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+      zjstatus.url = "github:dj95/zjstatus";
     };
-
-    outputs =
-      inputs:
-      inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-        imports = [
-          ./nix/globals.nix
-          ./nix/hosts.nix
-          ./nix/topology.nix
-          ./nix/devshell.nix
-          ./nix/apps.nix
-          ./nix/packages.nix
-          ./nix/overlays.nix
-          ./nix/lib.nix
-          ./nix/templates.nix
-          ./nix/formatter.nix
-          ./nix/modules.nix
-          ./nix/iso.nix
-        ];
-        systems = [
-          "x86_64-linux"
-          "aarch64-linux"
-          "x86_64-darwin"
-          "aarch64-darwin"
-        ];
-      };
   }
 #+end_src
 ** Auxiliary files
@@ -2211,6 +2188,8 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
   { self, inputs, ... }:
   {
 
+    flake-file.inputs.topologyPrivate.url = "./files/topology/public";
+
     imports = [
       (
         { lib, flake-parts-lib, ... }:
@@ -2320,6 +2299,17 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
 #+begin_src nix-ts :tangle nix/hosts.nix
   { self, inputs, ... }:
   {
+    flake-file.inputs = {
+      disko.url = "github:nix-community/disko";
+      microvm.url = "github:astro/microvm.nix";
+      nix-index-database = {
+        url = "github:nix-community/nix-index-database";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nix-darwin.url = "github:lnl7/nix-darwin";
+      nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
+    };
+
     flake = { config, ... }:
       let
         inherit (self) outputs;
@@ -2340,28 +2330,15 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
             modules = [
               inputs.disko.nixosModules.disko
               inputs.home-manager.nixosModules.home-manager
-              inputs.impermanence.nixosModules.impermanence
-              inputs.lanzaboote.nixosModules.lanzaboote
               inputs.microvm.nixosModules.host
               inputs.microvm.nixosModules.microvm
               inputs.nix-index-database.nixosModules.nix-index
-              inputs.nix-minecraft.nixosModules.minecraft-servers
-              inputs.nix-topology.nixosModules.default
-              inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-              inputs.simple-nixos-mailserver.nixosModules.default
-              inputs.sops.nixosModules.sops
-              inputs.stylix.nixosModules.stylix
               inputs.swarsel-nix.nixosModules.default
-              inputs.nixos-nftables-firewall.nixosModules.default
-              inputs.niritiling.nixosModules.default
-              inputs.noctoggle.nixosModules.default
               (inputs.nixos-extra-modules + "/modules/guests")
               (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
               "${self}/hosts/nixos/${arch}/${configName}"
               "${self}/modules/nixos"
               {
-                _module.args.dns = inputs.dns;
-
                 microvm.guest.enable = lib.mkDefault false;
 
                 networking.hostName = lib.swarselsystems.mkStrong configName;
@@ -2430,10 +2407,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
               minimal = false;
             };
             modules = [
-              inputs.stylix.homeModules.stylix
               inputs.nix-index-database.homeModules.nix-index
-              inputs.sops.homeManagerModules.sops
-              inputs.spicetify-nix.homeManagerModules.default
               inputs.swarsel-nix.homeModules.default
               "${self}/hosts/${type}/${arch}/${configName}"
               "${self}/profiles/home"
@@ -2542,6 +2516,8 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
 #+begin_src nix-ts :tangle nix/topology.nix
   { self, inputs, ... }:
   {
+    flake-file.inputs.nix-topology.url = "github:oddlama/nix-topology";
+
     imports = [
       inputs.nix-topology.flakeModule
     ];
@@ -2832,6 +2808,11 @@ Aside from the =default= devShell which is the one that should usually be called
 #+begin_src nix-ts :tangle nix/devshell.nix
   { self, inputs, ... }:
   {
+    flake-file.inputs = {
+      devshell.url = "github:numtide/devshell";
+      pre-commit-hooks.url = "github:cachix/git-hooks.nix";
+    };
+
     imports = [
       inputs.devshell.flakeModule
       inputs.pre-commit-hooks.flakeModule
@@ -3074,6 +3055,8 @@ Usually all formatting in this repo is done automatically while editing in emacs
 #+begin_src nix-ts :tangle nix/formatter.nix
   { inputs, ... }:
   {
+    flake-file.inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
+
     imports = [
       inputs.treefmt-nix.flakeModule
     ];
@@ -3226,6 +3209,22 @@ On the structure of overlays: as you notice, all of the attributes within overla
     inherit (outputs) lib;
   in
   {
+    flake-file.inputs = {
+      nixgl.url = "github:guibou/nixGL";
+      nur.url = "github:nix-community/NUR";
+      vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+      zjstatus.url = "github:dj95/zjstatus";
+      niri-flake.url = "github:sodiboo/niri-flake";
+      nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+
+      emacs-overlay.url = "github:nix-community/emacs-overlay";
+
+      noctalia = {
+        url = "github:noctalia-dev/noctalia-shell";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+    };
+
     flake = _:
       {
         overlays =
@@ -3393,6 +3392,141 @@ On the structure of overlays: as you notice, all of the attributes within overla
       };
   }
 #+end_src
+** flake-file
+
+#+begin_src nix-ts :tangle nix/flake-file.nix
+  { self, inputs, ... }:
+  let
+    realLib = inputs.nixpkgs.lib;
+
+    discoverRoots = [
+      ../modules
+      ../hosts
+      ../profiles
+    ];
+
+    declaresFlakeInput =
+      path:
+      realLib.lists.any
+        (line: builtins.match "[[:space:]]*flake-file\\.inputs[. =].*" line != null)
+        (realLib.splitString "\n" (builtins.readFile path));
+
+    discoveredModules = realLib.pipe discoverRoots [
+      (map realLib.filesystem.listFilesRecursive)
+      realLib.lists.flatten
+      (builtins.filter (p: realLib.hasSuffix ".nix" (toString p)))
+      (builtins.filter declaresFlakeInput)
+    ];
+
+    metadataModules = [ ./flake-file-options.nix ] ++ discoveredModules;
+
+    metadata = realLib.evalModules {
+      specialArgs = {
+        inherit self;
+        inputs = { };
+        outputs = { };
+        lib = realLib;
+        config = { };
+        globals = { };
+        confLib = { };
+        homeLib = { };
+        nodes = { };
+        topologyPrivate = { };
+        minimal = false;
+        configName = "_flake-file-metadata";
+        arch = "x86_64-linux";
+        type = "nixos";
+        withHomeManager = false;
+        extraModules = [ ];
+      };
+      modules = metadataModules;
+    };
+  in
+  {
+    imports = [
+      inputs.flake-file.flakeModules.default
+    ];
+
+    flake-file = {
+      description = "SwarseFlake - Nix Flake for all SwarselSystems";
+      outputs = "inputs: import ./nix/outputs.nix inputs";
+      nixConfig = {
+        extra-substituters = [
+          "https://nix-community.cachix.org"
+        ];
+        extra-trusted-public-keys = [
+          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        ];
+      };
+      inputs = metadata.config.flake-file.inputs // {
+        flake-file.url = "github:vic/flake-file";
+
+        flake-parts.url = "github:hercules-ci/flake-parts";
+        systems.url = "github:nix-systems/default";
+
+        nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+        nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
+        nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+        nixpkgs-master.url = "github:nixos/nixpkgs/master";
+        nixpkgs-kernelpin.url = "github:nixos/nixpkgs/dd9b079222d43e1943b6ebd802f04fd959dc8e61?narHash=sha256-I45esRSssFtJ8p/gLHUZ1OUaaTaVLluNkABkk6arQwE%3D";
+        nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+        nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
+        nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
+        nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
+        nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
+
+        home-manager = {
+          url = "github:nix-community/home-manager";
+          inputs.nixpkgs.follows = "nixpkgs";
+        };
+
+        nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+        nixos-extra-modules.url = "github:oddlama/nixos-extra-modules/main";
+
+        swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
+      };
+    };
+  }
+#+end_src
+** flake-file options
+
+#+begin_src nix-ts :tangle nix/flake-file-options.nix
+  { lib, ... }:
+  {
+    options.flake-file.inputs = lib.mkOption {
+      type = lib.types.lazyAttrsOf (lib.types.attrsOf lib.types.anything);
+      default = { };
+    };
+  }
+#+end_src
+** Outputs
+
+#+begin_src nix-ts :tangle nix/outputs.nix
+  inputs:
+  inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+    imports = [
+      ./flake-file.nix
+      ./globals.nix
+      ./hosts.nix
+      ./topology.nix
+      ./devshell.nix
+      ./apps.nix
+      ./packages.nix
+      ./overlays.nix
+      ./lib.nix
+      ./templates.nix
+      ./formatter.nix
+      ./modules.nix
+      ./iso.nix
+    ];
+    systems = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+    ];
+  }
+#+end_src
 ** Installer images (live iso, kexec)
 :PROPERTIES:
 :CUSTOM_ID: h:1d1ccae5-62ca-4d37-a28e-c59987850ed2
@@ -3407,6 +3541,16 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
 #+begin_src nix-ts :tangle nix/iso.nix
   { self, inputs, ... }:
   {
+    flake-file.inputs = {
+      nixos-images.url = "github:Swarsel/nixos-images/main";
+      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
+
+      nixos-generators = {
+        url = "github:nix-community/nixos-generators";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+    };
+
     perSystem = { pkgs, system, ... }:
       {
         packages = {
@@ -5686,7 +5830,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/guests/nginx/default.nix
-  { self, config, lib, minimal, globals, confLib, inputs, ... }:
+  { self, config, lib, minimal, globals, confLib, ... }:
   let
     inherit (confLib.static) nginxAccessRules;
   in
@@ -5697,7 +5841,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
       "${self}/modules/nixos/server/oauth2-proxy.nix"
       "${self}/modules/nixos/server/nginx.nix"
       "${self}/modules/nixos/server/acme.nix"
-      inputs.nginx-otel.nixosModules.default
+      "${self}/modules/nixos/server/nginx-otel.nix"
     ];
 
     swarselsystems = {
@@ -5715,11 +5859,6 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
     };
 
     services.nginx = {
-      otel = {
-        enable = true;
-        serviceName = "nginx-${config.node.name}";
-        endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
-      };
       upstreams.fritzbox = {
         servers.${globals.networks.home-lan.hosts.fritzbox.ipv4} = { };
       };
@@ -6786,7 +6925,7 @@ This host acts as my main http proxy for external access.
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/twothreetunnel/default.nix
-  { self, config, lib, minimal, globals, inputs, ... }:
+  { self, config, lib, minimal, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -6802,7 +6941,7 @@ This host acts as my main http proxy for external access.
       "${self}/modules/nixos/server/oauth2-proxy.nix"
       "${self}/modules/nixos/server/wireguard.nix"
       "${self}/modules/nixos/server/firezone.nix"
-      inputs.nginx-otel.nixosModules.default
+      "${self}/modules/nixos/server/nginx-otel.nix"
     ];
 
     topology.self = {
@@ -6865,12 +7004,6 @@ This host acts as my main http proxy for external access.
         after = [ "conntrack" ];
         rules = [ "ct status dnat accept" ];
       };
-    };
-
-    services.nginx.otel = {
-      enable = true;
-      serviceName = "nginx-${config.node.name}";
-      endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
     };
 
   }
@@ -8120,7 +8253,10 @@ Here we have NixOS options. All options are split into smaller files that are lo
   in
   {
     imports = lib.swarselsystems.mkImports sharedNames "modules/shared" ++ [
+      "${self}/nix/flake-file-options.nix"
+      "${m}/nixos/common/dns.nix"
       "${m}/nixos/common/globals.nix"
+      "${m}/nixos/common/nftables.nix"
       "${m}/nixos/common/nodes.nix"
       "${m}/nixos/common/topology.nix"
       "${m}/nixos/server/id.nix"
@@ -8751,19 +8887,25 @@ In the respective modules that use home-manager secrets (for example [[#h:506d01
 This is just some additional configuration that proliferates some [[#h:391e7712-fef3-4f13-a3ed-d36e228166fd][Topology]] node fields automatically from my own options.
 
 #+begin_src nix-ts :tangle modules/nixos/common/topology.nix
-  { lib, config, ... }:
+  { inputs, lib, ... }:
   {
     options.swarselsystems.info = lib.mkOption {
       type = lib.types.str;
       default = "";
     };
-    config.topology = {
-      id = config.node.name;
-      self = {
-        hardware.info = config.swarselsystems.info;
-        icon = lib.mkIf config.swarselsystems.isLaptop "devices.laptop";
-      };
-    };
+
+    imports = lib.optionals (inputs ? nix-topology) [
+      inputs.nix-topology.nixosModules.default
+      ({ lib, config, ... }: {
+        topology = {
+          id = config.node.name;
+          self = {
+            hardware.info = config.swarselsystems.info;
+            icon = lib.mkIf config.swarselsystems.isLaptop "devices.laptop";
+          };
+        };
+      })
+    ];
   }
 #+end_src
 **** General NixOS settings (nix config, stateVersion)
@@ -9009,10 +9151,6 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
         backupFileExtension = "hm-bak";
         overwriteBackup = true;
         users.${config.swarselsystems.mainUser}.imports = [
-          inputs.nix-index-database.homeModules.nix-index
-          # inputs.sops.homeManagerModules.sops # this is not needed!! we add these secrets in nixos scope
-          inputs.spicetify-nix.homeManagerModules.default
-          inputs.swarsel-nix.homeModules.default
           {
             imports = [
               "${self}/modules/home"
@@ -9250,33 +9388,38 @@ This system, while highly pleasant to work with during everyday use, sometimes h
 This dynamically uses systemd boot or Lanzaboote depending on the minimal system state and `config.swarselsystems.isSecureBoot`.
 
 #+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
-  { lib, pkgs, config, minimal, ... }:
-  let
-    inherit (config.swarselsystems) isSecureBoot isImpermanence;
-  in
+  { inputs, lib, ... }:
   {
-    config = {
+    flake-file.inputs.lanzaboote.url = "github:nix-community/lanzaboote";
 
-      environment.systemPackages = lib.mkIf isSecureBoot [
-        pkgs.sbctl
-      ];
+    imports = lib.optionals (inputs ? lanzaboote) [
+      inputs.lanzaboote.nixosModules.lanzaboote
+      ({ lib, pkgs, config, minimal, ... }:
+        let
+          inherit (config.swarselsystems) isSecureBoot isImpermanence;
+        in
+        {
+          environment.systemPackages = lib.mkIf isSecureBoot [
+            pkgs.sbctl
+          ];
 
-      environment.persistence."/persist" = lib.mkIf (isImpermanence && isSecureBoot) {
-        directories = [{ directory = "/var/lib/sbctl"; }];
-      };
+          environment.persistence."/persist" = lib.mkIf (isImpermanence && isSecureBoot) {
+            directories = [{ directory = "/var/lib/sbctl"; }];
+          };
 
-      boot = {
-        loader = {
-          efi.canTouchEfiVariables = true;
-          systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !isSecureBoot) (lib.mkForce true) (lib.mkForce false);
-        };
-        lanzaboote = lib.mkIf (!minimal && isSecureBoot) {
-          enable = true;
-          pkiBundle = "/var/lib/sbctl";
-          configurationLimit = 6;
-        };
-      };
-    };
+          boot = {
+            loader = {
+              efi.canTouchEfiVariables = true;
+              systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+            };
+            lanzaboote = lib.mkIf (!minimal && isSecureBoot) {
+              enable = true;
+              pkiBundle = "/var/lib/sbctl";
+              configurationLimit = 6;
+            };
+          };
+        })
+    ];
   }
 #+end_src
 
@@ -9324,20 +9467,25 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 Do note that we have to account for impermanent file systems here, otherwise system activation will fail because the secret files cannot be found.
 
 #+begin_src nix-ts :tangle modules/nixos/common/sops.nix
-  { self, config, ... }:
+  { inputs, lib, ... }:
   {
-    config = {
-      sops = {
+    flake-file.inputs.sops.url = "github:Mic92/sops-nix";
 
-        # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-        age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key" ];
-        # defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/repo/common.yaml";
-        defaultSopsFile = self + "/secrets/repo/common.yaml";
+    imports = lib.optionals (inputs ? sops) [
+      inputs.sops.nixosModules.sops
+      ({ self, config, ... }: {
+        sops = {
 
-        validateSopsFiles = false;
+          # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+          age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key" ];
+          # defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/repo/common.yaml";
+          defaultSopsFile = self + "/secrets/repo/common.yaml";
 
-      };
-    };
+          validateSopsFiles = false;
+
+        };
+      })
+    ];
   }
 #+end_src
 
@@ -9444,6 +9592,1880 @@ Normally, doing that also resets the lecture that happens on the first use of =s
       };
     };
 
+  }
+#+end_src
+
+*** Client
+:PROPERTIES:
+:CUSTOM_ID: h:1bb03c4c-7749-47c1-9af6-1b3d748cebf4
+:END:
+
+This section is to be used for modules that are most likely only used on client PCs (like my laptops) but no on servers.
+
+**** Imports
+:PROPERTIES:
+:CUSTOM_ID: h:4acbe063-188b-42e7-b75c-b6d2e232e784
+:END:
+
+This section is for setting things that should be used on clients that are using the default NixOS configuration.
+
+#+begin_src nix-ts :tangle modules/nixos/client/default.nix
+  { lib, ... }:
+  let
+    importNames = lib.swarselsystems.readNix "modules/nixos/client";
+  in
+  {
+    imports = lib.swarselsystems.mkImports importNames "modules/nixos/client";
+  }
+#+end_src
+
+**** System Packages
+:PROPERTIES:
+:CUSTOM_ID: h:0e7e8bea-ec58-499c-9731-09dddfc39532
+:END:
+
+Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
+
+#+begin_src nix-ts :tangle modules/nixos/client/packages.nix
+  { lib, pkgs, config, minimal, ... }:
+  {
+    config = {
+
+      environment.systemPackages = with pkgs; lib.optionals (!minimal)
+        ([
+          gnupg
+          yubikey-manager
+
+          # secure boot
+          sbctl
+
+          # better make for general tasks
+          just
+
+          # sops
+          ssh-to-age
+          sops
+
+          # theme related
+          adwaita-icon-theme
+
+          # bluetooth
+          bluez
+          wireguard-tools
+        ] ++ lib.optionals config.swarselsystems.isFullBuild [
+          # yubikey packages
+          yubikey-personalization
+          yubico-pam
+          yubioath-flutter
+          yubikey-touch-detector
+          yubico-piv-tool
+          cfssl
+          pcsc-tools
+          pcscliteWithPolkit.out
+
+          # ledger packages
+          ledger-live-desktop
+
+          # pinentry
+          dbus
+          # swaylock-effects
+          syncthingtray-minimal
+          swayosd
+
+          libsForQt5.qt5.qtwayland
+
+          nixos-generators
+
+          # commit hooks
+          pre-commit
+
+          # proc info
+          acpi
+
+          # pci info
+          pciutils
+          usbutils
+
+          # keyboards
+          qmk
+          vial
+          via
+
+          # kde-connect
+          xdg-desktop-portal
+          xdg-desktop-portal-gtk
+          xdg-desktop-portal-wlr
+
+          ghostscript_headless
+          nixd
+          zig
+          zls
+
+          elk-to-svg
+        ]) ++ lib.optionals minimal [
+        networkmanager
+        curl
+        git
+        gnupg
+        rsync
+        ssh-to-age
+        sops
+        vim
+        just
+        sbctl
+      ];
+
+      nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
+        "jitsi-meet-1.0.8043"
+        "electron-29.4.6"
+        "SDL_ttf-2.0.11"
+        # audacity?
+        "mbedtls-2.28.10"
+        # "qtwebengine-5.15.19"
+      ];
+    };
+  }
+#+end_src
+
+**** Environment setup
+:PROPERTIES:
+:CUSTOM_ID: h:f4006367-0965-4b4f-a3b0-45f63b07d2b8
+:END:
+
+Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
+
+#+begin_src nix-ts :tangle modules/nixos/client/env.nix
+  { lib, config, pkgs, ... }:
+  {
+    config = {
+
+      environment = {
+        wordlist.enable = true;
+        sessionVariables = {
+          NIXOS_OZONE_WL = "1";
+          SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+          SWARSEL_HI_RES = config.swarselsystems.highResolution;
+          GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+            gst-plugins-good
+            gst-plugins-bad
+            gst-plugins-ugly
+            gst-libav
+          ]);
+        } // (lib.optionalAttrs (!config.swarselsystems.isPublic) { });
+      };
+    };
+  }
+#+end_src
+
+**** Security (polkit)
+:PROPERTIES:
+:CUSTOM_ID: h:e2d40df9-0026-4caa-8476-9dc2353055a1
+:END:
+
+Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository, however, that does not matter anymore since I stopped using that solution) in order to be able to keep using the same agent upon escalation.
+
+#+begin_src nix-ts :tangle modules/nixos/client/polkit.nix
+  { lib, minimal, ... }:
+  {
+    config = {
+
+      security = {
+        # pki.certificateFiles = [
+        #   config.sops.secrets.harica-root-ca.path
+        # ];
+        pam.services = lib.mkIf (!minimal) {
+          login.u2fAuth = true;
+          sudo.u2fAuth = true;
+          sshd.u2fAuth = false;
+          swaylock = {
+            u2fAuth = true;
+            fprintAuth = false;
+          };
+        };
+        polkit.enable = lib.mkIf (!minimal) true;
+
+        sudo.extraConfig = ''
+          Defaults insults
+          Defaults    env_keep+=SSH_AUTH_SOCK
+        '' + lib.optionalString (!minimal) ''
+          Defaults    env_keep+=XDG_RUNTIME_DIR
+          Defaults    env_keep+=WAYLAND_DISPLAY
+        '';
+      };
+    };
+  }
+#+end_src
+
+**** Reduce systemd timeouts
+:PROPERTIES:
+:CUSTOM_ID: h:12858442-c129-4aa1-9c9c-a0916e36b302
+:END:
+
+There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason =a stop job is running for session 1 of user ...=. I do not want to wait that long and am confident no important data is lost by doing this.
+
+Nowadays, it seems that this bug was fixed (I think it was caused by VirtualBox), but still, I keep these shorter timeouts just to be safe (or unsafe, depending on your viewpoint).
+
+#+begin_src nix-ts :tangle modules/nixos/client/systemd.nix
+  _:
+  {
+    config = {
+      # systemd
+      systemd.settings.Manager = {
+        DefaultTimeoutStartSec = "60s";
+        DefaultTimeoutStopSec = "15s";
+      };
+    };
+  }
+#+end_src
+
+**** Hardware settings
+:PROPERTIES:
+:CUSTOM_ID: h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b
+:END:
+
+Enable OpenGL, Sound, Bluetooth, support for my custom keyboards and various other drivers.
+
+#+begin_src nix-ts :tangle modules/nixos/client/hardware.nix
+  { pkgs, config, confLib, lib, ... }:
+  {
+
+    options.swarselsystems = {
+      hasBluetooth = lib.mkEnableOption "bluetooth availability";
+      hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
+      trackpoint = {
+        isAvailable = lib.mkEnableOption "trackpoint availability";
+        trackpoint.device = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+        };
+      };
+    };
+    config = {
+
+      users.persistentIds.plugdev = confLib.mkIds 953;
+
+      hardware = {
+        # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
+        graphics = {
+          enable = true;
+          enable32Bit = true;
+        };
+
+
+        trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
+          enable = true;
+          inherit (config.swarselsystems.trackpoint) device;
+        };
+
+        keyboard.qmk.enable = true;
+
+        enableAllFirmware = lib.mkDefault true;
+
+        usbStorage.manageShutdown = true;
+
+        bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
+          enable = true;
+          package = pkgs.bluez;
+          powerOnBoot = true;
+          settings = {
+            General = {
+              Enable = "Source,Sink,Media,Socket";
+            };
+          };
+        };
+      };
+
+      services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
+    };
+  }
+#+end_src
+
+**** Pulseaudio
+:PROPERTIES:
+:CUSTOM_ID: h:63f6773e-b321-4b1d-a206-3913658cf62d
+:END:
+
+This is only used on systems not running Pipewire (none at the moment).
+
+
+#+begin_src nix-ts :tangle modules/nixos/client/pulseaudio.nix
+  { config, pkgs, lib, ... }: {
+
+    config = {
+      services.pulseaudio = {
+        enable = lib.mkIf (!config.services.pipewire.enable) true;
+        package = pkgs.pulseaudioFull;
+      };
+    };
+
+  }
+#+end_src
+**** Pipewire
+:PROPERTIES:
+:CUSTOM_ID: h:aa433f5e-a455-4414-b76b-0a2692fa06aa
+:END:
+
+Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr= when using [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]].
+
+#+begin_src nix-ts :tangle modules/nixos/client/pipewire.nix
+  { pkgs, confLib, ... }:
+  {
+    config = {
+      security.rtkit.enable = true; # this is required for pipewire real-time access
+
+      users.persistentIds.rtkit = confLib.mkIds 996;
+
+      services.pipewire = {
+        enable = true;
+        package = pkgs.pipewire;
+        pulse.enable = true;
+        jack.enable = true;
+        audio.enable = true;
+        wireplumber.enable = true;
+        alsa = {
+          enable = true;
+          support32Bit = true;
+        };
+      };
+    };
+  }
+#+end_src
+**** Common network settings
+:PROPERTIES:
+:CUSTOM_ID: h:7d696b64-debe-4a95-80b5-1e510156a6c6
+:END:
+
+Here I only enable =networkmanager= and a few default networks. The rest of the network config is done separately in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
+
+#+begin_src nix-ts :tangle modules/nixos/client/network.nix
+  { self, lib, pkgs, config, confLib, ... }:
+  let
+    certsSopsFile = self + /secrets/repo/certs.yaml;
+    clientSopsFile = config.node.secretsDir + "/secrets.yaml";
+
+    inherit (config.repo.secrets.common.network) wlan1 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
+
+    iwd = config.networking.networkmanager.wifi.backend == "iwd";
+  in
+  {
+    options.swarselsystems = {
+      firewall = lib.swarselsystems.mkTrueOption;
+    };
+    config = {
+
+      users.persistentIds = {
+        nm-iodine = confLib.mkIds 957;
+      };
+      sops = {
+        secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+          wlan1-pw = { };
+          wlan2-pw = { };
+          laptop-hotspot-pw = { };
+          mobile-hotspot-pw = { };
+          eduroam-user = { };
+          eduroam-pw = { };
+          pia-vpn-user = { };
+          pia-vpn-pw = { };
+          home-wireguard-client-private-key = { sopsFile = clientSopsFile; };
+          home-wireguard-server-public-key = { };
+          home-wireguard-endpoint = { };
+          pia-vpn1-crl-pem = { sopsFile = certsSopsFile; };
+          pia-vpn1-ca-pem = { sopsFile = certsSopsFile; };
+        };
+        templates = lib.mkIf (!config.swarselsystems.isPublic) {
+          "network-manager.env".content = ''
+            WLAN1_PW=${config.sops.placeholder.wlan1-pw}
+            WLAN2_PW=${config.sops.placeholder.wlan2-pw}
+            LAPTOP_HOTSPOT_PW=${config.sops.placeholder.laptop-hotspot-pw}
+            MOBILE_HOTSPOT_PW=${config.sops.placeholder.mobile-hotspot-pw}
+            EDUROAM_USER=${config.sops.placeholder.eduroam-user}
+            EDUROAM_PW=${config.sops.placeholder.eduroam-pw}
+            PIA_VPN_USER=${config.sops.placeholder.pia-vpn-user}
+            PIA_VPN_PW=${config.sops.placeholder.pia-vpn-pw}
+            HOME_WIREGUARD_CLIENT_PRIVATE_KEY=${config.sops.placeholder.home-wireguard-client-private-key}
+            HOME_WIREGUARD_SERVER_PUBLIC_KEY=${config.sops.placeholder.home-wireguard-server-public-key}
+            HOME_WIREGUARD_ENDPOINT=${config.sops.placeholder.home-wireguard-endpoint}
+          '';
+        };
+      };
+
+      services.resolved.enable = true;
+
+      networking = {
+        hostName = config.node.name;
+        hosts = { };
+        wireless.iwd = {
+          enable = true;
+          settings = {
+            IPv6 = {
+              Enabled = true;
+            };
+            Settings = {
+              AutoConnect = true;
+            };
+            # DriverQuirks = {
+            #   UseDefaultInterface = true;
+            # };
+          };
+        };
+        nftables.enable = lib.mkDefault true;
+        enableIPv6 = lib.mkDefault true;
+        firewall = {
+          enable = lib.swarselsystems.mkStrong config.swarselsystems.firewall;
+          checkReversePath = lib.mkDefault false;
+          allowedUDPPorts = [ 51820 ]; # 51820: wireguard
+          allowedTCPPortRanges = [
+            { from = 1714; to = 1764; } # kde-connect
+          ];
+          allowedUDPPortRanges = [
+            { from = 1714; to = 1764; } # kde-connect
+          ];
+        };
+
+
+        networkmanager = {
+          enable = true;
+          wifi.backend = "iwd";
+          dns = "systemd-resolved";
+          plugins = [
+            # list of plugins: https://search.nixos.org/packages?query=networkmanager-
+            # docs https://networkmanager.dev/docs/vpn/
+            pkgs.networkmanager-openconnect
+            pkgs.networkmanager-openvpn
+          ];
+          ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
+            environmentFiles = [
+              "${config.sops.templates."network-manager.env".path}"
+            ];
+            profiles =
+              let
+                inherit (config.repo.secrets.local.network) home-wireguard-address home-wireguard-allowed-ips;
+              in
+              {
+                ${wlan1} = {
+                  connection = {
+                    id = wlan1;
+                    # permissions = "";
+                    type = "wifi";
+                    autoconnect-priority = "999";
+                  };
+                  ipv4 = {
+                    # dns-search = "";
+                    method = "auto";
+                  };
+                  ipv6 = {
+                    addr-gen-mode = "stable-privacy";
+                    # dns-search = "";
+                    method = "auto";
+                  };
+                  wifi = {
+                    # mac-address-blacklist = "";
+                    mode = "infrastructure";
+                    # band = "a";
+                    ssid = wlan1;
+                  };
+                  wifi-security = {
+                    # auth-alg = "open";
+                    key-mgmt = "wpa-psk";
+                    psk = "$WLAN1_PW";
+                  };
+                };
+
+                LAN-Party = {
+                  connection = {
+                    autoconnect = "false";
+                    id = "LAN-Party";
+                    type = "ethernet";
+                  };
+                  ethernet = {
+                    auto-negotiate = "true";
+                    cloned-mac-address = "preserve";
+                  };
+                  ipv4 = { method = "shared"; };
+                  ipv6 = {
+                    addr-gen-mode = "stable-privacy";
+                    method = "auto";
+                  };
+                  proxy = { };
+                };
+
+                eduroam = {
+                  "802-1x" = {
+                    eap = if (!iwd) then "ttls;" else "peap;";
+                    identity = "$EDUROAM_USER";
+                    password = "$EDUROAM_PW";
+                    phase2-auth = "mschapv2";
+                    anonymous-identity = lib.mkIf iwd eduroam-anon;
+                  };
+                  connection = {
+                    id = "eduroam";
+                    type = "wifi";
+                  };
+                  ipv4 = { method = "auto"; };
+                  ipv6 = {
+                    addr-gen-mode = "default";
+                    method = "auto";
+                  };
+                  proxy = { };
+                  wifi = {
+                    mode = "infrastructure";
+                    ssid = "eduroam";
+                  };
+                  wifi-security = {
+                    auth-alg = "open";
+                    key-mgmt = "wpa-eap";
+                  };
+                };
+
+                local = {
+                  connection = {
+                    autoconnect = "false";
+                    id = "local";
+                    type = "ethernet";
+                  };
+                  ethernet = { };
+                  ipv4 = {
+                    address1 = "10.42.1.1/24";
+                    method = "shared";
+                  };
+                  ipv6 = {
+                    addr-gen-mode = "stable-privacy";
+                    method = "auto";
+                  };
+                  proxy = { };
+                };
+
+                ${mobile1} = {
+                  connection = {
+                    id = mobile1;
+                    type = "wifi";
+                    autoconnect-priority = "500";
+                  };
+                  ipv4 = { method = "auto"; };
+                  ipv6 = {
+                    addr-gen-mode = "default";
+                    method = "auto";
+                  };
+                  proxy = { };
+                  wifi = {
+                    mode = "infrastructure";
+                    ssid = mobile1;
+                  };
+                  wifi-security = {
+                    auth-alg = "open";
+                    key-mgmt = "wpa-psk";
+                    psk = "$MOBILE_HOTSPOT_PW";
+                  };
+                };
+
+                home-wireguard = {
+                  connection = {
+                    id = "HomeVPN";
+                    type = "wireguard";
+                    autoconnect = "false";
+                    interface-name = "wg1";
+                  };
+                  wireguard = { private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY"; };
+                  "wireguard-peer.$HOME_WIREGURARD_SERVER_PUBLIC_KEY" = {
+                    endpoint = "$HOME_WIREGUARD_ENDPOINT";
+                    allowed-ips = home-wireguard-allowed-ips;
+                  };
+                  ipv4 = {
+                    method = "ignore";
+                    address1 = home-wireguard-address;
+                  };
+                  ipv6 = {
+                    addr-gen-mode = "stable-privacy";
+                    method = "ignore";
+                  };
+                  proxy = { };
+                };
+
+                pia-vpn1 = {
+                  connection = {
+                    autoconnect = "false";
+                    id = "PIA ${vpn1-location}";
+                    type = "vpn";
+                  };
+                  ipv4 = { method = "auto"; };
+                  ipv6 = {
+                    addr-gen-mode = "stable-privacy";
+                    method = "auto";
+                  };
+                  proxy = { };
+                  vpn = {
+                    auth = "sha1";
+                    ca = config.sops.secrets."pia-vpn1-ca-pem".path;
+                    challenge-response-flags = "2";
+                    cipher = vpn1-cipher;
+                    compress = "yes";
+                    connection-type = "password";
+                    crl-verify-file = config.sops.secrets."pia-vpn1-crl-pem".path;
+                    dev = "tun";
+                    password-flags = "0";
+                    remote = vpn1-address;
+                    remote-cert-tls = "server";
+                    reneg-seconds = "0";
+                    service-type = "org.freedesktop.NetworkManager.openvpn";
+                    username = "$PIA_VPN_USER";
+                  };
+                  vpn-secrets = { password = "$PIA_VPN_PW"; };
+                };
+
+                Hotspot = {
+                  connection = {
+                    autoconnect = "false";
+                    id = "Hotspot";
+                    type = "wifi";
+                  };
+                  ipv4 = { method = "shared"; };
+                  ipv6 = {
+                    addr-gen-mode = "default";
+                    method = "ignore";
+                  };
+                  proxy = { };
+                  wifi = {
+                    mode = "ap";
+                    ssid = "Hotspot-${config.swarselsystems.mainUser}";
+                  };
+                  wifi-security = {
+                    group = "ccmp;";
+                    key-mgmt = "wpa-psk";
+                    pairwise = "ccmp;";
+                    proto = "rsn;";
+                    psk = "$MOBILE_HOTSPOT_PW";
+                  };
+                };
+
+              };
+          };
+        };
+      };
+
+      systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
+    };
+  }
+#+end_src
+
+**** Remote building
+:PROPERTIES:
+:CUSTOM_ID: h:43aa6c7e-ef6a-4907-9d22-3e6fb5ba4c08
+:END:
+
+This defines all remote builds that I want to use on client machines. This includes the nixbuild.net machine as well as my own private builders. I can use these to perform x86_64 builds as well as aarch64.
+
+#+begin_src nix-ts :tangle modules/nixos/client/remotebuild.nix
+  { lib, config, globals, ... }:
+  let
+    inherit (config.swarselsystems) homeDir mainUser isClient;
+  in
+  {
+    config = {
+
+      sops.secrets = {
+        builder-key = lib.mkIf isClient { owner = mainUser; path = "${homeDir}/.ssh/builder"; mode = "0600"; };
+        nixbuild-net-key = { owner = mainUser; path = "${homeDir}/.ssh/nixbuild-net"; mode = "0600"; };
+      };
+
+      nix = {
+        settings.builders-use-substitutes = true;
+        distributedBuilds = true;
+        buildMachines = [
+          (lib.mkIf isClient {
+            hostName = config.repo.secrets.common.builder1-ip;
+            system = "aarch64-linux";
+            maxJobs = 20;
+            speedFactor = 10;
+          })
+          (lib.mkIf isClient {
+            hostName = globals.hosts.belchsfactory.wanAddress4;
+            system = "aarch64-linux";
+            maxJobs = 4;
+            speedFactor = 2;
+            protocol = "ssh-ng";
+          })
+          (lib.mkIf isClient {
+            hostName = "eu.nixbuild.net";
+            system = "x86_64-linux";
+            maxJobs = 100;
+            speedFactor = 2;
+            supportedFeatures = [ "benchmark" "big-parallel" ];
+          })
+        ];
+      };
+
+      programs.ssh = {
+        knownHosts = {
+          nixbuild = {
+            hostNames = [ "eu.nixbuild.net" ];
+            publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPIQCZc54poJ8vqawd8TraNryQeJnvH1eLpIDgbiqymM";
+          };
+          builder1 = lib.mkIf isClient {
+            hostNames = [ config.repo.secrets.common.builder1-ip ];
+            publicKey = config.repo.secrets.common.builder1-pubHostKey;
+          };
+          jump = lib.mkIf isClient {
+            hostNames = [ globals.hosts.liliputsteps.wanAddress4 ];
+            publicKey = config.repo.secrets.common.jump-pubHostKey;
+          };
+          builder2 = lib.mkIf isClient {
+            hostNames = [ globals.hosts.belchsfactory.wanAddress4 ];
+            publicKey = config.repo.secrets.common.builder2-pubHostKey;
+          };
+        };
+        extraConfig = ''
+          Host eu.nixbuild.net
+            ConnectTimeout 1
+            PubkeyAcceptedKeyTypes ssh-ed25519
+            ServerAliveInterval 60
+            IPQoS throughput
+            IdentityFile ${config.sops.secrets.nixbuild-net-key.path}
+        '' + lib.optionalString isClient ''
+          Host ${config.repo.secrets.common.builder1-ip}
+            ConnectTimeout 1
+            User ${mainUser}
+            IdentityFile ${config.sops.secrets.builder-key.path}
+
+          Host ${globals.hosts.belchsfactory.wanAddress4}
+            ConnectTimeout 5
+            ProxyJump ${globals.hosts.liliputsteps.wanAddress4}
+            User builder
+            IdentityFile ${config.sops.secrets.builder-key.path}
+
+          Host ${globals.hosts.liliputsteps.wanAddress4}
+            ConnectTimeout 1
+            User jump
+            IdentityFile ${config.sops.secrets.builder-key.path}
+        '';
+      };
+    };
+  }
+#+end_src
+
+**** Theme (stylix)
+:PROPERTIES:
+:CUSTOM_ID: h:e6e44705-94af-49fe-9ca0-0629d0f7d932
+:END:
+
+By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
+=theme= is defined in [[#h:2e9b84d7-cb18-4e74-83f8-65ada11a8911][stylix color scheme]].
+
+#+begin_src nix-ts :noweb yes :tangle modules/nixos/client/stylix.nix
+  { self, lib, config, vars, ... }:
+  {
+    config = {
+      stylix = lib.recursiveUpdate
+        {
+          enable = true;
+          base16Scheme = "${self}/files/stylix/swarsel.yaml";
+          targets.grub.enable = false; # the styling makes grub more ugly
+          image = config.swarselsystems.wallpaper;
+        }
+        vars.stylix;
+    };
+  }
+#+end_src
+
+**** Programs (including zsh setup)
+:PROPERTIES:
+:CUSTOM_ID: h:2bbf5f31-246d-4738-925f-eca40681f7b6
+:END:
+
+Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances (its config is in a subsection)
+
+#+begin_src nix-ts :tangle modules/nixos/client/programs.nix
+  _:
+  {
+    config = {
+      programs = {
+        dconf.enable = true;
+        evince.enable = true;
+        kdeconnect.enable = true;
+      };
+    };
+  }
+#+end_src
+
+***** zsh
+:PROPERTIES:
+:CUSTOM_ID: h:7daa06ff-d3b0-4491-97ce-770b749c52f9
+:END:
+Here I disable global completion to prevent redundant compinit calls and cache invalidation that slow down shell startup (enabled on the home-manager side).
+
+#+begin_src nix-ts :tangle modules/nixos/client/zsh.nix
+  { pkgs, ... }:
+  {
+    config = {
+      programs.zsh = {
+        enable = true;
+        enableCompletion = false;
+      };
+      users.defaultUserShell = pkgs.zsh;
+      environment.shells = with pkgs; [ zsh ];
+      environment.pathsToLink = [ "/share/zsh" ];
+    };
+  }
+#+end_src
+***** nautilus
+:PROPERTIES:
+:CUSTOM_ID: h:e31fa37e-220f-4e97-89ae-6a5219309a05
+:END:
+
+This enabled the right-click context menu entry in nautilus that allows to open a folder in a terminal - I never use this to be honest, but I feel like the file explorer would not be complete otherwise.
+
+#+begin_src nix-ts :tangle modules/nixos/client/nautilus.nix
+  _:
+  {
+    config = {
+      programs.nautilus-open-any-terminal = {
+        enable = true;
+        terminal = "kitty";
+      };
+    };
+  }
+#+end_src
+***** syncthing
+:PROPERTIES:
+:CUSTOM_ID: h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8
+:END:
+
+This is the syncthing client configuration. Contrary to the [[#h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d][server syncthing config]], this sets all directories as send+receive (the servers only receive). Apart from that, I only really need to sync my Obsidian stuff and some Emacs files.
+
+#+begin_src nix-ts :tangle modules/nixos/client/syncthing.nix
+  { lib, config, pkgs, globals, ... }:
+  let
+    inherit (config.swarselsystems) mainUser homeDir;
+    inherit (globals.services."syncthing-${globals.general.homeSyncthingServer}".extraConfig) devices;
+    syncDevices = builtins.attrNames devices;
+    servicePort = 8384;
+  in
+  {
+    config = {
+      services.syncthing = {
+        enable = true;
+        systemService = true;
+        guiAddress = "127.0.0.1:${builtins.toString servicePort}";
+        package = pkgs.syncthing;
+        user = mainUser;
+        dataDir = homeDir;
+        configDir = "${homeDir}/.config/syncthing";
+        openDefaultPorts = true;
+        overrideDevices = true;
+        overrideFolders = true;
+        settings = {
+          options = {
+            urAccepted = -1;
+          };
+          inherit devices;
+          folders = {
+            "Default Folder" = lib.mkDefault {
+              path = "${homeDir}/Sync";
+              devices = syncDevices;
+              id = "default";
+            };
+            "Obsidian" = {
+              path = "${homeDir}/Obsidian";
+              devices = syncDevices;
+              id = "yjvni-9eaa7";
+            };
+            "Org" = {
+              path = "${homeDir}/Org";
+              devices = syncDevices;
+              id = "a7xnl-zjj3d";
+            };
+            "Vpn" = {
+              path = "${homeDir}/Vpn";
+              devices = syncDevices;
+              id = "hgp9s-fyq3p";
+            };
+          };
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Services
+:PROPERTIES:
+:CUSTOM_ID: h:79f3258f-ed9d-434d-b50a-e58d57ade2a7
+:END:
+
+Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
+
+***** Bluetooth
+:PROPERTIES:
+:CUSTOM_ID: h:b91df05b-113d-4d09-93d1-b271e5b76810
+:END:
+
+Enables the blueman service including the nice system tray icon.
+
+#+begin_src nix-ts :tangle modules/nixos/client/blueman.nix
+  _:
+  {
+    config = {
+      services = {
+        blueman = {
+          enable = true;
+        };
+        hardware.bolt.enable = true;
+      };
+    };
+  }
+#+end_src
+
+***** Network devices
+:PROPERTIES:
+:CUSTOM_ID: h:73ed28cb-2f82-47b2-8bc5-208278b55788
+:END:
+
+In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
+
+This allows me to use my big scanner/printer's scanning function over the network.
+This also allows me to use my big scanner/printer's printing function over the network. Most of the settings are driver related.
+Avahi is the service used for the network discovery.
+
+#+begin_src nix-ts :tangle modules/nixos/client/networkdevices.nix
+  { pkgs, confLib, ... }:
+  {
+    config = {
+      # enable scanners over network
+      hardware.sane = {
+        enable = true;
+        extraBackends = [ pkgs.sane-airscan ];
+      };
+
+      # enable discovery and usage of network devices (esp. printers)
+      services.printing = {
+        enable = true;
+        drivers = [
+          pkgs.gutenprint
+          pkgs.gutenprintBin
+        ];
+        browsedConf = ''
+          BrowseDNSSDSubTypes _cups,_print
+          BrowseLocalProtocols all
+          BrowseRemoteProtocols all
+          CreateIPPPrinterQueues All
+          BrowseProtocols all
+        '';
+      };
+
+      users.persistentIds = {
+        avahi = confLib.mkIds 978;
+        lpadmin = confLib.mkIds 954;
+      };
+
+      services.avahi = {
+        enable = true;
+        nssmdns4 = true;
+        openFirewall = true;
+      };
+    };
+  }
+#+end_src
+
+***** enable GVfs
+:PROPERTIES:
+:CUSTOM_ID: h:f101daa2-604d-4553-99e2-f64b9c207f51
+:END:
+
+This is being set to allow myself to use all functions of nautilus in NixOS.
+
+#+begin_src nix-ts :tangle modules/nixos/client/gvfs.nix
+  _:
+  {
+    config = {
+      services.gvfs.enable = true;
+    };
+  }
+#+end_src
+
+***** interception-tools: Make CAPS work as ESC/CTRL
+:PROPERTIES:
+:CUSTOM_ID: h:08d213d5-a9f4-4309-8635-ba557b01dc7d
+:END:
+
+This is a super-convenient configuration bit that lets my remap my =CAPS= key to =ESC= if pressed shortly, and =CTRL= if being held. Interception-tools can do many other things as well, but that is really all I need when I am typing on my laptops internal keyboard.
+
+#+begin_src nix-ts :tangle modules/nixos/client/interceptiontools.nix
+  { pkgs, ... }:
+  {
+    config = {
+      # Make CAPS work as a dual function ESC/CTRL key
+      services.interception-tools = {
+        enable = true;
+        udevmonConfig =
+          let
+            dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+              TIMING:
+                TAP_MILLISEC: 200
+                DOUBLE_TAP_MILLISEC: 0
+
+              MAPPINGS:
+                - KEY: KEY_CAPSLOCK
+                  TAP: KEY_ESC
+                  HOLD: KEY_LEFTCTRL
+            '';
+          in
+          ''
+            - JOB: |
+                ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+                  | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+                  | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+              DEVICE:
+                EVENTS:
+                  EV_KEY: [KEY_CAPSLOCK]
+          '';
+      };
+    };
+  }
+#+end_src
+
+***** keyd: remap SUPER (not used)
+:PROPERTIES:
+:CUSTOM_ID: h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b
+:END:
+
+This is an unused service that can also be used to remap keybinds. I tried to use this in the past to implement the self-hiding topbar that I know from [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] in [[#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb][Niri]]. That did not work. Still, it cannot hurt to keep this reference in here.
+
+#+begin_src nix-ts :tangle modules/nixos/client/keyd.nix
+  _:
+  {
+    config = {
+      services.keyd = {
+        enable = true;
+        keyboards = {
+          default = {
+            ids = [ "*" ];
+            settings = {
+              main = {
+                leftmeta = "overload(meta, macro(rightmeta+z))";
+                rightmeta = "overload(meta, macro(rightmeta+z))";
+              };
+            };
+          };
+        };
+      };
+    };
+  }
+#+end_src
+
+***** power-profiles-daemon
+:PROPERTIES:
+:CUSTOM_ID: h:82fbba41-3a46-4db7-aade-49e4c23fc475
+:END:
+
+This enables power profile management. The available modes are:
+
+- power-saver
+- balanced
+- performance
+
+Most of the time I am using =power-saver=, however, it is good to be able to choose.
+
+This is also used by [[#h:385cc6c7-416c-4570-a5d3-bf8fb7c841e7][Noctalia-shell]] in order to set and get the profiles.
+
+#+begin_src nix-ts :tangle modules/nixos/client/power-profiles-daemon.nix
+  _:
+  {
+    config = {
+      services.power-profiles-daemon.enable = true;
+    };
+  }
+#+end_src
+
+***** SwayOSD
+:PROPERTIES:
+:CUSTOM_ID: h:5db15758-17d8-4bde-811d-d11ccdd3f3d3
+:END:
+
+[[#h:388e71be-f00a-4d45-ade1-218ce942057d][SwayOSD]] provides a neat visual overlay when changing the system volume or brightness. However, the libinput backend needs some fixing, which is done here.
+
+Nowadays, this is not used in favor of [[#h:96e05275-38df-401b-8809-d45d8f59e43c][Noctalia-shell]].
+
+#+begin_src nix-ts :tangle modules/nixos/client/swayosd.nix
+  { pkgs, ... }:
+  {
+    config = {
+      environment.systemPackages = [ pkgs.swayosd ];
+      services.udev.packages = [ pkgs.swayosd ];
+      systemd.services.swayosd-libinput-backend = {
+        description = "SwayOSD LibInput backend for listening to certain keys like CapsLock, ScrollLock, VolumeUp, etc.";
+        documentation = [ "https://github.com/ErikReider/SwayOSD" ];
+        wantedBy = [ "graphical.target" ];
+        partOf = [ "graphical.target" ];
+        after = [ "graphical.target" ];
+
+        serviceConfig = {
+          Type = "dbus";
+          BusName = "org.erikreider.swayosd";
+          ExecStart = "${pkgs.swayosd}/bin/swayosd-libinput-backend";
+          Restart = "on-failure";
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules
+:PROPERTIES:
+:CUSTOM_ID: h:7a89b5e3-b700-4167-8b14-2b8172f33936
+:END:
+***** Yubikey
+:PROPERTIES:
+:CUSTOM_ID: h:49aa792d-edfb-4eac-ae31-ecf23c4dca00
+:END:
+
+This takes care of the main Yubikey related configuration on the NixOS side - note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
+
+I want to use the ssh-agent from gpg-agent's ssh compatibility, which is why we disable ssh-agent. Also, we load some extra udev rules using =hardware.gpgSmartcards.enable=.
+
+Many guides state that it is needed to enable =pcscd=  to use the smartcard mode (CCID) of the Yubikey. However, enabling it causes some problems when locking the screen and unplugging the Yubikey, after which the Yubikey only becomes available again as a smart card after about one minute. I found that is is sufficient to enable =services.gpg-agent.enableScDaemon= in home-manager instead.
+
+Also, since I use a GPG key in sops, it seems that scdaemon creates an instance at boot which sometimes hogs the Yubikey, which leads to significant delays after e.g. locking the screen and unplugging the Yubikey. Since I do not need the GPG key for the actual sops secrets (I use machine age keys instead), I kill that process.
+
+#+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-yubikey.nix
+  { lib, config, confLib, pkgs, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+    inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
+  in
+  {
+    config = {
+
+      users.persistentIds = {
+        pcscd = confLib.mkIds 956;
+      };
+      programs.ssh = {
+        startAgent = false; # yes we want this to use FIDO2 keys
+        # enableAskPassword = true;
+        # askPassword = lib.getExe pkgs.kdePackages.ksshaskpass;
+      };
+      services = {
+        gnome.gcr-ssh-agent.enable = false;
+        yubikey-agent.enable = false;
+        pcscd.enable = true;
+
+        udev.packages = with pkgs; [
+          yubikey-personalization
+        ];
+      };
+
+      hardware.gpgSmartcards.enable = true;
+
+      security.pam.u2f = {
+        enable = true;
+        control = "sufficient";
+        settings = {
+          interactive = false; # displays a prompt BEFORE asking for presence
+          cue = true; # prints a message that a touch is requrired
+          origin = "pam://${mainUser}"; # make the keys work on all machines
+          authfile = pkgs.writeText "u2f-mappings" (lib.concatStrings [
+            mainUser
+            cfg1
+            cfg2
+          ]);
+        };
+      };
+
+      environment.systemPackages = with pkgs; [
+        kdePackages.ksshaskpass
+      ];
+    };
+  }
+        #+end_src
+
+***** Ledger
+:PROPERTIES:
+:CUSTOM_ID: h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4
+:END:
+
+This performs the necessary configuration to support this hardware.
+
+#+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-ledger.nix
+  { pkgs, ... }:
+  {
+    config = {
+      hardware.ledger.enable = true;
+
+      services.udev.packages = with pkgs; [
+        ledger-udev-rules
+      ];
+    };
+
+  }
+#+end_src
+
+***** Keyboards
+:PROPERTIES:
+:CUSTOM_ID: h:103b68b6-33a1-4369-a534-5f36dfa95e03
+:END:
+
+This loads some udev rules that I need for my split keyboards.
+
+#+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-keyboards.nix
+  { pkgs, confLib, ... }:
+  {
+    config = {
+      users.persistentIds.plugdev = confLib.mkIds 953;
+
+      services.udev.packages = with pkgs; [
+        qmk-udev-rules
+        vial
+        via
+      ];
+    };
+  }
+#+end_src
+
+**** System Login (greetd)
+:PROPERTIES:
+:CUSTOM_ID: h:eae45839-223a-4027-bce3-e26e092c9096
+:END:
+
+This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway/niri on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there.n
+
+#+begin_src nix-ts :tangle modules/nixos/client/login.nix
+  { pkgs, confLib, ... }:
+  {
+    config = {
+
+      users.persistentIds = {
+        greeter = confLib.mkIds 958;
+      };
+
+      services.greetd = {
+        enable = true;
+        settings = {
+          # initial_session.command = "sway";
+          initial_session.command = "uwsm start -- niri-uwsm.desktop";
+          # --cmd sway
+          default_session.command = ''
+            ${pkgs.tuigreet}/bin/tuigreet \
+              --time \
+              --asterisks \
+              --user-menu \
+              --cmd "uwsm start -- niri-uwsm.desktop"
+          '';
+        };
+      };
+
+      # environment.etc."greetd/environments".text = ''
+      #   sway
+      # '';
+    };
+  }
+#+end_src
+
+**** nix-ld
+:PROPERTIES:
+:CUSTOM_ID: h:404cc18b-b5f8-48d9-a407-a0fd70d57f46
+:END:
+
+This provides libraries for binaries that are not patched for use on NixOS. This really makes the biggest gripe with NixOS go away, that being having to run a binary that is only found in a single spot. It is most of the times possible to patch such a file, but this makes such a situation take much less time to resolve.
+
+Only some binaries that touch system settings might still not work, apart from that, the list of libraries I have curated here should be quite exhaustive.
+
+When a program does not work, start with =nix-ldd <program>=. This will tell you which library is missing. Afterwards, continue with =nix-locate <program>= to find which packages provide that library. Add it to libraries below and rebuild. After a reboot, it will be visible using =nix-ldd=. It can also be useful to take a look at =ldd= to see which libraries are needed in general.
+
+#+begin_src nix-ts :tangle modules/nixos/client/nix-ld.nix
+  { pkgs, ... }:
+  {
+    config = {
+      programs.nix-ld = {
+        enable = true;
+        libraries = with pkgs; [
+          SDL
+          SDL2
+          SDL2_image
+          SDL2_mixer
+          SDL2_ttf
+          SDL_image
+          SDL_mixer
+          SDL_ttf
+          alsa-lib
+          at-spi2-atk
+          at-spi2-core
+          atk
+          bzip2
+          cairo
+          cups
+          curl
+          dbus
+          dbus-glib
+          expat
+          ffmpeg
+          flac
+          fontconfig
+          freeglut
+          freetype
+          fuse3
+          gdk-pixbuf
+          glew_1_10
+          glib
+          gnome2.GConf
+          pango
+          gtk2
+          gtk3
+          icu
+          libGL
+          libappindicator-gtk2
+          libappindicator-gtk3
+          libcaca
+          libcanberra
+          libcap
+          libdbusmenu-gtk2
+          libdrm
+          libelf
+          libgbm
+          libgcrypt
+          libglvnd
+          libidn
+          libindicator-gtk2
+          libjpeg
+          libmikmod
+          libnotify
+          libogg
+          libpng
+          libpng12
+          libpulseaudio
+          librsvg
+          libsamplerate
+          libtheora
+          libtiff
+          libudev0-shim
+          libunwind
+          libusb1
+          libuuid
+          libva
+          libvdpau
+          libvorbis
+          libvpx
+          libxkbcommon
+          libxml2
+          libz
+          mesa
+          nspr
+          nss
+          openssl
+          pango
+          pipewire
+          pixman
+          speex
+          steam-fhsenv-without-steam
+          systemd
+          tbb
+          vulkan-loader
+          libice
+          libsm
+          libx11
+          libxscrnsaver
+          libxcomposite
+          libxcursor
+          libxdamage
+          libxext
+          libxfixes
+          libxft
+          libxi
+          libxinerama
+          libxmu
+          libxrandr
+          libxrender
+          libxt
+          libxtst
+          libxxf86vm
+          libxcb
+          libxshmfence
+          zlib
+        ];
+      };
+    };
+  }
+#+end_src
+
+**** Summary of nixos-rebuild diff
+:PROPERTIES:
+:CUSTOM_ID: h:b751d77d-246c-4bd6-b689-3467d82bf9c3
+:END:
+
+This snippet is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
+
+#+begin_src nix-ts :tangle modules/nixos/client/nvd-rebuild.nix
+  { pkgs, ... }:
+  {
+    config = {
+
+      environment.systemPackages = [
+        pkgs.nvd
+      ];
+
+      # system.activationScripts.diff = {
+      #   supportsDryActivation = true;
+      #   text = ''
+      #     ${pkgs.nvd}/bin/nvd --color=always --nix-bin-dir=${pkgs.nix}/bin diff \
+      #          /run/current-system "$systemConfig"
+      #   '';
+      # };
+    };
+  }
+#+end_src
+
+**** gnome-keyring
+:PROPERTIES:
+:CUSTOM_ID: h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f
+:END:
+
+Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps the login information when logging out of the session as well.
+
+#+begin_src nix-ts :tangle modules/nixos/client/gnome-keyring.nix
+  _:
+  {
+    config = {
+      services.gnome.gnome-keyring = {
+        enable = true;
+      };
+
+      programs.seahorse.enable = true;
+    };
+  }
+#+end_src
+
+**** Sway
+:PROPERTIES:
+:CUSTOM_ID: h:f78ffdd3-232b-4313-bd89-d6fb331fef22
+:END:
+
+This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the =package= attribute will be =null= for such an host, using the systems derivation instead.
+
+#+begin_src nix-ts :tangle modules/nixos/client/sway.nix
+  { lib, config, pkgs, withHomeManager, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+  in
+  {
+    config =
+      {
+        programs.sway = {
+          enable = true;
+          package = pkgs.swayfx;
+          wrapperFeatures = {
+            base = true;
+            gtk = true;
+          };
+        };
+      } // lib.optionalAttrs withHomeManager {
+        inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
+      };
+  }
+#+end_src
+
+**** xdg-portal (Screensharing)
+:PROPERTIES:
+:CUSTOM_ID: h:872d5f46-2ffd-4076-9a2c-98783dd29434
+:END:
+
+This allows me to use screen sharing on Wayland when using [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]]. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
+
+Nowadays, I only need to enable portals in general for use with [[#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb][Niri]], which implements screensharing using gnome-portal (which allows for neat things like hiding shared windows based on =app_id=).
+
+#+begin_src nix-ts :tangle modules/nixos/client/xdg-portal.nix
+  _:
+  {
+    config = {
+      xdg.portal = {
+        enable = true;
+        # config = {
+        #   common = {
+        #     default = "wlr";
+        #   };
+        # };
+        # wlr.enable = true;
+        # wlr.settings.screencast =  {
+        #   output_name = "eDP-1";
+        #   chooser_type = "simple";
+        #   chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
+        # };
+      };
+    };
+  }
+#+end_src
+
+**** Podman (distrobox)
+:PROPERTIES:
+:CUSTOM_ID: h:1bef3914-a258-4585-b232-e0fbe9e7a9b5
+:END:
+
+I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS (which has not happened in a while, but you never know). It is always the goal to quickly get things working on NixOS, but this should usually prevent me from getting completely stuck.
+
+#+begin_src nix-ts :tangle modules/nixos/client/distrobox.nix
+  { pkgs, confLib, ... }:
+  {
+    config = {
+
+      users.persistentIds.podman = confLib.mkIds 969;
+
+      environment.systemPackages = with pkgs; [
+        distrobox
+        boxbuddy
+      ];
+
+      virtualisation.podman = {
+        enable = true;
+        dockerCompat = true;
+        package = pkgs.podman;
+      };
+    };
+  }
+#+end_src
+
+**** Appimage
+:PROPERTIES:
+:CUSTOM_ID: h:cfc22f8d-251e-4636-98d6-a43cdb112b68
+:END:
+Adds the necessary tools to allow .appimage programs handling easily.
+
+#+begin_src nix-ts :tangle modules/nixos/client/appimage.nix
+  _:
+  {
+    config = {
+      programs.appimage = {
+        enable = true;
+        binfmt = true;
+      };
+    };
+
+  }
+#+end_src
+
+**** Handle lid switch correctly
+:PROPERTIES:
+:CUSTOM_ID: h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd
+:END:
+
+This turns off the display when the lid is closed. When we are docked it just turns it off, when using the laptop standalone it instead sends it to suspend.
+
+Notably we also make sure to handle the fingerprint sensor especially, because it can misfire or stop working on wakeup otherwise.
+
+#+begin_src nix-ts :tangle modules/nixos/client/lid.nix
+  _:
+  {
+    config = {
+      services.logind.settings.Login = {
+        HandleLidSwitch = "suspend";
+        HandleLidSwitchDocked = "ignore";
+      };
+      services.acpid = {
+        enable = true;
+        handlers.lidClosed = {
+          event = "button/lid \\w+ close";
+          action = ''
+            cat /sys/class/backlight/amdgpu_bl1/device/enabled
+            if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled
+            then
+              echo "Lid closed. Disabling fprintd."
+              systemctl stop fprintd
+              ln -s /dev/null /run/systemd/transient/fprintd.service
+              systemctl daemon-reload
+            fi
+          '';
+        };
+        handlers.lidOpen = {
+          event = "button/lid \\w+ open";
+          action = ''
+            if ! $(systemctl is-active --quiet fprintd); then
+              echo "Lid open. Enabling fprintd."
+              rm -f /run/systemd/transient/fprintd.service
+              systemctl daemon-reload
+              systemctl start fprintd
+            fi
+          '';
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Low battery notification
+:PROPERTIES:
+:CUSTOM_ID: h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17
+:END:
+
+Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
+
+Nowadays, I have replaced this with [[#h:385cc6c7-416c-4570-a5d3-bf8fb7c841e7][Noctalia-shell]].
+
+#+begin_src nix-ts :tangle modules/nixos/client/lowbattery.nix
+  { pkgs, lib, ... }:
+  {
+    config = {
+      systemd.user.services."battery-low" =
+        let
+          target = "sway-session.target";
+        in
+        {
+          enable = true;
+          description = "Timer for battery check that alerts at 10% or less";
+          partOf = [ target ];
+          wantedBy = [ target ];
+          serviceConfig = {
+            Type = "simple";
+            ExecStart = pkgs.writeShellScript "battery-low-notification"
+              ''
+                if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") && $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") > 0 ));
+                then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
+                fi;
+              '';
+          };
+        };
+      systemd.user.timers."battery-low" = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          # Every Minute
+          OnCalendar = "*-*-* *:*:00";
+          Unit = "battery-low.service";
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Auto-login
+:PROPERTIES:
+:CUSTOM_ID: h:fa8d9ec4-3e22-458a-9239-859cffe7f55c
+:END:
+
+Auto login for the initial session. This basically skips the [[#h:eae45839-223a-4027-bce3-e26e092c9096][System Login (greetd)]] screen.
+
+#+begin_src nix-ts :tangle modules/nixos/client/autologin.nix
+  { config, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+  in
+  {
+    config = {
+      services = {
+        getty.autologinUser = mainUser;
+        greetd.settings.initial_session.user = mainUser;
+      };
+    };
+  }
+#+end_src
+
+**** UWSM
+:PROPERTIES:
+:CUSTOM_ID: h:74f5961d-2881-4a42-b99f-94c8f70c8196
+:END:
+
+UWSM is a helper tool meant to help with chaining systemd services correctly. When starting/ending sessions using it, we can be sure that the corresponding services also start and end with it - this is not standard behaviour!
+
+#+begin_src nix-ts :tangle modules/nixos/client/uwsm.nix
+  { lib, config, pkgs, ... }:
+  let
+    cfg = config.programs.uwsm;
+  in
+  {
+    config = {
+      programs.uwsm = {
+        enable = true;
+        waylandCompositors = {
+          sway = {
+            prettyName = "Sway";
+            comment = "Sway compositor managed by UWSM";
+            binPath = "/run/current-system/sw/bin/sway";
+          };
+          niri = lib.mkIf (config.programs ? niri) {
+            prettyName = "Niri";
+            comment = "Niri compositor managed by UWSM";
+            binPath = "/run/current-system/sw/bin/niri-session";
+          };
+        };
+      };
+
+      services.displayManager.sessionPackages =
+        let
+          mk_uwsm_desktop_entry =
+            opts:
+            (pkgs.writeTextFile {
+              name = "${opts.name}-uwsm";
+              text = ''
+                [Desktop Entry]
+                Name=${opts.prettyName} (UWSM)
+                Comment=${opts.comment}
+                Exec=${lib.getExe cfg.package} start -F -- ${opts.binPath} ${lib.strings.escapeShellArgs opts.extraArgs}
+                Type=Application
+              '';
+              destination = "/share/wayland-sessions/${opts.name}-uwsm.desktop";
+              derivationArgs = {
+                passthru.providedSessions = [ "${opts.name}-uwsm" ];
+              };
+            });
+        in
+        lib.mkForce (lib.mapAttrsToList
+          (
+            name: value:
+              mk_uwsm_desktop_entry {
+                inherit name;
+                inherit (value)
+                  prettyName
+                  comment
+                  binPath
+                  extraArgs
+                  ;
+              }
+          )
+          cfg.waylandCompositors);
+    };
+  }
+#+end_src
+
+**** Firezone Client
+:PROPERTIES:
+:CUSTOM_ID: h:4d018a21-637b-4c7d-b9c9-7f1b95144a07
+:END:
+
+This is the VPN client that I use to access my internal network at home.
+
+#+begin_src nix-ts :tangle modules/nixos/client/firezone-client.nix
+  { config, confLib, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+  in
+  {
+    config = {
+
+      users.persistentIds.firezone-client = confLib.mkIds 955;
+
+      services.firezone.gui-client = {
+        enable = true;
+        inherit (config.node) name;
+        allowedUsers = [ mainUser ];
+      };
+    };
+  }
+#+end_src
+
+**** Impermanence
+#+begin_src nix-ts :tangle modules/nixos/common/impermanence.nix
+  { config, lib, ... }:
+  let
+    mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+    inherit (config.swarselsystems) isImpermanence isCrypted isBtrfs;
+  in
+  {
+    config = {
+
+
+      security.sudo.extraConfig = lib.mkIf isImpermanence ''
+        # rollback results in sudo lectures after each reboot
+        Defaults lecture = never
+      '';
+
+      # This script does the actual wipe of the system
+      # So if it doesn't run, the btrfs system effectively acts like a normal system
+      # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
+      boot.tmp.useTmpfs = lib.mkIf (!isImpermanence) true;
+      boot.initrd.systemd = lib.mkIf (isImpermanence && isBtrfs) {
+        enable = true;
+        services.rollback = {
+          description = "Rollback BTRFS root subvolume to a pristine state";
+          wantedBy = [ "initrd.target" ];
+          # make sure it's done after encryption
+          # i.e. LUKS/TPM process
+          after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+          requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
+          # mount the root fs before clearing
+          before = [ "sysroot.mount" ];
+          unitConfig.DefaultDependencies = "no";
+          serviceConfig.Type = "oneshot";
+          script = ''
+            mkdir -p /mnt
+
+            # We first mount the btrfs root to /mnt
+            # so we can manipulate btrfs subvolumes.
+            mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
+            btrfs subvolume list -o /mnt/root
+
+            # While we're tempted to just delete /root and create
+            # a new snapshot from /root-blank, /root is already
+            # populated at this point with a number of subvolumes,
+            # which makes `btrfs subvolume delete` fail.
+            # So, we remove them first.
+            #
+            # /root contains subvolumes:
+            # - /root/var/lib/portables
+            # - /root/var/lib/machines
+
+            btrfs subvolume list -o /mnt/root |
+            cut -f9 -d' ' |
+            while read subvolume; do
+              echo "deleting /$subvolume subvolume..."
+              btrfs subvolume delete "/mnt/$subvolume"
+            done &&
+            echo "deleting /root subvolume..." &&
+            btrfs subvolume delete /mnt/root
+
+            echo "restoring blank /root subvolume..."
+            btrfs subvolume snapshot /mnt/root-blank /mnt/root
+
+            # Once we're done rolling back to a blank snapshot,
+            # we can unmount /mnt and continue on the boot process.
+            umount /mnt
+          '';
+        };
+      };
+
+
+      environment.persistence."/persist" = lib.mkIf isImpermanence {
+        hideMounts = true;
+        directories =
+          [
+            "/root/.dotfiles"
+            "/etc/nix"
+            "/etc/NetworkManager/system-connections"
+            "/var/lib/nixos"
+            "/var/tmp"
+            {
+              directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
+              mode = "1777";
+            }
+            # "/etc/secureboot"
+          ];
+
+        files = [
+          "/etc/ssh/ssh_host_ed25519_key"
+          "/etc/ssh/ssh_host_ed25519_key.pub"
+          "/etc/machine-id"
+        ];
+      };
+    };
+
+  }
+#+end_src
+
+**** dns
+#+begin_src nix-ts :tangle modules/nixos/common/dns.nix
+  { inputs, lib, ... }:
+  {
+    flake-file.inputs.dns = {
+      url = "github:kirelagin/dns.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    imports = lib.optionals (inputs ? dns) [
+      { _module.args.dns = inputs.dns; }
+    ];
+  }
+#+end_src
+
+**** nftables
+#+begin_src nix-ts :tangle modules/nixos/common/nftables.nix
+  { inputs, lib, ... }:
+  {
+    flake-file.inputs.nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
+
+    imports = lib.optionals (inputs ? nixos-nftables-firewall) [
+      inputs.nixos-nftables-firewall.nixosModules.default
+    ];
   }
 #+end_src
 
@@ -11666,6 +13688,29 @@ This is the general NGINX config usind on [[#h:19300583-322b-4e0b-b657-857fbf23d
         };
       };
     };
+  }
+#+end_src
+
+**** NGINX OpenTelemetry
+
+#+begin_src nix-ts :tangle modules/nixos/server/nginx-otel.nix
+  { inputs, lib, ... }:
+  {
+    flake-file.inputs.nginx-otel = {
+      url = "github:djvcom/nix-nginx-otel";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    imports = lib.optionals (inputs ? nginx-otel) [
+      inputs.nginx-otel.nixosModules.default
+      ({ config, globals, ... }: {
+        services.nginx.otel = {
+          enable = true;
+          serviceName = "nginx-${config.node.name}";
+          endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+        };
+      })
+    ];
   }
 #+end_src
 
@@ -19743,180 +21788,182 @@ When changing the hashed passwords, =dovecot= needs to be restarted manually, it
 Currently, the web UI for this is a bit wonky and requires reloading the page sometimes in order to show anything (this is because my security settings are too strict - even with the security headers off! - , but I do not have time to look into it) - in any case, I do rather use [[#h:b92a18cf-eec3-4605-a8c2-37133ade3574][mu4e]] along with =pizauth=, with the web UI just being a fallback in case I need to acccess special fringe accounts.
 
 #+begin_src nix-ts :tangle modules/nixos/server/mailserver.nix
-  { self, lib, config, globals, dns, confLib, ... }:
-  let
-    inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
-    inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 alias2_4 user3;
-    baseDomain = globals.domains.main;
-
-    roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
-    endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
-    endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6 or null;
-  in
+  { self, inputs, lib, ... }:
   {
-    imports = [
+    flake-file.inputs.simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
+
+    imports = lib.optionals (inputs ? simple-nixos-mailserver) [
       "${self}/modules/nixos/server/postgresql.nix"
       "${self}/modules/nixos/server/nginx.nix"
       "${self}/modules/nixos/server/acme.nix"
-    ];
-
-    config = {
-      swarselsystems.enabledServerModules = [ "mailserver" ];
-
-      users = {
-        persistentIds = {
-          knot-resolver = confLib.mkIds 963;
-          postfix-tlspol = confLib.mkIds 962;
-          roundcube = confLib.mkIds 961;
-          redis-rspamd = confLib.mkIds 960;
-        };
-      };
-
-      globals = {
-        dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
-          "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        };
-        services = {
-          ${serviceName} = {
-            domain = serviceDomain;
-            proxyAddress4 = endpointAddress4;
-            proxyAddress6 = endpointAddress6;
-          };
-          roundcube = {
-            domain = roundcubeDomain;
-            inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
-            homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-          };
-        };
-      };
-
-      topology.self.services = lib.listToAttrs (map
-        (service:
-          lib.nameValuePair "${service}" {
-            name = lib.swarselsystems.toCapitalized service;
-            info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
-            icon = "${self}/files/topology-images/${service}.png";
-          }
-        )
-        [ "postfix" "dovecot" "rspamd" "clamav" "roundcube" ]);
-
-      sops.secrets = {
-        user1-hashed-pw = { inherit sopsFile; owner = serviceUser; };
-        user2-hashed-pw = { inherit sopsFile; owner = serviceUser; };
-        user3-hashed-pw = { inherit sopsFile; owner = serviceUser; };
-      };
-
-      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-        { directory = "/var/vmail"; user = serviceUser; group = serviceGroup; mode = "0770"; }
-        { directory = "/var/sieve"; user = serviceUser; group = serviceGroup; mode = "0770"; }
-        { directory = "/var/dkim"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
-        { directory = serviceDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
-        # { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
-        { directory = "/var/lib/rspamd"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
-        { directory = "/var/lib/roundcube"; user = "roundcube"; group = "roundcube"; mode = "0700"; }
-        { directory = "/var/lib/redis-rspamd"; user = "redis-rspamd"; group = "redis-rspamd"; mode = "0700"; }
-        { directory = "/var/lib/postfix"; user = "root"; group = "root"; mode = "0755"; }
-        { directory = "/var/lib/knot-resolver"; user = "knot-resolver"; group = "knot-resolver"; mode = "0770"; }
-      ];
-
-      mailserver = {
-        enable = true;
-        stateVersion = 3;
-        fqdn = serviceDomain;
-        domains = [ baseDomain ];
-        indexDir = "${serviceDir}/indices";
-        openFirewall = true;
-        # certificateScheme = "acme";
-        dmarcReporting.enable = true;
-        enableSubmission = true;
-        enableSubmissionSsl = true;
-        enableImapSsl = true;
-        x509.useACMEHost = globals.domains.main;
-
-        accounts = {
-          "${user1}@${baseDomain}" = {
-            hashedPasswordFile = config.sops.secrets.user1-hashed-pw.path;
-            aliases = [
-              "${alias1_1}@${baseDomain}"
-              "${alias1_2}@${baseDomain}"
-              "${alias1_3}@${baseDomain}"
-              "${alias1_4}@${baseDomain}"
-            ];
-          };
-          "${user2}@${baseDomain}" = {
-            hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
-            aliases = [
-              "${alias2_1}@${baseDomain}"
-              "${alias2_2}@${baseDomain}"
-              "${alias2_3}@${baseDomain}"
-              "${alias2_4}@${baseDomain}"
-            ];
-            sendOnly = true;
-          };
-          "${user3}@${baseDomain}" = {
-            hashedPasswordFile = config.sops.secrets.user3-hashed-pw.path;
-            aliases = [
-              "@${baseDomain}"
-            ];
-            catchAll = [
-              baseDomain
-            ];
-          };
-        };
-      };
-
-      services.roundcube = {
-        enable = true;
-        # this is the url of the vhost, not necessarily the same as the fqdn of
-        # the mailserver
-        hostName = roundcubeDomain;
-        extraConfig = ''
-          $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
-          $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
-          $config['smtp_user'] = "%u";
-          $config['smtp_pass'] = "%p";
-        '';
-        configureNginx = true;
-      };
-
-      # the rest of the ports are managed by snm
-      networking.firewall.allowedTCPPorts = [ 80 443 ];
-
-      services.nginx = {
-        virtualHosts = {
-          "${roundcubeDomain}" = {
-            useACMEHost = globals.domains.main;
-            enableACME = false;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/".recommendedSecurityHeaders = false;
-              "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
-              "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders = false;
-              "~* \\.php(/|$)".recommendedSecurityHeaders = false;
-            };
-          };
-        };
-      };
-
-
-
-      nodes =
+      inputs.simple-nixos-mailserver.nixosModules.default
+      ({ self, lib, config, globals, dns, confLib, ... }:
         let
-          extraConfigLoc = ''
-            proxy_ssl_server_name on;
-            proxy_ssl_name ${roundcubeDomain};
-          '';
+          inherit (config.swarselsystems) sopsFile;
+          inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
+          inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+          inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 alias2_4 user3;
+          baseDomain = globals.domains.main;
+
+          roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
+          endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
+          endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6 or null;
         in
         {
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; protocol = "https"; maxBody = 0; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; protocol = "https"; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-        };
+          swarselsystems.enabledServerModules = [ "mailserver" ];
 
-    };
+          users = {
+            persistentIds = {
+              knot-resolver = confLib.mkIds 963;
+              postfix-tlspol = confLib.mkIds 962;
+              roundcube = confLib.mkIds 961;
+              redis-rspamd = confLib.mkIds 960;
+            };
+          };
+
+          globals = {
+            dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+              "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
+              "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+            };
+            services = {
+              ${serviceName} = {
+                domain = serviceDomain;
+                proxyAddress4 = endpointAddress4;
+                proxyAddress6 = endpointAddress6;
+              };
+              roundcube = {
+                domain = roundcubeDomain;
+                inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+                homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+              };
+            };
+          };
+
+          topology.self.services = lib.listToAttrs (map
+            (service:
+              lib.nameValuePair "${service}" {
+                name = lib.swarselsystems.toCapitalized service;
+                info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
+                icon = "${self}/files/topology-images/${service}.png";
+              }
+            )
+            [ "postfix" "dovecot" "rspamd" "clamav" "roundcube" ]);
+
+          sops.secrets = {
+            user1-hashed-pw = { inherit sopsFile; owner = serviceUser; };
+            user2-hashed-pw = { inherit sopsFile; owner = serviceUser; };
+            user3-hashed-pw = { inherit sopsFile; owner = serviceUser; };
+          };
+
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            { directory = "/var/vmail"; user = serviceUser; group = serviceGroup; mode = "0770"; }
+            { directory = "/var/sieve"; user = serviceUser; group = serviceGroup; mode = "0770"; }
+            { directory = "/var/dkim"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
+            { directory = serviceDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
+            # { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+            { directory = "/var/lib/rspamd"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
+            { directory = "/var/lib/roundcube"; user = "roundcube"; group = "roundcube"; mode = "0700"; }
+            { directory = "/var/lib/redis-rspamd"; user = "redis-rspamd"; group = "redis-rspamd"; mode = "0700"; }
+            { directory = "/var/lib/postfix"; user = "root"; group = "root"; mode = "0755"; }
+            { directory = "/var/lib/knot-resolver"; user = "knot-resolver"; group = "knot-resolver"; mode = "0770"; }
+          ];
+
+          mailserver = {
+            enable = true;
+            stateVersion = 3;
+            fqdn = serviceDomain;
+            domains = [ baseDomain ];
+            indexDir = "${serviceDir}/indices";
+            openFirewall = true;
+            # certificateScheme = "acme";
+            dmarcReporting.enable = true;
+            enableSubmission = true;
+            enableSubmissionSsl = true;
+            enableImapSsl = true;
+            x509.useACMEHost = globals.domains.main;
+
+            accounts = {
+              "${user1}@${baseDomain}" = {
+                hashedPasswordFile = config.sops.secrets.user1-hashed-pw.path;
+                aliases = [
+                  "${alias1_1}@${baseDomain}"
+                  "${alias1_2}@${baseDomain}"
+                  "${alias1_3}@${baseDomain}"
+                  "${alias1_4}@${baseDomain}"
+                ];
+              };
+              "${user2}@${baseDomain}" = {
+                hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
+                aliases = [
+                  "${alias2_1}@${baseDomain}"
+                  "${alias2_2}@${baseDomain}"
+                  "${alias2_3}@${baseDomain}"
+                  "${alias2_4}@${baseDomain}"
+                ];
+                sendOnly = true;
+              };
+              "${user3}@${baseDomain}" = {
+                hashedPasswordFile = config.sops.secrets.user3-hashed-pw.path;
+                aliases = [
+                  "@${baseDomain}"
+                ];
+                catchAll = [
+                  baseDomain
+                ];
+              };
+            };
+          };
+
+          services.roundcube = {
+            enable = true;
+            # this is the url of the vhost, not necessarily the same as the fqdn of
+            # the mailserver
+            hostName = roundcubeDomain;
+            extraConfig = ''
+              $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
+              $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
+              $config['smtp_user'] = "%u";
+              $config['smtp_pass'] = "%p";
+            '';
+            configureNginx = true;
+          };
+
+          # the rest of the ports are managed by snm
+          networking.firewall.allowedTCPPorts = [ 80 443 ];
+
+          services.nginx = {
+            virtualHosts = {
+              "${roundcubeDomain}" = {
+                useACMEHost = globals.domains.main;
+                enableACME = false;
+                forceSSL = true;
+                acmeRoot = null;
+                locations = {
+                  "/".recommendedSecurityHeaders = false;
+                  "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
+                  "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders = false;
+                  "~* \\.php(/|$)".recommendedSecurityHeaders = false;
+                };
+              };
+            };
+          };
+
+
+
+          nodes =
+            let
+              extraConfigLoc = ''
+                proxy_ssl_server_name on;
+                proxy_ssl_name ${roundcubeDomain};
+              '';
+            in
+            {
+              ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; protocol = "https"; maxBody = 0; };
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; protocol = "https"; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+            };
+        })
+    ];
   }
 #+end_src
 **** Attic (nix binary cache)
@@ -20110,121 +22157,134 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/hydra.nix
-  { inputs, lib, config, globals, confLib, ... }:
-  let
-    inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
-    inherit (config.swarselsystems) sopsFile;
-  in
+  { inputs, lib, ... }:
   {
-    config = {
-      swarselsystems.enabledServerModules = [ "hydra" ];
-
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-      globals = {
-        networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
-        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+    flake-file.inputs = {
+      hydra = {
+        url = "github:nixos/hydra/nix-2.30";
+        inputs.nix-eval-jobs.follows = "nix-eval-jobs";
       };
-
-      sops = {
-        secrets = {
-          nixbuild-net-key = { mode = "0600"; };
-          hydra-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        };
-        templates = {
-          "hydra-env" = {
-            content = ''
-              HYDRA_PW="${config.sops.placeholder.hydra-pw}"
-            '';
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
-          };
-        };
+      nix-eval-jobs = {
+        url = "github:nix-community/nix-eval-jobs";
+        flake = false;
       };
+    };
 
-      services.hydra = {
-        enable = true;
-        package = inputs.hydra.packages.${config.node.arch}.hydra;
-        port = servicePort;
-        hydraURL = "https://${serviceDomain}";
-        listenHost = "*";
-        notificationSender = "hydra@${globals.domains.main}";
-        minimumDiskFreeEvaluator = 20; # 20G
-        minimumDiskFree = 20; # 20G
-        useSubstitutes = true;
-        smtpHost = globals.services.mailserver.domain;
-        buildMachinesFiles = [
-          "/etc/nix/machines"
-        ];
-        extraConfig = ''
-          using_frontend_proxy 1
-        '';
-      };
-
-      systemd.services.hydra-user-setup = {
-        description = "Create admin user for Hydra";
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          User = "hydra";
-          EnvironmentFile = [
-            config.sops.templates.hydra-env.path
-          ];
-        };
-        wantedBy = [ "multi-user.target" ];
-        requires = [ "hydra-init.service" ];
-        after = [ "hydra-init.service" ];
-        environment = lib.mkForce config.systemd.services.hydra-init.environment;
-        script = ''
-            set -eu
-          if [ ! -e ~hydra/.user-setup-done ]; then
-            /run/current-system/sw/bin/hydra-create-user admin --full-name 'admin' --email-address 'admin@${globals.domains.main}' --password "$HYDRA_PW" --role admin
-            touch ~hydra/.user-setup-done
-          fi
-        '';
-      };
-
-      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-      ];
-
-      nix = {
-        settings.builders-use-substitutes = true;
-        distributedBuilds = true;
-        buildMachines = [
-          {
-            hostName = "localhost";
-            protocol = null;
-            system = config.node.arch;
-            supportedFeatures = [ "kvm" "nixos-test" "big-parallel" "benchmark" ];
-            maxJobs = 4;
-          }
-        ];
-      };
-
-      # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-      programs.ssh = {
-        extraConfig = ''
-          StrictHostKeyChecking no
-        '';
-      };
-
-      nodes =
+    imports = lib.optionals (inputs ? hydra) [
+      ({ inputs, lib, config, globals, confLib, ... }:
         let
-          extraConfigLoc = ''
-            proxy_set_header  X-Request-Base    /hydra;
-          '';
+          inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
+          inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+          inherit (config.swarselsystems) sopsFile;
         in
         {
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
-        };
+          swarselsystems.enabledServerModules = [ "hydra" ];
 
-    };
+          topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+          globals = {
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+            services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+            monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
+            dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          };
+
+          sops = {
+            secrets = {
+              nixbuild-net-key = { mode = "0600"; };
+              hydra-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            };
+            templates = {
+              "hydra-env" = {
+                content = ''
+                  HYDRA_PW="${config.sops.placeholder.hydra-pw}"
+                '';
+                owner = serviceUser;
+                group = serviceGroup;
+                mode = "0440";
+              };
+            };
+          };
+
+          services.hydra = {
+            enable = true;
+            package = inputs.hydra.packages.${config.node.arch}.hydra;
+            port = servicePort;
+            hydraURL = "https://${serviceDomain}";
+            listenHost = "*";
+            notificationSender = "hydra@${globals.domains.main}";
+            minimumDiskFreeEvaluator = 20; # 20G
+            minimumDiskFree = 20; # 20G
+            useSubstitutes = true;
+            smtpHost = globals.services.mailserver.domain;
+            buildMachinesFiles = [
+              "/etc/nix/machines"
+            ];
+            extraConfig = ''
+              using_frontend_proxy 1
+            '';
+          };
+
+          systemd.services.hydra-user-setup = {
+            description = "Create admin user for Hydra";
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              User = "hydra";
+              EnvironmentFile = [
+                config.sops.templates.hydra-env.path
+              ];
+            };
+            wantedBy = [ "multi-user.target" ];
+            requires = [ "hydra-init.service" ];
+            after = [ "hydra-init.service" ];
+            environment = lib.mkForce config.systemd.services.hydra-init.environment;
+            script = ''
+                set -eu
+              if [ ! -e ~hydra/.user-setup-done ]; then
+                /run/current-system/sw/bin/hydra-create-user admin --full-name 'admin' --email-address 'admin@${globals.domains.main}' --password "$HYDRA_PW" --role admin
+                touch ~hydra/.user-setup-done
+              fi
+            '';
+          };
+
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+          ];
+
+          nix = {
+            settings.builders-use-substitutes = true;
+            distributedBuilds = true;
+            buildMachines = [
+              {
+                hostName = "localhost";
+                protocol = null;
+                system = config.node.arch;
+                supportedFeatures = [ "kvm" "nixos-test" "big-parallel" "benchmark" ];
+                maxJobs = 4;
+              }
+            ];
+          };
+
+          # networking.firewall.allowedTCPPorts = [ servicePort ];
+
+          programs.ssh = {
+            extraConfig = ''
+              StrictHostKeyChecking no
+            '';
+          };
+
+          nodes =
+            let
+              extraConfigLoc = ''
+                proxy_set_header  X-Request-Base    /hydra;
+              '';
+            in
+            {
+              ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+            };
+        })
+    ];
   }
 #+end_src
 **** Kea DHCP
@@ -21837,117 +23897,122 @@ The tool itself fetches a token that can then be used by Invidious to start a se
 YouTube in theory has the IP where the PO token was derived from; however, when watching the actual videos, those run through the Invidious proxy which protects most information.
 
 #+begin_src nix-ts :tangle modules/nixos/server/invidious-companion.nix
-  { self, inputs, lib, pkgs, config, globals, confLib, ... }:
-  let
-    inherit (confLib.gen { name = "invidious-companion"; port = 8282; }) servicePort serviceName serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.gen { name = "invidious"; }) serviceDomain;
-    inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
-
-    sopsFile = self + /secrets/general/invidious-companion.yaml;
-    companion = pkgs.stdenv.mkDerivation {
-      name = "invidious-companion";
-      src = inputs.invidious-companion;
-      nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-      buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.openssl ];
-      phases = [ "unpackPhase" "installPhase" ];
-      installPhase = ''
-        mkdir -p $out/bin
-        cp invidious_companion $out/bin/invidious_companion
-        chmod +x $out/bin/invidious_companion
-      '';
-    };
-  in
+  { inputs, lib, ... }:
   {
+    flake-file.inputs.invidious-companion = {
+      url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
+      flake = false;
+    };
 
-    config = {
-      swarselsystems.enabledServerModules = [ "invidious-companion" ];
-
-      sops = {
-        secrets = {
-          invidious-companion-key = { inherit sopsFile; mode = "0444"; };
-        };
-
-        templates = {
-          "invidious-companion.env" = {
-            content = ''
-              SERVER_SECRET_KEY=${config.sops.placeholder.invidious-companion-key}
-              HOST=0.0.0.0
-            '';
-            mode = "0444";
-          };
-        };
-      };
-
-      topology.self.services.${serviceName} = {
-        name = "invidious-companion";
-        info = "https://${serviceDomain}/companion";
-        icon = "services.invidious";
-      };
-
-      systemd.services.invidious-companion = {
-        description = "Invidious companion service";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "network.target" ];
-        serviceConfig = {
-          ExecStart = "${companion}/bin/invidious_companion";
-          EnvironmentFile = config.sops.templates."invidious-companion.env".path;
-          Restart = "on-failure";
-          DynamicUser = true;
-        };
-      };
-
-      programs.nix-ld.enable = true; # invidious-companion runs as an unpatched deno app
-
-      globals = {
-        networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-      };
-
-      nodes =
+    imports = lib.optionals (inputs ? invidious-companion) [
+      ({ self, inputs, lib, pkgs, config, globals, confLib, ... }:
         let
-          genNginx = toAddress: extraConfig: {
-            upstreams = {
-              "${serviceName}" = {
-                servers = {
-                  "${toAddress}:${builtins.toString servicePort}" = { };
-                };
-              };
-            };
-            virtualHosts = {
-              "${serviceDomain}" = {
-                useACMEHost = globals.domains.main;
-                forceSSL = true;
-                acmeRoot = null;
-                inherit extraConfig;
-                locations = {
-                  "/companion" = {
-                    proxyPass = "http://${serviceName}";
-                    bypassAuth = true;
-                  };
-                };
-              };
-            };
-          };
-          homeInvidiousFallback = lib.optionalAttrs (!globals.services.invidious.isHome) {
-            virtualHosts.${serviceDomain}.locations."/" = {
-              proxyPass = "https://${globals.services.invidious.proxyAddress4}";
-              extraConfig = ''
-                proxy_ssl_server_name on;
-                proxy_ssl_name ${serviceDomain};
-              '';
-            };
+          inherit (confLib.gen { name = "invidious-companion"; port = 8282; }) servicePort serviceName serviceAddress proxyAddress4 proxyAddress6;
+          inherit (confLib.gen { name = "invidious"; }) serviceDomain;
+          inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+
+          sopsFile = self + /secrets/general/invidious-companion.yaml;
+          companion = pkgs.stdenv.mkDerivation {
+            name = "invidious-companion";
+            src = inputs.invidious-companion;
+            nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+            buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.openssl ];
+            phases = [ "unpackPhase" "installPhase" ];
+            installPhase = ''
+              mkdir -p $out/bin
+              cp invidious_companion $out/bin/invidious_companion
+              chmod +x $out/bin/invidious_companion
+            '';
           };
         in
         {
-          ${webProxy}.services.nginx = genNginx serviceAddress "";
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            lib.recursiveUpdate (genNginx homeServiceAddress nginxAccessRules) homeInvidiousFallback
-          );
-        };
+          swarselsystems.enabledServerModules = [ "invidious-companion" ];
 
-    };
+          sops = {
+            secrets = {
+              invidious-companion-key = { inherit sopsFile; mode = "0444"; };
+            };
 
+            templates = {
+              "invidious-companion.env" = {
+                content = ''
+                  SERVER_SECRET_KEY=${config.sops.placeholder.invidious-companion-key}
+                  HOST=0.0.0.0
+                '';
+                mode = "0444";
+              };
+            };
+          };
+
+          topology.self.services.${serviceName} = {
+            name = "invidious-companion";
+            info = "https://${serviceDomain}/companion";
+            icon = "services.invidious";
+          };
+
+          systemd.services.invidious-companion = {
+            description = "Invidious companion service";
+            wantedBy = [ "multi-user.target" ];
+            after = [ "network.target" ];
+            serviceConfig = {
+              ExecStart = "${companion}/bin/invidious_companion";
+              EnvironmentFile = config.sops.templates."invidious-companion.env".path;
+              Restart = "on-failure";
+              DynamicUser = true;
+            };
+          };
+
+          programs.nix-ld.enable = true; # invidious-companion runs as an unpatched deno app
+
+          globals = {
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+            services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+            dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          };
+
+          nodes =
+            let
+              genNginx = toAddress: extraConfig: {
+                upstreams = {
+                  "${serviceName}" = {
+                    servers = {
+                      "${toAddress}:${builtins.toString servicePort}" = { };
+                    };
+                  };
+                };
+                virtualHosts = {
+                  "${serviceDomain}" = {
+                    useACMEHost = globals.domains.main;
+                    forceSSL = true;
+                    acmeRoot = null;
+                    inherit extraConfig;
+                    locations = {
+                      "/companion" = {
+                        proxyPass = "http://${serviceName}";
+                        bypassAuth = true;
+                      };
+                    };
+                  };
+                };
+              };
+              homeInvidiousFallback = lib.optionalAttrs (!globals.services.invidious.isHome) {
+                virtualHosts.${serviceDomain}.locations."/" = {
+                  proxyPass = "https://${globals.services.invidious.proxyAddress4}";
+                  extraConfig = ''
+                    proxy_ssl_server_name on;
+                    proxy_ssl_name ${serviceDomain};
+                  '';
+                };
+              };
+            in
+            {
+              ${webProxy}.services.nginx = genNginx serviceAddress "";
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                lib.recursiveUpdate (genNginx homeServiceAddress nginxAccessRules) homeInvidiousFallback
+              );
+            };
+        })
+    ];
   }
 #+end_src
 
@@ -22258,104 +24323,108 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
 
 
 #+begin_src nix-ts :tangle modules/nixos/server/copyparty.nix
-  { self, inputs, lib, config, globals, confLib, ... }:
-  let
-    inherit (confLib.gen { name = "copyparty"; port = 3923; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-    inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
-
-    inherit (config.swarselsystems) sopsFile mainUser;
-
-    dataDir = "/sync/copyparty";
-    cacheDir = "/var/cache/copyparty";
-    stateDir = "/var/lib/copyparty";
-  in
+  { inputs, lib, ... }:
   {
-    imports = [
+    flake-file.inputs.copyparty = {
+      url = "github:9001/copyparty/hovudstraum";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    imports = lib.optionals (inputs ? copyparty) [
       inputs.copyparty.nixosModules.default
-    ];
-
-    config = {
-      swarselsystems.enabledServerModules = [ "copyparty" ];
-
-      users.persistentIds.${serviceName} = confLib.mkIds 945;
-
-      sops.secrets = {
-        copyparty-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0400"; };
-        copyparty-guest-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0400"; };
-      };
-
-      topology.self.services.${serviceName} = {
-        name = lib.swarselsystems.toCapitalized serviceName;
-        info = "https://${serviceDomain}";
-        icon = "${self}/files/topology-images/${serviceName}.png";
-      };
-
-      globals = {
-        networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-        services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-        monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "copyparty"; };
-        dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-      };
-
-      services.${serviceName} = {
-        enable = true;
-        user = serviceUser;
-        group = serviceGroup;
-        settings = {
-          i = "0.0.0.0";
-          p = servicePort;
-          no-reload = true;
-          hist = cacheDir;
-          rproxy = 1;
-          xff-src = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".cidrv4;
-        };
-        accounts = {
-          ${mainUser}.passwordFile = config.sops.secrets.copyparty-password.path;
-          guest.passwordFile = config.sops.secrets.copyparty-guest-password.path;
-        };
-        volumes = {
-          "/" = {
-            path = dataDir;
-            access = {
-              rwmda = mainUser;
-              rw = "guest";
-            };
-          };
-        };
-      };
-
-      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-        { directory = stateDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
-        { directory = cacheDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
-      ];
-
-      nodes =
+      ({ self, lib, config, globals, confLib, ... }:
         let
-          uploadProxyConfig = ''
-            proxy_request_buffering off;
-            proxy_buffering off;
-            proxy_read_timeout 1d;
-            proxy_send_timeout 1d;
-          '';
+          inherit (confLib.gen { name = "copyparty"; port = 3923; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
+          inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+
+          inherit (config.swarselsystems) sopsFile mainUser;
+
+          dataDir = "/sync/copyparty";
+          cacheDir = "/var/cache/copyparty";
+          stateDir = "/var/lib/copyparty";
         in
         {
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit serviceAddress servicePort serviceDomain serviceName;
-            maxBody = 0;
-            proxyWebsockets = true;
-            extraConfigLoc = uploadProxyConfig;
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
-            inherit servicePort serviceDomain serviceName;
-            serviceAddress = homeServiceAddress;
-            maxBody = 0;
-            proxyWebsockets = true;
-            extraConfig = nginxAccessRules;
-            extraConfigLoc = uploadProxyConfig;
-          });
-        };
+          swarselsystems.enabledServerModules = [ "copyparty" ];
 
-    };
+          users.persistentIds.${serviceName} = confLib.mkIds 945;
+
+          sops.secrets = {
+            copyparty-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0400"; };
+            copyparty-guest-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0400"; };
+          };
+
+          topology.self.services.${serviceName} = {
+            name = lib.swarselsystems.toCapitalized serviceName;
+            info = "https://${serviceDomain}";
+            icon = "${self}/files/topology-images/${serviceName}.png";
+          };
+
+          globals = {
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+            services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+            monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "copyparty"; };
+            dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          };
+
+          services.${serviceName} = {
+            enable = true;
+            user = serviceUser;
+            group = serviceGroup;
+            settings = {
+              i = "0.0.0.0";
+              p = servicePort;
+              no-reload = true;
+              hist = cacheDir;
+              rproxy = 1;
+              xff-src = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".cidrv4;
+            };
+            accounts = {
+              ${mainUser}.passwordFile = config.sops.secrets.copyparty-password.path;
+              guest.passwordFile = config.sops.secrets.copyparty-guest-password.path;
+            };
+            volumes = {
+              "/" = {
+                path = dataDir;
+                access = {
+                  rwmda = mainUser;
+                  rw = "guest";
+                };
+              };
+            };
+          };
+
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            { directory = stateDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
+            { directory = cacheDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
+          ];
+
+          nodes =
+            let
+              uploadProxyConfig = ''
+                proxy_request_buffering off;
+                proxy_buffering off;
+                proxy_read_timeout 1d;
+                proxy_send_timeout 1d;
+              '';
+            in
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit serviceAddress servicePort serviceDomain serviceName;
+                maxBody = 0;
+                proxyWebsockets = true;
+                extraConfigLoc = uploadProxyConfig;
+              };
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                serviceAddress = homeServiceAddress;
+                maxBody = 0;
+                proxyWebsockets = true;
+                extraConfig = nginxAccessRules;
+                extraConfigLoc = uploadProxyConfig;
+              });
+            };
+        })
+    ];
   }
 #+end_src
 
@@ -22518,39 +24587,41 @@ These sets of configuration do not need to be deployed on every host, for a mult
 Auto login for the initial session.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/niri.nix
-  { self, inputs, config, pkgs, ... }:
+  { inputs, lib, ... }:
   {
-    imports = [
+    flake-file.inputs.niritiling.url = "github:Swarsel/niritiling/feat/resize";
+
+    imports = lib.optionals (inputs ? niritiling) [
       inputs.niri-flake.nixosModules.niri
-    ];
-    config = {
+      inputs.niritiling.nixosModules.default
+      ({ self, config, pkgs, ... }: {
+        niri-flake.cache.enable = true;
+        home-manager.users.${config.swarselsystems.mainUser}.imports = [
+          "${self}/modules/home/optional/niri.nix"
+        ];
 
-      niri-flake.cache.enable = true;
-      home-manager.users.${config.swarselsystems.mainUser}.imports = [
-        "${self}/modules/home/optional/niri.nix"
-      ];
+        environment.systemPackages = with pkgs; [
+          wl-clipboard
+          wayland-utils
+          libsecret
+          cage
+          gamescope
+          xwayland-satellite-unstable
+        ];
 
-      environment.systemPackages = with pkgs; [
-        wl-clipboard
-        wayland-utils
-        libsecret
-        cage
-        gamescope
-        xwayland-satellite-unstable
-      ];
-
-      services.niritiling = {
-        enable = true;
-        resizeColumns = true;
-      };
-
-      programs = {
-        niri = {
+        services.niritiling = {
           enable = true;
-          package = pkgs.niri-stable; # the actual niri that will be installed and used
+          resizeColumns = true;
         };
-      };
-    };
+
+        programs = {
+          niri = {
+            enable = true;
+            package = pkgs.niri-stable;
+          };
+        };
+      })
+    ];
   }
 #+end_src
 
@@ -22560,33 +24631,38 @@ Auto login for the initial session.
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/optional/noctalia.nix
-  { self, inputs, config, ... }:
+  { inputs, lib, ... }:
   {
-    disabledModules = [ "programs/gpu-screen-recorder.nix" ];
-    imports = [
-      "${inputs.nixpkgs-dev}/nixos/modules/programs/gpu-screen-recorder.nix"
+    flake-file.inputs.noctoggle.url = "github:Swarsel/noctoggle";
+
+    imports = lib.optionals (inputs ? noctoggle) [
+      inputs.noctoggle.nixosModules.default
+      ({ self, inputs, config, ... }: {
+        disabledModules = [ "programs/gpu-screen-recorder.nix" ];
+        imports = [
+          "${inputs.nixpkgs-dev}/nixos/modules/programs/gpu-screen-recorder.nix"
+        ];
+        home-manager.users.${config.swarselsystems.mainUser}.imports = [
+          "${self}/modules/home/optional/noctalia.nix"
+        ];
+        services = {
+          upower.enable = true; # needed for battery percentage
+          gnome.evolution-data-server = {
+            enable = false; # needed for calendar integration
+          };
+
+          noctoggle = {
+            enable = true;
+            # noctaliaPackage = pkgs.noctalia-shell;
+          };
+
+        };
+        programs = {
+          gpu-screen-recorder.enable = true;
+          evolution.enable = false;
+        };
+      })
     ];
-    config = {
-      home-manager.users.${config.swarselsystems.mainUser}.imports = [
-        "${self}/modules/home/optional/noctalia.nix"
-      ];
-      services = {
-        upower.enable = true; # needed for battery percentage
-        gnome.evolution-data-server = {
-          enable = false; # needed for calendar integration
-        };
-
-        noctoggle = {
-          enable = true;
-          # noctaliaPackage = pkgs.noctalia-shell;
-        };
-
-      };
-      programs = {
-        gpu-screen-recorder.enable = true;
-        evolution.enable = false;
-      };
-    };
   }
 #+end_src
 
@@ -22718,17 +24794,22 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 This smashes Atmosphère 1.3.2 on the switch, which is what I am currenty using.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/nswitch-rcm.nix
-  { pkgs, ... }:
+  { inputs, lib, ... }:
   {
-    config = {
-      services.nswitch-rcm = {
-        enable = true;
-        package = pkgs.fetchurl {
-          url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
-          hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
+    flake-file.inputs.nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
+
+    imports = lib.optionals (inputs ? nswitch-rcm-nix) [
+      inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+      ({ pkgs, ... }: {
+        services.nswitch-rcm = {
+          enable = true;
+          package = pkgs.fetchurl {
+            url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
+            hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
+          };
         };
-      };
-    };
+      })
+    ];
   }
 #+end_src
 
@@ -23222,20 +25303,14 @@ Some standard options that should be set for every microvm guest. We set the def
   { self, config, inputs, ... }:
   {
     imports = [
-      inputs.disko.nixosModules.disko
       inputs.home-manager.nixosModules.home-manager
-      inputs.impermanence.nixosModules.impermanence
-      inputs.lanzaboote.nixosModules.lanzaboote
       inputs.microvm.nixosModules.microvm
       inputs.nix-index-database.nixosModules.nix-index
       inputs.nix-minecraft.nixosModules.minecraft-servers
-      inputs.nix-topology.nixosModules.default
       inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
       inputs.simple-nixos-mailserver.nixosModules.default
-      inputs.sops.nixosModules.sops
       inputs.stylix.nixosModules.stylix
       inputs.swarsel-nix.nixosModules.default
-      inputs.nixos-nftables-firewall.nixosModules.default
 
       (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
 
@@ -23615,6 +25690,7 @@ The general structure here is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a
   in
   {
     imports = lib.swarselsystems.mkImports sharedNames "modules/shared" ++ [
+      "${self}/nix/flake-file-options.nix"
       "${self}/modules/home/common/sharedoptions.nix"
     ];
   }
@@ -23892,8 +25968,8 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
         sops = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos)
           {
             secrets = {
-              github-api-token = { owner = mainUser; group = "builder"; mode = "0440"; };
-              attic-cache-key = { owner = mainUser; };
+              github-api-token = { mode = "0440"; };
+              attic-cache-key = { };
             };
             templates = {
               netrc = {
@@ -23901,7 +25977,6 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
                       machine ${globals.services.attic.domain}
                   password ${config.sops.placeholder.attic-cache-key}
                 '';
-                owner = mainUser;
               };
             };
           };
@@ -23935,20 +26010,21 @@ It can be set to either:
     };
     config = {
       swarselsystems.enabledHomeModules = [ "nixgl" ];
-      nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
+      nixGL = lib.mkIf (!config.swarselsystems.isNixos) ({
         inherit (inputs.nixgl) packages;
-        defaultWrapper = lib.mkDefault "mesa";
-        vulkan.enable = lib.mkDefault false;
-        prime = lib.mkIf config.swarselsystems.isSecondaryGpu {
-          card = config.swarselsystems.secondaryGpuCard;
-          installScript = "mesa";
-        };
-        offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
+        defaultWrapper = "mesa";
+        vulkan.enable = false;
         installScripts = [
           "mesa"
           "mesaPrime"
         ];
-      };
+      } // lib.optionalAttrs config.swarselsystems.isSecondaryGpu {
+        prime = {
+          card = config.swarselsystems.secondaryGpuCard;
+          installScript = "mesa";
+        };
+        offloadWrapper = "mesaPrime";
+      });
     };
   }
 #+end_src
@@ -24023,11 +26099,14 @@ This holds packages that I can use as provided, or with small modifications (as 
 
         claude-code
 
+      ] ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
+        losslessaudiochecker
+        cura-appimage
+        zoom-us
       ] ++ lib.optionals config.swarselsystems.isFullBuild [
 
         # audio stuff
         spek # spectrum analyzer
-        losslessaudiochecker
         ffmpeg_7-full
         flac
         mediainfo
@@ -24039,7 +26118,6 @@ This holds packages that I can use as provided, or with small modifications (as 
         # printing
         cups
         simple-scan
-        cura-appimage
 
         # ssh login using idm
         opkssh
@@ -24073,7 +26151,6 @@ This holds packages that I can use as provided, or with small modifications (as 
         # obs-studio
         gimp
         stable.inkscape
-        zoom-us
         # nomacs
         libreoffice-qt
         xournalpp
@@ -24228,21 +26305,27 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   At the same time, I want to avoid running the homeManager module of sops on a NixOS machine. Note that we cannot use =lib.mkIf= in the line =config == ...= as this would evaluate the blocks that are within; however, on a NixOS machine, there will be no =sops= module in the homeManager scope. Hence we use =optionalAttrs=. Also, we cannot make use of =config.swarselsystems.isNixos= because that will lead to an infinite recursion. Hence, we take the =type= arg that we passed during host declaration to make sure sops stays disabled. This is used in all places in the home-manager config that make use of sops-secrets.
 
 #+begin_src nix-ts :tangle modules/home/common/sops.nix
-  { self, config, lib, type, ... }:
-  let
-    inherit (config.swarselsystems) homeDir;
-  in
+  { inputs, lib, type, ... }:
   {
-    config = {
-      swarselsystems.enabledHomeModules = [ "sops" ];
-    } // (lib.optionalAttrs (type != "nixos") {
-      sops = lib.mkIf (!config.swarselsystems.isNixos) {
-        age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.ssh/sops" ];
-        defaultSopsFile = self + "/secrets/repo/common.yaml";
+    flake-file.inputs.sops = lib.mkDefault { url = "github:Mic92/sops-nix"; };
 
-        validateSopsFiles = false;
-      };
-    });
+    imports = lib.optionals (inputs ? sops) [
+      inputs.sops.homeManagerModules.sops
+      ({ self, config, ... }:
+        let
+          inherit (config.swarselsystems) homeDir;
+        in
+        {
+          swarselsystems.enabledHomeModules = [ "sops" ];
+
+          sops = lib.mkIf (type != "nixos" && !config.swarselsystems.isNixos) {
+            age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.ssh/sops" ];
+            defaultSopsFile = self + "/secrets/repo/common.yaml";
+
+            validateSopsFiles = false;
+          };
+        })
+    ];
   }
 #+end_src
 
@@ -24677,67 +26760,75 @@ This section is for programs that require no further configuration. zsh Integrat
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output. This also uses the =nix-index-with-full-db= from the nix-index-database input thanks to its overlay.
 
 #+begin_src nix-ts :tangle modules/home/common/nix-index.nix
-  { pkgs, ... }:
+  { inputs, lib, ... }:
   {
-    config = {
-      swarselsystems.enabledHomeModules = [ "nix-index" ];
-      programs.nix-index =
-        let
-          commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
-            mkdir -p $out/etc/profile.d
-            cat > $out/etc/profile.d/command-not-found.sh <<'EOF'
-            # Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
-            command_not_found_handle() {
-                if [ -n "''${MC_SID-}" ] || ! [ -t 1 ]; then
-                    >&2 echo "$1: command not found"
-                    return 127
-                fi
-
-                echo -n "searching nix-index..."
-                ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --whole-name --at-root "/bin/$1")
-
-                case $(echo -n "$ATTRS" | grep -c "^") in
-                0)
-                    >&2 echo -ne "$(@tput@ el1)\r"
-                    >&2 echo "$1: command not found"
-                    ;;
-                *)
-                    >&2 echo -ne "$(@tput@ el1)\r"
-                    >&2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
-                    >&2 echo "It is provided by the following derivation(s):"
-                    while read -r ATTR; do
-                        ATTR=''${ATTR%.out}
-                        >&2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
-                    done <<< "$ATTRS"
-                    ;;
-                esac
-
-                return 127
-            }
-
-            command_not_found_handler() {
-                command_not_found_handle "$@"
-                return $?
-            }
-            EOF
-
-            substitute $out/etc/profile.d/command-not-found.sh        \
-              $out/etc/profile.d/command-not-found.sh                 \
-              --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
-              --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
-          '';
-        in
-
-        {
-
-          enable = true;
-          package = pkgs.symlinkJoin {
-            name = "nix-index";
-            paths = [ commandNotFound ];
-          };
-        };
-      programs.nix-index-database.comma.enable = true;
+    flake-file.inputs.nix-index-database = lib.mkDefault {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    imports = lib.optionals (inputs ? nix-index-database) [
+      inputs.nix-index-database.homeModules.nix-index
+      ({ pkgs, ... }: {
+        swarselsystems.enabledHomeModules = [ "nix-index" ];
+        programs.nix-index =
+          let
+            commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
+              mkdir -p $out/etc/profile.d
+              cat > $out/etc/profile.d/command-not-found.sh <<'EOF'
+              # Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
+              command_not_found_handle() {
+                  if [ -n "''${MC_SID-}" ] || ! [ -t 1 ]; then
+                      >&2 echo "$1: command not found"
+                      return 127
+                  fi
+
+                  echo -n "searching nix-index..."
+                  ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --whole-name --at-root "/bin/$1")
+
+                  case $(echo -n "$ATTRS" | grep -c "^") in
+                  0)
+                      >&2 echo -ne "$(@tput@ el1)\r"
+                      >&2 echo "$1: command not found"
+                      ;;
+                  *)
+                      >&2 echo -ne "$(@tput@ el1)\r"
+                      >&2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
+                      >&2 echo "It is provided by the following derivation(s):"
+                      while read -r ATTR; do
+                          ATTR=''${ATTR%.out}
+                          >&2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
+                      done <<< "$ATTRS"
+                      ;;
+                  esac
+
+                  return 127
+              }
+
+              command_not_found_handler() {
+                  command_not_found_handle "$@"
+                  return $?
+              }
+              EOF
+
+              substitute $out/etc/profile.d/command-not-found.sh        \
+                $out/etc/profile.d/command-not-found.sh                 \
+                --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+                --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
+            '';
+          in
+
+          {
+
+            enable = true;
+            package = pkgs.symlinkJoin {
+              name = "nix-index";
+              paths = [ commandNotFound ];
+            };
+          };
+        programs.nix-index-database.comma.enable = true;
+      })
+    ];
   }
 #+end_src
 
@@ -28840,27 +30931,33 @@ This service changes the screen hue at night. I am not sure if that really does 
 
 
 #+begin_src nix-ts :tangle modules/home/common/spicetify.nix
-  { inputs, pkgs, ... }:
-  let
-    spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.system};
-  in
+  { inputs, lib, arch, ... }:
   {
-    config = {
-      swarselsystems.enabledHomeModules = [ "spicetify" ];
-      programs.spicetify = {
-        enable = true;
-        # spotifyPackage = pkgs.stable24_11.spotify;
-        spotifyPackage = pkgs.spotify;
-        enabledExtensions = with spicePkgs.extensions; [
-          fullAppDisplay
-          shuffle
-          hidePodcasts
-          fullAlbumDate
-          skipStats
-          history
-        ];
-      };
-    };
+    flake-file.inputs.spicetify-nix.url = "github:Gerg-l/spicetify-nix";
+
+    imports = lib.optionals (inputs ? spicetify-nix && arch == "x86_64-linux") [
+      inputs.spicetify-nix.homeManagerModules.default
+      ({ inputs, pkgs, ... }:
+        let
+          spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.system};
+        in
+        {
+          swarselsystems.enabledHomeModules = [ "spicetify" ];
+          programs.spicetify = {
+            enable = true;
+            # spotifyPackage = pkgs.stable24_11.spotify;
+            spotifyPackage = pkgs.spotify;
+            enabledExtensions = with spicePkgs.extensions; [
+              fullAppDisplay
+              shuffle
+              hidePodcasts
+              fullAlbumDate
+              skipStats
+              history
+            ];
+          };
+        })
+    ];
   }
 #+end_src
 
@@ -45602,9 +47699,15 @@ This is the state of the repository when I decided to migrate to flakes. At this
 :CUSTOM_ID: h:15ee6287-207f-49a5-8bf0-cf66707b892c
 :END:
 
-- implement simple dendritic structure for clients
+Fixes:
 - split off invidious-companion into own vm(?)
-- look into selfhosted cospend (spliit module?) to deprecate nextcloud
 - fix hotel configuration and add an example secret
-- fix router bridge interfaces after kitchen construction
-- automatic client cache auth
+
+Enhancements:
+- manage flake.nix using flake-file
+- implement simple dendritic structure for clients
+- automatic attic client cache auth
+
+Blocked:
+- look into selfhosted cospend (spliit module?) to deprecate nextcloud
+- fix router bridge interfaces after kitchen construction concludes

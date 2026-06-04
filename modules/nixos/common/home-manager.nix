@@ -14,10 +14,6 @@ in
       backupFileExtension = "hm-bak";
       overwriteBackup = true;
       users.${config.swarselsystems.mainUser}.imports = [
-        inputs.nix-index-database.homeModules.nix-index
-        # inputs.sops.homeManagerModules.sops # this is not needed!! we add these secrets in nixos scope
-        inputs.spicetify-nix.homeManagerModules.default
-        inputs.swarsel-nix.homeModules.default
         {
           imports = [
             "${self}/modules/home"

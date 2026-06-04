@@ -9,19 +9,20 @@
   };
   config = {
     swarselsystems.enabledHomeModules = [ "nixgl" ];
-    nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
+    nixGL = lib.mkIf (!config.swarselsystems.isNixos) ({
       inherit (inputs.nixgl) packages;
-      defaultWrapper = lib.mkDefault "mesa";
-      vulkan.enable = lib.mkDefault false;
-      prime = lib.mkIf config.swarselsystems.isSecondaryGpu {
-        card = config.swarselsystems.secondaryGpuCard;
-        installScript = "mesa";
-      };
-      offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
+      defaultWrapper = "mesa";
+      vulkan.enable = false;
       installScripts = [
         "mesa"
         "mesaPrime"
       ];
-    };
+    } // lib.optionalAttrs config.swarselsystems.isSecondaryGpu {
+      prime = {
+        card = config.swarselsystems.secondaryGpuCard;
+        installScript = "mesa";
+      };
+      offloadWrapper = "mesaPrime";
+    });
   };
 }

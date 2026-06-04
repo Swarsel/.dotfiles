@@ -2,6 +2,8 @@
 { self, inputs, ... }:
 {
 
+  flake-file.inputs.topologyPrivate.url = "./files/topology/public";
+
   imports = [
     (
       { lib, flake-parts-lib, ... }:

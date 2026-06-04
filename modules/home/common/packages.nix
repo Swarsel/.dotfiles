@@ -49,11 +49,14 @@
 
       claude-code
 
+    ] ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
+      losslessaudiochecker
+      cura-appimage
+      zoom-us
     ] ++ lib.optionals config.swarselsystems.isFullBuild [
 
       # audio stuff
       spek # spectrum analyzer
-      losslessaudiochecker
       ffmpeg_7-full
       flac
       mediainfo
@@ -65,7 +68,6 @@
       # printing
       cups
       simple-scan
-      cura-appimage
 
       # ssh login using idm
       opkssh
@@ -99,7 +101,6 @@
       # obs-studio
       gimp
       stable.inkscape
-      zoom-us
       # nomacs
       libreoffice-qt
       xournalpp
