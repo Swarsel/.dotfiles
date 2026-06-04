@@ -4,6 +4,22 @@ let
   inherit (outputs) lib;
 in
 {
+  flake-file.inputs = {
+    nixgl.url = "github:guibou/nixGL";
+    nur.url = "github:nix-community/NUR";
+    vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+    zjstatus.url = "github:dj95/zjstatus";
+    niri-flake.url = "github:sodiboo/niri-flake";
+    nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+
+    emacs-overlay.url = "github:nix-community/emacs-overlay";
+
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
   flake = _:
     {
       overlays =

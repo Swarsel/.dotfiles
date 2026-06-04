@@ -5,6 +5,7 @@ let
 in
 {
   imports = lib.swarselsystems.mkImports sharedNames "modules/shared" ++ [
+    "${self}/nix/flake-file-options.nix"
     "${self}/modules/home/common/sharedoptions.nix"
   ];
 }

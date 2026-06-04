@@ -1,5 +1,7 @@
 { self, inputs, ... }:
 {
+  flake-file.inputs.nix-topology.url = "github:oddlama/nix-topology";
+
   imports = [
     inputs.nix-topology.flakeModule
   ];
