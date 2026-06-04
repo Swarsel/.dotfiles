@@ -141,8 +141,8 @@ in
       sops = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos)
         {
           secrets = {
-            github-api-token = { owner = mainUser; group = "builder"; mode = "0440"; };
-            attic-cache-key = { owner = mainUser; };
+            github-api-token = { mode = "0440"; };
+            attic-cache-key = { };
           };
           templates = {
             netrc = {
@@ -150,7 +150,6 @@ in
                     machine ${globals.services.attic.domain}
                 password ${config.sops.placeholder.attic-cache-key}
               '';
-              owner = mainUser;
             };
           };
         };

@@ -1,5 +1,16 @@
 { self, inputs, ... }:
 {
+  flake-file.inputs = {
+    disko.url = "github:nix-community/disko";
+    microvm.url = "github:astro/microvm.nix";
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-darwin.url = "github:lnl7/nix-darwin";
+    nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
+  };
+
   flake = { config, ... }:
     let
       inherit (self) outputs;
@@ -20,28 +31,15 @@
           modules = [
             inputs.disko.nixosModules.disko
             inputs.home-manager.nixosModules.home-manager
-            inputs.impermanence.nixosModules.impermanence
-            inputs.lanzaboote.nixosModules.lanzaboote
             inputs.microvm.nixosModules.host
             inputs.microvm.nixosModules.microvm
             inputs.nix-index-database.nixosModules.nix-index
-            inputs.nix-minecraft.nixosModules.minecraft-servers
-            inputs.nix-topology.nixosModules.default
-            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-            inputs.simple-nixos-mailserver.nixosModules.default
-            inputs.sops.nixosModules.sops
-            inputs.stylix.nixosModules.stylix
             inputs.swarsel-nix.nixosModules.default
-            inputs.nixos-nftables-firewall.nixosModules.default
-            inputs.niritiling.nixosModules.default
-            inputs.noctoggle.nixosModules.default
             (inputs.nixos-extra-modules + "/modules/guests")
             (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
             "${self}/hosts/nixos/${arch}/${configName}"
             "${self}/modules/nixos"
             {
-              _module.args.dns = inputs.dns;
-
               microvm.guest.enable = lib.mkDefault false;
 
               networking.hostName = lib.swarselsystems.mkStrong configName;
@@ -110,10 +108,7 @@
             minimal = false;
           };
           modules = [
-            inputs.stylix.homeModules.stylix
             inputs.nix-index-database.homeModules.nix-index
-            inputs.sops.homeManagerModules.sops
-            inputs.spicetify-nix.homeManagerModules.default
             inputs.swarsel-nix.homeModules.default
             "${self}/hosts/${type}/${arch}/${configName}"
             "${self}/profiles/home"
