@@ -1,9 +1,9 @@
 { self, lib, minimal, ... }:
 {
   imports = [
-    "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos/optional/microvm-guest-shares.nix"
-    "${self}/modules/nixos/server/adguardhome.nix"
+    self.modules.nixos.profile-microvm
+    self.modules.nixos.microvm-guest-shares
+    self.modules.nixos.adguardhome
   ];
 
   swarselsystems = {

@@ -1,4 +1,4 @@
-{ self, config, pkgs, lib, minimal, ... }:
+{ self, inputs, config, pkgs, lib, minimal, ... }:
 let
   mainUser = "demo";
 in
@@ -11,7 +11,7 @@ in
       _module.args.diskDevice = config.swarselsystems.rootDisk;
     }
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/public"
+    inputs.self.modules.nixos.profile-public
   ];
 
   environment.variables = {
@@ -46,7 +46,6 @@ in
     inherit mainUser;
     isLinux = true;
     isPublic = true;
-    isNixos = true;
   };
 
 }

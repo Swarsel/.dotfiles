@@ -1,0 +1,81 @@
+{
+  flake.modules.homeManager.vesktop = { pkgs, ... }:
+    let
+      moduleName = "vesktop";
+    in
+    {
+      config = {
+        swarselsystems.enabledHomeModules = [ "vesktop" ];
+        programs.${moduleName} = {
+          enable = true;
+          package = pkgs.vesktop;
+          settings = {
+            appBadge = false;
+            arRPC = false;
+            checkUpdates = false;
+            customTitleBar = false;
+            disableMinSize = true;
+            minimizeToTray = true;
+            tray = true;
+            staticTitle = true;
+            hardwareAcceleration = true;
+            discordBranch = "stable";
+          };
+          vencord = {
+            useSystem = true;
+            settings = {
+              autoUpdate = false;
+              autoUpdateNotification = false;
+              enableReactDevtools = false;
+              frameless = false;
+              transparent = false;
+              winCtrlQ = false;
+              notifyAboutUpdates = false;
+              useQuickCss = true;
+              disableMinSize = true;
+              winNativeTitleBar = false;
+              plugins = {
+                MessageLogger = {
+                  enabled = true;
+                  ignoreSelf = true;
+                };
+                ChatInputButtonAPI = {
+                  enabled = false;
+                };
+                CommandsAPI = {
+                  enabled = true;
+                };
+                MemberListDecoratorsAPI = {
+                  enabled = false;
+                };
+                MessageAccessoriesAPI = {
+                  enabled = true;
+                };
+                MessageDecorationsAPI = {
+                  enabled = false;
+                };
+                MessageEventsAPI = {
+                  enabled = false;
+                };
+                MessagePopoverAPI = {
+                  enabled = false;
+                };
+                MessageUpdaterAPI = {
+                  enabled = false;
+                };
+                ServerListAPI = {
+                  enabled = false;
+                };
+                UserSettingsAPI = {
+                  enabled = true;
+                };
+                FakeNitro = {
+                  enabled = true;
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+}

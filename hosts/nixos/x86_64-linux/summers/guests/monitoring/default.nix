@@ -1,13 +1,13 @@
 { self, lib, minimal, ... }:
 {
   imports = [
-    "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos/server/grafana.nix"
-    "${self}/modules/nixos/server/mimir.nix"
-    "${self}/modules/nixos/server/loki.nix"
-    "${self}/modules/nixos/server/tempo.nix"
-    "${self}/modules/nixos/server/pyroscope.nix"
-    "${self}/modules/nixos/server/gotify.nix"
+    self.modules.nixos.profile-microvm
+    self.modules.nixos.grafana
+    self.modules.nixos.mimir
+    self.modules.nixos.loki
+    self.modules.nixos.tempo
+    self.modules.nixos.pyroscope
+    self.modules.nixos.gotify
   ];
 
   swarselsystems = {

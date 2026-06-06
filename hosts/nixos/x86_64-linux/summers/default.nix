@@ -7,16 +7,16 @@
 
     inputs.nixos-hardware.nixosModules.common-cpu-intel
 
-    "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
-    "${self}/modules/nixos/optional/microvm-host.nix"
+    self.modules.nixos.systemd-networkd-server-home
+    self.modules.nixos.microvm-host
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/localserver"
-    "${self}/modules/nixos/server/wireguard.nix"
-    "${self}/modules/nixos/server/restic.nix"
-    "${self}/modules/nixos/server/podman.nix"
-    "${self}/modules/nixos/server/opkssh.nix"
-    "${self}/modules/nixos/server/smartctl-exporter.nix"
-    "${self}/modules/nixos/server/zfs-exporter.nix"
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.wireguard
+    self.modules.nixos.restic
+    self.modules.nixos.podman
+    self.modules.nixos.opkssh
+    self.modules.nixos.smartctl-exporter
+    self.modules.nixos.zfs-exporter
   ];
 
   topology.self = {
@@ -56,7 +56,6 @@
     isCrypted = true;
     isBtrfs = true;
     isLinux = true;
-    isNixos = true;
     isSwap = false;
     proxyHost = "twothreetunnel";
     writeGlobalNetworks = false;

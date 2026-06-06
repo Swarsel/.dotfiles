@@ -4,11 +4,11 @@
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-    "${self}/modules/nixos/optional/nix-topology-self.nix"
+    self.modules.nixos.systemd-networkd-server
+    self.modules.nixos.nix-topology-self
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/localserver"
-    "${self}/modules/nixos/server/nsd"
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.nsd
   ];
 
   topology.self = {
@@ -25,7 +25,6 @@
     isSwap = false;
     rootDisk = "/dev/disk/by-id/scsi-360e1a5236f034316a10a97cc703ce9e3";
     isBtrfs = true;
-    isNixos = true;
     isLinux = true;
     isCloud = true;
     isBastionTarget = true;

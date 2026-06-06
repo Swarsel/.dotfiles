@@ -4,17 +4,17 @@
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-    "${self}/modules/nixos/optional/nix-topology-self.nix"
+    self.modules.nixos.systemd-networkd-server
+    self.modules.nixos.nix-topology-self
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/localserver"
-    "${self}/modules/nixos/server/nginx.nix"
-    "${self}/modules/nixos/server/crowdsec.nix"
-    "${self}/modules/nixos/server/acme.nix"
-    "${self}/modules/nixos/server/oauth2-proxy.nix"
-    "${self}/modules/nixos/server/wireguard.nix"
-    "${self}/modules/nixos/server/firezone.nix"
-    "${self}/modules/nixos/server/nginx-otel.nix"
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.nginx
+    self.modules.nixos.crowdsec
+    self.modules.nixos.acme
+    self.modules.nixos.oauth2-proxy
+    self.modules.nixos.wireguard
+    self.modules.nixos.firezone
+    self.modules.nixos.nginx-otel
   ];
 
   topology.self = {
@@ -65,7 +65,6 @@
     isSwap = false;
     rootDisk = "/dev/disk/by-id/scsi-3608deb9b0d4244de95c6620086ff740d";
     isBtrfs = true;
-    isNixos = true;
     isLinux = true;
     isCloud = true;
   };

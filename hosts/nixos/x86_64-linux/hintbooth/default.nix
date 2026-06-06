@@ -5,13 +5,13 @@
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server-home.nix"
-    "${self}/modules/nixos/optional/microvm-host.nix"
+    self.modules.nixos.systemd-networkd-server-home
+    self.modules.nixos.microvm-host
   ] ++ lib.optionals (!minimal) [
-    "${self}/modules/nixos/server/wireguard.nix"
-    "${self}/profiles/nixos/localserver"
-    "${self}/profiles/nixos/router"
-    "${self}/modules/nixos/server/smartctl-exporter.nix"
+    self.modules.nixos.wireguard
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.profile-router
+    self.modules.nixos.smartctl-exporter
   ];
 
   topology.self = {
@@ -65,7 +65,6 @@
     isCrypted = true;
     isBtrfs = true;
     isLinux = true;
-    isNixos = true;
     rootDisk = "/dev/sda";
     swapSize = "8G";
     networkKernelModules = [ "igb" ];

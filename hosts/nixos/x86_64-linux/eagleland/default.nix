@@ -4,12 +4,12 @@
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-    "${self}/modules/nixos/optional/nix-topology-self.nix"
+    self.modules.nixos.systemd-networkd-server
+    self.modules.nixos.nix-topology-self
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/localserver"
-    "${self}/modules/nixos/server/mailserver.nix"
-    "${self}/modules/nixos/server/wireguard.nix"
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.mailserver
+    self.modules.nixos.wireguard
   ];
 
   topology.self = {
@@ -27,7 +27,6 @@
     swapSize = "4G";
     rootDisk = "/dev/sda";
     isBtrfs = true;
-    isNixos = true;
     isLinux = true;
     proxyHost = "twothreetunnel"; # mail shall not be proxied through twothreetunnel
 

@@ -1,8 +1,8 @@
 { self, lib, minimal, ... }:
 {
   imports = [
-    "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos/server/atuin.nix"
+    self.modules.nixos.profile-microvm
+    self.modules.nixos.atuin
   ];
 
   swarselsystems = {
