@@ -1,9 +1,9 @@
 { self, lib, minimal, ... }:
 {
   imports = [
-    "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos/server/ankisync.nix"
-    "${self}/modules/nixos/server/invidious-companion.nix"
+    self.modules.nixos.profile-microvm
+    self.modules.nixos.ankisync
+    self.modules.nixos.invidious-companion
   ];
 
   swarselsystems = {

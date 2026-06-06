@@ -2,8 +2,8 @@
 {
   imports = [
 
-    "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos/server/transmission.nix"
+    self.modules.nixos.profile-microvm
+    self.modules.nixos.transmission
   ];
 
   swarselsystems = {

@@ -11,7 +11,7 @@
       curl
       deadnix
       statix
-      nixpgks-fmt
+      nixpkgs-fmt
       nvd
     ];
 

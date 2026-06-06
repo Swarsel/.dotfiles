@@ -1,0 +1,224 @@
+{ self, inputs, ... }:
+{
+  flake-file.inputs = {
+    disko.url = "github:nix-community/disko";
+    microvm.url = "github:astro/microvm.nix";
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-darwin = {
+      url = "github:lnl7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-on-droid = {
+      url = "github:nix-community/nix-on-droid/release-24.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+  };
+
+  flake = { config, ... }:
+    let
+      inherit (self) outputs;
+      inherit (outputs) lib homeLib;
+      # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
+
+      mkNixosHost = { minimal }: configName: arch:
+        inputs.nixpkgs.lib.nixosSystem {
+          specialArgs = {
+            inherit inputs outputs self minimal homeLib configName arch;
+            inherit (config.pkgs.${arch}) lib;
+            inherit (config) nodes topologyPrivate;
+            globals = config.globals.${arch};
+            type = "nixos";
+            withHomeManager = true;
+            extraModules = [ ];
+          };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.home-manager.nixosModules.home-manager
+            inputs.microvm.nixosModules.host
+            inputs.microvm.nixosModules.microvm
+            inputs.nix-index-database.nixosModules.nix-index
+            inputs.swarsel-nix.nixosModules.default
+            (inputs.nixos-extra-modules + "/modules/guests")
+            (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
+            "${self}/hosts/nixos/${arch}/${configName}"
+            self.modules.nixos.profile-base
+            {
+              microvm.guest.enable = lib.mkDefault false;
+
+              networking.hostName = lib.swarselsystems.mkStrong configName;
+
+              node = {
+                name = lib.mkForce configName;
+                arch = lib.mkForce arch;
+                type = lib.mkForce "nixos";
+                secretsDir = ../../hosts/nixos/${arch}/${configName}/secrets;
+                configDir = ../../hosts/nixos/${arch}/${configName};
+                lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
+              };
+
+              swarselsystems = {
+                mainUser = lib.swarselsystems.mkStrong "swarsel";
+              };
+            }
+          ] ++ lib.optionals minimal [
+            self.modules.nixos.profile-minimal
+          ];
+        };
+
+      mkDarwinHost = { minimal }: configName: arch:
+        inputs.nix-darwin.lib.darwinSystem {
+          specialArgs = {
+            inherit inputs lib outputs self minimal configName;
+            inherit (config) nodes topologyPrivate;
+            withHomeManager = true;
+            globals = config.globals.${arch};
+          };
+          modules = [
+            # inputs.disko.nixosModules.disko
+            # inputs.sops.nixosModules.sops
+            # inputs.impermanence.nixosModules.impermanence
+            # inputs.lanzaboote.nixosModules.lanzaboote
+            # inputs.fw-fanctrl.nixosModules.default
+            # inputs.nix-topology.nixosModules.default
+            inputs.home-manager.darwinModules.home-manager
+            "${self}/hosts/darwin/${arch}/${configName}"
+            {
+              node = {
+                name = lib.mkForce configName;
+                arch = lib.mkForce arch;
+                type = lib.mkForce "darwin";
+                secretsDir = ../../hosts/darwin/${arch}/${configName}/secrets;
+              };
+            }
+          ];
+        };
+
+      mkHalfHost = configName: type: arch:
+        let
+          pkgs = lib.swarselsystems.pkgsFor.${arch};
+          extraSpecialArgs = {
+            inherit inputs lib outputs self configName arch type;
+            inherit (config) nodes topologyPrivate;
+            globals = config.globals.${arch};
+            minimal = false;
+          };
+          nodeModule = {
+            node = {
+              name = lib.mkForce configName;
+              arch = lib.mkForce arch;
+              type = lib.mkForce type;
+              secretsDir = ../../hosts/${type}/${arch}/${configName}/secrets;
+            };
+          };
+          homeModules = [
+            inputs.nix-index-database.homeModules.nix-index
+            inputs.swarsel-nix.homeModules.default
+            self.modules.generic.pii
+            nodeModule
+          ];
+        in
+        if (type == "home") then
+          inputs.home-manager.lib.homeManagerConfiguration
+            {
+              inherit pkgs extraSpecialArgs;
+              modules = homeModules ++ [ "${self}/hosts/${type}/${arch}/${configName}" ];
+            }
+        else
+          inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+            inherit pkgs extraSpecialArgs;
+            modules = [
+              "${self}/hosts/${type}/${arch}/${configName}"
+              {
+                home-manager = {
+                  extraSpecialArgs = extraSpecialArgs // { nixosConfig = null; };
+                  config.imports = homeModules ++ [
+                    self.modules.homeManager.profile-base
+                    { home.stateVersion = "23.05"; }
+                  ];
+                };
+              }
+            ];
+          };
+
+      linuxArches = [ "x86_64-linux" "aarch64-linux" ];
+      darwinArches = [ "x86_64-darwin" "aarch64-darwin" ];
+      mkArches = type: if (type == "nixos") then linuxArches else if (type == "darwin") then darwinArches else linuxArches ++ darwinArches;
+
+      readHostDirs = hostDir:
+        if builtins.pathExists hostDir then
+          builtins.attrNames
+            (
+              lib.filterAttrs (_: type: type == "directory")
+                (builtins.readDir hostDir)
+            ) else [ ];
+
+      mkHalfHostsForArch = type: arch:
+        let
+          hostDir = "${self}/hosts/${type}/${arch}";
+          hosts = readHostDirs hostDir;
+        in
+        lib.genAttrs hosts (host: mkHalfHost host type arch);
+
+      mkHostsForArch = type: arch: minimal:
+        let
+          hostDir = "${self}/hosts/${type}/${arch}";
+          hosts = readHostDirs hostDir;
+        in
+        if (type == "nixos") then
+          lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
+        else if (type == "darwin") then
+          lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
+        else { };
+
+      mkConfigurationsPerArch = type: minimal:
+        let
+          arches = mkArches type;
+          toMake = if (minimal == null) then (arch: _: mkHalfHostsForArch type arch) else (arch: _: mkHostsForArch type arch minimal);
+        in
+        lib.concatMapAttrs toMake
+          (lib.listToAttrs (map (a: { name = a; value = { }; }) arches));
+
+      halfConfigurationsPerArch = type: mkConfigurationsPerArch type null;
+      configurationsPerArch = type: minimal: mkConfigurationsPerArch type minimal;
+
+    in
+    rec {
+      nixosConfigurations = configurationsPerArch "nixos" false;
+      nixosConfigurationsMinimal = configurationsPerArch "nixos" true;
+      darwinConfigurations = configurationsPerArch "darwin" false;
+      darwinConfigurationsMinimal = configurationsPerArch "darwin" true;
+      homeConfigurations = halfConfigurationsPerArch "home";
+      nixOnDroidConfigurations = halfConfigurationsPerArch "android";
+
+      guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
+        _: node:
+          lib.flip lib.mapAttrs' (node.config.guests or { }) (
+            guestName: guestDef:
+              lib.nameValuePair guestDef.nodeName node.config.microvm.vms.${guestName}.config
+          )
+      );
+
+      diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
+
+      nodes = config.nixosConfigurations
+        // config.darwinConfigurations
+        // config.guestConfigurations;
+
+      guestResources = lib.mapAttrs
+        (name: _:
+          let
+            f = arg: lib.foldr (base: acc: base + acc) 0 (map (node: nodes."${name}-${node}".config.microvm.${arg}) (builtins.attrNames nodes.${name}.config.guests));
+          in
+          {
+            mem = f "mem";
+            vcpu = f "vcpu";
+          })
+        nodes;
+
+      "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
+    };
+}

@@ -10,14 +10,15 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
-  ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/personal"
-    "${self}/modules/nixos/optional/gaming.nix"
-    "${self}/modules/nixos/optional/nswitch-rcm.nix"
-    "${self}/modules/nixos/optional/virtualbox.nix"
-    "${self}/modules/nixos/optional/niri.nix"
-    "${self}/modules/nixos/optional/noctalia.nix"
-  ];
+  ] ++ lib.optionals (!minimal) (builtins.attrValues (lib.getAttrs [
+    "profile-personal"
+    "gaming"
+    "nswitch-rcm"
+    "virtualbox"
+    "niri"
+    "noctalia"
+  ]
+    inputs.self.modules.nixos));
 
   topology.self.interfaces = {
     eth1.network = lib.mkForce "home";
@@ -26,7 +27,6 @@ in
 
   swarselsystems = {
     isLaptop = true;
-    isNixos = true;
     isBtrfs = true;
     isLinux = true;
     isFullBuild = false;

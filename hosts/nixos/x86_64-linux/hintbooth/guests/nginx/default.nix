@@ -4,12 +4,12 @@ let
 in
 {
   imports = [
-    "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos/optional/microvm-guest-shares.nix"
-    "${self}/modules/nixos/server/oauth2-proxy.nix"
-    "${self}/modules/nixos/server/nginx.nix"
-    "${self}/modules/nixos/server/acme.nix"
-    "${self}/modules/nixos/server/nginx-otel.nix"
+    self.modules.nixos.profile-microvm
+    self.modules.nixos.microvm-guest-shares
+    self.modules.nixos.oauth2-proxy
+    self.modules.nixos.nginx
+    self.modules.nixos.acme
+    self.modules.nixos.nginx-otel
   ];
 
   swarselsystems = {

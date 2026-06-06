@@ -3,7 +3,7 @@
 {
   description = "SwarseFlake - Nix Flake for all SwarselSystems";
 
-  outputs = inputs: import ./nix/outputs.nix inputs;
+  outputs = inputs: import ./modules/flake/_outputs.nix inputs;
 
   nixConfig = {
     extra-substituters = [ "https://nix-community.cachix.org" ];
@@ -35,6 +35,7 @@
       inputs.nix-eval-jobs.follows = "nix-eval-jobs";
     };
     impermanence.url = "github:nix-community/impermanence";
+    import-tree.url = "github:vic/import-tree";
     invidious-companion = {
       url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
       flake = false;
@@ -47,7 +48,10 @@
     };
     niri-flake.url = "github:sodiboo/niri-flake";
     niritiling.url = "github:Swarsel/niritiling/feat/resize";
-    nix-darwin.url = "github:lnl7/nix-darwin";
+    nix-darwin = {
+      url = "github:lnl7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-eval-jobs = {
       url = "github:nix-community/nix-eval-jobs";
       flake = false;
@@ -57,7 +61,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
-    nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
+    nix-on-droid = {
+      url = "github:nix-community/nix-on-droid/release-24.05";
+      inputs = {
+        home-manager.follows = "home-manager";
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
     nix-topology.url = "github:oddlama/nix-topology";
     nixgl.url = "github:guibou/nixGL";
     nixos-extra-modules.url = "github:oddlama/nixos-extra-modules/main";

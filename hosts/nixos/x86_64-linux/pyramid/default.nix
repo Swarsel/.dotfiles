@@ -10,19 +10,20 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
-  ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/personal"
-    "${self}/modules/nixos/optional/amdcpu.nix"
-    "${self}/modules/nixos/optional/amdgpu.nix"
-    "${self}/modules/nixos/optional/framework.nix"
-    "${self}/modules/nixos/optional/gaming.nix"
-    "${self}/modules/nixos/optional/hibernation.nix"
-    "${self}/modules/nixos/optional/nswitch-rcm.nix"
-    "${self}/modules/nixos/optional/virtualbox.nix"
-    "${self}/modules/nixos/optional/work.nix"
-    "${self}/modules/nixos/optional/niri.nix"
-    "${self}/modules/nixos/optional/noctalia.nix"
-  ];
+  ] ++ lib.optionals (!minimal) (builtins.attrValues (lib.getAttrs [
+    "profile-personal"
+    "amdcpu"
+    "amdgpu"
+    "framework"
+    "gaming"
+    "hibernation"
+    "nswitch-rcm"
+    "virtualbox"
+    "work"
+    "niri"
+    "noctalia"
+  ]
+    inputs.self.modules.nixos));
 
   topology.self = {
     interfaces = {
@@ -36,7 +37,6 @@ in
     lowResolution = "1280x800";
     highResolution = "2560x1600";
     isLaptop = true;
-    isNixos = true;
     isBtrfs = true;
     isLinux = true;
     sharescreen = "eDP-2";

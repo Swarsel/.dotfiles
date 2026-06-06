@@ -1,10 +1,10 @@
-{ self, ... }:
+{ self, inputs, ... }:
 {
 
   imports = [
     ./disk-config.nix
     ./hardware-configuration.nix
-    "${self}/profiles/nixos/minimal"
+    inputs.self.modules.nixos.profile-minimal
   ];
 
   topology.self.interfaces."bootstrapper" = { };
@@ -28,7 +28,6 @@
     isBtrfs = true;
     isLinux = true;
     isLaptop = false;
-    isNixos = true;
   };
 
 }
