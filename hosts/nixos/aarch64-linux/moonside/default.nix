@@ -7,22 +7,22 @@ in
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-    "${self}/modules/nixos/optional/nix-topology-self.nix"
+    self.modules.nixos.systemd-networkd-server
+    self.modules.nixos.nix-topology-self
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/localserver"
-    "${self}/modules/nixos/server/wireguard.nix"
-    "${self}/modules/nixos/server/croc.nix"
-    "${self}/modules/nixos/server/microbin.nix"
-    "${self}/modules/nixos/server/shlink.nix"
-    "${self}/modules/nixos/server/slink.nix"
-    "${self}/modules/nixos/server/syncthing.nix"
-    "${self}/modules/nixos/server/minecraft"
-    "${self}/modules/nixos/server/restic.nix"
-    "${self}/modules/nixos/server/searx.nix"
-    "${self}/modules/nixos/server/invidious.nix"
-    "${self}/modules/nixos/server/firefox-syncserver.nix"
-    "${self}/modules/nixos/server/copyparty.nix"
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.wireguard
+    self.modules.nixos.croc
+    self.modules.nixos.microbin
+    self.modules.nixos.shlink
+    self.modules.nixos.slink
+    self.modules.nixos.server-syncthing
+    self.modules.nixos.minecraft
+    self.modules.nixos.restic
+    self.modules.nixos.searx
+    self.modules.nixos.invidious
+    self.modules.nixos.firefox-syncserver
+    self.modules.nixos.copyparty
   ];
 
   system.stateVersion = "23.11";
@@ -37,7 +37,6 @@ in
     isSwap = false;
     rootDisk = "/dev/sda";
     isBtrfs = true;
-    isNixos = true;
     isLinux = true;
     isCloud = true;
     proxyHost = "twothreetunnel";

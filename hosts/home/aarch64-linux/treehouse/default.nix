@@ -1,10 +1,9 @@
-{ self, pkgs, ... }:
+{ self, inputs, pkgs, ... }:
 {
 
   imports = [
-    "${self}/modules/home"
-    "${self}/profiles/home/dgxspark"
-    "${self}/modules/nixos/common/pii.nix"
+    inputs.self.modules.homeManager.profile-base
+    inputs.self.modules.homeManager.profile-dgxspark
   ];
 
   services.xcape = {
@@ -24,7 +23,6 @@
   #       ";
   swarselsystems = {
     isLaptop = false;
-    isNixos = false;
     wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
   };
 

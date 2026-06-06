@@ -1,10 +1,10 @@
 { self, lib, pkgs, minimal, ... }:
 {
   imports = [
-    "${self}/profiles/nixos/microvm"
-    "${self}/modules/nixos/server/navidrome.nix"
-    "${self}/modules/nixos/server/spotifyd.nix"
-    "${self}/modules/nixos/server/mpd.nix"
+    self.modules.nixos.profile-microvm
+    self.modules.nixos.navidrome
+    self.modules.nixos.spotifyd
+    self.modules.nixos.mpd
   ];
 
   swarselsystems = {

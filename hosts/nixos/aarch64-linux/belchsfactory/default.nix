@@ -1,19 +1,19 @@
-{ self, config, lib, minimal, ... }:
+{ self, inputs, config, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-    "${self}/modules/nixos/optional/nix-topology-self.nix"
+    self.modules.nixos.systemd-networkd-server
+    self.modules.nixos.nix-topology-self
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/localserver"
-    "${self}/modules/nixos/server/wireguard.nix"
-    "${self}/modules/nixos/server/ssh-builder.nix"
-    "${self}/modules/nixos/server/attic.nix"
-    "${self}/modules/nixos/server/garage.nix"
-    "${self}/modules/nixos/server/buildbot.nix"
-    "${self}/modules/nixos/client/remotebuild.nix"
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.wireguard
+    self.modules.nixos.ssh-builder
+    self.modules.nixos.attic
+    self.modules.nixos.garage
+    self.modules.nixos.buildbot
+    inputs.self.modules.nixos.remotebuild
   ];
 
   node.lockFromBootstrapping = lib.mkForce false;
@@ -34,7 +34,6 @@
     isSwap = false;
     rootDisk = "/dev/sda";
     isBtrfs = true;
-    isNixos = true;
     isLinux = true;
     isCloud = true;
     proxyHost = "twothreetunnel";

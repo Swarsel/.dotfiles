@@ -4,11 +4,11 @@
   imports = [
     ./hardware-configuration.nix
 
-    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
-    "${self}/modules/nixos/optional/nix-topology-self.nix"
+    self.modules.nixos.systemd-networkd-server
+    self.modules.nixos.nix-topology-self
   ] ++ lib.optionals (!minimal) [
-    "${self}/profiles/nixos/localserver"
-    "${self}/modules/nixos/server/smartctl-exporter.nix"
+    self.modules.nixos.profile-localserver
+    self.modules.nixos.smartctl-exporter
   ];
 
   topology.self.interfaces."eth1" = { };
@@ -31,7 +31,6 @@
     isCrypted = false;
     isBtrfs = false;
     isLinux = true;
-    isNixos = true;
     proxyHost = "twothreetunnel";
 
   };

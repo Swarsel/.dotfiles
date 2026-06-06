@@ -8,13 +8,13 @@
     ./disk-config.nix
 
     # ---- SERVER-ONLY ----
-    # "${self}/modules/nixos/optional/systemd-networkd-server.nix"      # cloud / single-NIC
-    # "${self}/modules/nixos/optional/systemd-networkd-server-home.nix" # home server with VLANs
-    # "${self}/modules/nixos/optional/nix-topology-self.nix"
+    # self.modules.nixos.systemd-networkd-server      # cloud / single-NIC
+    # self.modules.nixos.systemd-networkd-server-home # home server with VLANs
+    # self.modules.nixos.nix-topology-self
 
   ] ++ lib.optionals (!minimal) [
-    # "${self}/profiles/nixos/personal"
-    # "${self}/profiles/nixos/localserver"
+    # self.modules.nixos.profile-personal
+    # self.modules.nixos.profile-localserver
   ];
 
   # ---- CLIENT-ONLY ----
@@ -32,7 +32,6 @@
   swarselsystems = {
     info = "TEMPLATE";
     rootDisk = "TEMPLATE"; # /dev/disk/by-id/[...]
-    isNixos = true;
     isLinux = true;
     isBtrfs = true;
     isImpermanence = true;
