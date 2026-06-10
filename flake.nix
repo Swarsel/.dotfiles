@@ -85,6 +85,10 @@
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    noctalia-greeter = {
+      url = "github:noctalia-dev/noctalia-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     noctoggle.url = "github:Swarsel/noctoggle";
     nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
     nur.url = "github:nix-community/NUR";

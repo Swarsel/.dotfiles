@@ -40,7 +40,6 @@ in
         "spicetify"
         "starship"
         "stylix"
-        "swayidle"
         "symlink"
         "yubikey-touch-detector"
         "zellij"

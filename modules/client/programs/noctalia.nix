@@ -41,6 +41,14 @@ in
             gpu-screen-recorder.enable = true;
             evolution.enable = false;
           };
+          systemd.services.lock-before-sleep = {
+            before = [ "sleep.target" ];
+            wantedBy = [ "sleep.target" ];
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = "${pkgs.systemd}/bin/loginctl lock-sessions";
+            };
+          };
         })
       ];
     };
@@ -48,6 +56,7 @@ in
     homeManager.noctalia = { self, inputs, config, pkgs, lib, confLib, ... }:
       let
         inherit (confLib.getConfig.repo.secrets.common) caldavTasksEndpoint;
+        brightnessctl = lib.getExe pkgs.brightnessctl;
       in
       {
         imports = [
@@ -169,6 +178,30 @@ in
                       shortcut = "b";
                     }
                   ];
+                };
+
+                idle = {
+                  behavior_order = [ "dim" "lock" "suspend" ];
+                  pre_action_fade_seconds = 0.0;
+                  behavior = {
+                    dim = {
+                      enabled = true;
+                      timeout = 60;
+                      action = "command";
+                      command = "${brightnessctl} -s; ${brightnessctl} set 80%-";
+                      resume_command = "${brightnessctl} -r";
+                    };
+                    lock = {
+                      enabled = true;
+                      timeout = 300;
+                      action = "lock";
+                    };
+                    suspend = {
+                      enabled = true;
+                      timeout = 600;
+                      action = "lock_and_suspend";
+                    };
+                  };
                 };
 
                 bar.main = {
