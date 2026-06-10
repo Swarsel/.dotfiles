@@ -109,26 +109,16 @@ in
               "steam-fhsenv-without-steam"
               "transmission_3"
             ])
+            // (mkUsePkgsFrom (from "stable25_11") [
+              "azure-cli"
+            ])
             // (mkUsePkgsFrom (from "stable") [
               # "anki"
-              "azure-cli"
               # "bat-extras.batgrep"
               # "bluez"
-              "calibre"
               # "chromium"
-              "dwarfs"
-              "gotenberg"
-              "khal"
-              "libreoffice"
-              "libreoffice-qt"
-              "nerd-fonts-symbols-only"
-              "noto-fonts-color-emoji"
               # "pipewire"
-              "podman"
               "teams-for-linux"
-              # "vesktop"
-              "virtualbox"
-              "inkscape"
             ]);
 
           modifications = final: prev:
@@ -151,19 +141,11 @@ in
                   ];
                 };
 
-                openldap = prev.openldap.overrideAttrs {
-                  doCheck = false;
-                };
-
                 isync = prev.isync.override {
                   withCyrusSaslXoauth2 = true;
                 };
 
                 mgba = final.swarsel-mgba;
-
-                noctalia-shell = prev.noctalia-shell.override {
-                  calendarSupport = true;
-                };
 
                 retroarch = prev.retroarch.withCores (cores: with cores; [
                   snes9x # snes
@@ -175,6 +157,14 @@ in
                   melonds # ds
                   dolphin # gc/wii
                 ]);
+
+                shikane = prev.shikane.overrideAttrs (old: {
+                  postPatch = (old.postPatch or "") + ''
+                    substituteInPlace src/settings.rs \
+                      --replace-fail ".create(true)" "" \
+                      --replace-fail ".append(true)" ""
+                  '';
+                });
 
               };
             in
