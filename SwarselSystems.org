@@ -44992,6 +44992,29 @@ Note that the string cannot be preceded by 0 - =lib.toInt "01"= would yield ==> 
 
 In this section I try to add commits whenever they feel like they changed something about this repository (but often also other commits around the same time are important). I wanted to do this for a while already and always was too lazy. I will need to do another run through the history at another point, but for now here are some interesting states:
 
+** [[https://github.com/Swarsel/.dotfiles/tree/78edb33][78edb33 — feat[client]: migrate to emacs-init (2026-06-10)]]
+:PROPERTIES:
+:CUSTOM_ID: h:29e01484-3316-4248-8153-83a9be864db3
+:END:
+
+For years my Emacs configuration was a hand-written =init.el= and =early-init.el= that I tangled from this very document. Here, I converted the whole config to rycee's =emacs-init= home-manager module, which generates the =init.el= from native nix config. I also used the opportunity to restructure the emacs section a little bit. I had wanted to do this for years already, but was always too afraid that I woudl at some point move away from nix. However, I recently realised that even rewriting the entire emacs config from scratch would be a laughable effort compared to the rest of what I did in this project, so well, I just did it now :)
+
+** [[https://github.com/Swarsel/.dotfiles/tree/fffcee1][fffcee1 — refactor: move to dendritic pattern (2026-06-06)]]
+:PROPERTIES:
+:CUSTOM_ID: h:c7763b63-9015-4012-ad02-4a06a4872bee
+:END:
+
+Here, I moved the whole repository over to the dendritic pattern, where every =.nix= file under =modules/= is a flake-parts module that gets auto-imported via import-tree, and features are composed through =flake.modules.*= (this allows to write configuration for multiple contexts in a single file). This made the project a lot more concise, saving around 2000 lines of code here.
+
+** [[https://github.com/Swarsel/.dotfiles/tree/85e830d][85e830d — feat: use flake-file (2026-06-04)]]
+:PROPERTIES:
+:CUSTOM_ID: h:215e7c76-ed89-472c-afd4-d4cc8e1e450b
+:END:
+
+Here I started using flake-file to manage my flake inputs. Instead of maintaining the =inputs= block in =flake.nix= by hand, each feature can now declare the inputs it needs next to where it uses them, and the actual =flake.nix= inputs block is generated from those declarations.
+
+This revision is particularly interesting, because at this point I was not yet using a dendritic pattern for the rest of the project. I figured out a neat way to still make full use of flake-file anyways, even if it was just for this single commit.
+
 ** [[https://github.com/Swarsel/.dotfiles/tree/8b2fe83][8b2fe83 — feat[server]: modernize nginx/acme setup (2026-06-02)]]
 :PROPERTIES:
 :CUSTOM_ID: h:fba0310f-6dca-4fb8-98da-73628ff14485
