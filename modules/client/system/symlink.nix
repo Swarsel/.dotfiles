@@ -1,16 +1,8 @@
 {
-  flake.modules.homeManager.symlink = { self, lib, ... }: {
+  flake.modules.homeManager.symlink = { self, ... }: {
     config = {
       swarselsystems.enabledHomeModules = [ "symlink" ];
       home.file = {
-        "init.el" = lib.mkDefault {
-          source = self + /files/emacs/init.el;
-          target = ".emacs.d/init.el";
-        };
-        "early-init.el" = {
-          source = self + /files/emacs/early-init.el;
-          target = ".emacs.d/early-init.el";
-        };
         # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
         ".aspell.conf" = {
           source = self + /files/config/.aspell.conf;

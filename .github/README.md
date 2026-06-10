@@ -56,11 +56,12 @@
 
   I went to great lengths in order to document the full design process of my infrastructure properly; the above document strives to serve as an introductory lecture to nix / NixOS while at the same time explaining the config in general.
 
-  If you only came here for my Emacs configuration, the relevant files are here:
+  ### Emacs
+
+  If you came here for my raw Emacs configuration, the relevant files live here in elisp form (these files are generated from the nix `emacs-init` module):
 
   - [early-init.el](../files/emacs/early-init.el)
   - [init.el](../files/emacs/init.el)
-
 
   ### Getting started
 

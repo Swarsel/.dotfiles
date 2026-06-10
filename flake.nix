@@ -95,6 +95,10 @@
     noctoggle.url = "github:Swarsel/noctoggle";
     nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
     nur.url = "github:nix-community/NUR";
+    nur-expressions = {
+      url = "gitlab:rycee/nur-expressions";
+      flake = false;
+    };
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
     simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
     smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
