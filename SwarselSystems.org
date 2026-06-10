@@ -1839,6 +1839,10 @@ A short overview over each notable input and what it does:
         url = "github:noctalia-dev/noctalia-shell";
         inputs.nixpkgs.follows = "nixpkgs";
       };
+      noctalia-greeter = {
+        url = "github:noctalia-dev/noctalia-greeter";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       noctoggle.url = "github:Swarsel/noctoggle";
       nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
       nur.url = "github:nix-community/NUR";
@@ -11511,7 +11515,6 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
           "tridactyl/tridactylrc".source = self + /files/firefox/tridactyl/tridactylrc;
           "tridactyl/themes/base16-codeschool.css".source = self + /files/firefox/tridactyl/themes/base16-codeschool.css;
           "tridactyl/themes/swarsel.css".source = self + /files/firefox/tridactyl/themes/swarsel.css;
-          # "swayidle/config".source = self + /files/swayidle/config;
         };
       };
     };
@@ -14998,7 +15001,6 @@ Nowadays, all of the Sway stack is kept as a reference.
                       # }
 
                       exec systemctl --user import-environment
-                      # exec swayidle -w
 
                       seat * hide_cursor 2000
 
@@ -15011,44 +15013,6 @@ Nowadays, all of the Sway stack is kept as a reference.
                       ";
               };
             };
-          };
-
-        swayidle = { lib, config, pkgs, ... }:
-          let
-            moduleName = "swayidle";
-          in
-          {
-            config = {
-              swarselsystems.enabledHomeModules = [ "swayidle" ];
-              services.${moduleName} =
-                let
-                  brightnessctl = "${lib.getExe pkgs.brightnessctl}";
-                  swaylock = "${lib.getExe pkgs.swaylock-effects}";
-                  suspend = "${pkgs.systemd}/bin/systemctl suspend";
-                  noctalia = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/noctalia msg";
-                in
-                {
-                  enable = true;
-                  # systemdTarget = "sway-session.target";
-                  extraArgs = [ "-w" ];
-                  timeouts = [
-                    { timeout = 60; command = "${brightnessctl} -s; ${brightnessctl} set 80%-"; resumeCommand = "${brightnessctl} -r"; }
-                    # { timeout = 300; command =  "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
-                    # { timeout = 300; command = "${swaylock} -f"; }
-                    { timeout = 300; command = "${noctalia} session lock || ${swaylock} -f"; }
-                    # { timeout = 600; command = ''${pkgs.sway}/bin/swaymsg "output * dpms off"; resumeCommand = "${pkgs.sway}/bin/swaymsg output * dpms on'';  }
-                    # { timeout = 600; command = "${noctalia} sessionMenu lockAndSuspend || ${suspend}"; }
-                    { timeout = 600; command = "${suspend}"; }
-                  ];
-                  events = {
-                    # { event = "before-sleep"; command = "${noctalia} lockScreen lock || ${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
-                    # { event = "after-resume"; command = "${swaylock} -f "; }
-                    before-sleep = "${noctalia} session lock || ${swaylock} -f ";
-                    # lock = "${swaylock} -f ";
-                  };
-                };
-            };
-
           };
 
         swaylock = { pkgs, ... }:
@@ -17677,19 +17641,30 @@ This section houses the greetd related settings. I do not really want to use a d
 
 #+begin_src nix-ts :tangle modules/client/system/login.nix
   {
-    flake.modules.nixos.login = { pkgs, confLib, ... }: {
+    flake-file.inputs.noctalia-greeter = {
+      url = "github:noctalia-dev/noctalia-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    flake.modules.nixos.login = { inputs, config, confLib, ... }: {
+      imports = [ inputs.noctalia-greeter.nixosModules.default ];
+
       config = {
 
         users.persistentIds = {
           greeter = confLib.mkIds 958;
         };
 
+        environment = {
+          systemPackages = config.services.displayManager.sessionPackages;
+          pathsToLink = [ "/share/wayland-sessions" ];
+        };
+
+        programs.noctalia-greeter.enable = true;
+
         services.greetd = {
           enable = true;
-          settings = {
-            initial_session.command = "uwsm start -- niri-uwsm.desktop";
-            default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --asterisks --user-menu --cmd 'uwsm start -- niri-uwsm.desktop'";
-          };
+          settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";
         };
 
       };
@@ -18558,6 +18533,14 @@ Auto login for the initial session.
               gpu-screen-recorder.enable = true;
               evolution.enable = false;
             };
+            systemd.services.lock-before-sleep = {
+              before = [ "sleep.target" ];
+              wantedBy = [ "sleep.target" ];
+              serviceConfig = {
+                Type = "oneshot";
+                ExecStart = "${pkgs.systemd}/bin/loginctl lock-sessions";
+              };
+            };
           })
         ];
       };
@@ -18565,6 +18548,7 @@ Auto login for the initial session.
       homeManager.noctalia = { self, inputs, config, pkgs, lib, confLib, ... }:
         let
           inherit (confLib.getConfig.repo.secrets.common) caldavTasksEndpoint;
+          brightnessctl = lib.getExe pkgs.brightnessctl;
         in
         {
           imports = [
@@ -18686,6 +18670,30 @@ Auto login for the initial session.
                         shortcut = "b";
                       }
                     ];
+                  };
+
+                  idle = {
+                    behavior_order = [ "dim" "lock" "suspend" ];
+                    pre_action_fade_seconds = 0.0;
+                    behavior = {
+                      dim = {
+                        enabled = true;
+                        timeout = 60;
+                        action = "command";
+                        command = "${brightnessctl} -s; ${brightnessctl} set 80%-";
+                        resume_command = "${brightnessctl} -r";
+                      };
+                      lock = {
+                        enabled = true;
+                        timeout = 300;
+                        action = "lock";
+                      };
+                      suspend = {
+                        enabled = true;
+                        timeout = 600;
+                        action = "lock_and_suspend";
+                      };
+                    };
                   };
 
                   bar.main = {
@@ -34589,7 +34597,6 @@ In this section I define custom aspect sets. These are mostly used to combine co
           "spicetify"
           "starship"
           "stylix"
-          "swayidle"
           "symlink"
           "yubikey-touch-detector"
           "zellij"
