@@ -111,7 +111,6 @@ in
               systemd.enable = config.swarselsystems.noctalia-systemd;
               settings = {
                 shell = {
-                  font_family = "FiraCode Nerd Font Mono";
                   time_format = "{:%H:%M}";
                   telemetry_enabled = false;
                   clipboard_enabled = true;
@@ -175,11 +174,16 @@ in
                 bar.main = {
                   position = "top";
                   background_opacity = 0.5;
+                  color = "on_surface";
+                  font_weight = 500;
+                  widget_spacing = 10;
                   radius = 12;
                   border_width = 0.0;
                   margin_ends = 0;
                   margin_edge = 0;
                   reserve_space = false;
+                  scale = 1.1;
+                  thickness = 40;
                   auto_hide = false;
                   capsule = false;
                   start = [ "workspaces" ];
@@ -221,7 +225,7 @@ in
                     device = "output";
                   };
                   notifications.hide_when_no_unread = false;
-                  network.show_label = true;
+                  network.show_label = false;
                   bluetooth = {
                     show_label = true;
                     hide_when_no_connected_device = true;
@@ -274,14 +278,19 @@ in
                 };
 
                 theme = {
-                  source = "builtin";
-                  builtin = "Nord";
-                  community_palette = "Oxocarbon";
+                  source = "custom";
+                  custom_palette = "stylix";
                   mode = "dark";
-                  wallpaper_scheme = "m3-content";
+                  templates = {
+                    enable_builtin_templates = false;
+                    enable_community_templates = false;
+                  };
                 };
 
-                lockscreen.monitors = [ "eDP-2" ];
+                lockscreen = {
+                  blurred_desktop = true;
+                  monitors = [ "eDP-2" ];
+                };
 
                 lockscreen_widgets = {
                   enabled = true;
@@ -304,6 +313,9 @@ in
                       output = "eDP-2";
                       cx = 853.5;
                       cy = 981.5;
+                      box_width = 0.0;
+                      box_height = 0.0;
+                      rotation = 0.0;
                       enabled = true;
                     };
                     lockscreen-widget-0000000000000001 = {
@@ -313,6 +325,7 @@ in
                       cy = 789.5;
                       box_width = 192.0;
                       box_height = 192.0;
+                      rotation = 0.0;
                       enabled = true;
                       settings.background = false;
                     };
@@ -321,6 +334,9 @@ in
                       output = "eDP-2";
                       cx = 853.5;
                       cy = 533.5;
+                      box_width = 0.0;
+                      box_height = 0.0;
+                      rotation = 0.0;
                       enabled = true;
                       settings = {
                         background = false;
@@ -401,7 +417,10 @@ in
                   disk_pct_critical_threshold = 90.0;
                 };
 
-                dock.enabled = false;
+                dock = {
+                  enabled = false;
+                  background_opacity = 1.0;
+                };
 
                 desktop_widgets.enabled = false;
 

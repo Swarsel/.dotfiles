@@ -1759,13 +1759,6 @@ A short overview over each notable input and what it does:
 
     outputs = inputs: import ./modules/flake/_outputs.nix inputs;
 
-    nixConfig = {
-      extra-substituters = [ "https://nix-community.cachix.org" ];
-      extra-trusted-public-keys = [
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      ];
-    };
-
     inputs = {
       copyparty = {
         url = "github:9001/copyparty/hovudstraum";
@@ -1858,7 +1851,7 @@ A short overview over each notable input and what it does:
       smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
       sops.url = "github:Mic92/sops-nix";
       spicetify-nix.url = "github:Gerg-l/spicetify-nix";
-      stylix.url = "github:danth/stylix";
+      stylix.url = "github:Swarsel/stylix/feat/noctalia-v5";
       swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       systems.url = "github:nix-systems/default";
       topologyPrivate.url = "./files/topology/public";
@@ -11322,7 +11315,8 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 
 #+begin_src nix-ts :tangle modules/client/programs/stylix.nix
   {
-    flake-file.inputs.stylix.url = "github:danth/stylix";
+    # flake-file.inputs.stylix.url = "github:danth/stylix";
+    flake-file.inputs.stylix.url = "github:Swarsel/stylix/feat/noctalia-v5";
 
     flake.modules = {
       nixos.stylix = { inputs, lib, ... }: {
@@ -17693,22 +17687,11 @@ This section houses the greetd related settings. I do not really want to use a d
         services.greetd = {
           enable = true;
           settings = {
-            # initial_session.command = "sway";
             initial_session.command = "uwsm start -- niri-uwsm.desktop";
-            # --cmd sway
-            default_session.command = ''
-              ${pkgs.tuigreet}/bin/tuigreet \
-                --time \
-                --asterisks \
-                --user-menu \
-                --cmd "uwsm start -- niri-uwsm.desktop"
-            '';
+            default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --asterisks --user-menu --cmd 'uwsm start -- niri-uwsm.desktop'";
           };
         };
 
-        # environment.etc."greetd/environments".text = ''
-        #   sway
-        # '';
       };
     };
   }
@@ -18645,7 +18628,6 @@ Auto login for the initial session.
                 systemd.enable = config.swarselsystems.noctalia-systemd;
                 settings = {
                   shell = {
-                    font_family = "FiraCode Nerd Font Mono";
                     time_format = "{:%H:%M}";
                     telemetry_enabled = false;
                     clipboard_enabled = true;
@@ -18709,11 +18691,16 @@ Auto login for the initial session.
                   bar.main = {
                     position = "top";
                     background_opacity = 0.5;
+                    color = "on_surface";
+                    font_weight = 500;
+                    widget_spacing = 10;
                     radius = 12;
                     border_width = 0.0;
                     margin_ends = 0;
                     margin_edge = 0;
                     reserve_space = false;
+                    scale = 1.1;
+                    thickness = 40;
                     auto_hide = false;
                     capsule = false;
                     start = [ "workspaces" ];
@@ -18755,7 +18742,7 @@ Auto login for the initial session.
                       device = "output";
                     };
                     notifications.hide_when_no_unread = false;
-                    network.show_label = true;
+                    network.show_label = false;
                     bluetooth = {
                       show_label = true;
                       hide_when_no_connected_device = true;
@@ -18808,14 +18795,19 @@ Auto login for the initial session.
                   };
 
                   theme = {
-                    source = "builtin";
-                    builtin = "Nord";
-                    community_palette = "Oxocarbon";
+                    source = "custom";
+                    custom_palette = "stylix";
                     mode = "dark";
-                    wallpaper_scheme = "m3-content";
+                    templates = {
+                      enable_builtin_templates = false;
+                      enable_community_templates = false;
+                    };
                   };
 
-                  lockscreen.monitors = [ "eDP-2" ];
+                  lockscreen = {
+                    blurred_desktop = true;
+                    monitors = [ "eDP-2" ];
+                  };
 
                   lockscreen_widgets = {
                     enabled = true;
@@ -18838,6 +18830,9 @@ Auto login for the initial session.
                         output = "eDP-2";
                         cx = 853.5;
                         cy = 981.5;
+                        box_width = 0.0;
+                        box_height = 0.0;
+                        rotation = 0.0;
                         enabled = true;
                       };
                       lockscreen-widget-0000000000000001 = {
@@ -18847,6 +18842,7 @@ Auto login for the initial session.
                         cy = 789.5;
                         box_width = 192.0;
                         box_height = 192.0;
+                        rotation = 0.0;
                         enabled = true;
                         settings.background = false;
                       };
@@ -18855,6 +18851,9 @@ Auto login for the initial session.
                         output = "eDP-2";
                         cx = 853.5;
                         cy = 533.5;
+                        box_width = 0.0;
+                        box_height = 0.0;
+                        rotation = 0.0;
                         enabled = true;
                         settings = {
                           background = false;
@@ -18935,7 +18934,10 @@ Auto login for the initial session.
                     disk_pct_critical_threshold = 90.0;
                   };
 
-                  dock.enabled = false;
+                  dock = {
+                    enabled = false;
+                    background_opacity = 1.0;
+                  };
 
                   desktop_widgets.enabled = false;
 

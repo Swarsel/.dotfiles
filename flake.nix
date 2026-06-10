@@ -5,13 +5,6 @@
 
   outputs = inputs: import ./modules/flake/_outputs.nix inputs;
 
-  nixConfig = {
-    extra-substituters = [ "https://nix-community.cachix.org" ];
-    extra-trusted-public-keys = [
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-    ];
-  };
-
   inputs = {
     copyparty = {
       url = "github:9001/copyparty/hovudstraum";
@@ -104,7 +97,7 @@
     smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
     sops.url = "github:Mic92/sops-nix";
     spicetify-nix.url = "github:Gerg-l/spicetify-nix";
-    stylix.url = "github:danth/stylix";
+    stylix.url = "github:Swarsel/stylix/feat/noctalia-v5";
     swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
     systems.url = "github:nix-systems/default";
     topologyPrivate.url = "./files/topology/public";
