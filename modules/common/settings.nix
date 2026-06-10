@@ -43,7 +43,10 @@ let
     max-jobs = 1;
   };
 
-  mkSubstituter = globals: mainUser: [ "https://${globals.services.attic.domain}/${mainUser}" ];
+  mkSubstituter = globals: mainUser: [
+    "https://nix-community.cachix.org"
+    "https://${globals.services.attic.domain}/${mainUser}"
+  ];
 
   baseOverlays = outputs: [
     outputs.overlays.default
@@ -142,6 +145,7 @@ in
                   trusted-substituters = mkSubstituter globals mainUser;
                   trusted-public-keys = [
                     atticPublicKey
+                    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
                   ];
                   trusted-users = [
                     "@wheel"

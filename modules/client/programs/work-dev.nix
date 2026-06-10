@@ -42,6 +42,9 @@
           sessionVariables = {
             AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
           };
+          file.".ssh/known_hosts_work".text = ''
+            @cert-authority *.vbc.ac.at ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBIIQtwt8vkYw9jc4cF9F2TxdpEv8Wc68ofDjUp8AOf3/bKfTcN1yaTpPlTEtwNo/1EnR2lOlrukYrKtw8jKW0nA=
+          '';
         };
         systemd.user.sessionVariables = {
           DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
@@ -92,7 +95,9 @@
               };
             };
 
-            ssh.settings = confLib.getConfig.repo.secrets.local.work.sshConfig;
+            ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.local.work.sshConfig {
+              "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
+            };
 
             firefox = {
               profiles =

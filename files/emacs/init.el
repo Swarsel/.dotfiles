@@ -542,6 +542,8 @@ Also see `prot-window-delete-popup-frame'." command)
   (load-theme 'doom-city-lights t)
   (doom-themes-treemacs-config)
   (doom-themes-org-config)
+  (with-eval-after-load 'gnus
+    (put 'gnus-group-news-low 'face-defface-spec '((t (:weight bold)))))
   )
 
 (use-package eglot
@@ -1049,7 +1051,6 @@ there's a region, all lines that region covers will be duplicated."
   (setq magit-repository-directories `((,swarsel-work-projects-directory  . 3)
                                         (,swarsel-private-projects-directory . 3)
                                         ("~/.dotfiles/" . 0)))
-
   ;; RET on a hunk/file always opens the editable worktree file at point,
   ;; never a read-only staged blob.
   (with-eval-after-load 'magit-diff

@@ -402,7 +402,7 @@
                 brightnessctl = "${lib.getExe pkgs.brightnessctl}";
                 swaylock = "${lib.getExe pkgs.swaylock-effects}";
                 suspend = "${pkgs.systemd}/bin/systemctl suspend";
-                noctalia = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/noctalia-shell ipc call";
+                noctalia = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/noctalia msg";
               in
               {
                 enable = true;
@@ -412,7 +412,7 @@
                   { timeout = 60; command = "${brightnessctl} -s; ${brightnessctl} set 80%-"; resumeCommand = "${brightnessctl} -r"; }
                   # { timeout = 300; command =  "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
                   # { timeout = 300; command = "${swaylock} -f"; }
-                  { timeout = 300; command = "${noctalia} lockScreen lock || ${swaylock} -f"; }
+                  { timeout = 300; command = "${noctalia} session lock || ${swaylock} -f"; }
                   # { timeout = 600; command = ''${pkgs.sway}/bin/swaymsg "output * dpms off"; resumeCommand = "${pkgs.sway}/bin/swaymsg output * dpms on'';  }
                   # { timeout = 600; command = "${noctalia} sessionMenu lockAndSuspend || ${suspend}"; }
                   { timeout = 600; command = "${suspend}"; }
@@ -420,7 +420,7 @@
                 events = {
                   # { event = "before-sleep"; command = "${noctalia} lockScreen lock || ${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
                   # { event = "after-resume"; command = "${swaylock} -f "; }
-                  before-sleep = "${noctalia} lockScreen lock || ${swaylock} -f ";
+                  before-sleep = "${noctalia} session lock || ${swaylock} -f ";
                   # lock = "${swaylock} -f ";
                 };
               };

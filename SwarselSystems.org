@@ -3362,26 +3362,16 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 "steam-fhsenv-without-steam"
                 "transmission_3"
               ])
+              // (mkUsePkgsFrom (from "stable25_11") [
+                "azure-cli"
+              ])
               // (mkUsePkgsFrom (from "stable") [
                 # "anki"
-                "azure-cli"
                 # "bat-extras.batgrep"
                 # "bluez"
-                "calibre"
                 # "chromium"
-                "dwarfs"
-                "gotenberg"
-                "khal"
-                "libreoffice"
-                "libreoffice-qt"
-                "nerd-fonts-symbols-only"
-                "noto-fonts-color-emoji"
                 # "pipewire"
-                "podman"
                 "teams-for-linux"
-                # "vesktop"
-                "virtualbox"
-                "inkscape"
               ]);
 
             modifications = final: prev:
@@ -3404,19 +3394,11 @@ On the structure of overlays: as you notice, all of the attributes within overla
                     ];
                   };
 
-                  openldap = prev.openldap.overrideAttrs {
-                    doCheck = false;
-                  };
-
                   isync = prev.isync.override {
                     withCyrusSaslXoauth2 = true;
                   };
 
                   mgba = final.swarsel-mgba;
-
-                  noctalia-shell = prev.noctalia-shell.override {
-                    calendarSupport = true;
-                  };
 
                   retroarch = prev.retroarch.withCores (cores: with cores; [
                     snes9x # snes
@@ -3428,6 +3410,14 @@ On the structure of overlays: as you notice, all of the attributes within overla
                     melonds # ds
                     dolphin # gc/wii
                   ]);
+
+                  shikane = prev.shikane.overrideAttrs (old: {
+                    postPatch = (old.postPatch or "") + ''
+                      substituteInPlace src/settings.rs \
+                        --replace-fail ".create(true)" "" \
+                        --replace-fail ".append(true)" ""
+                    '';
+                  });
 
                 };
               in
@@ -3451,14 +3441,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
     flake-file = {
       description = "SwarseFlake - Nix Flake for all SwarselSystems";
       outputs = "inputs: import ./modules/flake/_outputs.nix inputs";
-      nixConfig = {
-        extra-substituters = [
-          "https://nix-community.cachix.org"
-        ];
-        extra-trusted-public-keys = [
-          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        ];
-      };
       inputs = {
         flake-file.url = "github:vic/flake-file";
 
@@ -9028,7 +9010,10 @@ A breakdown of the flags being set:
       max-jobs = 1;
     };
 
-    mkSubstituter = globals: mainUser: [ "https://${globals.services.attic.domain}/${mainUser}" ];
+    mkSubstituter = globals: mainUser: [
+      "https://nix-community.cachix.org"
+      "https://${globals.services.attic.domain}/${mainUser}"
+    ];
 
     baseOverlays = outputs: [
       outputs.overlays.default
@@ -9127,6 +9112,7 @@ A breakdown of the flags being set:
                     trusted-substituters = mkSubstituter globals mainUser;
                     trusted-public-keys = [
                       atticPublicKey
+                      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
                     ];
                     trusted-users = [
                       "@wheel"
@@ -11652,7 +11638,7 @@ Enables password store with the =pass-otp= extension which allows me to store an
 
 #+begin_src nix-ts :tangle modules/client/programs/password-store.nix
   {
-    flake.modules.homeManager.password-store = { pkgs, ... }: {
+    flake.modules.homeManager.password-store = { pkgs, lib, config, ... }: {
       config = {
         swarselsystems.enabledHomeModules = [ "passwordstore" ];
         programs.password-store = {
@@ -11662,6 +11648,14 @@ Enables password store with the =pass-otp= extension which allows me to store an
           };
           package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
         };
+        home.activation.setupPasswordStore = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          set -eu
+          storeDir="${config.programs.password-store.settings.PASSWORD_STORE_DIR}"
+          if [ ! -e "$storeDir" ]; then
+            GIT_SSH_COMMAND='${pkgs.openssh}/bin/ssh -o StrictHostKeyChecking=accept-new' \
+              ${pkgs.git}/bin/git clone git@github.com:Swarsel/secrets.git "$storeDir" || true
+          fi
+        '';
       };
     };
   }
@@ -13785,86 +13779,86 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
     };
 
     flake.modules.homeManager.emacs = { self, lib, config, pkgs, inputs, confLib, globals, ... }:
-    let
-      inherit (config.swarselsystems) homeDir mainUser;
-      inherit (confLib.getConfig.repo.secrets.common.emacs) radicaleUser;
-    in
-    {
-      imports = [
-        "${inputs.nur-expressions}/hm-modules/emacs-init.nix"
-        self.modules.homeManager.emacs-init
-      ];
+      let
+        inherit (config.swarselsystems) homeDir mainUser;
+        inherit (confLib.getConfig.repo.secrets.common.emacs) radicaleUser;
+      in
+      {
+        imports = [
+          "${inputs.nur-expressions}/hm-modules/emacs-init.nix"
+          self.modules.homeManager.emacs-init
+        ];
 
-      config = {
-        swarselsystems = {
-          enabledHomeModules = [ "emacs" ];
+        config = {
+          swarselsystems = {
+            enabledHomeModules = [ "emacs" ];
 
-          homeSopsSecrets = {
-            fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
-            emacs-radicale-pw = { };
-            github-forge-token = { };
+            homeSopsSecrets = {
+              fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
+              emacs-radicale-pw = { };
+              github-forge-token = { };
+            };
+
+            homeSopsTemplates.authinfo = {
+              path = "${homeDir}/.emacs.d/.authinfo";
+              content = ''
+                machine ${globals.services.radicale.domain} login ${radicaleUser} password ${confLib.getConfig.sops.placeholder.emacs-radicale-pw}
+              '';
+            };
           };
 
-          homeSopsTemplates.authinfo = {
-            path = "${homeDir}/.emacs.d/.authinfo";
-            content = ''
-              machine ${globals.services.radicale.domain} login ${radicaleUser} password ${confLib.getConfig.sops.placeholder.emacs-radicale-pw}
-            '';
-          };
-        };
+          home.activation = {
+            setupEmacsOrgFiles =
+              lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                set -eu
 
-        home.activation = {
-          setupEmacsOrgFiles =
-            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              set -eu
-
-              if [ ! -d ${homeDir}/Org ]; then
-                ${pkgs.coreutils}/bin/install -d -m 0755 ${homeDir}/Org
-                ${pkgs.coreutils}/bin/chown ${mainUser}:syncthing ${homeDir}/Org
-              fi
-
-              # create dummy files to make Emacs calendar work
-              # these have low modified dates and should be marked as sync-conflicts
-              for file in "Tasks" "Archive" "Journal"; do
-                if [ ! -f ${homeDir}/Org/"$file".org ]; then
-                  ${pkgs.coreutils}/bin/touch --time=access --time=modify -t 197001010000.00 ${homeDir}/Org/"$file".org
-                  ${pkgs.coreutils}/bin/chown ${mainUser}:syncthing ${homeDir}/Org/"$file".org
+                if [ ! -d ${homeDir}/Org ]; then
+                  ${pkgs.coreutils}/bin/install -d -m 0755 ${homeDir}/Org
+                  ${pkgs.coreutils}/bin/chown ${mainUser}:syncthing ${homeDir}/Org
                 fi
-              done
 
-              # when the configuration is build again, these sync-conflicts will be cleaned up
-              for file in $(find ${homeDir}/Org/ -name "*sync-conflict*"); do
-                ${pkgs.coreutils}/bin/rm "$file"
-              done
-            '';
+                # create dummy files to make Emacs calendar work
+                # these have low modified dates and should be marked as sync-conflicts
+                for file in "Tasks" "Archive" "Journal"; do
+                  if [ ! -f ${homeDir}/Org/"$file".org ]; then
+                    ${pkgs.coreutils}/bin/touch --time=access --time=modify -t 197001010000.00 ${homeDir}/Org/"$file".org
+                    ${pkgs.coreutils}/bin/chown ${mainUser}:syncthing ${homeDir}/Org/"$file".org
+                  fi
+                done
 
-          copyEmacsGeneratedRef =
-            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              ref="${homeDir}/.dotfiles/files/emacs"
-              if [ -d "$ref" ]; then
-                paths=$(${config.programs.emacs.finalPackage}/bin/emacs -Q --batch --eval \
-                  '(progn (require (quote find-func)) (princ (concat (find-library-name "hm-early-init") "\n" (find-library-name "hm-init"))))' 2>/dev/null || true)
-                early_src=$(printf '%s\n' "$paths" | ${pkgs.coreutils}/bin/head -n1)
-                init_src=$(printf '%s\n' "$paths" | ${pkgs.coreutils}/bin/tail -n1)
-                [ -n "$early_src" ] && [ -f "$early_src" ] && ${pkgs.coreutils}/bin/install -m 0644 "$early_src" "$ref/early-init.el"
-                [ -n "$init_src" ] && [ -f "$init_src" ] && ${pkgs.coreutils}/bin/install -m 0644 "$init_src" "$ref/init.el"
-              fi
-            '';
+                # when the configuration is build again, these sync-conflicts will be cleaned up
+                for file in $(find ${homeDir}/Org/ -name "*sync-conflict*"); do
+                  ${pkgs.coreutils}/bin/rm "$file"
+                done
+              '';
+
+            copyEmacsGeneratedRef =
+              lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                ref="${homeDir}/.dotfiles/files/emacs"
+                if [ -d "$ref" ]; then
+                  paths=$(${config.programs.emacs.finalPackage}/bin/emacs -Q --batch --eval \
+                    '(progn (require (quote find-func)) (princ (concat (find-library-name "hm-early-init") "\n" (find-library-name "hm-init"))))' 2>/dev/null || true)
+                  early_src=$(printf '%s\n' "$paths" | ${pkgs.coreutils}/bin/head -n1)
+                  init_src=$(printf '%s\n' "$paths" | ${pkgs.coreutils}/bin/tail -n1)
+                  [ -n "$early_src" ] && [ -f "$early_src" ] && ${pkgs.coreutils}/bin/install -m 0644 "$early_src" "$ref/early-init.el"
+                  [ -n "$init_src" ] && [ -f "$init_src" ] && ${pkgs.coreutils}/bin/install -m 0644 "$init_src" "$ref/init.el"
+                fi
+              '';
+          };
+
+          programs.emacs = {
+            enable = true;
+            package = pkgs.emacs-unstable-pgtk;
+          };
+
+          services.emacs = {
+            enable = true;
+            socketActivation.enable = false;
+            startWithUserSession = "graphical";
+          };
+
         };
-
-        programs.emacs = {
-          enable = true;
-          package = pkgs.emacs-unstable-pgtk;
-        };
-
-        services.emacs = {
-          enable = true;
-          socketActivation.enable = false;
-          startWithUserSession = "graphical";
-        };
-
       };
-    };
   }
 #+end_src
 
@@ -15037,7 +15031,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                   brightnessctl = "${lib.getExe pkgs.brightnessctl}";
                   swaylock = "${lib.getExe pkgs.swaylock-effects}";
                   suspend = "${pkgs.systemd}/bin/systemctl suspend";
-                  noctalia = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/noctalia-shell ipc call";
+                  noctalia = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/noctalia msg";
                 in
                 {
                   enable = true;
@@ -15047,7 +15041,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                     { timeout = 60; command = "${brightnessctl} -s; ${brightnessctl} set 80%-"; resumeCommand = "${brightnessctl} -r"; }
                     # { timeout = 300; command =  "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
                     # { timeout = 300; command = "${swaylock} -f"; }
-                    { timeout = 300; command = "${noctalia} lockScreen lock || ${swaylock} -f"; }
+                    { timeout = 300; command = "${noctalia} session lock || ${swaylock} -f"; }
                     # { timeout = 600; command = ''${pkgs.sway}/bin/swaymsg "output * dpms off"; resumeCommand = "${pkgs.sway}/bin/swaymsg output * dpms on'';  }
                     # { timeout = 600; command = "${noctalia} sessionMenu lockAndSuspend || ${suspend}"; }
                     { timeout = 600; command = "${suspend}"; }
@@ -15055,7 +15049,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                   events = {
                     # { event = "before-sleep"; command = "${noctalia} lockScreen lock || ${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
                     # { event = "after-resume"; command = "${swaylock} -f "; }
-                    before-sleep = "${noctalia} lockScreen lock || ${swaylock} -f ";
+                    before-sleep = "${noctalia} session lock || ${swaylock} -f ";
                     # lock = "${swaylock} -f ";
                   };
                 };
@@ -18383,9 +18377,9 @@ Auto login for the initial session.
                 "Mod+f".action = sh "exec firefox";
                 # "Mod+Space".action = spawn "noctalia-shell" "ipc" "call" "launcher" "toggle";
                 # "Mod+Space".action = sh "${resizer} && exec noctalia-shell ipc call launcher toggle";
-                "Mod+Space".action = sh "exec noctalia-shell ipc call launcher toggle";
+                "Mod+Space".action = sh "exec noctalia msg panel-toggle launcher";
                 # "Mod+Space".action = sh "${resizer} & exec fuzzel";
-                "Mod+z".action = spawn "noctalia-shell" "ipc" "call" "bar" "toggle";
+                "Mod+z".action = spawn "noctalia" "msg" "bar-toggle";
                 "Mod+Shift+c".action = spawn "qalculate-gtk";
                 "Mod+Ctrl+p".action = spawn "1password" "--quick-acces";
                 "Mod+Shift+Escape".action = spawn "kitty" "-o" "confirm_os_window_close=0" "btm";
@@ -18434,17 +18428,17 @@ Auto login for the initial session.
                 # "Mod+Return".action = "exec kitty";
                 # "Mod+Return".action = sh "${resizer} && exec kitty -o confirm_os_window_close=0";
                 "Mod+Return".action = sh "exec kitty -o confirm_os_window_close=0";
-                "XF86AudioRaiseVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "increase";
-                "XF86AudioLowerVolume".action = spawn "noctalia-shell" "ipc" "call" "volume" "decrease";
-                "XF86AudioMute".action = spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput";
-                "XF86AudioPrev".action = spawn "noctalia-shell" "ipc" "call" "media" "previous";
-                "XF86AudioPlay".action = spawn "noctalia-shell" "ipc" "call" "media" "playPause";
-                "XF86AudioNext".action = spawn "noctalia-shell" "ipc" "call" "media" "next";
-                "XF86MonBrightnessUp".action = spawn "noctalia-shell" "ipc" "call" "brightness" "increase";
-                "XF86MonBrightnessDown".action = spawn "noctalia-shell" "ipc" "call" "brightness" "decrease";
+                "XF86AudioRaiseVolume".action = spawn "noctalia" "msg" "volume-up";
+                "XF86AudioLowerVolume".action = spawn "noctalia" "msg" "volume-down";
+                "XF86AudioMute".action = spawn "noctalia" "msg" "volume-mute";
+                "XF86AudioPrev".action = spawn "noctalia" "msg" "media" "previous";
+                "XF86AudioPlay".action = spawn "noctalia" "msg" "media" "toggle";
+                "XF86AudioNext".action = spawn "noctalia" "msg" "media" "next";
+                "XF86MonBrightnessUp".action = spawn "noctalia" "msg" "brightness-up";
+                "XF86MonBrightnessDown".action = spawn "noctalia" "msg" "brightness-down";
                 "XF86Display".action = spawn "wl-mirror" "eDP-1";
-                "Mod+Escape".action = spawn "noctalia-shell" "ipc" "call" "sessionMenu" "toggle";
-                "Mod+i".action = spawn "noctalia-shell" "ipc" "call" "launcher" "emoji";
+                "Mod+Escape".action = spawn "noctalia" "msg" "panel-toggle" "session";
+                "Mod+i".action = spawn "noctalia" "msg" "panel-toggle" "launcher" "/emo";
                 "Mod+Equal".action = set-column-width "+10%";
                 "Mod+Minus".action = set-column-width "-10%";
 
@@ -18555,7 +18549,7 @@ Auto login for the initial session.
       nixos.noctalia = { inputs, lib, ... }: {
         imports = lib.optionals (inputs ? noctoggle) [
           inputs.noctoggle.nixosModules.default
-          ({ inputs, config, ... }: {
+          ({ inputs, config, pkgs, ... }: {
             disabledModules = [ "programs/gpu-screen-recorder.nix" ];
             imports = [
               "${inputs.nixpkgs-dev}/nixos/modules/programs/gpu-screen-recorder.nix"
@@ -18571,7 +18565,9 @@ Auto login for the initial session.
 
               noctoggle = {
                 enable = true;
-                # noctaliaPackage = pkgs.noctalia-shell;
+                noctaliaPackage = pkgs.noctalia;
+                showCommand = "${lib.getExe pkgs.noctalia} msg bar-show";
+                hideCommand = "${lib.getExe pkgs.noctalia} msg bar-hide";
               };
 
             };
@@ -18597,696 +18593,380 @@ Auto login for the initial session.
           config = {
             swarselsystems.enabledHomeModules = [ "optional-noctalia" ];
 
-            swarselsystems.homeSopsSecrets = {
-              radicale-token = { };
-            };
-            systemd.user = lib.mkIf config.swarselsystems.noctalia-systemd {
-              targets = {
-                noctalia-shell.Unit = {
-                  After = [ "graphical-session.target" ];
-                };
-                tray = {
-                  Unit = {
-                    Wants = [ "noctalia-init.service" ];
-                    After = [
-                      "noctalia-shell.service"
-                      "noctalia-init.service"
-                    ];
+            systemd.user = lib.mkMerge [
+              { sessionVariables.TERMINAL = "kitty"; }
+              (lib.mkIf config.swarselsystems.noctalia-systemd {
+                targets = {
+                  noctalia-shell.Unit = {
+                    After = [ "graphical-session.target" ];
                   };
-                  Install.WantedBy = [ "noctalia-shell.target" ];
-                };
-              };
-              services = {
-                # upstream noctalia-shell deprecated systemd for no reason - we bring it back
-                noctalia-shell = lib.mkIf config.swarselsystems.noctalia-systemd {
-                  Unit = {
-                    Description = "Noctalia Shell - Wayland desktop shell";
-                    Documentation = "https://docs.noctalia.dev";
-                    PartOf = [
-                      config.wayland.systemd.target
-                      "noctalia-shell.target"
-                    ];
-                    After = [ config.wayland.systemd.target ];
-                    X-Restart-Triggers =
-                      lib.optional (config.programs.noctalia-shell.settings != { }) "${config.xdg.configFile."noctalia/settings.json".source}"
-                      ++ lib.optional (config.programs.noctalia-shell.colors != { }) "${config.xdg.configFile."noctalia/colors.json".source}"
-                      ++ lib.optional (config.programs.noctalia-shell.plugins != { }) "${config.xdg.configFile."noctalia/plugins.json".source}"
-                      ++ lib.optional
-                        (
-                          config.programs.noctalia-shell.user-templates != { }
-                        ) "${config.xdg.configFile."noctalia/user-templates.toml".source}"
-                      ++ lib.mapAttrsToList
-                        (
-                          name: _: "${config.xdg.configFile."noctalia/plugins/${name}/settings.json".source}"
-                        )
-                        config.programs.noctalia-shell.pluginSettings;
-                  };
-
-                  Service = {
-                    ExecStart = lib.getExe config.programs.noctalia-shell.package;
-                    Restart = "on-failure";
-                  };
-
-                  Install.WantedBy = [
-                    config.wayland.systemd.target
-                    "noctalia-shell.target"
-                  ];
-                };
-                noctalia-init = {
-
-                  Unit = {
-                    Requires = [ "noctalia-shell.service" ];
-                    After = [ "noctalia-shell.service" ];
-                  };
-
-                  Service = {
-                    Type = "oneshot";
-                    ExecStart = "${pkgs.coreutils}/bin/sleep 3";
-                    RemainAfterExit = true;
-                  };
-
-                  Install = {
-                    WantedBy = [ "tray.target" ];
+                  tray = {
+                    Unit = {
+                      Wants = [ "noctalia-init.service" ];
+                      After = [
+                        "noctalia.service"
+                        "noctalia-init.service"
+                      ];
+                    };
+                    Install.WantedBy = [ "noctalia-shell.target" ];
                   };
                 };
-              };
-            };
+                services = {
+                  noctalia = {
+                    Unit.PartOf = [ "noctalia-shell.target" ];
+                    Install.WantedBy = [ "noctalia-shell.target" ];
+                  };
+                  noctalia-init = {
+
+                    Unit = {
+                      Requires = [ "noctalia.service" ];
+                      After = [ "noctalia.service" ];
+                    };
+
+                    Service = {
+                      Type = "oneshot";
+                      ExecStart = "${pkgs.coreutils}/bin/sleep 3";
+                      RemainAfterExit = true;
+                    };
+
+                    Install = {
+                      WantedBy = [ "tray.target" ];
+                    };
+                  };
+                };
+              })
+            ];
 
             programs = {
               fastfetch.enable = true;
-              noctalia-shell = {
+              noctalia = {
                 enable = true;
-                package = pkgs.noctalia-shell;
-                systemd.enable = false; # we fake this using our own option
+                package = pkgs.noctalia;
+                systemd.enable = config.swarselsystems.noctalia-systemd;
                 settings = {
-                  bar = {
-                    barType = "simple";
-                    position = "top";
-                    monitors = [ ];
-                    density = "default";
-                    showCapsule = false;
-                    showOutline = false;
-                    capsuleOpacity = lib.mkForce 1;
-                    backgroundOpacity = lib.mkForce 0.5;
-                    useSeparateOpacity = true;
-                    floating = false;
-                    marginVertical = 4;
-                    marginHorizontal = 0;
-                    frameThickness = 8;
-                    frameRadius = 12;
-                    outerCorners = false;
-                    hideOnOverview = false;
-                    displayMode = "non_exclusive";
-                    autoHideDelay = 100;
-                    autoShowDelay = 300;
-                    screenOverrides = [ ];
-                    widgets = {
-                      left = [
-                        {
-                          characterCount = 4;
-                          colorizeIcons = false;
-                          emptyColor = "primary";
-                          enableScrollWheel = false;
-                          focusedColor = "secondary";
-                          followFocusedScreen = false;
-                          groupedBorderOpacity = 1;
-                          hideUnoccupied = false;
-                          iconScale = 0.5;
-                          id = "Workspace";
-                          labelMode = "name";
-                          occupiedColor = "primary";
-                          pillSize = 0.4;
-                          reverseScroll = false;
-                          showApplications = true;
-                          showBadge = true;
-                          showLabelsOnlyWhenOccupied = false;
-                          unfocusedIconsOpacity = 0.25;
-                        }
-
-                        {
-                          defaultSettings = {
-                            completedCount = 0;
-                            count = 0;
-                            current_page_id = 0;
-                            isExpanded = false;
-                            pages = [
-                              {
-                                id = 0;
-                                name = "General";
-                              }
-                            ];
-                            priorityColors = {
-                              high = "#f44336";
-                              low = "#9e9e9e";
-                              medium = "#2196f3";
-                            };
-                            showBackground = true;
-                            showCompleted = true;
-                            todos = [ ];
-                            useCustomColors = false;
-                          };
-                          id = "plugin:ba7043:todo";
-                        }
-                      ];
-                      center = [
-                        {
-                          colorizeIcons = true;
-                          hideMode = "hidden";
-                          id = "ActiveWindow";
-                          maxWidth = 145;
-                          scrollingMode = "hover";
-                          showIcon = true;
-                          useFixedWidth = false;
-                        }
-                        {
-                          id = "plugin:privacy-indicator";
-                        }
-                        {
-                          id = "plugin:screen-recorder";
-                        }
-                      ];
-                      right = [
-                        {
-                          blacklist = [
-                            "bluetooth*"
-                          ];
-                          colorizeIcons = false;
-                          drawerEnabled = true;
-                          hidePassive = true;
-                          id = "Tray";
-                          pinned = [ ];
-                        }
-                        {
-                          displayMode = "alwaysShow";
-                          id = "Volume";
-                          middleClickCommand = "pavucontrol";
-                        }
-                        {
-                          id = "NotificationHistory";
-                          hideWhenZero = false;
-                          showUnreadBadge = true;
-                        }
-                        {
-                          id = "plugin:github-feed";
-                        }
-                        {
-                          id = "plugin:clipper";
-                        }
-                        {
-                          displayMode = "onhover";
-                          id = "Network";
-                        }
-                        {
-                          displayMode = "onhover";
-                          id = "Bluetooth";
-                        }
-                        {
-                          displayMode = "onhover";
-                          id = "VPN";
-                        }
-                        {
-                          deviceNativePath = "__default__";
-                          hideIfIdle = true;
-                          hideIfNotDetected = true;
-                          id = "Battery";
-                          showNoctaliaPerformance = false;
-                          showPowerProfiles = true;
-                        }
-                        {
-                          iconColor = "none";
-                          id = "SessionMenu";
-                        }
-                        {
-                          customFont = "FiraCode Nerd Font Mono";
-                          formatHorizontal = "ddd dd. MMM HH:mm:ss";
-                          formatVertical = "";
-                          id = "Clock";
-                          tooltipFormat = "ddd dd. MMM HH:mm:ss";
-                          useCustomFont = true;
-                          usePrimaryColor = true;
-                        }
-                        {
-                          colorizeDistroLogo = false;
-                          colorizeSystemIcon = "none";
-                          customIconPath = "${self}/files/icons/swarsel.png";
-                          enableColorization = true;
-                          icon = "noctalia";
-                          id = "ControlCenter";
-                          useDistroLogo = false;
-                        }
-                      ];
+                  shell = {
+                    font_family = "FiraCode Nerd Font Mono";
+                    time_format = "{:%H:%M}";
+                    telemetry_enabled = false;
+                    clipboard_enabled = true;
+                    clipboard_auto_paste = "off";
+                    avatar_path = "${self}/files/icons/swarsel.png";
+                    settings_show_advanced = true;
+                    animation = {
+                      enabled = true;
+                      speed = 4.0;
                     };
-                  };
-                  general = {
-                    avatarImage = "${self}/files/icons/swarsel.png";
-                    dimmerOpacity = 0.2;
-                    showScreenCorners = false;
-                    forceBlackScreenCorners = false;
-                    scaleRatio = 1;
-                    radiusRatio = 0.2;
-                    iRadiusRatio = 1;
-                    boxRadiusRatio = 1;
-                    screenRadiusRatio = 1;
-                    animationSpeed = 1.5;
-                    animationDisabled = false;
-                    compactLockScreen = true;
-                    lockOnSuspend = true;
-                    showSessionButtonsOnLockScreen = true;
-                    showHibernateOnLockScreen = false;
-                    enableShadows = true;
-                    shadowDirection = "center";
-                    shadowOffsetX = 0;
-                    shadowOffsetY = 0;
-                    language = "";
-                    allowPanelsOnScreenWithoutBar = true;
-                    showChangelogOnStartup = true;
-                    telemetryEnabled = false;
-                    enableLockScreenCountdown = true;
-                    lockScreenCountdownDuration = 10000;
-                    autoStartAuth = true;
-                    allowPasswordWithFprintd = true;
-                  };
-                  ui = {
-                    fontDefaultScale = 1;
-                    fontFixedScale = 1;
-                    tooltipsEnabled = true;
-                    panelBackgroundOpacity = lib.mkForce 1;
-                    panelsAttachedToBar = true;
-                    settingsPanelMode = "centered";
-                    wifiDetailsViewMode = "grid";
-                    bluetoothDetailsViewMode = "grid";
-                    networkPanelView = "wifi";
-                    bluetoothHideUnnamedDevices = false;
-                    boxBorderEnabled = false;
-                  };
-                  location = {
-                    name = confLib.getConfig.repo.secrets.common.location.timezoneSpecific;
-                    weatherEnabled = true;
-                    weatherShowEffects = false;
-                    useFahrenheit = false;
-                    use12hourFormat = false;
-                    showWeekNumberInCalendar = true;
-                    showCalendarEvents = true;
-                    showCalendarWeather = true;
-                    analogClockInCalendar = false;
-                    firstDayOfWeek = 1;
-                    hideWeatherTimezone = false;
-                    hideWeatherCityName = false;
-                  };
-                  calendar = {
-                    cards = [
-                      {
-                        enabled = true;
-                        id = "calendar-header-card";
-                      }
-                      {
-                        enabled = true;
-                        id = "calendar-month-card";
-                      }
-                      {
-                        enabled = true;
-                        id = "weather-card";
-                      }
-                    ];
-                  };
-                  wallpaper = {
-                    enabled = true;
-                    overviewEnabled = true;
-                    directory = "${self}/files/wallpaper/landscape";
-                    monitorDirectories = [ ];
-                    enableMultiMonitorDirectories = true;
-                    showHiddenFiles = false;
-                    viewMode = "single";
-                    setWallpaperOnAllMonitors = false;
-                    fillMode = "crop";
-                    fillColor = "#000000";
-                    useSolidColor = false;
-                    solidColor = "#1a1a2e";
-                    automationEnabled = true;
-                    wallpaperChangeMode = "random";
-                    randomIntervalSec = 300;
-                    transitionDuration = 500;
-                    transitionType = "random";
-                    transitionEdgeSmoothness = 0.05;
-                    panelPosition = "follow_bar";
-                    hideWallpaperFilenames = false;
-                    useWallhaven = false;
-                    wallhavenQuery = "";
-                    wallhavenSorting = "relevance";
-                    wallhavenOrder = "desc";
-                    wallhavenCategories = "111";
-                    wallhavenPurity = "100";
-                    wallhavenRatios = "";
-                    wallhavenApiKey = "";
-                    wallhavenResolutionMode = "atleast";
-                    wallhavenResolutionWidth = "";
-                    wallhavenResolutionHeight = "";
-                    sortOrder = "name";
-                  };
-                  appLauncher = {
-                    enableClipboardHistory = false;
-                    autoPasteClipboard = false;
-                    enableClipPreview = true;
-                    clipboardWrapText = true;
-                    clipboardWatchTextCommand = "wl-paste --type text --watch cliphist store";
-                    clipboardWatchImageCommand = "wl-paste --type image --watch cliphist store";
-                    position = "center";
-                    pinnedApps = [ ];
-                    useApp2Unit = false;
-                    sortByMostUsed = true;
-                    terminalCommand = "kitty -e";
-                    customLaunchPrefixEnabled = false;
-                    customLaunchPrefix = "";
-                    viewMode = "list";
-                    showCategories = false;
-                    iconMode = "native";
-                    density = "compact";
-                    overviewLayer = false;
-                    showIconBackground = false;
-                    enableSettingsSearch = false;
-                    enableWindowsSearch = false;
-                    enableSessionSearch = false;
-                    ignoreMouseInput = true;
-                    screenshotAnnotationTool = "";
-                  };
-                  controlCenter = {
-                    position = "close_to_bar_button";
-                    diskPath = "/";
-                    shortcuts = {
-                      left = [
-                        {
-                          id = "Network";
-                        }
-                        {
-                          id = "Bluetooth";
-                        }
-                      ];
-                      right = [
-                        {
-                          id = "Notifications";
-                        }
-                        {
-                          id = "PowerProfile";
-                        }
-                        {
-                          id = "KeepAwake";
-                        }
-                        {
-                          id = "plugin:screen-recorder";
-                        }
-                      ];
+                    shadow.direction = "center";
+                    screen_corners.enabled = false;
+                    panel = {
+                      transparency_mode = "solid";
+                      launcher_placement = "centered";
+                      session_placement = "centered";
+                      control_center_placement = "attached";
+                      open_near_click_control_center = true;
+                      launcher_categories = false;
+                      launcher_compact = true;
+                      launcher_show_icons = true;
                     };
-                    cards = [
-                      {
-                        enabled = true;
-                        id = "profile-card";
-                      }
-                      {
-                        enabled = true;
-                        id = "shortcuts-card";
-                      }
-                      {
-                        enabled = true;
-                        id = "audio-card";
-                      }
-                      {
-                        enabled = true;
-                        id = "brightness-card";
-                      }
-                      {
-                        enabled = true;
-                        id = "weather-card";
-                      }
-                      {
-                        enabled = true;
-                        id = "media-sysmon-card";
-                      }
-                    ];
-                  };
-                  systemMonitor = {
-                    cpuWarningThreshold = 80;
-                    cpuCriticalThreshold = 90;
-                    tempWarningThreshold = 80;
-                    tempCriticalThreshold = 90;
-                    gpuWarningThreshold = 80;
-                    gpuCriticalThreshold = 90;
-                    memWarningThreshold = 80;
-                    memCriticalThreshold = 90;
-                    swapWarningThreshold = 80;
-                    swapCriticalThreshold = 90;
-                    diskWarningThreshold = 80;
-                    diskCriticalThreshold = 90;
-                    diskAvailWarningThreshold = 20;
-                    diskAvailCriticalThreshold = 10;
-                    cpuPollingInterval = 1000;
-                    gpuPollingInterval = 3000;
-                    enableDgpuMonitoring = false;
-                    memPollingInterval = 1000;
-                    diskPollingInterval = 30000;
-                    networkPollingInterval = 1000;
-                    loadAvgPollingInterval = 3000;
-                    useCustomColors = true;
-                    warningColor = "#5ec4ff";
-                    criticalColor = "#d95468";
-                    externalMonitor = "btm";
-                  };
-                  dock = {
-                    enabled = false;
-                  };
-                  network = {
-                    wifiEnabled = true;
-                    bluetoothRssiPollingEnabled = false;
-                    bluetoothRssiPollIntervalMs = 10000;
-                    wifiDetailsViewMode = "grid";
-                    bluetoothDetailsViewMode = "grid";
-                    bluetoothHideUnnamedDevices = false;
-                  };
-                  sessionMenu = {
-                    enableCountdown = true;
-                    countdownDuration = 3000;
-                    position = "center";
-                    showHeader = true;
-                    largeButtonsStyle = true;
-                    largeButtonsLayout = "grid";
-                    showNumberLabels = true;
-                    powerOptions = [
+                    session.actions = [
                       {
                         action = "lock";
-                        command = "";
-                        countdownEnabled = true;
-                        enabled = true;
-                        keybind = "L";
+                        shortcut = "l";
                       }
                       {
                         action = "suspend";
-                        command = "";
-                        countdownEnabled = true;
-                        enabled = true;
-                        keybind = "S";
+                        shortcut = "s";
                       }
                       {
-                        action = "hibernate";
-                        command = "";
-                        countdownEnabled = true;
-                        enabled = true;
-                        keybind = "H";
+                        action = "command";
+                        command = "systemctl hibernate";
+                        label = "Hibernate";
+                        glyph = "suspend";
+                        shortcut = "h";
                       }
                       {
                         action = "reboot";
-                        command = "";
-                        countdownEnabled = true;
-                        enabled = true;
-                        keybind = "R";
+                        shortcut = "r";
                       }
                       {
                         action = "logout";
-                        command = "";
-                        countdownEnabled = true;
-                        enabled = true;
-                        keybind = "U";
+                        shortcut = "u";
                       }
                       {
                         action = "shutdown";
-                        command = "";
-                        countdownEnabled = true;
-                        enabled = true;
-                        keybind = "P";
+                        shortcut = "p";
                       }
                       {
-                        action = "rebootToUefi";
-                        command = "";
-                        countdownEnabled = true;
-                        enabled = true;
-                        keybind = "B";
+                        action = "command";
+                        command = "systemctl reboot --firmware-setup";
+                        label = "Reboot to UEFI";
+                        glyph = "reboot";
+                        shortcut = "b";
                       }
                     ];
                   };
-                  notifications = {
-                    enabled = true;
-                    monitors = [ ];
-                    location = "top_right";
-                    overlayLayer = true;
-                    backgroundOpacity = 0.5;
-                    respectExpireTimeout = true;
-                    lowUrgencyDuration = 3;
-                    normalUrgencyDuration = 8;
-                    criticalUrgencyDuration = 15;
-                    enableMediaToast = false;
-                    enableKeyboardLayoutToast = true;
-                    batteryWarningThreshold = 20;
-                    batteryCriticalThreshold = 5;
-                    saveToHistory = {
-                      low = true;
-                      normal = true;
-                      critical = true;
-                    };
-                    sounds.enabled = false;
-                  };
-                  osd = {
-                    enabled = true;
-                    location = "right";
-                    autoHideMs = 2000;
-                    overlayLayer = true;
-                    backgroundOpacity = 0.5;
-                    monitors = [ ];
-                    enabledTypes = [ 0 1 2 3 ];
-                  };
-                  audio = {
-                    volumeStep = 5;
-                    volumeOverdrive = false;
-                    cavaFrameRate = 30;
-                    visualizerType = "linear";
-                    mprisBlacklist = [ ];
-                    preferredPlayer = "";
-                    volumeFeedback = false;
-                  };
-                  brightness = {
-                    brightnessStep = 5;
-                    enforceMinimum = true;
-                    enableDdcSupport = false;
-                  };
-                  nightLight = {
-                    enabled = true;
-                    autoSchedule = true;
-                    nightTemp = "3700";
-                    dayTemp = "5500";
-                    manualSunrise = "06:30";
-                    manualSunset = "18:30";
-                  };
-                  hooks.enabled = false;
-                  desktopWidgets.enabled = false;
 
-                  plugins = {
-                    sources = [
-                      {
-                        enabled = true;
-                        name = "Official Noctalia Plugins";
-                        url = "https://github.com/noctalia-dev/noctalia-plugins";
-                      }
-                      {
-                        enabled = true;
-                        name = "Dev";
-                        url = "https://github.com/Swarsel/noctalia-plugins";
-                      }
+                  bar.main = {
+                    position = "top";
+                    background_opacity = 0.5;
+                    radius = 12;
+                    border_width = 0.0;
+                    margin_ends = 0;
+                    margin_edge = 0;
+                    reserve_space = false;
+                    auto_hide = false;
+                    capsule = false;
+                    start = [ "workspaces" ];
+                    center = [ "active_window" "noctalia/screen_recorder:recorder" ];
+                    end = [
+                      "tray"
+                      "volume"
+                      "network"
+                      "bluetooth"
+                      "battery"
+                      "spacer_1"
+                      "clock"
+                      "control-center"
                     ];
-                    states = lib.listToAttrs
-                      (map
-                        (plugin:
-                          lib.nameValuePair plugin {
-                            enabled = true;
-                            sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
-                          })
-                        [
-                          "clipper"
-                          "github-feed"
-                          "privacy-indicator"
-                          "kaomoji-provider"
-                          "unicode-picker"
-                          "screen-recorder"
-                        ]) // {
-                      todo = {
+                  };
+
+                  widget = {
+                    workspaces = {
+                      display = "name";
+                      max_label_chars = 4;
+                      labels_only_when_occupied = false;
+                      hide_when_empty = true;
+                      focused_color = "primary";
+                      occupied_color = "primary";
+                      empty_color = "primary";
+                    };
+                    active_window = {
+                      max_length = 300;
+                      title_scroll = "hover";
+                      display = "icon_and_text";
+                    };
+                    tray = {
+                      hidden = [ "bluetooth" ];
+                      drawer = true;
+                    };
+                    volume = {
+                      show_label = true;
+                      scroll_step = 5;
+                      device = "output";
+                    };
+                    notifications.hide_when_no_unread = false;
+                    network.show_label = true;
+                    bluetooth = {
+                      show_label = true;
+                      hide_when_no_connected_device = true;
+                    };
+                    battery = {
+                      device = "auto";
+                      display_mode = "graphic";
+                      show_label = true;
+                      hide_when_full = true;
+                    };
+                    clock = {
+                      format = "{:%a %d. %b %H:%M:%S}";
+                      tooltip_format = "{:%a %d. %b %H:%M:%S}";
+                    };
+                    "control-center" = {
+                      glyph = "noctalia";
+                      custom_image = "${self}/files/icons/swarsel.png";
+                      custom_image_colorize = true;
+                    };
+                    spacer_1.type = "spacer";
+                  };
+
+                  location = {
+                    auto_locate = false;
+                    address = confLib.getConfig.repo.secrets.common.location.timezoneSpecific;
+                  };
+
+                  weather = {
+                    enabled = true;
+                    unit = "celsius";
+                    effects = false;
+                  };
+
+                  calendar = {
+                    enabled = true;
+                    account.caldav = {
+                      type = "caldav";
+                      provider = "custom";
+                      name = "CalDAV";
+                      server_url = caldavTasksEndpoint;
+                      username = config.swarselsystems.mainUser;
+                    };
+                  };
+
+                  nightlight = {
+                    enabled = true;
+                    force = false;
+                    temperature_day = 5500;
+                    temperature_night = 3700;
+                  };
+
+                  theme = {
+                    source = "builtin";
+                    builtin = "Nord";
+                    community_palette = "Oxocarbon";
+                    mode = "dark";
+                    wallpaper_scheme = "m3-content";
+                  };
+
+                  lockscreen.monitors = [ "eDP-2" ];
+
+                  lockscreen_widgets = {
+                    enabled = true;
+                    schema_version = 2;
+                    widget_order = [
+                      "lockscreen-login-box@DP-9"
+                      "lockscreen-login-box@DP-8"
+                      "lockscreen-login-box@eDP-2"
+                      "lockscreen-widget-0000000000000001"
+                      "lockscreen-widget-0000000000000002"
+                    ];
+                    grid = {
+                      cell_size = 64;
+                      major_interval = 4;
+                      visible = true;
+                    };
+                    widget = {
+                      "lockscreen-login-box@eDP-2" = {
+                        type = "login_box";
+                        output = "eDP-2";
+                        cx = 853.5;
+                        cy = 981.5;
                         enabled = true;
-                        sourceUrl = "https://github.com/Swarsel/noctalia-plugins";
+                      };
+                      lockscreen-widget-0000000000000001 = {
+                        type = "fancy_audio_visualizer";
+                        output = "eDP-2";
+                        cx = 853.5;
+                        cy = 789.5;
+                        box_width = 192.0;
+                        box_height = 192.0;
+                        enabled = true;
+                        settings.background = false;
+                      };
+                      lockscreen-widget-0000000000000002 = {
+                        type = "sticker";
+                        output = "eDP-2";
+                        cx = 853.5;
+                        cy = 533.5;
+                        enabled = true;
+                        settings = {
+                          background = false;
+                          image_path = "${self}/files/icons/swarsel.png";
+                          opacity = 1.0;
+                        };
                       };
                     };
                   };
-                  pluginSettings = {
-                    clipper = {
-                      enableTodoIntegration = false;
-                    };
 
-                    todo = {
-
-                      caldavEnabled = true;
-                      caldavUrl = caldavTasksEndpoint;
-                      caldavUsername = config.swarselsystems.mainUser;
-                      caldavPasswordType = "file";
-                      caldavPasswordCmd = "";
-                      caldavPasswordFile = confLib.getConfig.sops.secrets.radicale-token.path;
-                      caldavSyncInterval = 300;
-                      current_page_id = 1;
-                      pages = [
-                        {
-                          id = 0;
-                          name = "General";
-                        }
-                        {
-                          id = 1;
-                          name = "Work";
-                        }
-                      ];
+                  wallpaper = {
+                    enabled = true;
+                    directory = "${self}/files/wallpaper/landscape";
+                    fill_mode = "crop";
+                    transition = [
+                      "fade"
+                      "wipe"
+                      "disc"
+                      "stripes"
+                      "zoom"
+                      "honeycomb"
+                    ];
+                    transition_duration = 500.0;
+                    edge_smoothness = 0.05;
+                    automation = {
+                      enabled = true;
+                      interval_seconds = 300;
+                      order = "random";
+                      recursive = true;
                     };
+                  };
 
-                    privacy-indicator = {
-                      hideInactive = true;
-                      iconSpacing = 4;
-                      removeMargins = true;
-                    };
+                  notification = {
+                    enable_daemon = true;
+                    position = "top_right";
+                    layer = "overlay";
+                    background_opacity = 0.5;
+                  };
 
-                    screen-recorder = {
-                      hideInactive = true;
-                      directory = "";
-                      filenamePattern = "recording_yyyyMMdd_HHmmss";
-                      frameRate = "60";
-                      audioCodec = "opus";
-                      videoCodec = "h264";
-                      quality = "very_high";
-                      colorRange = "limited";
-                      showCursor = true;
-                      copyToClipboard = true;
-                      audioSource = "default_output";
-                      videoSource = "portal";
-                      resolution = "original";
-                    };
+                  osd = {
+                    position = "center_right";
+                    orientation = "vertical";
+                    background_opacity = 0.5;
+                  };
 
-                    github-feed = {
-                      username = lib.toUpper config.swarselsystems.mainUser;
-                      token = confLib.getConfig.repo.secrets.common.noctaliaGithubToken;
-                      refreshInterval = 300;
-                      maxEvents = 50;
-                      showStars = false;
-                      showForks = false;
-                      showPRs = false;
-                      showRepoCreations = false;
-                      showMyRepoStars = true;
-                      showMyRepoForks = true;
-                      openInBrowser = true;
-                      # my fork:
-                      showNotificationBadge = true;
-                      colorizationEnabled = true;
-                      colorizationIcon = "None";
-                      colorizationBadge = "Primary";
-                      colorizationBadgeText = "None";
-                      defaultTab = 1;
-                      enableSystemNotifications = true;
-                      notifyGitHubNotifications = true;
-                      notifyStars = true;
-                      notifyForks = true;
-                      notifyPRs = true;
-                      notifyRepoCreations = true;
-                      notifyMyRepoStars = true;
-                      notifyMyRepoForks = true;
-                    };
+                  audio = {
+                    enable_overdrive = false;
+                    enable_sounds = false;
+                  };
+
+                  brightness.enable_ddcutil = false;
+
+                  battery = {
+                    warning_threshold = 20;
+                    device."/org/freedesktop/UPower/devices/battery_hidpp_battery_3".warning_threshold = 15;
+                  };
+
+                  system.monitor = {
+                    enabled = true;
+                    cpu_poll_seconds = 1.0;
+                    gpu_poll_seconds = 3.0;
+                    memory_poll_seconds = 1.0;
+                    network_poll_seconds = 1.0;
+                    disk_poll_seconds = 30.0;
+                    cpu_usage_activity_threshold = 80.0;
+                    cpu_usage_critical_threshold = 90.0;
+                    cpu_temp_activity_threshold = 80.0;
+                    cpu_temp_critical_threshold = 90.0;
+                    gpu_temp_activity_threshold = 80.0;
+                    gpu_temp_critical_threshold = 90.0;
+                    gpu_usage_activity_threshold = 80.0;
+                    gpu_usage_critical_threshold = 90.0;
+                    ram_pct_activity_threshold = 80.0;
+                    ram_pct_critical_threshold = 90.0;
+                    swap_pct_activity_threshold = 80.0;
+                    swap_pct_critical_threshold = 90.0;
+                    disk_pct_activity_threshold = 80.0;
+                    disk_pct_critical_threshold = 90.0;
+                  };
+
+                  dock.enabled = false;
+
+                  desktop_widgets.enabled = false;
+
+                  control_center = {
+                    sidebar = "compact";
+                    sidebar_section = "compact";
+                    shortcuts = [
+                      { type = "wifi"; }
+                      { type = "bluetooth"; }
+                      { type = "notification"; }
+                      { type = "caffeine"; }
+                      { type = "clipboard"; }
+                      { type = "power_profile"; }
+                    ];
+                  };
+
+                  plugins.enabled = [ "noctalia/screen_recorder" ];
+
+                  plugin_settings."noctalia/screen_recorder" = {
+                    video_source = "portal";
+                    filename_pattern = "recording_%Y%m%d_%H%M%S";
+                    frame_rate = 60;
+                    video_codec = "h264";
+                    quality = "very_high";
+                    resolution = "original";
+                    audio_source = "default_output";
+                    audio_codec = "opus";
+                    show_cursor = true;
+                    color_range = "limited";
+                    copy_to_clipboard = true;
+                    hide_inactive = true;
                   };
                 };
               };
@@ -19813,6 +19493,9 @@ When setting up a new machine:
             sessionVariables = {
               AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
             };
+            file.".ssh/known_hosts_work".text = ''
+              @cert-authority *.vbc.ac.at ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBIIQtwt8vkYw9jc4cF9F2TxdpEv8Wc68ofDjUp8AOf3/bKfTcN1yaTpPlTEtwNo/1EnR2lOlrukYrKtw8jKW0nA=
+            '';
           };
           systemd.user.sessionVariables = {
             DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
@@ -19863,7 +19546,9 @@ When setting up a new machine:
                 };
               };
 
-              ssh.settings = confLib.getConfig.repo.secrets.local.work.sshConfig;
+              ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.local.work.sshConfig {
+                "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
+              };
 
               firefox = {
                 profiles =
@@ -35103,7 +34788,6 @@ In this section I define custom aspect sets. These are mostly used to combine co
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
 :END:
 
-
 *** early-init
 :PROPERTIES:
 :CUSTOM_ID: h:29d52d85-c0b3-4e23-ab30-6f06d86812fe
@@ -35755,6 +35439,8 @@ I have grown to love the =doom-citylights= theme and have modeled my whole syste
           (load-theme 'doom-city-lights t)
           (doom-themes-treemacs-config)
           (doom-themes-org-config)
+          (with-eval-after-load 'gnus
+            (put 'gnus-group-news-low 'face-defface-spec '((t (:weight bold)))))
         '';
       };
     };
@@ -37079,28 +36765,37 @@ projectile is useful for keeping track of your git projects within Emacs. I most
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/projectile.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-      general.config = ''
-        (swarsel/leader-keys
-          "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project"))
-      '';
-
-      projectile = {
-        enable = true;
-        diminish = [ "projectile-mode" ];
-        config = "(projectile-mode)";
-        custom = {
-          projectile-completion-system = "'auto";
-        };
-        bindKeyMap = {
-          "C-c p" = "projectile-command-map";
-        };
-        init = ''
-          (when (file-directory-p swarsel-work-projects-directory)
-            (when (file-directory-p swarsel-private-projects-directory)
-              (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
-          (setq projectile-switch-project-action #'magit-status)
+    flake.modules.homeManager.emacs-init = { config, ... }: {
+      config.programs.emacs.init.usePackage = {
+        general.config = ''
+          (swarsel/leader-keys
+            "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project"))
         '';
+
+        projectile = {
+          enable = true;
+          diminish = [ "projectile-mode" ];
+          config = "(projectile-mode)";
+          custom = {
+            projectile-completion-system = "'auto";
+          };
+          bindKeyMap = {
+            "C-c p" = "projectile-command-map";
+          };
+          init =
+            if builtins.elem "optional-work" config.swarselsystems.enabledHomeModules
+            then ''
+              (when (file-directory-p swarsel-work-projects-directory)
+                (when (file-directory-p swarsel-private-projects-directory)
+                  (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
+              (setq projectile-switch-project-action #'magit-status)
+            ''
+            else ''
+              (when (file-directory-p swarsel-private-projects-directory)
+                (setq projectile-project-search-path (list swarsel-private-projects-directory)))
+              (setq projectile-switch-project-action #'magit-status)
+            '';
+        };
       };
     };
   }
@@ -37117,63 +36812,65 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/magit.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-      general.config = ''
-        (swarsel/leader-keys
-          "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
-          "lr" '(swarsel/consult-magit-repos :which-key "List repos")
-          "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos"))
+    flake.modules.homeManager.emacs-init = { config, lib, ... }:
+      {
+        config.programs.emacs.init.usePackage = {
+          general.config = ''
+            (swarsel/leader-keys
+              "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
+              "lr" '(swarsel/consult-magit-repos :which-key "List repos")
+              "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos"))
 
-        (general-define-key
-         "M-r" 'swarsel/consult-magit-repos)
-      '';
+            (general-define-key
+             "M-r" 'swarsel/consult-magit-repos)
+          '';
 
-      magit = {
-        enable = true;
-        init = ''
-          (declare-function consult--read "consult")
+          magit = {
+            enable = true;
+            init = ''
+              (declare-function consult--read "consult")
 
-          (defun swarsel/consult-magit-repos ()
-            (interactive)
-            (require 'magit)
-            (let ((repos (magit-list-repos)))
-              (unless repos
-                (user-error "No repositories found in `magit-repository-directories'"))
-              (let ((repo
-                     (if (or (fboundp 'consult--read)
-                             (require 'consult nil t))
-                         (consult--read repos
-                                        :prompt "Magit repo: "
-                                        :require-match t
-                                        :history 'my/consult-magit-repos-history
-                                        :sort t)
-                       (completing-read "Magit repo: "
-                                        repos
-                                        nil
-                                        t
-                                        nil
-                                        'my/consult-magit-repos-history))))
-                (when (and repo (> (length repo) 0))
-                  (magit-status repo)))))
-        '';
-        config = ''
-          (advice-add 'magit-auto-revert-mode--init-kludge :around #'suppress-messages)
+              (defun swarsel/consult-magit-repos ()
+                (interactive)
+                (require 'magit)
+                (let ((repos (magit-list-repos)))
+                  (unless repos
+                    (user-error "No repositories found in `magit-repository-directories'"))
+                  (let ((repo
+                         (if (or (fboundp 'consult--read)
+                                 (require 'consult nil t))
+                             (consult--read repos
+                                            :prompt "Magit repo: "
+                                            :require-match t
+                                            :history 'my/consult-magit-repos-history
+                                            :sort t)
+                           (completing-read "Magit repo: "
+                                            repos
+                                            nil
+                                            t
+                                            nil
+                                            'my/consult-magit-repos-history))))
+                    (when (and repo (> (length repo) 0))
+                      (magit-status repo)))))
+            '';
+            config = ''
+              (advice-add 'magit-auto-revert-mode--init-kludge :around #'suppress-messages)
 
-          (setq magit-repository-directories `((,swarsel-work-projects-directory  . 3)
-                                               (,swarsel-private-projects-directory . 3)
-                                               ("~/.dotfiles/" . 0)))
-
-          ;; RET on a hunk/file always opens the editable worktree file at point,
-          ;; never a read-only staged blob.
-          (with-eval-after-load 'magit-diff
-            (define-key magit-hunk-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file)
-            (define-key magit-file-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file))
-        '';
-        custom = {
-          magit-display-buffer-function = "#'magit-display-buffer-same-window-except-diff-v1";
+              (setq magit-repository-directories `((,swarsel-work-projects-directory  . 3)
+                                                  ${lib.optionalString (builtins.elem "optional-work" config.swarselsystems.enabledHomeModules) "(,swarsel-private-projects-directory . 3)"}
+                                                  ("~/.dotfiles/" . 0)))
+              ;; RET on a hunk/file always opens the editable worktree file at point,
+              ;; never a read-only staged blob.
+              (with-eval-after-load 'magit-diff
+                (define-key magit-hunk-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file)
+                (define-key magit-file-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file))
+            '';
+            custom = {
+              magit-display-buffer-function = "#'magit-display-buffer-same-window-except-diff-v1";
+            };
+          };
         };
       };
-    };
   }
 #+end_src
 
@@ -38171,7 +37868,6 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
       };
   }
 #+end_src
-
 
 *** Close pane when closing buffer
 :PROPERTIES:
@@ -45137,8 +44833,6 @@ Fixes:
 - fix hotel configuration and add an example secret
 
 Enhancements:
-- manage flake.nix using flake-file
-- implement simple dendritic structure for clients
 - automatic attic client cache auth
 
 Blocked:
