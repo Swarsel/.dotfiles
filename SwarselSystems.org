@@ -1777,6 +1777,10 @@ A short overview over each notable input and what it does:
         url = "github:nix-community/home-manager";
         inputs.nixpkgs.follows = "nixpkgs";
       };
+      hunkle = {
+        url = "github:Swarsel/hunkle";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       hydra = {
         url = "github:nixos/hydra/nix-2.30";
         inputs.nix-eval-jobs.follows = "nix-eval-jobs";
@@ -3303,6 +3307,9 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 }
                   // lib.optionalAttrs (inputs ? zjstatus) {
                   zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
+                }
+                  // lib.optionalAttrs (inputs ? hunkle) {
+                  hunkle = inputs.hunkle.packages.${prev.stdenv.hostPlatform.system}.default;
                 };
 
               in
@@ -11289,6 +11296,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
           swarselzellij
           sshrm
           git-replace
+          hunkle
           swarsel-gens
           swarsel-switch
           swarsel-sops
@@ -37892,6 +37900,38 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 
       (add-hook 'kill-buffer-hook #'swarsel/kill-buffer-delete-window)
     '';
+  }
+#+end_src
+*** hunkle
+:PROPERTIES:
+:CUSTOM_ID: h:c3722d3a-5ac3-47bb-80cd-4202cec0e7dc
+:END:
+
+#+begin_src nix-ts :tangle modules/client/programs/emacs/hunkle.nix
+  {
+    flake-file.inputs.hunkle = {
+      url = "github:Swarsel/hunkle";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    flake.modules.homeManager.emacs-init = { pkgs, inputs, ... }: {
+      config.programs.emacs.init.usePackage.hunkle = {
+        enable = true;
+        package = epkgs: epkgs.trivialBuild {
+          pname = "hunkle";
+          version = "0.1.0";
+          src = "${inputs.hunkle}/emacs";
+          packageRequires = [ epkgs.magit ];
+          postPatch = ''
+            substituteInPlace hunkle.el \
+              --replace-fail '(defcustom hunkle-executable "hunkle"' \
+                '(defcustom hunkle-executable "${pkgs.hunkle}/bin/hunkle"'
+          '';
+        };
+        after = [ "magit" ];
+        config = "(hunkle-magit-setup)";
+      };
+    };
   }
 #+end_src
 * Tofu

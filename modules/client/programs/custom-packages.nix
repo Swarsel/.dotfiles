@@ -23,6 +23,7 @@
         swarselzellij
         sshrm
         git-replace
+        hunkle
         swarsel-gens
         swarsel-switch
         swarsel-sops

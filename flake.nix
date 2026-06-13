@@ -23,6 +23,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    hunkle = {
+      url = "github:Swarsel/hunkle";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     hydra = {
       url = "github:nixos/hydra/nix-2.30";
       inputs.nix-eval-jobs.follows = "nix-eval-jobs";

@@ -936,6 +936,11 @@ there's a region, all lines that region covers will be duplicated."
   (global-highlight-parentheses-mode t)
   )
 
+(use-package hunkle
+  :after (magit)
+  :config
+  (hunkle-magit-setup))
+
 (use-package hydra
   :config
   (defhydra hydra-text-scale (:timeout 4)

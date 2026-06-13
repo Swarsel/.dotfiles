@@ -53,6 +53,9 @@ in
               }
                 // lib.optionalAttrs (inputs ? zjstatus) {
                 zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
+              }
+                // lib.optionalAttrs (inputs ? hunkle) {
+                hunkle = inputs.hunkle.packages.${prev.stdenv.hostPlatform.system}.default;
               };
 
             in
