@@ -10,7 +10,9 @@
       trustedWanAddresses = lib.filter (a: a != null) (lib.concatMap
         (h: [ (h.wanAddress4 or null) (h.wanAddress6 or null) ])
         (lib.attrValues globals.hosts));
-      atticDomain = globals.services.attic.domain or null;
+      allowlistIps = config.repo.secrets.local.crowdsec.allowlistIps or [ ];
+      allowlistCidrs = config.repo.secrets.local.crowdsec.allowlistCidrs or [ ];
+      allowlistAs = config.repo.secrets.local.crowdsec.allowlistAs or [ ];
     in
     {
       options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
@@ -88,14 +90,24 @@
                   ];
                 };
               }
-            ] ++ lib.optional (atticDomain != null) {
-              name = "swarsel/attic-cache";
-              description = "Don't count cache lookups as probes";
+              {
+                name = "swarsel/attic-cache";
+                description = "Don't count cache requests as probes";
+                whitelist = {
+                  reason = "Attic binary cache lookups; misses are expected 404s";
+                  expression = [
+                    "evt.Meta.http_path matches '\\.nar(info)?$'"
+                  ];
+                };
+              }
+            ] ++ lib.optional (allowlistIps != [ ] || allowlistCidrs != [ ] || allowlistAs != [ ]) {
+              name = "swarsel/allowlist";
+              description = "Don't ban trusted addresses";
               whitelist = {
-                reason = "These are most likey failed Attic lookups";
-                expression = [
-                  "evt.Meta.service == 'http' && evt.Parsed.target_fqdn == '${atticDomain}'"
-                ];
+                reason = "Personal home addresses and trusted work AS";
+                ip = allowlistIps;
+                cidr = allowlistCidrs;
+                expression = map (asn: "evt.Enriched.ASNumber == '${toString asn}'") allowlistAs;
               };
             };
 
