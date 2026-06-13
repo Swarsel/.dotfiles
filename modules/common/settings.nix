@@ -43,10 +43,11 @@ let
     max-jobs = 1;
   };
 
-  mkSubstituter = globals: mainUser: [
+  mkSubstituter = isPublic: globals: mainUser: [
     "https://nix-community.cachix.org"
+  ] ++ (if isPublic then [ ] else [
     "https://${globals.services.attic.domain}/${mainUser}"
-  ];
+  ]);
 
   baseOverlays = outputs: [
     outputs.overlays.default
@@ -141,10 +142,11 @@ in
                 package = pkgs.nixVersions."nix_${nix-version}";
                 settings = {
                   experimental-features = experimentalFeatures;
-                  substituters = mkSubstituter globals mainUser;
-                  trusted-substituters = mkSubstituter globals mainUser;
-                  trusted-public-keys = [
+                  substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                  trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                  trusted-public-keys = lib.optionals (!config.swarselsystems.isPublic) [
                     atticPublicKey
+                  ] ++ [
                     "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
                   ];
                   trusted-users = [
@@ -197,9 +199,9 @@ in
               extraOptions = mkExtraOptions { inherit self pkgs lib minimal config; };
               settings = commonScalarSettings // {
                 experimental-features = experimentalFeatures;
-                substituters = mkSubstituter globals mainUser;
-                trusted-substituters = mkSubstituter globals mainUser;
-                trusted-public-keys = [
+                substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                trusted-public-keys = lib.optionals (!config.swarselsystems.isPublic) [
                   atticPublicKey
                 ];
                 trusted-users = [

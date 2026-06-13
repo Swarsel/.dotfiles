@@ -3,8 +3,10 @@ let
   fmods = config.flake.modules;
 in
 {
+  flake-file.inputs.vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+
   flake.modules = {
-    nixos.work = { self, lib, pkgs, config, withHomeManager, ... }:
+    nixos.work = { self, lib, pkgs, config, inputs, withHomeManager, ... }:
       let
         inherit (config.swarselsystems) mainUser homeDir;
         iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -23,6 +25,10 @@ in
           };
         };
         config = {
+
+          nixpkgs.overlays = [
+            (final: prev: lib.genAttrs [ "rustdesk-vbc" ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}))
+          ];
 
           sops =
             let

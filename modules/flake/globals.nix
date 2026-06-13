@@ -2,7 +2,10 @@
 { self, inputs, ... }:
 {
 
-  flake-file.inputs.topologyPrivate.url = "./files/topology/public";
+  flake-file.inputs = {
+    topologyPrivate.url = "./files/topology/public";
+    repoSecrets.url = "./secrets/repo";
+  };
 
   imports = [
     (
@@ -37,15 +40,17 @@
                     assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
                       "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./files/nix/extra-builtins.nix` ?";
                     builtins.extraBuiltins.sopsImportEncrypted;
+                  globalsFile = inputs.repoSecrets.globals;
                 in
 
                 {
                   imports = [
-                    (sopsImportEncrypted ../../secrets/repo/globals.nix.enc)
+                    (if lib.hasSuffix ".enc" (toString globalsFile) then sopsImportEncrypted globalsFile else globalsFile)
                   ];
 
                 }
               )
+            ] ++ lib.optionals (!(inputs.repoSecrets.isDemo or false)) [
               (
                 { lib, ... }:
                 {

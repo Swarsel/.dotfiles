@@ -1855,6 +1855,7 @@ A short overview over each notable input and what it does:
         flake = false;
       };
       pre-commit-hooks.url = "github:cachix/git-hooks.nix";
+      repoSecrets.url = "./secrets/repo";
       simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
       smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
       sops.url = "github:Mic92/sops-nix";
@@ -2218,7 +2219,10 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
   { self, inputs, ... }:
   {
 
-    flake-file.inputs.topologyPrivate.url = "./files/topology/public";
+    flake-file.inputs = {
+      topologyPrivate.url = "./files/topology/public";
+      repoSecrets.url = "./secrets/repo";
+    };
 
     imports = [
       (
@@ -2253,15 +2257,17 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
                       assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
                         "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./files/nix/extra-builtins.nix` ?";
                       builtins.extraBuiltins.sopsImportEncrypted;
+                    globalsFile = inputs.repoSecrets.globals;
                   in
 
                   {
                     imports = [
-                      (sopsImportEncrypted ../../secrets/repo/globals.nix.enc)
+                      (if lib.hasSuffix ".enc" (toString globalsFile) then sopsImportEncrypted globalsFile else globalsFile)
                     ];
 
                   }
                 )
+              ] ++ lib.optionals (!(inputs.repoSecrets.isDemo or false)) [
                 (
                   { lib, ... }:
                   {
@@ -3261,7 +3267,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
     flake-file.inputs = {
       nixgl.url = "github:guibou/nixGL";
       nur.url = "github:nix-community/NUR";
-      vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
       zjstatus.url = "github:dj95/zjstatus";
       nix-minecraft.url = "github:Infinidoge/nix-minecraft";
 
@@ -3317,7 +3322,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
               // (nixpkgs-stable-versions final prev)
               // ((inputs.niri-flake.overlays.niri or (_: _: { })) final prev)
               // ((inputs.noctalia.overlays.default or (_: _: { })) final prev)
-              // ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev)
               // ((inputs.nur.overlays.default or (_: _: { })) final prev)
               // ((inputs.emacs-overlay.overlay or (_: _: { })) final prev)
               // ((inputs.nix-topology.overlays.default or (_: _: { })) final prev)
@@ -8360,9 +8364,7 @@ This is a specialized kexec image that I use to have disko available on RAM-limi
 :CUSTOM_ID: h:e1498bef-ec67-483d-bf02-76264e30be8e
 :END:
 
-This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
-
-[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: provide a public secret that can be used to test the environment
+This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys). Values that are normally read from the encrypted repository secrets are taken from the plaintext example files in =files/demo= instead (see [[#h:dca96f1a-3297-4b72-8d35-f107325cde12][Demo secrets and input stubs]]), which the install scripts swap in via =--override-input repoSecrets=. The end-to-end installation of this host is covered by the [[#h:84e74ffb-d454-4744-bd89-4e65e122ced5][Demo tests]].
 
 I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
 ****** Main configuration
@@ -8385,7 +8387,11 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       }
     ] ++ lib.optionals (!minimal) [
       inputs.self.modules.nixos.profile-public
-    ];
+    ] ++ lib.optionals (!minimal) (builtins.attrValues (lib.getAttrs [
+      "niri"
+      "noctalia"
+    ]
+      inputs.self.modules.nixos));
 
     environment.variables = {
       WLR_RENDERER_ALLOW_SOFTWARE = 1;
@@ -8579,6 +8585,279 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
   _:
   { }
 #+end_src
+
+****** Demo secrets and input stubs
+:PROPERTIES:
+:CUSTOM_ID: h:dca96f1a-3297-4b72-8d35-f107325cde12
+:END:
+
+Building this configuration without my SSH keys is made possible by two overridable inputs: =vbc-nix= (a private work repository, only consumed by the work hosts) and =repoSecrets= (a local subflake at =./secrets/repo= that points at the sops-encrypted repository secrets). The =swarsel-install= and =swarsel-rebuild= scripts detect a missing key and pass =--override-input= flags that replace these inputs with public stand-ins, so no part of the evaluation ever needs to decrypt anything.
+
+The private secrets input simply exposes the paths of the encrypted files:
+
+#+begin_src nix-ts :tangle secrets/repo/flake.nix
+  {
+    description = "Repository secrets for SwarselSystems. Override this input with ./files/demo to build without access to the encrypted files.";
+
+    outputs = _: {
+      pii = ./pii.nix.enc;
+      globals = ./globals.nix.enc;
+    };
+  }
+#+end_src
+
+The demo replacement exposes plaintext example files instead and sets =isDemo=, which also disables the cross-host globals aggregation (which would otherwise pull in every host's encrypted local secrets):
+
+#+begin_src nix-ts :tangle files/demo/flake.nix
+  {
+    description = "Example repository secrets used for building the public demo configuration.";
+
+    outputs = _: {
+      isDemo = true;
+      pii = ./pii.nix;
+      globals = ./globals.nix;
+    };
+  }
+#+end_src
+
+#+begin_src nix-ts :tangle files/demo/pii.nix
+  {
+    ipv4 = "203.0.113.1";
+    wireguardEndpoint = "vpn.example.org";
+    atticPublicKey = "demo:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+    sportDomain = "sport.example.org";
+    instaDomain = "insta.example.org";
+
+    noctaliaGithubToken = "";
+
+    builder1-ip = "203.0.113.2";
+    builder1-pubHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    builder1-pubHostKey-b64 = "";
+    builder2-ip = "203.0.113.3";
+    builder2-pubHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    builder2-pubHostKey-b64 = "";
+    jump-pubHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    jump-pubHostKey-b64 = "";
+
+    dnsProvider = "example";
+    dnsBase = "example.org";
+    dnsMail = "hostmaster@example.org";
+    openrouterApi = "";
+    emacs.radicaleUser = "demo";
+    irc.irc_nick1 = "demo";
+    fullName = "Demo User";
+    workHostName = "demo-work";
+    caldavTasksEndpoint = "https://radicale.example.org/demo/tasks/";
+
+    location = {
+      timezone = "Europe/Vienna";
+      timezoneSpecific = "Europe/Vienna";
+      latitude = "16.0";
+      longitude = "16.0";
+    };
+
+    syncthing = {
+      devices = {
+        demo1.id = "AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA";
+        demo2.id = "AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAB";
+      };
+    };
+
+    obsidian = {
+      userIgnoreFilters = [ ];
+    };
+
+    calendar = {
+      source1 = "https://calendar.example.org/demo/calendar1/";
+      source1-name = "calendar1";
+      source2 = "https://calendar.example.org/demo/calendar2/";
+      source2-name = "calendar2";
+      source3 = "https://calendar.example.org/demo/calendar3/";
+      source3-name = "calendar3";
+    };
+
+    mail = {
+      address1 = "demo@example.org";
+      address2 = "demo2@example.org";
+      address2-name = "demo2";
+      address3 = "demo3@example.org";
+      address3-name = "demo3";
+      address4 = "demo4@example.org";
+      addressWork = "demo@work.example.org";
+      addressWork-name = "demo-work";
+      allMailAddresses = "demo@example.org demo2@example.org demo3@example.org demo4@example.org";
+    };
+
+    yubikeys = {
+      dev1 = "0000000";
+      cfg1 = "00000000000000000000000000000000";
+      dev2 = "0000001";
+      cfg2 = "00000000000000000000000000000001";
+    };
+
+    network = {
+      wlan1 = "DemoWifi";
+      wlan2 = "DemoWifi2";
+      mobile1 = "DemoHotspot";
+      eduroam-anon = "anonymous@example.org";
+      vpn1-location = "demo";
+      vpn1-cipher = "aes-256-gcm";
+      vpn1-address = "vpn.example.org";
+    };
+
+    services.domains = {
+      kavita = "kavita.example.org";
+      jellyfin = "jellyfin.example.org";
+      navidrome = "navidrome.example.org";
+      matrix = "matrix.example.org";
+      nextcloud = "nextcloud.example.org";
+      immich = "immich.example.org";
+      paperless = "paperless.example.org";
+      syncthing1 = "syncthing1.example.org";
+      syncthing-summers-storage = "syncthing-storage.example.org";
+      syncthing2 = "syncthing2.example.org";
+      syncthing3 = "syncthing3.example.org";
+      syncthing-moonside = "syncthing-moonside.example.org";
+      grafana = "grafana.example.org";
+      jenkins = "jenkins.example.org";
+      freshrss = "freshrss.example.org";
+      forgejo = "forgejo.example.org";
+      ankisync = "ankisync.example.org";
+      kanidm = "kanidm.example.org";
+      oauth2-proxy = "oauth2-proxy.example.org";
+      firefly-iii = "firefly.example.org";
+      koillection = "koillection.example.org";
+      atuin = "atuin.example.org";
+      radicale = "radicale.example.org";
+      croc = "croc.example.org";
+      microbin = "microbin.example.org";
+      shlink = "shlink.example.org";
+      slink = "slink.example.org";
+      transmission = "transmission.example.org";
+      snipeit = "snipeit.example.org";
+      homebox = "homebox.example.org";
+      garage-belchsfactory = "garage1.example.org";
+      garage-winters = "garage2.example.org";
+      minecraft = "minecraft.example.org";
+      mailserver = "mail.example.org";
+      attic = "attic.example.org";
+      garage-web-belchsfactory = "garage-web1.example.org";
+      garage-web-winters = "garage-web2.example.org";
+      garage-admin-belchsfactory = "garage-admin1.example.org";
+      garage-admin-winters = "garage-admin2.example.org";
+      hydra = "hydra.example.org";
+      buildbot = "buildbot.example.org";
+      roundcube = "roundcube.example.org";
+      firezone = "firezone.example.org";
+      adguardhome = "adguardhome.example.org";
+      searx = "searx.example.org";
+      invidious = "invidious.example.org";
+      firefox-syncserver = "firefox-sync.example.org";
+      loki = "loki.example.org";
+      tempo = "tempo.example.org";
+      mimir = "mimir.example.org";
+      pyroscope = "pyroscope.example.org";
+      gotify = "gotify.example.org";
+      copyparty = "copyparty.example.org";
+      mealie = "mealie.example.org";
+    };
+
+    ssh.hosts = { };
+  }
+#+end_src
+
+#+begin_src nix-ts :tangle files/demo/globals.nix
+  {
+    globals = {
+      root.hashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0"; # setup
+
+      user = {
+        name = "demo";
+        work = "demo";
+      };
+
+      general = {
+        internetVLANs = [ "home" ];
+        homeProxy = "demo-homeproxy";
+        routerServer = "demo-router";
+        webProxy = "demo-webproxy";
+        dnsServer = "demo-dns";
+        homeDnsServer = "demo-homedns";
+        homeWebProxy = "demo-homewebproxy";
+        idmServer = "demo-idm";
+        oauthServer = "demo-oauth";
+        monitoringServer = "demo-monitoring";
+        homeSyncthingServer = "demo-syncthing";
+      };
+
+      domains = {
+        main = "example.org";
+        externalDns = [ "9.9.9.9" ];
+      };
+
+      services = {
+        alloy.extraConfig = {
+          clients = { };
+          otlpGrpcPort = 4317;
+        };
+        syncthing-demo-syncthing.extraConfig.devices = { };
+        ankisync.domain = "ankisync.example.org";
+        attic.domain = "attic.example.org";
+        atuin.domain = "atuin.example.org";
+        croc.domain = "croc.example.org";
+        firefox-syncserver.domain = "firefox-sync.example.org";
+        firezone.domain = "firezone.example.org";
+        freshrss.domain = "freshrss.example.org";
+        gotify.domain = "gotify.example.org";
+        invidious.domain = "invidious.example.org";
+        kanidm.domain = "kanidm.example.org";
+        loki = {
+          domain = "loki.example.org";
+          extraConfig.host = "demo-monitoring";
+        };
+        mailserver.domain = "mail.example.org";
+        matrix.domain = "matrix.example.org";
+        mimir = {
+          domain = "mimir.example.org";
+          extraConfig.host = "demo-monitoring";
+        };
+        navidrome.domain = "navidrome.example.org";
+        nextcloud.domain = "nextcloud.example.org";
+        pyroscope = {
+          domain = "pyroscope.example.org";
+          extraConfig.host = "demo-monitoring";
+        };
+        radicale.domain = "radicale.example.org";
+        roundcube.domain = "roundcube.example.org";
+        searx.domain = "searx.example.org";
+        tempo.domain = "tempo.example.org";
+      };
+
+      networks = { };
+
+      hosts = {
+        hotel = {
+          defaultGateway4 = null;
+          defaultGateway6 = null;
+          wanAddress4 = null;
+          wanAddress6 = null;
+          isHome = false;
+        };
+      };
+    };
+  }
+#+end_src
+
+The stub flake used to replace =vbc-nix= (and any future private input that is not needed by the demo) provides no outputs at all; all accesses to it are already guarded:
+
+#+begin_src nix-ts :tangle files/stub/flake.nix
+  {
+    description = "Stub flake used to override private inputs when building the public demo configuration.";
+
+    outputs = _: { };
+  }
+#+end_src
+
 
 ** Modules
 :PROPERTIES:
@@ -9368,10 +9647,11 @@ A breakdown of the flags being set:
       max-jobs = 1;
     };
 
-    mkSubstituter = globals: mainUser: [
+    mkSubstituter = isPublic: globals: mainUser: [
       "https://nix-community.cachix.org"
+    ] ++ (if isPublic then [ ] else [
       "https://${globals.services.attic.domain}/${mainUser}"
-    ];
+    ]);
 
     baseOverlays = outputs: [
       outputs.overlays.default
@@ -9466,10 +9746,11 @@ A breakdown of the flags being set:
                   package = pkgs.nixVersions."nix_${nix-version}";
                   settings = {
                     experimental-features = experimentalFeatures;
-                    substituters = mkSubstituter globals mainUser;
-                    trusted-substituters = mkSubstituter globals mainUser;
-                    trusted-public-keys = [
+                    substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                    trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                    trusted-public-keys = lib.optionals (!config.swarselsystems.isPublic) [
                       atticPublicKey
+                    ] ++ [
                       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
                     ];
                     trusted-users = [
@@ -9522,9 +9803,9 @@ A breakdown of the flags being set:
                 extraOptions = mkExtraOptions { inherit self pkgs lib minimal config; };
                 settings = commonScalarSettings // {
                   experimental-features = experimentalFeatures;
-                  substituters = mkSubstituter globals mainUser;
-                  trusted-substituters = mkSubstituter globals mainUser;
-                  trusted-public-keys = [
+                  substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                  trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                  trusted-public-keys = lib.optionals (!config.swarselsystems.isPublic) [
                     atticPublicKey
                   ];
                   trusted-users = [
@@ -10128,13 +10409,16 @@ This system, while highly pleasant to work with during everyday use, sometimes h
           builtins.extraBuiltins.sopsImportEncrypted;
 
         # This "imports" an encrypted .nix.age file by evaluating the decrypted content.
+        # Plain .nix files (e.g. the demo secrets) are imported directly.
         importEncrypted =
           path:
           constSet (
-            if builtins.pathExists path then
+            if !builtins.pathExists path then
+              { }
+            else if lib.hasSuffix ".enc" (toString path) then
               sopsImportEncrypted path
             else
-              { }
+              import path
           );
       in
       {
@@ -10178,8 +10462,8 @@ This system, while highly pleasant to work with during everyday use, sometimes h
             let
               local = config.node.secretsDir + "/pii.nix.enc";
             in
-            (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // lib.optionalAttrs true {
-              common = ../../secrets/repo/pii.nix.enc;
+            (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // {
+              common = inputs.repoSecrets.pii;
             };
         };
       }
@@ -19509,8 +19793,10 @@ When setting up a new machine:
     fmods = config.flake.modules;
   in
   {
+    flake-file.inputs.vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+
     flake.modules = {
-      nixos.work = { self, lib, pkgs, config, withHomeManager, ... }:
+      nixos.work = { self, lib, pkgs, config, inputs, withHomeManager, ... }:
         let
           inherit (config.swarselsystems) mainUser homeDir;
           iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -19529,6 +19815,10 @@ When setting up a new machine:
             };
           };
           config = {
+
+            nixpkgs.overlays = [
+              (final: prev: lib.genAttrs [ "rustdesk-vbc" ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}))
+            ];
 
             sops =
               let
@@ -33576,7 +33866,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 :CUSTOM_ID: h:1eabdc59-8832-44ca-a22b-11f848ab150a
 :END:
 
-This script is a local fallback bootstrap path: it prepares a buildable clone on a target machine and installs a selected host generation for demonstration or recovery scenarios.
+This script is a local fallback bootstrap path: it prepares a buildable clone on a target machine and activates a selected host configuration via =nixos-rebuild boot=, without reformatting any disks. Like =swarsel-install=, it overrides the private inputs with their public demo counterparts when no matching SSH key is available, so it can be used to try the =hotel= demo configuration on any existing NixOS machine.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-rebuild/default.nix
   { name, writeShellApplication, git, ... }:
@@ -33586,9 +33876,14 @@ This script is a local fallback bootstrap path: it prepares a buildable clone on
     text = ''
       set -eo pipefail
 
+      export NIX_CONFIG="experimental-features = nix-command flakes"
+
       target_config="hotel"
-      target_arch=""
       target_user="swarsel"
+      target_arch="$(uname -m)-linux"
+      target_repo="https://github.com/Swarsel/.dotfiles.git"
+      skip_hardware_config=0
+      demo_flags=()
 
       function help_and_exit() {
         echo
@@ -33602,6 +33897,10 @@ This script is a local fallback bootstrap path: it prepares a buildable clone on
         echo "  -u <target_user>                        specify user to deploy for."
         echo "                                          Default: swarsel"
         echo "  -a <target_arch>                        specify target architecture."
+        echo "                                          Default: $(uname -m)-linux"
+        echo "  -r <target_repo>                        specify repository to clone."
+        echo "                                          Default: https://github.com/Swarsel/.dotfiles.git"
+        echo "  -H                                      keep the hardware configuration from the repository."
         echo "  -h | --help                             Print this help."
         exit 0
       }
@@ -33631,14 +33930,19 @@ This script is a local fallback bootstrap path: it prepares a buildable clone on
           shift
           target_config=$1
           ;;
-        -a)
-          shift
-          target_arch=$1
-          ;;
         -u)
           shift
           target_user=$1
           ;;
+        -a)
+          shift
+          target_arch=$1
+          ;;
+        -r)
+          shift
+          target_repo=$1
+          ;;
+        -H) skip_hardware_config=1 ;;
         -h | --help) help_and_exit ;;
         *)
           echo "Invalid option detected."
@@ -33648,51 +33952,42 @@ This script is a local fallback bootstrap path: it prepares a buildable clone on
         shift
       done
 
-      if [[ $target_arch == "" ]]; then
-        red "error: target_arch not set."
-        help_and_exit
-      fi
-
       cd /home/"$target_user"
 
       if [ ! -d /home/"$target_user"/.dotfiles ]; then
-        green "Cloning repository from GitHub"
-        git clone https://github.com/Swarsel/.dotfiles.git
+        green "Cloning repository from $target_repo"
+        git clone "$target_repo" .dotfiles
       else
         red "A .dotfiles repository is in the way. Please (re-)move the repository and try again."
         exit 1
       fi
+      cd .dotfiles
 
       local_keys=$(ssh-add -L || true)
-      pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
+      pub_key=$(cat files/public/ssh/yubikey.pub)
       read -ra pub_arr <<< "$pub_key"
 
-      cd .dotfiles
       if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
         yellow "The ssh key for this configuration is not available."
-        green "Adjusting flake.nix so that the configuration is buildable"
-        sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
-        sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
-        sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-        rm modules/home/common/env.nix
-        rm modules/home/common/gammastep.nix
-        rm modules/home/common/git.nix
-        rm modules/home/common/mail.nix
-        rm modules/home/common/yubikey.nix
-        rm modules/nixos/server/restic.nix
-        rm hosts/nixos/aarch64-linux/milkywell/default.nix
-        rm -rf modules/nixos/server
-        rm -rf modules/home/server
-        nix flake update vbc-nix
-        git add .
+        green "Overriding private inputs so that the configuration is buildable ..."
+        demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/files/demo" --no-write-lock-file)
       else
         green "Valid SSH key found! Continuing with installation"
       fi
-      sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
-      git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
 
-      green "Installing flake $target_config"
-      sudo nixos-rebuild --show-trace --flake .#"$target_config" boot
+      if [[ $skip_hardware_config -eq 1 ]]; then
+        yellow "Keeping hardware configuration from the repository"
+      else
+        sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+        git add hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
+      fi
+
+      green "Building flake $target_config"
+      store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurations."$target_config".config.system.build.toplevel)
+
+      green "Activating configuration $target_config on next boot"
+      sudo nix-env --profile /nix/var/nix/profiles/system --set "$store_path"
+      sudo "$store_path"/bin/switch-to-configuration boot
       yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
     '';
   }
@@ -33703,38 +33998,44 @@ This script is a local fallback bootstrap path: it prepares a buildable clone on
 :CUSTOM_ID: h:fbd8aaf2-9dca-4ca3-aca1-19d0d188a435
 :END:
 
-Autoformatting always puts the =EOF= with indentation, which makes shfmt check fail. When editing this block, unindent them manually.
+This script wipes the target disk using the disko script generated by the target configuration, generates a hardware configuration, builds the minimal projection of the configuration and installs it via =nixos-install=. When no matching SSH key is available, it transparently overrides the private inputs (=vbc-nix=, =repoSecrets=) with their public demo counterparts, so anyone can install the =hotel= demo configuration this way.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-install/default.nix
-  { name, writeShellApplication, git, ... }:
+  { name, writeShellApplication, git, jq, ... }:
   writeShellApplication {
     inherit name;
-    runtimeInputs = [ git ];
+    runtimeInputs = [ git jq ];
     text = ''
       set -eo pipefail
 
+      export NIX_CONFIG="experimental-features = nix-command flakes"
+
       target_config="hotel"
-      target_hostname="hotel"
       target_user="swarsel"
-      target_arch=""
+      target_arch="$(uname -m)-linux"
+      target_disk=""
+      target_repo="https://github.com/Swarsel/.dotfiles.git"
       persist_dir=""
-      target_disk="/dev/vda"
-      disk_encryption=0
+      skip_hardware_config=0
+      demo_flags=()
 
       function help_and_exit() {
         echo
         echo "Locally installs SwarselSystem on this machine."
         echo
-        echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
+        echo "USAGE: $0 [OPTIONS]"
         echo
         echo "ARGS:"
         echo "  -n <target_config>                      specify the nixos config to deploy."
         echo "                                          Default: hotel"
-        echo "  -d <target_disk>                        specify disk to install on."
-        echo "                                          Default: /dev/vda"
         echo "  -u <target_user>                        specify user to deploy for."
         echo "                                          Default: swarsel"
         echo "  -a <target_arch>                        specify target architecture."
+        echo "                                          Default: $(uname -m)-linux"
+        echo "  -d <target_disk>                        verify that the config installs to this disk."
+        echo "  -r <target_repo>                        specify repository to clone."
+        echo "                                          Default: https://github.com/Swarsel/.dotfiles.git"
+        echo "  -H                                      keep the hardware configuration from the repository."
         echo "  -h | --help                             Print this help."
         exit 0
       }
@@ -33763,20 +34064,24 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
         -n)
           shift
           target_config=$1
-          target_hostname=$1
           ;;
         -u)
           shift
           target_user=$1
           ;;
-        -d)
-          shift
-          target_disk=$1
-          ;;
         -a)
           shift
           target_arch=$1
           ;;
+        -d)
+          shift
+          target_disk=$1
+          ;;
+        -r)
+          shift
+          target_repo=$1
+          ;;
+        -H) skip_hardware_config=1 ;;
         -h | --help) help_and_exit ;;
         *)
           echo "Invalid option detected."
@@ -33787,118 +34092,115 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
       done
 
       function cleanup() {
-        sudo rm -rf .cache/nix
-        sudo rm -rf /root/.cache/nix
+        sudo rm -rf /root/.cache/nix "/home/$target_user/.cache/nix"
       }
       trap cleanup exit
-
-      if [[ $target_arch == "" || $target_hostname == "" ]]; then
-        red "error: target_arch or target_hostname not set."
-        help_and_exit
-      fi
 
       green "~SwarselSystems~ local installer"
 
       cd /home/"$target_user"
 
-      sudo rm -rf /root/.cache/nix
-      sudo rm -rf .cache/nix
-      sudo rm -rf .dotfiles
+      sudo rm -rf /root/.cache/nix .cache/nix .dotfiles
 
-      green "Cloning repository from GitHub"
-      git clone https://github.com/Swarsel/.dotfiles.git
+      green "Cloning repository from $target_repo"
+      git clone "$target_repo" .dotfiles
+      cd .dotfiles
 
       local_keys=$(ssh-add -L || true)
-      pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
+      pub_key=$(cat files/public/ssh/yubikey.pub)
       read -ra pub_arr <<< "$pub_key"
 
-      cd .dotfiles
       if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
         yellow "The ssh key for this configuration is not available."
-        green "Adjusting flake.nix so that the configuration is buildable ..."
-        sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
-        sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-        nix flake update vbc-nix
-        git add .
+        green "Overriding private inputs so that the configuration is buildable ..."
+        demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/files/demo" --no-write-lock-file)
       else
         green "Valid SSH key found! Continuing with installation"
       fi
 
       green "Reading system information for $target_config ..."
-      DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
-      green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
+      settings=$(nix eval "''${demo_flags[@]}" --json .#nixosConfigurationsMinimal."$target_config".config.swarselsystems --apply 'c: { inherit (c) rootDisk isCrypted isImpermanence isSwap isSecureBoot; }')
 
-      CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
-      if [[ $CRYPTED == "true" ]]; then
-        green "Encryption: ✓"
-        disk_encryption=1
-      else
-        red "Encryption: X"
-        disk_encryption=0
+      DISK=$(jq -r .rootDisk <<< "$settings")
+      green "Root Disk in config: $DISK"
+      if [[ -n $target_disk && $target_disk != "$DISK" ]]; then
+        red "error: this configuration installs to $DISK, but -d $target_disk was passed."
+        red "Adjust swarselsystems.rootDisk in hosts/nixos/$target_arch/$target_config or omit -d."
+        exit 1
       fi
 
-      IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+      CRYPTED=$(jq -r .isCrypted <<< "$settings")
+      if [[ $CRYPTED == "true" ]]; then
+        green "Encryption: ✓"
+      else
+        red "Encryption: X"
+      fi
+
+      IMPERMANENCE=$(jq -r .isImpermanence <<< "$settings")
       if [[ $IMPERMANENCE == "true" ]]; then
         green "Impermanence: ✓"
         persist_dir="/persist"
       else
         red "Impermanence: X"
-        persist_dir=""
       fi
 
-      SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+      SWAP=$(jq -r .isSwap <<< "$settings")
       if [[ $SWAP == "true" ]]; then
         green "Swap: ✓"
       else
         red "Swap: X"
       fi
 
-      SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+      SECUREBOOT=$(jq -r .isSecureBoot <<< "$settings")
       if [[ $SECUREBOOT == "true" ]]; then
         green "Secure Boot: ✓"
       else
         red "Secure Boot: X"
       fi
 
-      if [ "$disk_encryption" -eq 1 ]; then
-        while true; do
-          green "Set disk encryption passphrase:"
-          read -rs luks_passphrase
-          green "Please confirm passphrase:"
-          read -rs luks_passphrase_confirm
-          if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
-            echo "$luks_passphrase" > /tmp/disko-password
-            break
-          else
-            red "Passwords do not match"
-          fi
-        done
+      if [[ $CRYPTED == "true" ]]; then
+        if [ -f /tmp/disko-password ]; then
+          yellow "Using existing passphrase from /tmp/disko-password"
+        else
+          while true; do
+            green "Set disk encryption passphrase:"
+            read -rs luks_passphrase
+            green "Please confirm passphrase:"
+            read -rs luks_passphrase_confirm
+            if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+              echo "$luks_passphrase" > /tmp/disko-password
+              break
+            else
+              red "Passwords do not match"
+            fi
+          done
+        fi
       fi
 
       green "Setting up disk ..."
-      if [[ $target_config == "hotel" ]]; then
-        sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
+      disko_script=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.destroyFormatMount)
+      sudo "$disko_script"/bin/disko-destroy-format-mount --yes-wipe-all-disks
+
+      if [[ $skip_hardware_config -eq 1 ]]; then
+        yellow "Keeping hardware configuration from the repository"
       else
-        sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+        green "Generating hardware configuration ..."
+        sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+        git add hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
       fi
-      sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
-      sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
-      sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
-      green "Generating hardware configuration ..."
-      sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+      green "Building flake $target_config ..."
+      store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
 
-      git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
-      sudo mkdir -p /root/.local/share/nix/
-      printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
-      green "Installing flake $target_config"
+      green "Copying configuration to target ..."
+      sudo mkdir -p /mnt"$persist_dir"/home/"$target_user"/
+      sudo cp -r /home/"$target_user"/.dotfiles /mnt"$persist_dir"/home/"$target_user"/
+      sudo chown -R 1000:100 /mnt"$persist_dir"/home/"$target_user"
 
-      store_path=$(nix build --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
-      green "Linking generation in bootloader"
-      sudo "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
-      green "Setting generation to activate upon next boot"
-      sudo "$store_path/bin/switch-to-configuration boot"
+      green "Installing flake $target_config ..."
+      sudo nixos-install --no-root-passwd --no-channel-copy --system "$store_path"
       green "Installation finished! Reboot to see changes"
+      yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
     '';
   }
 #+end_src
@@ -42673,7 +42975,7 @@ Here lies defined the readme for GitHub and Forgejo:
     ```
 
     This will activate the `hotel` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
-    Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
+    Since you do not have my SSH keys, the installer automatically replaces the private flake inputs (my work repository and the encrypted repository secrets) with public demo stand-ins via `--override-input` - nothing in the repository is modified for this. This should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
     </details>
 
     ### Deployment
@@ -42702,7 +43004,7 @@ Here lies defined the readme for GitHub and Forgejo:
     2) Run `swarsel-install -n <CONFIGURATION_NAME>`
     3) Reboot
 
-    Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -n <CONFIGURATION_NAME>` at step 2.
+    Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-install -- -n <CONFIGURATION_NAME>` at step 2.
     </details>
 
     ## Infrastructure
@@ -45237,7 +45539,6 @@ This is the state of the repository when I decided to migrate to flakes. At this
 
 Fixes:
 - split off invidious-companion into own vm(?)
-- fix hotel configuration and add an example secret
 
 Enhancements:
 - automatic attic client cache auth

@@ -7,7 +7,6 @@ in
   flake-file.inputs = {
     nixgl.url = "github:guibou/nixGL";
     nur.url = "github:nix-community/NUR";
-    vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
     zjstatus.url = "github:dj95/zjstatus";
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
 
@@ -63,7 +62,6 @@ in
             // (nixpkgs-stable-versions final prev)
             // ((inputs.niri-flake.overlays.niri or (_: _: { })) final prev)
             // ((inputs.noctalia.overlays.default or (_: _: { })) final prev)
-            // ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev)
             // ((inputs.nur.overlays.default or (_: _: { })) final prev)
             // ((inputs.emacs-overlay.overlay or (_: _: { })) final prev)
             // ((inputs.nix-topology.overlays.default or (_: _: { })) final prev)

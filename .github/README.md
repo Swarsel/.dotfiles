@@ -77,7 +77,7 @@
   ```
 
   This will activate the `hotel` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
-  Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
+  Since you do not have my SSH keys, the installer automatically replaces the private flake inputs (my work repository and the encrypted repository secrets) with public demo stand-ins via `--override-input` - nothing in the repository is modified for this. This should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
   </details>
 
   ### Deployment
@@ -106,7 +106,7 @@
   2) Run `swarsel-install -n <CONFIGURATION_NAME>`
   3) Reboot
 
-  Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -n <CONFIGURATION_NAME>` at step 2.
+  Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-install -- -n <CONFIGURATION_NAME>` at step 2.
   </details>
 
   ## Infrastructure

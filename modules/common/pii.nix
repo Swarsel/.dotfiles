@@ -15,13 +15,16 @@
         builtins.extraBuiltins.sopsImportEncrypted;
 
       # This "imports" an encrypted .nix.age file by evaluating the decrypted content.
+      # Plain .nix files (e.g. the demo secrets) are imported directly.
       importEncrypted =
         path:
         constSet (
-          if builtins.pathExists path then
+          if !builtins.pathExists path then
+            { }
+          else if lib.hasSuffix ".enc" (toString path) then
             sopsImportEncrypted path
           else
-            { }
+            import path
         );
     in
     {
@@ -65,8 +68,8 @@
           let
             local = config.node.secretsDir + "/pii.nix.enc";
           in
-          (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // lib.optionalAttrs true {
-            common = ../../secrets/repo/pii.nix.enc;
+          (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // {
+            common = inputs.repoSecrets.pii;
           };
       };
     }

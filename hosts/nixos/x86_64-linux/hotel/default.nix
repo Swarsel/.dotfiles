@@ -12,7 +12,11 @@ in
     }
   ] ++ lib.optionals (!minimal) [
     inputs.self.modules.nixos.profile-public
-  ];
+  ] ++ lib.optionals (!minimal) (builtins.attrValues (lib.getAttrs [
+    "niri"
+    "noctalia"
+  ]
+    inputs.self.modules.nixos));
 
   environment.variables = {
     WLR_RENDERER_ALLOW_SOFTWARE = 1;

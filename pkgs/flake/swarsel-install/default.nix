@@ -1,32 +1,38 @@
-{ name, writeShellApplication, git, ... }:
+{ name, writeShellApplication, git, jq, ... }:
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ git ];
+  runtimeInputs = [ git jq ];
   text = ''
     set -eo pipefail
 
+    export NIX_CONFIG="experimental-features = nix-command flakes"
+
     target_config="hotel"
-    target_hostname="hotel"
     target_user="swarsel"
-    target_arch=""
+    target_arch="$(uname -m)-linux"
+    target_disk=""
+    target_repo="https://github.com/Swarsel/.dotfiles.git"
     persist_dir=""
-    target_disk="/dev/vda"
-    disk_encryption=0
+    skip_hardware_config=0
+    demo_flags=()
 
     function help_and_exit() {
       echo
       echo "Locally installs SwarselSystem on this machine."
       echo
-      echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
+      echo "USAGE: $0 [OPTIONS]"
       echo
       echo "ARGS:"
       echo "  -n <target_config>                      specify the nixos config to deploy."
       echo "                                          Default: hotel"
-      echo "  -d <target_disk>                        specify disk to install on."
-      echo "                                          Default: /dev/vda"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
       echo "  -a <target_arch>                        specify target architecture."
+      echo "                                          Default: $(uname -m)-linux"
+      echo "  -d <target_disk>                        verify that the config installs to this disk."
+      echo "  -r <target_repo>                        specify repository to clone."
+      echo "                                          Default: https://github.com/Swarsel/.dotfiles.git"
+      echo "  -H                                      keep the hardware configuration from the repository."
       echo "  -h | --help                             Print this help."
       exit 0
     }
@@ -55,20 +61,24 @@ writeShellApplication {
       -n)
         shift
         target_config=$1
-        target_hostname=$1
         ;;
       -u)
         shift
         target_user=$1
         ;;
-      -d)
-        shift
-        target_disk=$1
-        ;;
       -a)
         shift
         target_arch=$1
         ;;
+      -d)
+        shift
+        target_disk=$1
+        ;;
+      -r)
+        shift
+        target_repo=$1
+        ;;
+      -H) skip_hardware_config=1 ;;
       -h | --help) help_and_exit ;;
       *)
         echo "Invalid option detected."
@@ -79,117 +89,114 @@ writeShellApplication {
     done
 
     function cleanup() {
-      sudo rm -rf .cache/nix
-      sudo rm -rf /root/.cache/nix
+      sudo rm -rf /root/.cache/nix "/home/$target_user/.cache/nix"
     }
     trap cleanup exit
-
-    if [[ $target_arch == "" || $target_hostname == "" ]]; then
-      red "error: target_arch or target_hostname not set."
-      help_and_exit
-    fi
 
     green "~SwarselSystems~ local installer"
 
     cd /home/"$target_user"
 
-    sudo rm -rf /root/.cache/nix
-    sudo rm -rf .cache/nix
-    sudo rm -rf .dotfiles
+    sudo rm -rf /root/.cache/nix .cache/nix .dotfiles
 
-    green "Cloning repository from GitHub"
-    git clone https://github.com/Swarsel/.dotfiles.git
+    green "Cloning repository from $target_repo"
+    git clone "$target_repo" .dotfiles
+    cd .dotfiles
 
     local_keys=$(ssh-add -L || true)
-    pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
+    pub_key=$(cat files/public/ssh/yubikey.pub)
     read -ra pub_arr <<< "$pub_key"
 
-    cd .dotfiles
     if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
       yellow "The ssh key for this configuration is not available."
-      green "Adjusting flake.nix so that the configuration is buildable ..."
-      sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
-      sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-      nix flake update vbc-nix
-      git add .
+      green "Overriding private inputs so that the configuration is buildable ..."
+      demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/files/demo" --no-write-lock-file)
     else
       green "Valid SSH key found! Continuing with installation"
     fi
 
     green "Reading system information for $target_config ..."
-    DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
-    green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
+    settings=$(nix eval "''${demo_flags[@]}" --json .#nixosConfigurationsMinimal."$target_config".config.swarselsystems --apply 'c: { inherit (c) rootDisk isCrypted isImpermanence isSwap isSecureBoot; }')
 
-    CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
-    if [[ $CRYPTED == "true" ]]; then
-      green "Encryption: ✓"
-      disk_encryption=1
-    else
-      red "Encryption: X"
-      disk_encryption=0
+    DISK=$(jq -r .rootDisk <<< "$settings")
+    green "Root Disk in config: $DISK"
+    if [[ -n $target_disk && $target_disk != "$DISK" ]]; then
+      red "error: this configuration installs to $DISK, but -d $target_disk was passed."
+      red "Adjust swarselsystems.rootDisk in hosts/nixos/$target_arch/$target_config or omit -d."
+      exit 1
     fi
 
-    IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+    CRYPTED=$(jq -r .isCrypted <<< "$settings")
+    if [[ $CRYPTED == "true" ]]; then
+      green "Encryption: ✓"
+    else
+      red "Encryption: X"
+    fi
+
+    IMPERMANENCE=$(jq -r .isImpermanence <<< "$settings")
     if [[ $IMPERMANENCE == "true" ]]; then
       green "Impermanence: ✓"
       persist_dir="/persist"
     else
       red "Impermanence: X"
-      persist_dir=""
     fi
 
-    SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+    SWAP=$(jq -r .isSwap <<< "$settings")
     if [[ $SWAP == "true" ]]; then
       green "Swap: ✓"
     else
       red "Swap: X"
     fi
 
-    SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+    SECUREBOOT=$(jq -r .isSecureBoot <<< "$settings")
     if [[ $SECUREBOOT == "true" ]]; then
       green "Secure Boot: ✓"
     else
       red "Secure Boot: X"
     fi
 
-    if [ "$disk_encryption" -eq 1 ]; then
-      while true; do
-        green "Set disk encryption passphrase:"
-        read -rs luks_passphrase
-        green "Please confirm passphrase:"
-        read -rs luks_passphrase_confirm
-        if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
-          echo "$luks_passphrase" > /tmp/disko-password
-          break
-        else
-          red "Passwords do not match"
-        fi
-      done
+    if [[ $CRYPTED == "true" ]]; then
+      if [ -f /tmp/disko-password ]; then
+        yellow "Using existing passphrase from /tmp/disko-password"
+      else
+        while true; do
+          green "Set disk encryption passphrase:"
+          read -rs luks_passphrase
+          green "Please confirm passphrase:"
+          read -rs luks_passphrase_confirm
+          if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+            echo "$luks_passphrase" > /tmp/disko-password
+            break
+          else
+            red "Passwords do not match"
+          fi
+        done
+      fi
     fi
 
     green "Setting up disk ..."
-    if [[ $target_config == "hotel" ]]; then
-      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
+    disko_script=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.destroyFormatMount)
+    sudo "$disko_script"/bin/disko-destroy-format-mount --yes-wipe-all-disks
+
+    if [[ $skip_hardware_config -eq 1 ]]; then
+      yellow "Keeping hardware configuration from the repository"
     else
-      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+      green "Generating hardware configuration ..."
+      sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+      git add hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
     fi
-    sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
-    sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
-    sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
-    green "Generating hardware configuration ..."
-    sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+    green "Building flake $target_config ..."
+    store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
 
-    git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
-    sudo mkdir -p /root/.local/share/nix/
-    printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
-    green "Installing flake $target_config"
+    green "Copying configuration to target ..."
+    sudo mkdir -p /mnt"$persist_dir"/home/"$target_user"/
+    sudo cp -r /home/"$target_user"/.dotfiles /mnt"$persist_dir"/home/"$target_user"/
+    sudo chown -R 1000:100 /mnt"$persist_dir"/home/"$target_user"
 
-    store_path=$(nix build --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
-    green "Linking generation in bootloader"
-    sudo "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
-    green "Setting generation to activate upon next boot"
-    sudo "$store_path/bin/switch-to-configuration boot"
+    green "Installing flake $target_config ..."
+    sudo nixos-install --no-root-passwd --no-channel-copy --system "$store_path"
     green "Installation finished! Reboot to see changes"
+    yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
   '';
 }
