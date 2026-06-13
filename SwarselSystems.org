@@ -7562,7 +7562,7 @@ Steps to recover using live ISO:
 #+begin_src nix-ts :tangle install/installer-config.nix
   { self, config, pkgs, lib, ... }:
   let
-    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/public/ssh";
+    pubKeys = lib.filesystem.listFilesRecursive "${self}/files/public/ssh";
     stateVersion = lib.mkDefault "23.05";
     homeFiles = {
       ".bash_history" = {
@@ -10098,8 +10098,8 @@ I also take some precautions in how I get networking information during stage 1.
                   enable = true;
                   port = 2222; # avoid hostkey changed nag
                   authorizedKeys = [
-                    ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
-                    ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
+                    ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/yubikey.pub"}''
+                    ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/magicant.pub"}''
                   ];
                   hostKeys = [ "/tmp${hostKeyPathBase}" ]; # use a tmp file otherwise persist mount will be unhappy
                 };
@@ -10699,14 +10699,14 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               };
               users = {
                 "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
-                  (self + /secrets/public/ssh/yubikey.pub)
-                  (self + /secrets/public/ssh/magicant.pub)
-                  # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+                  (self + /files/public/ssh/yubikey.pub)
+                  (self + /files/public/ssh/magicant.pub)
+                  # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
                 ];
                 root.openssh.authorizedKeys.keyFiles = [
-                  (self + /secrets/public/ssh/yubikey.pub)
-                  (self + /secrets/public/ssh/magicant.pub)
-                  # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+                  (self + /files/public/ssh/yubikey.pub)
+                  (self + /files/public/ssh/magicant.pub)
+                  # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
                 ];
               };
             };
@@ -15310,7 +15310,7 @@ When setting up a new machine:
             };
             publicKeys = [
               {
-                source = "${self}/secrets/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+                source = "${self}/files/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
                 trust = 5;
               }
             ];
@@ -20854,9 +20854,9 @@ Some extra config to harden the config on my ssh bastion host. It makes it so th
                 group = lib.mkForce "jump";
                 createHome = lib.mkForce true;
                 openssh.authorizedKeys.keyFiles = [
-                  (self + /secrets/public/ssh/yubikey.pub)
-                  (self + /secrets/public/ssh/magicant.pub)
-                  (self + /secrets/public/ssh/builder.pub)
+                  (self + /files/public/ssh/yubikey.pub)
+                  (self + /files/public/ssh/magicant.pub)
+                  (self + /files/public/ssh/builder.pub)
                 ];
               };
             };
@@ -20950,7 +20950,7 @@ Restricts access to the system by the nix build user as per https://discourse.ni
               isSystemUser = true;
               group = "builder";
               openssh.authorizedKeys.keys = [
-                ''${ssh-restrict} ${builtins.readFile "${self}/secrets/public/ssh/builder.pub"}''
+                ''${ssh-restrict} ${builtins.readFile "${self}/files/public/ssh/builder.pub"}''
               ];
             };
           };
@@ -21432,7 +21432,7 @@ In order to define a new wireguard interface, I have to:
                       lib.optionals i.isClient [
                         {
                           PublicKey =
-                            builtins.readFile "${self}/secrets/public/wg/${i.serverName}.pub";
+                            builtins.readFile "${self}/files/public/wg/${i.serverName}.pub";
 
                           PresharedKeyFile =
                             config.sops.secrets."wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey".path;
@@ -21453,7 +21453,7 @@ In order to define a new wireguard interface, I have to:
                       ++ lib.optionals i.isServer (map
                         (clientName: {
                           PublicKey =
-                            builtins.readFile "${self}/secrets/public/wg/${clientName}.pub";
+                            builtins.readFile "${self}/files/public/wg/${clientName}.pub";
 
                           PresharedKeyFile =
                             config.sops.secrets."wireguard-${i.serverName}-${clientName}-${i.ifName}-presharedKey".path;
@@ -40447,7 +40447,7 @@ This file defines a few workflows that I often need to run when working on my co
     nix develop .#deploy --command zsh -c "swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
 
   updatekeys:
-    find . -path ./secrets/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}
+    find . -path ./files/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}
 #+end_src
 ** aspell.conf
 :PROPERTIES:

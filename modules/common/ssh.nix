@@ -29,14 +29,14 @@
             };
             users = {
               "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
-                (self + /secrets/public/ssh/yubikey.pub)
-                (self + /secrets/public/ssh/magicant.pub)
-                # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+                (self + /files/public/ssh/yubikey.pub)
+                (self + /files/public/ssh/magicant.pub)
+                # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
               ];
               root.openssh.authorizedKeys.keyFiles = [
-                (self + /secrets/public/ssh/yubikey.pub)
-                (self + /secrets/public/ssh/magicant.pub)
-                # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+                (self + /files/public/ssh/yubikey.pub)
+                (self + /files/public/ssh/magicant.pub)
+                # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
               ];
             };
           };

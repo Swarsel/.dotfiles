@@ -53,8 +53,8 @@
                 enable = true;
                 port = 2222; # avoid hostkey changed nag
                 authorizedKeys = [
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
+                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/yubikey.pub"}''
+                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/magicant.pub"}''
                 ];
                 hostKeys = [ "/tmp${hostKeyPathBase}" ]; # use a tmp file otherwise persist mount will be unhappy
               };

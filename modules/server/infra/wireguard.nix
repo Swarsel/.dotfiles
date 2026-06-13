@@ -252,7 +252,7 @@
                     lib.optionals i.isClient [
                       {
                         PublicKey =
-                          builtins.readFile "${self}/secrets/public/wg/${i.serverName}.pub";
+                          builtins.readFile "${self}/files/public/wg/${i.serverName}.pub";
 
                         PresharedKeyFile =
                           config.sops.secrets."wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey".path;
@@ -273,7 +273,7 @@
                     ++ lib.optionals i.isServer (map
                       (clientName: {
                         PublicKey =
-                          builtins.readFile "${self}/secrets/public/wg/${clientName}.pub";
+                          builtins.readFile "${self}/files/public/wg/${clientName}.pub";
 
                         PresharedKeyFile =
                           config.sops.secrets."wireguard-${i.serverName}-${clientName}-${i.ifName}-presharedKey".path;
