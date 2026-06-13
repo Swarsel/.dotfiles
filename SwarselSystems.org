@@ -3564,6 +3564,360 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
       };
   }
 #+end_src
+** Tests
+:PROPERTIES:
+:CUSTOM_ID: h:84e74ffb-d454-4744-bd89-4e65e122ced5
+:END:
+
+These are various NixOS tests that run in a VM and test certain aspects of my infrastructure. This ordeal was inspired by [[https://github.com/Swarsel/.dotfiles/issues/12][Issue #12]] that called out my broken demo configuration. For these, the store of the installer VM is pre-seeded with the prebuilt hotel system and all flake inputs, the test itself runs offline. For this to work, the tests must be built with the demo input overrides (otherwise the prebuilt system would not match what the installer builds inside the VM), which is what =just demo-test= and =just demo-full-test= do.
+
+This library file defines a few commonly used functions for the tests.
+
+#+begin_src nix-ts :tangle modules/tests/lib.nix
+  { self, inputs, ... }:
+  {
+    perSystem = { pkgs, lib, system, ... }:
+      {
+        _module.args.testsLib = rec {
+          inputSources =
+            let
+              go = seen: queue:
+                if queue == [ ] then
+                  seen
+                else
+                  let
+                    input = builtins.head queue;
+                    rest = builtins.tail queue;
+                    key = if input ? outPath then builtins.unsafeDiscardStringContext input.outPath else null;
+                  in
+                  if key == null || seen ? ${key} then
+                    go seen rest
+                  else
+                    go (seen // { ${key} = input; }) (rest ++ builtins.attrValues (input.inputs or { }));
+            in
+            builtins.attrValues (go { } (builtins.attrValues (builtins.removeAttrs self.inputs [ "vbc-nix" "repoSecrets" ])));
+
+          mkDemoTest = name: testArgs:
+            if !(inputs.repoSecrets.isDemo or false) then
+              pkgs.runCommand "${name}-needs-demo-overrides" { } ''
+                echo "${name} must be built against the demo secrets so that the prebuilt system matches what swarsel-install builds inside the VM:" >&2
+                echo "  nix build .#${name} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file" >&2
+                echo "or run 'just demo-test'." >&2
+                exit 1
+              ''
+            else
+              pkgs.testers.runNixOSTest (lib.recursiveUpdate
+                {
+                  inherit name;
+
+                  globalTimeout = 4 * 3600;
+
+                  node = {
+                    specialArgs = { inherit self; };
+                    pkgsReadOnly = false;
+                  };
+
+                  defaults = {
+                    documentation.enable = lib.mkDefault false;
+                    nixpkgs.hostPlatform = system;
+                  };
+                }
+                testArgs);
+
+          installerNode = { extraDependencies ? [ ], diskSize ? 32 * 1024 }: { lib, ... }: {
+            imports = [
+              inputs.home-manager.nixosModules.home-manager
+              "${self}/install/installer-config.nix"
+              "${inputs.nixpkgs}/nixos/modules/profiles/installation-device.nix"
+              "${inputs.nixpkgs}/nixos/modules/profiles/base.nix"
+              "${inputs.nixpkgs}/nixos/tests/common/auto-format-root-device.nix"
+            ];
+
+            virtualisation = {
+              cores = 8;
+              memorySize = 12288;
+              diskImage = "./target.qcow2";
+              inherit diskSize;
+              emptyDiskImages = [ 20480 ];
+              rootDevice = "/dev/vdb";
+              fileSystems."/".autoFormat = true;
+              useEFIBoot = true;
+            };
+
+            boot.supportedFilesystems = lib.mkOverride 40 [ "btrfs" "vfat" "ext4" ];
+
+            boot.kernel.sysctl = {
+              "vm.dirty_bytes" = 268435456;
+              "vm.dirty_background_bytes" = 67108864;
+            };
+
+            environment.systemPackages = [ pkgs.swarsel-install ];
+
+            system.extraDependencies = [ self ] ++ extraDependencies ++ inputSources;
+
+            nix.settings = {
+              substituters = lib.mkForce [ ];
+              connect-timeout = 1;
+            };
+          };
+
+          targetNode = { toplevel, memorySize ? 4096, cores ? 2, quiet ? true }: {
+            virtualisation = {
+              inherit cores memorySize;
+              diskImage = "./target.qcow2";
+              useDefaultFilesystems = false;
+              directBoot.enable = false;
+              fileSystems."/" = {
+                device = "/dev/disk/by-label/unused";
+                fsType = "btrfs";
+              };
+              qemu.options = [
+                "-kernel ${toplevel}/kernel"
+                "-initrd ${toplevel}/initrd"
+                ''-append "$(cat ${toplevel}/kernel-params) init=${toplevel}/init console=ttyS0${lib.optionalString quiet " quiet"}"''
+              ];
+            };
+          };
+
+          prepareCloneSourceScript = machine: ''
+            with subtest("Prepare local clone source"):
+                ${machine}.succeed("cp -r ${self} /root/dotfiles-src && chmod -R u+w /root/dotfiles-src")
+                ${machine}.succeed("git -C /root/dotfiles-src init -q -b main")
+                ${machine}.succeed("git -C /root/dotfiles-src add -A")
+                ${machine}.succeed("GIT_COMMITTER_DATE='@${toString (self.lastModified or 1)}' GIT_AUTHOR_DATE='@${toString (self.lastModified or 1)}' git -C /root/dotfiles-src -c commit.gpgsign=false -c user.email=demo@example.org -c user.name=demo commit -q -m demo")
+
+            with subtest("Provide disk encryption passphrase"):
+                ${machine}.succeed("echo demopass > /tmp/disko-password")
+          '';
+
+          runInstallScript = machine: ''
+            with subtest("Run swarsel-install"):
+                ${machine}.succeed("swarsel-install -n hotel -H -r /root/dotfiles-src >&2", timeout=7200)
+
+            with subtest("Check installation results"):
+                ${machine}.succeed("test -e /mnt/boot/EFI/systemd/systemd-bootx64.efi")
+                ${machine}.succeed("test -e /mnt/nix/var/nix/profiles/system/init")
+                ${machine}.succeed("test -d /mnt/persist/home/swarsel/.dotfiles")
+          '';
+
+          shutdownInstallerScript = machine: ''
+            with subtest("Shut down installer"):
+                ${machine}.succeed("umount -R /mnt")
+                ${machine}.succeed("sync")
+                ${machine}.shutdown()
+          '';
+
+          unlockBootScript = { machine, marker, title ? "Boot installed system, unlock disk and reach a shell" }: ''
+            with subtest("${title}"):
+                ${machine}.start()
+                booted = False
+                for _ in range(40):
+                    ${machine}.send_console("demopass\n")
+                    ${machine}.send_console("echo ${marker}-$(hostname)\n")
+                    try:
+                        ${machine}.wait_for_console_text("${marker}-hotel", timeout=15)
+                        booted = True
+                        break
+                    except Exception:
+                        pass
+                assert booted, "installed system did not reach a shell after disk unlock"
+          '';
+
+          enablePasswordlessSudoScript = { machine, user ? "swarsel", password ? "setup" }: ''
+            import time
+
+            with subtest("Enable passwordless sudo for ${user}"):
+                ok = False
+                for _ in range(5):
+                    ${machine}.send_console("echo '${user} ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/99-demo-test > /dev/null\n")
+                    time.sleep(3)
+                    ${machine}.send_console("${password}\n")
+                    time.sleep(2)
+                    ${machine}.send_console("sudo -n true && echo sudo-\"mark\"er-ok\n")
+                    try:
+                        ${machine}.wait_for_console_text("sudo-marker-ok", timeout=20)
+                        ok = True
+                        break
+                    except Exception:
+                        pass
+                assert ok, "could not enable passwordless sudo for ${user}"
+          '';
+
+          unlockGraphicalBootScript = { machine, title ? "Boot full system, unlock disk and reach graphical.target", passphrase ? "demopass" }: ''
+            import time
+
+            with subtest("${title}"):
+                ${machine}.start()
+                for _ in range(20):
+                    ${machine}.send_console("${passphrase}\n")
+                    time.sleep(4)
+                ${machine}.wait_for_console_text(r"Reached target.*[Gg]raphical", timeout=2400)
+          '';
+
+          consoleMarkerLoopScript = { machine, title, command, marker, tries ? 20, timeout ? 15, failure }: ''
+            with subtest("${title}"):
+                ok = False
+                for _ in range(${toString tries}):
+                    ${machine}.send_console("${command} && echo ${marker}-\"mark\"er-ok\n")
+                    try:
+                        ${machine}.wait_for_console_text("${marker}-marker-ok", timeout=${toString timeout})
+                        ok = True
+                        break
+                    except Exception:
+                        pass
+                assert ok, "${failure}"
+          '';
+        };
+      };
+  }
+#+end_src
+
+*** Minimal demo
+:PROPERTIES:
+:CUSTOM_ID: h:7b739388-ef6d-4a0e-913c-213fc00e11f5
+:END:
+
+=demo-install-test= covers the default demo flow: install the minimal hotel projection, boot it, unlock the disk and reach a shell.
+
+#+begin_src nix-ts :tangle modules/tests/demo-install.nix
+  { self, ... }:
+  {
+    perSystem = { lib, system, testsLib, ... }:
+      lib.optionalAttrs (system == "x86_64-linux") {
+        packages.demo-install-test =
+          let
+            hotel = self.nixosConfigurationsMinimal.hotel;
+            toplevel = hotel.config.system.build.toplevel;
+          in
+          testsLib.mkDemoTest "demo-install-test" {
+            nodes = {
+              installer = testsLib.installerNode {
+                extraDependencies = [
+                  toplevel
+                  hotel.config.system.build.destroyFormatMount
+                ];
+              };
+
+              target = testsLib.targetNode { inherit toplevel; };
+            };
+
+            testScript = ''
+              installer.start()
+              installer.wait_for_unit("multi-user.target")
+
+              ${testsLib.prepareCloneSourceScript "installer"}
+
+              ${testsLib.runInstallScript "installer"}
+
+              ${testsLib.shutdownInstallerScript "installer"}
+
+              target.state_dir = installer.state_dir
+
+              ${testsLib.unlockBootScript { machine = "target"; marker = "boot-marker"; }}
+
+              target.crash()
+            '';
+          };
+      };
+  }
+#+end_src
+
+*** Full demo
+:PROPERTIES:
+:CUSTOM_ID: h:80720023-65b9-4036-82c8-ba9372412f75
+:END:
+
+=demo-full-test= goes one step further and covers the second stage of the demo: after booting the installed minimal system, it rebuilds to the full hotel configuration, reboots into it and asserts that the graphical target comes up.
+
+#+begin_src nix-ts :tangle modules/tests/demo-full.nix
+  { self, ... }:
+  {
+    perSystem = { lib, system, pkgs, testsLib, ... }:
+      lib.optionalAttrs (system == "x86_64-linux") {
+        packages.demo-full-test =
+          let
+            hotelMinimal = self.nixosConfigurationsMinimal.hotel;
+            minimalToplevel = hotelMinimal.config.system.build.toplevel;
+            fullToplevel = self.nixosConfigurations.hotel.config.system.build.toplevel;
+            rebuildCommand = "${pkgs.swarsel-rebuild}/bin/swarsel-rebuild -n hotel -H -r /persist/home/swarsel/.dotfiles";
+          in
+          testsLib.mkDemoTest "demo-full-test" {
+            globalTimeout = 8 * 3600;
+
+            nodes = {
+              installer = testsLib.installerNode {
+                diskSize = 96 * 1024;
+                extraDependencies = [
+                  minimalToplevel
+                  hotelMinimal.config.system.build.destroyFormatMount
+                  fullToplevel
+                  pkgs.swarsel-rebuild
+                ];
+              };
+
+              target = testsLib.targetNode {
+                toplevel = minimalToplevel;
+                memorySize = 10240;
+                cores = 4;
+              };
+
+              full = testsLib.targetNode {
+                toplevel = fullToplevel;
+                memorySize = 8192;
+                cores = 4;
+                quiet = false;
+              };
+            };
+
+            testScript = ''
+              installer.start()
+              installer.wait_for_unit("multi-user.target")
+
+              ${testsLib.prepareCloneSourceScript "installer"}
+
+              ${testsLib.runInstallScript "installer"}
+
+              with subtest("Copy full system closure to the target disk"):
+                  installer.succeed("mount -o remount,commit=5 /mnt")
+                  installer.succeed("set -e; for p in ${fullToplevel} ${pkgs.swarsel-rebuild} ${toString testsLib.inputSources}; do nix copy --no-check-sigs --to /mnt \"$p\"; sync /mnt; echo 3 > /proc/sys/vm/drop_caches; done >&2", timeout=14400)
+
+              ${testsLib.shutdownInstallerScript "installer"}
+
+              target.state_dir = installer.state_dir
+
+              ${testsLib.unlockBootScript { machine = "target"; marker = "boot-minimal"; title = "Boot minimal system and unlock disk"; }}
+
+              ${testsLib.enablePasswordlessSudoScript { machine = "target"; }}
+
+              with subtest("Rebuild to the full configuration"):
+                  target.send_console("${rebuildCommand} > /tmp/rebuild.log 2>&1 && echo rebuild-\"mark\"er-ok || echo rebuild-\"mark\"er-fail\n")
+                  target.wait_for_console_text("rebuild-marker-(ok|fail)", timeout=14400)
+                  target.send_console("tail -n 25 /tmp/rebuild.log\n")
+                  time.sleep(30)
+
+              ${testsLib.consoleMarkerLoopScript {
+                machine = "target";
+                title = "Check that a second system generation exists";
+                command = "test -e /nix/var/nix/profiles/system-2-link";
+                marker = "gen";
+                tries = 3;
+                failure = "nixos-rebuild did not create a second system generation";
+              }}
+
+              target.crash()
+
+              full.state_dir = installer.state_dir
+
+              ${testsLib.unlockGraphicalBootScript { machine = "full"; }}
+
+              full.crash()
+            '';
+          };
+      };
+  }
+#+end_src
+
+
 ** Installer flake
 :PROPERTIES:
 :CUSTOM_ID: h:1d4514b4-e952-4faf-b30e-d89e73a526c6
@@ -40470,6 +40824,11 @@ This file defines a few workflows that I often need to run when working on my co
   iso CONFIG="live-iso":
     rm -rf result
     nix build --print-out-paths .#live-iso
+
+  demo-test TEST="demo-install-test":
+    nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file
+
+  demo-full-test: (demo-test "demo-full-test")
 
   iso-install DRIVE: iso
     sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync

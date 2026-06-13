@@ -14,6 +14,11 @@ iso CONFIG="live-iso":
   rm -rf result
   nix build --print-out-paths .#live-iso
 
+demo-test TEST="demo-install-test":
+  nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file
+
+demo-full-test: (demo-test "demo-full-test")
+
 iso-install DRIVE: iso
   sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
 
