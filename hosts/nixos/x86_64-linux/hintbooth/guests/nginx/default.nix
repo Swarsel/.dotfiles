@@ -8,6 +8,7 @@ in
     self.modules.nixos.microvm-guest-shares
     self.modules.nixos.oauth2-proxy
     self.modules.nixos.nginx
+    self.modules.nixos.nginx-exporter
     self.modules.nixos.acme
     self.modules.nixos.nginx-otel
   ];
