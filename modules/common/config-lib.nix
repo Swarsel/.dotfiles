@@ -366,6 +366,7 @@
             , expectedStatus ? null
             , hostHeader ? null
             , failIfBodyMatchesRegex ? null
+            , alertFor ? null
             }:
             {
               ${serviceName} = {
@@ -375,7 +376,8 @@
               // lib.optionalAttrs (expectedBodyRegex != null) { inherit expectedBodyRegex; }
               // lib.optionalAttrs (expectedStatus != null) { inherit expectedStatus; }
               // lib.optionalAttrs (hostHeader != null) { inherit hostHeader; }
-              // lib.optionalAttrs (failIfBodyMatchesRegex != null) { inherit failIfBodyMatchesRegex; };
+              // lib.optionalAttrs (failIfBodyMatchesRegex != null) { inherit failIfBodyMatchesRegex; }
+              // lib.optionalAttrs (alertFor != null) { inherit alertFor; };
             };
 
           mkDnsRecord =

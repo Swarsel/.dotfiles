@@ -140,21 +140,32 @@
           })
         ));
 
-        nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [{
-          orgId = 1;
-          name = "blackbox";
-          folder = "Infrastructure";
-          interval = "1m";
-          rules = [
-            (confLib.mkGrafanaAlertRule {
-              uid = "http_probe_failed";
-              title = "HTTP probe failed";
-              expr = ''min by (name) (probe_success{probe="http"}) or on(name) (probe_expected{probe="http"} * 0)'';
-              forDuration = "3m";
-              summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
-            })
-          ];
-        }];
+        nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
+          let
+            defaultProbeFor = "3m";
+            probesByFor = lib.foldlAttrs
+              (acc: name: cfg:
+                let forDuration = if cfg.alertFor != null then cfg.alertFor else defaultProbeFor;
+                in acc // { ${forDuration} = (acc.${forDuration} or [ ]) ++ [ name ]; })
+              { }
+              globals.monitoring.http;
+            mkProbeRule = forDuration: names:
+              let selector = ''probe="http",name=~"${lib.concatStringsSep "|" names}"'';
+              in confLib.mkGrafanaAlertRule {
+                uid = if forDuration == defaultProbeFor then "http_probe_failed" else "http_probe_failed_${forDuration}";
+                title = "HTTP probe failed${lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"}";
+                expr = ''min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)'';
+                inherit forDuration;
+                summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
+              };
+          in
+          [{
+            orgId = 1;
+            name = "blackbox";
+            folder = "Infrastructure";
+            interval = "1m";
+            rules = lib.mapAttrsToList mkProbeRule probesByFor;
+          }];
       };
     }
 

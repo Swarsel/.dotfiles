@@ -363,6 +363,11 @@
                               default = null;
                               description = "Optional Host header to send (e.g. for phpfm services).";
                             };
+                            alertFor = mkOption {
+                              type = types.nullOr types.str;
+                              default = null;
+                              description = "How long the probe must stay failed before the alert fires";
+                            };
                             network = mkOption {
                               type = types.str;
                               description = ''

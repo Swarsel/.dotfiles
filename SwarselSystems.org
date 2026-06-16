@@ -9513,6 +9513,11 @@ Do note that the below does not achieve anything on its own - as is, these would
                                 default = null;
                                 description = "Optional Host header to send (e.g. for phpfm services).";
                               };
+                              alertFor = mkOption {
+                                type = types.nullOr types.str;
+                                default = null;
+                                description = "How long the probe must stay failed before the alert fires";
+                              };
                               network = mkOption {
                                 type = types.str;
                                 description = ''
@@ -11328,6 +11333,7 @@ I also take some precautions in how I get networking information during stage 1.
               , expectedStatus ? null
               , hostHeader ? null
               , failIfBodyMatchesRegex ? null
+              , alertFor ? null
               }:
               {
                 ${serviceName} = {
@@ -11337,7 +11343,8 @@ I also take some precautions in how I get networking information during stage 1.
                 // lib.optionalAttrs (expectedBodyRegex != null) { inherit expectedBodyRegex; }
                 // lib.optionalAttrs (expectedStatus != null) { inherit expectedStatus; }
                 // lib.optionalAttrs (hostHeader != null) { inherit hostHeader; }
-                // lib.optionalAttrs (failIfBodyMatchesRegex != null) { inherit failIfBodyMatchesRegex; };
+                // lib.optionalAttrs (failIfBodyMatchesRegex != null) { inherit failIfBodyMatchesRegex; }
+                // lib.optionalAttrs (alertFor != null) { inherit alertFor; };
               };
 
             mkDnsRecord =
@@ -26497,21 +26504,32 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             })
           ));
 
-          nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [{
-            orgId = 1;
-            name = "blackbox";
-            folder = "Infrastructure";
-            interval = "1m";
-            rules = [
-              (confLib.mkGrafanaAlertRule {
-                uid = "http_probe_failed";
-                title = "HTTP probe failed";
-                expr = ''min by (name) (probe_success{probe="http"}) or on(name) (probe_expected{probe="http"} * 0)'';
-                forDuration = "3m";
-                summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
-              })
-            ];
-          }];
+          nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
+            let
+              defaultProbeFor = "3m";
+              probesByFor = lib.foldlAttrs
+                (acc: name: cfg:
+                  let forDuration = if cfg.alertFor != null then cfg.alertFor else defaultProbeFor;
+                  in acc // { ${forDuration} = (acc.${forDuration} or [ ]) ++ [ name ]; })
+                { }
+                globals.monitoring.http;
+              mkProbeRule = forDuration: names:
+                let selector = ''probe="http",name=~"${lib.concatStringsSep "|" names}"'';
+                in confLib.mkGrafanaAlertRule {
+                  uid = if forDuration == defaultProbeFor then "http_probe_failed" else "http_probe_failed_${forDuration}";
+                  title = "HTTP probe failed${lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"}";
+                  expr = ''min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)'';
+                  inherit forDuration;
+                  summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
+                };
+            in
+            [{
+              orgId = 1;
+              name = "blackbox";
+              folder = "Infrastructure";
+              interval = "1m";
+              rules = lib.mapAttrsToList mkProbeRule probesByFor;
+            }];
         };
       }
 
@@ -31877,7 +31895,7 @@ For sponsorblock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
           globals = {
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-            monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Invidious"; };
+            monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Invidious"; alertFor = "30m"; };
             dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
           };
 
