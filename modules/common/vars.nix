@@ -150,6 +150,7 @@
                 "browser.newtabpage.activity-stream.showSponsored" = false;
                 "browser.newtabpage.activity-stream.system.showSponsored" = false;
                 "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
+                "identity.sync.tokenserver.uri" = "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
               };
 
             search = {

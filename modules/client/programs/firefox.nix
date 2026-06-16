@@ -1,7 +1,16 @@
 {
-  flake.modules.homeManager.firefox = { pkgs, lib, vars, globals, ... }: {
+  flake.modules.homeManager.firefox = { pkgs, lib, vars, globals, confLib, ... }: {
     config = {
       swarselsystems.enabledHomeModules = [ "firefox" ];
+
+      xdg.desktopEntries.firefox_checker = {
+        name = "Firefox (checker)";
+        genericName = "Firefox checker";
+        exec = "firefox -p checker";
+        terminal = false;
+        categories = [ "Application" ];
+        icon = "firefox";
+      };
 
       programs.zsh.sessionVariables = {
         MOZ_DISABLE_RDD_SANDBOX = "1";
@@ -147,7 +156,14 @@
               isDefault = true;
               settings = {
                 "browser.startup.homepage" = "https://lobste.rs";
-                "identity.sync.tokenserver.uri" = "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
+              };
+            }
+            vars.firefox;
+          checker = lib.recursiveUpdate
+            {
+              id = 5;
+              settings = {
+                "browser.startup.homepage" = confLib.getConfig.repo.secrets.common.checkerURLs;
               };
             }
             vars.firefox;
