@@ -1,6 +1,10 @@
 {
+  # this one still supports provision, name is not nixpgks-[...] on purpose to avoid adding to the overlay
+  flake-file.inputs.nixpkgsFirezoneProvisioned = {
+    url = "github:nixos/nixpkgs/a799d3e3886da994fa307f817a6bc705ae538eeb?narHash=sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY%3D";
+  };
   flake.modules.nixos.firezone =
-    { self, lib, pkgs, config, globals, confLib, nodes, ... }:
+    { self, lib, inputs, pkgs, config, globals, confLib, nodes, ... }:
     let
       inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6;
       inherit (confLib.static) isHome isProxied homeProxy webProxy homeWebProxy homeProxyIf webProxyIf idmServer homeServiceAddress nginxAccessRules;
@@ -47,13 +51,22 @@
       };
 
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
+
+      disabledFirezoneModules = [ "gateway.nix" "relay.nix" "server.nix" "gui-client.nix" "headless-client.nix" ];
+      disabledFirezoneModule = name: "services/networking/firezone/${name}";
     in
     {
+      disabledModules = map disabledFirezoneModule disabledFirezoneModules;
+
+      imports = map
+        (name: "${inputs.nixpkgsFirezoneProvisioned}/nixos/modules/${disabledFirezoneModule name}")
+        disabledFirezoneModules;
       config = {
         swarselsystems.enabledServerModules = [ "firezone" ];
 
         globals = {
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName; servicePort = webPort; path = "/healthz"; expectedBodyRegex = ''"status":"ok"''; };
           networks = {
             ${webProxyIf}.hosts = lib.mkIf isProxied {
               ${config.node.name}.firewallRuleForNode.${webProxy} = {
