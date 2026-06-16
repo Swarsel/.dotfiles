@@ -52,7 +52,7 @@ in
 
     profile-public = {
       imports = pickH [
-        "attic-store-push"
+        "attic-client"
         "atuin"
         "hexchat"
         "kdeconnect"
