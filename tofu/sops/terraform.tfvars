@@ -14,7 +14,7 @@ hosts = {
   pyramid        = "age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m"
   stoicclub      = "age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm"
   summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
-  toto           = "age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl"
+  toto           = "placeholder"
   twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
   winters        = "age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza"
 }
@@ -81,6 +81,11 @@ host_configs = {
     guests = []
   }
   bakery = {
+    type   = "nixos"
+    arch   = "x86_64-linux"
+    guests = []
+  }
+  toto = {
     type   = "nixos"
     arch   = "x86_64-linux"
     guests = []

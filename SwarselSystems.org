@@ -2931,6 +2931,8 @@ Aside from the =default= devShell which is the one that should usually be called
                 pkgs.age
                 pkgs.ssh-to-age
                 pkgs.sops
+                pkgs.opentofu
+                self.packages.${system}.swarsel-bootstrap
               ];
 
               env =
@@ -3038,7 +3040,6 @@ Aside from the =default= devShell which is the one that should usually be called
                 }
               ];
 
-              # devshell.startup.pre-commit-install.text = "pre-commit install";
               devshell.startup.pre-commit.text = config.pre-commit.installationScript;
 
               env =
@@ -3921,6 +3922,172 @@ This library file defines a few commonly used functions for the tests.
   }
 #+end_src
 
+*** Bootstrapping
+#+begin_src nix-ts :tangle modules/tests/bootstrap-install.nix
+  { self, ... }:
+  {
+    perSystem = { lib, system, pkgs, ... }:
+      lib.optionalAttrs (system == "x86_64-linux") {
+        packages.bootstrap-install-test = pkgs.writeShellApplication {
+          name = "bootstrap-install-test";
+          runtimeInputs = [
+            pkgs.openssh
+            pkgs.sops
+            pkgs.ssh-to-age
+            pkgs.gnupg
+            pkgs.git
+            pkgs.rsync
+            pkgs.gawk
+            pkgs.coreutils
+            pkgs.qemu
+            pkgs.socat
+            self.packages.${system}.swarsel-bootstrap
+          ];
+          text = ''
+            set -euo pipefail
+
+            target_config="toto"
+            target_arch="x86_64-linux"
+            ssh_port="2222"
+            secret_key="toto-deploy-test"
+            secret_plaintext="bootstrap-secret-deployment-ok"
+
+            iso_file=$(echo ${self.packages.${system}.live-iso}/iso/*.iso)
+            ovmf=${pkgs.OVMF.fd}/FV
+
+            repo=$(git rev-parse --show-toplevel)
+            tmp=$(mktemp -d /tmp/bootstrap-test.XXXXXX)
+            work="$tmp/dotfiles"
+            disk="$tmp/$target_config.qcow2"
+            ovmf_vars="$tmp/OVMF_VARS.fd"
+            qemu_pid=""
+            eject_watcher_pid=""
+
+            ssh_config="$HOME/.ssh/config"
+            ssh_config_managed=""
+            ssh_config_restore=""
+            function cleanup() {
+                [[ -n $eject_watcher_pid ]] && kill "$eject_watcher_pid" 2> /dev/null || true
+                [[ -n $qemu_pid ]] && kill "$qemu_pid" 2> /dev/null || true
+                if [[ -n $ssh_config_managed ]]; then
+                    rm -f "$ssh_config"
+                    [[ -n $ssh_config_restore ]] && cp -P "$tmp/ssh_config.bak" "$ssh_config"
+                fi
+                rm -rf "$tmp"
+            }
+            trap cleanup EXIT
+
+            gpg_ssh_sock=$(gpgconf --list-dirs agent-ssh-socket 2> /dev/null || true)
+            [[ -n $gpg_ssh_sock ]] && export SSH_AUTH_SOCK="$gpg_ssh_sock"
+
+            if [[ -L $ssh_config || -e $ssh_config ]]; then
+                cp -P "$ssh_config" "$tmp/ssh_config.bak"
+                ssh_config_restore=1
+            fi
+            mkdir -p "$HOME/.ssh"
+            rm -f "$ssh_config"
+            cat > "$ssh_config" << EOF
+            Host *
+                ControlMaster auto
+                ControlPath $tmp/cm-%r@%h-%p
+                ControlPersist 600
+                ServerAliveInterval 5
+                ServerAliveCountMax 2
+            EOF
+            chmod 600 "$ssh_config"
+            ssh_config_managed=1
+
+            function banner_up() {
+                timeout 3 bash -c "exec 3<> /dev/tcp/127.0.0.1/$ssh_port; head -c 4 <&3" 2> /dev/null | grep -q SSH
+            }
+
+            echo "[*] Preparing isolated clone in $work"
+            mkdir -p "$work"
+            rsync -a --filter=':- .gitignore' --exclude=.git "$repo"/ "$work"/
+            git -C "$work" init -q -b main
+            git -C "$work" add -A
+            git -C "$work" -c user.email=test@example.org -c user.name=test -c commit.gpgsign=false commit -q --no-verify -m "bootstrap-test base"
+
+            echo "[*] Creating blank target disk"
+            cp "$ovmf/OVMF_VARS.fd" "$ovmf_vars"
+            chmod u+w "$ovmf_vars"
+            qemu-img create -f qcow2 "$disk" 32G > /dev/null
+
+            echo "[*] Booting target VM (installer first boot, installed disk afterwards)"
+            qemu-system-x86_64 \
+                -enable-kvm -m 8192 -smp 4 \
+                -drive if=pflash,format=raw,readonly=on,file="$ovmf/OVMF_CODE.fd" \
+                -drive if=pflash,format=raw,file="$ovmf_vars" \
+                -drive id=hd0,file="$disk",if=none,format=qcow2 \
+                -device virtio-blk-pci,drive=hd0,bootindex=1 \
+                -drive id=cd0,file="$iso_file",if=none,media=cdrom \
+                -device ide-cd,drive=cd0,id=cdrom0,bootindex=2 \
+                -boot menu=off \
+                -netdev "user,id=net0,hostfwd=tcp::$ssh_port-:22" -device virtio-net,netdev=net0 \
+                -qmp "unix:$tmp/qmp.sock,server=on,wait=off" \
+                -display none -serial "file:$tmp/console.log" &
+            qemu_pid=$!
+
+            (
+                until banner_up; do sleep 1; done
+                while banner_up; do sleep 2; done
+                printf '%s\n' \
+                    '{"execute":"qmp_capabilities"}' \
+                    '{"execute":"eject","arguments":{"id":"cdrom0","force":true}}' |
+                    socat - "UNIX-CONNECT:$tmp/qmp.sock" > /dev/null 2>&1 || true
+            ) &
+            eject_watcher_pid=$!
+
+            echo "[*] Waiting for installer SSH on port $ssh_port"
+            for ((i = 0; i < 120; i++)); do
+                if banner_up; then break; fi
+                sleep 5
+            done
+
+            echo
+            echo ">>> ACTION: enter your PIN and touch the Yubikey when prompted (install phase)."
+            for ((i = 0; i < 5; i++)); do
+                if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                    -o IdentitiesOnly=yes -i "$repo/files/public/ssh/yubikey.pub" \
+                    -o PreferredAuthentications=publickey -o ConnectTimeout=120 \
+                    -p "$ssh_port" root@127.0.0.1 true; then break; fi
+                echo "[*] SSH master not established yet (touch the Yubikey), retrying ..."
+                sleep 2
+            done
+
+            echo "[*] Running swarsel-bootstrap against the VM"
+            FLAKE="$work" swarsel-bootstrap --non-interactive \
+                -n "$target_config" -d 127.0.0.1 --port "$ssh_port" -a "$target_arch"
+
+            echo "[*] Assertion 1: .sops.yaml registers toto's age key"
+            grep -E "&$target_config age1" "$work/.sops.yaml"
+
+            echo "[*] Assertion 2: the deployed host can decrypt its re-keyed secret"
+            echo ">>> ACTION: touch the Yubikey to fetch the deployed host key (PIN is cached)."
+            for ((i = 0; i < 5; i++)); do
+                if scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+                    -o IdentitiesOnly=yes -i "$repo/files/public/ssh/yubikey.pub" \
+                    -o PreferredAuthentications=publickey -o ConnectTimeout=120 -P "$ssh_port" \
+                    root@127.0.0.1:/etc/ssh/ssh_host_ed25519_key "$tmp/hostkey"; then break; fi
+                echo "[*] retrying host-key fetch (touch the Yubikey) ..."
+                sleep 2
+            done
+            SOPS_AGE_KEY=$(ssh-to-age -private-key -i "$tmp/hostkey")
+            export SOPS_AGE_KEY
+            got=$(sops decrypt --extract "[\"$secret_key\"]" \
+                "$work/hosts/nixos/$target_arch/$target_config/secrets/secret.yaml")
+
+            if [[ $got == "$secret_plaintext" ]]; then
+                echo "[+] PASS: secret deployment verified ($secret_key decrypts on the deployed host)"
+            else
+                echo "[!] FAIL: expected '$secret_plaintext', got '$got'"
+                exit 1
+            fi
+          '';
+        };
+      };
+  }
+#+end_src
 
 ** Installer flake
 :PROPERTIES:
@@ -7735,33 +7902,36 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/toto/default.nix
-  { self, inputs, ... }:
+  { self, inputs, config, lib, minimal, ... }:
   {
 
     imports = [
       ./disk-config.nix
       ./hardware-configuration.nix
+    ] ++ lib.optionals (!minimal) [
       inputs.self.modules.nixos.profile-minimal
     ];
 
     topology.self.interfaces."bootstrapper" = { };
+
+    node.lockFromBootstrapping = lib.mkForce false;
 
     networking = {
       hostName = "toto";
       firewall.enable = false;
     };
 
+    sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
+
     swarselsystems = {
       info = "~SwarselSystems~ remote install helper";
       wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
       isImpermanence = true;
-      isCrypted = true;
+      isCrypted = false;
       isSecureBoot = false;
       isSwap = true;
       swapSize = "2G";
-      # rootDisk = "/dev/nvme0n1";
       rootDisk = "/dev/vda";
-      # rootDisk = "/dev/vda";
       isBtrfs = true;
       isLinux = true;
       isLaptop = false;
@@ -33471,12 +33641,11 @@ This is a small helper for mirroring my screen onto another output (for example 
 This program sets up a new NixOS host remotely. It also takes care of secret management on the new host.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-bootstrap/default.nix
-  { name, writeShellApplication, openssh, ... }:
+  { name, writeShellApplication, openssh, opentofu, ssh-to-age, ... }:
   writeShellApplication {
     inherit name;
-    runtimeInputs = [ openssh ];
+    runtimeInputs = [ openssh (opentofu.withPlugins (p: [ p.hashicorp_local ])) ssh-to-age ];
     text = ''
-      # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/files/scripts/bootstrap-nixos.sh
       set -eo pipefail
 
       target_hostname=""
@@ -33488,6 +33657,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       disk_encryption=0
       disk_encryption_args=""
       no_disko_deps="false"
+      non_interactive="false"
       temp=$(mktemp -d)
 
       function help_and_exit() {
@@ -33507,6 +33677,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         echo "                                          Default=''${target_user}."
         echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=''${ssh_port}."
         echo "  --debug                                 Enable debug mode."
+        echo "  --non-interactive                       Run without prompts (requires FLAKE to be set). Used by the bootstrap test."
         echo "  --no-disko-deps                         Upload only disk script and not dependencies (for use on low ram)."
         echo "  -h | --help                             Print this help."
         exit 0
@@ -33549,29 +33720,33 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         done
       }
 
+      function confirm() {
+        local default=$1
+        shift
+        if [[ $non_interactive == "true" ]]; then
+          [[ $default == "y" ]]
+          return
+        fi
+        yes_or_no "$@"
+      }
+
       function update_sops_file() {
         key_name=$1
-        key_type=$2
-        key=$3
+        key=$2
 
-        if [ ! "$key_type" == "hosts" ] && [ ! "$key_type" == "users" ]; then
-          red "Invalid key type passed to update_sops_file. Must be either 'hosts' or 'users'."
+        tfvars="''${git_root}/tofu/sops/terraform.tfvars"
+        if ! grep -qE "^[[:space:]]*''${key_name}[[:space:]]*=[[:space:]]*\"placeholder\"" "$tfvars"; then
+          red "No placeholder entry for '$key_name' found in tofu/sops/terraform.tfvars."
+          yellow "Add '$key_name = \"placeholder\"' to the hosts map (and a host_configs entry) before bootstrapping."
           exit 1
         fi
-        cd "''${git_root}"
 
-        SOPS_FILE=".sops.yaml"
-        sed -i "{
-                                  # Remove any * and & entries for this host
-                                  /[*&]$key_name/ d;
-                                  # Inject a new age: entry
-                                  # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                  /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                  # Inject a new hosts or user: entry
-                                  /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                  }" $SOPS_FILE
-        green "Updating .sops.yaml"
-        cd -
+        green "Writing age key for $key_name into tofu/sops/terraform.tfvars"
+        sed -E -i "s|^([[:space:]]*''${key_name}[[:space:]]*=[[:space:]]*)\"placeholder\"|\1\"''${key}\"|" "$tfvars"
+
+        green "Regenerating .sops.yaml via OpenTofu"
+        tofu -chdir="''${git_root}/tofu/sops" init -upgrade -input=false > /dev/null
+        tofu -chdir="''${git_root}/tofu/sops" apply -auto-approve
       }
 
       while [[ $# -gt 0 ]]; do
@@ -33598,6 +33773,9 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           ;;
         --no-disko-deps)
           no_disko_deps="true"
+          ;;
+        --non-interactive)
+          non_interactive="true"
           ;;
         --debug)
           set -x
@@ -33665,15 +33843,26 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         red "Secure Boot: X"
       fi
 
-      ssh_cmd="ssh -oport=''${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
-      # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|''${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
+      tty_flag="-t"
+      if [[ $non_interactive == "true" ]]; then
+        tty_flag=""
+      fi
+      ssh_cmd="ssh -oport=''${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $tty_flag $target_user@$target_destination"
       ssh_root_cmd=''${ssh_cmd/''${target_user}@/root@}
-      scp_cmd="scp -oport=''${ssh_port} -o StrictHostKeyChecking=no"
+      scp_cmd="scp -oport=''${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
-      if [[ -z ''${FLAKE} ]]; then
+      if [[ -z ''${FLAKE:-} ]]; then
+        if [[ $non_interactive == "true" ]]; then
+          red "FLAKE must be set in non-interactive mode."
+          exit 1
+        fi
         FLAKE=/home/"$target_user"/.dotfiles
       fi
       if [ ! -d "$FLAKE" ]; then
+        if [[ $non_interactive == "true" ]]; then
+          red "FLAKE directory $FLAKE does not exist."
+          exit 1
+        fi
         cd /home/"$target_user"
         yellow "Flake directory not found - cloning repository from GitHub"
         git clone git@github.com:Swarsel/.dotfiles.git || (yellow "Could not clone repository via SSH - defaulting to HTTPS" && git clone https://github.com/Swarsel/.dotfiles.git)
@@ -33684,23 +33873,14 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
       rm install/flake.lock || true
       git_root=$(git rev-parse --show-toplevel)
-      # ------------------------
       green "Wiping known_hosts of $target_destination"
       sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
-      # ------------------------
       green "Preparing a new ssh_host_ed25519_key pair for $target_hostname."
-      # Create the directory where sshd expects to find the host keys
       install -d -m755 "$temp/$persist_dir/etc/ssh"
-      # Generate host ssh key pair without a passphrase
       ssh-keygen -t ed25519 -f "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
-      # Set the correct permissions so sshd will accept the key
       chmod 600 "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key"
       echo "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
-      # This will fail if we already know the host, but that's fine
       ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
-      # ------------------------
-      # when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
-      # via the config
       if [ "$disk_encryption" -eq 1 ]; then
         while true; do
           green "Set disk encryption passphrase:"
@@ -33716,44 +33896,55 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           fi
         done
       fi
-      # ------------------------
       green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
       $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
       mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
       $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
-      # ------------------------
       green "Generating hostkey for ssh initrd"
       $ssh_root_cmd "mkdir -p $temp/etc/secrets/initrd /etc/secrets/initrd"
-      $ssh_root_cmd "ssh-keygen -t ed25519 -N '''' -f $temp/etc/secrets/initrd/ssh_host_ed25519_key"
+      $ssh_root_cmd "ssh-keygen -t ed25519 -N ''' -f $temp/etc/secrets/initrd/ssh_host_ed25519_key"
       $ssh_root_cmd "cp $temp/etc/secrets/initrd/ssh_host_ed25519_key /etc/secrets/initrd/ssh_host_ed25519_key"
-      # ------------------------
 
       green "Deploying minimal NixOS installation on $target_destination"
 
+      nixos_anywhere=(nix run github:nix-community/nixos-anywhere/1.10.0 --)
+      if [[ -n ''${NIXOS_ANYWHERE:-} ]]; then
+        nixos_anywhere=("$NIXOS_ANYWHERE")
+      fi
+
       if [[ $no_disko_deps == "true" ]]; then
         green "Building without disko dependencies (using custom kexec)"
-        nix run github:nix-community/nixos-anywhere/1.10.0 -- "''${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
+        "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
       else
         green "Building with disko dependencies (using nixos-images kexec)"
-        nix run github:nix-community/nixos-anywhere/1.10.0 -- "''${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+        "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
       fi
 
       echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
       ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
-      # ------------------------
 
-      while true; do
-        read -rp "Press Enter to continue once the remote host has finished booting."
-        if nc -z "$target_destination" "''${ssh_port}" 2> /dev/null; then
-          green "$target_destination is booted. Continuing..."
-          break
-        else
-          yellow "$target_destination is not yet ready."
-        fi
-      done
+      if [[ $non_interactive == "true" ]]; then
+        green "Waiting for $target_destination to finish booting ..."
+        for ((i = 0; i < 120; i++)); do
+          if ssh-keyscan -T 5 -p "$ssh_port" "$target_destination" 2> /dev/null | grep -q .; then
+            green "$target_destination is booted. Continuing..."
+            break
+          fi
+          sleep 5
+        done
+      else
+        while true; do
+          read -rp "Press Enter to continue once the remote host has finished booting."
+          if nc -z "$target_destination" "''${ssh_port}" 2> /dev/null; then
+            green "$target_destination is booted. Continuing..."
+            break
+          else
+            yellow "$target_destination is not yet ready."
+          fi
+        done
+      fi
 
-      # ------------------------
 
       if [[ $SECUREBOOT == "true" ]]; then
         green "Setting up secure boot keys"
@@ -33762,24 +33953,26 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         sudo "''${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
         $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
       fi
-      # ------------------------
 
-      if [ -n "$persist_dir" ]; then
+      if [ -n "$persist_dir" ] && [[ $non_interactive != "true" ]]; then
         $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
         $ssh_root_cmd "cp -R /etc/ssh/ $persist_dir/etc/ssh/ || true"
       fi
-      # ------------------------
       green "Generating an age key based on the new ssh_host_ed25519_key."
-      target_key=$(
-        ssh-keyscan -p "$ssh_port" -t ssh-ed25519 "$target_destination" 2>&1 |
-          grep ssh-ed25519 |
-          cut -f2- -d" " ||
-          (
-            red "Failed to get ssh key. Host down?"
-            exit 1
-          )
-      )
-      host_age_key=$(nix shell nixpkgs#ssh-to-age.out -c sh -c "echo $target_key | ssh-to-age")
+      if [[ $non_interactive == "true" ]]; then
+        host_age_key=$(ssh-to-age -i "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key.pub")
+      else
+        target_key=$(
+          ssh-keyscan -p "$ssh_port" -t ssh-ed25519 "$target_destination" 2>&1 |
+            grep ssh-ed25519 |
+            cut -f2- -d" " ||
+            (
+              red "Failed to get ssh key. Host down?"
+              exit 1
+            )
+        )
+        host_age_key=$(ssh-to-age <<< "$target_key")
+      fi
 
       if grep -qv '^age1' <<< "$host_age_key"; then
         red "The result from generated age key does not match the expected format."
@@ -33790,30 +33983,25 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         echo "$host_age_key"
       fi
 
-      green "Updating nix-secrets/.sops.yaml"
-      update_sops_file "$target_hostname" "hosts" "$host_age_key"
-      yellow ".sops.yaml has been updated. There may be superfluous entries, you might need to edit manually."
-      if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
-        vim "''${git_root}"/.sops.yaml
-      fi
-      green "Updating all secrets files to reflect updates .sops.yaml"
+      green "Registering $target_hostname in the sops configuration"
+      update_sops_file "$target_hostname" "$host_age_key"
+      green "Updating all secrets files to reflect updated .sops.yaml"
       sops updatekeys --yes --enable-local-keyservice "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/* || true
-      # --------------------------
-      green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
-      sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
-      $ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown -R $target_user:users /home/$target_user/.ssh/"
-      $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
-      $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
-      # __________________________
+      if [[ $non_interactive != "true" ]]; then
+        green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
+        sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
+        $ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown -R $target_user:users /home/$target_user/.ssh/"
+        $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
+        $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
+      fi
 
-      if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
+      if confirm n "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
         green "Adding ssh host fingerprints for git{lab,hub}"
         $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /home/$target_user/.ssh/known_hosts"
         $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /root/.ssh/known_hosts"
       fi
-      # --------------------------
 
-      if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $target_hostname?"; then
+      if confirm n "Do you want to copy your full nix-config and nix-secrets to $target_hostname?"; then
         green "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
         ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
         green "Copying full nix-config to $target_hostname"
@@ -33825,15 +34013,11 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           $ssh_root_cmd "cp -r /home/$target_user/.ssh $persist_dir/.ssh || true"
         fi
 
-        if yes_or_no "Do you want to rebuild immediately?"; then
+        if confirm n "Do you want to rebuild immediately?"; then
           green "Building nix-config for $target_hostname"
-          # yellow "Reminder: The password is 'setup'"
-          $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json"
-          # $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
           store_path=$(nix build --no-link --print-out-paths .#nixosConfigurations."$target_hostname".config.system.build.toplevel)
           green "Copying generation to $target_hostname"
           nix copy --to "ssh://root@$target_destination" "$store_path"
-          # prev_system=$($ssh_root_cmd " readlink -e /nix/var/nix/profiles/system")
           green "Linking generation in bootloader"
           $ssh_root_cmd "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
           green "Setting generation to activate upon next boot"
@@ -33847,24 +34031,28 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
           echo "cd nix-config"
           echo "sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
-          # echo "just rebuild"
           echo
         fi
       fi
 
       green "NixOS was successfully installed!"
-      if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
+      if confirm n "You can now commit the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
         cd "''${git_root}"
         deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
         nixpkgs-fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
-        (pre-commit run --all-files 2> /dev/null || true) &&
-          git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix" &&
-          git add "$git_root/.sops.yaml" &&
-          git add "$git_root/secrets" &&
-          (git commit -m "feat: deployed $target_hostname" || true) && git push
+        (pre-commit run --all-files 2> /dev/null || true) || true
+        git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix"
+        git add "$git_root/.sops.yaml"
+        git add "$git_root/tofu/sops/terraform.tfvars"
+        git add "$git_root/secrets" 2> /dev/null || true
+        git add "$git_root/hosts/nixos/$target_arch/$target_hostname/secrets" 2> /dev/null || true
+        git commit -m "feat: deployed $target_hostname" || true
+        if confirm n "Push the committed changes to the remote?"; then
+          git push
+        fi
       fi
 
-      if yes_or_no "Reboot now?"; then
+      if confirm n "Reboot now?"; then
         $ssh_root_cmd "reboot"
       fi
 
@@ -38840,7 +39028,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     pyramid        = "age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m"
     stoicclub      = "age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm"
     summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
-    toto           = "age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl"
+    toto           = "placeholder"
     twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
     winters        = "age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza"
   }
@@ -38907,6 +39095,11 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       guests = []
     }
     bakery = {
+      type   = "nixos"
+      arch   = "x86_64-linux"
+      guests = []
+    }
+    toto = {
       type   = "nixos"
       arch   = "x86_64-linux"
       guests = []
@@ -41143,6 +41336,9 @@ This file defines a few workflows that I often need to run when working on my co
     nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file
 
   demo-full-test: (demo-test "demo-full-test")
+
+  bootstrap-test:
+    nix develop .#deploy --command nix run .#bootstrap-install-test
 
   iso-install DRIVE: iso
     sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
@@ -45554,6 +45750,8 @@ Fixes:
 
 Enhancements:
 - automatic attic client cache auth
+- add nginx exporter
+- do not fire alerts on first miss
 
 Blocked:
 - look into selfhosted cospend (spliit module?) to deprecate nextcloud

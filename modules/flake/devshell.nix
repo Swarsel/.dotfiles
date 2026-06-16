@@ -66,6 +66,8 @@
               pkgs.age
               pkgs.ssh-to-age
               pkgs.sops
+              pkgs.opentofu
+              self.packages.${system}.swarsel-bootstrap
             ];
 
             env =
@@ -173,7 +175,6 @@
               }
             ];
 
-            # devshell.startup.pre-commit-install.text = "pre-commit install";
             devshell.startup.pre-commit.text = config.pre-commit.installationScript;
 
             env =
