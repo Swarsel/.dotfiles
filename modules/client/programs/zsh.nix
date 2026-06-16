@@ -154,7 +154,7 @@
                 CROC_RELAY = crocDomain;
                 CROC_PASS = "$(cat ${confLib.getConfig.sops.secrets.croc-password.path or ""})";
                 GITHUB_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.github-nixpkgs-review-token.path or ""})";
-                QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
+                QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
                 # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
               };
             };

@@ -44,7 +44,7 @@
             syncthingtray-minimal
             swayosd
 
-            libsForQt5.qt5.qtwayland
+            qt5.qtwayland
 
             nixos-generators
 
