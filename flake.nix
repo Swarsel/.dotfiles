@@ -20,7 +20,7 @@
     flake-file.url = "github:vic/flake-file";
     flake-parts.url = "github:hercules-ci/flake-parts";
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:Swarsel/home-manager/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunkle = {

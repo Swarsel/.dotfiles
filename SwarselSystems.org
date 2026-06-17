@@ -1774,7 +1774,7 @@ A short overview over each notable input and what it does:
       flake-file.url = "github:vic/flake-file";
       flake-parts.url = "github:hercules-ci/flake-parts";
       home-manager = {
-        url = "github:nix-community/home-manager";
+        url = "github:Swarsel/home-manager/main";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       hunkle = {
@@ -3470,7 +3470,8 @@ On the structure of overlays: as you notice, all of the attributes within overla
         nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
 
         home-manager = {
-          url = "github:nix-community/home-manager";
+          # url = "github:nix-community/home-manager";
+          url = "github:Swarsel/home-manager/main";
           inputs.nixpkgs.follows = "nixpkgs";
         };
 
@@ -15335,7 +15336,7 @@ Normally, I want to push all nix build artifacts to my main cache automatically,
             attic-cache-key = { };
           };
 
-          swarselservices.attic-client = {
+          programs.attic-client = {
             enable = true;
             servers.${mainUser} = {
               endpoint = "https://${globals.services.attic.domain}";

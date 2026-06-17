@@ -11,7 +11,7 @@
           attic-cache-key = { };
         };
 
-        swarselservices.attic-client = {
+        programs.attic-client = {
           enable = true;
           servers.${mainUser} = {
             endpoint = "https://${globals.services.attic.domain}";
