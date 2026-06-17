@@ -58,16 +58,18 @@
               wal.path = "${serviceDir}/wal";
             };
 
-            compactor.compaction = {
-              block_retention = "168h";
+            backend_scheduler = {
+              local_work_path = "${serviceDir}/scheduler";
+              provider.compaction.compaction.block_retention = "168h";
+            };
+
+            live_store = {
+              wal.path = "${serviceDir}/live-store/traces";
+              shutdown_marker_dir = "${serviceDir}/live-store/shutdown-marker";
             };
 
             metrics_generator = {
               registry.external_labels.source = "tempo";
-              processor.local_blocks = {
-                filter_server_spans = false;
-                flush_to_storage = true;
-              };
               storage = {
                 path = "${serviceDir}/generator/wal";
                 remote_write = [{
@@ -75,11 +77,10 @@
                   send_exemplars = true;
                 }];
               };
-              traces_storage.path = "${serviceDir}/generator/traces";
             };
 
             overrides.defaults.metrics_generator = {
-              processors = [ "service-graphs" "span-metrics" "local-blocks" ];
+              processors = [ "service-graphs" "span-metrics" ];
             };
 
             usage_report.reporting_enabled = false;
