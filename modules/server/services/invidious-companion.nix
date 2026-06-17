@@ -71,6 +71,7 @@
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
               services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
               dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+              monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/healthz"; expectedBodyRegex = "OK"; };
             };
 
             nodes =
