@@ -34834,6 +34834,25 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
             TOPLEVEL_FLAKE_PATHS["$host"]=".#nixosConfigurations.$host.config.system.build.toplevel"
         done
 
+        current_host=$(hostname)
+
+        ssh_control_dir=$(mktemp -d)
+        ssh_mux_opts=(-o ControlMaster=auto -o ControlPath="$ssh_control_dir/%C" -o ControlPersist=yes)
+        function cleanup_ssh() {
+            for host in "''${HOSTS[@]}"; do
+                [ "$host" = "$current_host" ] && continue
+                ssh -o ControlPath="$ssh_control_dir/%C" -O exit "$host" 2>/dev/null || true
+            done
+            rm -rf "$ssh_control_dir"
+        }
+        trap cleanup_ssh EXIT
+
+        for host in "''${HOSTS[@]}"; do
+            [ "$host" = "$current_host" ] && continue
+            echo -e "\033[1;36m  Connecting \033[m🔑 \033[34m$host\033[m \033[90m(touch your key once)\033[m"
+            ssh "''${ssh_mux_opts[@]}" "$host" -- true
+        done
+
         time_start
 
         declare -A TOPLEVEL_STORE_PATHS
@@ -34866,8 +34885,6 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
             echo "[1;32m       Built [m✅ [34m$host[m [33m''${TOPLEVEL_STORE_PATHS["$host"]}[m [90min ''${T_LAST}s[m"
         done
 
-        current_host=$(hostname)
-
         for host in "''${HOSTS[@]}"; do
             store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
 
@@ -34876,10 +34893,10 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
                 ssh_prefix="sudo"
             else
                 echo -e "\033[1;36m     Copying \033[m➡️  \033[34m$host\033[m"
-                nix copy --to "ssh://$host" "$store_path"
+                NIX_SSHOPTS="''${ssh_mux_opts[*]}" nix copy --to "ssh://$host" "$store_path"
                 time_next
                 echo -e "\033[1;32m      Copied \033[m✅  \033[34m$host\033[m \033[90min ''${T_LAST}s\033[m"
-                ssh_prefix="ssh $host --"
+                ssh_prefix="ssh ''${ssh_mux_opts[*]} $host --"
             fi
 
             echo -e "\033[1;36m    Applying \033[m⚙️  \033[34m$host\033[m"
