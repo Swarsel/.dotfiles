@@ -11275,24 +11275,26 @@ I also take some precautions in how I get networking information during stage 1.
               , forDuration ? "5m"
               , severity ? "critical"
               , summary
+              , datasourceUid ? "mimir"
+              , queryType ? null
+              , noDataState ? "NoData"
               }:
               {
-                inherit uid title;
+                inherit uid title noDataState;
                 condition = "C";
                 for = forDuration;
-                noDataState = "NoData";
                 execErrState = "Alerting";
                 data = [
                   {
                     refId = "A";
                     relativeTimeRange = { from = 600; to = 0; };
-                    datasourceUid = "mimir";
+                    inherit datasourceUid;
                     model = {
                       refId = "A";
                       inherit expr;
                       range = false;
                       instant = true;
-                    };
+                    } // lib.optionalAttrs (queryType != null) { inherit queryType; };
                   }
                   {
                     refId = "C";
