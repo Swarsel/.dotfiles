@@ -13,9 +13,12 @@
 
         programs.attic-client = {
           enable = true;
-          servers.${mainUser} = {
-            endpoint = "https://${globals.services.attic.domain}";
-            tokenFile = confLib.getConfig.sops.secrets.attic-cache-key.path;
+          settings = {
+            default-server = mainUser;
+            servers.${mainUser} = {
+              endpoint = "https://${globals.services.attic.domain}";
+              token-file = confLib.getConfig.sops.secrets.attic-cache-key.path;
+            };
           };
           watchStore = [ "${mainUser}:${mainUser}" ];
         };
