@@ -12,11 +12,11 @@ let
       "_1password-gui"
       "_1password-gui-beta"
     ];
-    stable24_05 = [ "awscli2" ];
-    stable24_11 = [ "python39" "spotify" "vieb" ];
+    stable24_05 = [ ];
+    stable24_11 = [ "python39" "vieb" ];
     stable25_05 = [ "steam-fhsenv-without-steam" "transmission_3" ];
-    stable25_11 = [ "azure-cli" ];
-    stable = [ "teams-for-linux" ];
+    stable25_11 = [ ];
+    stable = [ ];
   };
 in
 {

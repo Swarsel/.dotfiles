@@ -167,14 +167,19 @@
         rm -f ${retryFile}
       '';
 
-      pinSystems = builtins.attrNames self.stablePinsUnstable;
-      pinCheckCalls = lib.concatStringsSep "\n" (lib.concatMap
-        (system: lib.concatMap
-          (suffix: map
-            (pkg: ''check "${system}" "${suffix}" "${pkg}"'')
-            (builtins.attrNames self.stablePinsUnstable.${system}.${suffix}))
-          (builtins.filter (lib.hasPrefix "stable") (builtins.attrNames self.stablePinsUnstable.${system})))
-        pinSystems);
+      pinEnumApply = ''
+        attrs:
+          let
+            stableSuffixes = builtins.filter (s: builtins.substring 0 6 s == "stable");
+            forSystem = system: suffixes: builtins.concatLists (map
+              (suffix: map
+                (name: system + " " + suffix + " " + name)
+                (builtins.attrNames suffixes.''${suffix}))
+              (stableSuffixes (builtins.attrNames suffixes)));
+          in
+          builtins.concatStringsSep "\n"
+            (builtins.concatLists (builtins.attrValues (builtins.mapAttrs forSystem attrs)))
+      '';
 
       checkStablePins = pkgs.writeShellScript "buildbot-check-stable-pins" ''
         set -uo pipefail
@@ -190,10 +195,20 @@
             keep+=("$3 (nixpkgs-$2, $1)")
           fi
         }
-        ${pinCheckCalls}
+        pinlist=$(nix eval --raw "${flakeDir}#stablePinsUnstable" --apply ${lib.escapeShellArg pinEnumApply}) || {
+          echo "ERROR: failed to enumerate stable pins from the flake" >&2
+          exit 2
+        }
+        while read -r system suffix pkg; do
+          [ -n "$system" ] && check "$system" "$suffix" "$pkg"
+        done <<< "$pinlist"
         echo "=== Stable-pin check: tried building each pinned package from current unstable nixpkgs (per supported platform) ==="
         echo "fork-pinned packages (nixpkgs-dev) are excluded; review those manually."
         echo ""
+        if [ ''${#keep[@]} -eq 0 ] && [ ''${#candidates[@]} -eq 0 ]; then
+          echo "No stable pins with a checkable unstable target."
+          exit 0
+        fi
         if [ ''${#keep[@]} -gt 0 ]; then
           echo "Still broken on unstable, keep pinned:"
           printf '  - %s\n' "''${keep[@]}"

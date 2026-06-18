@@ -3274,11 +3274,11 @@ On the structure of overlays: as you notice, all of the attributes within overla
         "_1password-gui"
         "_1password-gui-beta"
       ];
-      stable24_05 = [ "awscli2" ];
-      stable24_11 = [ "python39" "spotify" "vieb" ];
+      stable24_05 = [ ];
+      stable24_11 = [ "python39" "vieb" ];
       stable25_05 = [ "steam-fhsenv-without-steam" "transmission_3" ];
-      stable25_11 = [ "azure-cli" ];
-      stable = [ "teams-for-linux" ];
+      stable25_11 = [ ];
+      stable = [ ];
     };
   in
   {
@@ -31350,14 +31350,19 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           rm -f ${retryFile}
         '';
 
-        pinSystems = builtins.attrNames self.stablePinsUnstable;
-        pinCheckCalls = lib.concatStringsSep "\n" (lib.concatMap
-          (system: lib.concatMap
-            (suffix: map
-              (pkg: ''check "${system}" "${suffix}" "${pkg}"'')
-              (builtins.attrNames self.stablePinsUnstable.${system}.${suffix}))
-            (builtins.filter (lib.hasPrefix "stable") (builtins.attrNames self.stablePinsUnstable.${system})))
-          pinSystems);
+        pinEnumApply = ''
+          attrs:
+            let
+              stableSuffixes = builtins.filter (s: builtins.substring 0 6 s == "stable");
+              forSystem = system: suffixes: builtins.concatLists (map
+                (suffix: map
+                  (name: system + " " + suffix + " " + name)
+                  (builtins.attrNames suffixes.''${suffix}))
+                (stableSuffixes (builtins.attrNames suffixes)));
+            in
+            builtins.concatStringsSep "\n"
+              (builtins.concatLists (builtins.attrValues (builtins.mapAttrs forSystem attrs)))
+        '';
 
         checkStablePins = pkgs.writeShellScript "buildbot-check-stable-pins" ''
           set -uo pipefail
@@ -31373,10 +31378,20 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
               keep+=("$3 (nixpkgs-$2, $1)")
             fi
           }
-          ${pinCheckCalls}
+          pinlist=$(nix eval --raw "${flakeDir}#stablePinsUnstable" --apply ${lib.escapeShellArg pinEnumApply}) || {
+            echo "ERROR: failed to enumerate stable pins from the flake" >&2
+            exit 2
+          }
+          while read -r system suffix pkg; do
+            [ -n "$system" ] && check "$system" "$suffix" "$pkg"
+          done <<< "$pinlist"
           echo "=== Stable-pin check: tried building each pinned package from current unstable nixpkgs (per supported platform) ==="
           echo "fork-pinned packages (nixpkgs-dev) are excluded; review those manually."
           echo ""
+          if [ ''${#keep[@]} -eq 0 ] && [ ''${#candidates[@]} -eq 0 ]; then
+            echo "No stable pins with a checkable unstable target."
+            exit 0
+          fi
           if [ ''${#keep[@]} -gt 0 ]; then
             echo "Still broken on unstable, keep pinned:"
             printf '  - %s\n' "''${keep[@]}"
