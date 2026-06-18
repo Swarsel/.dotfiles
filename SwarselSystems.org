@@ -3264,6 +3264,22 @@ On the structure of overlays: as you notice, all of the attributes within overla
   let
     inherit (self) outputs;
     inherit (outputs) lib;
+
+    stablePins = {
+      dev = [
+        "firezone-relay"
+        "firezone-server-web"
+        "firezone-server-api"
+        "firezone-server-domain"
+        "_1password-gui"
+        "_1password-gui-beta"
+      ];
+      stable24_05 = [ "awscli2" ];
+      stable24_11 = [ "python39" "spotify" "vieb" ];
+      stable25_05 = [ "steam-fhsenv-without-steam" "transmission_3" ];
+      stable25_11 = [ "azure-cli" ];
+      stable = [ "teams-for-linux" ];
+    };
   in
   {
     flake-file.inputs = {
@@ -3277,6 +3293,19 @@ On the structure of overlays: as you notice, all of the attributes within overla
 
     flake =
       {
+        stablePinsUnstable = lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system:
+          let
+            pkgs = import inputs.nixpkgs {
+              inherit system;
+              config = { allowUnfree = true; allowBroken = true; };
+            };
+            supportedOn = name:
+              let r = builtins.tryEval (pkgs ? ${name} && lib.meta.availableOn pkgs.stdenv.hostPlatform pkgs.${name});
+              in r.success && r.value;
+          in
+          builtins.mapAttrs
+            (_: names: lib.genAttrs (builtins.filter supportedOn names) (name: pkgs.${name}))
+            stablePins);
         overlays =
           let
             nixpkgs-stable-versions = final: _:
@@ -3335,54 +3364,12 @@ On the structure of overlays: as you notice, all of the attributes within overla
 
             stables = final: prev:
               let
-                mkUsePkgsFrom = pkgsFrom: names:
-                  builtins.listToAttrs (map
-                    (name: {
-                      inherit name;
-                      value = pkgsFrom.${name};
-                    })
-                    names);
-
-                from =
-                  let
-                    stablePackages = nixpkgs-stable-versions final prev;
-                  in
-                  key:
-                    stablePackages.${key} or (throw "Missing nixpkgs input nixpkgs-${key}");
-
+                stablePackages = nixpkgs-stable-versions final prev;
+                from = suffix: stablePackages.${suffix} or (throw "Missing nixpkgs input nixpkgs-${suffix}");
               in
-              (mkUsePkgsFrom (from "dev") [
-                # "swayosd"
-                "firezone-relay"
-                "firezone-server-web"
-                "firezone-server-api"
-                "firezone-server-domain"
-                "_1password-gui"
-                "_1password-gui-beta"
-              ])
-              // (mkUsePkgsFrom (from "stable24_05") [
-                "awscli2"
-              ])
-              // (mkUsePkgsFrom (from "stable24_11") [
-                "python39"
-                "spotify"
-                "vieb"
-              ])
-              // (mkUsePkgsFrom (from "stable25_05") [
-                "steam-fhsenv-without-steam"
-                "transmission_3"
-              ])
-              // (mkUsePkgsFrom (from "stable25_11") [
-                "azure-cli"
-              ])
-              // (mkUsePkgsFrom (from "stable") [
-                # "anki"
-                # "bat-extras.batgrep"
-                # "bluez"
-                # "chromium"
-                # "pipewire"
-                "teams-for-linux"
-              ]);
+              lib.concatMapAttrs
+                (suffix: names: lib.genAttrs names (name: (from suffix).${name}))
+                stablePins;
 
             modifications = final: prev:
               let
@@ -31252,9 +31239,8 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           fi
         '';
 
-        buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
+        syncFlake = pkgs.writeShellScript "buildbot-sync-flake" ''
           set -euo pipefail
-
           echo "=== Syncing flake repository ==="
           (
             flock -x 9
@@ -31266,21 +31252,17 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
               git clone --branch main ${flakeRepo} ${flakeDir}
             fi
           ) 9>"${lockFile}"
+        '';
 
+        buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
+          set -euo pipefail
+          ${syncFlake}
           ${buildAndPushBody}
         '';
 
         prepareUpdateBranch = pkgs.writeShellScript "buildbot-prepare-update-branch" ''
           set -euo pipefail
-          (
-            flock -x 9
-            if [ -d "${flakeDir}/.git" ]; then
-              cd ${flakeDir}
-              git fetch --prune origin
-            else
-              git clone --branch main ${flakeRepo} ${flakeDir}
-            fi
-          ) 9>"${lockFile}"
+          ${syncFlake}
           cd ${flakeDir}
 
           git remote set-url --push origin ${flakeRepoSSH}
@@ -31368,8 +31350,49 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           rm -f ${retryFile}
         '';
 
+        pinSystems = builtins.attrNames self.stablePinsUnstable;
+        pinCheckCalls = lib.concatStringsSep "\n" (lib.concatMap
+          (system: lib.concatMap
+            (suffix: map
+              (pkg: ''check "${system}" "${suffix}" "${pkg}"'')
+              (builtins.attrNames self.stablePinsUnstable.${system}.${suffix}))
+            (builtins.filter (lib.hasPrefix "stable") (builtins.attrNames self.stablePinsUnstable.${system})))
+          pinSystems);
+
+        checkStablePins = pkgs.writeShellScript "buildbot-check-stable-pins" ''
+          set -uo pipefail
+          ${syncFlake}
+          candidates=()
+          keep=()
+          check() {
+            if nix build --no-link --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" "aarch64-linux" ]} \
+                 "${flakeDir}#stablePinsUnstable.\"$1\".\"$2\".\"$3\"" \
+                 > /dev/null 2>&1; then
+              candidates+=("$3 (nixpkgs-$2, $1)")
+            else
+              keep+=("$3 (nixpkgs-$2, $1)")
+            fi
+          }
+          ${pinCheckCalls}
+          echo "=== Stable-pin check: tried building each pinned package from current unstable nixpkgs (per supported platform) ==="
+          echo "fork-pinned packages (nixpkgs-dev) are excluded; review those manually."
+          echo ""
+          if [ ''${#keep[@]} -gt 0 ]; then
+            echo "Still broken on unstable, keep pinned:"
+            printf '  - %s\n' "''${keep[@]}"
+            echo ""
+          fi
+          if [ ''${#candidates[@]} -gt 0 ]; then
+            echo "Now build on unstable, can likely be un-pinned (remove from stablePins in modules/flake/overlays.nix):"
+            printf '  - %s\n' "''${candidates[@]}"
+            exit 1
+          fi
+          echo "No un-pin candidates; all checked pins are still needed."
+        '';
+
         masterCfg = pkgs.writeText "master.cfg" ''
           from buildbot.plugins import *
+          from buildbot.process.results import SUCCESS, WARNINGS
 
           c = BuildmasterConfig = {}
 
@@ -31439,7 +31462,20 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
               factory=flake_update_factory,
           ))
 
-          all_builder_names = build_builder_names + ['flake-update']
+          pin_check_factory = util.BuildFactory()
+          pin_check_factory.addStep(steps.ShellCommand(
+              name='check-stable-pins',
+              command=['${checkStablePins}'],
+              decodeRC={0: SUCCESS, 1: WARNINGS},
+              timeout=7200,
+          ))
+          builders.append(util.BuilderConfig(
+              name='check-stable-pins',
+              workernames=['local-worker'],
+              factory=pin_check_factory,
+          ))
+
+          all_builder_names = build_builder_names + ['flake-update', 'check-stable-pins']
 
           c['builders'] = builders
 
@@ -31454,6 +31490,11 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
                   builderNames=['flake-update'],
                   hour=3,
                   minute=0,
+              ),
+              schedulers.Periodic(
+                  name='weekly-pin-check',
+                  builderNames=['check-stable-pins'],
+                  periodicBuildTimer=604800,
               ),
               schedulers.ForceScheduler(
                   name='force',

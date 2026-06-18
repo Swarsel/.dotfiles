@@ -2,6 +2,22 @@
 let
   inherit (self) outputs;
   inherit (outputs) lib;
+
+  stablePins = {
+    dev = [
+      "firezone-relay"
+      "firezone-server-web"
+      "firezone-server-api"
+      "firezone-server-domain"
+      "_1password-gui"
+      "_1password-gui-beta"
+    ];
+    stable24_05 = [ "awscli2" ];
+    stable24_11 = [ "python39" "spotify" "vieb" ];
+    stable25_05 = [ "steam-fhsenv-without-steam" "transmission_3" ];
+    stable25_11 = [ "azure-cli" ];
+    stable = [ "teams-for-linux" ];
+  };
 in
 {
   flake-file.inputs = {
@@ -15,6 +31,19 @@ in
 
   flake =
     {
+      stablePinsUnstable = lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system:
+        let
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            config = { allowUnfree = true; allowBroken = true; };
+          };
+          supportedOn = name:
+            let r = builtins.tryEval (pkgs ? ${name} && lib.meta.availableOn pkgs.stdenv.hostPlatform pkgs.${name});
+            in r.success && r.value;
+        in
+        builtins.mapAttrs
+          (_: names: lib.genAttrs (builtins.filter supportedOn names) (name: pkgs.${name}))
+          stablePins);
       overlays =
         let
           nixpkgs-stable-versions = final: _:
@@ -73,54 +102,12 @@ in
 
           stables = final: prev:
             let
-              mkUsePkgsFrom = pkgsFrom: names:
-                builtins.listToAttrs (map
-                  (name: {
-                    inherit name;
-                    value = pkgsFrom.${name};
-                  })
-                  names);
-
-              from =
-                let
-                  stablePackages = nixpkgs-stable-versions final prev;
-                in
-                key:
-                  stablePackages.${key} or (throw "Missing nixpkgs input nixpkgs-${key}");
-
+              stablePackages = nixpkgs-stable-versions final prev;
+              from = suffix: stablePackages.${suffix} or (throw "Missing nixpkgs input nixpkgs-${suffix}");
             in
-            (mkUsePkgsFrom (from "dev") [
-              # "swayosd"
-              "firezone-relay"
-              "firezone-server-web"
-              "firezone-server-api"
-              "firezone-server-domain"
-              "_1password-gui"
-              "_1password-gui-beta"
-            ])
-            // (mkUsePkgsFrom (from "stable24_05") [
-              "awscli2"
-            ])
-            // (mkUsePkgsFrom (from "stable24_11") [
-              "python39"
-              "spotify"
-              "vieb"
-            ])
-            // (mkUsePkgsFrom (from "stable25_05") [
-              "steam-fhsenv-without-steam"
-              "transmission_3"
-            ])
-            // (mkUsePkgsFrom (from "stable25_11") [
-              "azure-cli"
-            ])
-            // (mkUsePkgsFrom (from "stable") [
-              # "anki"
-              # "bat-extras.batgrep"
-              # "bluez"
-              # "chromium"
-              # "pipewire"
-              "teams-for-linux"
-            ]);
+            lib.concatMapAttrs
+              (suffix: names: lib.genAttrs names (name: (from suffix).${name}))
+              stablePins;
 
           modifications = final: prev:
             let

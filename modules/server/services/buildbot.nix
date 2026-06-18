@@ -56,9 +56,8 @@
         fi
       '';
 
-      buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
+      syncFlake = pkgs.writeShellScript "buildbot-sync-flake" ''
         set -euo pipefail
-
         echo "=== Syncing flake repository ==="
         (
           flock -x 9
@@ -70,21 +69,17 @@
             git clone --branch main ${flakeRepo} ${flakeDir}
           fi
         ) 9>"${lockFile}"
+      '';
 
+      buildAndPush = pkgs.writeShellScript "buildbot-build-and-push" ''
+        set -euo pipefail
+        ${syncFlake}
         ${buildAndPushBody}
       '';
 
       prepareUpdateBranch = pkgs.writeShellScript "buildbot-prepare-update-branch" ''
         set -euo pipefail
-        (
-          flock -x 9
-          if [ -d "${flakeDir}/.git" ]; then
-            cd ${flakeDir}
-            git fetch --prune origin
-          else
-            git clone --branch main ${flakeRepo} ${flakeDir}
-          fi
-        ) 9>"${lockFile}"
+        ${syncFlake}
         cd ${flakeDir}
 
         git remote set-url --push origin ${flakeRepoSSH}
@@ -172,8 +167,49 @@
         rm -f ${retryFile}
       '';
 
+      pinSystems = builtins.attrNames self.stablePinsUnstable;
+      pinCheckCalls = lib.concatStringsSep "\n" (lib.concatMap
+        (system: lib.concatMap
+          (suffix: map
+            (pkg: ''check "${system}" "${suffix}" "${pkg}"'')
+            (builtins.attrNames self.stablePinsUnstable.${system}.${suffix}))
+          (builtins.filter (lib.hasPrefix "stable") (builtins.attrNames self.stablePinsUnstable.${system})))
+        pinSystems);
+
+      checkStablePins = pkgs.writeShellScript "buildbot-check-stable-pins" ''
+        set -uo pipefail
+        ${syncFlake}
+        candidates=()
+        keep=()
+        check() {
+          if nix build --no-link --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" "aarch64-linux" ]} \
+               "${flakeDir}#stablePinsUnstable.\"$1\".\"$2\".\"$3\"" \
+               > /dev/null 2>&1; then
+            candidates+=("$3 (nixpkgs-$2, $1)")
+          else
+            keep+=("$3 (nixpkgs-$2, $1)")
+          fi
+        }
+        ${pinCheckCalls}
+        echo "=== Stable-pin check: tried building each pinned package from current unstable nixpkgs (per supported platform) ==="
+        echo "fork-pinned packages (nixpkgs-dev) are excluded; review those manually."
+        echo ""
+        if [ ''${#keep[@]} -gt 0 ]; then
+          echo "Still broken on unstable, keep pinned:"
+          printf '  - %s\n' "''${keep[@]}"
+          echo ""
+        fi
+        if [ ''${#candidates[@]} -gt 0 ]; then
+          echo "Now build on unstable, can likely be un-pinned (remove from stablePins in modules/flake/overlays.nix):"
+          printf '  - %s\n' "''${candidates[@]}"
+          exit 1
+        fi
+        echo "No un-pin candidates; all checked pins are still needed."
+      '';
+
       masterCfg = pkgs.writeText "master.cfg" ''
         from buildbot.plugins import *
+        from buildbot.process.results import SUCCESS, WARNINGS
 
         c = BuildmasterConfig = {}
 
@@ -243,7 +279,20 @@
             factory=flake_update_factory,
         ))
 
-        all_builder_names = build_builder_names + ['flake-update']
+        pin_check_factory = util.BuildFactory()
+        pin_check_factory.addStep(steps.ShellCommand(
+            name='check-stable-pins',
+            command=['${checkStablePins}'],
+            decodeRC={0: SUCCESS, 1: WARNINGS},
+            timeout=7200,
+        ))
+        builders.append(util.BuilderConfig(
+            name='check-stable-pins',
+            workernames=['local-worker'],
+            factory=pin_check_factory,
+        ))
+
+        all_builder_names = build_builder_names + ['flake-update', 'check-stable-pins']
 
         c['builders'] = builders
 
@@ -258,6 +307,11 @@
                 builderNames=['flake-update'],
                 hour=3,
                 minute=0,
+            ),
+            schedulers.Periodic(
+                name='weekly-pin-check',
+                builderNames=['check-stable-pins'],
+                periodicBuildTimer=604800,
             ),
             schedulers.ForceScheduler(
                 name='force',
