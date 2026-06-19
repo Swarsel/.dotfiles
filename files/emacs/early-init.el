@@ -20,17 +20,19 @@
 
 (defun swarsel/restore-startup-settings ()
   "Restore startup-tuned variables to their regular runtime values."
-  (setq gc-cons-threshold (* 100 1024 1024)
-        gc-cons-percentage 0.1
-        jit-lock-defer-time 0.05
+  (unless (featurep 'mps)
+    (setq gc-cons-threshold (* 100 1024 1024)
+          gc-cons-percentage 0.1))
+  (setq jit-lock-defer-time 0.05
         read-process-output-max (* 1024 1024)
         file-name-handler-alist swarsel-file-name-handler-alist
         vc-handled-backends swarsel-vc-handled-backends)
   (fset 'epg-wait-for-status #'ignore))
 
-(setq gc-cons-threshold most-positive-fixnum
-      gc-cons-percentage 0.6
-      file-name-handler-alist nil
+(unless (featurep 'mps)
+  (setq gc-cons-threshold most-positive-fixnum
+        gc-cons-percentage 0.6))
+(setq file-name-handler-alist nil
       vc-handled-backends nil)
 
 (add-hook 'emacs-startup-hook #'swarsel/restore-startup-settings)

@@ -181,19 +181,20 @@ Also see `prot-window-delete-popup-frame'." command)
      ,@body
      (float-time (time-since time))))
 
-(defvar k-gc-timer
-  (run-with-idle-timer 15 t
-    (lambda ()
-      (k-time (garbage-collect)))))
+(unless (featurep 'mps)
+  (defvar k-gc-timer
+    (run-with-idle-timer 15 t
+      (lambda ()
+        (k-time (garbage-collect)))))
 
-(defun swarsel/minibuffer-setup-hook ()
-  (setq gc-cons-threshold most-positive-fixnum))
+  (defun swarsel/minibuffer-setup-hook ()
+    (setq gc-cons-threshold most-positive-fixnum))
 
-(defun swarsel/minibuffer-exit-hook ()
-  (setq gc-cons-threshold (* 100 1024 1024)))
+  (defun swarsel/minibuffer-exit-hook ()
+    (setq gc-cons-threshold (* 100 1024 1024)))
 
-(add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
-(add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook)
+  (add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
+  (add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook))
 
 (setq ispell-alternate-dictionary (getenv "WORDLIST"))
 
