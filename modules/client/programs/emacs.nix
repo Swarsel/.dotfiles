@@ -72,6 +72,11 @@
             '';
         };
 
+        home.file = {
+          ".emacs.d/early-init.el".text = lib.mkBefore ";;; early-init.el --- -*- lexical-binding: t; -*-\n";
+          ".emacs.d/init.el".text = lib.mkBefore ";;; init.el --- -*- lexical-binding: t; -*-\n";
+        };
+
         programs.emacs = {
           enable = true;
           package = pkgs.emacs-igc-pgtk;

@@ -14660,6 +14660,11 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
               '';
           };
 
+          home.file = {
+            ".emacs.d/early-init.el".text = lib.mkBefore ";;; early-init.el --- -*- lexical-binding: t; -*-\n";
+            ".emacs.d/init.el".text = lib.mkBefore ";;; init.el --- -*- lexical-binding: t; -*-\n";
+          };
+
           programs.emacs = {
             enable = true;
             package = pkgs.emacs-igc-pgtk;
@@ -37109,7 +37114,7 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
              (js . t)
              (shell . t)))
 
-          (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+          (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch)
           (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
           (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
           (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
