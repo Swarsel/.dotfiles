@@ -105,6 +105,27 @@
         '';
       };
 
+      consult-dir = {
+        enable = true;
+        after = [ "consult" ];
+        bind = {
+          "C-x C-d" = "consult-dir";
+        };
+        bindLocal.minibuffer-local-map = {
+          "C-x C-d" = "consult-dir";
+          "C-x C-j" = "consult-dir-jump-file";
+        };
+      };
+
+      consult-eglot = {
+        enable = true;
+        after = [ "consult" "eglot" ];
+        bind = {
+          "C-c s" = "consult-eglot-symbols";
+        };
+      };
+
+
       embark-consult = {
         enable = true;
         after = [ "embark" "consult" ];

@@ -20,14 +20,15 @@
           hook = [ "((python-mode python-ts-mode c-mode c-ts-mode c++-mode c++-ts-mode go-mode go-ts-mode tex-mode LaTeX-mode) . swarsel/eglot-ensure-and-format)" ];
           init = ''
             (defun swarsel/eglot-ensure-and-format ()
-              "Ensure eglot is running and enable format-on-save for current buffer."
-              (eglot-ensure)
-              (add-hook 'before-save-hook #'eglot-format nil 'local))
+                "Ensure eglot is running and enable format-on-save for current buffer."
+                (eglot-ensure)
+                (add-hook 'before-save-hook #'eglot-format nil 'local))
 
-            (defalias 'start-lsp-server #'eglot)
+              (defalias 'start-lsp-server #'eglot)
           '';
           custom = {
             eldoc-echo-area-use-multiline-p = false;
+            eldoc-echo-area-prefer-doc-buffer = true;
             eglot-events-buffer-size = 0;
             eglot-sync-connect = false;
             eglot-connect-timeout = false;
@@ -40,6 +41,12 @@
             "M-(" = "flymake-goto-next-error";
             "C-c ," = "eglot-code-actions";
           };
+        };
+
+        eldoc-box = {
+          enable = true;
+          after = [ "eglot" ];
+          hook = [ "(eglot-managed-mode . eldoc-box-hover-at-point-mode)" ];
         };
 
         eglot-booster = {

@@ -26,7 +26,7 @@
 
 This literate configuration file holds the entirety of all configuration for both NixOS PCs and servers as well as home-manager only systems across all machines that I currently use. It also holds an extensive Emacs configuration. I use this project to manage my entire home + cloud infrastructure
 
-This configuration is part of a NixOS system that is for the most part fully declarative (execpt for the steps outlined in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]) and can be found here:
+This configuration is part of a NixOS system that is for the most part fully declarative (except for the steps outlined in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]) and can be found here:
 
 - [[https://github.com/Swarsel/.dotfiles][Swarsel/.dotfiles on GitHub]]
 
@@ -43,13 +43,13 @@ The literate configuration approach lets me explain my choices to my future self
 
 This project manages my entire IT infrastructure. In particular:
 
-- A mailserver ([[#h:81bc8746-b46b-4d29-87de-ddbd77788b43][Eagleland (Hetzner)]])
+- A mail server ([[#h:81bc8746-b46b-4d29-87de-ddbd77788b43][Eagleland (Hetzner)]])
 - My home router ([[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]) and its MicroVMs
-- Two homeservers ([[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]], [[#h:932ef6b0-4c14-4200-8e3f-2e208e748746][Winters (Server: ASRock J4105-ITX)]] and their respective MicroVMs) and one cloud server ([[#h:f547ed16-5e6e-4744-9e33-af090e0a175b][Moonside (OCI)]]) that are using other services defined in [[#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9][Services]] (a list can be found in [[#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9][Services]])
-- Two servers (the cloud host [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]] and one microvm [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][Nginx]] hosted on [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]) that proxy requests to those services
-- A NixOS hydra buildfarm ([[#h:90457194-6b97-4cd6-90bc-4f42d0d69f51][Belchsfactory (OCI)]]) with binary caching that helps me build derivations faster and cache them for reuse
+- Two home servers ([[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]], [[#h:932ef6b0-4c14-4200-8e3f-2e208e748746][Winters (Server: ASRock J4105-ITX)]] and their respective MicroVMs) and one cloud server ([[#h:f547ed16-5e6e-4744-9e33-af090e0a175b][Moonside (OCI)]]) that are using other services defined in [[#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9][Services]] (a list can be found in [[#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9][Services]])
+- Two servers (the cloud host [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]] and one MicroVM [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][Nginx]] hosted on [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]) that proxy requests to those services
+- A NixOS hydra build farm ([[#h:90457194-6b97-4cd6-90bc-4f42d0d69f51][Belchsfactory (OCI)]]) with binary caching that helps me build derivations faster and cache them for reuse
 - An authoritative DNS server ([[#h:1888ded8-69dc-431f-bb39-5089a8e8b1f4][Stoicclub (OCI)]]) that pushes records to both Hetzner and Hurricane Electric DNS
-- An SSH bastion ([[#h:a6baab45-b608-4289-bc92-4454bb0856c6][Liliputsteps (OCI)]]) that gatekeeps access to all cloud hosts
+- An SSH bastion ([[#h:a6baab45-b608-4289-bc92-4454bb0856c6][Liliputsteps (OCI)]]) that gate-keeps access to all cloud hosts
 - My work laptop ([[#h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9][pyramid (Framework Laptop 16)]]) and my personal laptop ([[#h:a320569e-7bf0-4552-9039-b2a8e0939a12][Bakery (Lenovo ThinkPad)]])
 - My work workstation ([[#h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0][Treehouse (DGX Spark)]])
 - My phone ([[#h:729af373-37e7-4379-9a3d-b09792219415][Magicant (Phone)]])
@@ -96,7 +96,7 @@ Now, I will outline how this document is structured. I have segmented this file 
 - [[#h:ed4cd05c-0879-41c6-bc39-3f1246a96f04][Emacs]]
   This section defines my Emacs configuration. For a while, I considered to use rycee's =emacs-init= module ([[https://github.com/nix-community/nur-combined/blob/master/repos/rycee/hm-modules/emacs-init.nix]]) to manage my Emacs configuration; I have since come to the conclusion that this would be a bad idea: at the moment, even though it might seem as I am very bound to the configuration file that you are currently reading, if I ever decide to change how I run my system, I can simply take the generated =.nix= and =.el= files and put them wherever I need them. This file only simplifies that generation without putting further restrictions on my. If I were however to switch to =emacs-init= then I would be indeed to some level confined to the nix ecosystem with my Emacs configuration, as I would no longer have a valid =.org= file to manage it with, instead generating an =init.el= directly from nix code. I like to keep that level of freedom for potential future use. Also, you will notice there is no package system setup in this configuration. This is because packages are automatically handled on the NixOS side by parsing the generated =init.el= file for package installs.
 
-[[#h:fa377c74-36e5-4aea-bc39-4d3def4b67d1][nix build]]  My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: {{{revision-date}}})
+[[#h:fa377c74-36e5-4aea-bc39-4d3def4b67d1][nix build]]  My Emacs is built using the =emacs-overlay= nix flake, which builds a bleeding edge Emacs on Wayland (=pgtk=) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: {{{revision-date}}})
 
 #+begin_src emacs-lisp :tangle no :exports both
 
@@ -115,7 +115,7 @@ This file is not loaded by Emacs directly as the configuration (even though this
 - =init.el=
   This file handles the rest of the Emacs configuration.
 
-By using the configuration offered by this file, the file you are reading right now (=SwarselSystems.org=) will not be freshly tangled on every file save, as this slows down emacs over time. However, when you clone this configuration yourself and have not yet activated it, you need to tangle the file yourself. This can be done using the general keybind =C-c C-v t= or my personal chord =C-SPC o t=. Alternatively, execute the following block:
+By using the configuration offered by this file, the file you are reading right now (=SwarselSystems.org=) will not be freshly tangled on every file save, as this slows down Emacs over time. However, when you clone this configuration yourself and have not yet activated it, you need to tangle the file yourself. This can be done using the general keybinding =C-c C-v t= or my personal chord =C-SPC o t=. Alternatively, execute the following block:
 
 #+begin_src emacs-lisp :tangle no :export code :results silent
 
@@ -130,7 +130,7 @@ This section holds code that can be templated by other parts of the configuratio
 
 These blocks were used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section used need to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS.
 
-Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains. For example, the above problem can be solved by defining a =theme= attribute set and using =lib.recursiveUpdate= as shown in [[#h:79f7150f-b162-4f57-abdf-07f40dffd932][Shared Configuration Options (holds firefox & stylix config parts)]] and [[#h:a92318cd-413e-4e78-a478-e63b09df019c][Theme (stylix)]]. Nowadays I use this mostly for some meta information in this file, e.g. for definining the [[#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32][Programs]], [[#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9][Services]] and [[#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02][Hosts]] blocks only once. I also use it to merge the [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]].
+Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains. For example, the above problem can be solved by defining a =theme= attribute set and using =lib.recursiveUpdate= as shown in [[#h:79f7150f-b162-4f57-abdf-07f40dffd932][Shared Configuration Options (holds firefox & stylix config parts)]] and [[#h:a92318cd-413e-4e78-a478-e63b09df019c][Theme (stylix)]]. Nowadays I use this mostly for some meta information in this file, e.g. for defining the [[#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32][Programs]], [[#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9][Services]] and [[#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02][Hosts]] blocks only once. I also use it to merge the [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]].
 
 As such, this served to reduce code duplication in this file. The tangled files experienced no size reduction, since noweb-ref only substitutes these blocks in.
 
@@ -160,20 +160,20 @@ and is finally parsed as:
 #+end_src
 
 
-Note that noweb-reffed blocks will not always be indented correctly. You will want to account for that when checking your nix flake with the formatter of your choice. Personally, I have solved this issue using the functions defined in [[#h:99544398-72af-4382-b8e1-01b2221baff4][org-mode: Upon-save actions (Auto-tangle, export to html, formatting)]]. Originally, I also automatically exported to html there, but it incurred a too high memory penalty which made Emacs become sluggish over time - instead I now build the website version whenever I push to GitHub.
+Note that noweb-reffed blocks will not always be indented correctly. You will want to account for that when checking your nix flake with the formatter of your choice. Personally, I have solved this issue using the functions defined in [[#h:99544398-72af-4382-b8e1-01b2221baff4][org-mode: Upon-save actions (Auto-tangle, export to html, formatting)]]. Originally, I also automatically exported to HTML there, but it incurred a too high memory penalty which made Emacs become sluggish over time - instead I now build the website version whenever I push to GitHub.
 
 - [[#h:8fc9f66a-7412-4091-8dee-a06f897baf67][Appendix B: Supplementary Files]]
   This section holds files that are not written in nix but are still referenced in the configuration in some way. This is mostly used for configuration of programs that have no native nix support, like tridactyl, as well as "meta" files like the [[#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec][GitHub Readme]] or the [[#h:abed312c-5bf7-43f5-b0d0-43cce513ccb9][GitHub Workflow: Build-and-deploy]]. Note that shell scripts are still defined under their respective entry in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. Over time, the goal is to reduce this section to a minimum, but things like the aforementioned tridactyl might stay for a long time, until we have a stable nix interface to configure browser plugins.
 
 - [[#h:8ea35dcc-ef94-4c10-9112-8be8efd6f424][Appendix C: Explanations to nix functions and operators]]
-  When I started to learn about nix, I found that journey quite arduous; while I disagree with the general public in that the documentation is too sparse, I will say that, while it is very good, reading (and understanding!) it requires a certain level of existing nix knowledge that one will problably not have when starging out. Hence, the goal of this document is to explain common nix functions as they come up in this document (I thing I wrote this before :sweat:), in hopes that you will be able to understand most of the code. When a new function appears for the first time, I will try to link to an entry in the appendix.
+  When I started to learn about nix, I found that journey quite arduous; while I disagree with the general public in that the documentation is too sparse, I will say that, while it is very good, reading (and understanding!) it requires a certain level of existing nix knowledge that one will probably not have when starting out. Hence, the goal of this document is to explain common nix functions as they come up in this document (I thing I wrote this before :sweat:), in hopes that you will be able to understand most of the code. When a new function appears for the first time, I will try to link to an entry in the appendix.
 
 *** HTML version of this document
 :PROPERTIES:
 :CUSTOM_ID: h:12880c64-229c-4063-9eea-387a97490676
 :END:
 
-I will also quickly talk about the webpage that (I hope) you are currently viewing works:
+I will also quickly talk about the web page that (I hope) you are currently viewing works:
 
 The =.html= version of this page is built by a GitHub workflow; it can also be generated manually by calling the chord =C-SPC o e=, or by executing the below block
 
@@ -188,7 +188,7 @@ The web version is useful because it allows navigation using org-mode links, whi
 - Functionality to save links to certain headers in a "Pinned" menu that can be toggled
 - These links are locally saved
 
-I add a javascript bit to the file in order to have a darkmode toggle when exporting to html (defined in [[#h:cf6a12cf-929b-4080-9945-e6f02afc7990][HTML Export: Darkmode toggle]]). NOTE: What I am doing is defining an elisp multiline string which gives me heredoc capabilities for defining blocks that should be both exported to the final =.html= but should also be shown in the document itself (only putting a =#+[begin/end]_export= block would not show the block in the content of the page) which is then output as html and exported to both.
+I add a JavaScript bit to the file in order to have a dark mode toggle when exporting to HTML (defined in [[#h:cf6a12cf-929b-4080-9945-e6f02afc7990][HTML Export: Darkmode toggle]]). NOTE: What I am doing is defining an elisp multi-line string which gives me HereDoc capabilities for defining blocks that should be both exported to the final =.html= but should also be shown in the document itself (only putting a =#+[begin/end]_export= block would not show the block in the content of the page) which is then output as HTML and exported to both.
 
 #+begin_src elisp :tangle no :noweb yes :exports both :results html
   "
@@ -197,7 +197,7 @@ I add a javascript bit to the file in order to have a darkmode toggle when expor
 #+end_src
 
 
-I also add this javascript to add header pinning functionality to the site, using the same trick as above (this is defined in [[#h:e5f900a0-9d68-4269-a663-53c52434c342][HTML Export: Docs QoL]]):
+I also add this JavaScript to add header pinning functionality to the site, using the same trick as above (this is defined in [[#h:e5f900a0-9d68-4269-a663-53c52434c342][HTML Export: Docs QoL]]):
 
 #+begin_src elisp :tangle no :noweb yes :exports both :results html
   "
@@ -216,14 +216,14 @@ I also add this javascript to add header pinning functionality to the site, usin
 The structure of this flake as seen many revisions, however lately I have settled on a system that I have grown to like:
 
   - =hosts=: This folder is used to house all configurations that are used across the infrastructure. At the top level, it splits into the subfolders =nixos=, =home=, =darwin=, and =android=. These folders specify the mode that the configuration is running in:
-    - nixos: Full NixOS host (may or may not also use home-manager)
-    - darwin: Host that uses NixOS on MacOS (may or may not use home-manager)
+    - NixOS: Full NixOS host (may or may not also use home-manager)
+    - Darwin: Host that uses NixOS on MacOS (may or may not use home-manager)
     - home: Host that uses only home-manager (no full NixOS)
     - android: Phone using nix-on-droid (may or may not use home-manager)
 
-  The corresponding configurations are automatically generated by =mkNixosHost=, =mkDarwinHost= and =mkHalfHost=. A "full" host is either in the nixos or darwin folder, while a "half" host is in either of home or android. This has to do with the scheme in which these configurations are generated.
+  The corresponding configurations are automatically generated by =mkNixosHost=, =mkDarwinHost= and =mkHalfHost=. A "full" host is either in the NixOS or Darwin folder, while a "half" host is in either of home or android. This has to do with the scheme in which these configurations are generated.
 
-  These <hosttype> folders hold on the first level a folder describing the machine archetype (=x86_64-linux= or =aarch64-linux= for linux, =x86_64-darwin= or =aarch64-darwin= for macs). Those folders then hold a number of <hostname> folders, the actual configurations. At this time, the files stored in this folder are:
+  These <host type> folders hold on the first level a folder describing the machine archetype (=x86_64-linux= or =aarch64-linux= for Linux, =x86_64-darwin= or =aarch64-darwin= for macs). Those folders then hold a number of <hostname> folders, the actual configurations. At this time, the files stored in this folder are:
     - default.nix:
       This file holds the abstracted configuration of the host. This should mostly be enabling [[#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc][Profiles]] as well as setting some [[#h:79f7150f-b162-4f57-abdf-07f40dffd932][Configuration options]].
     - hardware-config.nix:
@@ -231,7 +231,7 @@ The structure of this flake as seen many revisions, however lately I have settle
     - disk-config.nix
       Holds the aforementioned filesystem configuration and is applied using [[https://github.com/nix-community/disko][disko]].
 
-    - The hosts/<hosttype>/<hostname> folders may also have a =secrets= folder, under which files of the ending =.nix.enc= may be stored. As the name suggests, these files should be encrypted. Specifically, they need to be [[https://github.com/getsops/sops][sops]]-encrypted files (sops does not seem to suggest a file ending other than .yml or others, which is not verbose enough for me, so I went with =.enc=).  This should have the structure of a nix expression, e.g.:
+    - The hosts/<host type>/<hostname> folders may also have a =secrets= folder, under which files of the ending =.nix.enc= may be stored. As the name suggests, these files should be encrypted. Specifically, they need to be [[https://github.com/getsops/sops][sops]]-encrypted files (sops does not seem to suggest a file ending other than =.yml= or others, which is not verbose enough for me, so I went with =.enc=).  This should have the structure of a nix expression, e.g.:
 
   #+begin_src nix-ts :tangle no
     {
@@ -256,21 +256,21 @@ It is also possible to pass it as a function:
 
       Using the mechanisms in [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]] (which in turn uses [[#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e][extra-builtins]] and [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]]), these files are decrypted during evaluation time and stored under a persistent directory. As the name suggests, I am using these files to store personally identifiable information - these "secrets" are stored world-readable in the nix store. As such, this should not be used to store important secrets, but rather information that you would not like everyone on the internet to easily find in your git repo.
 
-      Other than that, the =secrets= folder will also be used to store conventional (decryted at activation-time) sops-encrypted secrets in the standard =.yaml= / =.toml= / =.ini= formats.
-      - a host might have a =guests/= subdirectory. That is telling of that host acting as a microvm hypervisor. Each microvm has it's own secret directory under the =secrets/= directory of the root host directory. Here is a rough outline on how to add a new microvm to a host:
+      Other than that, the =secrets= folder will also be used to store conventional (decrypted at activation-time) sops-encrypted secrets in the standard =.yaml= / =.toml= / =.ini= formats.
+      - a host might have a =guests/= subdirectory. That is telling of that host acting as a MicroVM hypervisor. Each MicroVM has it's own secret directory under the =secrets/= directory of the root host directory. Here is a rough outline on how to add a new MicroVM to a host:
         1) update =secrets/repo/globals.nix.enc=, adding interface information to the new host (virtual MAC address as well as WireGuard interfaces mostly)
         2) add a new entry under =guests= in the hypervisors main configuration
         3) add a guest =default.nix= in =guests/<guestName>=
-        4) Add an entry to  =tofu/sops/terraform.tfvars=, using =placeholder= as the age key; add it to the main guests and to the hypervisor guests. Also, If the guest makes use of e.g. kanidm or is in a wireguard connection, add those as well to =tofu/sops/terraform.tfvars=
+        4) Add an entry to  =tofu/sops/terraform.tfvars=, using =placeholder= as the age key; add it to the main guests and to the hypervisor guests. Also, If the guest makes use of e.g. kanidm or is in a WireGuard connection, add those as well to =tofu/sops/terraform.tfvars=
         5) apply the tofu config
-        6) create the secrets.yaml file at =secrets/<guestName>=, using any secret just so that the file is created
+        6) create the =secrets.yaml= file at =secrets/<guestName>=, using any secret just so that the file is created
         6) Now rebuild once so that the host gets created and its ssh hostkey deployed
         7) Add the age key to =tofu/sops/terraform.tfvars=
         8) apply the tofu config
         9) =just updatekeys=
-        9) update the guests' =secrets.yaml= with the wireguard private key
+        9) update the guests' =secrets.yaml= with the WireGuard private key
         10) update secrets in =secrets/wireguard= / =secrets/kanidm= / whatever needed
-        11) add microvm name to peers of wgHome / wgProxy in the respective main host config
+        11) add MicroVM name to peers of =wgHome= / =wgProxy= in the respective main host config
         12) add WireGuard public key to =secrets/public/wg=
         13) rebuild the hypervisor
 
@@ -290,12 +290,12 @@ It is also possible to pass it as a function:
     - profiles: sets of aspects that can be imported as a collection by hosts
     - common: features that are used by (mostly) all hosts
 
-        This structure is very optionated and highly subjective. I will possibly change this in the future.
+        This structure is very opinionated and highly subjective. I will possibly change this in the future.
 
-  - =pkgs=: This folder holds derivations (mostly packages) that I define myself. This is mostly used to grab versions that are not (yet) in nixpkgs, or modified versions of another package. Each derivation in this folder is in turn in its own folder which holds a defautlt.nix. Using the mechanism in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]], these are automatically built and available to all configurations (packages still need to be installed e.g. in =environment.systemPackages=). Note that the folder at the top level splits up in =config= and =flake= subdirectories:
-    - The =config= dir is used for packages that need the actual config of the machine where they run in order to be built. These packages cannot simply be released as a flake output (or better, it would not make a lot of sense). Instead, these are added within the configuration as an overlay
+  - =pkgs=: This folder holds derivations (mostly packages) that I define myself. This is mostly used to grab versions that are not (yet) in nixpkgs, or modified versions of another package. Each derivation in this folder is in turn in its own folder which holds a default.nix. Using the mechanism in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]], these are automatically built and available to all configurations (packages still need to be installed e.g. in =environment.systemPackages=). Note that the folder at the top level splits up in =config= and =flake= subdirectories:
+    - The =config= directory is used for packages that need the actual config of the machine where they run in order to be built. These packages cannot simply be released as a flake output (or better, it would not make a lot of sense). Instead, these are added within the configuration as an overlay
 
-    - The =flake= dir is used for the conventional packages that I described above.
+    - The =flake= directory is used for the conventional packages that I described above.
 
   - =files=: This is kind of a catchall folder that holds (nearly) all non-nix files. It mostly holds blocks created in [[#h:8fc9f66a-7412-4091-8dee-a06f897baf67][Appendix B: Supplementary Files]], but also some more specific directories:
     - =wallpaper=: Holds my wallpapers and profile pictures :)
@@ -303,12 +303,12 @@ It is also possible to pass it as a function:
 
   - =secrets=: Unlike the similar folder under =hosts=, this folder holds sops-encrypted secrets and PIIs that are used by a number of hosts that is greater than one.
 
-  - =install=: This folder holds another [[#h:1d4514b4-e952-4faf-b30e-d89e73a526c6][Installer flake]]. That flake pulls in the =nixosConfigurationsMinimal= that are defined in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]] of the main flake, which enables me to build an extemely reduced configuration when I deploy a new host for the first time - this is used by [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] in the first installation step. It also holds the configuration of the two installer images that I use to deploy this flake:
+  - =install=: This folder holds another [[#h:1d4514b4-e952-4faf-b30e-d89e73a526c6][Installer flake]]. That flake pulls in the =nixosConfigurationsMinimal= that are defined in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]] of the main flake, which enables me to build an extremely reduced configuration when I deploy a new host for the first time - this is used by [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] in the first installation step. It also holds the configuration of the two installer images that I use to deploy this flake:
     - [[#h:8583371d-5d47-468b-84ba-210aad7e2c90][Drugstore (ISO installer config)]]: This is the general installer ISO that I use whenever I can when I want to deploy a new host. It has a few conveniences like some of my utility programs for figuring out some dependencies or network quirks, as well as my public ssh keys so that I can immediately login to them.
 
-    - [[#h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9][Brick Road (kexec image)]]: This is a kexec tarball that can be used by [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] in case that I need to deploy to a machine that has less than 1GB of RAM. It is basically just an even more stripped down version of the detault one used by nixos-anywhere, but notably I added cryptsetup so that it can be used when setting up an encrypted device using disko.
+    - [[#h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9][Brick Road (kexec image)]]: This is a kexec tarball that can be used by [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] in case that I need to deploy to a machine that has less than 1GB of RAM. It is basically just an even more stripped down version of the default one used by =nixos-anywhere=, but notably I added =cryptsetup= so that it can be used when setting up an encrypted device using =disko=.
 
-  - =.github=: Canonically, this holds github related files like the [[#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec][GitHub Readme]] and some workflows.
+  - =.github=: Canonically, this holds GitHub related files like the [[#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec][GitHub Readme]] and some workflows.
 
 ** Hosts
 :PROPERTIES:
@@ -434,7 +434,7 @@ First off, when talking about nix, we need to differentiate between several thin
 
 - The [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]]
 - The [[#h:f4fa6a46-e016-48f8-9ead-608b739c706a][nix package manager]]
-- The linux distribution [[#h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef][NixOS]]
+- The Linux distribution [[#h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef][NixOS]]
 - the =nix-community= input [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]]
 
 While these terms are all connected with each other, it is important to keep in mind that fundamentally those are separate entities. Let us briefly talk about each one:
@@ -464,7 +464,7 @@ The main purpose of the nix language is to build packages. These packages are bu
 
 This function along with all its inputs we call a =derivation=. What is important to realize is that such a derivation can itself depend on other derivations, and the resulting package does not necessarily need to be a callable program (a more correct name for the function result is =outputs=). When we as nix users define a package, we will usually use a function called =pkgs.stdenv.mkDerivation= (ore one of its derived wrappers like =buildRustPackage=; for now, it is not important what these do exactly), which will run things like install phases and setup hooks for us. It is a wrapper around nix function ~derivation(name, system, builder, args=[],outputs=["out"])~, where =name= is the derivation name, =system= is the system architecture to build for, =builder= is the executable responsible for building the result, =args= are arbitrary arguments passed to =builder=, and =outputs=, which can be thought of a list of locations where we want to put different build artifacts that can be referenced separately when using the package. There are [[https://nix.dev/manual/nix/2.28/language/advanced-attributes][more attributes]], but these five are the most important and commonly used ones.
 
-Building a package (in nix terms: "realising") from a derivation causes the package to be created in the =nix store=. This is a read-only filesystem that is usually located at =/nix/store=. When building a package, nix will place its content of each output at =/nix/store/<hash>-<package name>-<package version>-<output name if not 'out'>/=, where =<hash>= is a unique identifier that changes whenever one of the inputs to the above function changes. That means that it is no problem to store different versions of the same file on one system, and each program can use the correct dependencies that it needs.
+Building a package (in nix terms: "realizing") from a derivation causes the package to be created in the =nix store=. This is a read-only filesystem that is usually located at =/nix/store=. When building a package, nix will place its content of each output at =/nix/store/<hash>-<package name>-<package version>-<output name if not 'out'>/=, where =<hash>= is a unique identifier that changes whenever one of the inputs to the above function changes. That means that it is no problem to store different versions of the same file on one system, and each program can use the correct dependencies that it needs.
 
 A key observation that follows from this is that packages are declarative and reproducible; when not changing the inputs, a derivation will always yield the same package with the same store path.
 
@@ -523,8 +523,8 @@ The nix language supports the following types and how they look in the wild:
       - Backslash: =\= (escape using =\\=)
       - Double quote: ="= (using =\"=)
       - Opening of nix expression: =${= (using =\${=)
-  - in multiline strings, you escape stuff using one or two apostrophes ='=
-    - the following characters need to be escaped in multline strings:
+  - in multi-line strings, you escape stuff using one or two apostrophes ='=
+    - the following characters need to be escaped in multi-line strings:
       - Two apostrophes are escaped with a single apostrophe: =''= (escape with ='''=)
       - All other things are escaped using =''=:
         - Dollar sign: =$= (escape with =''$=)
@@ -545,7 +545,7 @@ The nix language supports the following types and how they look in the wild:
   - functions: =arg: body=
     - =arg= can be any of these data types, including functions
       - when =arg= is an attribute set, some special things apply:
-        - default values can be specified using =arg ? defaultValue=, e.g. ={ name ? "Default", age }: "${name} is ${age} years old"= will yield ="X is 20 years old"= when called using the attribute set ={ name = "X"; age = "20"; }=. Otherwise it will yield "Default is 20 years old" when called using ={ age = "20"; }=. When not passing =age= in this example, it will throw an error (also not that we had to pass =age= as a string as the value is not cast to a string automatically. Alternatively, we could have passed =age = 20;= and updated the function body to ="${name} is ${builtins.toString age} years old"=. But that is just a sidenote)
+        - default values can be specified using =arg ? defaultValue=, e.g. ={ name ? "Default", age }: "${name} is ${age} years old"= will yield ="X is 20 years old"= when called using the attribute set ={ name = "X"; age = "20"; }=. Otherwise it will yield "Default is 20 years old" when called using ={ age = "20"; }=. When not passing =age= in this example, it will throw an error (also not that we had to pass =age= as a string as the value is not cast to a string automatically. Alternatively, we could have passed =age = 20;= and updated the function body to ="${name} is ${builtins.toString age} years old"=. But that is just a side note)
 
 Let's see this in action:
 
@@ -587,7 +587,7 @@ error:
              |                                            ^
 #+end_example
 
-- the evaluator will error out if it is called with an argument that is not explicitely mentioned in the function definition. Passing a superfluous =another= errors out:
+- the evaluator will error out if it is called with an argument that is not explicitly mentioned in the function definition. Passing a superfluous =another= errors out:
 
 #+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
@@ -607,7 +607,7 @@ error:
              |                                            ^
              #+end_example
 
-- this behaviour can be suppressed by adding an ellipsis =...= to the function arguments (={ name ? "Default", age, ... }:=). Adding this ellipsis =...= to the function definition, we can now pass =another=:
+- this behavior can be suppressed by adding an ellipsis =...= to the function arguments (={ name ? "Default", age, ... }:=). Adding this ellipsis =...= to the function definition, we can now pass =another=:
 
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate 'let f = {name ? "Default", age, ... }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
@@ -636,7 +636,7 @@ Note that it is equivalent to write ={} @ extra=:
 #+RESULTS:
 : Nyx likes nix
 
-This looks cumberesome on first sight, but is for example useful when referencing flake inputs in the flake outputs, as it allows you to forego listing them all in the arguments (which can be a very long list!). More on that later.
+This looks cumbersome on first sight, but is for example useful when referencing flake inputs in the flake outputs, as it allows you to forego listing them all in the arguments (which can be a very long list!). More on that later.
 
 **** Language features
 :PROPERTIES:
@@ -721,7 +721,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
 #+RESULTS:
 : ok
 
-  - generally, the values of the variable in the innermmost scope is given precedence in evaluation:
+  - generally, the values of the variable in the innermost scope is given precedence in evaluation:
 
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate '
@@ -752,7 +752,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
 - you can copy variables from an outer scope by using =inherit (<outer scope>) <name>;=
   - This is syntactic sugar to achieve the same as =<name> = <outer scope>.<name>;=
 - when not in a string, we can place parentheses around a nix expression to provide its return value to other expressions (remember the =builtins.toString (-1)= example from before. =-1= is indeed a nix expression.)
-- you can write inline comments using =#= and multiline comments using =/* ... */=
+- you can write inline comments using =#= and multi-line comments using =/* ... */=
 - The following words are reserved keywords and cannot be used for variable names: =assert=, =else=, =if=, =in= =inherit=, =let=, =or=, =rec=, =then=, =with=
 
 **** Operators
@@ -761,7 +761,7 @@ This looks cumberesome on first sight, but is for example useful when referencin
 :END:
   The following operators work as you know them from most other programming languages:
     - Any operator involving numbers (=+=, =-=, =*=, =/=)
-      /Sidenote:/ When negating a number in actual nix code you will need to wrap it in parentheses nearly every time due to function evaluation:
+      /Side note:/ When negating a number in actual nix code you will need to wrap it in parentheses nearly every time due to function evaluation:
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate '
     builtins.toString (-1)
@@ -800,7 +800,7 @@ error:
   The following operators are nix specific:
     - Concatenations can be done between strings and paths (in any order) using =+=
     - List Concatenations however use the =++= operator
-    - you can use the =?= operator on an attribue set to check whether it has an attribute:
+    - you can use the =?= operator on an attribute set to check whether it has an attribute:
 
 #+begin_src bash :tangle no :exports both
   swarsel-instantiate '
@@ -845,7 +845,7 @@ A directory becomes a flake as soon as it contains a file called =flake.nix=, wh
     }
 #+end_src
 
-What is very nice about flakes is that each flake generates a corresponding =flake.lock= file the first time a nix command is called targetting it. This file exactly specifies at which revision every flake input should be pulled in. This makes flakes very nice for declaratively setting up development environments that can then be committed to a project; this enables collaborators to do [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]] which will setup a reproducible environment, which is the same for every developer.
+What is very nice about flakes is that each flake generates a corresponding =flake.lock= file the first time a nix command is called targeting it. This file exactly specifies at which revision every flake input should be pulled in. This makes flakes very nice for declaratively setting up development environments that can then be committed to a project; this enables collaborators to do [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]] which will setup a reproducible environment, which is the same for every developer.
 
 That was a very dry introduction. Now, what we are usually interested in when pulling in a flake is any of the following:
 
@@ -877,7 +877,7 @@ Flakes are, as of writing, an experimental feature in nix, although their interf
 
 This approach simply imports a chunk of nix code that is fetched using =fetchTarball= - and the version is pinned by the git revision. However, imagine a bigger project; even if you were to import every input like this and pass the expressions to the modules that need them, updating the inputs manually would be a chore. And even though projects like [[https://github.com/nmattia/niv][niv]] and [[https://github.com/andir/npins][npins]] exist(/ed) to help with these problems, flakes provide a uniform interface and are reasonably easy to work with, and provide a lot more other stuff on the side.
 
-That being said, some people decide to work without flakes. Depending on the reasoning, I think this is totally fair (as really for the code itself they dont automatically provide a lot of extra functionality that cannot be achieved with other tools). However, some people dismiss flakes for the only reason being "they are too complex" with really is not at all true (which is what I hope to prove to you soon!). A simple project devshell for example could very reasonably be built only from the =fetchTarball= construct I showed above.
+That being said, some people decide to work without flakes. Depending on the reasoning, I think this is totally fair (as really for the code itself they don't automatically provide a lot of extra functionality that cannot be achieved with other tools). However, some people dismiss flakes for the only reason being "they are too complex" with really is not at all true (which is what I hope to prove to you soon!). A simple project devshell for example could very reasonably be built only from the =fetchTarball= construct I showed above.
 
 ****** Channels
 :PROPERTIES:
@@ -886,7 +886,7 @@ That being said, some people decide to work without flakes. Depending on the rea
 
 Finally and for completeness sake, a historical note on nix channels.
 
-Nix channels are one of the official mechanisms to provide package sources. They are managed manually through the cli. A channel would be given a name (like =nixpkgs=) which could then in nix code be referenced for example like:
+Nix channels are one of the official mechanisms to provide package sources. They are managed manually through the CLI. A channel would be given a name (like =nixpkgs=) which could then in nix code be referenced for example like:
 
 #+begin_src nix-ts :tangle no
   { pkgs ? import <nixpkgs> {} }: ...
@@ -894,7 +894,7 @@ Nix channels are one of the official mechanisms to provide package sources. They
 
 Really, this leaves it up to the caller to decide what =nixpkgs= really is, along with a few other considerations that I do not want to get into. This chapter is intentionally left short; I just want you to know how the pattern above (the =<nixpkgs>=) looks so that you know what you are working with if you encounter it in the wild.
 
-Channels are not a great tool for reproducability and I would advise against using them if possible.
+Channels are not a great tool for reproducibility and I would advise against using them if possible.
 
 ***** Flake arguments
 :PROPERTIES:
@@ -928,13 +928,13 @@ As we already learned, a flake must provide an attribute called =outputs= (whate
 #+end_src
 
 This is a surprisingly real-world example from my [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix]] (I used this snippet in the past) that we can use so explain most of the important =inputs= options:
-- the most important attribute is =url=. It describes where the source should be fetched from. As you can see from the =toplevel= input, you can put as an input a path on the local filesystem. Note that by default, it is expected that every input is itself a flake - meaning, a =flake.nix= exists there which will be loaded into our flake along with its dependencies. You can also see that we set this to =false= for the =nix-eval-jobs= input. This is usually done when the target project is simply not a flake. Nix will then load in the contents of the repository as a raw filetree.
+- the most important attribute is =url=. It describes where the source should be fetched from. As you can see from the =toplevel= input, you can put as an input a path on the local filesystem. Note that by default, it is expected that every input is itself a flake - meaning, a =flake.nix= exists there which will be loaded into our flake along with its dependencies. You can also see that we set this to =false= for the =nix-eval-jobs= input. This is usually done when the target project is simply not a flake. Nix will then load in the contents of the repository as a raw file tree.
 
 However, if you go and check out [[https://github.com/nix-community/nix-eval-jobs][nix-eval-jobs]] you will see that this project /does/ have a =flake.nix=, and it is also very active; so what is going on here? In this particular case, this is done to avoid pulling in the dependencies that the =nix-eval-jobs= would bring along. Instead, the files provided by it must be then made to work using what is provided in the parent flake. This is not a common pattern, but something that is good to know.
 
 Another interesting option is the =hydra.inputs.nix-eval-jobs.follows=. Let us first talk about the general interface =<input>.inputs.<dependency>=: This structure allows to customize options for the *dependency* of a flake input. For example, we could have customized the source of the =nix-eval-jobs= dependency of =hydra= had we written =hydra.inputs.nix-eval-jobs.url = ...=. The =follows= option takes a similar approach by setting an input dependency to the same version as some other input of the parent flake (in our case, it is pinned to the =nix-eval-jobs= v2.30.0 version).
 
-When we are done defining our flake inputs, we can then decide what our flake shoud actually do.
+When we are done defining our flake inputs, we can then decide what our flake should actually do.
 
 ****** Outputs
 :PROPERTIES:
@@ -969,9 +969,9 @@ With what we learned so far, you are already able to understand most of what is 
   - an attribute =outputs= is inherited from the outer scope =self=, meaning =outputs = self.outputs;= (what =self= is and why we can reference the =outputs= in the same place where we are defining them I will explain shortly)
   - the resulting attribute set holds an attribute called =nixosConfigurations= that holds an attribute called =main=, which is set by calling a function that we now do not want to get into too much.
 
-  You might (rightfully!) wonder where the =self= argument comes from. It is actually not a flake input. Instead, =self= is a special flake construct that refers to the root of the current flake, meaning all flake attributes can be accessed using =self.<attribute>=. Moreover, when using =self= as a path, it refers to the path os the current flake in the nix store. This can be used to reference files within the repository without needing relative paths (this is exactly what happenss in =self.outputs.nixosConfigurations.main.modules=: it loads in =configuration.nix=, which resides in the same directory as the =flake.nix=. We could have also written =./configuration.nix= here instead).
+  You might (rightfully!) wonder where the =self= argument comes from. It is actually not a flake input. Instead, =self= is a special flake construct that refers to the root of the current flake, meaning all flake attributes can be accessed using =self.<attribute>=. Moreover, when using =self= as a path, it refers to the path of the current flake in the nix store. This can be used to reference files within the repository without needing relative paths (this is exactly what happens in =self.outputs.nixosConfigurations.main.modules=: it loads in =configuration.nix=, which resides in the same directory as the =flake.nix=. We could have also written =./configuration.nix= here instead).
 
-  Another question might be what happens when we load in =self.outputs= while defining outputs. Normally that should not work? Remember that nix is a lazy language. When =outputs= is first created in the =let ... in= block, its value will be something along the lines of =outputs = <thunk>;=. That means, not all values are loaded upon instanciation, but only whenever they are needed. And if a value is needed, nix will then move on to compute that value.
+  Another question might be what happens when we load in =self.outputs= while defining outputs. Normally that should not work? Remember that nix is a lazy language. When =outputs= is first created in the =let ... in= block, its value will be something along the lines of =outputs = <thunk>;=. That means, not all values are loaded upon instantiation, but only whenever they are needed. And if a value is needed, nix will then move on to compute that value.
 
   Of course that does mean that we need to be careful to not introduce circular chains of dependency. Doing that would result in what is called an =infinite recursion error=, a type of error that can be very hard to wrap one's head around. Luckily, when writing a simple config, you are not very likely to encounter it in a shape that is not rather easily solved.
 
@@ -982,7 +982,7 @@ With what we learned so far, you are already able to understand most of what is 
 :CUSTOM_ID: h:680b38c1-14de-4892-8840-2c82accd6827
 :END:
 
-I will now list output names and explain what they to; some outputs are what I call "system-scoped". That means they have toplevel attribute in the name of system architectures, e.g. =x86_64-linux=. I will mention when an output is system-scoped. This list is roughly ordered by importance to a NixOS beginner:
+I will now list output names and explain what they to; some outputs are what I call "system-scoped". That means they have top-level attribute in the name of system architectures, e.g. =x86_64-linux=. I will mention when an output is system-scoped. This list is roughly ordered by importance to a NixOS beginner:
 
 - =nixosConfigurations=: A set of NixOS host configurations
 - =devShells=: *system-scoped*. A set of devshells that can be used by calling [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]]. Defaults to the devshell called =default=.
@@ -1073,7 +1073,7 @@ However:
 #+RESULTS:
 : error: unable to execute 'hello': No such file or directory
 
-This happens because the =man= output of =cowsay= does not provide the package itself, but only its manpage. =nix run= reads your mind a little more in that case and makes it available anyways (this is because the =apps= output is tailored towards running programs):
+This happens because the =man= output of =cowsay= does not provide the package itself, but only its manpage. =nix run= reads your mind a little more in that case and makes it available anyway (this is because the =apps= output is tailored towards running programs):
 
 #+begin_src bash :tangle no :exports both :results discard :eval never-export
   nix run nixpkgs#cowsay^man -- hello
@@ -1095,7 +1095,7 @@ This happens because the =man= output of =cowsay= does not provide the package i
 :CUSTOM_ID: h:e6aeff2e-de6c-411c-ae24-77c2928e8e4f
 :END:
 
-  All you really need to know about flake registries is that they provide a shorthand to access flake [[#h:410e74cc-6fea-43cc-9d4a-3c88d6437760][References]] easily. By default, the =nixpkgs= identifier is provided when installing nix with flakes. Additional registries can however be configured (I do this in [[#h:24c9146f-2147-4fd5-bafc-d5853e15cf12][General NixOS settings (nix config, stateVersion)]]). For example, I have configured a =n= identifier that simply mirriors the =nixpkgs= identifier, which allows me to save on some typing with most nix commands:
+  All you really need to know about flake registries is that they provide a shorthand to access flake [[#h:410e74cc-6fea-43cc-9d4a-3c88d6437760][References]] easily. By default, the =nixpkgs= identifier is provided when installing nix with flakes. Additional registries can however be configured (I do this in [[#h:24c9146f-2147-4fd5-bafc-d5853e15cf12][General NixOS settings (nix config, stateVersion)]]). For example, I have configured a =n= identifier that simply mirrors the =nixpkgs= identifier, which allows me to save on some typing with most nix commands:
 
 #+begin_src bash :tangle no :exports both :results output :eval never-export
   nix run n#cowsay -- hello
@@ -1170,7 +1170,7 @@ What is often useful is to build a =nixosConfiguration= using =nix build= prior 
 :CUSTOM_ID: h:9f55f619-892e-488c-936f-43962f90cde8
 :END:
 
-This is the command that allows you to run a command directly. These apps are per default defined under the =apps= output, and that again allows to run them directly instead of specifying the full path. For example to run the [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] tool that I expore under [[#h:52e1fae8-0e8c-4be6-a6ce-758ada652dd3][Apps]]:
+This is the command that allows you to run a command directly. These apps are per default defined under the =apps= output, and that again allows to run them directly instead of specifying the full path. For example to run the [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] tool that I explore under [[#h:52e1fae8-0e8c-4be6-a6ce-758ada652dd3][Apps]]:
 
 
 #+begin_src bash :tangle no :exports both :results discard :eval never-export
@@ -1284,7 +1284,7 @@ This uses the formatter that is defined in the passed flakes =formatter= output 
 :CUSTOM_ID: h:092fe295-4211-4b19-a071-53b5f3061a9b
 :END:
 
-This command allows us to convert between different hasn algorithms that are used by nix. The interesting command for us is =nix hash convert=, which is used like
+This command allows us to convert between different hash algorithms that are used by nix. The interesting command for us is =nix hash convert=, which is used like
 
 #+begin_src bash :tangle no :exports both :results output
   nix hash convert --from base16 --hash-algo sha1 --to nix32 bb0d59cfdddd37f62fee1e214be3467acffe58df
@@ -1327,7 +1327,7 @@ It is also possible to only update specific inputs:
 
 #+RESULTS:
 
-To lock an input from ever updating, a nice trick is to pin it to a specific revision in the inputs' source url like I do in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton (inputs)]] for the =nixpkgs-kernelpin= input.
+To lock an input from ever updating, a nice trick is to pin it to a specific revision in the inputs' source URL like I do in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton (inputs)]] for the =nixpkgs-kernelpin= input.
 
 ****** nix flake check
 :PROPERTIES:
@@ -1362,7 +1362,7 @@ This lists all outputs of the passed flake. The default is the flake in the curr
 :CUSTOM_ID: h:a084fd59-fba1-4661-9807-cd0e06c21f2b
 :END:
 
-This initializes a new flake. Per default it chooses the simple flake that you might have seen before if you ever tried this command. After you already have your own config flake, this command is mainly useful to create a project flake from a template. If you have a flake that exposes =templates= as outputs, you can list them as showen in [[#h:54e532ec-0056-4cd1-b257-aac17ccd944b][nix flake show]] and then initialize the flake using:
+This initializes a new flake. Per default it chooses the simple flake that you might have seen before if you ever tried this command. After you already have your own config flake, this command is mainly useful to create a project flake from a template. If you have a flake that exposes =templates= as outputs, you can list them as shown in [[#h:54e532ec-0056-4cd1-b257-aac17ccd944b][nix flake show]] and then initialize the flake using:
 
 #+begin_src bash :tangle no :exports both :results discard :eval never-export
 
@@ -1376,7 +1376,7 @@ Keep in mind that you are free in choosing the flake reference.
 :CUSTOM_ID: h:f4fa6a46-e016-48f8-9ead-608b739c706a
 :END:
 
-In contrast to the [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]], there really is not much important stuff that you need to know about the nix package manager. Just keep in mind that the nix package manager is the tool that the [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]] was invented for in the first place. It aims to escape the dependancy problems that conventional package managers bring by the mechanisms that we learned about earlier.
+In contrast to the [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]], there really is not much important stuff that you need to know about the nix package manager. Just keep in mind that the nix package manager is the tool that the [[#h:b2222c7c-0bd5-44f8-aa69-17869d6913c0][nix language]] was invented for in the first place. It aims to escape the dependency problems that conventional package managers bring by the mechanisms that we learned about earlier.
 
 In practice, you should never need to install a package with the nix package manager imperatively. For things you only need once you can resort to [[#h:403a8ebd-f094-4795-aca3-60de62c77ef9][nix shell]] or [[#h:9f55f619-892e-488c-936f-43962f90cde8][nix run]] or even [[https://github.com/nix-community/comma][comma]]. Otherwise you should probably make it available in your config or in a devshell.
 
@@ -1442,7 +1442,7 @@ Other than that, we can also extend nixpkgs with packages that it does not norma
 
 This overlay will add a =newVesktop= package with a vesktop package that has the =withSystemVencord= flag set to true to nixpkgs when applied (this is due to =override= overriding the arguments of the =vesktop package=; such flags can be found by checking out the source of the package. To find that source. you can use the [[https://search.nixos.org/packages?query=][nix package search]] to search for a package, and then click the "source" button, which for the vesktop example yields [[https://github.com/NixOS/nixpkgs/blob/2e21f6c5797fcccfc1e8eced873aea8401a71135/pkgs/by-name/ve/vesktop/package.nix][this GitHub page]]. There you will also see that =withSystemVencord= defaults to =false=.). In this case of course, this has the same effect as simply using an override, so this is better used for adding new packages.
 
-When installing =newVesktop afterwards=, we will get a =vekstop= that will have system vencord enabled. Overlays can also be added by referencing a [[#h:66a04339-dbc7-4d98-a763-5a9be9185f9b][flake overlay output]]. Here is an example of how to use both of these methods in practise:
+When installing =newVesktop afterwards=, we will get a =vekstop= that will have system vencord enabled. Overlays can also be added by referencing a [[#h:66a04339-dbc7-4d98-a763-5a9be9185f9b][flake overlay output]]. Here is an example of how to use both of these methods in practice:
 
   #+begin_src nix-ts :tangle no
     { outputs, inputs, ... }:
@@ -1464,7 +1464,7 @@ Also keep the parentheses around the inline overlay in mind; we need to pass who
 :CUSTOM_ID: h:d62af55c-a7f3-47ba-b2a5-78cc60b03aef
 :END:
 
-NixOS is the name of the linux distribution that relies on the [[#h:f4fa6a46-e016-48f8-9ead-608b739c706a][nix package manager]]. NixOS also relies heavily on [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]] to provide packages, library functions, and modules. The one part this really important to understand here is the module system.
+NixOS is the name of the Linux distribution that relies on the [[#h:f4fa6a46-e016-48f8-9ead-608b739c706a][nix package manager]]. NixOS also relies heavily on [[#h:f4e89635-e006-4c41-a545-d4b56c7ac293][nixpkgs]] to provide packages, library functions, and modules. The one part this really important to understand here is the module system.
 
 **** The module system
 :PROPERTIES:
@@ -1497,7 +1497,7 @@ but that is just a note for completeness sake.
 In the module systems, the above attribute sets supports three main options:
 
 - =imports=, which allows for importing further files
-- =options=, for declaring Nixoptions that should be added to the module system
+- =options=, for declaring Nix options that should be added to the module system
 - =config=, for setting said options.
 
 ****** imports
@@ -1523,7 +1523,7 @@ The module system will pass an attribute as an argument to this function. When a
 
 - =lib= for library functions
 - =pkgs= the set of packages of the systems architecture
-- =options=, the option declarations. Note that you only need to import this if you need the access the option declarations themselves. You will not need this for declaring options in a moduls - i.e. you will only need to add this *very* rarely
+- =options=, the option declarations. Note that you only need to import this if you need the access the option declarations themselves. You will not need this for declaring options in a modules - i.e. you will only need to add this *very* rarely
 - =config=, the option definitions - you need this whenever you want to access configuration parts that has been defined somewhere
 - the set of values passed to =specialArgs= in the call to =nixpkgs.lib.nixosSystem=. To that, everything should be added that is needed to be evaluated when resolving the model structure (e.g. imports)
   - =specialArgs= includes =modulesPath=, which can be used to import =nixpkgs= modules without knowing their location in the nix store
@@ -1609,14 +1609,14 @@ If we would however declare options in the same file, we would need to write:
 :CUSTOM_ID: h:c7588c0d-2528-485d-b2df-04d6336428d7
 :END:
 
-Handling the flake.nix file used to be a bit of a chore, since it felt like writing so much boilerplate code just to define new systems. For a while, I used noweb-ref in order to alleviate this problem (see [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]], an example of the repository at that time would be =acc0ad6: Add several NixOS hosts on Proxmox and Oracle Cloud=.). However, the true answer laid in making use of builtin nix functionality.
+Handling the flake.nix file used to be a bit of a chore, since it felt like writing so much boilerplate code just to define new systems. For a while, I used noweb-ref in order to alleviate this problem (see [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]], an example of the repository at that time would be =acc0ad6: Add several NixOS hosts on Proxmox and Oracle Cloud=.). However, the true answer laid in making use of built-in nix functionality.
 
 Nowadays, I use flake-parts in conjunction with flake-file to manage my flake. It allows me to conveniently split the actual flake into multiple files ("parts") using the following mechanism:
 
 - =imports= are files pulled in to build the flake configuration (similar to the imports in the module system)
-- =systems= defines the architectures that the flake should be provided for - I go here for the four "main" architectures, although true support is only provided for linux systems (see [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] for the main reason)
+- =systems= defines the architectures that the flake should be provided for - I go here for the four "main" architectures, although true support is only provided for Linux systems (see [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] for the main reason)
 
-The above two are used in [[#h:d0e7d80a-5f3a-4dc0-b4b6-112fd77a8608][Outputs]] by flake-file; flake-file allows to fetch the actual input urls etc. from the corresponding features where they are used. I think this is a lot more concise than manually curating the separate flake.nix. Some attention must be paid since flake-file assumes the flake to be able to fully evaluate. Hence, if the input-defining features also try to import said inputs in some way, a bootstrapping problem can arise if that input is not yet in the flake.nix - this can be circumvented by doing a conditional import (see for example [[#h:391e7712-fef3-4f13-a3ed-d36e228166fd][Topology (nix-topology generated network diagram)]] with the =optionalAttrs=).
+The above two are used in [[#h:d0e7d80a-5f3a-4dc0-b4b6-112fd77a8608][Outputs]] by flake-file; flake-file allows to fetch the actual input URLs etc. from the corresponding features where they are used. I think this is a lot more concise than manually curating the separate flake.nix. Some attention must be paid since flake-file assumes the flake to be able to fully evaluate. Hence, if the input-defining features also try to import said inputs in some way, a bootstrapping problem can arise if that input is not yet in the flake.nix - this can be circumvented by doing a conditional import (see for example [[#h:391e7712-fef3-4f13-a3ed-d36e228166fd][Topology (nix-topology generated network diagram)]] with the =optionalAttrs=).
 ** flake.nix skeleton (inputs)
 :PROPERTIES:
 :CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
@@ -1626,7 +1626,7 @@ In general, a nix flake consists of one or more inputs and several outputs. The 
 
 In the start, I enable some public cache repositories. This saves some time during rebuilds because it avoids building as many packages from scratch - this is mainly important for community flakes like =emacs-overlay=, which basically would trigger a rebuild whenever updating the flake. The repository does of course not hold everything, but it lightens the pain. It would look cleaner if this were to be used only inside a nix configuration block of an actual system, but I want these caches to be used for e.g. app calls as well.
 
-In many flakes, you see a structure like this: =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are automatically passed to the outputs and can be called as =inputs.<name>=, whereas explicit arguments may just be called by using =<name>=. For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintainance effort with this file. In fact, I also used to make use of this mechanism. However, using flake-parts, all I really need for the outputs function is inputs, which is why I used to do
+In many flakes, you see a structure like this: =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are automatically passed to the outputs and can be called as =inputs.<name>=, whereas explicit arguments may just be called by using =<name>=. For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintenance effort with this file. In fact, I also used to make use of this mechanism. However, using flake-parts, all I really need for the outputs function is inputs, which is why I used to do
 ~outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } { [...] }~.
 Note that flake-parts must inherit these inputs and no other arguments are expected. flake-file makes this obsolete (again).
 
@@ -1634,20 +1634,20 @@ In this section I am creating some attributes that define general concepts of my
 
 - =nixosModules= imports self-defined options that I only want to use on NixOS systems. All modules are held as separately as possible, to allow for easier sharing with other people mostly.
 - =homeModules= imports modules that are to be used on NixOS and non-NixOS systems. These are mostly used to define outputs (monitors), keyboards and special commands for machines.
-- =packages= holds packages that I am building myself. These are mostly shell scripts, but also a few others such as AppImages and firefox addons.
+- =packages= holds packages that I am building myself. These are mostly shell scripts, but also a few others such as AppImages and Firefox addons.
 - =devShells= provides a development shell that can be used as a bootstrap for new installs using =nix develop= while inside the flake directory. It received an overhaul in =0a6cf0e feat: add checks to devShell=, since when it is handled using =forAllSystems= and now including pre-commit-hook checks.
 - =formatter= provides the formatter that is to be used on =.nix= files. It can be called by using =nix fmt=.
 - =check= provides the pre-commit-hook checks that I have explained in [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks)]].
-- =overlays= imports a few community overlays (such as the emacs-overlay) and also three overlays of my own:
+- =overlays= imports a few community overlays (such as the Emacs-overlay) and also three overlays of my own:
   1) =additions= holds derivations that I am adding myself to nixpkgs - i.e. this is where the packages defined in =/pkgs= get added to nixpkgs.
   2) =modifications= holds derivations that I have performed overrides on. The list of interesting attribute overrides can be found by looking at the source code of a derivation and looking at the start of the file for lines of the form =<name> ? <val>=. But this can also be used to, for example, fetch a different version of a package instead.
   3) =nixpkgs-stable= holds the newest version of stable nixpkgs. I only use this on packages that seem broken on unstable, which are not many.
   4) =zjstatus= holds some options for =zellij=, but I have stopped using it since I prefer =tmux=.
   They are defined in [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. The way this is handled was simplified in =647a2ae feat: simplify overlay structure=; however, the old structure might be easier to understand as a reference.
 
-I no longer maintain =flake.nix= by hand. It is generated by [[https://github.com/vic/flake-file][flake-file]]: some required inputs (=nixpkgs=, =flake-parts=, =import-tree=, and =flake-file=) (and some where I was too lazy to find an appropriate spot) are declared in =modules/flake/_flake-file.nix=, while every other input is declared right next to the feature that actually uses it, via a =flake-file.inputs.<name>.url= attribute at the top of that feature's module. Running =nix run .#write-flake= gathers all of these declarations (the merged =config.flake-file.inputs=) and regenerates =flake.nix=.
+I no longer maintain =flake.nix= by hand. It is generated by [[https://github.com/vic/flake-file][flake-file]]: some required inputs (=nixpkgs=, =flake-parts=, =import-tree=, and =flake-file=) (and some where I was too lazy to find an appropriate spot) are declared in =modules/flake/_flake-file.nix=, while every other input is declared right next to the feature that actually uses it, via a =flake-file.inputs.<name>.url= attribute at the top of that features module. Running =nix run .#write-flake= gathers all of these declarations (the merged =config.flake-file.inputs=) and regenerates =flake.nix=.
 
-Many inputs set =nixpkgs.follows=: this tells an input to not pull in its own copy of nixpkgs, but instead 'nest' itself into mine, which for one avoids duplicate nixpkgs evaluations (saving space - whatever). Howver, what this also does it supplying that input with a version of nixpkgs that might be the needed/supported one for the infrastructure. I try to only do a follows if the consuming package actually needs it - I do not care about the marginal space savings.
+Many inputs set =nixpkgs.follows=: this tells an input to not pull in its own copy of nixpkgs, but instead 'nest' itself into mine, which for one avoids duplicate nixpkgs evaluations (saving space - whatever). However, what this also does it supplying that input with a version of nixpkgs that might be the needed/supported one for the infrastructure. I try to only do a follows if the consuming package actually needs it - I do not care about the marginal space savings.
 
 A short overview over each notable input and what it does:
 
@@ -1658,9 +1658,9 @@ A short overview over each notable input and what it does:
 - [[https://github.com/Swarsel/swarsel-nix][swarsel-nix]]
   This pulls in the very dotfiles you are currently reading. I am adding this to the flake registry in order to
 - [[https://github.com/nix-community/NUR][NUR]]
-  The nix user repository contains user provided modules, packages and expressions. These are not audited by the nix community, so be aware of supply chain vulnerabilities when using those. I am only really using rycee's firefox addons from there which saves me a lot of hassle, and it seems to be a safe resource.
+  The nix user repository contains user provided modules, packages and expressions. These are not audited by the nix community, so be aware of supply chain vulnerabilities when using those. I am only really using rycee's Firefox addons from there which saves me a lot of hassle, and it seems to be a safe resource.
 - [[https://github.com/nix-community/nixGL][nixGL]]
-  This solves the problem that nix has with =OpenGL=, as libraries are not linked and programs will often fail to find drivers. Nowadays, this is included in the [[#h:90af1862-90b3-4c93-8730-2443bc62986a][nixGL]] module of home-manager, but even that requres a binary for nixGL, which is what I pull from this input.
+  This solves the problem that nix has with =OpenGL=, as libraries are not linked and programs will often fail to find drivers. Nowadays, this is included in the [[#h:90af1862-90b3-4c93-8730-2443bc62986a][nixGL]] module of home-manager, but even that requires a binary for nixGL, which is what I pull from this input.
 - [[https://github.com/danth/stylix][stylix]]
   As described before, this handles all theme related options.
 - [[https://github.com/Mic92/sops-nix][sops-nix]]
@@ -1682,9 +1682,9 @@ A short overview over each notable input and what it does:
 - [[https://github.com/nix-community/impermanence][Impermanence]]
   Some of my machines are using a btrfs filesystem that wipes the root directory on each reboot. This forces me to pay more attention in keeping my system declarative as well as helping me keeping the system uncluttered. However, it is a chore to make sure that important files are not deleted. This flake helps with this problem, allowing me to select files and directories for persisting.
 - [[https://github.com/dj95/zjstatus][zjstatus]]
-  This provides utilities for customizing a statusbar in zellij. Currently unused as I prefer tmux for now and might be removed in the future.
+  This provides utilities for customizing a status bar in zellij. Currently unused as I prefer tmux for now and might be removed in the future.
 - [[https://github.com/LnL7/nix-darwin][nix-darwin]]
-  After learning that MacOS systems can also be configured using nix, I managed to get access to an old MacBook for testing. This allows to set most general settings that can otherwise be set using the Mac GUI.
+  After learning that MacOS systems can also be configured using nix, I managed to get access to an old Mac Book for testing. This allows to set most general settings that can otherwise be set using the Mac GUI.
 - [[https://github.com/cachix/git-hooks.nix][pre-commit-hooks]]
   Provides access to several checks that can be hooked to be run before several stages in the process.
 - [[https://github.com/oddlama/nix-topology][nix-topology]]
@@ -1694,7 +1694,7 @@ A short overview over each notable input and what it does:
 - [[https://github.com/numtide/devshell][devshell]]
   This provides devshell support for flake-parts
 - [[https://github.com/Gerg-L/spicetify-nix][spicetify]]
-  This is a improved spotify client. This provides a NixOs module to manage it.
+  This is a improved Spotify client. This provides a NixOs module to manage it.
 - [[https://github.com/sodiboo/niri-flake][niri-flake]]
   This is an optional input that I reserve to use in the future; it provides a module to manage [[#h:58162d08-3ded-441d-861e-2ebf30e32538][Niri]] in a way that is way more all-encompassing than the current modules in nixpkgs/home-manager. However, I do not include this by default as this leads to a full compilation of latest niri - this is used only be the niri config evaluator, but is even built if niri is not included in the final config. Also, the binary cache provided by this flake does usually not have the latest niri cached.
 - [[https://github.com/microvm-nix/microvm.nix][microvm.nix]]
@@ -6484,7 +6484,7 @@ My phone. I use only a minimal config for remote debugging here.
 :CUSTOM_ID: h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0
 :END:
 
-This is my workstation locatated at my workplace - I use it as a remote builder and for testing things on ARM architecture.
+This is my workstation located at my workplace - I use it as a remote builder and for testing things on ARM architecture.
 
 #+begin_src nix-ts :tangle hosts/home/aarch64-linux/treehouse/default.nix
   { self, inputs, pkgs, ... }:
@@ -35982,6 +35982,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
         (setq blink-matching-paren nil)
         (delete-selection-mode 1)
         (setq vc-follow-symlinks t)
+        (setq kill-region-dwim 'emacs-word)
         (setq require-final-newline t)
         (winner-mode 1)
         (setq load-prefer-newer t)
@@ -36014,6 +36015,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
         (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
         (when (native-comp-available-p)
           (setq native-comp-async-report-warnings-errors 'silent)
+          (setq native-comp-async-on-battery-power nil)
           (setq native-compile-prune-cache t))
 
         (setq garbage-collection-messages nil)
@@ -36091,19 +36093,44 @@ In this section I define custom aspect sets. These are mostly used to combine co
   }
 #+end_src
 
-*** recentf excludes
+*** Session related settings
 :PROPERTIES:
 :CUSTOM_ID: h:f73c3873-63af-46bc-a5a3-7f49b76cf2bc
 :END:
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/recentf.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.recentf = {
-      enable = true;
-      config = ''
-        (add-to-list 'recentf-exclude "\\Archive\\.org\\'")
-        (add-to-list 'recentf-exclude "\\Tasks\\.org\\'")
-      '';
+    flake.modules.homeManager.emacs-init.config.programs.emacs.init = {
+      usePackage = {
+
+        recentf = {
+          enable = true;
+          config = ''
+            (add-to-list 'recentf-exclude "\\Archive\\.org\\'")
+            (add-to-list 'recentf-exclude "\\Tasks\\.org\\'")
+          '';
+        };
+
+        savehist = {
+          enable = true;
+          init = "(savehist-mode 1)";
+        };
+
+        saveplace = {
+          enable = true;
+          init = "(save-place-mode 1)";
+        };
+
+        repeat = {
+          enable = true;
+          custom = {
+            repeat-exit-timeout = 3;
+          };
+          init = "(repeat-mode 1)";
+        };
+      };
+
+      prelude = "(context-menu-mode 1)";
     };
   }
 #+end_src
@@ -36245,9 +36272,9 @@ I also define some keybinds to some combinations directly. Those are used mostly
 :CUSTOM_ID: h:0cf30b76-91d9-41da-a10b-74199bc36d40
 :END:
 
-In this section I move the =custom.el= out of it's standard location in =.emacs.d=. Firstly, I dislike using this file at all since I would rather have fully stateful configuration as commanded by this file. Secondly, this file is too easily permanently changed. Recently I figured out the last bits that I needed to remove from custom.el to no longer be reliant on it, so I now just write it to a temporary file (through =make-temp=file=) which will be cleaned on shutdown. However, I like to retain the custom framework because it is nice for testing out theme customizations, hence why I still load the file.
+In this section I move the =custom.el= out of it's standard location in =.emacs.d=. Firstly, I dislike using this file at all since I would rather have fully stateful configuration as commanded by this file. Secondly, this file is too easily permanently changed. Recently I figured out the last bits that I needed to remove from =custom.el= to no longer be reliant on it, so I now just write it to a temporary file (through =make-temp=file=) which will be cleaned on shutdown. However, I like to retain the custom framework because it is nice for testing out theme customizations, hence why I still load the file.
 
-This section also sets the emacs directory to the =~/.cache/= directory which is useful for files that I do not want to have lying around in my =.emacs.d=.
+This section also sets the Emacs directory to the =~/.cache/= directory which is useful for files that I do not want to have lying around in my =.emacs.d=.
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/no-littering.nix
   {
@@ -36564,15 +36591,6 @@ This is really the perfect solution for me, but it might not be for everyone.
 #+begin_src nix-ts :tangle modules/client/programs/emacs/modeline.nix
   {
     flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-      doom-modeline = {
-        enable = false;
-        custom = {
-          doom-modeline-height = 22;
-          doom-modeline-indent-info = false;
-          doom-modeline-buffer-encoding = false;
-        };
-      };
-
       mini-modeline = {
         enable = true;
         after = [ "smart-mode-line" ];
@@ -36734,6 +36752,27 @@ I set the annotation-mode of marginalia to =heavy=. This gives even more informa
                            (window-parameters (mode-line-format . none))))
           '';
         };
+
+        consult-dir = {
+          enable = true;
+          after = [ "consult" ];
+          bind = {
+            "C-x C-d" = "consult-dir";
+          };
+          bindLocal.minibuffer-local-map = {
+            "C-x C-d" = "consult-dir";
+            "C-x C-j" = "consult-dir-jump-file";
+          };
+        };
+
+        consult-eglot = {
+          enable = true;
+          after = [ "consult" "eglot" ];
+          bind = {
+            "C-c s" = "consult-eglot-symbols";
+          };
+        };
+
 
         embark-consult = {
           enable = true;
@@ -37691,7 +37730,7 @@ This adds elfeed, a neat RSS reader for Emacs. I use this as a client for [[#h:9
   }
 #+end_src
 
-*** Ripgrep
+*** Grep
 :PROPERTIES:
 :CUSTOM_ID: h:87453f1c-8ea5-4d0a-862d-8973d5bc5405
 :END:
@@ -37700,7 +37739,15 @@ This is the ripgrep package for Emacs.
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/ripgrep.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.rg.enable = true;
+    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
+      rg.enable = true;
+      wgrep = {
+        enable = true;
+        custom = {
+          wgrep-auto-save-buffer = true;
+        };
+      };
+    };
   }
 #+end_src
 *** Tree-sitter
@@ -37723,22 +37770,22 @@ In order to update the language grammars, run the next command below. NOTE: sinc
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/treesit.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-      treesit-auto = {
-        enable = true;
-        custom = {
-          treesit-auto-install = true;
-        };
-        config = ''
-          (treesit-auto-add-to-auto-mode-alist 'all)
-          (global-treesit-auto-mode)
-        '';
-      };
+    flake.modules.homeManager.emacs-init.config.programs.emacs.init = {
+      prelude = ''
+        (setq treesit-enabled-modes t)
+      '';
 
-      treesit-grammars = {
-        enable = true;
-        package = epkgs: epkgs.treesit-grammars.with-all-grammars;
-        enableUsePackage = false;
+      usePackage = {
+        treesit-grammars = {
+          enable = true;
+          package = epkgs: epkgs.treesit-grammars.with-all-grammars;
+          enableUsePackage = false;
+        };
+
+        treesit-fold = {
+          enable = true;
+          config = "(global-treesit-fold-mode 1)";
+        };
       };
     };
   }
@@ -38257,14 +38304,15 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
             hook = [ "((python-mode python-ts-mode c-mode c-ts-mode c++-mode c++-ts-mode go-mode go-ts-mode tex-mode LaTeX-mode) . swarsel/eglot-ensure-and-format)" ];
             init = ''
               (defun swarsel/eglot-ensure-and-format ()
-                "Ensure eglot is running and enable format-on-save for current buffer."
-                (eglot-ensure)
-                (add-hook 'before-save-hook #'eglot-format nil 'local))
+                  "Ensure eglot is running and enable format-on-save for current buffer."
+                  (eglot-ensure)
+                  (add-hook 'before-save-hook #'eglot-format nil 'local))
 
-              (defalias 'start-lsp-server #'eglot)
+                (defalias 'start-lsp-server #'eglot)
             '';
             custom = {
               eldoc-echo-area-use-multiline-p = false;
+              eldoc-echo-area-prefer-doc-buffer = true;
               eglot-events-buffer-size = 0;
               eglot-sync-connect = false;
               eglot-connect-timeout = false;
@@ -38279,6 +38327,12 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
             };
           };
 
+          eldoc-box = {
+            enable = true;
+            after = [ "eglot" ];
+            hook = [ "(eglot-managed-mode . eldoc-box-hover-at-point-mode)" ];
+          };
+
           eglot-booster = {
             enable = true;
             package = eglot-booster;
@@ -38289,7 +38343,7 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
       };
   }
 #+end_src
-*** lsp-mode & company
+*** lsp-mode & company & dape
 :PROPERTIES:
 :CUSTOM_ID: h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75
 :END:
@@ -38303,45 +38357,53 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
         enable = true;
         init = ''
           (setq lsp-keymap-prefix "C-c l")
-          (setq lsp-auto-guess-root "t")
+            (setq lsp-auto-guess-root "t")
 
-          (cl-defmacro lsp-org-babel-enable (lang)
-            "Support LANG in org source code block."
-            (setq centaur-lsp 'lsp-mode)
-            (cl-check-type lang string)
-            (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-                   (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-              `(progn
-                 (defun ,intern-pre (info)
-                   (let ((file-name (->> info caddr (alist-get :file))))
-                     (unless file-name
-                       (setq file-name (make-temp-file "babel-lsp-")))
-                     (setq buffer-file-name file-name)
-                     (lsp-deferred)))
-                 (put ',intern-pre 'function-documentation
-                      (format "Enable lsp-mode in the buffer of org source block (%s)."
-                              (upcase ,lang)))
-                 (if (fboundp ',edit-pre)
-                     (advice-add ',edit-pre :after ',intern-pre)
-                   (progn
-                     (defun ,edit-pre (info)
-                       (,intern-pre info))
-                     (put ',edit-pre 'function-documentation
-                          (format "Prepare local buffer environment for org source block (%s)."
-                                  (upcase ,lang))))))))
-          (defvar org-babel-lang-list
-            '( "nix" "nix-ts" "go" "python" "ipython" "bash" "sh" ))
-          (dolist (lang org-babel-lang-list)
-            (eval `(lsp-org-babel-enable ,lang)))
+            (cl-defmacro lsp-org-babel-enable (lang)
+              "Support LANG in org source code block."
+              (setq centaur-lsp 'lsp-mode)
+              (cl-check-type lang string)
+              (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+                     (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+                `(progn
+                   (defun ,intern-pre (info)
+                     (let ((file-name (->> info caddr (alist-get :file))))
+                       (unless file-name
+                         (setq file-name (make-temp-file "babel-lsp-")))
+                       (setq buffer-file-name file-name)
+                       (lsp-deferred)))
+                   (put ',intern-pre 'function-documentation
+                        (format "Enable lsp-mode in the buffer of org source block (%s)."
+                                (upcase ,lang)))
+                   (if (fboundp ',edit-pre)
+                       (advice-add ',edit-pre :after ',intern-pre)
+                     (progn
+                       (defun ,edit-pre (info)
+                         (,intern-pre info))
+                       (put ',edit-pre 'function-documentation
+                            (format "Prepare local buffer environment for org source block (%s)."
+                                    (upcase ,lang))))))))
+            (defvar org-babel-lang-list
+              '( "nix" "nix-ts" "go" "python" "ipython" "bash" "sh" ))
+            (dolist (lang org-babel-lang-list)
+              (eval `(lsp-org-babel-enable ,lang)))
         '';
         command = [ "lsp" ];
         config = ''
           (lsp-register-client
-           (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
-                            :major-modes '(nix-mode nix-ts-mode)
-                            :priority 0
-                            :server-id 'nixd))
+             (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
+                              :major-modes '(nix-mode nix-ts-mode)
+                              :priority 0
+                              :server-id 'nixd))
         '';
+      };
+
+      dape = {
+        enable = true;
+        custom = {
+          dape-buffer-window-arrangement = "'right";
+          dape-inlay-hints = true;
+        };
       };
 
       lsp-bridge = {
@@ -38354,7 +38416,7 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
         hook = [ "(flymake-mode . sideline-mode)" ];
         init = ''
           (setq sideline-flymake-display-mode 'point)
-          (setq sideline-backends-right '(sideline-flymake))
+            (setq sideline-backends-right '(sideline-flymake))
         '';
       };
     };
@@ -38976,6 +39038,66 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
         after = [ "magit" ];
         config = "(hunkle-magit-setup)";
       };
+    };
+  }
+#+end_src
+*** apheleia
+
+#+begin_src nix-ts :tangle modules/client/programs/emacs/apheleia.nix
+  {
+    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.apheleia = {
+      enable = true;
+      config = "(apheleia-global-mode 1)";
+    };
+  }
+#+end_src
+*** jinx
+
+#+begin_src nix-ts :tangle modules/client/programs/emacs/jinx.nix
+  {
+    flake.modules.homeManager.emacs-init = { pkgs, ... }: {
+      config = {
+        home.packages = [
+          pkgs.enchant
+          pkgs.hunspellDicts.en_US
+        ];
+
+        programs.emacs.init.usePackage.jinx = {
+          enable = true;
+          hook = [
+            "(text-mode . jinx-mode)"
+            "(prog-mode . jinx-mode)"
+            "(conf-mode . jinx-mode)"
+          ];
+          custom = {
+            jinx-languages = ''"en_US"'';
+          };
+          bind = {
+            "M-$" = "jinx-correct";
+            "C-M-$" = "jinx-languages";
+          };
+        };
+      };
+    };
+  }
+#+end_src
+*** pulsar
+
+#+begin_src nix-ts :tangle modules/client/programs/emacs/pulsar.nix
+  {
+    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.pulsar = {
+      enable = true;
+      custom = {
+        pulsar-pulse = true;
+        pulsar-face = "'pulsar-green";
+        pulsar-highlight-face = "'pulsar-cyan";
+      };
+      config = ''
+        (pulsar-global-mode 1)
+        (with-eval-after-load 'consult
+          (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
+          (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry))
+      '';
     };
   }
 #+end_src

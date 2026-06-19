@@ -48,6 +48,7 @@
       (setq blink-matching-paren nil)
       (delete-selection-mode 1)
       (setq vc-follow-symlinks t)
+      (setq kill-region-dwim 'emacs-word)
       (setq require-final-newline t)
       (winner-mode 1)
       (setq load-prefer-newer t)
@@ -80,6 +81,7 @@
       (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
       (when (native-comp-available-p)
         (setq native-comp-async-report-warnings-errors 'silent)
+        (setq native-comp-async-on-battery-power nil)
         (setq native-compile-prune-cache t))
 
       (setq garbage-collection-messages nil)

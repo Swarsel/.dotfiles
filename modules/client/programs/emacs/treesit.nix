@@ -1,20 +1,20 @@
 {
-  flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-    treesit-auto = {
-      enable = true;
-      custom = {
-        treesit-auto-install = true;
-      };
-      config = ''
-        (treesit-auto-add-to-auto-mode-alist 'all)
-        (global-treesit-auto-mode)
-      '';
-    };
+  flake.modules.homeManager.emacs-init.config.programs.emacs.init = {
+    prelude = ''
+      (setq treesit-enabled-modes t)
+    '';
 
-    treesit-grammars = {
-      enable = true;
-      package = epkgs: epkgs.treesit-grammars.with-all-grammars;
-      enableUsePackage = false;
+    usePackage = {
+      treesit-grammars = {
+        enable = true;
+        package = epkgs: epkgs.treesit-grammars.with-all-grammars;
+        enableUsePackage = false;
+      };
+
+      treesit-fold = {
+        enable = true;
+        config = "(global-treesit-fold-mode 1)";
+      };
     };
   };
 }

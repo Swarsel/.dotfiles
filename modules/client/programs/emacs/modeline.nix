@@ -1,14 +1,5 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-    doom-modeline = {
-      enable = false;
-      custom = {
-        doom-modeline-height = 22;
-        doom-modeline-indent-info = false;
-        doom-modeline-buffer-encoding = false;
-      };
-    };
-
     mini-modeline = {
       enable = true;
       after = [ "smart-mode-line" ];

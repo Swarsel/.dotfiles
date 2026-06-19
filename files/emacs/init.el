@@ -9,6 +9,9 @@
 
 
 
+(setq treesit-enabled-modes t)
+
+(context-menu-mode 1)
 (setq mouse-wheel-scroll-amount
   '(1
      ((shift) . 5)
@@ -140,6 +143,7 @@ Also see `prot-window-delete-popup-frame'." command)
 (setq blink-matching-paren nil)
 (delete-selection-mode 1)
 (setq vc-follow-symlinks t)
+(setq kill-region-dwim 'emacs-word)
 (setq require-final-newline t)
 (winner-mode 1)
 (setq load-prefer-newer t)
@@ -172,6 +176,7 @@ Also see `prot-window-delete-popup-frame'." command)
 (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
 (when (native-comp-available-p)
   (setq native-comp-async-report-warnings-errors 'silent)
+  (setq native-comp-async-on-battery-power nil)
   (setq native-compile-prune-cache t))
 
 (setq garbage-collection-messages nil)
@@ -251,6 +256,10 @@ Also see `prot-window-delete-popup-frame'." command)
 (autoload #'use-package-autoload-keymap "use-package-bind-key")
 
 (use-package ansible)
+
+(use-package apheleia
+  :config
+  (apheleia-global-mode 1))
 
 (use-package auctex
   :hook (LaTeX-mode . visual-line-mode)
@@ -365,6 +374,22 @@ Also see `prot-window-delete-popup-frame'." command)
   :custom
   (consult-fontify-max-size 1024))
 
+(use-package consult-dir
+  :after (consult)
+  :bind (
+          ("C-x C-d" . consult-dir)
+          )
+  :bind (:map minibuffer-local-map
+          ("C-x C-d" . consult-dir)
+          ("C-x C-j" . consult-dir-jump-file)
+          ))
+
+(use-package consult-eglot
+  :after (consult eglot)
+  :bind (
+          ("C-c s" . consult-eglot-symbols)
+          ))
+
 (use-package corfu
   :bind (:map corfu-map
           ("<insert-state> <down>" . swarsel/corfu-quit-and-down)
@@ -408,6 +433,11 @@ Also see `prot-window-delete-popup-frame'." command)
   (corfu-history-mode)
   (corfu-popupinfo-mode)
   )
+
+(use-package dape
+  :custom
+  (dape-buffer-window-arrangement 'right)
+  (dape-inlay-hints t))
 
 (use-package dashboard
   :config
@@ -559,6 +589,7 @@ Also see `prot-window-delete-popup-frame'." command)
   (eglot-events-buffer-size 0)
   (eglot-send-changes-idle-time 3)
   (eglot-sync-connect nil)
+  (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   (flymake-no-changes-timeout 5)
   :init
@@ -576,6 +607,10 @@ Also see `prot-window-delete-popup-frame'." command)
   :after (eglot)
   :config
   (eglot-booster-mode))
+
+(use-package eldoc-box
+  :after (eglot)
+  :hook (eglot-managed-mode . eldoc-box-hover-at-point-mode))
 
 (use-package elfeed
   :custom
@@ -956,6 +991,17 @@ there's a region, all lines that region covers will be duplicated."
 
 (use-package jenkinsfile-mode
   :mode "Jenkinsfile")
+
+(use-package jinx
+  :bind (
+          ("C-M-$" . jinx-languages)
+          ("M-$" . jinx-correct)
+          )
+  :hook (text-mode . jinx-mode)
+  :hook (prog-mode . jinx-mode)
+  :hook (conf-mode . jinx-mode)
+  :custom
+  (jinx-languages "en_US"))
 
 (use-package ligature
   :init
@@ -1820,6 +1866,18 @@ create a new one."
   :config
   (projectile-mode))
 
+(use-package pulsar
+  :custom
+  (pulsar-face 'pulsar-green)
+  (pulsar-highlight-face 'pulsar-cyan)
+  (pulsar-pulse t)
+  :config
+  (pulsar-global-mode 1)
+  (with-eval-after-load 'consult
+    (add-hook 'consult-after-jump-hook #'pulsar-recenter-top)
+    (add-hook 'consult-after-jump-hook #'pulsar-reveal-entry))
+  )
+
 (use-package python
   :custom
   (python-indent-guess-indent-offset-verbose nil))
@@ -1836,7 +1894,21 @@ create a new one."
   (add-to-list 'recentf-exclude "\\Tasks\\.org\\'")
   )
 
+(use-package repeat
+  :custom
+  (repeat-exit-timeout 3)
+  :init
+  (repeat-mode 1))
+
 (use-package rg)
+
+(use-package savehist
+  :init
+  (savehist-mode 1))
+
+(use-package saveplace
+  :init
+  (save-place-mode 1))
 
 (use-package shackle
   :config
@@ -1906,13 +1978,9 @@ create a new one."
       "-o ControlMaster=auto -o ControlPersist=yes"))
   )
 
-(use-package treesit-auto
-  :custom
-  (treesit-auto-install t)
+(use-package treesit-fold
   :config
-  (treesit-auto-add-to-auto-mode-alist 'all)
-  (global-treesit-auto-mode)
-  )
+  (global-treesit-fold-mode 1))
 
 (use-package ultra-scroll
   :custom
@@ -1971,6 +2039,10 @@ create a new one."
 (use-package vterm
   :custom
   (vterm-tramp-shells '(("ssh" "'sh'"))))
+
+(use-package wgrep
+  :custom
+  (wgrep-auto-save-buffer t))
 
 (use-package which-key
   :diminish (which-key-mode)
