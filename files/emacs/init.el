@@ -11,7 +11,6 @@
 
 (setq treesit-enabled-modes t)
 
-(context-menu-mode 1)
 (setq mouse-wheel-scroll-amount
   '(1
      ((shift) . 5)
@@ -24,6 +23,7 @@
 (setq-default scroll-preserve-screen-position t
   next-screen-context-lines 0)
 
+(context-menu-mode 1)
 (defun prot-window-delete-popup-frame (&rest _)
   "Kill selected selected frame if it has parameter `prot-window-popup-frame'.
     Use this function via a hook."
