@@ -30,7 +30,7 @@
             flake-checker.enable = true;
             forbid-new-submodules.enable = true;
             mixed-line-endings.enable = true;
-            nixpkgs-fmt.enable = true;
+            nixfmt-rfc-style.enable = true;
             statix.enable = true;
             trim-trailing-whitespace.enable = true;
             treefmt.enable = true;
@@ -98,7 +98,7 @@
               pkgs.age
               pkgs.ssh-to-age
               pkgs.sops
-              pkgs.nixpkgs-fmt
+              pkgs.nixfmt
               self.packages.${system}.swarsel-build
               self.packages.${system}.swarsel-deploy
               (pkgs.symlinkJoin {
@@ -146,7 +146,7 @@
               {
                 name = "fmt";
                 help = "Format flake";
-                command = "nixpkgs-fmt --check \"$FLAKE\"";
+                command = "find \"$FLAKE\" -name '*.nix' -exec nixfmt --check {} +";
               }
               {
                 name = "sd";

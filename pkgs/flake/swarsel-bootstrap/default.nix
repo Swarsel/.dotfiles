@@ -396,7 +396,7 @@ writeShellApplication {
     if confirm n "You can now commit the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
       cd "''${git_root}"
       deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
-      nixpkgs-fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
+      nixfmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
       (pre-commit run --all-files 2> /dev/null || true) || true
       git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix"
       git add "$git_root/.sops.yaml"

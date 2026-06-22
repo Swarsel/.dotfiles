@@ -15,7 +15,7 @@
       programs = {
         nixfmt = {
           enable = true;
-          package = pkgs.nixpkgs-fmt;
+          package = pkgs.nixfmt;
         };
         deadnix.enable = true;
         statix.enable = true;

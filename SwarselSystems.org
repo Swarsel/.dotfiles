@@ -2896,7 +2896,7 @@ Aside from the =default= devShell which is the one that should usually be called
               flake-checker.enable = true;
               forbid-new-submodules.enable = true;
               mixed-line-endings.enable = true;
-              nixpkgs-fmt.enable = true;
+              nixfmt-rfc-style.enable = true;
               statix.enable = true;
               trim-trailing-whitespace.enable = true;
               treefmt.enable = true;
@@ -2964,7 +2964,7 @@ Aside from the =default= devShell which is the one that should usually be called
                 pkgs.age
                 pkgs.ssh-to-age
                 pkgs.sops
-                pkgs.nixpkgs-fmt
+                pkgs.nixfmt
                 self.packages.${system}.swarsel-build
                 self.packages.${system}.swarsel-deploy
                 (pkgs.symlinkJoin {
@@ -3012,7 +3012,7 @@ Aside from the =default= devShell which is the one that should usually be called
                 {
                   name = "fmt";
                   help = "Format flake";
-                  command = "nixpkgs-fmt --check \"$FLAKE\"";
+                  command = "find \"$FLAKE\" -name '*.nix' -exec nixfmt --check {} +";
                 }
                 {
                   name = "sd";
@@ -3130,7 +3130,7 @@ Usually all formatting in this repo is done automatically while editing in emacs
         programs = {
           nixfmt = {
             enable = true;
-            package = pkgs.nixpkgs-fmt;
+            package = pkgs.nixfmt;
           };
           deadnix.enable = true;
           statix.enable = true;
@@ -6447,7 +6447,7 @@ My phone. I use only a minimal config for remote debugging here.
         curl
         deadnix
         statix
-        nixpkgs-fmt
+        nixfmt
         nvd
       ];
 
@@ -17001,7 +17001,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
             # nix
             alejandra
-            nixpkgs-fmt
+            nixfmt
             deadnix
             statix
             nix-tree
@@ -34209,7 +34209,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       if confirm n "You can now commit the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
         cd "''${git_root}"
         deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
-        nixpkgs-fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
+        nixfmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
         (pre-commit run --all-files 2> /dev/null || true) || true
         git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix"
         git add "$git_root/.sops.yaml"
@@ -36954,7 +36954,7 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
           "oc" '((lambda () (interactive) (org-store-link)) :which-key "copy (=store) link")
           "os" '(shfmt-region :which-key "format sh-block")
           "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-          "on" '(nixpkgs-fmt-region :which-key "format nix-block")
+          "on" '(nixfmt-region :which-key "format nix-block")
           "ot" '(swarsel/org-babel-tangle-config :which-key "tangle file")
           "oe" '(org-html-export-to-html :which-key "export to html")
           "c"  '(:ignore c :which-key "capture")
@@ -36997,7 +36997,7 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
           (defun swarsel/run-formatting ()
             (interactive)
             (let ((default-directory (expand-file-name "~/.dotfiles")))
-              (shell-command "nixpkgs-fmt . > /dev/null")))
+              (shell-command "find . -name '*.nix' -exec nixfmt {} + > /dev/null")))
 
           (defun swarsel/org-babel-tangle-config ()
             (interactive)
@@ -37479,7 +37479,7 @@ It supports all functions that I normally need. Note that getting completions fo
       let
         lspNixdConfig = ''
           (setq lsp-nix-nixd-server-path "nixd"
-                lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
+                lsp-nix-nixd-formatting-command [ "nixfmt" ]
                 lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
                 lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
                 lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
@@ -37616,7 +37616,7 @@ Note that for files that are not managed using this file (which there should nor
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/nixfmt.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.nixpkgs-fmt.enable = true;
+    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.nixfmt.enable = true;
   }
 #+end_src
 
@@ -42899,7 +42899,7 @@ The double source block is intended here to circumvent a org-babel convenience w
         pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
       in
       {
-        formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+        formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
 
         devShells = forEachSystem (system: {
           default = pkgsFor.${system}.mkShell {
@@ -43009,7 +43009,7 @@ The double source block is intended here to circumvent a org-babel convenience w
         pname = "name";
       in
       {
-        formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+        formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
 
         devShells = forEachSystem (system: {
           default = pkgsFor.${system}.mkShell {
@@ -43107,7 +43107,7 @@ The double source block is intended here to circumvent a org-babel convenience w
             buildInputs = [ latex-packages dev-packages ];
           };
 
-          formatter = pkgs.nixpkgs-fmt;
+          formatter = pkgs.nixfmt;
 
           packages = flake-utils.lib.flattenTree {
             default = import ./build-document.nix {
@@ -43326,7 +43326,7 @@ The double source block is intended here to circumvent a org-babel convenience w
           }
         );
 
-        formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
+        formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
 
       };
   }
@@ -43372,7 +43372,7 @@ The double source block is intended here to circumvent a org-babel convenience w
         rust-toolchain = forEachSystem (system: pkgsFor.${system}.fenix.stable);
       in
       {
-        formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+        formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
 
         devShells = forEachSystem (system: {
           default = pkgsFor.${system}.mkShell {
@@ -43867,7 +43867,7 @@ This is a crude workflow that performs some rudimentary checks on the repository
         - name: Check for lints in .nix files
           run: nix run nixpkgs#statix -- check
         - name: Check formatting in .nix files
-          run: git ls-files '*.nix' | xargs nix run nixpkgs#nixpkgs-fmt -- --check
+          run: git ls-files '*.nix' | xargs nix run nixpkgs#nixfmt -- --check
 #+end_src
 
 ** Private topology flake

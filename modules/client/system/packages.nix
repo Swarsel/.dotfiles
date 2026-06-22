@@ -129,7 +129,7 @@
 
           # nix
           alejandra
-          nixpkgs-fmt
+          nixfmt
           deadnix
           statix
           nix-tree

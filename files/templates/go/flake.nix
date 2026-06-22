@@ -20,7 +20,7 @@
       pname = "name";
     in
     {
-      formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
 
       devShells = forEachSystem (system: {
         default = pkgsFor.${system}.mkShell {
