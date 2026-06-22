@@ -1,6 +1,12 @@
 {
   flake.modules.nixos.systemd-networkd-server =
-    { self, lib, config, globals, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      ...
+    }:
     let
       inherit (config.swarselsystems) isCrypted localVLANs;
       inherit (globals.general) routerServer;

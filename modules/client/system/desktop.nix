@@ -50,7 +50,10 @@
           exec = "emacsclient -r %u";
           icon = "emacs";
           terminal = false;
-          categories = [ "Development" "TextEditor" ];
+          categories = [
+            "Development"
+            "TextEditor"
+          ];
         };
 
       };

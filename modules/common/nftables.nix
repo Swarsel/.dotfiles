@@ -2,12 +2,14 @@
   flake-file.inputs.nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
 
   flake.modules.nixos = {
-    nftables = { inputs, ... }:
+    nftables =
+      { inputs, ... }:
       {
         imports = [ inputs.nixos-nftables-firewall.nixosModules.default ];
       };
 
-    nftables-rules = { lib, config, ... }:
+    nftables-rules =
+      { lib, config, ... }:
       {
         key = "swarsel/nftables-rules";
         config = {

@@ -1,5 +1,11 @@
 {
-  flake.modules.nixos.id = { lib, config, confLib, ... }:
+  flake.modules.nixos.id =
+    {
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
       inherit (lib)
         concatLists
@@ -74,21 +80,20 @@
       };
       config = {
         assertions =
-          concatLists
-            (
-              flip mapAttrsToList config.users.users (
-                name: user: [
-                  {
-                    assertion = user.uid != null;
-                    message = "non-persistent uid detected for '${name}', please assign one via `users.persistentIds`";
-                  }
-                  {
-                    assertion = !user.autoSubUidGidRange;
-                    message = "non-persistent subUids/subGids detected for: ${name}";
-                  }
-                ]
-              )
+          concatLists (
+            flip mapAttrsToList config.users.users (
+              name: user: [
+                {
+                  assertion = user.uid != null;
+                  message = "non-persistent uid detected for '${name}', please assign one via `users.persistentIds`";
+                }
+                {
+                  assertion = !user.autoSubUidGidRange;
+                  message = "non-persistent subUids/subGids detected for: ${name}";
+                }
+              ]
             )
+          )
           ++ flip mapAttrsToList config.users.groups (
             name: group: {
               assertion = group.gid != null;
@@ -104,6 +109,5 @@
           resolvconf = lib.mkIf config.networking.resolvconf.enable (confLib.mkIds 951);
         };
       };
-    }
-  ;
+    };
 }

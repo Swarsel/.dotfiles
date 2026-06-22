@@ -1,14 +1,42 @@
 {
   flake.modules.nixos.buildbot =
-    { self, lib, config, pkgs, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      pkgs,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "buildbot"; port = 8010; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "buildbot";
+          port = 8010;
+        })
+        serviceName
+        servicePort
+        serviceAddress
+        serviceDomain
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
       inherit (config.swarselsystems) mainUser sopsFile;
 
-      nixosHostsForArch = arch:
-        let dir = self + "/hosts/nixos/${arch}";
-        in if builtins.pathExists dir then builtins.attrNames (builtins.readDir dir) else [ ];
+      nixosHostsForArch =
+        arch:
+        let
+          dir = self + "/hosts/nixos/${arch}";
+        in
+        if builtins.pathExists dir then builtins.attrNames (builtins.readDir dir) else [ ];
 
       allNixosHosts = nixosHostsForArch "aarch64-linux" ++ nixosHostsForArch "x86_64-linux";
 
@@ -25,12 +53,23 @@
       githubKeyPath = config.sops.secrets.buildbot-github-key.path;
       githubTokenPath = config.sops.secrets.buildbot-github-token.path;
       buildCommand = ''nix build "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" --no-link --keep-going --max-jobs 3 --print-out-paths --accept-flake-config'';
-      nixBuilders = systems: ''--builders "'' + lib.foldl (acc: system: acc + ''ssh://eu.nixbuild.net ${system} - 100 1 big-parallel,benchmark;'') "" systems + ''"'';
+      nixBuilders =
+        systems:
+        ''--builders "''
+        + lib.foldl (
+          acc: system: acc + "ssh://eu.nixbuild.net ${system} - 100 1 big-parallel,benchmark;"
+        ) "" systems
+        + ''"'';
 
       buildAndPushBody = ''
         HOST="$1"
         echo "=== Building nixosConfiguration: $HOST ==="
-        result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" ]})
+        result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${
+          nixBuilders [
+            "x86_64-linux"
+            "i686-linux"
+          ]
+        })
         echo "Build output: $result"
 
         attempt=1
@@ -187,7 +226,13 @@
         candidates=()
         keep=()
         check() {
-          if nix build --no-link --max-jobs 0 ${nixBuilders [ "x86_64-linux" "i686-linux" "aarch64-linux" ]} \
+          if nix build --no-link --max-jobs 0 ${
+            nixBuilders [
+              "x86_64-linux"
+              "i686-linux"
+              "aarch64-linux"
+            ]
+          } \
                "${flakeDir}#stablePinsUnstable.\"$1\".\"$2\".\"$3\"" \
                > /dev/null 2>&1; then
             candidates+=("$3 (nixpkgs-$2, $1)")
@@ -369,10 +414,11 @@
                   mode = "0750";
                 };
               };
-            }) [
-            "/flake"
-            "/master"
-          ]
+            })
+            [
+              "/flake"
+              "/master"
+            ]
         );
 
         users = {
@@ -396,8 +442,21 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Buildbot Web UI"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Buildbot Web UI";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -468,13 +527,36 @@
         };
 
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = "/home/buildbot"; user = "buildbot"; group = "buildbot"; mode = "0750"; }
+          {
+            directory = "/home/buildbot";
+            user = "buildbot";
+            group = "buildbot";
+            mode = "0750";
+          }
         ];
 
         nodes = {
           ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "buildbot_access" ]; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2Groups = [ "buildbot_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            proxyWebsockets = true;
+            oauth2 = true;
+            oauth2Groups = [ "buildbot_access" ];
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              proxyWebsockets = true;
+              oauth2Groups = [ "buildbot_access" ];
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

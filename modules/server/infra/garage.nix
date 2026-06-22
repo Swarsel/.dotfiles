@@ -1,12 +1,44 @@
 {
   flake.modules.nixos.garage =
     # inspired by https://github.com/atropos112/nixos/blob/7fef652006a1c939f4caf9c8a0cb0892d9cdfe21/modules/garage.nix
-    { self, lib, pkgs, config, globals, dns, confLib, ... }:
+    {
+      self,
+      lib,
+      pkgs,
+      config,
+      globals,
+      dns,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "garage"; port = 3900; domain = config.repo.secrets.common.services.domains."garage-${config.node.name}"; }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "garage";
+          port = 3900;
+          domain = config.repo.secrets.common.services.domains."garage-${config.node.name}";
+        })
+        servicePort
+        serviceName
+        specificServiceName
+        serviceDomain
+        subDomain
+        baseDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
-      cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
+      cfg =
+        lib.recursiveUpdate config.services.${serviceName}
+          config.swarselsystems.server.${serviceName};
       inherit (config.swarselsystems) sopsFile mainUser;
 
       # needs SSD
@@ -42,8 +74,14 @@
             default = { };
             description = "Keys and their associated buckets. Each key gets full access (read/write/owner) to its listed buckets.";
             example = {
-              my_key_name = [ "bucket1" "bucket2" ];
-              my_other_key = [ "bucket2" "bucket3" ];
+              my_key_name = [
+                "bucket1"
+                "bucket2"
+              ];
+              my_other_key = [
+                "bucket2"
+                "bucket3"
+              ];
             };
           };
         };
@@ -63,7 +101,9 @@
             assertion =
               let
                 allKeyBuckets = lib.flatten (lib.attrValues config.swarselsystems.server.${serviceName}.keys);
-                invalidBuckets = builtins.filter (bucket: !(lib.elem bucket config.swarselsystems.server.${serviceName}.buckets)) allKeyBuckets;
+                invalidBuckets = builtins.filter (
+                  bucket: !(lib.elem bucket config.swarselsystems.server.${serviceName}.buckets)
+                ) allKeyBuckets;
               in
               invalidBuckets == [ ];
             message = "All buckets referenced in keys must exist in the buckets list";
@@ -92,7 +132,9 @@
         environment = {
           persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
             { directory = "/var/lib/garage"; }
-            (lib.mkIf config.swarselsystems.isCloud { directory = config.swarselsystems.server.${serviceName}.data_dir.path; })
+            (lib.mkIf config.swarselsystems.isCloud {
+              directory = config.swarselsystems.server.${serviceName}.data_dir.path;
+            })
           ];
           systemPackages = [
             cfg.package
@@ -100,9 +142,32 @@
         };
 
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort 3901 3902 3903 3904 ]; };
-          services = confLib.mkServiceGlobal { serviceName = specificServiceName; inherit serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { serviceName = specificServiceName; servicePort = garageAdminPort; path = "/health"; expectedBodyRegex = "fully operational"; };
+          networks = confLib.mkDualFirewallRules {
+            tcpPorts = [
+              servicePort
+              3901
+              3902
+              3903
+              3904
+            ];
+          };
+          services = confLib.mkServiceGlobal {
+            serviceName = specificServiceName;
+            inherit
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            serviceName = specificServiceName;
+            servicePort = garageAdminPort;
+            path = "/health";
+            expectedBodyRegex = "fully operational";
+          };
           dns.${baseDomain}.subdomainRecords = {
             "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
             "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -111,7 +176,6 @@
             "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
         };
-
 
         services.${serviceName} = {
           enable = true;
@@ -128,7 +192,9 @@
 
             rpc_bind_addr = "[::]:${builtins.toString garageRpcPort}";
             # we are not joining our nodes, just use the private ipv4
-            rpc_public_addr = "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4}:${builtins.toString garageRpcPort}";
+            rpc_public_addr = "${
+              globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
+            }:${builtins.toString garageRpcPort}";
 
             rpc_secret_file = config.sops.secrets.garage-rpc-secret.path;
 
@@ -155,7 +221,6 @@
           };
         };
 
-
         systemd.services = {
           garage-buckets = {
             description = "Create Garage buckets";
@@ -163,7 +228,11 @@
             wants = [ "garage.service" ];
             wantedBy = [ "multi-user.target" ];
 
-            path = [ cfg.package pkgs.gawk pkgs.coreutils ];
+            path = [
+              cfg.package
+              pkgs.gawk
+              pkgs.coreutils
+            ];
 
             serviceConfig = {
               Type = "oneshot";
@@ -206,8 +275,7 @@
                   else
                     echo "Bucket ${lib.escapeShellArg bucket} already exists"
                   fi
-              '')
-                cfg.buckets}
+              '') cfg.buckets}
 
               # Remove buckets that shouldn't exist
               for bucket in $existing_buckets; do
@@ -216,8 +284,7 @@
                   if [[ "$bucket" == ${lib.escapeShellArg bucket} ]]; then
                     should_exist=true
                   fi
-                '')
-                  cfg.buckets}
+                '') cfg.buckets}
 
                 if [[ "$should_exist" == "false" ]]; then
                   echo "Removing bucket $bucket"
@@ -234,7 +301,11 @@
             requires = [ "garage-buckets.service" ];
             wantedBy = [ "multi-user.target" ];
 
-            path = [ cfg.package pkgs.gawk pkgs.coreutils ];
+            path = [
+              cfg.package
+              pkgs.gawk
+              pkgs.coreutils
+            ];
 
             serviceConfig = {
               Type = "oneshot";
@@ -251,59 +322,61 @@
               existing_keys=$(garage key list | tail -n +2 | awk '{print $3}' | grep -v '^$' || true)
 
               # Create keys that should exist
-              ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
-                if [[ "$(garage key info ${lib.escapeShellArg keyName} 2>&1)" == *"0 matching keys"* ]]; then
-                    echo "Creating key ${lib.escapeShellArg keyName}"
-                    garage key create ${lib.escapeShellArg keyName}
-                  else
-                    echo "Key ${lib.escapeShellArg keyName} already exists"
-                  fi
-              '')
-                cfg.keys)}
+              ${lib.concatStringsSep "\n" (
+                lib.mapAttrsToList (keyName: _: ''
+                  if [[ "$(garage key info ${lib.escapeShellArg keyName} 2>&1)" == *"0 matching keys"* ]]; then
+                      echo "Creating key ${lib.escapeShellArg keyName}"
+                      garage key create ${lib.escapeShellArg keyName}
+                    else
+                      echo "Key ${lib.escapeShellArg keyName} already exists"
+                    fi
+                '') cfg.keys
+              )}
 
               # Set up key permissions for buckets
-              ${lib.concatStringsSep "\n" (lib.mapAttrsToList (
-                keyName: buckets:
-                lib.concatMapStringsSep "\n" (bucket: ''
-                  echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
-                      garage bucket allow --read --write --owner --key ${lib.escapeShellArg keyName} ${lib.escapeShellArg bucket}
-                '')
-                  buckets
-              )
-                cfg.keys)}
+              ${lib.concatStringsSep "\n" (
+                lib.mapAttrsToList (
+                  keyName: buckets:
+                  lib.concatMapStringsSep "\n" (bucket: ''
+                    echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
+                        garage bucket allow --read --write --owner --key ${lib.escapeShellArg keyName} ${lib.escapeShellArg bucket}
+                  '') buckets
+                ) cfg.keys
+              )}
 
               # Remove permissions from buckets that are no longer associated with keys
-              ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: buckets: ''
-                # Get current buckets this key has access to
-                  current_buckets=$(garage key info ${lib.escapeShellArg keyName} | grep -A 1000 "==== BUCKETS FOR THIS KEY ====" | tail -n +3 | awk '{print $3}' | grep -v '^$' || true)
+              ${lib.concatStringsSep "\n" (
+                lib.mapAttrsToList (keyName: buckets: ''
+                  # Get current buckets this key has access to
+                    current_buckets=$(garage key info ${lib.escapeShellArg keyName} | grep -A 1000 "==== BUCKETS FOR THIS KEY ====" | tail -n +3 | awk '{print $3}' | grep -v '^$' || true)
 
-                  # Remove access from buckets not in the desired list
-                  for current_bucket in $current_buckets; do
-                    should_have_access=false
-                    ${lib.concatMapStringsSep "\n" (bucket: ''
-                      if [[ "$current_bucket" == ${lib.escapeShellArg bucket} ]]; then
-                        should_have_access=true
+                    # Remove access from buckets not in the desired list
+                    for current_bucket in $current_buckets; do
+                      should_have_access=false
+                      ${lib.concatMapStringsSep "\n" (bucket: ''
+                        if [[ "$current_bucket" == ${lib.escapeShellArg bucket} ]]; then
+                          should_have_access=true
+                        fi
+                      '') buckets}
+
+                      if [[ "$should_have_access" == "false" ]]; then
+                        echo "Removing access for key ${lib.escapeShellArg keyName} from bucket $current_bucket"
+                        garage bucket deny --key ${lib.escapeShellArg keyName} $current_bucket
                       fi
-                    '')
-                      buckets}
-
-                    if [[ "$should_have_access" == "false" ]]; then
-                      echo "Removing access for key ${lib.escapeShellArg keyName} from bucket $current_bucket"
-                      garage bucket deny --key ${lib.escapeShellArg keyName} $current_bucket
-                    fi
-                  done
-              '')
-                cfg.keys)}
+                    done
+                '') cfg.keys
+              )}
 
               # Remove keys that shouldn't exist
               for key in $existing_keys; do
                 should_exist=false
-                ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
-                  if [[ "$key" == ${lib.escapeShellArg keyName} ]]; then
-                    should_exist=true
-                  fi
-                '')
-                  cfg.keys)}
+                ${lib.concatStringsSep "\n" (
+                  lib.mapAttrsToList (keyName: _: ''
+                    if [[ "$key" == ${lib.escapeShellArg keyName} ]]; then
+                      should_exist=true
+                    fi
+                  '') cfg.keys
+                )}
 
                 if [[ "$should_exist" == "false" ]]; then
                   echo "Removing key $key"

@@ -1,9 +1,29 @@
 {
   flake.modules.nixos.transmission =
-    { self, pkgs, lib, config, globals, confLib, ... }:
+    {
+      self,
+      pkgs,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "transmission"; port = 9091; }) servicePort serviceDomain;
-      inherit (confLib.static) isHome homeServiceAddress homeWebProxy nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "transmission";
+          port = 9091;
+        })
+        servicePort
+        serviceDomain
+        ;
+      inherit (confLib.static)
+        isHome
+        homeServiceAddress
+        homeWebProxy
+        nginxAccessRules
+        ;
       inherit (config.swarselsystems) sopsFile;
 
       piaNamespace = "pia";
@@ -120,7 +140,14 @@
         globals = {
           networks = confLib.mkDualFirewallRules {
             forWebProxy = false;
-            tcpPorts = [ servicePort radarrPort readarrPort sonarrPort lidarrPort prowlarrPort ];
+            tcpPorts = [
+              servicePort
+              radarrPort
+              readarrPort
+              sonarrPort
+              lidarrPort
+              prowlarrPort
+            ];
           };
           services.transmission = {
             domain = serviceDomain;
@@ -130,13 +157,42 @@
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
-            { directory = "/var/lib/radarr"; user = radarrUser; group = radarrGroup; }
-            { directory = "/var/lib/readarr"; user = readarrUser; group = readarrGroup; }
-            { directory = "/var/lib/sonarr"; user = sonarrUser; group = sonarrGroup; }
-            { directory = "/var/lib/lidarr"; user = lidarrUser; group = lidarrGroup; }
-            { directory = "/var/lib/private/prowlarr"; user = prowlarrUser; group = prowlarrGroup; }
-            { directory = "/var/lib/mam"; user = "root"; group = "root"; mode = "0700"; }
-            { directory = "/var/lib/transmission"; user = "transmission"; group = "transmission"; }
+            {
+              directory = "/var/lib/radarr";
+              user = radarrUser;
+              group = radarrGroup;
+            }
+            {
+              directory = "/var/lib/readarr";
+              user = readarrUser;
+              group = readarrGroup;
+            }
+            {
+              directory = "/var/lib/sonarr";
+              user = sonarrUser;
+              group = sonarrGroup;
+            }
+            {
+              directory = "/var/lib/lidarr";
+              user = lidarrUser;
+              group = lidarrGroup;
+            }
+            {
+              directory = "/var/lib/private/prowlarr";
+              user = prowlarrUser;
+              group = prowlarrGroup;
+            }
+            {
+              directory = "/var/lib/mam";
+              user = "root";
+              group = "root";
+              mode = "0700";
+            }
+            {
+              directory = "/var/lib/transmission";
+              user = "transmission";
+              group = "transmission";
+            }
           ];
         };
 
@@ -296,10 +352,17 @@
 
             transmission-peer-port = {
               description = "Apply PIA-forwarded port to transmission";
-              after = [ "transmission.service" "transmission-rpc-forward.service" ];
+              after = [
+                "transmission.service"
+                "transmission-rpc-forward.service"
+              ];
               wants = [ "transmission-rpc-forward.service" ];
               wantedBy = [ "transmission.service" ];
-              path = with pkgs; [ transmission_3 coreutils jq ];
+              path = with pkgs; [
+                transmission_3
+                coreutils
+                jq
+              ];
               serviceConfig = {
                 Type = "oneshot";
                 Restart = "on-failure";
@@ -321,7 +384,11 @@
               requires = [ "pia-netns.service" ];
               partOf = [ "pia-netns.service" ];
               wantedBy = [ "pia-netns.service" ];
-              path = with pkgs; [ curl iproute2 coreutils ];
+              path = with pkgs; [
+                curl
+                iproute2
+                coreutils
+              ];
               serviceConfig = {
                 Type = "oneshot";
                 Restart = "on-failure";
@@ -361,7 +428,6 @@
 
           };
         };
-
 
         nodes = {
           ${homeWebProxy}.services.nginx = {

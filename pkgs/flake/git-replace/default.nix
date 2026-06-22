@@ -1,8 +1,19 @@
-{ name, writeShellApplication, git, gnugrep, findutils, ... }:
+{
+  name,
+  writeShellApplication,
+  git,
+  gnugrep,
+  findutils,
+  ...
+}:
 
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ git gnugrep findutils ];
+  runtimeInputs = [
+    git
+    gnugrep
+    findutils
+  ];
   text = ''
 
     function help_and_exit() {
@@ -59,5 +70,5 @@ writeShellApplication {
     if [[ $target_dirs == "true" ]]; then
       grep -rl "$1" . | xargs sed -i "s/$1/$2/g"
     fi
-      '';
+  '';
 }

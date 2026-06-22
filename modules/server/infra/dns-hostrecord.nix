@@ -1,8 +1,22 @@
 {
   flake.modules.nixos.dns-hostrecord =
-    { lib, config, globals, dns, confLib, ... }:
+    {
+      lib,
+      config,
+      globals,
+      dns,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "dns-hostrecord"; proxy = config.node.name; }) proxyAddress4 proxyAddress6;
+      inherit
+        (confLib.gen {
+          name = "dns-hostrecord";
+          proxy = config.node.name;
+        })
+        proxyAddress4
+        proxyAddress6
+        ;
     in
     {
       config = lib.mkIf config.swarselsystems.isCloud {

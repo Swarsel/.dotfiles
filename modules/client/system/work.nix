@@ -6,7 +6,16 @@ in
   flake-file.inputs.vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
 
   flake.modules = {
-    nixos.work = { self, lib, pkgs, config, inputs, withHomeManager, ... }:
+    nixos.work =
+      {
+        self,
+        lib,
+        pkgs,
+        config,
+        inputs,
+        withHomeManager,
+        ...
+      }:
       let
         inherit (config.swarselsystems) mainUser homeDir;
         iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -27,7 +36,12 @@ in
         config = {
 
           nixpkgs.overlays = [
-            (final: prev: lib.genAttrs [ "rustdesk-vbc" ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}))
+            (
+              final: prev:
+              lib.genAttrs [ "rustdesk-vbc" ] (
+                name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}
+              )
+            )
           ];
 
           sops =
@@ -49,12 +63,10 @@ in
             in
             {
               secrets = builtins.listToAttrs (
-                map
-                  (name: {
-                    inherit name;
-                    value = { inherit owner sopsFile; };
-                  })
-                  secretNames
+                map (name: {
+                  inherit name;
+                  value = { inherit owner sopsFile; };
+                }) secretNames
               );
               templates = {
                 "network-manager-work.env".content = ''
@@ -110,7 +122,9 @@ in
                       uuid = "3988f10e-6451-381f-9330-a12e66f45051";
                       secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
                     };
-                    ipv4 = { method = "auto"; };
+                    ipv4 = {
+                      method = "auto";
+                    };
                     ipv6 = {
                       # addr-gen-mode = "default";
                       addr-gen-mode = "stable-privacy";
@@ -134,7 +148,6 @@ in
               };
             };
 
-
             nftables = {
               firewall = {
                 zones = {
@@ -147,7 +160,11 @@ in
                     from = [ "virbr" ];
                     to = [ "local" ];
                     allowedTCPPorts = [ 53 ];
-                    allowedUDPPorts = [ 53 67 547 ];
+                    allowedUDPPorts = [
+                      53
+                      67
+                      547
+                    ];
                   };
                   virbr-forward = {
                     from = [ "virbr" ];
@@ -242,8 +259,7 @@ in
             spice-vdagentd.enable = true;
             openssh = {
               enable = true;
-              extraConfig = ''
-                      '';
+              extraConfig = "";
             };
 
             syncthing = {
@@ -280,7 +296,8 @@ in
           #     ];
           #   };
           # };
-        } // lib.optionalAttrs withHomeManager {
+        }
+        // lib.optionalAttrs withHomeManager {
 
           home-manager.users."${config.swarselsystems.mainUser}" = {
             imports = [

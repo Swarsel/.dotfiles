@@ -3,7 +3,14 @@
     nixos.server-emacs =
       { confLib, ... }:
       let
-        inherit (confLib.gen { name = "emacs"; port = 9812; }) servicePort serviceName;
+        inherit
+          (confLib.gen {
+            name = "emacs";
+            port = 9812;
+          })
+          servicePort
+          serviceName
+          ;
       in
       {
         config = {

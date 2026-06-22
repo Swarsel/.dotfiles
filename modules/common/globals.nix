@@ -1,5 +1,11 @@
 {
-  flake.modules.generic.globals = { lib, inputs, options, ... }:
+  flake.modules.generic.globals =
+    {
+      lib,
+      inputs,
+      options,
+      ...
+    }:
     let
       inherit (lib)
         mkOption
@@ -62,8 +68,6 @@
           };
         };
 
-
-
         hosts = mkOption {
           default = { };
           type = types.attrsOf (
@@ -121,8 +125,10 @@
                     if netSubmod.config.cidrv6 == null then
                       null
                     else
-                    # if we use the /32 wan address as local address directly, do not use the network address in ipv6
-                      lib.net.cidr.hostCidr (if hostSubmod.config.id == 0 then 1 else hostSubmod.config.id) netSubmod.config.cidrv6;
+                      # if we use the /32 wan address as local address directly, do not use the network address in ipv6
+                      lib.net.cidr.hostCidr (
+                        if hostSubmod.config.id == 0 then 1 else hostSubmod.config.id
+                      ) netSubmod.config.cidrv6;
                 };
 
                 firewallRuleForNode = mkOption {
@@ -164,7 +170,6 @@
                   type = types.str;
                 };
               };
-
 
               services = mkOption {
                 type = types.attrsOf (
@@ -422,6 +427,5 @@
           internal = true;
         };
       };
-    }
-  ;
+    };
 }

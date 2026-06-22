@@ -1,5 +1,6 @@
 {
-  flake.modules.homeManager.hexchat = { confLib, ... }:
+  flake.modules.homeManager.hexchat =
+    { confLib, ... }:
     let
       moduleName = "hexchat";
       inherit (confLib.getConfig.repo.secrets.common.irc) irc_nick1;

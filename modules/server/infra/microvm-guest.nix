@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.microvm-guest =
-    { self, config, inputs, ... }:
+    {
+      self,
+      config,
+      inputs,
+      ...
+    }:
     {
       imports = [
         inputs.home-manager.nixosModules.home-manager

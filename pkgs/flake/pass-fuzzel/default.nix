@@ -1,7 +1,20 @@
-{ name, writeShellApplication, libnotify, pass, fuzzel, wtype, ... }:
+{
+  name,
+  writeShellApplication,
+  libnotify,
+  pass,
+  fuzzel,
+  wtype,
+  ...
+}:
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
+  runtimeInputs = [
+    libnotify
+    (pass.withExtensions (exts: [ exts.pass-otp ]))
+    fuzzel
+    wtype
+  ];
   text = ''
     # Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
       shopt -s nullglob globstar

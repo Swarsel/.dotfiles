@@ -14,8 +14,7 @@
       '';
       custom = {
         delete-by-moving-to-trash = true;
-        dired-listing-switches = ''
-          "-l --almost-all --human-readable --group-directories-first --no-group"'';
+        dired-listing-switches = ''"-l --almost-all --human-readable --group-directories-first --no-group"'';
         dirvish-attributes = "'(vc-state subtree-state nerd-icons collapse file-time file-size)";
         dirvish-quick-access-entries = ''
           '(("h" "~/"              "Home")

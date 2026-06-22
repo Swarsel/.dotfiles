@@ -1,6 +1,14 @@
 {
   flake.modules.nixos.acme =
-    { self, pkgs, lib, config, globals, confLib, ... }:
+    {
+      self,
+      pkgs,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
       inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
 
@@ -15,7 +23,13 @@
 
         sops = {
           secrets = {
-            acme-creds = { format = "json"; key = ""; group = "acme"; inherit sopsFile; mode = "0660"; };
+            acme-creds = {
+              format = "json";
+              key = "";
+              group = "acme";
+              inherit sopsFile;
+              mode = "0660";
+            };
           };
           templates."certs.secret".content = ''
             ACME_DNS_API_BASE = ${dnsBase}
@@ -25,7 +39,9 @@
 
         users = {
           persistentIds.acme = confLib.mkIds 967;
-          groups.acme.members = lib.mkIf (builtins.elem "nginx" config.swarselsystems.enabledServerModules) [ "nginx" ];
+          groups.acme.members = lib.mkIf (builtins.elem "nginx" config.swarselsystems.enabledServerModules) [
+            "nginx"
+          ];
         };
 
         security.acme = {
@@ -44,7 +60,7 @@
         };
 
         environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-          directories = [{ directory = "/var/lib/acme"; }];
+          directories = [ { directory = "/var/lib/acme"; } ];
         };
 
       };

@@ -1,13 +1,36 @@
 {
   flake.modules.nixos.pyroscope =
-    { self, lib, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen {
-        name = "pyroscope";
-        port = 4040;
-        dir = "/var/lib/private/pyroscope";
-      }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules wgProxyAccessRules;
+      inherit
+        (confLib.gen {
+          name = "pyroscope";
+          port = 4040;
+          dir = "/var/lib/private/pyroscope";
+        })
+        servicePort
+        serviceName
+        serviceDir
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        wgProxyAccessRules
+        ;
 
       memberlistPort = 7948;
     in
@@ -23,15 +46,38 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig = { port = servicePort; host = config.node.name; }; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ready"; expectedBodyRegex = "ready"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+            extra.extraConfig = {
+              port = servicePort;
+              host = config.node.name;
+            };
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/ready";
+            expectedBodyRegex = "ready";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         networking.firewall.allowedTCPPorts = [ servicePort ];
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = serviceDir; mode = "0700"; }];
+          directories = [
+            {
+              directory = serviceDir;
+              mode = "0700";
+            }
+          ];
         };
 
         services.${serviceName} = {
@@ -60,28 +106,37 @@
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
-              inherit serviceAddress servicePort serviceDomain serviceName;
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               maxBody = 0;
               extraConfig = wgProxyAccessRules;
             };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              serviceAddress = homeServiceAddress;
-              maxBody = 0;
-              extraConfig = nginxAccessRules;
-            });
-            ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [{
-              name = "Pyroscope";
-              uid = "pyroscope";
-              type = "grafana-pyroscope-datasource";
-              access = "proxy";
-              url = confLib.mkAlloyPushUrl {
-                host = globals.general.monitoringServer;
-                domain = serviceDomain;
-                port = servicePort;
-                path = "";
-              };
-            }];
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                serviceAddress = homeServiceAddress;
+                maxBody = 0;
+                extraConfig = nginxAccessRules;
+              }
+            );
+            ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [
+              {
+                name = "Pyroscope";
+                uid = "pyroscope";
+                type = "grafana-pyroscope-datasource";
+                access = "proxy";
+                url = confLib.mkAlloyPushUrl {
+                  host = globals.general.monitoringServer;
+                  domain = serviceDomain;
+                  port = servicePort;
+                  path = "";
+                };
+              }
+            ];
           }
           (lib.genAttrs (lib.attrNames globals.services.alloy.extraConfig.clients) (alloyHost: {
             environment.etc."alloy/config.alloy".text = lib.mkAfter ''
@@ -120,12 +175,14 @@
 
               pyroscope.write "central" {
                 endpoint {
-                  url = "${confLib.mkAlloyPushUrl {
-                    host = alloyHost;
-                    domain = serviceDomain;
-                    port = servicePort;
-                    path = "";
-                  }}"
+                  url = "${
+                    confLib.mkAlloyPushUrl {
+                      host = alloyHost;
+                      domain = serviceDomain;
+                      port = servicePort;
+                      path = "";
+                    }
+                  }"
                 }
                 external_labels = {
                   host = "${alloyHost}",

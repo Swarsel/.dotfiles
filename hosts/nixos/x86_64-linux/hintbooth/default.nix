@@ -1,4 +1,12 @@
-{ self, config, lib, minimal, confLib, globals, ... }:
+{
+  self,
+  config,
+  lib,
+  minimal,
+  confLib,
+  globals,
+  ...
+}:
 {
 
   imports = [
@@ -7,7 +15,8 @@
 
     self.modules.nixos.systemd-networkd-server-home
     self.modules.nixos.microvm-host
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     self.modules.nixos.wireguard
     self.modules.nixos.profile-localserver
     self.modules.nixos.profile-router
@@ -16,10 +25,30 @@
 
   topology.self = {
     interfaces = {
-      lan2.physicalConnections = [{ node = "summers"; interface = "lan"; }];
-      lan3.physicalConnections = [{ node = "summers"; interface = "bmc"; }];
-      lan4.physicalConnections = [{ node = "switch-bedroom"; interface = "eth1"; }];
-      lan5.physicalConnections = [{ node = "switch-livingroom"; interface = "eth1"; }];
+      lan2.physicalConnections = [
+        {
+          node = "summers";
+          interface = "lan";
+        }
+      ];
+      lan3.physicalConnections = [
+        {
+          node = "summers";
+          interface = "bmc";
+        }
+      ];
+      lan4.physicalConnections = [
+        {
+          node = "switch-bedroom";
+          interface = "eth1";
+        }
+      ];
+      lan5.physicalConnections = [
+        {
+          node = "switch-livingroom";
+          interface = "eth1";
+        }
+      ];
     };
   };
 
@@ -57,7 +86,10 @@
   };
 
   swarselsystems = {
-    nodeRoles = [ "homeProxy" "routerServer" ];
+    nodeRoles = [
+      "homeProxy"
+      "routerServer"
+    ];
     info = "HUNSN RM02, 8GB RAM";
     flakePath = "/root/.dotfiles";
     isImpermanence = true;
@@ -73,12 +105,11 @@
     initrdVLAN = "home";
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-    { }
-    // confLib.mkMicrovm "adguardhome" { }
-    // confLib.mkMicrovm "nginx" { }
+    { } // confLib.mkMicrovm "adguardhome" { } // confLib.mkMicrovm "nginx" { }
   );
 
 }

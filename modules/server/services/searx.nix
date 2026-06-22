@@ -1,9 +1,35 @@
 {
   flake.modules.nixos.searx =
-    { lib, config, globals, confLib, ... }:
+    {
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "searx"; port = 3002; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "searx";
+          port = 3002;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        idmServer
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       inherit (config.swarselsystems) sopsFile;
     in
@@ -13,7 +39,12 @@
 
         sops = {
           secrets = {
-            searx-secret = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            searx-secret = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
           };
 
           templates = {
@@ -38,8 +69,22 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/healthz"; expectedBodyRegex = "OK"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/healthz";
+            expectedBodyRegex = "OK";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -259,13 +304,35 @@
         };
 
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = "/var/lib/redis-${serviceName}"; user = serviceUser; group = serviceGroup; mode = "0700"; }
+          {
+            directory = "/var/lib/redis-${serviceName}";
+            user = serviceUser;
+            group = serviceGroup;
+            mode = "0700";
+          }
         ];
 
         nodes = {
           ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; oauth2 = true; oauth2Groups = [ "searx_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            oauth2 = true;
+            oauth2Groups = [ "searx_access" ];
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              oauth2 = true;
+              oauth2Groups = [ "searx_access" ];
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

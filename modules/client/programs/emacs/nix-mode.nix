@@ -1,5 +1,6 @@
 {
-  flake.modules.homeManager.emacs-init = { lib, ... }:
+  flake.modules.homeManager.emacs-init =
+    { lib, ... }:
     let
       lspNixdConfig = ''
         (setq lsp-nix-nixd-server-path "nixd"

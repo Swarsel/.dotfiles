@@ -1,9 +1,25 @@
 {
   flake.modules.nixos.mpd =
-    { self, lib, config, pkgs, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      pkgs,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) sopsFile;
-      inherit (confLib.gen { name = "mpd"; port = 6600; }) servicePort serviceName serviceUser serviceGroup;
+      inherit
+        (confLib.gen {
+          name = "mpd";
+          port = 6600;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        ;
       inherit (confLib.static) routerServer;
     in
     {
@@ -22,13 +38,23 @@
             ${serviceUser} = {
               isSystemUser = true;
               group = serviceGroup;
-              extraGroups = [ "audio" "utmp" "users" "pipewire" ];
+              extraGroups = [
+                "audio"
+                "utmp"
+                "users"
+                "pipewire"
+              ];
             };
           };
         };
 
         sops = {
-          secrets.mpd-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          secrets.mpd-pw = {
+            inherit sopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
         };
 
         environment.systemPackages = with pkgs; [
@@ -43,7 +69,13 @@
         # };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; user = "mpd"; group = "mpd"; }];
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              user = "mpd";
+              group = "mpd";
+            }
+          ];
         };
 
         services.${serviceName} = {

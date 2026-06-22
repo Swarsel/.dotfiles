@@ -1,9 +1,34 @@
 {
   flake.modules.nixos.microbin =
-    { self, lib, config, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "microbin";
+          port = 8777;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       inherit (config.swarselsystems) sopsFile;
 
@@ -25,9 +50,24 @@
 
         sops = {
           secrets = {
-            microbin-admin-username = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            microbin-admin-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            microbin-uploader-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            microbin-admin-username = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
+            microbin-admin-password = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
+            microbin-uploader-password = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
           };
 
           templates = {
@@ -52,8 +92,21 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "pasta-form"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "pasta-form";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -104,12 +157,34 @@
         # networking.firewall.allowedTCPPorts = [ servicePort ];
 
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
+          {
+            directory = cfg.dataDir;
+            user = serviceUser;
+            group = serviceGroup;
+            mode = "0700";
+          }
         ];
 
         nodes = {
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 1; maxBodyUnit = "G"; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            maxBody = 1;
+            maxBodyUnit = "G";
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              maxBody = 1;
+              maxBodyUnit = "G";
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

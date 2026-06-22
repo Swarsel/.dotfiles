@@ -1,11 +1,16 @@
 # NOTE: ... is needed because dikso passes diskoFile
-{ lib
-, config
-, ...
+{
+  lib,
+  config,
+  ...
 }:
 let
   type = "btrfs";
-  extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+  extraArgs = [
+    "-L"
+    "nixos"
+    "-f"
+  ]; # force overwrite
   subvolumes = {
     "/root" = {
       mountpoint = "/";
@@ -99,7 +104,11 @@ in
               size = "100%";
               content = {
                 type = "btrfs";
-                extraArgs = [ "-L" "sync" "-f" ]; # force overwrite
+                extraArgs = [
+                  "-L"
+                  "sync"
+                  "-f"
+                ]; # force overwrite
                 subvolumes = {
                   "/sync" = {
                     mountpoint = "/sync";

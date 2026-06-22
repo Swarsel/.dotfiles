@@ -1,5 +1,11 @@
 {
-  flake.modules.nixos.remotebuild = { lib, config, globals, ... }:
+  flake.modules.nixos.remotebuild =
+    {
+      lib,
+      config,
+      globals,
+      ...
+    }:
     let
       inherit (config.swarselsystems) homeDir mainUser isClient;
     in
@@ -7,8 +13,16 @@
       config = {
 
         sops.secrets = {
-          builder-key = lib.mkIf isClient { owner = mainUser; path = "${homeDir}/.ssh/builder"; mode = "0600"; };
-          nixbuild-net-key = { owner = mainUser; path = "${homeDir}/.ssh/nixbuild-net"; mode = "0600"; };
+          builder-key = lib.mkIf isClient {
+            owner = mainUser;
+            path = "${homeDir}/.ssh/builder";
+            mode = "0600";
+          };
+          nixbuild-net-key = {
+            owner = mainUser;
+            path = "${homeDir}/.ssh/nixbuild-net";
+            mode = "0600";
+          };
         };
 
         nix = {
@@ -33,7 +47,10 @@
               system = "x86_64-linux";
               maxJobs = 100;
               speedFactor = 2;
-              supportedFeatures = [ "benchmark" "big-parallel" ];
+              supportedFeatures = [
+                "benchmark"
+                "big-parallel"
+              ];
             })
           ];
         };
@@ -64,7 +81,8 @@
               ServerAliveInterval 60
               IPQoS throughput
               IdentityFile ${config.sops.secrets.nixbuild-net-key.path}
-          '' + lib.optionalString isClient ''
+          ''
+          + lib.optionalString isClient ''
             Host ${config.repo.secrets.common.builder1-ip}
               ConnectTimeout 1
               User ${mainUser}

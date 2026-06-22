@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   config = {
     home-manager.users.nixos = {
@@ -72,7 +77,10 @@
 
     nix = {
       channel.enable = false;
-      settings.experimental-features = [ "nix-command" "flakes" ];
+      settings.experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
     };
 
     environment.interactiveShellInit = ''

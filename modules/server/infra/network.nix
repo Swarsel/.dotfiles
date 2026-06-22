@@ -29,16 +29,17 @@
 
         swarselsystems.server.localNetwork = netConfig.localNetwork or "";
 
-        globals.networks = lib.mkIf config.swarselsystems.writeGlobalNetworks (lib.mapAttrs'
-          (netName: _:
+        globals.networks = lib.mkIf config.swarselsystems.writeGlobalNetworks (
+          lib.mapAttrs' (
+            netName: _:
             lib.nameValuePair "${netPrefix}-${netName}" {
               hosts.${config.node.name} = {
                 inherit (netConfig.networks.${netName}) id;
                 mac = netConfig.networks.${netName}.mac or null;
               };
             }
-          )
-          netConfig.networks);
+          ) netConfig.networks
+        );
 
         globals.hosts.${config.node.name} = {
           defaultGateway4 = netConfig.defaultGateway4 or null;

@@ -1,9 +1,33 @@
 {
   flake.modules.nixos.snipe-it =
-    { lib, config, confLib, ... }:
+    {
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "snipeit";
+          port = 80;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
       # sopsFile = config.node.secretsDir + "/secrets2.yaml";
       inherit (config.swarselsystems) sopsFile;
 
@@ -17,7 +41,12 @@
 
         sops = {
           secrets = {
-            snipe-it-appkey = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            snipe-it-appkey = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
           };
         };
 
@@ -25,8 +54,21 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Snipe-IT"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Snipe-IT";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -48,8 +90,23 @@
         };
 
         nodes = {
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            maxBody = 0;
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              maxBody = 0;
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

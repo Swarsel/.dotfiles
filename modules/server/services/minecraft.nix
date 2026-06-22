@@ -1,8 +1,30 @@
 {
   flake.modules.nixos.minecraft =
-    { self, lib, config, pkgs, globals, dns, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      pkgs,
+      globals,
+      dns,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+      inherit
+        (confLib.gen {
+          name = "minecraft";
+          port = 25565;
+          dir = "/opt/minecraft";
+          proxy = config.node.name;
+        })
+        serviceName
+        servicePort
+        serviceDir
+        serviceDomain
+        proxyAddress4
+        proxyAddress6
+        ;
       inherit (confLib.static) isHome;
       inherit (config.swarselsystems) mainUser;
       worldName = "${mainUser}craft";
@@ -10,7 +32,6 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "minecraft" ];
-
 
         topology.self.services.${serviceName} = {
           name = "Minecraft";
@@ -20,7 +41,8 @@
 
         globals = {
           dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-            "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+            "${globals.services.${serviceName}.subDomain}" =
+              dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
           services.${serviceName} = {
             domain = serviceDomain;
@@ -31,7 +53,10 @@
         networking.firewall.allowedTCPPorts = [ servicePort ];
 
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = serviceDir; mode = "0755"; }
+          {
+            directory = serviceDir;
+            mode = "0755";
+          }
         ];
 
         systemd.services.minecraft-swarselcraft = {
@@ -52,7 +77,6 @@
 
           wantedBy = [ "multi-user.target" ];
         };
-
 
       };
 

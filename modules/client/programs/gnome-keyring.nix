@@ -10,13 +10,19 @@
       };
     };
 
-    homeManager.gnome-keyring = { lib, nixosConfig ? null, ... }: {
-      config = {
-        swarselsystems.enabledHomeModules = [ "gnome-keyring" ];
-        services.gnome-keyring = lib.mkIf (nixosConfig == null) {
-          enable = true;
+    homeManager.gnome-keyring =
+      {
+        lib,
+        nixosConfig ? null,
+        ...
+      }:
+      {
+        config = {
+          swarselsystems.enabledHomeModules = [ "gnome-keyring" ];
+          services.gnome-keyring = lib.mkIf (nixosConfig == null) {
+            enable = true;
+          };
         };
       };
-    };
   };
 }

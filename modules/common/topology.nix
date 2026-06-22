@@ -1,5 +1,6 @@
 {
-  flake.modules.nixos.topology = { inputs, lib, ... }:
+  flake.modules.nixos.topology =
+    { inputs, lib, ... }:
     {
       options.swarselsystems.info = lib.mkOption {
         type = lib.types.str;
@@ -18,6 +19,5 @@
           };
         })
       ];
-    }
-  ;
+    };
 }

@@ -15,14 +15,12 @@
       config = {
         swarselsystems.enabledServerModules = [ "general" ];
 
-        environment.shellAliases = lib.recursiveUpdate
-          {
-            nswitch = "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
-            ntest = "cd ${flakePath}; swarsel-deploy $(hostname) test; cd -;";
-            nboot = "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
-            ndry = "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
-          }
-          config.swarselsystems.shellAliases;
+        environment.shellAliases = lib.recursiveUpdate {
+          nswitch = "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+          ntest = "cd ${flakePath}; swarsel-deploy $(hostname) test; cd -;";
+          nboot = "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
+          ndry = "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
+        } config.swarselsystems.shellAliases;
 
         nixpkgs.config = lib.mkIf (!config.swarselsystems.isMicroVM) {
           permittedInsecurePackages = [

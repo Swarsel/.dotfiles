@@ -1,5 +1,11 @@
 {
-  flake.modules.nixos.uwsm = { lib, config, pkgs, ... }:
+  flake.modules.nixos.uwsm =
+    {
+      lib,
+      config,
+      pkgs,
+      ...
+    }:
     let
       cfg = config.programs.uwsm;
     in
@@ -40,20 +46,20 @@
                 };
               });
           in
-          lib.mkForce (lib.mapAttrsToList
-            (
+          lib.mkForce (
+            lib.mapAttrsToList (
               name: value:
-                mk_uwsm_desktop_entry {
-                  inherit name;
-                  inherit (value)
-                    prettyName
-                    comment
-                    binPath
-                    extraArgs
-                    ;
-                }
-            )
-            cfg.waylandCompositors);
+              mk_uwsm_desktop_entry {
+                inherit name;
+                inherit (value)
+                  prettyName
+                  comment
+                  binPath
+                  extraArgs
+                  ;
+              }
+            ) cfg.waylandCompositors
+          );
       };
     };
 }

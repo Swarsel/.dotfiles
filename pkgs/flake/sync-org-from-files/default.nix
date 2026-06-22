@@ -1,4 +1,10 @@
-{ name, self, python313, writeShellApplication, ... }:
+{
+  name,
+  self,
+  python313,
+  writeShellApplication,
+  ...
+}:
 
 writeShellApplication {
   inherit name;

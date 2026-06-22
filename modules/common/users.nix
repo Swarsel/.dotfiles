@@ -1,8 +1,18 @@
 {
-  flake.modules.nixos.users = { pkgs, config, lib, globals, minimal, ... }:
+  flake.modules.nixos.users =
+    {
+      pkgs,
+      config,
+      lib,
+      globals,
+      minimal,
+      ...
+    }:
     {
       config = {
-        sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
+        sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) {
+          neededForUsers = true;
+        };
 
         users = {
           mutableUsers = lib.mkIf (!minimal) false;
@@ -29,13 +39,29 @@
               ];
               description = config.repo.secrets.common.fullName or "User";
               password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
-              hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
-              extraGroups = [ "wheel" ] ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [ "networkmanager" "input" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "builder" "libvirtd" "scanner" ];
+              hashedPasswordFile = lib.mkIf (
+                !minimal && !config.swarselsystems.isPublic
+              ) config.sops.secrets.main-user-hashed-pw.path;
+              extraGroups = [
+                "wheel"
+              ]
+              ++ lib.optionals (!minimal && !config.swarselsystems.isMicroVM) [
+                "networkmanager"
+                "input"
+                "syncthing"
+                "docker"
+                "lp"
+                "audio"
+                "video"
+                "vboxusers"
+                "builder"
+                "libvirtd"
+                "scanner"
+              ];
               packages = with pkgs; [ ];
             };
           };
         };
       };
-    }
-  ;
+    };
 }

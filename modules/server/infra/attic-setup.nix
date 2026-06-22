@@ -1,6 +1,12 @@
 {
   flake.modules.nixos.attic-setup =
-    { lib, config, pkgs, globals, ... }:
+    {
+      lib,
+      config,
+      pkgs,
+      globals,
+      ...
+    }:
 
     {
       key = "swarsel/server/attic-setup";
@@ -72,7 +78,8 @@
               else
                 echo "Cache already authenticated with matching token, skipping."
               fi
-            '' + lib.optionalString (config.users.users ? buildbot) ''
+            ''
+            + lib.optionalString (config.users.users ? buildbot) ''
               echo "Copying attic config to buildbot user..."
               install -d -m 700 -o buildbot -g buildbot /home/buildbot/.config/attic
               install -m 600 -o buildbot -g buildbot ${configFile} /home/buildbot/.config/attic/config.toml

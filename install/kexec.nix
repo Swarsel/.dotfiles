@@ -1,4 +1,10 @@
-{ lib, pkgs, modulesPath, options, ... }:
+{
+  lib,
+  pkgs,
+  modulesPath,
+  options,
+  ...
+}:
 {
   disabledModules = [
     # This module adds values to multiple lists (systemPackages, supportedFilesystems)
@@ -82,15 +88,14 @@
       userborn.enable = false;
     };
 
-
-
     # we are missing this from base.nix
     boot.supportedFilesystems = [
       "ext4"
       "btrfs"
       "xfs"
     ];
-  } // lib.optionalAttrs (options.hardware ? firmwareCompression) {
+  }
+  // lib.optionalAttrs (options.hardware ? firmwareCompression) {
     hardware.firmwareCompression = "xz";
   };
 }

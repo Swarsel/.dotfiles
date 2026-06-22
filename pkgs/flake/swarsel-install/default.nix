@@ -1,7 +1,16 @@
-{ name, writeShellApplication, git, jq, ... }:
+{
+  name,
+  writeShellApplication,
+  git,
+  jq,
+  ...
+}:
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ git jq ];
+  runtimeInputs = [
+    git
+    jq
+  ];
   text = ''
     set -eo pipefail
 

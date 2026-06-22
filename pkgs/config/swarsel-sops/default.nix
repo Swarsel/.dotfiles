@@ -1,4 +1,10 @@
-{ name, sops, homeConfig, writeShellApplication, ... }:
+{
+  name,
+  sops,
+  homeConfig,
+  writeShellApplication,
+  ...
+}:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ sops ];

@@ -12,7 +12,8 @@
     # self.modules.nixos.systemd-networkd-server-home # home server with VLANs
     # self.modules.nixos.nix-topology-self
 
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     # self.modules.nixos.profile-personal
     # self.modules.nixos.profile-localserver
   ];
@@ -56,7 +57,8 @@
     # nodeRoles = [ ];
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   # ---- PICK ----:
   #   client:               [ "wlan*" "enp*" ]

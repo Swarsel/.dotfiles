@@ -1,9 +1,37 @@
 {
   flake.modules.nixos.immich =
-    { self, lib, pkgs, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      pkgs,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "immich";
+          port = 3001;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
       inherit (config.swarselsystems) sopsFile;
 
       kanidmDomain = globals.services.kanidm.domain;
@@ -18,10 +46,19 @@
         swarselsystems.enabledServerModules = [ "immich" ];
 
         sops.secrets = {
-          kanidm-immich = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          immich-smtp-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          kanidm-immich = {
+            sopsFile = kanidmSopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
+          immich-smtp-pw = {
+            inherit sopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
         };
-
 
         users = {
           persistentIds = {
@@ -29,7 +66,11 @@
             redis-immich = confLib.mkIds 977;
           };
           users.${serviceUser} = {
-            extraGroups = [ "video" "render" "users" ];
+            extraGroups = [
+              "video"
+              "render"
+              "users"
+            ];
           };
         };
 
@@ -38,16 +79,42 @@
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/server/ping"; expectedBodyRegex = ''"res":\s*"pong"''; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/api/server/ping";
+            expectedBodyRegex = ''"res":\s*"pong"'';
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
-            { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
-            { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
-            { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+            {
+              directory = "/var/cache/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+            {
+              directory = "/var/lib/redis-${serviceName}";
+              user = "redis-${serviceUser}";
+              group = "redis-${serviceGroup}";
+            }
           ];
         };
 
@@ -70,8 +137,16 @@
             ffmpeg = {
               accel = "disabled";
               accelDecode = false;
-              acceptedAudioCodecs = [ "aac" "mp3" "opus" ];
-              acceptedContainers = [ "mov" "ogg" "webm" ];
+              acceptedAudioCodecs = [
+                "aac"
+                "mp3"
+                "opus"
+              ];
+              acceptedContainers = [
+                "mov"
+                "ogg"
+                "webm"
+              ];
               acceptedVideoCodecs = [ "h264" ];
               bframes = -1;
               cqMode = "auto";
@@ -260,21 +335,43 @@
             '';
           in
           {
-            ${idmServer} = lib.recursiveUpdate
-              (confLib.mkKanidmOidcSystem {
-                inherit serviceName serviceDomain kanidmSopsFile;
-                originUrl = [
-                  "https://${serviceDomain}/auth/login"
-                  "https://${serviceDomain}/user-settings"
-                  "app.immich:///oauth-callback"
-                  "https://${serviceDomain}/api/oauth/mobile-redirect"
-                ];
-              })
-              {
-                services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
-              };
-            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+            ${idmServer} =
+              lib.recursiveUpdate
+                (confLib.mkKanidmOidcSystem {
+                  inherit serviceName serviceDomain kanidmSopsFile;
+                  originUrl = [
+                    "https://${serviceDomain}/auth/login"
+                    "https://${serviceDomain}/user-settings"
+                    "app.immich:///oauth-callback"
+                    "https://${serviceDomain}/api/oauth/mobile-redirect"
+                  ];
+                })
+                {
+                  services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
+                };
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                extraConfigLoc
+                ;
+              maxBody = 0;
+            };
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  extraConfigLoc
+                  ;
+                maxBody = 0;
+                extraConfig = nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }
+            );
           };
 
       };

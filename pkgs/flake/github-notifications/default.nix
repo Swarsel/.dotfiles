@@ -1,4 +1,9 @@
-{ name, writeShellApplication, jq, ... }:
+{
+  name,
+  writeShellApplication,
+  jq,
+  ...
+}:
 
 writeShellApplication {
   inherit name;

@@ -3,8 +3,7 @@
     enable = true;
     custom = {
       shfmt-command = ''"shfmt"'';
-      shfmt-arguments = ''
-        '("-i" "4" "-s" "-sr")'';
+      shfmt-arguments = '''("-i" "4" "-s" "-sr")'';
     };
   };
 }

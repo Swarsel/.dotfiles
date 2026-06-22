@@ -1,5 +1,13 @@
 {
-  flake.modules.nixos.disk-encrypt = { self, pkgs, lib, config, minimal, ... }:
+  flake.modules.nixos.disk-encrypt =
+    {
+      self,
+      pkgs,
+      lib,
+      config,
+      minimal,
+      ...
+    }:
     let
 
       hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
@@ -22,7 +30,6 @@
       config = lib.mkIf config.swarselsystems.isCrypted {
         swarselsystems.enabledServerModules = [ "diskEncryption" ];
 
-
         # as soon as we hit a stable system, we will use a persisted key
         # @future me: dont mkIf this to minimal, we need to create this as soon as possible
         system.activationScripts.ensureInitrdHostkey = {
@@ -31,19 +38,23 @@
           '';
           deps = [
             "users"
-          ] ++ lib.optional config.swarselsystems.isImpermanence "createPersistentStorageDirs";
+          ]
+          ++ lib.optional config.swarselsystems.isImpermanence "createPersistentStorageDirs";
         };
 
-        environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselsystems.isServer || minimal)) {
-          files = [ hostKeyPathBase ];
-        };
+        environment.persistence."/persist" =
+          lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselsystems.isServer || minimal))
+            {
+              files = [ hostKeyPathBase ];
+            };
 
         boot = lib.mkIf (!config.swarselsystems.isClient) {
           # kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == []) || isRouter)) [
           #   "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
           # ];
           initrd = {
-            secrets."/tmp${hostKeyPathBase}" = if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
+            secrets."/tmp${hostKeyPathBase}" =
+              if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
             availableKernelModules = config.swarselsystems.networkKernelModules;
             kernelModules = config.swarselsystems.networkKernelModules; # at least summers needs this to actually find the interfaces
             network = {
@@ -68,6 +79,5 @@
         };
       };
 
-    }
-  ;
+    };
 }

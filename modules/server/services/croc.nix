@@ -1,8 +1,24 @@
 {
   flake.modules.nixos.croc =
-    { self, lib, config, pkgs, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      pkgs,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
+      inherit
+        (confLib.gen {
+          name = "croc";
+          proxy = config.node.name;
+        })
+        serviceName
+        serviceDomain
+        proxyAddress4
+        proxyAddress6
+        ;
       inherit (confLib.static) isHome;
       servicePorts = [
         9009
@@ -34,7 +50,6 @@
           };
         };
 
-
         topology.self.services.${serviceName} = {
           name = serviceName;
           info = "https://${serviceDomain}";
@@ -56,12 +71,12 @@
           openFirewall = true;
         };
 
-
         systemd.services = {
           ${serviceName} = {
             serviceConfig = {
               ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
-            lib.concatMapStringsSep "," toString cfg.ports}";
+                lib.concatMapStringsSep "," toString cfg.ports
+              }";
               EnvironmentFile = [
                 config.sops.templates.croc-env.path
               ];

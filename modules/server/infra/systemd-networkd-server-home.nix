@@ -1,6 +1,12 @@
 {
   flake.modules.nixos.systemd-networkd-server-home =
-    { self, lib, config, globals, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      ...
+    }:
     let
       inherit (globals.general) routerServer;
       inherit (config.swarselsystems) withMicroVMs isCrypted initrdVLAN;
@@ -16,7 +22,8 @@
       config = {
         assertions = [
           {
-            assertion = ((localVLANsList != [ ]) && (initrdVLAN != null)) || (localVLANsList == [ ]) || (!isCrypted);
+            assertion =
+              ((localVLANsList != [ ]) && (initrdVLAN != null)) || (localVLANsList == [ ]) || (!isCrypted);
             message = "This host uses VLANs and disk encryption, thus a VLAN must be specified for initrd or disk encryption must be removed.";
           }
         ];
@@ -58,19 +65,19 @@
           };
         };
 
-        topology.self.interfaces = (lib.mapAttrs'
-          (vlanName: _:
+        topology.self.interfaces =
+          (lib.mapAttrs' (
+            vlanName: _:
             lib.nameValuePair "vlan-${vlanName}" {
               network = lib.mkForce vlanName;
             }
-          )
-          localVLANs) // (lib.mapAttrs'
-          (vlanName: _:
+          ) localVLANs)
+          // (lib.mapAttrs' (
+            vlanName: _:
             lib.nameValuePair "me-${vlanName}" {
               network = lib.mkForce vlanName;
             }
-          )
-          localVLANs);
+          ) localVLANs);
 
         systemd.network = {
           netdevs = lib.flip lib.concatMapAttrs localVLANs (
@@ -115,31 +122,38 @@
           }
           // lib.flip lib.concatMapAttrs localVLANs (
             vlanName: vlanCfg:
-              let
-                me = {
-                  address = [
-                    vlanCfg.hosts.${config.node.name}.cidrv4
-                    vlanCfg.hosts.${config.node.name}.cidrv6
-                  ];
-                  gateway = lib.optionals (vlanName == "services") [ vlanCfg.hosts.${routerServer}.ipv4 vlanCfg.hosts.${routerServer}.ipv6 ];
-                  matchConfig.Name = "${if withMicroVMs then "me" else "vlan"}-${vlanName}";
-                  networkConfig.IPv6PrivacyExtensions = "yes";
-                  linkConfig.RequiredForOnline = "routable";
-                };
+            let
+              me = {
+                address = [
+                  vlanCfg.hosts.${config.node.name}.cidrv4
+                  vlanCfg.hosts.${config.node.name}.cidrv6
+                ];
+                gateway = lib.optionals (vlanName == "services") [
+                  vlanCfg.hosts.${routerServer}.ipv4
+                  vlanCfg.hosts.${routerServer}.ipv6
+                ];
+                matchConfig.Name = "${if withMicroVMs then "me" else "vlan"}-${vlanName}";
+                networkConfig.IPv6PrivacyExtensions = "yes";
+                linkConfig.RequiredForOnline = "routable";
+              };
 
-              in
-              {
-                "30-vlan-${vlanName}" = if (!withMicroVMs) then me else {
-                  matchConfig.Name = "vlan-${vlanName}";
-                  # This interface should only be used from attached macvlans.
-                  # So don't acquire a link local address and only wait for
-                  # this interface to gain a carrier.
-                  networkConfig.LinkLocalAddressing = "no";
-                  networkConfig.MACVLAN = "me-${vlanName}";
-                  linkConfig.RequiredForOnline = if isRouter then "no" else "carrier";
-                };
-                "40-me-${vlanName}" = lib.mkIf withMicroVMs (lib.mkDefault me);
-              }
+            in
+            {
+              "30-vlan-${vlanName}" =
+                if (!withMicroVMs) then
+                  me
+                else
+                  {
+                    matchConfig.Name = "vlan-${vlanName}";
+                    # This interface should only be used from attached macvlans.
+                    # So don't acquire a link local address and only wait for
+                    # this interface to gain a carrier.
+                    networkConfig.LinkLocalAddressing = "no";
+                    networkConfig.MACVLAN = "me-${vlanName}";
+                    linkConfig.RequiredForOnline = if isRouter then "no" else "carrier";
+                  };
+              "40-me-${vlanName}" = lib.mkIf withMicroVMs (lib.mkDefault me);
+            }
           );
         };
 

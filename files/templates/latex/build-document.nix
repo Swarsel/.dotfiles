@@ -1,43 +1,44 @@
 # Build a reproducible latex document with latexmk, based on:
 # https://flyx.org/nix-flakes-latex/
 
-{ pkgs
+{
+  pkgs,
   # Document source
-, src ? ./.
+  src ? ./.,
 
   # Name of the final pdf file
-, name ? "document.pdf"
+  name ? "document.pdf",
 
   # Use -shell-escape
-, shellEscape ? false
+  shellEscape ? false,
 
   # Use minted (requires shellEscape)
-, minted ? false
+  minted ? false,
 
   # Additional flags for latexmk
-, extraFlags ? [ ]
+  extraFlags ? [ ],
 
   # Do not use the default latexmk flags. Usefull if you have a .latexmkrc or you
   # don't want to use lualatex
-, dontUseDefaultFlags ? false
+  dontUseDefaultFlags ? false,
 
   # texlive packages needed to build the document
   # you can also include other packages as a list.
-, texlive ? pkgs.texlive.combined.scheme-full
+  texlive ? pkgs.texlive.combined.scheme-full,
 
   # Pygments package to use (needed for minted)
-, pygments ? pkgs.python39Packages.pygments
+  pygments ? pkgs.python39Packages.pygments,
 
   # Add system fonts
   # you can specify one font directly with: pkgs.fira-code
   # of join multiple fonts using symlinJoin:
   #   pkgs.symlinkJoin { name = "fonts"; paths = with pkgs; [ fira-code souce-code-pro ]; }
-, fonts ? null
+  fonts ? null,
 
   # Date for the document in unix time. You can change it
   # to "$(date -r . +%s)" , "$(date -d "2022/02/22" +%s)", toString
   # self.lastModified
-, SOURCE_DATE_EPOCH ? "$(git log -1 --pretty=%ct)"
+  SOURCE_DATE_EPOCH ? "$(git log -1 --pretty=%ct)",
 }:
 
 let
@@ -61,8 +62,14 @@ assert minted -> shellEscape;
 pkgs.stdenvNoCC.mkDerivation rec {
   inherit src name;
 
-  buildInputs = [ texlive pkgs.git ] ++
-    lib.optional minted [ pkgs.which pygments ];
+  buildInputs = [
+    texlive
+    pkgs.git
+  ]
+  ++ lib.optional minted [
+    pkgs.which
+    pygments
+  ];
 
   TEXMFHOME = "./cache";
   TEXMFVAR = "./cache/var";

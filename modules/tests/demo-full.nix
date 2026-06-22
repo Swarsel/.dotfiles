@@ -1,6 +1,13 @@
 { self, ... }:
 {
-  perSystem = { lib, system, pkgs, testsLib, ... }:
+  perSystem =
+    {
+      lib,
+      system,
+      pkgs,
+      testsLib,
+      ...
+    }:
     lib.optionalAttrs (system == "x86_64-linux") {
       packages.demo-full-test =
         let
@@ -53,7 +60,11 @@
 
             target.state_dir = installer.state_dir
 
-            ${testsLib.unlockBootScript { machine = "target"; marker = "boot-minimal"; title = "Boot minimal system and unlock disk"; }}
+            ${testsLib.unlockBootScript {
+              machine = "target";
+              marker = "boot-minimal";
+              title = "Boot minimal system and unlock disk";
+            }}
 
             ${testsLib.enablePasswordlessSudoScript { machine = "target"; }}
 

@@ -1,6 +1,12 @@
 { self, ... }:
 {
-  perSystem = { lib, system, testsLib, ... }:
+  perSystem =
+    {
+      lib,
+      system,
+      testsLib,
+      ...
+    }:
     lib.optionalAttrs (system == "x86_64-linux") {
       packages.demo-install-test =
         let
@@ -31,7 +37,10 @@
 
             target.state_dir = installer.state_dir
 
-            ${testsLib.unlockBootScript { machine = "target"; marker = "boot-marker"; }}
+            ${testsLib.unlockBootScript {
+              machine = "target";
+              marker = "boot-marker";
+            }}
 
             target.crash()
           '';

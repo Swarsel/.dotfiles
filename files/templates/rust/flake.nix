@@ -13,23 +13,26 @@
   };
 
   outputs =
-    { self
-    , nixpkgs
-    , naersk
-    , fenix
-    , systems
-    , ...
+    {
+      self,
+      nixpkgs,
+      naersk,
+      fenix,
+      systems,
+      ...
     }:
     let
       forEachSystem = nixpkgs.lib.genAttrs (import systems);
-      pkgsFor = forEachSystem (system:
+      pkgsFor = forEachSystem (
+        system:
 
         import nixpkgs {
           inherit system;
           overlays = [
             fenix.overlays.default
           ];
-        });
+        }
+      );
       rust-toolchain = forEachSystem (system: pkgsFor.${system}.fenix.stable);
     in
     {
@@ -55,9 +58,10 @@
         default =
           (pkgsFor.${system}.callPackage naersk {
             inherit (rust-toolchain.${system}) cargo rustc;
-          }).buildPackage {
-            src = ./.;
-          };
+          }).buildPackage
+            {
+              src = ./.;
+            };
       });
 
       apps = forEachSystem (system: {

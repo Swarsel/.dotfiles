@@ -1,5 +1,6 @@
 {
-  flake.modules.nixos.btrfs = { lib, config, ... }:
+  flake.modules.nixos.btrfs =
+    { lib, config, ... }:
     {
       config = {
         swarselsystems.enabledServerModules = [ "btrfs" ];
@@ -7,6 +8,5 @@
           supportedFilesystems = lib.mkIf config.swarselsystems.isBtrfs [ "btrfs" ];
         };
       };
-    }
-  ;
+    };
 }

@@ -1,4 +1,12 @@
-{ self, inputs, config, pkgs, lib, minimal, ... }:
+{
+  self,
+  inputs,
+  config,
+  pkgs,
+  lib,
+  minimal,
+  ...
+}:
 let
   mainUser = "demo";
 in
@@ -10,13 +18,18 @@ in
     {
       _module.args.diskDevice = config.swarselsystems.rootDisk;
     }
-  ] ++ lib.optionals (!minimal) [
-    inputs.self.modules.nixos.profile-public
-  ] ++ lib.optionals (!minimal) (builtins.attrValues (lib.getAttrs [
-    "niri"
-    "noctalia"
   ]
-    inputs.self.modules.nixos));
+  ++ lib.optionals (!minimal) [
+    inputs.self.modules.nixos.profile-public
+  ]
+  ++ lib.optionals (!minimal) (
+    builtins.attrValues (
+      lib.getAttrs [
+        "niri"
+        "noctalia"
+      ] inputs.self.modules.nixos
+    )
+  );
 
   environment.variables = {
     WLR_RENDERER_ALLOW_SOFTWARE = 1;

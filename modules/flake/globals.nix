@@ -19,7 +19,8 @@
       }
     )
   ];
-  perSystem = { lib, pkgs, ... }:
+  perSystem =
+    { lib, pkgs, ... }:
     {
       globals =
         let
@@ -45,12 +46,15 @@
 
                 {
                   imports = [
-                    (if lib.hasSuffix ".enc" (toString globalsFile) then sopsImportEncrypted globalsFile else globalsFile)
+                    (
+                      if lib.hasSuffix ".enc" (toString globalsFile) then sopsImportEncrypted globalsFile else globalsFile
+                    )
                   ];
 
                 }
               )
-            ] ++ lib.optionals (!(inputs.repoSecrets.isDemo or false)) [
+            ]
+            ++ lib.optionals (!(inputs.repoSecrets.isDemo or false)) [
               (
                 { lib, ... }:
                 {
@@ -58,7 +62,7 @@
                     lib.concatLists (
                       lib.flip lib.mapAttrsToList self.outputs.nodes (
                         name: cfg:
-                          builtins.addErrorContext "while aggregating globals from nixosConfigurations.${name} into flake-level globals:" cfg.config._globalsDefs
+                        builtins.addErrorContext "while aggregating globals from nixosConfigurations.${name} into flake-level globals:" cfg.config._globalsDefs
                       )
                     )
                   );

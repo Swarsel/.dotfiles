@@ -1,30 +1,66 @@
 {
   flake.modules = {
-    nixos.env = { lib, config, pkgs, ... }: {
-      config = {
+    nixos.env =
+      {
+        lib,
+        config,
+        pkgs,
+        ...
+      }:
+      {
+        config = {
 
-        environment = {
-          wordlist.enable = true;
-          sessionVariables = {
-            NIXOS_OZONE_WL = "1";
-            SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-            SWARSEL_HI_RES = config.swarselsystems.highResolution;
-            GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
-              gst-plugins-good
-              gst-plugins-bad
-              gst-plugins-ugly
-              gst-libav
-            ]);
-          } // (lib.optionalAttrs (!config.swarselsystems.isPublic) { });
+          environment = {
+            wordlist.enable = true;
+            sessionVariables = {
+              NIXOS_OZONE_WL = "1";
+              SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+              SWARSEL_HI_RES = config.swarselsystems.highResolution;
+              GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (
+                with pkgs.gst_all_1;
+                [
+                  gst-plugins-good
+                  gst-plugins-bad
+                  gst-plugins-ugly
+                  gst-libav
+                ]
+              );
+            }
+            // (lib.optionalAttrs (!config.swarselsystems.isPublic) { });
+          };
         };
       };
-    };
 
-    homeManager.env = { lib, config, confLib, globals, ... }:
+    homeManager.env =
+      {
+        lib,
+        config,
+        confLib,
+        globals,
+        ...
+      }:
       let
-        inherit (confLib.getConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
-        inherit (confLib.getConfig.repo.secrets.common.calendar) source1 source1-name source2 source2-name source3 source3-name;
-        inherit (confLib.getConfig.repo.secrets.common) fullName openrouterApi instaDomain sportDomain;
+        inherit (confLib.getConfig.repo.secrets.common.mail)
+          address1
+          address2
+          address3
+          address4
+          allMailAddresses
+          ;
+        inherit (confLib.getConfig.repo.secrets.common.calendar)
+          source1
+          source1-name
+          source2
+          source2-name
+          source3
+          source3-name
+          ;
+        inherit (confLib.getConfig.repo.secrets.common)
+          fullName
+          openrouterApi
+          instaDomain
+          sportDomain
+          ;
         inherit (config.swarselsystems) isPublic homeDir;
 
         DISPLAY = ":0";
@@ -34,11 +70,13 @@
           swarselsystems.enabledHomeModules = [ "env" ];
           home.sessionVariables = {
             inherit DISPLAY;
-          } // (lib.optionalAttrs (!isPublic) { });
+          }
+          // (lib.optionalAttrs (!isPublic) { });
           systemd.user.sessionVariables = {
             DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
             FLAKE = "${config.home.homeDirectory}/.dotfiles";
-          } // lib.optionalAttrs (!isPublic) {
+          }
+          // lib.optionalAttrs (!isPublic) {
             SWARSEL_DOMAIN = globals.domains.main;
             SWARSEL_RSS_DOMAIN = globals.services.freshrss.domain;
             SWARSEL_MUSIC_DOMAIN = globals.services.navidrome.domain;

@@ -1,6 +1,18 @@
-{ self, lib, config, minimal, ... }:
+{
+  self,
+  lib,
+  config,
+  minimal,
+  ...
+}:
 let
-  inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1 devices;
+  inherit (config.repo.secrets.local.syncthing)
+    dev1
+    dev2
+    dev3
+    loc1
+    devices
+    ;
 in
 {
   imports = [
@@ -9,7 +21,8 @@ in
 
     self.modules.nixos.systemd-networkd-server
     self.modules.nixos.nix-topology-self
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.wireguard
     self.modules.nixos.croc
@@ -73,7 +86,10 @@ in
           type = "simple";
           params.keep = "5";
         };
-        devices = [ "pyramid" "magicant" ];
+        devices = [
+          "pyramid"
+          "magicant"
+        ];
         id = "kwnql-ev64v";
       };
       "${loc1}" = {
@@ -83,12 +99,17 @@ in
           type = "simple";
           params.keep = "3";
         };
-        devices = [ dev1 dev2 dev3 ];
+        devices = [
+          dev1
+          dev2
+          dev3
+        ];
         id = "5gsxv-rzzst";
       };
     };
   };
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
 }

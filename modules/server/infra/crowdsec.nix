@@ -1,15 +1,25 @@
 {
   flake.modules.nixos.crowdsec =
-    { lib, pkgs, config, globals, confLib, ... }:
+    {
+      lib,
+      pkgs,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) sopsFile;
       bootstrap = config.swarselsystems.crowdsecBootstrap;
       jumphost = globals.general.jumphost or null;
       jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
       jumphostWan6 = if jumphost != null then globals.hosts.${jumphost}.wanAddress6 or null else null;
-      trustedWanAddresses = lib.filter (a: a != null) (lib.concatMap
-        (h: [ (h.wanAddress4 or null) (h.wanAddress6 or null) ])
-        (lib.attrValues globals.hosts));
+      trustedWanAddresses = lib.filter (a: a != null) (
+        lib.concatMap (h: [
+          (h.wanAddress4 or null)
+          (h.wanAddress6 or null)
+        ]) (lib.attrValues globals.hosts)
+      );
       allowlistIps = config.repo.secrets.local.crowdsec.allowlistIps or [ ];
       allowlistCidrs = config.repo.secrets.local.crowdsec.allowlistCidrs or [ ];
       allowlistAs = config.repo.secrets.local.crowdsec.allowlistAs or [ ];
@@ -26,9 +36,24 @@
         };
 
         sops.secrets = lib.mkIf (!bootstrap) {
-          crowdsec-lapi = { inherit sopsFile; owner = "crowdsec"; group = "crowdsec"; mode = "0400"; };
-          crowdsec-capi = { inherit sopsFile; owner = "crowdsec"; group = "crowdsec"; mode = "0400"; };
-          crowdsec-bouncer-key = { inherit sopsFile; owner = "crowdsec"; group = "crowdsec"; mode = "0400"; };
+          crowdsec-lapi = {
+            inherit sopsFile;
+            owner = "crowdsec";
+            group = "crowdsec";
+            mode = "0400";
+          };
+          crowdsec-capi = {
+            inherit sopsFile;
+            owner = "crowdsec";
+            group = "crowdsec";
+            mode = "0400";
+          };
+          crowdsec-bouncer-key = {
+            inherit sopsFile;
+            owner = "crowdsec";
+            group = "crowdsec";
+            mode = "0400";
+          };
         };
 
         services.crowdsec = {
@@ -41,13 +66,9 @@
               listen_uri = "127.0.0.1:8089";
             };
             lapi.credentialsFile =
-              if bootstrap
-              then "/var/lib/crowdsec/state/lapi.yaml"
-              else config.sops.secrets.crowdsec-lapi.path;
+              if bootstrap then "/var/lib/crowdsec/state/lapi.yaml" else config.sops.secrets.crowdsec-lapi.path;
             capi.credentialsFile =
-              if bootstrap
-              then "/var/lib/crowdsec/state/capi.yaml"
-              else config.sops.secrets.crowdsec-capi.path;
+              if bootstrap then "/var/lib/crowdsec/state/capi.yaml" else config.sops.secrets.crowdsec-capi.path;
             simulation.simulation = false;
           };
 
@@ -100,7 +121,8 @@
                   ];
                 };
               }
-            ] ++ lib.optional (allowlistIps != [ ] || allowlistCidrs != [ ] || allowlistAs != [ ]) {
+            ]
+            ++ lib.optional (allowlistIps != [ ] || allowlistCidrs != [ ] || allowlistAs != [ ]) {
               name = "swarsel/allowlist";
               description = "Don't ban trusted addresses";
               whitelist = {
@@ -146,7 +168,9 @@
               ReadWritePaths = [ "/var/lib/crowdsec" ];
             };
 
-            crowdsec-firewall-bouncer.after = lib.mkIf bootstrap [ "crowdsec-firewall-bouncer-register.service" ];
+            crowdsec-firewall-bouncer.after = lib.mkIf bootstrap [
+              "crowdsec-firewall-bouncer-register.service"
+            ];
 
             crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce "+systemctl try-restart crowdsec.service";
           };
@@ -182,21 +206,27 @@
         environment = {
           etc = {
             "crowdsec/config.yaml" = lib.mkIf bootstrap {
-              source = (pkgs.formats.yaml { }).generate "crowdsec.yaml"
-                config.services.crowdsec.settings.general;
+              source = (pkgs.formats.yaml { }).generate "crowdsec.yaml" config.services.crowdsec.settings.general;
             };
-            "alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (lib.mkAfter ''
-              prometheus.scrape "crowdsec" {
-                targets         = [{"__address__" = "127.0.0.1:${toString config.services.crowdsec.settings.general.prometheus.listen_port}"}]
-                forward_to      = [prometheus.remote_write.mimir.receiver]
-                job_name        = "crowdsec"
-                scrape_interval = "30s"
-              }
-            '');
+            "alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
+              lib.mkAfter ''
+                prometheus.scrape "crowdsec" {
+                  targets         = [{"__address__" = "127.0.0.1:${toString config.services.crowdsec.settings.general.prometheus.listen_port}"}]
+                  forward_to      = [prometheus.remote_write.mimir.receiver]
+                  job_name        = "crowdsec"
+                  scrape_interval = "30s"
+                }
+              ''
+            );
           };
           persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
             directories = [
-              { directory = "/var/lib/crowdsec"; user = "crowdsec"; group = "crowdsec"; mode = "0750"; }
+              {
+                directory = "/var/lib/crowdsec";
+                user = "crowdsec";
+                group = "crowdsec";
+                mode = "0750";
+              }
             ];
           };
         };

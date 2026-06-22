@@ -16,12 +16,12 @@ in
   # file once.
   sopsImportEncrypted =
     nixFile:
-      assert assertMsg (builtins.isPath nixFile)
-        "The file to decrypt must be given as a path (not a string) to prevent impurity.";
-      assert assertMsg (hasSuffix ".nix.enc" nixFile)
-        "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
-      exec [
-        ../scripts/sops-decrypt-and-cache.sh
-        nixFile
-      ];
+    assert assertMsg (builtins.isPath nixFile)
+      "The file to decrypt must be given as a path (not a string) to prevent impurity.";
+    assert assertMsg (hasSuffix ".nix.enc" nixFile)
+      "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
+    exec [
+      ../scripts/sops-decrypt-and-cache.sh
+      nixFile
+    ];
 }

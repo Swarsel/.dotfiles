@@ -1,8 +1,15 @@
 {
   flake.modules.homeManager.waybar =
-    { self, config, lib, pkgs, ... }:
+    {
+      self,
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
-      generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
+      generateIcons =
+        n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
       modulesLeft = [
         "custom/outer-left-arrow-dark"
         "mpris"
@@ -41,9 +48,12 @@
         };
         waybarModules = lib.mkOption {
           type = lib.types.listOf lib.types.str;
-          default = modulesLeft ++ [
-            "custom/pseudobat"
-          ] ++ modulesRight;
+          default =
+            modulesLeft
+            ++ [
+              "custom/pseudobat"
+            ]
+            ++ modulesRight;
         };
         cpuString = lib.mkOption {
           type = lib.types.str;
@@ -58,9 +68,13 @@
           homeSopsSecrets = {
             github-notifications-token = { };
           };
-          waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
-            "battery"
-          ] ++ modulesRight);
+          waybarModules = lib.mkIf config.swarselsystems.isLaptop (
+            modulesLeft
+            ++ [
+              "battery"
+            ]
+            ++ modulesRight
+          );
         };
 
         services.playerctld.enable = true;
@@ -84,8 +98,20 @@
               # start_hidden = true;
               layer = "top";
               position = "top";
-              modules-left = [ "sway/workspaces" "niri/workspaces" "custom/outer-right-arrow-dark" "niri/window" "sway/window" ];
-              modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
+              modules-left = [
+                "sway/workspaces"
+                "niri/workspaces"
+                "custom/outer-right-arrow-dark"
+                "niri/window"
+                "sway/window"
+              ];
+              modules-center = [
+                "sway/mode"
+                "privacy"
+                "custom/github"
+                "custom/configwarn"
+                "custom/nix-updates"
+              ];
               "sway/mode" = {
                 format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
               };
@@ -174,7 +200,9 @@
               };
 
               temperature = {
-                hwmon-path = lib.mkIf (!config.swarselsystems.temperatureHwmon.isAbsolutePath) config.swarselsystems.temperatureHwmon.path;
+                hwmon-path = lib.mkIf (
+                  !config.swarselsystems.temperatureHwmon.isAbsolutePath
+                ) config.swarselsystems.temperatureHwmon.path;
                 hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
                 input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
                 critical-threshold = 80;
@@ -267,7 +295,16 @@
                 format = config.swarselsystems.cpuString;
                 min-length = 6;
                 interval = 5;
-                format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
+                format-icons = [
+                  "▁"
+                  "▂"
+                  "▃"
+                  "▄"
+                  "▅"
+                  "▆"
+                  "▇"
+                  "█"
+                ];
                 # on-click-right= "com.github.stsdc.monitor";
                 on-click-right = "${pkgs.kitty}/bin/kitty -o confirm_os_window_close=0 btm";
 
@@ -326,6 +363,5 @@
           style = builtins.readFile (self + /files/waybar/style.css);
         };
       };
-    }
-  ;
+    };
 }

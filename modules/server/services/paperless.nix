@@ -1,10 +1,38 @@
 {
   flake.modules.nixos.paperless =
-    { self, lib, pkgs, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      pkgs,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) sopsFile;
-      inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "paperless";
+          port = 28981;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       tikaPort = 9998;
       gotenbergPort = 3002;
@@ -25,25 +53,59 @@
         };
 
         sops.secrets = {
-          paperless-admin-pw = { inherit sopsFile; owner = serviceUser; };
-          kanidm-paperless = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          paperless-admin-pw = {
+            inherit sopsFile;
+            owner = serviceUser;
+          };
+          kanidm-paperless = {
+            sopsFile = kanidmSopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
         };
 
         # networking.firewall.allowedTCPPorts = [ servicePort ];
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/accounts/login/"; expectedBodyRegex = "Paperless"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/accounts/login/";
+            expectedBodyRegex = "Paperless";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
-            { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
-            { directory = "/var/lib/redis-${serviceName}"; user = "redis-${serviceUser}"; group = "redis-${serviceGroup}"; }
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+            {
+              directory = "/var/lib/redis-${serviceName}";
+              user = "redis-${serviceUser}";
+              group = "redis-${serviceGroup}";
+            }
             { directory = "/var/lib/private/tika"; }
-            { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+            {
+              directory = "/var/cache/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
             { directory = "/var/cache/private/tika"; }
           ];
         };
@@ -107,7 +169,6 @@
           };
         };
 
-
         # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
         systemd.services.paperless-web.script = lib.mkBefore ''
             oidcSecret=$(< ${config.sops.secrets.kanidm-paperless.path})
@@ -132,8 +193,29 @@
               inherit serviceName serviceDomain kanidmSopsFile;
               originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
             };
-            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                extraConfigLoc
+                ;
+              maxBody = 0;
+            };
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  extraConfigLoc
+                  ;
+                maxBody = 0;
+                extraConfig = nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }
+            );
           };
 
       };

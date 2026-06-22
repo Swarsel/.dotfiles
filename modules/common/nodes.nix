@@ -1,6 +1,12 @@
 # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
 {
-  flake.modules.nixos.nodes = { config, lib, nodes, ... }:
+  flake.modules.nixos.nodes =
+    {
+      config,
+      lib,
+      nodes,
+      ...
+    }:
     let
       nodeName = config.node.name;
       mkForwardedOption =
@@ -36,9 +42,22 @@
         (splitPath "topology.self.services")
       ]
       ++ expandOptions [ "environment" ] [ "persistence" "etc" ]
-      ++ expandOptions (splitPath "networking.nftables.firewall") [ "zones" "rules" ]
-      ++ expandOptions (splitPath "services.firezone.gateway") [ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]
-      ++ expandOptions (splitPath "services.nginx") [ "upstreams" "virtualHosts" ]
+      ++ expandOptions (splitPath "networking.nftables.firewall") [
+        "zones"
+        "rules"
+      ]
+      ++ expandOptions (splitPath "services.firezone.gateway") [
+        "enable"
+        "name"
+        "apiUrl"
+        "tokenFile"
+        "package"
+        "logLevel"
+      ]
+      ++ expandOptions (splitPath "services.nginx") [
+        "upstreams"
+        "virtualHosts"
+      ]
       ++ expandOptions (splitPath "services.grafana") [
         "settings"
         "provision.datasources.settings.datasources"
@@ -46,7 +65,10 @@
       ];
 
       attrsForEachOption =
-        f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;
+        f:
+        lib.foldl' (
+          acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))
+        ) { } forwardedOptions;
     in
     {
       options.nodes = lib.mkOption {
@@ -70,6 +92,5 @@
           mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames nodes));
         in
         attrsForEachOption mergeConfigFromOthers;
-    }
-  ;
+    };
 }

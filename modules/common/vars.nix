@@ -1,6 +1,11 @@
 {
   flake.modules.generic.vars =
-    { self, pkgs, globals, ... }:
+    {
+      self,
+      pkgs,
+      globals,
+      ...
+    }:
     {
       _module.args = {
         vars = rec {
@@ -18,7 +23,9 @@
 
           waylandExports =
             let
-              renderedWaylandExports = map (key: "export ${key}=${waylandSessionVariables.${key}};") (builtins.attrNames waylandSessionVariables);
+              renderedWaylandExports = map (key: "export ${key}=${waylandSessionVariables.${key}};") (
+                builtins.attrNames waylandSessionVariables
+              );
             in
             builtins.concatStringsSep "\n" renderedWaylandExports;
 
@@ -130,28 +137,28 @@
               ];
             };
 
-            settings =
-              {
-                "extensions.autoDisableScopes" = 0;
-                "browser.bookmarks.showMobileBookmarks" = true;
-                "browser.autofocus" = false;
-                "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
-                "browser.search.suggest.enabled" = false;
-                "browser.search.suggest.enabled.private" = false;
-                "browser.urlbar.suggest.searches" = false;
-                "browser.urlbar.showSearchSuggestionsFirst" = false;
-                "browser.topsites.contile.enabled" = false;
-                "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
-                "browser.newtabpage.activity-stream.feeds.snippets" = false;
-                "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
-                "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = false;
-                "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = false;
-                "browser.newtabpage.activity-stream.section.highlights.includeVisited" = false;
-                "browser.newtabpage.activity-stream.showSponsored" = false;
-                "browser.newtabpage.activity-stream.system.showSponsored" = false;
-                "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
-                "identity.sync.tokenserver.uri" = "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
-              };
+            settings = {
+              "extensions.autoDisableScopes" = 0;
+              "browser.bookmarks.showMobileBookmarks" = true;
+              "browser.autofocus" = false;
+              "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+              "browser.search.suggest.enabled" = false;
+              "browser.search.suggest.enabled.private" = false;
+              "browser.urlbar.suggest.searches" = false;
+              "browser.urlbar.showSearchSuggestionsFirst" = false;
+              "browser.topsites.contile.enabled" = false;
+              "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+              "browser.newtabpage.activity-stream.feeds.snippets" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeVisited" = false;
+              "browser.newtabpage.activity-stream.showSponsored" = false;
+              "browser.newtabpage.activity-stream.system.showSponsored" = false;
+              "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
+              "identity.sync.tokenserver.uri" =
+                "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
+            };
 
             search = {
               # default = "Kagi";
@@ -160,93 +167,144 @@
               privateDefault = "google";
               engines = {
                 "SearXNG" = {
-                  urls = [{
-                    template = "https://${globals.services.searx.domain}/search";
-                    params = [
-                      { name = "q"; value = "{searchTerms}"; }
-                    ];
-                  }];
+                  urls = [
+                    {
+                      template = "https://${globals.services.searx.domain}/search";
+                      params = [
+                        {
+                          name = "q";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
                   icon = "https://search.swarsel.win/favicon.ico";
                   updateInterval = 24 * 60 * 60 * 1000; # every day
                   definedAliases = [ "@sx" ];
                 };
                 "Kagi" = {
-                  urls = [{
-                    template = "https://kagi.com/search";
-                    params = [
-                      { name = "q"; value = "{searchTerms}"; }
-                    ];
-                  }];
+                  urls = [
+                    {
+                      template = "https://kagi.com/search";
+                      params = [
+                        {
+                          name = "q";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
                   icon = "https://kagi.com/favicon.ico";
                   updateInterval = 24 * 60 * 60 * 1000; # every day
                   definedAliases = [ "@k" ];
                 };
 
                 "Nix Packages" = {
-                  urls = [{
-                    template = "https://search.nixos.org/packages";
-                    params = [
-                      { name = "type"; value = "packages"; }
-                      { name = "query"; value = "{searchTerms}"; }
-                    ];
-                  }];
+                  urls = [
+                    {
+                      template = "https://search.nixos.org/packages";
+                      params = [
+                        {
+                          name = "type";
+                          value = "packages";
+                        }
+                        {
+                          name = "query";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
                   icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
                   definedAliases = [ "@np" ];
                 };
 
                 "NixOS Wiki" = {
-                  urls = [{
-                    template = "https://nixos.wiki/index.php?search={searchTerms}";
-                  }];
+                  urls = [
+                    {
+                      template = "https://nixos.wiki/index.php?search={searchTerms}";
+                    }
+                  ];
                   icon = "https://nixos.wiki/favicon.png";
                   updateInterval = 24 * 60 * 60 * 1000; # every day
                   definedAliases = [ "@nw" ];
                 };
 
                 "NixOS Options" = {
-                  urls = [{
-                    template = "https://search.nixos.org/options";
-                    params = [
-                      { name = "query"; value = "{searchTerms}"; }
-                    ];
-                  }];
+                  urls = [
+                    {
+                      template = "https://search.nixos.org/options";
+                      params = [
+                        {
+                          name = "query";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
 
                   icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
                   definedAliases = [ "@no" ];
                 };
 
                 "Home Manager Options" = {
-                  urls = [{
-                    template = "https://home-manager-options.extranix.com/";
-                    params = [
-                      { name = "query"; value = "{searchTerms}"; }
-                    ];
-                  }];
+                  urls = [
+                    {
+                      template = "https://home-manager-options.extranix.com/";
+                      params = [
+                        {
+                          name = "query";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
 
                   icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                  definedAliases = [ "@hm" "@ho" "@hmo" ];
+                  definedAliases = [
+                    "@hm"
+                    "@ho"
+                    "@hmo"
+                  ];
                 };
 
                 "Confluence search" = {
-                  urls = [{
-                    template = "https://vbc.atlassian.net/wiki/search";
-                    params = [
-                      { name = "text"; value = "{searchTerms}"; }
-                    ];
-                  }];
+                  urls = [
+                    {
+                      template = "https://vbc.atlassian.net/wiki/search";
+                      params = [
+                        {
+                          name = "text";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
 
-                  definedAliases = [ "@c" "@cf" "@confluence" ];
+                  definedAliases = [
+                    "@c"
+                    "@cf"
+                    "@confluence"
+                  ];
                 };
 
                 "Jira search" = {
-                  urls = [{
-                    template = "https://vbc.atlassian.net/issues/";
-                    params = [
-                      { name = "jql"; value = "textfields ~ \"{searchTerms}*\"&wildcardFlag=true"; }
-                    ];
-                  }];
+                  urls = [
+                    {
+                      template = "https://vbc.atlassian.net/issues/";
+                      params = [
+                        {
+                          name = "jql";
+                          value = "textfields ~ \"{searchTerms}*\"&wildcardFlag=true";
+                        }
+                      ];
+                    }
+                  ];
 
-                  definedAliases = [ "@j" "@jire" ];
+                  definedAliases = [
+                    "@j"
+                    "@jire"
+                  ];
                 };
 
                 "google".metaData.alias = "@g";
@@ -256,6 +314,5 @@
           };
         };
       };
-    }
-  ;
+    };
 }

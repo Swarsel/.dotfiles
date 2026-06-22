@@ -1,8 +1,22 @@
 {
   flake.modules.nixos.spotifyd =
-    { lib, config, confLib, ... }:
+    {
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "spotifyd"; port = 1025; }) servicePort serviceName serviceUser serviceGroup;
+      inherit
+        (confLib.gen {
+          name = "spotifyd";
+          port = 1025;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        ;
       inherit (confLib.static) routerServer;
     in
     {
@@ -16,7 +30,11 @@
           isSystemUser = true;
           uid = 65136;
           group = serviceGroup;
-          extraGroups = [ "audio" "utmp" "pipewire" ];
+          extraGroups = [
+            "audio"
+            "utmp"
+            "pipewire"
+          ];
         };
 
         networking.firewall.allowedTCPPorts = [ servicePort ];

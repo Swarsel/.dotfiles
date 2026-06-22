@@ -119,16 +119,21 @@
 
       consult-eglot = {
         enable = true;
-        after = [ "consult" "eglot" ];
+        after = [
+          "consult"
+          "eglot"
+        ];
         bind = {
           "C-c s" = "consult-eglot-symbols";
         };
       };
 
-
       embark-consult = {
         enable = true;
-        after = [ "embark" "consult" ];
+        after = [
+          "embark"
+          "consult"
+        ];
         demand = true;
         hook = [ "(embark-collect-mode . consult-preview-at-point-mode)" ];
       };
@@ -144,7 +149,10 @@
 
       nerd-icons-completion = {
         enable = true;
-        after = [ "marginalia" "nerd-icons" ];
+        after = [
+          "marginalia"
+          "nerd-icons"
+        ];
         hook = [ "(marginalia-mode . nerd-icons-completion-marginalia-setup)" ];
         init = "(nerd-icons-completion-mode)";
       };

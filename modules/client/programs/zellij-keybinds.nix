@@ -12,7 +12,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl g" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
               ];
@@ -23,55 +23,55 @@
                 {
                   bind = {
                     _args = [ "Ctrl p" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "left" ];
-                    _children = [{ MoveFocus._args = [ "left" ]; }];
+                    _children = [ { MoveFocus._args = [ "left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "down" ];
-                    _children = [{ MoveFocus._args = [ "down" ]; }];
+                    _children = [ { MoveFocus._args = [ "down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "up" ];
-                    _children = [{ MoveFocus._args = [ "up" ]; }];
+                    _children = [ { MoveFocus._args = [ "up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "right" ];
-                    _children = [{ MoveFocus._args = [ "right" ]; }];
+                    _children = [ { MoveFocus._args = [ "right" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "h" ];
-                    _children = [{ MoveFocus._args = [ "left" ]; }];
+                    _children = [ { MoveFocus._args = [ "left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "j" ];
-                    _children = [{ MoveFocus._args = [ "down" ]; }];
+                    _children = [ { MoveFocus._args = [ "down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "k" ];
-                    _children = [{ MoveFocus._args = [ "up" ]; }];
+                    _children = [ { MoveFocus._args = [ "up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "l" ];
-                    _children = [{ MoveFocus._args = [ "right" ]; }];
+                    _children = [ { MoveFocus._args = [ "right" ]; } ];
                   };
                 }
                 {
@@ -113,7 +113,7 @@
                 {
                   bind = {
                     _args = [ "p" ];
-                    _children = [{ SwitchFocus = { }; }];
+                    _children = [ { SwitchFocus = { }; } ];
                   };
                 }
                 {
@@ -133,31 +133,31 @@
                 {
                   bind = {
                     _args = [ "Ctrl t" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "left" ];
-                    _children = [{ GoToPreviousTab = { }; }];
+                    _children = [ { GoToPreviousTab = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "down" ];
-                    _children = [{ GoToNextTab = { }; }];
+                    _children = [ { GoToNextTab = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "up" ];
-                    _children = [{ GoToPreviousTab = { }; }];
+                    _children = [ { GoToPreviousTab = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "right" ];
-                    _children = [{ GoToNextTab = { }; }];
+                    _children = [ { GoToNextTab = { }; } ];
                   };
                 }
                 {
@@ -244,25 +244,25 @@
                 {
                   bind = {
                     _args = [ "h" ];
-                    _children = [{ GoToPreviousTab = { }; }];
+                    _children = [ { GoToPreviousTab = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "j" ];
-                    _children = [{ GoToNextTab = { }; }];
+                    _children = [ { GoToNextTab = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "k" ];
-                    _children = [{ GoToPreviousTab = { }; }];
+                    _children = [ { GoToPreviousTab = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "l" ];
-                    _children = [{ GoToNextTab = { }; }];
+                    _children = [ { GoToNextTab = { }; } ];
                   };
                 }
                 {
@@ -309,97 +309,97 @@
                 {
                   bind = {
                     _args = [ "Ctrl n" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "left" ];
-                    _children = [{ Resize._args = [ "Increase left" ]; }];
+                    _children = [ { Resize._args = [ "Increase left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "down" ];
-                    _children = [{ Resize._args = [ "Increase down" ]; }];
+                    _children = [ { Resize._args = [ "Increase down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "up" ];
-                    _children = [{ Resize._args = [ "Increase up" ]; }];
+                    _children = [ { Resize._args = [ "Increase up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "right" ];
-                    _children = [{ Resize._args = [ "Increase right" ]; }];
+                    _children = [ { Resize._args = [ "Increase right" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "+" ];
-                    _children = [{ Resize._args = [ "Increase" ]; }];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "-" ];
-                    _children = [{ Resize._args = [ "Decrease" ]; }];
+                    _children = [ { Resize._args = [ "Decrease" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "=" ];
-                    _children = [{ Resize._args = [ "Increase" ]; }];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "H" ];
-                    _children = [{ Resize._args = [ "Decrease left" ]; }];
+                    _children = [ { Resize._args = [ "Decrease left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "J" ];
-                    _children = [{ Resize._args = [ "Decrease down" ]; }];
+                    _children = [ { Resize._args = [ "Decrease down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "K" ];
-                    _children = [{ Resize._args = [ "Decrease up" ]; }];
+                    _children = [ { Resize._args = [ "Decrease up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "L" ];
-                    _children = [{ Resize._args = [ "Decrease right" ]; }];
+                    _children = [ { Resize._args = [ "Decrease right" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "h" ];
-                    _children = [{ Resize._args = [ "Increase left" ]; }];
+                    _children = [ { Resize._args = [ "Increase left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "j" ];
-                    _children = [{ Resize._args = [ "Increase down" ]; }];
+                    _children = [ { Resize._args = [ "Increase down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "k" ];
-                    _children = [{ Resize._args = [ "Increase up" ]; }];
+                    _children = [ { Resize._args = [ "Increase up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "l" ];
-                    _children = [{ Resize._args = [ "Increase right" ]; }];
+                    _children = [ { Resize._args = [ "Increase right" ]; } ];
                   };
                 }
               ];
@@ -410,55 +410,55 @@
                 {
                   bind = {
                     _args = [ "Ctrl h" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "left" ];
-                    _children = [{ MovePane._args = [ "left" ]; }];
+                    _children = [ { MovePane._args = [ "left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "down" ];
-                    _children = [{ MovePane._args = [ "down" ]; }];
+                    _children = [ { MovePane._args = [ "down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "up" ];
-                    _children = [{ MovePane._args = [ "up" ]; }];
+                    _children = [ { MovePane._args = [ "up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "right" ];
-                    _children = [{ MovePane._args = [ "right" ]; }];
+                    _children = [ { MovePane._args = [ "right" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "h" ];
-                    _children = [{ MovePane._args = [ "left" ]; }];
+                    _children = [ { MovePane._args = [ "left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "j" ];
-                    _children = [{ MovePane._args = [ "down" ]; }];
+                    _children = [ { MovePane._args = [ "down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "k" ];
-                    _children = [{ MovePane._args = [ "up" ]; }];
+                    _children = [ { MovePane._args = [ "up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "l" ];
-                    _children = [{ MovePane._args = [ "right" ]; }];
+                    _children = [ { MovePane._args = [ "right" ]; } ];
                   };
                 }
               ];
@@ -492,31 +492,31 @@
                 {
                   bind = {
                     _args = [ "c" ];
-                    _children = [{ SearchToggleOption._args = [ "CaseSensitivity" ]; }];
+                    _children = [ { SearchToggleOption._args = [ "CaseSensitivity" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "n" ];
-                    _children = [{ Search._args = [ "down" ]; }];
+                    _children = [ { Search._args = [ "down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "o" ];
-                    _children = [{ SearchToggleOption._args = [ "WholeWord" ]; }];
+                    _children = [ { SearchToggleOption._args = [ "WholeWord" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "p" ];
-                    _children = [{ Search._args = [ "up" ]; }];
+                    _children = [ { Search._args = [ "up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "w" ];
-                    _children = [{ SearchToggleOption._args = [ "Wrap" ]; }];
+                    _children = [ { SearchToggleOption._args = [ "Wrap" ]; } ];
                   };
                 }
               ];
@@ -527,7 +527,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl o" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
                 {
@@ -583,43 +583,43 @@
                 {
                   bind = {
                     _args = [ "Alt left" ];
-                    _children = [{ MoveFocusOrTab._args = [ "left" ]; }];
+                    _children = [ { MoveFocusOrTab._args = [ "left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt down" ];
-                    _children = [{ MoveFocus._args = [ "down" ]; }];
+                    _children = [ { MoveFocus._args = [ "down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt up" ];
-                    _children = [{ MoveFocus._args = [ "up" ]; }];
+                    _children = [ { MoveFocus._args = [ "up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt right" ];
-                    _children = [{ MoveFocusOrTab._args = [ "right" ]; }];
+                    _children = [ { MoveFocusOrTab._args = [ "right" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt +" ];
-                    _children = [{ Resize._args = [ "Increase" ]; }];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt -" ];
-                    _children = [{ Resize._args = [ "Decrease" ]; }];
+                    _children = [ { Resize._args = [ "Decrease" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt =" ];
-                    _children = [{ Resize._args = [ "Increase" ]; }];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
                   };
                 }
                 {
@@ -638,49 +638,49 @@
                 {
                   bind = {
                     _args = [ "Alt f" ];
-                    _children = [{ ToggleFloatingPanes = { }; }];
+                    _children = [ { ToggleFloatingPanes = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Ctrl g" ];
-                    _children = [{ SwitchToMode._args = [ "locked" ]; }];
+                    _children = [ { SwitchToMode._args = [ "locked" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt h" ];
-                    _children = [{ MoveFocusOrTab._args = [ "left" ]; }];
+                    _children = [ { MoveFocusOrTab._args = [ "left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt i" ];
-                    _children = [{ MoveTab._args = [ "left" ]; }];
+                    _children = [ { MoveTab._args = [ "left" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt j" ];
-                    _children = [{ MoveFocus._args = [ "down" ]; }];
+                    _children = [ { MoveFocus._args = [ "down" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt k" ];
-                    _children = [{ MoveFocus._args = [ "up" ]; }];
+                    _children = [ { MoveFocus._args = [ "up" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt p" ];
-                    _children = [{ NewPane = { }; }];
+                    _children = [ { NewPane = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Alt n" ];
-                    _children = [{ NewTab = { }; }];
+                    _children = [ { NewTab = { }; } ];
                   };
                 }
               ];
@@ -691,7 +691,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl h" ];
-                    _children = [{ SwitchToMode._args = [ "move" ]; }];
+                    _children = [ { SwitchToMode._args = [ "move" ]; } ];
                   };
                 }
               ];
@@ -702,7 +702,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl o" ];
-                    _children = [{ SwitchToMode._args = [ "session" ]; }];
+                    _children = [ { SwitchToMode._args = [ "session" ]; } ];
                   };
                 }
               ];
@@ -713,7 +713,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl b" ];
-                    _children = [{ SwitchToMode._args = [ "tmux" ]; }];
+                    _children = [ { SwitchToMode._args = [ "tmux" ]; } ];
                   };
                 }
               ];
@@ -724,7 +724,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl s" ];
-                    _children = [{ SwitchToMode._args = [ "scroll" ]; }];
+                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
                   };
                 }
               ];
@@ -735,7 +735,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl t" ];
-                    _children = [{ SwitchToMode._args = [ "tab" ]; }];
+                    _children = [ { SwitchToMode._args = [ "tab" ]; } ];
                   };
                 }
               ];
@@ -746,7 +746,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl p" ];
-                    _children = [{ SwitchToMode._args = [ "pane" ]; }];
+                    _children = [ { SwitchToMode._args = [ "pane" ]; } ];
                   };
                 }
               ];
@@ -757,7 +757,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl n" ];
-                    _children = [{ SwitchToMode._args = [ "resize" ]; }];
+                    _children = [ { SwitchToMode._args = [ "resize" ]; } ];
                   };
                 }
               ];
@@ -768,7 +768,7 @@
                 {
                   bind = {
                     _args = [ "enter" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
               ];
@@ -779,7 +779,7 @@
                 {
                   bind = {
                     _args = [ "esc" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
               ];
@@ -804,43 +804,43 @@
                 {
                   bind = {
                     _args = [ "PageDown" ];
-                    _children = [{ PageScrollDown = { }; }];
+                    _children = [ { PageScrollDown = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "PageUp" ];
-                    _children = [{ PageScrollUp = { }; }];
+                    _children = [ { PageScrollUp = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "left" ];
-                    _children = [{ PageScrollUp = { }; }];
+                    _children = [ { PageScrollUp = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "down" ];
-                    _children = [{ ScrollDown = { }; }];
+                    _children = [ { ScrollDown = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "up" ];
-                    _children = [{ ScrollUp = { }; }];
+                    _children = [ { ScrollUp = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "right" ];
-                    _children = [{ PageScrollDown = { }; }];
+                    _children = [ { PageScrollDown = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Ctrl b" ];
-                    _children = [{ PageScrollUp = { }; }];
+                    _children = [ { PageScrollUp = { }; } ];
                   };
                 }
                 {
@@ -855,49 +855,49 @@
                 {
                   bind = {
                     _args = [ "d" ];
-                    _children = [{ HalfPageScrollDown = { }; }];
+                    _children = [ { HalfPageScrollDown = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Ctrl f" ];
-                    _children = [{ PageScrollDown = { }; }];
+                    _children = [ { PageScrollDown = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "h" ];
-                    _children = [{ PageScrollUp = { }; }];
+                    _children = [ { PageScrollUp = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "j" ];
-                    _children = [{ ScrollDown = { }; }];
+                    _children = [ { ScrollDown = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "k" ];
-                    _children = [{ ScrollUp = { }; }];
+                    _children = [ { ScrollUp = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "l" ];
-                    _children = [{ PageScrollDown = { }; }];
+                    _children = [ { PageScrollDown = { }; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "Ctrl s" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "u" ];
-                    _children = [{ HalfPageScrollUp = { }; }];
+                    _children = [ { HalfPageScrollUp = { }; } ];
                   };
                 }
               ];
@@ -908,19 +908,19 @@
                 {
                   bind = {
                     _args = [ "Ctrl c" ];
-                    _children = [{ SwitchToMode._args = [ "scroll" ]; }];
+                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "esc" ];
-                    _children = [{ SwitchToMode._args = [ "scroll" ]; }];
+                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "enter" ];
-                    _children = [{ SwitchToMode._args = [ "search" ]; }];
+                    _children = [ { SwitchToMode._args = [ "search" ]; } ];
                   };
                 }
               ];
@@ -945,7 +945,7 @@
                 {
                   bind = {
                     _args = [ "Ctrl c" ];
-                    _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
                   };
                 }
               ];
@@ -970,7 +970,7 @@
                 {
                   bind = {
                     _args = [ "d" ];
-                    _children = [{ Detach = { }; }];
+                    _children = [ { Detach = { }; } ];
                   };
                 }
               ];
@@ -1017,7 +1017,7 @@
                 {
                   bind = {
                     _args = [ "space" ];
-                    _children = [{ NextSwapLayout = { }; }];
+                    _children = [ { NextSwapLayout = { }; } ];
                   };
                 }
                 {
@@ -1041,13 +1041,13 @@
                 {
                   bind = {
                     _args = [ "," ];
-                    _children = [{ SwitchToMode._args = [ "renametab" ]; }];
+                    _children = [ { SwitchToMode._args = [ "renametab" ]; } ];
                   };
                 }
                 {
                   bind = {
                     _args = [ "[" ];
-                    _children = [{ SwitchToMode._args = [ "scroll" ]; }];
+                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
                   };
                 }
                 {
@@ -1116,7 +1116,7 @@
                 {
                   bind = {
                     _args = [ "o" ];
-                    _children = [{ FocusNextPane = { }; }];
+                    _children = [ { FocusNextPane = { }; } ];
                   };
                 }
                 {
@@ -1143,6 +1143,5 @@
         };
       };
 
-    }
-  ;
+    };
 }

@@ -1,6 +1,19 @@
 {
   flake.modules = {
-    darwin.home-manager = { self, lib, config, inputs, outputs, globals, nodes, minimal, configName, withHomeManager, ... }:
+    darwin.home-manager =
+      {
+        self,
+        lib,
+        config,
+        inputs,
+        outputs,
+        globals,
+        nodes,
+        minimal,
+        configName,
+        withHomeManager,
+        ...
+      }:
       {
         config = lib.mkIf withHomeManager {
           home-manager = {
@@ -11,7 +24,14 @@
             ];
             extraSpecialArgs = {
               inherit (inputs) self nixgl;
-              inherit inputs outputs globals nodes minimal configName;
+              inherit
+                inputs
+                outputs
+                globals
+                nodes
+                minimal
+                configName
+                ;
               arch = config.node.arch;
               type = "darwin";
               lib = outputs.homeLib;
@@ -21,7 +41,22 @@
         };
       };
 
-    nixos.home-manager = { self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, ... }:
+    nixos.home-manager =
+      {
+        self,
+        inputs,
+        config,
+        lib,
+        homeLib,
+        outputs,
+        globals,
+        nodes,
+        minimal,
+        configName,
+        arch,
+        type,
+        ...
+      }:
       let
         inherit (config.swarselsystems) isServer isMicroVM mainUser;
         homeSwarsel = config.home-manager.users.${mainUser}.swarselsystems or { };
@@ -44,7 +79,8 @@
               {
                 imports = [
                   self.modules.homeManager.profile-base
-                ] ++ lib.optionals minimal [
+                ]
+                ++ lib.optionals minimal [
                   self.modules.homeManager.profile-minimal
                 ];
                 home.stateVersion = lib.mkDefault config.system.stateVersion;
@@ -52,7 +88,16 @@
             ];
             extraSpecialArgs = {
               inherit (inputs) self nixgl;
-              inherit inputs outputs globals nodes minimal configName arch type;
+              inherit
+                inputs
+                outputs
+                globals
+                nodes
+                minimal
+                configName
+                arch
+                type
+                ;
               lib = homeLib;
             };
           };

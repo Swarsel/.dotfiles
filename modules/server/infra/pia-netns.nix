@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.pia-netns =
-    { lib, pkgs, config, ... }:
+    {
+      lib,
+      pkgs,
+      config,
+      ...
+    }:
     let
       cfg = config.services.pia-netns;
 
@@ -52,7 +57,16 @@
 
       piaUp = pkgs.writeShellApplication {
         name = "pia-netns-up";
-        runtimeInputs = with pkgs; [ iproute2 wireguard-tools curl jq coreutils gnused gawk systemd ];
+        runtimeInputs = with pkgs; [
+          iproute2
+          wireguard-tools
+          curl
+          jq
+          coreutils
+          gnused
+          gawk
+          systemd
+        ];
         text = ''
           set -euo pipefail
 
@@ -191,7 +205,10 @@
 
       piaDown = pkgs.writeShellApplication {
         name = "pia-netns-down";
-        runtimeInputs = with pkgs; [ iproute2 coreutils ];
+        runtimeInputs = with pkgs; [
+          iproute2
+          coreutils
+        ];
         text = ''
           NETNS="${cfg.namespace}"
           WG_IFACE="wg-${cfg.namespace}"

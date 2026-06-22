@@ -1,7 +1,19 @@
-{ self, name, writeShellApplication, emacs30-pgtk, kitty, jq, ... }:
+{
+  self,
+  name,
+  writeShellApplication,
+  emacs30-pgtk,
+  kitty,
+  jq,
+  ...
+}:
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ emacs30-pgtk kitty jq ];
+  runtimeInputs = [
+    emacs30-pgtk
+    kitty
+    jq
+  ];
   text = ''
     wait=0
     while :; do

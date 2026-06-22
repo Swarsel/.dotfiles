@@ -1,10 +1,25 @@
 {
   flake.modules.nixos.kea =
-    { self, lib, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "kea"; dir = "/var/lib/private/kea"; }) serviceName serviceDir;
+      inherit
+        (confLib.gen {
+          name = "kea";
+          dir = "/var/lib/private/kea";
+        })
+        serviceName
+        serviceDir
+        ;
       inherit (confLib.static) homeDnsServer;
-      dhcpX = intX:
+      dhcpX =
+        intX:
         let
           x = builtins.toString intX;
         in
@@ -31,37 +46,34 @@
                 rapid-commit = lib.mkIf (intX == 6) true;
                 pools = [
                   {
-                    pool = "${lib.net.cidr.host 100 vlanCfg."cidrv${x}"} - ${lib.net.cidr.host (-6) vlanCfg."cidrv${x}"}";
+                    pool = "${lib.net.cidr.host 100 vlanCfg."cidrv${x}"} - ${
+                      lib.net.cidr.host (-6) vlanCfg."cidrv${x}"
+                    }";
                   }
                 ];
                 pd-pools = lib.mkIf (intX == 6) [
                   {
-                    prefix = builtins.replaceStrings [ "::" ] [ ":0:0:100::" ] (lib.head (lib.splitString "/" vlanCfg.cidrv6));
+                    prefix = builtins.replaceStrings [ "::" ] [ ":0:0:100::" ] (
+                      lib.head (lib.splitString "/" vlanCfg.cidrv6)
+                    );
                     prefix-len = 56;
                     delegated-len = 64;
                   }
                 ];
                 option-data =
-                  lib.optional (intX == 4)
-                    {
-                      name = "routers";
-                      data = vlanCfg.hosts.hintbooth."ipv${x}";
-                    }
+                  lib.optional (intX == 4) {
+                    name = "routers";
+                    data = vlanCfg.hosts.hintbooth."ipv${x}";
+                  }
                   # Advertise DNS server for VLANS that have internet access
-                  ++
-                  lib.optional
-                    (lib.elem vlanName globals.general.internetVLANs)
-                    {
-                      name = if (intX == 4) then "domain-name-servers" else "dns-servers";
-                      data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
-                    }
-                  ++
-                  lib.optional
-                    (lib.elem vlanName globals.general.internetVLANs)
-                    {
-                      name = "domain-search";
-                      data = globals.domains.main;
-                    };
+                  ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
+                    name = if (intX == 4) then "domain-name-servers" else "dns-servers";
+                    data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
+                  }
+                  ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
+                    name = "domain-search";
+                    data = globals.domains.main;
+                  };
                 reservations = lib.concatLists (
                   lib.forEach (builtins.attrValues vlanCfg.hosts) (
                     hostCfg:
@@ -71,7 +83,11 @@
                       ip-address = lib.mkIf (intX == 4) hostCfg."ipv${x}";
                       ip-addresses = lib.mkIf (intX == 6) [ hostCfg."ipv${x}" ];
                       prefixes = lib.mkIf (intX == 6) [
-                        "${builtins.replaceStrings ["::"] [":0:0:${builtins.toString (256 + hostCfg.id)}::"] (lib.head (lib.splitString "/" vlanCfg.cidrv6))}/64"
+                        "${
+                          builtins.replaceStrings [ "::" ] [ ":0:0:${builtins.toString (256 + hostCfg.id)}::" ] (
+                            lib.head (lib.splitString "/" vlanCfg.cidrv6)
+                          )
+                        }/64"
                       ];
                     }
                   )
@@ -86,7 +102,10 @@
         swarselsystems.enabledServerModules = [ "kea" ];
 
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = serviceDir; mode = "0700"; }
+          {
+            directory = serviceDir;
+            mode = "0700";
+          }
         ];
 
         users.persistentIds.kea = confLib.mkIds 968;

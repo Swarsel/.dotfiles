@@ -2,7 +2,7 @@
 {
   flake-file.inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
 }
-  // lib.optionalAttrs (inputs ? treefmt-nix) {
+// lib.optionalAttrs (inputs ? treefmt-nix) {
   imports = [
     inputs.treefmt-nix.flakeModule
   ];

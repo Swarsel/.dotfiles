@@ -1,6 +1,13 @@
 {
   flake.modules.nixos.bastion =
-    { self, lib, config, withHomeManager, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      withHomeManager,
+      confLib,
+      ...
+    }:
     {
       config = {
         swarselsystems.enabledServerModules = [ "bastion" ];
@@ -25,7 +32,6 @@
             };
           };
         };
-
 
         services.openssh = {
           enable = true;
@@ -54,7 +60,8 @@
             }
           ];
         };
-      } // lib.optionalAttrs withHomeManager {
+      }
+      // lib.optionalAttrs withHomeManager {
 
         home-manager.users.jump.config = {
           home.stateVersion = lib.mkDefault "23.05";
@@ -65,7 +72,8 @@
               "*" = {
                 forwardAgent = false;
               };
-            } // config.repo.secrets.local.ssh.hosts;
+            }
+            // config.repo.secrets.local.ssh.hosts;
           };
         };
       };

@@ -1,4 +1,9 @@
-{ self, lib, minimal, ... }:
+{
+  self,
+  lib,
+  minimal,
+  ...
+}:
 {
   imports = [
 
@@ -11,7 +16,8 @@
     isImpermanence = true;
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 1024 * 6;

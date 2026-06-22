@@ -1,9 +1,37 @@
 {
   flake.modules.nixos.forgejo =
-    { self, lib, config, pkgs, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      pkgs,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "forgejo"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "forgejo";
+          port = 3004;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       kanidmDomain = globals.services.kanidm.domain;
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
@@ -27,18 +55,44 @@
         users.groups.${serviceGroup} = { };
 
         sops.secrets = {
-          kanidm-forgejo = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          kanidm-forgejo = {
+            sopsFile = kanidmSopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
         };
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/healthz"; expectedBodyRegex = ''"status":\s*"pass"''; failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"''; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/api/healthz";
+            expectedBodyRegex = ''"status":\s*"pass"'';
+            failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"'';
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+          ];
         };
 
         services.${serviceName} = {
@@ -144,25 +198,41 @@
         };
 
         nodes = {
-          ${idmServer} = lib.recursiveUpdate
-            (confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
-              extraGroups = [ "forgejo.admins" ];
-            })
-            {
-              services.kanidm.provision.systems.oauth2.forgejo = {
-                # XXX: PKCE is currently not supported by gitea/forgejo,
-                # see https://github.com/go-gitea/gitea/issues/21376.
-                allowInsecureClientDisablePkce = true;
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup."forgejo.admins" = [ "admin" ];
+          ${idmServer} =
+            lib.recursiveUpdate
+              (confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+                extraGroups = [ "forgejo.admins" ];
+              })
+              {
+                services.kanidm.provision.systems.oauth2.forgejo = {
+                  # XXX: PKCE is currently not supported by gitea/forgejo,
+                  # see https://github.com/go-gitea/gitea/issues/21376.
+                  allowInsecureClientDisablePkce = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup."forgejo.admins" = [ "admin" ];
+                  };
                 };
               };
-            };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            maxBody = 0;
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              maxBody = 0;
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

@@ -1,4 +1,12 @@
-{ self, config, lib, minimal, globals, confLib, ... }:
+{
+  self,
+  config,
+  lib,
+  minimal,
+  globals,
+  confLib,
+  ...
+}:
 let
   inherit (confLib.static) nginxAccessRules;
 in
@@ -20,7 +28,8 @@ in
     proxyHost = config.node.name;
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 3072 * 1;
@@ -41,7 +50,8 @@ in
       };
       extraConfig = ''
         proxy_ssl_verify off;
-      '' + nginxAccessRules;
+      ''
+      + nginxAccessRules;
     };
   };
 

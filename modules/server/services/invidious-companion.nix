@@ -8,19 +8,51 @@
     { inputs, lib, ... }:
     {
       imports = lib.optionals (inputs ? invidious-companion) [
-        ({ self, inputs, lib, pkgs, config, globals, confLib, ... }:
+        (
+          {
+            self,
+            inputs,
+            lib,
+            pkgs,
+            config,
+            globals,
+            confLib,
+            ...
+          }:
           let
-            inherit (confLib.gen { name = "invidious-companion"; port = 8282; }) servicePort serviceName serviceAddress proxyAddress4 proxyAddress6;
+            inherit
+              (confLib.gen {
+                name = "invidious-companion";
+                port = 8282;
+              })
+              servicePort
+              serviceName
+              serviceAddress
+              proxyAddress4
+              proxyAddress6
+              ;
             inherit (confLib.gen { name = "invidious"; }) serviceDomain;
-            inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+            inherit (confLib.static)
+              isHome
+              webProxy
+              homeWebProxy
+              homeServiceAddress
+              nginxAccessRules
+              ;
 
             sopsFile = self + /secrets/general/invidious-companion.yaml;
             companion = pkgs.stdenv.mkDerivation {
               name = "invidious-companion";
               src = inputs.invidious-companion;
               nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-              buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.openssl ];
-              phases = [ "unpackPhase" "installPhase" ];
+              buildInputs = [
+                pkgs.stdenv.cc.cc.lib
+                pkgs.openssl
+              ];
+              phases = [
+                "unpackPhase"
+                "installPhase"
+              ];
               installPhase = ''
                 mkdir -p $out/bin
                 cp invidious_companion $out/bin/invidious_companion
@@ -33,7 +65,10 @@
 
             sops = {
               secrets = {
-                invidious-companion-key = { inherit sopsFile; mode = "0444"; };
+                invidious-companion-key = {
+                  inherit sopsFile;
+                  mode = "0444";
+                };
               };
 
               templates = {
@@ -69,9 +104,23 @@
 
             globals = {
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-              services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+              services = confLib.mkServiceGlobal {
+                inherit
+                  serviceName
+                  serviceDomain
+                  proxyAddress4
+                  proxyAddress6
+                  isHome
+                  serviceAddress
+                  homeServiceAddress
+                  ;
+              };
               dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-              monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/healthz"; expectedBodyRegex = "OK"; };
+              monitoring.http = confLib.mkHttpMonitoring {
+                inherit serviceName servicePort;
+                path = "/healthz";
+                expectedBodyRegex = "OK";
+              };
             };
 
             nodes =
@@ -115,7 +164,8 @@
                   lib.recursiveUpdate (genNginx homeServiceAddress nginxAccessRules) homeInvidiousFallback
                 );
               };
-          })
+          }
+        )
       ];
     };
 }

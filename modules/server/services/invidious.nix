@@ -1,9 +1,35 @@
 {
   flake.modules.nixos.invidious =
-    { self, lib, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "invidious"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "invidious";
+          port = 3001;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        idmServer
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       sopsFile = self + /secrets/general/invidious-companion.yaml;
     in
@@ -17,7 +43,10 @@
 
         sops = {
           secrets = {
-            invidious-companion-key = { inherit sopsFile; mode = "0444"; };
+            invidious-companion-key = {
+              inherit sopsFile;
+              mode = "0444";
+            };
           };
 
           templates = {
@@ -36,8 +65,22 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Invidious"; alertFor = "30m"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Invidious";
+            alertFor = "30m";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 

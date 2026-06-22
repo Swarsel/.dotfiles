@@ -4,10 +4,43 @@
     url = "github:nixos/nixpkgs/a799d3e3886da994fa307f817a6bc705ae538eeb?narHash=sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY%3D";
   };
   flake.modules.nixos.firezone =
-    { self, lib, inputs, pkgs, config, globals, confLib, nodes, ... }:
+    {
+      self,
+      lib,
+      inputs,
+      pkgs,
+      config,
+      globals,
+      confLib,
+      nodes,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "firezone"; dir = "/var/lib/private/firezone"; }) serviceName serviceDir serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome isProxied homeProxy webProxy homeWebProxy homeProxyIf webProxyIf idmServer homeServiceAddress nginxAccessRules monitoringServer;
+      inherit
+        (confLib.gen {
+          name = "firezone";
+          dir = "/var/lib/private/firezone";
+        })
+        serviceName
+        serviceDir
+        serviceAddress
+        serviceDomain
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        isProxied
+        homeProxy
+        webProxy
+        homeWebProxy
+        homeProxyIf
+        webProxyIf
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        monitoringServer
+        ;
       inherit (config.swarselsystems) sopsFile;
 
       apiPort = 8081;
@@ -16,14 +49,18 @@
       relayHealthPort = 8082;
       domainPort = 9003;
 
-      firezoneTargetVLANs = [ "services" "home" "devices" ];
+      firezoneTargetVLANs = [
+        "services"
+        "home"
+        "devices"
+      ];
       firezoneTargetZones = map (v: "vlan-${v}") firezoneTargetVLANs;
 
       homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
       homeDomains = map (name: globals.services.${name}.domain) homeServices;
       smbDomain = "smb.${globals.domains.main}";
-      vlanCidrResources = lib.listToAttrs (lib.concatMap
-        (vlan: [
+      vlanCidrResources = lib.listToAttrs (
+        lib.concatMap (vlan: [
           {
             name = "home.vlan-${vlan}.v4";
             value = {
@@ -42,8 +79,8 @@
               gatewayGroups = [ "home" ];
             };
           }
-        ])
-        firezoneTargetVLANs);
+        ]) firezoneTargetVLANs
+      );
       allow = group: resource: {
         "${group}@${resource}" = {
           inherit group resource;
@@ -53,31 +90,65 @@
 
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
-      disabledFirezoneModules = [ "gateway.nix" "relay.nix" "server.nix" "gui-client.nix" "headless-client.nix" ];
+      disabledFirezoneModules = [
+        "gateway.nix"
+        "relay.nix"
+        "server.nix"
+        "gui-client.nix"
+        "headless-client.nix"
+      ];
       disabledFirezoneModule = name: "services/networking/firezone/${name}";
     in
     {
       disabledModules = map disabledFirezoneModule disabledFirezoneModules;
 
-      imports = map
-        (name: "${inputs.nixpkgsFirezoneProvisioned}/nixos/modules/${disabledFirezoneModule name}")
-        disabledFirezoneModules;
+      imports = map (
+        name: "${inputs.nixpkgsFirezoneProvisioned}/nixos/modules/${disabledFirezoneModule name}"
+      ) disabledFirezoneModules;
       config = {
         swarselsystems.enabledServerModules = [ "firezone" ];
 
         globals = {
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
           monitoring.http = lib.mkMerge [
-            (confLib.mkHttpMonitoring { serviceName = "firezone-server-domain"; servicePort = config.services.firezone.server.domain.settings.HEALTHZ_PORT; path = "/healthz"; expectedBodyRegex = ''"status":"ok"''; })
-            (confLib.mkHttpMonitoring { serviceName = "firezone-server-web"; servicePort = config.services.firezone.server.web.settings.HEALTHZ_PORT; path = "/healthz"; expectedBodyRegex = ''"status":"ok"''; })
-            (confLib.mkHttpMonitoring { serviceName = "firezone-server-api"; servicePort = config.services.firezone.server.api.settings.HEALTHZ_PORT; path = "/healthz"; expectedBodyRegex = ''"status":"ok"''; })
-            (confLib.mkHttpMonitoring { serviceName = "firezone-relay"; servicePort = relayHealthPort; path = "/healthz"; })
-            { firezone-gateway = { url = "http://127.0.0.1:${toString webPort}/healthz"; network = "local-${homeProxy}"; }; }
+            (confLib.mkHttpMonitoring {
+              serviceName = "firezone-server-domain";
+              servicePort = config.services.firezone.server.domain.settings.HEALTHZ_PORT;
+              path = "/healthz";
+              expectedBodyRegex = ''"status":"ok"'';
+            })
+            (confLib.mkHttpMonitoring {
+              serviceName = "firezone-server-web";
+              servicePort = config.services.firezone.server.web.settings.HEALTHZ_PORT;
+              path = "/healthz";
+              expectedBodyRegex = ''"status":"ok"'';
+            })
+            (confLib.mkHttpMonitoring {
+              serviceName = "firezone-server-api";
+              servicePort = config.services.firezone.server.api.settings.HEALTHZ_PORT;
+              path = "/healthz";
+              expectedBodyRegex = ''"status":"ok"'';
+            })
+            (confLib.mkHttpMonitoring {
+              serviceName = "firezone-relay";
+              servicePort = relayHealthPort;
+              path = "/healthz";
+            })
+            {
+              firezone-gateway = {
+                url = "http://127.0.0.1:${toString webPort}/healthz";
+                network = "local-${homeProxy}";
+              };
+            }
           ];
           networks = {
             ${webProxyIf}.hosts = lib.mkIf isProxied {
               ${config.node.name}.firewallRuleForNode.${webProxy} = {
-                allowedTCPPorts = [ apiPort webPort domainPort ];
+                allowedTCPPorts = [
+                  apiPort
+                  webPort
+                  domainPort
+                ];
                 allowedUDPPorts = [ relayPort ];
                 allowedUDPPortRanges = [
                   {
@@ -89,7 +160,11 @@
             };
             ${homeProxyIf}.hosts = lib.mkIf isHome {
               ${config.node.name}.firewallRuleForNode.${homeWebProxy} = {
-                allowedTCPPorts = [ apiPort webPort domainPort ];
+                allowedTCPPorts = [
+                  apiPort
+                  webPort
+                  domainPort
+                ];
                 allowedUDPPorts = [ relayPort ];
                 allowedUDPPortRanges = [
                   {
@@ -100,7 +175,17 @@
               };
             };
           };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
         };
 
         topology.self.services.${serviceName} = {
@@ -111,16 +196,34 @@
 
         sops = {
           secrets = {
-            kanidm-firezone = { sopsFile = kanidmSopsFile; mode = "0400"; };
-            firezone-relay-token = { inherit sopsFile; mode = "0400"; };
-            firezone-smtp-password = { inherit sopsFile; mode = "0440"; };
-            firezone-adapter-config = { inherit sopsFile; mode = "0440"; };
+            kanidm-firezone = {
+              sopsFile = kanidmSopsFile;
+              mode = "0400";
+            };
+            firezone-relay-token = {
+              inherit sopsFile;
+              mode = "0400";
+            };
+            firezone-smtp-password = {
+              inherit sopsFile;
+              mode = "0440";
+            };
+            firezone-adapter-config = {
+              inherit sopsFile;
+              mode = "0440";
+            };
           };
         };
 
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = serviceDir; mode = "0700"; }
-          { directory = "${serviceDir}-relay"; mode = "0700"; }
+          {
+            directory = serviceDir;
+            mode = "0700";
+          }
+          {
+            directory = "${serviceDir}-relay";
+            mode = "0700";
+          }
         ];
 
         services.firezone = {
@@ -171,27 +274,26 @@
                   };
 
                 resources =
-                  lib.genAttrs homeDomains
-                    (domain: {
-                      type = "dns";
-                      name = domain;
-                      address = domain;
-                      gatewayGroups = [ "home" ];
-                      filters = [
-                        { protocol = "icmp"; }
-                        {
-                          protocol = "tcp";
-                          ports = [
-                            443
-                            80
-                          ];
-                        }
-                        {
-                          protocol = "udp";
-                          ports = [ 443 ];
-                        }
-                      ];
-                    })
+                  lib.genAttrs homeDomains (domain: {
+                    type = "dns";
+                    name = domain;
+                    address = domain;
+                    gatewayGroups = [ "home" ];
+                    filters = [
+                      { protocol = "icmp"; }
+                      {
+                        protocol = "tcp";
+                        ports = [
+                          443
+                          80
+                        ];
+                      }
+                      {
+                        protocol = "udp";
+                        ports = [ 443 ];
+                      }
+                    ];
+                  })
                   // vlanCidrResources
                   // {
                     ${smbDomain} = {
@@ -214,12 +316,12 @@
 
                 policies =
                   { }
-                  // lib.mergeAttrsList (lib.concatMap
-                    (resource: [
+                  // lib.mergeAttrsList (
+                    lib.concatMap (resource: [
                       (allow "everyone" resource)
                       (allow "anyone" resource)
-                    ])
-                    (lib.attrNames vlanCidrResources))
+                    ]) (lib.attrNames vlanCidrResources)
+                  )
                   // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains)
                   // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains)
                   // (allow "everyone" smbDomain)
@@ -259,16 +361,18 @@
         };
 
         systemd.services = lib.mkMerge [
-          (lib.genAttrs [
-            "firezone-server-web"
-            "firezone-server-api"
-            "firezone-server-domain"
-          ]
+          (lib.genAttrs
+            [
+              "firezone-server-web"
+              "firezone-server-api"
+              "firezone-server-domain"
+            ]
             (_: {
               startLimitIntervalSec = 600;
               startLimitBurst = 10;
               serviceConfig.RestartSec = lib.mkForce 30;
-            }))
+            })
+          )
           {
             firezone-relay.environment.HEALTH_CHECK_ADDR = "0.0.0.0:${toString relayHealthPort}";
           }
@@ -315,7 +419,10 @@
                   nodePkgs = nodes.${homeProxy}.pkgs;
                 in
                 {
-                  sops.secrets.firezone-gateway-token = { inherit (nodeCfg.swarselsystems) sopsFile; mode = "0400"; };
+                  sops.secrets.firezone-gateway-token = {
+                    inherit (nodeCfg.swarselsystems) sopsFile;
+                    mode = "0400";
+                  };
                   networking.nftables = {
                     firewall = {
                       zones.firezone.interfaces = [ "tun-firezone" ];
@@ -347,25 +454,27 @@
                       masquerade-firezone = {
                         after = [ "hook" ];
                         late = true;
-                        rules =
-                          lib.concatMap
-                            (sourceZone:
-                              lib.forEach firezoneTargetZones (
-                                targetZone:
-                                lib.concatStringsSep " " [
-                                  "meta protocol { ip, ip6 }"
-                                  (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
-                                  (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
-                                  "masquerade random"
-                                ]
-                              ))
-                            [ "firezone" ];
+                        rules = lib.concatMap (
+                          sourceZone:
+                          lib.forEach firezoneTargetZones (
+                            targetZone:
+                            lib.concatStringsSep " " [
+                              "meta protocol { ip, ip6 }"
+                              (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
+                              (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
+                              "masquerade random"
+                            ]
+                          )
+                        ) [ "firezone" ];
                       };
                     };
                   };
 
                   environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
-                    { directory = "${serviceDir}-gateway"; mode = "0700"; }
+                    {
+                      directory = "${serviceDir}-gateway";
+                      mode = "0700";
+                    }
                   ];
 
                   boot.kernel.sysctl = {
@@ -405,26 +514,28 @@
             }
           )
           {
-            ${monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [{
-              orgId = 1;
-              name = "firezone";
-              folder = "Infrastructure";
-              interval = "1m";
-              rules = [
-                (confLib.mkGrafanaAlertRule {
-                  uid = "firezone_presence_match_spec_overflow";
-                  title = "Firezone presence tracker match-spec overflow";
-                  expr = ''sum(count_over_time({unit="firezone-server-api.service"} |= `not a valid match specification` [10m]))'';
-                  op = "gt";
-                  threshold = 0;
-                  forDuration = "5m";
-                  summary = "firezone-server-api relay selection is crashing (ETS match-spec overflow from accumulated presence replicas); VPN gateway and client connections will fail. Restart all three firezone-server-* units to rebuild tracker state.";
-                  datasourceUid = "loki";
-                  queryType = "instant";
-                  noDataState = "OK";
-                })
-              ];
-            }];
+            ${monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [
+              {
+                orgId = 1;
+                name = "firezone";
+                folder = "Infrastructure";
+                interval = "1m";
+                rules = [
+                  (confLib.mkGrafanaAlertRule {
+                    uid = "firezone_presence_match_spec_overflow";
+                    title = "Firezone presence tracker match-spec overflow";
+                    expr = ''sum(count_over_time({unit="firezone-server-api.service"} |= `not a valid match specification` [10m]))'';
+                    op = "gt";
+                    threshold = 0;
+                    forDuration = "5m";
+                    summary = "firezone-server-api relay selection is crashing (ETS match-spec overflow from accumulated presence replicas); VPN gateway and client connections will fail. Restart all three firezone-server-* units to rebuild tracker state.";
+                    datasourceUid = "loki";
+                    queryType = "instant";
+                    noDataState = "OK";
+                  })
+                ];
+              }
+            ];
           }
         ];
 

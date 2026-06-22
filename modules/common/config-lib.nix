@@ -1,19 +1,26 @@
 {
   flake.modules.generic.config-lib =
-    { self, config, lib, globals, inputs, outputs, minimal, nixosConfig ? null, ... }:
+    {
+      self,
+      config,
+      lib,
+      globals,
+      inputs,
+      outputs,
+      minimal,
+      nixosConfig ? null,
+      ...
+    }:
     let
       domainDefault = service: config.repo.secrets.common.services.domains.${service};
       proxyDefault = config.swarselsystems.proxyHost;
 
-      isWgProxyClient = globals.wireguard ? wgProxy && builtins.elem config.node.name globals.wireguard.wgProxy.clients;
+      isWgProxyClient =
+        globals.wireguard ? wgProxy && builtins.elem config.node.name globals.wireguard.wgProxy.clients;
 
       addressDefault =
-        if
-          config.swarselsystems.proxyHost != config.node.name
-        then
-          if
-            isWgProxyClient
-          then
+        if config.swarselsystems.proxyHost != config.node.name then
+          if isWgProxyClient then
             globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
           else
             globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
@@ -25,27 +32,48 @@
         confLib = rec {
           getConfig = if nixosConfig == null then config else nixosConfig;
 
-          gen = { name ? "n/a", user ? name, group ? user, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
-            servicePort = port;
-            serviceName = name;
-            specificServiceName = "${name}-${config.node.name}";
-            serviceUser = user;
-            serviceGroup = group;
-            serviceDomain = domain;
-            baseDomain = lib.swarselsystems.getBaseDomain domain;
-            subDomain = lib.swarselsystems.getSubDomain domain;
-            serviceDir = dir;
-            serviceAddress = address;
-            serviceProxy = proxy;
-            serviceNode = config.node.name;
-            topologyContainerName = "${serviceNode}-${config.virtualisation.oci-containers.backend}-${name}";
-            proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
-            proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
-          };
+          gen =
+            {
+              name ? "n/a",
+              user ? name,
+              group ? user,
+              dir ? null,
+              port ? null,
+              domain ? (domainDefault name),
+              address ? addressDefault,
+              proxy ? proxyDefault,
+            }:
+            rec {
+              servicePort = port;
+              serviceName = name;
+              specificServiceName = "${name}-${config.node.name}";
+              serviceUser = user;
+              serviceGroup = group;
+              serviceDomain = domain;
+              baseDomain = lib.swarselsystems.getBaseDomain domain;
+              subDomain = lib.swarselsystems.getSubDomain domain;
+              serviceDir = dir;
+              serviceAddress = address;
+              serviceProxy = proxy;
+              serviceNode = config.node.name;
+              topologyContainerName = "${serviceNode}-${config.virtualisation.oci-containers.backend}-${name}";
+              proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
+              proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
+            };
 
           static = rec {
             inherit (globals.hosts.${config.node.name}) isHome;
-            inherit (globals.general) homeProxy routerServer webProxy dnsServer homeDnsServer homeWebProxy idmServer oauthServer monitoringServer;
+            inherit (globals.general)
+              homeProxy
+              routerServer
+              webProxy
+              dnsServer
+              homeDnsServer
+              homeWebProxy
+              idmServer
+              oauthServer
+              monitoringServer
+              ;
             webProxyIf = "${webProxy}-wgProxy";
             homeProxyIf = "home-wgHome";
             isProxied = config.node.name != webProxy;
@@ -72,27 +100,36 @@
                 return 444;
               }
             '';
-            wgProxyMembers = lib.optionals (globals.wireguard ? wgProxy) (globals.wireguard.wgProxy.clients ++ [ globals.wireguard.wgProxy.server ]);
-            wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]);
+            wgProxyMembers = lib.optionals (globals.wireguard ? wgProxy) (
+              globals.wireguard.wgProxy.clients ++ [ globals.wireguard.wgProxy.server ]
+            );
+            wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (
+              globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]
+            );
             inWgProxy = builtins.elem config.node.name wgProxyMembers;
             inWgHome = builtins.elem config.node.name wgHomeMembers;
-            homeServiceAddress = lib.optionalString inWgHome globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
+            homeServiceAddress =
+              lib.optionalString inWgHome
+                globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4;
 
             wgProxyAccessRules =
               let
                 wgProxyNet = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy";
-                extraAllows = lib.concatMapStrings
-                  (host:
-                    let cfg = globals.hosts.${host}; in
-                    lib.optionalString (cfg.wanAddress4 != null) "allow ${cfg.wanAddress4};\n"
-                    + lib.optionalString (cfg.wanAddress6 != null) "allow ${cfg.wanAddress6};\n"
-                  )
-                  (lib.filter (h: !(builtins.elem h wgProxyMembers)) (lib.attrNames globals.hosts));
+                extraAllows = lib.concatMapStrings (
+                  host:
+                  let
+                    cfg = globals.hosts.${host};
+                  in
+                  lib.optionalString (cfg.wanAddress4 != null) "allow ${cfg.wanAddress4};\n"
+                  + lib.optionalString (cfg.wanAddress6 != null) "allow ${cfg.wanAddress6};\n"
+                ) (lib.filter (h: !(builtins.elem h wgProxyMembers)) (lib.attrNames globals.hosts));
               in
               ''
                 allow ${wgProxyNet.cidrv4};
                 allow ${wgProxyNet.cidrv6};
-              '' + extraAllows + ''
+              ''
+              + extraAllows
+              + ''
                 deny all;
               '';
           };
@@ -102,17 +139,18 @@
             gid = id;
           };
 
-          mkDeviceMac = id:
+          mkDeviceMac =
+            id:
             let
               mod = n: d: n - (n / d) * d;
-              toHexByte = n:
+              toHexByte =
+                n:
                 let
                   hex = "0123456789abcdef";
                   hi = n / 16;
                   lo = mod n 16;
                 in
-                builtins.substring hi 1 hex
-                + builtins.substring lo 1 hex;
+                builtins.substring hi 1 hex + builtins.substring lo 1 hex;
 
               max = 16777215; # 256^3 - 1
 
@@ -121,88 +159,102 @@
               b2 = r1 / 256;
               b3 = mod r1 256;
             in
-            if
-              (id <= max)
-            then
-              (builtins.concatStringsSep ":"
-                (map toHexByte [ b1 b2 b3 ]))
+            if (id <= max) then
+              (builtins.concatStringsSep ":" (
+                map toHexByte [
+                  b1
+                  b2
+                  b3
+                ]
+              ))
             else
               (throw "Device MAC ID too large (max is 16777215)");
 
           mkMicrovm =
             if config.swarselsystems.withMicroVMs then
-              (guestName:
-                { eternorPaths ? [ ]
-                , withZfs ? false
-                , ...
+              (
+                guestName:
+                {
+                  eternorPaths ? [ ],
+                  withZfs ? false,
+                  ...
                 }:
                 {
-                  ${guestName} =
-                    {
-                      backend = "microvm";
-                      autostart = true;
-                      zfs = lib.mkIf withZfs
-                        ({
-                          # stateful config usually bind-mounted to /var/lib/ that should be backed up remotely
-                          "/state" = {
-                            pool = "Vault";
-                            dataset = "guests/${guestName}/state";
-                          };
-                          # other stuff that should only reside on zfs, not backed up remotely
-                          "/persist" = {
-                            pool = "Vault";
-                            dataset = "guests/${guestName}/persist";
-                          };
-                        } // lib.optionalAttrs (eternorPaths != [ ])
-                          (lib.listToAttrs (map
+                  ${guestName} = {
+                    backend = "microvm";
+                    autostart = true;
+                    zfs = lib.mkIf withZfs (
+                      {
+                        # stateful config usually bind-mounted to /var/lib/ that should be backed up remotely
+                        "/state" = {
+                          pool = "Vault";
+                          dataset = "guests/${guestName}/state";
+                        };
+                        # other stuff that should only reside on zfs, not backed up remotely
+                        "/persist" = {
+                          pool = "Vault";
+                          dataset = "guests/${guestName}/persist";
+                        };
+                      }
+                      // lib.optionalAttrs (eternorPaths != [ ]) (
+                        lib.listToAttrs (
+                          map
                             # data that is pulled in externally by services, some of which is backed up externally
-                            (eternorPath:
+                            (
+                              eternorPath:
                               lib.nameValuePair "/storage/${eternorPath}" {
                                 pool = "Vault";
                                 dataset = "Eternor/${eternorPath}";
-                              })
-                            eternorPaths)));
-                      modules = [
-                        (config.node.configDir + /guests/${guestName}/default.nix)
-                        {
-                          node.secretsDir = config.node.configDir + /secrets/${guestName};
-                          node.configDir = config.node.configDir + /guests/${guestName};
-                          networking.nftables.firewall = {
-                            zones.untrusted.interfaces = lib.mkIf
-                              (
-                                lib.length config.guests.${guestName}.networking.links == 1
-                              )
-                              config.guests.${guestName}.networking.links;
-                          };
-
-                          fileSystems = {
-                            "/persist".neededForBoot = true;
-                          } // lib.optionalAttrs withZfs {
-                            "/state".neededForBoot = true;
-                          };
-                        }
-                        self.modules.nixos.microvm-guest
-                        self.modules.nixos.systemd-networkd-base
-                      ];
-                      microvm = {
-                        system = config.node.arch;
-                        baseMac = config.repo.secrets.local.networking.networks.lan.mac;
-                        interfaces.vlan-services = {
-                          mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id}";
-
+                              }
+                            )
+                            eternorPaths
+                        )
+                      )
+                    );
+                    modules = [
+                      (config.node.configDir + /guests/${guestName}/default.nix)
+                      {
+                        node.secretsDir = config.node.configDir + /secrets/${guestName};
+                        node.configDir = config.node.configDir + /guests/${guestName};
+                        networking.nftables.firewall = {
+                          zones.untrusted.interfaces = lib.mkIf (
+                            lib.length config.guests.${guestName}.networking.links == 1
+                          ) config.guests.${guestName}.networking.links;
                         };
-                      };
-                      extraSpecialArgs = {
-                        inherit (inputs.self) nodes;
-                        inherit (inputs.self.pkgs.${config.node.arch}) lib;
-                        inherit inputs outputs minimal;
-                        inherit (inputs) self;
-                        withHomeManager = false;
-                        microVMParent = config.node.name;
-                        globals = inputs.self.globals.${config.node.arch};
+
+                        fileSystems = {
+                          "/persist".neededForBoot = true;
+                        }
+                        // lib.optionalAttrs withZfs {
+                          "/state".neededForBoot = true;
+                        };
+                      }
+                      self.modules.nixos.microvm-guest
+                      self.modules.nixos.systemd-networkd-base
+                    ];
+                    microvm = {
+                      system = config.node.arch;
+                      baseMac = config.repo.secrets.local.networking.networks.lan.mac;
+                      interfaces.vlan-services = {
+                        mac = lib.mkForce "02:${lib.substring 3 5 config.guests.${guestName}.microvm.baseMac}:${
+                          mkDeviceMac globals.networks.home-lan.vlans.services.hosts."${config.node.name}-${guestName}".id
+                        }";
+
                       };
                     };
-                }) else
+                    extraSpecialArgs = {
+                      inherit (inputs.self) nodes;
+                      inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                      inherit inputs outputs minimal;
+                      inherit (inputs) self;
+                      withHomeManager = false;
+                      microVMParent = config.node.name;
+                      globals = inputs.self.globals.${config.node.arch};
+                    };
+                  };
+                }
+              )
+            else
               (_: {
                 _ = { };
               });
@@ -216,12 +268,13 @@
           };
 
           mkKanidmOidcSystem =
-            { serviceName
-            , displayName ? lib.swarselsystems.toCapitalized serviceName
-            , serviceDomain
-            , originUrl
-            , kanidmSopsFile
-            , extraGroups ? [ ]
+            {
+              serviceName,
+              displayName ? lib.swarselsystems.toCapitalized serviceName,
+              serviceDomain,
+              originUrl,
+              kanidmSopsFile,
+              extraGroups ? [ ],
             }:
             {
               sops.secrets."kanidm-${serviceName}" = {
@@ -236,51 +289,70 @@
                   inherit displayName originUrl;
                   originLanding = "https://${serviceDomain}/";
                   basicSecretFile = config.sops.secrets."kanidm-${serviceName}".path;
-                  scopeMaps."${serviceName}.access" = [ "openid" "email" "profile" ];
+                  scopeMaps."${serviceName}.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
                   preferShortUsername = true;
                 };
               };
             };
 
           mkServiceGlobal =
-            { serviceName
-            , serviceDomain
-            , proxyAddress4
-            , proxyAddress6
-            , isHome
-            , serviceAddress
-            , homeServiceAddress
-            , extra ? { }
+            {
+              serviceName,
+              serviceDomain,
+              proxyAddress4,
+              proxyAddress6,
+              isHome,
+              serviceAddress,
+              homeServiceAddress,
+              extra ? { },
             }:
             {
               ${serviceName} = {
                 domain = serviceDomain;
-                inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+                inherit
+                  proxyAddress4
+                  proxyAddress6
+                  isHome
+                  serviceAddress
+                  ;
                 homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-              } // extra;
+              }
+              // extra;
             };
 
           mkTrayApplet =
-            { description
-            , execStart
-            , extraService ? { }
+            {
+              description,
+              execStart,
+              extraService ? { },
             }:
             {
               Unit = {
                 Description = description;
                 Requires = [ "graphical-session.target" ];
-                After = [ "graphical-session.target" "tray.target" ];
+                After = [
+                  "graphical-session.target"
+                  "tray.target"
+                ];
                 PartOf = [ "tray.target" ];
               };
               Install.WantedBy = [ "tray.target" ];
-              Service = { ExecStart = execStart; } // extraService;
+              Service = {
+                ExecStart = execStart;
+              }
+              // extraService;
             };
 
           mkDualFirewallRules =
-            { tcpPorts ? [ ]
-            , udpPorts ? [ ]
-            , forWebProxy ? true
-            , forHomeProxy ? true
+            {
+              tcpPorts ? [ ],
+              udpPorts ? [ ],
+              forWebProxy ? true,
+              forHomeProxy ? true,
             }:
             let
               rule = {
@@ -298,17 +370,18 @@
             };
 
           mkGrafanaAlertRule =
-            { uid
-            , title
-            , expr
-            , op ? "lt"
-            , threshold ? 1
-            , forDuration ? "5m"
-            , severity ? "critical"
-            , summary
-            , datasourceUid ? "mimir"
-            , queryType ? null
-            , noDataState ? "NoData"
+            {
+              uid,
+              title,
+              expr,
+              op ? "lt",
+              threshold ? 1,
+              forDuration ? "5m",
+              severity ? "critical",
+              summary,
+              datasourceUid ? "mimir",
+              queryType ? null,
+              noDataState ? "NoData",
             }:
             {
               inherit uid title noDataState;
@@ -318,14 +391,18 @@
               data = [
                 {
                   refId = "A";
-                  relativeTimeRange = { from = 600; to = 0; };
+                  relativeTimeRange = {
+                    from = 600;
+                    to = 0;
+                  };
                   inherit datasourceUid;
                   model = {
                     refId = "A";
                     inherit expr;
                     range = false;
                     instant = true;
-                  } // lib.optionalAttrs (queryType != null) { inherit queryType; };
+                  }
+                  // lib.optionalAttrs (queryType != null) { inherit queryType; };
                 }
                 {
                   refId = "C";
@@ -334,9 +411,14 @@
                     refId = "C";
                     type = "threshold";
                     expression = "A";
-                    conditions = [{
-                      evaluator = { type = op; params = [ threshold ]; };
-                    }];
+                    conditions = [
+                      {
+                        evaluator = {
+                          type = op;
+                          params = [ threshold ];
+                        };
+                      }
+                    ];
                   };
                 }
               ];
@@ -345,30 +427,37 @@
             };
 
           mkAlloyPushUrl =
-            { host
-            , domain
-            , port
-            , path
+            {
+              host,
+              domain,
+              port,
+              path,
             }:
             let
               monitoringServer = globals.general.monitoringServer;
               isCentral = host == monitoringServer;
               isHomeHost = globals.hosts.${host}.isHome or false;
             in
-            if isCentral then "http://127.0.0.1:${toString port}${path}"
-            else if isHomeHost then "http://${globals.networks.home-lan.vlans.services.hosts.${monitoringServer}.ipv4}:${toString port}${path}"
-            else "https://${domain}${path}";
+            if isCentral then
+              "http://127.0.0.1:${toString port}${path}"
+            else if isHomeHost then
+              "http://${
+                globals.networks.home-lan.vlans.services.hosts.${monitoringServer}.ipv4
+              }:${toString port}${path}"
+            else
+              "https://${domain}${path}";
 
           mkHttpMonitoring =
-            { serviceName
-            , servicePort
-            , path ? "/"
-            , scheme ? "http"
-            , expectedBodyRegex ? null
-            , expectedStatus ? null
-            , hostHeader ? null
-            , failIfBodyMatchesRegex ? null
-            , alertFor ? null
+            {
+              serviceName,
+              servicePort,
+              path ? "/",
+              scheme ? "http",
+              expectedBodyRegex ? null,
+              expectedStatus ? null,
+              hostHeader ? null,
+              failIfBodyMatchesRegex ? null,
+              alertFor ? null,
             }:
             {
               ${serviceName} = {
@@ -383,11 +472,13 @@
             };
 
           mkDnsRecord =
-            { serviceName
-            , proxyAddress4
-            , proxyAddress6
+            {
+              serviceName,
+              proxyAddress4,
+              proxyAddress6,
             }:
-            let svc = globals.services.${serviceName};
+            let
+              svc = globals.services.${serviceName};
             in
             {
               ${svc.baseDomain}.subdomainRecords.${svc.subDomain} =
@@ -395,34 +486,41 @@
             };
 
           mkKanidmOauth2ProxyAccess =
-            { serviceName
-            , proxyGroup ? "${serviceName}_access"
+            {
+              serviceName,
+              proxyGroup ? "${serviceName}_access",
             }:
             {
               services.kanidm.provision = {
                 groups."${serviceName}.access" = { };
                 systems.oauth2.oauth2-proxy = {
-                  scopeMaps."${serviceName}.access" = [ "openid" "email" "profile" ];
+                  scopeMaps."${serviceName}.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
                   claimMaps.groups.valuesByGroup."${serviceName}.access" = [ proxyGroup ];
                 };
               };
             };
 
           genNginx =
-            { serviceAddress
-            , serviceName
-            , serviceDomain
-            , servicePort
-            , protocol ? "http"
-            , maxBody ? (-1)
-            , maxBodyUnit ? ""
-            , noSslVerify ? false
-            , proxyWebsockets ? false
-            , oauth2 ? false
-            , oauth2Groups ? [ ]
-            , extraConfig ? ""
-            , extraConfigLoc ? ""
-            }: {
+            {
+              serviceAddress,
+              serviceName,
+              serviceDomain,
+              servicePort,
+              protocol ? "http",
+              maxBody ? (-1),
+              maxBodyUnit ? "",
+              noSslVerify ? false,
+              proxyWebsockets ? false,
+              oauth2 ? false,
+              oauth2Groups ? [ ],
+              extraConfig ? "",
+              extraConfigLoc ? "",
+            }:
+            {
               upstreams = {
                 ${serviceName} = {
                   servers = {
@@ -443,20 +541,23 @@
                     "/" = {
                       proxyPass = "${protocol}://${serviceName}";
                       proxyWebsockets = lib.mkIf proxyWebsockets true;
-                      extraConfig = lib.optionalString (maxBody != (-1)) ''
-                        client_max_body_size ${builtins.toString maxBody}${maxBodyUnit};
-                      '' + extraConfigLoc;
+                      extraConfig =
+                        lib.optionalString (maxBody != (-1)) ''
+                          client_max_body_size ${builtins.toString maxBody}${maxBodyUnit};
+                        ''
+                        + extraConfigLoc;
                     };
                   };
-                  extraConfig = lib.optionalString noSslVerify ''
-                    proxy_ssl_verify off;
-                  '' + extraConfig;
+                  extraConfig =
+                    lib.optionalString noSslVerify ''
+                      proxy_ssl_verify off;
+                    ''
+                    + extraConfig;
                 };
               };
             };
 
         };
       };
-    }
-  ;
+    };
 }

@@ -1,31 +1,52 @@
 {
   flake.modules = {
-    nixos.sway = { lib, config, pkgs, withHomeManager, ... }:
+    nixos.sway =
+      {
+        lib,
+        config,
+        pkgs,
+        withHomeManager,
+        ...
+      }:
       let
         inherit (config.swarselsystems) mainUser;
       in
       {
-        config =
-          {
-            programs.sway = {
-              enable = true;
-              package = pkgs.swayfx;
-              wrapperFeatures = {
-                base = true;
-                gtk = true;
-              };
+        config = {
+          programs.sway = {
+            enable = true;
+            package = pkgs.swayfx;
+            wrapperFeatures = {
+              base = true;
+              gtk = true;
             };
-          } // lib.optionalAttrs withHomeManager {
-            inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
           };
+        }
+        // lib.optionalAttrs withHomeManager {
+          inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
+        };
       };
 
     homeManager = {
-      sway = { config, lib, vars, confLib, nixosConfig ? null, ... }:
+      sway =
+        {
+          config,
+          lib,
+          vars,
+          confLib,
+          nixosConfig ? null,
+          ...
+        }:
         let
           eachOutput = _: monitor: {
             inherit (monitor) name;
-            value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
+            value = builtins.removeAttrs monitor [
+              "mode"
+              "name"
+              "scale"
+              "transform"
+              "position"
+            ];
           };
         in
         {
@@ -74,106 +95,113 @@
                 modifier = "Mod4";
                 # terminal = "kitty";
                 menu = "fuzzel";
-                bars = [{
-                  command = "waybar";
-                  mode = "hide";
-                  hiddenState = "hide";
-                  position = "top";
-                  extraConfig = "modifier Mod4";
-                }];
+                bars = [
+                  {
+                    command = "waybar";
+                    mode = "hide";
+                    hiddenState = "hide";
+                    position = "top";
+                    extraConfig = "modifier Mod4";
+                  }
+                ];
                 keybindings =
                   let
                     inherit (config.wayland.windowManager.sway.config) modifier;
                   in
-                  lib.recursiveUpdate
-                    {
-                      "${modifier}+0" = "workspace 10:十";
-                      "${modifier}+1" = "workspace 1:一";
-                      "${modifier}+2" = "workspace 2:二";
-                      "${modifier}+3" = "workspace 3:三";
-                      "${modifier}+4" = "workspace 4:四";
-                      "${modifier}+5" = "workspace 5:五";
-                      "${modifier}+6" = "workspace 6:六";
-                      "${modifier}+7" = "workspace 7:七";
-                      "${modifier}+8" = "workspace 8:八";
-                      "${modifier}+9" = "workspace 9:九";
-                      "${modifier}+Ctrl+Shift+c" = "reload";
-                      "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
-                      "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
-                      "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
-                      "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
-                      "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
-                      "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
-                      "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
-                      "${modifier}+Ctrl+e" = "workspace 13:E";
-                      "${modifier}+Ctrl+f" = "workspace 16:F";
-                      "${modifier}+Ctrl+l" = "workspace 15:L";
-                      "${modifier}+Ctrl+m" = "workspace 11:M";
-                      "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
-                      "${modifier}+Ctrl+s" = "workspace 12:S";
-                      "${modifier}+Ctrl+t" = "workspace 14:T";
-                      "${modifier}+Down" = "focus down";
-                      "${modifier}+Escape" = "exec wlogout";
-                      "${modifier}+F12" = "scratchpad show";
-                      "${modifier}+Left" = "focus left";
-                      "${modifier}+Return" = "exec swarselzellij";
-                      "${modifier}+Right" = "focus right";
-                      "${modifier}+Shift+0" = "move container to workspace 10:十";
-                      "${modifier}+Shift+1" = "move container to workspace 1:一";
-                      "${modifier}+Shift+2" = "move container to workspace 2:二";
-                      "${modifier}+Shift+3" = "move container to workspace 3:三";
-                      "${modifier}+Shift+4" = "move container to workspace 4:四";
-                      "${modifier}+Shift+5" = "move container to workspace 5:五";
-                      "${modifier}+Shift+6" = "move container to workspace 6:六";
-                      "${modifier}+Shift+7" = "move container to workspace 7:七";
-                      "${modifier}+Shift+8" = "move container to workspace 8:八";
-                      "${modifier}+Shift+9" = "move container to workspace 9:九";
-                      "${modifier}+Shift+Down" = "move down 40px";
-                      "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
-                      "${modifier}+Shift+F12" = "move scratchpad";
-                      "${modifier}+Shift+Left" = "move left 40px";
-                      "${modifier}+Shift+Right" = "move right 40px";
-                      "${modifier}+Shift+Space" = "floating toggle";
-                      "${modifier}+Shift+Up" = "move up 40px";
-                      "${modifier}+Shift+a" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
-                      "${modifier}+Shift+c" = "exec qalculate-gtk";
-                      "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
-                      "${modifier}+Shift+f" = "exec swaymsg fullscreen";
-                      "${modifier}+Shift+m" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-mu4e)'";
-                      "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
-                      "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-                      "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
-                      "${modifier}+Shift+t" = "exec opacitytoggle";
-                      "${modifier}+Shift+v" = "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
-                      "${modifier}+Space" = "exec fuzzel";
-                      "${modifier}+Up" = "focus up";
-                      "${modifier}+a" = "exec swarselcheck -s";
-                      "${modifier}+c" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
-                      "${modifier}+d" = "exec swarselcheck -d";
-                      "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-                      "${modifier}+f" = "exec firefox";
-                      "${modifier}+h" = "exec hyprpicker | wl-copy";
-                      "${modifier}+m" = "exec swaymsg workspace back_and_forth";
-                      "${modifier}+o" = "exec pass-fuzzel --otp";
-                      "${modifier}+p" = "exec pass-fuzzel";
-                      "${modifier}+q" = "kill";
-                      "${modifier}+r" = "mode resize";
-                      "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-                      "${modifier}+t" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
-                      "${modifier}+w" = "exec swarselcheck -e";
-                      "${modifier}+x" = "exec swarselcheck -k";
-                      # "${modifier}+Escape" = "mode $exit";
-                      # "${modifier}+Return" = "exec kitty";
-                      "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
-                      "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
-                      "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
-                      "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
-                      "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
-                      "XF86Display" = "exec wl-mirror eDP-1";
-                      # "--no-repeat Super_L" = "exec killall -SIGUSR1 .waybar-wrapped";
-                      # "${modifier}+z" = "exec killall -SIGUSR1 .waybar-wrapped";
-                    }
-                    config.swarselsystems.keybindings;
+                  lib.recursiveUpdate {
+                    "${modifier}+0" = "workspace 10:十";
+                    "${modifier}+1" = "workspace 1:一";
+                    "${modifier}+2" = "workspace 2:二";
+                    "${modifier}+3" = "workspace 3:三";
+                    "${modifier}+4" = "workspace 4:四";
+                    "${modifier}+5" = "workspace 5:五";
+                    "${modifier}+6" = "workspace 6:六";
+                    "${modifier}+7" = "workspace 7:七";
+                    "${modifier}+8" = "workspace 8:八";
+                    "${modifier}+9" = "workspace 9:九";
+                    "${modifier}+Ctrl+Shift+c" = "reload";
+                    "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
+                    "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
+                    "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
+                    "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
+                    "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
+                    "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
+                    "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
+                    "${modifier}+Ctrl+e" = "workspace 13:E";
+                    "${modifier}+Ctrl+f" = "workspace 16:F";
+                    "${modifier}+Ctrl+l" = "workspace 15:L";
+                    "${modifier}+Ctrl+m" = "workspace 11:M";
+                    "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
+                    "${modifier}+Ctrl+s" = "workspace 12:S";
+                    "${modifier}+Ctrl+t" = "workspace 14:T";
+                    "${modifier}+Down" = "focus down";
+                    "${modifier}+Escape" = "exec wlogout";
+                    "${modifier}+F12" = "scratchpad show";
+                    "${modifier}+Left" = "focus left";
+                    "${modifier}+Return" = "exec swarselzellij";
+                    "${modifier}+Right" = "focus right";
+                    "${modifier}+Shift+0" = "move container to workspace 10:十";
+                    "${modifier}+Shift+1" = "move container to workspace 1:一";
+                    "${modifier}+Shift+2" = "move container to workspace 2:二";
+                    "${modifier}+Shift+3" = "move container to workspace 3:三";
+                    "${modifier}+Shift+4" = "move container to workspace 4:四";
+                    "${modifier}+Shift+5" = "move container to workspace 5:五";
+                    "${modifier}+Shift+6" = "move container to workspace 6:六";
+                    "${modifier}+Shift+7" = "move container to workspace 7:七";
+                    "${modifier}+Shift+8" = "move container to workspace 8:八";
+                    "${modifier}+Shift+9" = "move container to workspace 9:九";
+                    "${modifier}+Shift+Down" = "move down 40px";
+                    "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+                    "${modifier}+Shift+F12" = "move scratchpad";
+                    "${modifier}+Shift+Left" = "move left 40px";
+                    "${modifier}+Shift+Right" = "move right 40px";
+                    "${modifier}+Shift+Space" = "floating toggle";
+                    "${modifier}+Shift+Up" = "move up 40px";
+                    "${modifier}+Shift+a" =
+                      "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
+                    "${modifier}+Shift+c" = "exec qalculate-gtk";
+                    "${modifier}+Shift+e" =
+                      "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+                    "${modifier}+Shift+f" = "exec swaymsg fullscreen";
+                    "${modifier}+Shift+m" =
+                      "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-mu4e)'";
+                    "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
+                    "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+                    "${modifier}+Shift+s" =
+                      "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
+                    "${modifier}+Shift+t" = "exec opacitytoggle";
+                    "${modifier}+Shift+v" =
+                      "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
+                    "${modifier}+Space" = "exec fuzzel";
+                    "${modifier}+Up" = "focus up";
+                    "${modifier}+a" = "exec swarselcheck -s";
+                    "${modifier}+c" =
+                      "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
+                    "${modifier}+d" = "exec swarselcheck -d";
+                    "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
+                    "${modifier}+f" = "exec firefox";
+                    "${modifier}+h" = "exec hyprpicker | wl-copy";
+                    "${modifier}+m" = "exec swaymsg workspace back_and_forth";
+                    "${modifier}+o" = "exec pass-fuzzel --otp";
+                    "${modifier}+p" = "exec pass-fuzzel";
+                    "${modifier}+q" = "kill";
+                    "${modifier}+r" = "mode resize";
+                    "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+                    "${modifier}+t" =
+                      "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
+                    "${modifier}+w" = "exec swarselcheck -e";
+                    "${modifier}+x" = "exec swarselcheck -k";
+                    # "${modifier}+Escape" = "mode $exit";
+                    # "${modifier}+Return" = "exec kitty";
+                    "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
+                    "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
+                    "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
+                    "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
+                    "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
+                    "XF86Display" = "exec wl-mirror eDP-1";
+                    # "--no-repeat Super_L" = "exec killall -SIGUSR1 .waybar-wrapped";
+                    # "${modifier}+z" = "exec killall -SIGUSR1 .waybar-wrapped";
+                  } config.swarselsystems.keybindings;
                 modes = {
                   resize = {
                     Down = "resize grow height 10 px or 10 ppt";
@@ -216,7 +244,7 @@
                   titlebar = false;
                 };
                 assigns = {
-                  "15:L" = [{ app_id = "teams-for-linux"; }];
+                  "15:L" = [ { app_id = "teams-for-linux"; } ];
                 };
                 floating = {
                   border = 1;
@@ -345,7 +373,8 @@
                 export XDG_SESSION_DESKTOP=sway;
                 export _JAVA_AWT_WM_NONREPARENTING=1;
                 export GITHUB_NOTIFICATION_TOKEN_PATH=${confLib.getConfig.sops.secrets.github-notifications-token.path};
-              '' + vars.waylandExports;
+              ''
+              + vars.waylandExports;
               # extraConfigEarly = "
               # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
               # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
@@ -383,13 +412,16 @@
                     bindswitch --locked lid:on exec kanshictl switch lidclosed
                     bindswitch --locked lid:off exec kanshictl switch lidopen
 
-                    ${swayfxSettings}
+                    ${
+                                      swayfxSettings
+                                    }
                     ";
             };
           };
         };
 
-      swaylock = { pkgs, ... }:
+      swaylock =
+        { pkgs, ... }:
         let
           moduleName = "swaylock";
         in

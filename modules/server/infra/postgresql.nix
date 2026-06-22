@@ -1,8 +1,20 @@
 {
   flake.modules.nixos.postgresql =
-    { config, lib, pkgs, confLib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "postgresql"; port = 3254; }) serviceName;
+      inherit
+        (confLib.gen {
+          name = "postgresql";
+          port = 3254;
+        })
+        serviceName
+        ;
       postgresVersion = 14;
       postgresDirPrefix = "/var/lib";
     in
@@ -18,11 +30,23 @@
           };
         };
         environment.persistence = {
-          "/persist".directories = lib.mkIf (config.swarselsystems.isImpermanence && config.swarselsystems.isCloud) [
-            { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
-          ];
+          "/persist".directories =
+            lib.mkIf (config.swarselsystems.isImpermanence && config.swarselsystems.isCloud)
+              [
+                {
+                  directory = "/var/lib/postgresql";
+                  user = "postgres";
+                  group = "postgres";
+                  mode = "0750";
+                }
+              ];
           "/state".directories = lib.mkIf config.swarselsystems.isMicroVM [
-            { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+            {
+              directory = "/var/lib/postgresql";
+              user = "postgres";
+              group = "postgres";
+              mode = "0750";
+            }
           ];
         };
 

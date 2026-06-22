@@ -1,13 +1,35 @@
 {
   flake.modules.nixos.mimir =
-    { lib, config, globals, confLib, ... }:
+    {
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen {
-        name = "mimir";
-        port = 9009;
-        dir = "/var/lib/private/mimir";
-      }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules wgProxyAccessRules;
+      inherit
+        (confLib.gen {
+          name = "mimir";
+          port = 9009;
+          dir = "/var/lib/private/mimir";
+        })
+        servicePort
+        serviceName
+        serviceDir
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        wgProxyAccessRules
+        ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
     in
     {
@@ -18,15 +40,39 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig = { port = servicePort; host = config.node.name; }; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/services"; expectedBodyRegex = "Running"; failIfBodyMatchesRegex = "(Starting|Stopping|Failed|Terminated|New|Stuck)"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+            extra.extraConfig = {
+              port = servicePort;
+              host = config.node.name;
+            };
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/services";
+            expectedBodyRegex = "Running";
+            failIfBodyMatchesRegex = "(Starting|Stopping|Failed|Terminated|New|Stuck)";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         networking.firewall.allowedTCPPorts = [ servicePort ];
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = serviceDir; mode = "0700"; }];
+          directories = [
+            {
+              directory = serviceDir;
+              mode = "0700";
+            }
+          ];
         };
 
         services.${serviceName} = {
@@ -94,64 +140,76 @@
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
-              inherit serviceAddress servicePort serviceDomain serviceName;
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               maxBody = 0;
               extraConfig = wgProxyAccessRules;
             };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              serviceAddress = homeServiceAddress;
-              maxBody = 0;
-              extraConfig = nginxAccessRules;
-            });
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                serviceAddress = homeServiceAddress;
+                maxBody = 0;
+                extraConfig = nginxAccessRules;
+              }
+            );
             ${globals.general.monitoringServer}.services.grafana.provision = {
-              datasources.settings.datasources = [{
-                name = "Mimir";
-                uid = "mimir";
-                type = "prometheus";
-                access = "proxy";
-                url = confLib.mkAlloyPushUrl {
-                  host = globals.general.monitoringServer;
-                  domain = serviceDomain;
-                  port = servicePort;
-                  path = "/prometheus";
-                };
-                isDefault = true;
-                jsonData = {
-                  httpMethod = "POST";
-                  manageAlerts = true;
-                  prometheusType = "Mimir";
-                  cacheLevel = "High";
-                  incrementalQueryOverlapWindow = "10m";
-                };
-              }];
-              alerting.rules.settings.groups = [{
-                orgId = 1;
-                name = "mimir";
-                folder = "Infrastructure";
-                interval = "1m";
-                rules = [
-                  (confLib.mkGrafanaAlertRule {
-                    uid = "host_down";
-                    title = "Host down";
-                    expr = "max by (host) (up) or max by (host) (host_expected * 0)";
-                    summary = "{{ $labels.host }} stopped reporting (no `up` series and `host_expected` fallback fired)";
-                  })
-                  (confLib.mkGrafanaAlertRule {
-                    uid = "disk_filling";
-                    title = "Disk above 80% used";
-                    expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
-                    op = "gt";
-                    threshold = 80;
-                    forDuration = "10m";
-                    severity = "warning";
-                    summary = "{{ $labels.host }}:{{ $labels.mountpoint }} is more than 80% full";
-                  })
-                ];
-              }];
+              datasources.settings.datasources = [
+                {
+                  name = "Mimir";
+                  uid = "mimir";
+                  type = "prometheus";
+                  access = "proxy";
+                  url = confLib.mkAlloyPushUrl {
+                    host = globals.general.monitoringServer;
+                    domain = serviceDomain;
+                    port = servicePort;
+                    path = "/prometheus";
+                  };
+                  isDefault = true;
+                  jsonData = {
+                    httpMethod = "POST";
+                    manageAlerts = true;
+                    prometheusType = "Mimir";
+                    cacheLevel = "High";
+                    incrementalQueryOverlapWindow = "10m";
+                  };
+                }
+              ];
+              alerting.rules.settings.groups = [
+                {
+                  orgId = 1;
+                  name = "mimir";
+                  folder = "Infrastructure";
+                  interval = "1m";
+                  rules = [
+                    (confLib.mkGrafanaAlertRule {
+                      uid = "host_down";
+                      title = "Host down";
+                      expr = "max by (host) (up) or max by (host) (host_expected * 0)";
+                      summary = "{{ $labels.host }} stopped reporting (no `up` series and `host_expected` fallback fired)";
+                    })
+                    (confLib.mkGrafanaAlertRule {
+                      uid = "disk_filling";
+                      title = "Disk above 80% used";
+                      expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
+                      op = "gt";
+                      threshold = 80;
+                      forDuration = "10m";
+                      severity = "warning";
+                      summary = "{{ $labels.host }}:{{ $labels.mountpoint }} is more than 80% full";
+                    })
+                  ];
+                }
+              ];
             };
           }
-          (lib.genAttrs (lib.attrNames globals.services.alloy.extraConfig.clients) (alloyHost:
+          (lib.genAttrs (lib.attrNames globals.services.alloy.extraConfig.clients) (
+            alloyHost:
             let
               isCentral = alloyHost == globals.general.monitoringServer;
             in
@@ -173,12 +231,14 @@
 
                   prometheus.remote_write "mimir" {
                     endpoint {
-                      url = "${confLib.mkAlloyPushUrl {
-                        host = alloyHost;
-                        domain = serviceDomain;
-                        port = servicePort;
-                        path = "/api/v1/push";
-                      }}"
+                      url = "${
+                        confLib.mkAlloyPushUrl {
+                          host = alloyHost;
+                          domain = serviceDomain;
+                          port = servicePort;
+                          path = "/api/v1/push";
+                        }
+                      }"
                     }
                     external_labels = {
                       host = "${alloyHost}",
@@ -186,25 +246,25 @@
                   }
                 '';
                 "alloy/textfiles/host_expected.prom" = lib.mkIf isCentral {
-                  text = lib.concatStrings (map
-                    (h: ''host_expected{host="${h}"} 1
-                    '')
-                    (lib.attrNames globals.hosts));
+                  text = lib.concatStrings (
+                    map (h: ''
+                      host_expected{host="${h}"} 1
+                    '') (lib.attrNames globals.hosts)
+                  );
                 };
                 "alloy/textfiles/probe_expected.prom" = lib.mkIf isCentral {
                   text = lib.concatStrings (
-                    map
-                      (n: ''probe_expected{name="${n}",probe="http"} 1
-                      '')
-                      (lib.attrNames globals.monitoring.http)
-                    ++ map
-                      (n: ''probe_expected{name="${n}",probe="ping"} 1
-                      '')
-                      (lib.attrNames globals.monitoring.ping)
+                    map (n: ''
+                      probe_expected{name="${n}",probe="http"} 1
+                    '') (lib.attrNames globals.monitoring.http)
+                    ++ map (n: ''
+                      probe_expected{name="${n}",probe="ping"} 1
+                    '') (lib.attrNames globals.monitoring.ping)
                   );
                 };
               };
-            }))
+            }
+          ))
         ];
       };
     }

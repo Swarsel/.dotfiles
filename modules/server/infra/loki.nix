@@ -1,13 +1,37 @@
 {
   flake.modules.nixos.loki =
-    { lib, config, globals, confLib, ... }:
+    {
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen {
-        name = "loki";
-        port = 3100;
-        dir = "/var/lib/loki";
-      }) servicePort serviceName serviceUser serviceGroup serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules wgProxyAccessRules;
+      inherit
+        (confLib.gen {
+          name = "loki";
+          port = 3100;
+          dir = "/var/lib/loki";
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDir
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        wgProxyAccessRules
+        ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
     in
     {
@@ -18,15 +42,39 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig = { port = servicePort; host = config.node.name; }; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ready"; expectedBodyRegex = "ready"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+            extra.extraConfig = {
+              port = servicePort;
+              host = config.node.name;
+            };
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/ready";
+            expectedBodyRegex = "ready";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         networking.firewall.allowedTCPPorts = [ servicePort ];
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = serviceDir; user = serviceUser; group = serviceGroup; }];
+          directories = [
+            {
+              directory = serviceDir;
+              user = serviceUser;
+              group = serviceGroup;
+            }
+          ];
         };
 
         services.${serviceName} = {
@@ -54,16 +102,18 @@
               instance_addr = "127.0.0.1";
             };
 
-            schema_config.configs = [{
-              from = "2026-01-01";
-              store = "tsdb";
-              object_store = "filesystem";
-              schema = "v13";
-              index = {
-                prefix = "index_";
-                period = "24h";
-              };
-            }];
+            schema_config.configs = [
+              {
+                from = "2026-01-01";
+                store = "tsdb";
+                object_store = "filesystem";
+                schema = "v13";
+                index = {
+                  prefix = "index_";
+                  period = "24h";
+                };
+              }
+            ];
 
             ingester = {
               chunk_idle_period = "5m";
@@ -97,28 +147,37 @@
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
-              inherit serviceAddress servicePort serviceDomain serviceName;
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               maxBody = 0;
               extraConfig = wgProxyAccessRules;
             };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              serviceAddress = homeServiceAddress;
-              maxBody = 0;
-              extraConfig = nginxAccessRules;
-            });
-            ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [{
-              name = "Loki";
-              uid = "loki";
-              type = "loki";
-              access = "proxy";
-              url = confLib.mkAlloyPushUrl {
-                host = globals.general.monitoringServer;
-                domain = serviceDomain;
-                port = servicePort;
-                path = "";
-              };
-            }];
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                serviceAddress = homeServiceAddress;
+                maxBody = 0;
+                extraConfig = nginxAccessRules;
+              }
+            );
+            ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [
+              {
+                name = "Loki";
+                uid = "loki";
+                type = "loki";
+                access = "proxy";
+                url = confLib.mkAlloyPushUrl {
+                  host = globals.general.monitoringServer;
+                  domain = serviceDomain;
+                  port = servicePort;
+                  path = "";
+                };
+              }
+            ];
           }
           (lib.genAttrs (lib.attrNames globals.services.alloy.extraConfig.clients) (alloyHost: {
             environment.etc."alloy/config.alloy".text = lib.mkAfter ''
@@ -146,12 +205,14 @@
 
               loki.write "central" {
                 endpoint {
-                  url = "${confLib.mkAlloyPushUrl {
-                    host = alloyHost;
-                    domain = serviceDomain;
-                    port = servicePort;
-                    path = "/loki/api/v1/push";
-                  }}"
+                  url = "${
+                    confLib.mkAlloyPushUrl {
+                      host = alloyHost;
+                      domain = serviceDomain;
+                      port = servicePort;
+                      path = "/loki/api/v1/push";
+                    }
+                  }"
                 }
               }
             '';

@@ -1,9 +1,34 @@
 {
   flake.modules.nixos.adguardhome =
-    { lib, config, globals, confLib, ... }:
+    {
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "adguardhome"; port = 3000; }) serviceName servicePort serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeDnsServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "adguardhome";
+          port = 3000;
+        })
+        serviceName
+        servicePort
+        serviceAddress
+        serviceDomain
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeDnsServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
       homeDomains = map (name: globals.services.${name}.domain) homeServices;
@@ -12,11 +37,24 @@
       config = {
         swarselsystems.enabledServerModules = [ "adguardhome" ];
 
-
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/control/status"; expectedBodyRegex = ''"running":true''; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/control/status";
+            expectedBodyRegex = ''"running":true'';
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -50,21 +88,21 @@
               ];
               dhcp.enabled = false;
             };
-            filtering.rewrites = (map
-              (domain: {
+            filtering.rewrites =
+              (map (domain: {
                 inherit domain;
                 # FIXME: change to homeWebProxy once that is setup
                 answer = globals.networks.home-lan.vlans.services.hosts.${homeWebProxy}.ipv4;
                 # answer = globals.hosts.${webProxy}.wanAddress4;
                 enabled = true;
-              })
-              homeDomains) ++ [
-              {
-                domain = "smb.${globals.domains.main}";
-                answer = globals.networks.home-lan.vlans.services.hosts.summers-storage.ipv4;
-                enabled = true;
-              }
-            ];
+              }) homeDomains)
+              ++ [
+                {
+                  domain = "smb.${globals.domains.main}";
+                  answer = globals.networks.home-lan.vlans.services.hosts.summers-storage.ipv4;
+                  enabled = true;
+                }
+              ];
             filters = [
               {
                 name = "AdGuard DNS filter";
@@ -95,8 +133,27 @@
 
         nodes = {
           ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; proxyWebsockets = true; oauth2 = true; oauth2Groups = [ "adguardhome_access" ]; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            proxyWebsockets = true;
+            oauth2 = true;
+            oauth2Groups = [ "adguardhome_access" ];
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              proxyWebsockets = true;
+              oauth2 = true;
+              oauth2Groups = [ "adguardhome_access" ];
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
       };
     }

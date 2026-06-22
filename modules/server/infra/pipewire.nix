@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.server-pipewire =
-    { lib, config, confLib, ... }:
+    {
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     {
       key = "swarsel/server/server-pipewire";
       config = {
@@ -12,7 +17,13 @@
         users.persistentIds.rtkit = confLib.mkIds 996;
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/pipewire"; user = "pipewire"; group = "pipewire"; }];
+          directories = [
+            {
+              directory = "/var/lib/pipewire";
+              user = "pipewire";
+              group = "pipewire";
+            }
+          ];
         };
 
         services.pipewire = {

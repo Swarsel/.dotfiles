@@ -1,13 +1,35 @@
 {
   flake.modules.nixos.tempo =
-    { lib, config, globals, confLib, ... }:
+    {
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen {
-        name = "tempo";
-        port = 14318;
-        dir = "/var/lib/private/tempo";
-      }) servicePort serviceName serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules wgProxyAccessRules;
+      inherit
+        (confLib.gen {
+          name = "tempo";
+          port = 14318;
+          dir = "/var/lib/private/tempo";
+        })
+        servicePort
+        serviceName
+        serviceDir
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        wgProxyAccessRules
+        ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort otlpHttpPort;
 
       tempoHttpApiPort = 3200;
@@ -20,16 +42,45 @@
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort tempoHttpApiPort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; extra.extraConfig = { port = servicePort; host = config.node.name; }; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName; servicePort = tempoHttpApiPort; path = "/ready"; expectedBodyRegex = "ready"; };
+          networks = confLib.mkDualFirewallRules {
+            tcpPorts = [
+              servicePort
+              tempoHttpApiPort
+            ];
+          };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+            extra.extraConfig = {
+              port = servicePort;
+              host = config.node.name;
+            };
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName;
+            servicePort = tempoHttpApiPort;
+            path = "/ready";
+            expectedBodyRegex = "ready";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         networking.firewall.allowedTCPPorts = [ servicePort ];
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = serviceDir; mode = "0700"; }];
+          directories = [
+            {
+              directory = serviceDir;
+              mode = "0700";
+            }
+          ];
         };
 
         services.${serviceName} = {
@@ -72,15 +123,20 @@
               registry.external_labels.source = "tempo";
               storage = {
                 path = "${serviceDir}/generator/wal";
-                remote_write = [{
-                  url = "https://${globals.services.mimir.domain}/api/v1/push";
-                  send_exemplars = true;
-                }];
+                remote_write = [
+                  {
+                    url = "https://${globals.services.mimir.domain}/api/v1/push";
+                    send_exemplars = true;
+                  }
+                ];
               };
             };
 
             overrides.defaults.metrics_generator = {
-              processors = [ "service-graphs" "span-metrics" ];
+              processors = [
+                "service-graphs"
+                "span-metrics"
+              ];
             };
 
             usage_report.reporting_enabled = false;
@@ -144,36 +200,55 @@
                     propagation = "w3c";
                   };
                 };
-                provision.datasources.settings.datasources = [{
-                  name = "Tempo";
-                  uid = "tempo";
-                  type = "tempo";
-                  access = "proxy";
-                  url = confLib.mkAlloyPushUrl {
-                    host = globals.general.monitoringServer;
-                    domain = serviceDomain;
-                    port = tempoHttpApiPort;
-                    path = "";
-                  };
-                  jsonData = {
-                    nodeGraph.enabled = true;
-                    search.hide = false;
-                  } // lib.optionalAttrs ((globals.services.loki.extraConfig.host or null) == globals.general.monitoringServer) {
-                    tracesToLogsV2 = {
-                      datasourceUid = "loki";
-                      filterByTraceID = true;
-                      filterBySpanID = false;
+                provision.datasources.settings.datasources = [
+                  {
+                    name = "Tempo";
+                    uid = "tempo";
+                    type = "tempo";
+                    access = "proxy";
+                    url = confLib.mkAlloyPushUrl {
+                      host = globals.general.monitoringServer;
+                      domain = serviceDomain;
+                      port = tempoHttpApiPort;
+                      path = "";
                     };
-                  } // lib.optionalAttrs ((globals.services.mimir.extraConfig.host or null) == globals.general.monitoringServer) {
-                    serviceMap.datasourceUid = "mimir";
-                  } // lib.optionalAttrs ((globals.services.pyroscope.extraConfig.host or null) == globals.general.monitoringServer) {
-                    tracesToProfiles = {
-                      datasourceUid = "pyroscope";
-                      profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
-                      tags = [{ key = "service.name"; value = "service_name"; }];
-                    };
-                  };
-                }];
+                    jsonData = {
+                      nodeGraph.enabled = true;
+                      search.hide = false;
+                    }
+                    //
+                      lib.optionalAttrs
+                        ((globals.services.loki.extraConfig.host or null) == globals.general.monitoringServer)
+                        {
+                          tracesToLogsV2 = {
+                            datasourceUid = "loki";
+                            filterByTraceID = true;
+                            filterBySpanID = false;
+                          };
+                        }
+                    //
+                      lib.optionalAttrs
+                        ((globals.services.mimir.extraConfig.host or null) == globals.general.monitoringServer)
+                        {
+                          serviceMap.datasourceUid = "mimir";
+                        }
+                    //
+                      lib.optionalAttrs
+                        ((globals.services.pyroscope.extraConfig.host or null) == globals.general.monitoringServer)
+                        {
+                          tracesToProfiles = {
+                            datasourceUid = "pyroscope";
+                            profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
+                            tags = [
+                              {
+                                key = "service.name";
+                                value = "service_name";
+                              }
+                            ];
+                          };
+                        };
+                  }
+                ];
               };
             }
             (lib.genAttrs (lib.attrNames globals.services.alloy.extraConfig.clients) (alloyHost: {
@@ -192,12 +267,14 @@
 
                 otelcol.exporter.otlphttp "tempo" {
                   client {
-                    endpoint = "${confLib.mkAlloyPushUrl {
-                      host = alloyHost;
-                      domain = serviceDomain;
-                      port = servicePort;
-                      path = "";
-                    }}"
+                    endpoint = "${
+                      confLib.mkAlloyPushUrl {
+                        host = alloyHost;
+                        domain = serviceDomain;
+                        port = servicePort;
+                        path = "";
+                      }
+                    }"
                   }
                 }
 

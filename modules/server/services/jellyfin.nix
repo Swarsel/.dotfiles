@@ -1,9 +1,36 @@
 {
   flake.modules.nixos.jellyfin =
-    { self, pkgs, lib, config, confLib, ... }:
+    {
+      self,
+      pkgs,
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer nginxAccessRules homeServiceAddress;
+      inherit
+        (confLib.gen {
+          name = "jellyfin";
+          port = 8096;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        nginxAccessRules
+        homeServiceAddress
+        ;
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
@@ -13,11 +40,20 @@
         users = {
           persistentIds.jellyfin = confLib.mkIds 994;
           users.${serviceUser} = {
-            extraGroups = [ "video" "render" "users" ];
+            extraGroups = [
+              "video"
+              "render"
+              "users"
+            ];
           };
         };
 
-        sops.secrets.kanidm-jellyfin = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        sops.secrets.kanidm-jellyfin = {
+          sopsFile = kanidmSopsFile;
+          owner = serviceUser;
+          group = serviceGroup;
+          mode = "0440";
+        };
         # nixpkgs.config.packageOverrides = pkgs: {
         #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
         # };
@@ -36,8 +72,22 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "Healthy"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/health";
+            expectedBodyRegex = "Healthy";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -49,24 +99,40 @@
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
-            { directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }
-            { directory = "/var/cache/${serviceName}"; user = serviceUser; group = serviceGroup; }
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+            {
+              directory = "/var/cache/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
           ];
         };
-
 
         nodes = {
           ${idmServer} = confLib.mkKanidmOidcSystem {
             inherit serviceName serviceDomain kanidmSopsFile;
             originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
           };
-          ${webProxy}.services.nginx = lib.recursiveUpdate
-            (confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; })
-            { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
+          ${webProxy}.services.nginx = lib.recursiveUpdate (confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            maxBody = 0;
+          }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
           ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            lib.recursiveUpdate
-              (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; })
-              { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
+            lib.recursiveUpdate (confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              maxBody = 0;
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
           );
         };
 

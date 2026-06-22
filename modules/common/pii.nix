@@ -1,6 +1,15 @@
 # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
 {
-  flake.modules.generic.pii = { config, inputs, lib, homeLib, nodes, globals, ... }:
+  flake.modules.generic.pii =
+    {
+      config,
+      inputs,
+      lib,
+      homeLib,
+      nodes,
+      globals,
+      ...
+    }:
     let
       # If the given expression is a bare set, it will be wrapped in a function,
       # so that the imported file can always be applied to the inputs, similar to
@@ -57,7 +66,20 @@
 
           secrets = lib.mkOption {
             readOnly = true;
-            default = lib.mapAttrs (_: x: importEncrypted x { inherit lib homeLib nodes globals inputs config; inherit (inputs.topologyPrivate) topologyPrivate; }) config.repo.secretFiles;
+            default = lib.mapAttrs (
+              _: x:
+              importEncrypted x {
+                inherit
+                  lib
+                  homeLib
+                  nodes
+                  globals
+                  inputs
+                  config
+                  ;
+                inherit (inputs.topologyPrivate) topologyPrivate;
+              }
+            ) config.repo.secretFiles;
             type = lib.types.unspecified;
             description = "Exposes the loaded repo secrets. This option is read-only.";
           };
@@ -68,10 +90,10 @@
           let
             local = config.node.secretsDir + "/pii.nix.enc";
           in
-          (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // {
+          (lib.optionalAttrs (lib.pathExists local) { inherit local; })
+          // {
             common = inputs.repoSecrets.pii;
           };
       };
-    }
-  ;
+    };
 }

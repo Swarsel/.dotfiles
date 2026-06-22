@@ -1,5 +1,6 @@
 {
-  flake.modules.homeManager.vesktop = { pkgs, ... }:
+  flake.modules.homeManager.vesktop =
+    { pkgs, ... }:
     let
       moduleName = "vesktop";
     in

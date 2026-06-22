@@ -1,5 +1,12 @@
 {
-  flake.modules.homeManager.tray-applets = { lib, pkgs, config, confLib, ... }:
+  flake.modules.homeManager.tray-applets =
+    {
+      lib,
+      pkgs,
+      config,
+      confLib,
+      ...
+    }:
     let
       applets = {
         anki = {
@@ -35,15 +42,16 @@
       enabledApplets = lib.filterAttrs (n: _: cfg.${n}.enable) applets;
     in
     {
-      options.swarselsystems.trayApplets =
-        lib.mapAttrs (_: _: { enable = lib.swarselsystems.mkTrueOption; }) applets;
+      options.swarselsystems.trayApplets = lib.mapAttrs (_: _: {
+        enable = lib.swarselsystems.mkTrueOption;
+      }) applets;
 
       config = {
         swarselsystems.enabledHomeModules = lib.mapAttrsToList (n: _: "${n}-tray") enabledApplets;
 
-        systemd.user.services = lib.mapAttrs'
-          (n: appletDef: lib.nameValuePair "${n}-applet" (confLib.mkTrayApplet appletDef))
-          enabledApplets;
+        systemd.user.services = lib.mapAttrs' (
+          n: appletDef: lib.nameValuePair "${n}-applet" (confLib.mkTrayApplet appletDef)
+        ) enabledApplets;
       };
     };
 }

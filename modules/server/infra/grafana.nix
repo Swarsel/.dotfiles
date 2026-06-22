@@ -1,13 +1,38 @@
 {
   flake.modules.nixos.grafana =
-    { self, lib, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen {
-        name = "grafana";
-        port = 3000;
-        dir = "/var/lib/grafana";
-      }) servicePort serviceName serviceUser serviceGroup serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "grafana";
+          port = 3000;
+          dir = "/var/lib/grafana";
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDir
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       inherit (config.swarselsystems) sopsFile;
 
@@ -19,10 +44,30 @@
         swarselsystems.enabledServerModules = [ serviceName ];
 
         sops.secrets = {
-          grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          kanidm-grafana = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          grafana-gotify-token = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          grafana-smtp-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          grafana-admin-pw = {
+            inherit sopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
+          kanidm-grafana = {
+            sopsFile = kanidmSopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
+          grafana-gotify-token = {
+            inherit sopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
+          grafana-smtp-pw = {
+            inherit sopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
         };
 
         users = {
@@ -34,14 +79,32 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/api/health"; expectedBodyRegex = "ok|database"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/api/health";
+            expectedBodyRegex = "ok|database";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
-            { directory = serviceDir; user = serviceUser; group = serviceGroup; }
+            {
+              directory = serviceDir;
+              user = serviceUser;
+              group = serviceGroup;
+            }
           ];
         };
 
@@ -51,50 +114,59 @@
           provision = {
             enable = true;
 
-            dashboards.settings.providers = [{
-              name = "default";
-              options.path = self + "/files/grafana";
-            }];
+            dashboards.settings.providers = [
+              {
+                name = "default";
+                options.path = self + "/files/grafana";
+              }
+            ];
 
             alerting = {
               contactPoints.settings = {
                 apiVersion = 1;
-                contactPoints = [{
-                  orgId = 1;
-                  name = "default";
-                  receivers = [
-                    {
-                      uid = "gotify_webhook";
-                      type = "webhook";
-                      settings = {
-                        url = "https://${globals.services.gotify.domain}/message?token=$__file{${config.sops.secrets.grafana-gotify-token.path}}";
-                        httpMethod = "POST";
-                        title = "{{ template \"default.title\" . }}";
-                        message = "{{ template \"default.message\" . }}";
-                      };
-                    }
-                    {
-                      uid = "email_default";
-                      type = "email";
-                      settings = {
-                        addresses = "monitoring@${globals.domains.main}";
-                        singleEmail = false;
-                      };
-                    }
-                  ];
-                }];
+                contactPoints = [
+                  {
+                    orgId = 1;
+                    name = "default";
+                    receivers = [
+                      {
+                        uid = "gotify_webhook";
+                        type = "webhook";
+                        settings = {
+                          url = "https://${globals.services.gotify.domain}/message?token=$__file{${config.sops.secrets.grafana-gotify-token.path}}";
+                          httpMethod = "POST";
+                          title = "{{ template \"default.title\" . }}";
+                          message = "{{ template \"default.message\" . }}";
+                        };
+                      }
+                      {
+                        uid = "email_default";
+                        type = "email";
+                        settings = {
+                          addresses = "monitoring@${globals.domains.main}";
+                          singleEmail = false;
+                        };
+                      }
+                    ];
+                  }
+                ];
               };
 
               policies.settings = {
                 apiVersion = 1;
-                policies = [{
-                  orgId = 1;
-                  receiver = "default";
-                  group_by = [ "grafana_folder" "alertname" ];
-                  group_wait = "30s";
-                  group_interval = "5m";
-                  repeat_interval = "4h";
-                }];
+                policies = [
+                  {
+                    orgId = 1;
+                    receiver = "default";
+                    group_by = [
+                      "grafana_folder"
+                      "alertname"
+                    ];
+                    group_wait = "30s";
+                    group_interval = "5m";
+                    repeat_interval = "4h";
+                  }
+                ];
               };
 
               rules.settings.apiVersion = 1;
@@ -155,32 +227,44 @@
         systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
 
         nodes = {
-          ${idmServer} = lib.recursiveUpdate
-            (confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/login/generic_oauth";
-              extraGroups = [ "grafana.editors" "grafana.admins" "grafana.server-admins" ];
-            })
-            {
-              services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
-                joinType = "array";
-                valuesByGroup = {
-                  "grafana.editors" = [ "editor" ];
-                  "grafana.admins" = [ "admin" ];
-                  "grafana.server-admins" = [ "server_admin" ];
+          ${idmServer} =
+            lib.recursiveUpdate
+              (confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/login/generic_oauth";
+                extraGroups = [
+                  "grafana.editors"
+                  "grafana.admins"
+                  "grafana.server-admins"
+                ];
+              })
+              {
+                services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
+                  joinType = "array";
+                  valuesByGroup = {
+                    "grafana.editors" = [ "editor" ];
+                    "grafana.admins" = [ "admin" ];
+                    "grafana.server-admins" = [ "server_admin" ];
+                  };
                 };
               };
-            };
           ${webProxy}.services.nginx = confLib.genNginx {
-            inherit serviceAddress servicePort serviceDomain serviceName;
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
             proxyWebsockets = true;
           };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
-            inherit servicePort serviceDomain serviceName;
-            serviceAddress = homeServiceAddress;
-            proxyWebsockets = true;
-            extraConfig = nginxAccessRules;
-          });
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              serviceAddress = homeServiceAddress;
+              proxyWebsockets = true;
+              extraConfig = nginxAccessRules;
+            }
+          );
         };
       };
     }

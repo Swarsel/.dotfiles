@@ -1,7 +1,18 @@
-{ name, writeShellApplication, openssh, opentofu, ssh-to-age, ... }:
+{
+  name,
+  writeShellApplication,
+  openssh,
+  opentofu,
+  ssh-to-age,
+  ...
+}:
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ openssh (opentofu.withPlugins (p: [ p.hashicorp_local ])) ssh-to-age ];
+  runtimeInputs = [
+    openssh
+    (opentofu.withPlugins (p: [ p.hashicorp_local ]))
+    ssh-to-age
+  ];
   text = ''
     set -eo pipefail
 

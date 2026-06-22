@@ -1,5 +1,14 @@
 {
-  flake.modules.homeManager.work-dev = { self, config, pkgs, lib, vars, confLib, ... }:
+  flake.modules.homeManager.work-dev =
+    {
+      self,
+      config,
+      pkgs,
+      lib,
+      vars,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) homeDir;
       certsSopsFile = self + /secrets/repo/certs.yaml;
@@ -12,10 +21,18 @@
             sopsFile = certsSopsFile;
             path = "${homeDir}/.aws/certs/harica-root.pem";
           };
-          yubikey-1 = { sopsFile = workSopsFile; };
-          yubikey-2 = { sopsFile = workSopsFile; };
-          yubikey-3 = { sopsFile = workSopsFile; };
-          ucKey = { sopsFile = workSopsFile; };
+          yubikey-1 = {
+            sopsFile = workSopsFile;
+          };
+          yubikey-2 = {
+            sopsFile = workSopsFile;
+          };
+          yubikey-3 = {
+            sopsFile = workSopsFile;
+          };
+          ucKey = {
+            sopsFile = workSopsFile;
+          };
         };
 
         home = {
@@ -36,7 +53,6 @@
             claude-code
             antigravity
 
-
             rustdesk-vbc
           ];
           sessionVariables = {
@@ -52,7 +68,23 @@
 
         programs =
           let
-            inherit (confLib.getConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long path1 site1 site2 site3 site4 site5 site6 site7 clouds;
+            inherit (confLib.getConfig.repo.secrets.local.work)
+              user1
+              user1Long
+              user2
+              user2Long
+              user3
+              user3Long
+              path1
+              site1
+              site2
+              site3
+              site4
+              site5
+              site6
+              site7
+              clouds
+              ;
           in
           {
             openstackclient = {
@@ -105,39 +137,31 @@
                   isDefault = false;
                 in
                 {
-                  "${user1}" = lib.recursiveUpdate
-                    {
-                      inherit isDefault;
-                      id = 1;
-                      settings = {
-                        "browser.startup.homepage" = "${site1}|${site2}";
-                      };
-                    }
-                    vars.firefox;
-                  "${user2}" = lib.recursiveUpdate
-                    {
-                      inherit isDefault;
-                      id = 2;
-                      settings = {
-                        "browser.startup.homepage" = "${site3}";
-                      };
-                    }
-                    vars.firefox;
-                  "${user3}" = lib.recursiveUpdate
-                    {
-                      inherit isDefault;
-                      id = 3;
-                    }
-                    vars.firefox;
-                  work = lib.recursiveUpdate
-                    {
-                      inherit isDefault;
-                      id = 4;
-                      settings = {
-                        "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                      };
-                    }
-                    vars.firefox;
+                  "${user1}" = lib.recursiveUpdate {
+                    inherit isDefault;
+                    id = 1;
+                    settings = {
+                      "browser.startup.homepage" = "${site1}|${site2}";
+                    };
+                  } vars.firefox;
+                  "${user2}" = lib.recursiveUpdate {
+                    inherit isDefault;
+                    id = 2;
+                    settings = {
+                      "browser.startup.homepage" = "${site3}";
+                    };
+                  } vars.firefox;
+                  "${user3}" = lib.recursiveUpdate {
+                    inherit isDefault;
+                    id = 3;
+                  } vars.firefox;
+                  work = lib.recursiveUpdate {
+                    inherit isDefault;
+                    id = 4;
+                    settings = {
+                      "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                    };
+                  } vars.firefox;
                 };
             };
 

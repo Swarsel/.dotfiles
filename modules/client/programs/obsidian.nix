@@ -1,5 +1,12 @@
 {
-  flake.modules.homeManager.obsidian = { lib, config, pkgs, confLib, ... }:
+  flake.modules.homeManager.obsidian =
+    {
+      lib,
+      config,
+      pkgs,
+      confLib,
+      ...
+    }:
     let
       inherit (confLib.getConfig.repo.secrets.common.obsidian) userIgnoreFilters;
       name = "Main";
@@ -116,16 +123,15 @@
                     {
                       pkg = file-hider;
                       enable = true;
-                      settings =
-                        {
-                          hidden = true;
-                          hiddenList = [
-                            "attachments"
-                            "images"
-                            "ltximg"
-                            "logseq"
-                          ];
-                        };
+                      settings = {
+                        hidden = true;
+                        hiddenList = [
+                          "attachments"
+                          "images"
+                          "ltximg"
+                          "logseq"
+                        ];
+                      };
                     }
                     {
                       pkg = linter;

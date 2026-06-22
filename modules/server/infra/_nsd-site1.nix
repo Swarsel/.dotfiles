@@ -1,5 +1,13 @@
-{ config, globals, dns, proxyAddress4, proxyAddress6, ... }:
-with dns.lib.combinators; {
+{
+  config,
+  globals,
+  dns,
+  proxyAddress4,
+  proxyAddress6,
+  ...
+}:
+with dns.lib.combinators;
+{
   SOA = {
     nameServer = "soa";
     adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
@@ -11,7 +19,8 @@ with dns.lib.combinators; {
   NS = [
     "soa"
     "srv"
-  ] ++ globals.domains.externalDns;
+  ]
+  ++ globals.domains.externalDns;
 
   CAA = [
     {

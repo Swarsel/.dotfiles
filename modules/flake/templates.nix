@@ -3,15 +3,17 @@
   flake = {
     templates =
       let
-        mkTemplates = names: builtins.listToAttrs (map
-          (name: {
-            inherit name;
-            value = {
-              path = "${self}/files/templates/${name}";
-              description = "${name} project ";
-            };
-          })
-          names);
+        mkTemplates =
+          names:
+          builtins.listToAttrs (
+            map (name: {
+              inherit name;
+              value = {
+                path = "${self}/files/templates/${name}";
+                description = "${name} project ";
+              };
+            }) names
+          );
         templateNames = [
           "python"
           "rust"

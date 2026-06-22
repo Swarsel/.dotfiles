@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.podman =
-    { config, lib, confLib, ... }:
+    {
+      config,
+      lib,
+      confLib,
+      ...
+    }:
     {
       key = "swarsel/server/podman";
       config = {
@@ -36,7 +41,11 @@
             };
 
             local-to-podman = {
-              from = [ "local" "wgProxy" "wgHome" ];
+              from = [
+                "local"
+                "wgProxy"
+                "wgHome"
+              ];
               to = [ "podman" ];
               before = [ "drop" ];
               verdict = "accept";

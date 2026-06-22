@@ -2,19 +2,68 @@
   flake-file.inputs.simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
 
   flake.modules.nixos.mailserver =
-    { self, inputs, lib, ... }:
+    {
+      self,
+      inputs,
+      lib,
+      ...
+    }:
     {
       imports = lib.optionals (inputs ? simple-nixos-mailserver) [
         self.modules.nixos.postgresql
         self.modules.nixos.nginx
         self.modules.nixos.acme
         inputs.simple-nixos-mailserver.nixosModules.default
-        ({ self, lib, config, globals, dns, confLib, ... }:
+        (
+          {
+            self,
+            lib,
+            config,
+            globals,
+            dns,
+            confLib,
+            ...
+          }:
           let
             inherit (config.swarselsystems) sopsFile;
-            inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-            inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
-            inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 alias2_3 alias2_4 user3;
+            inherit
+              (confLib.gen {
+                name = "mailserver";
+                dir = "/var/lib/dovecot";
+                user = "virtualMail";
+                group = "virtualMail";
+                port = 443;
+              })
+              serviceName
+              serviceDir
+              servicePort
+              serviceUser
+              serviceGroup
+              serviceAddress
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              ;
+            inherit (confLib.static)
+              isHome
+              webProxy
+              homeWebProxy
+              homeServiceAddress
+              nginxAccessRules
+              ;
+            inherit (config.repo.secrets.local.mailserver)
+              user1
+              alias1_1
+              alias1_2
+              alias1_3
+              alias1_4
+              user2
+              alias2_1
+              alias2_2
+              alias2_3
+              alias2_4
+              user3
+              ;
             baseDomain = globals.domains.main;
 
             roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
@@ -35,7 +84,8 @@
 
             globals = {
               dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-                "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
+                "${globals.services.${serviceName}.subDomain}" =
+                  dns.lib.combinators.host endpointAddress4 endpointAddress6;
                 "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
               };
               services = {
@@ -46,39 +96,109 @@
                 };
                 roundcube = {
                   domain = roundcubeDomain;
-                  inherit proxyAddress4 proxyAddress6 isHome serviceAddress;
+                  inherit
+                    proxyAddress4
+                    proxyAddress6
+                    isHome
+                    serviceAddress
+                    ;
                   homeServiceAddress = lib.mkIf isHome homeServiceAddress;
                 };
               };
             };
 
-            topology.self.services = lib.listToAttrs (map
-              (service:
-                lib.nameValuePair "${service}" {
-                  name = lib.swarselsystems.toCapitalized service;
-                  info = lib.mkIf (service == "postfix" || service == "roundcube") (if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}");
-                  icon = "${self}/files/topology-images/${service}.png";
-                }
-              )
-              [ "postfix" "dovecot" "rspamd" "clamav" "roundcube" ]);
+            topology.self.services = lib.listToAttrs (
+              map
+                (
+                  service:
+                  lib.nameValuePair "${service}" {
+                    name = lib.swarselsystems.toCapitalized service;
+                    info = lib.mkIf (service == "postfix" || service == "roundcube") (
+                      if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}"
+                    );
+                    icon = "${self}/files/topology-images/${service}.png";
+                  }
+                )
+                [
+                  "postfix"
+                  "dovecot"
+                  "rspamd"
+                  "clamav"
+                  "roundcube"
+                ]
+            );
 
             sops.secrets = {
-              user1-hashed-pw = { inherit sopsFile; owner = serviceUser; };
-              user2-hashed-pw = { inherit sopsFile; owner = serviceUser; };
-              user3-hashed-pw = { inherit sopsFile; owner = serviceUser; };
+              user1-hashed-pw = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
+              user2-hashed-pw = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
+              user3-hashed-pw = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
             };
 
             environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-              { directory = "/var/vmail"; user = serviceUser; group = serviceGroup; mode = "0770"; }
-              { directory = "/var/sieve"; user = serviceUser; group = serviceGroup; mode = "0770"; }
-              { directory = "/var/dkim"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
-              { directory = serviceDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
+              {
+                directory = "/var/vmail";
+                user = serviceUser;
+                group = serviceGroup;
+                mode = "0770";
+              }
+              {
+                directory = "/var/sieve";
+                user = serviceUser;
+                group = serviceGroup;
+                mode = "0770";
+              }
+              {
+                directory = "/var/dkim";
+                user = "rspamd";
+                group = "rspamd";
+                mode = "0700";
+              }
+              {
+                directory = serviceDir;
+                user = serviceUser;
+                group = serviceGroup;
+                mode = "0700";
+              }
               # { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
-              { directory = "/var/lib/rspamd"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
-              { directory = "/var/lib/roundcube"; user = "roundcube"; group = "roundcube"; mode = "0700"; }
-              { directory = "/var/lib/redis-rspamd"; user = "redis-rspamd"; group = "redis-rspamd"; mode = "0700"; }
-              { directory = "/var/lib/postfix"; user = "root"; group = "root"; mode = "0755"; }
-              { directory = "/var/lib/knot-resolver"; user = "knot-resolver"; group = "knot-resolver"; mode = "0770"; }
+              {
+                directory = "/var/lib/rspamd";
+                user = "rspamd";
+                group = "rspamd";
+                mode = "0700";
+              }
+              {
+                directory = "/var/lib/roundcube";
+                user = "roundcube";
+                group = "roundcube";
+                mode = "0700";
+              }
+              {
+                directory = "/var/lib/redis-rspamd";
+                user = "redis-rspamd";
+                group = "redis-rspamd";
+                mode = "0700";
+              }
+              {
+                directory = "/var/lib/postfix";
+                user = "root";
+                group = "root";
+                mode = "0755";
+              }
+              {
+                directory = "/var/lib/knot-resolver";
+                user = "knot-resolver";
+                group = "knot-resolver";
+                mode = "0770";
+              }
             ];
 
             mailserver = {
@@ -142,7 +262,10 @@
             };
 
             # the rest of the ports are managed by snm
-            networking.firewall.allowedTCPPorts = [ 80 443 ];
+            networking.firewall.allowedTCPPorts = [
+              80
+              443
+            ];
 
             services.nginx = {
               virtualHosts = {
@@ -154,14 +277,13 @@
                   locations = {
                     "/".recommendedSecurityHeaders = false;
                     "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
-                    "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders = false;
+                    "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders =
+                      false;
                     "~* \\.php(/|$)".recommendedSecurityHeaders = false;
                   };
                 };
               };
             };
-
-
 
             nodes =
               let
@@ -171,10 +293,30 @@
                 '';
               in
               {
-                ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; protocol = "https"; maxBody = 0; };
-                ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceName extraConfigLoc; serviceDomain = roundcubeDomain; protocol = "https"; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+                ${webProxy}.services.nginx = confLib.genNginx {
+                  inherit
+                    serviceAddress
+                    servicePort
+                    serviceName
+                    extraConfigLoc
+                    ;
+                  serviceDomain = roundcubeDomain;
+                  protocol = "https";
+                  maxBody = 0;
+                };
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit servicePort serviceName extraConfigLoc;
+                    serviceDomain = roundcubeDomain;
+                    protocol = "https";
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
               };
-          })
+          }
+        )
       ];
     };
 }

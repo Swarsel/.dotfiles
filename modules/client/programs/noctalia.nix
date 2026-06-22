@@ -15,45 +15,62 @@ in
     nixos.noctalia = { inputs, lib, ... }: {
       imports = lib.optionals (inputs ? noctoggle) [
         inputs.noctoggle.nixosModules.default
-        ({ inputs, config, pkgs, ... }: {
-          disabledModules = [ "programs/gpu-screen-recorder.nix" ];
-          imports = [
-            "${inputs.nixpkgs-dev}/nixos/modules/programs/gpu-screen-recorder.nix"
-          ];
-          home-manager.users.${config.swarselsystems.mainUser}.imports = [
-            fmods.homeManager.noctalia
-          ];
-          services = {
-            upower.enable = true; # needed for battery percentage
-            gnome.evolution-data-server = {
-              enable = false; # needed for calendar integration
-            };
+        (
+          {
+            inputs,
+            config,
+            pkgs,
+            ...
+          }:
+          {
+            disabledModules = [ "programs/gpu-screen-recorder.nix" ];
+            imports = [
+              "${inputs.nixpkgs-dev}/nixos/modules/programs/gpu-screen-recorder.nix"
+            ];
+            home-manager.users.${config.swarselsystems.mainUser}.imports = [
+              fmods.homeManager.noctalia
+            ];
+            services = {
+              upower.enable = true; # needed for battery percentage
+              gnome.evolution-data-server = {
+                enable = false; # needed for calendar integration
+              };
 
-            noctoggle = {
-              enable = true;
-              noctaliaPackage = pkgs.noctalia;
-              showCommand = "${lib.getExe pkgs.noctalia} msg bar-show";
-              hideCommand = "${lib.getExe pkgs.noctalia} msg bar-hide";
-            };
+              noctoggle = {
+                enable = true;
+                noctaliaPackage = pkgs.noctalia;
+                showCommand = "${lib.getExe pkgs.noctalia} msg bar-show";
+                hideCommand = "${lib.getExe pkgs.noctalia} msg bar-hide";
+              };
 
-          };
-          programs = {
-            gpu-screen-recorder.enable = true;
-            evolution.enable = false;
-          };
-          systemd.services.lock-before-sleep = {
-            before = [ "sleep.target" ];
-            wantedBy = [ "sleep.target" ];
-            serviceConfig = {
-              Type = "oneshot";
-              ExecStart = "${pkgs.systemd}/bin/loginctl lock-sessions";
             };
-          };
-        })
+            programs = {
+              gpu-screen-recorder.enable = true;
+              evolution.enable = false;
+            };
+            systemd.services.lock-before-sleep = {
+              before = [ "sleep.target" ];
+              wantedBy = [ "sleep.target" ];
+              serviceConfig = {
+                Type = "oneshot";
+                ExecStart = "${pkgs.systemd}/bin/loginctl lock-sessions";
+              };
+            };
+          }
+        )
       ];
     };
 
-    homeManager.noctalia = { self, inputs, config, pkgs, lib, confLib, ... }:
+    homeManager.noctalia =
+      {
+        self,
+        inputs,
+        config,
+        pkgs,
+        lib,
+        confLib,
+        ...
+      }:
       let
         inherit (confLib.getConfig.repo.secrets.common) caldavTasksEndpoint;
         brightnessctl = lib.getExe pkgs.brightnessctl;
@@ -181,7 +198,11 @@ in
                 };
 
                 idle = {
-                  behavior_order = [ "dim" "lock" "suspend" ];
+                  behavior_order = [
+                    "dim"
+                    "lock"
+                    "suspend"
+                  ];
                   pre_action_fade_seconds = 0.0;
                   behavior = {
                     dim = {
@@ -220,7 +241,10 @@ in
                   auto_hide = false;
                   capsule = false;
                   start = [ "workspaces" ];
-                  center = [ "active_window" "noctalia/screen_recorder:recorder" ];
+                  center = [
+                    "active_window"
+                    "noctalia/screen_recorder:recorder"
+                  ];
                   end = [
                     "tray"
                     "volume"

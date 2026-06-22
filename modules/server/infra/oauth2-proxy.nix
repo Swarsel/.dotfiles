@@ -1,9 +1,39 @@
 {
   flake.modules.nixos.oauth2-proxy =
-    { self, lib, config, pkgs, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      pkgs,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeProxy idmServer oauthServer nginxAccessRules homeServiceAddress;
+      inherit
+        (confLib.gen {
+          name = "oauth2-proxy";
+          port = 3004;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeProxy
+        idmServer
+        oauthServer
+        nginxAccessRules
+        homeServiceAddress
+        ;
 
       mainDomain = globals.domains.main;
 
@@ -14,9 +44,12 @@
 
       homeProxyWan4 = globals.hosts.${homeProxy}.wanAddress4 or null;
       homeProxyWan6 = globals.hosts.${homeProxy}.wanAddress6 or null;
-      trustedProxyIPs = [ "127.0.0.1" "::1" ]
-        ++ lib.optional (homeProxyWan4 != null) homeProxyWan4
-        ++ lib.optional (homeProxyWan6 != null) homeProxyWan6;
+      trustedProxyIPs = [
+        "127.0.0.1"
+        "::1"
+      ]
+      ++ lib.optional (homeProxyWan4 != null) homeProxyWan4
+      ++ lib.optional (homeProxyWan6 != null) homeProxyWan6;
     in
     {
       options = {
@@ -68,16 +101,18 @@
                         };
                       };
                       config = lib.mkIf config.oauth2.enable {
-                        extraConfig = lib.optionalString locationSubmodule.config.setOauth2Headers ''
-                          proxy_set_header X-User         $user;
-                            proxy_set_header Remote-User    $user;
-                            proxy_set_header X-Remote-User  $user;
-                            proxy_set_header X-Email        $email;
-                            # proxy_set_header X-Access-Token $token;
-                            add_header Set-Cookie           $auth_cookie;
-                        '' + lib.optionalString locationSubmodule.config.bypassAuth ''
-                          auth_request off;
-                        '';
+                        extraConfig =
+                          lib.optionalString locationSubmodule.config.setOauth2Headers ''
+                            proxy_set_header X-User         $user;
+                              proxy_set_header Remote-User    $user;
+                              proxy_set_header X-Remote-User  $user;
+                              proxy_set_header X-Email        $email;
+                              # proxy_set_header X-Access-Token $token;
+                              add_header Set-Cookie           $auth_cookie;
+                          ''
+                          + lib.optionalString locationSubmodule.config.bypassAuth ''
+                            auth_request off;
+                          '';
                       };
                     })
                   );
@@ -108,7 +143,11 @@
                       '';
                     };
                     "= /oauth2/auth" = {
-                      proxyPass = "http://oauth2-proxy/oauth2/auth" + lib.optionalString (config.oauth2.allowedGroups != [ ]) "?allowed_groups=${lib.concatStringsSep "," config.oauth2.allowedGroups}";
+                      proxyPass =
+                        "http://oauth2-proxy/oauth2/auth"
+                        + lib.optionalString (
+                          config.oauth2.allowedGroups != [ ]
+                        ) "?allowed_groups=${lib.concatStringsSep "," config.oauth2.allowedGroups}";
                       setOauth2Headers = false;
                       bypassAuth = true;
                       extraConfig = ''
@@ -132,8 +171,18 @@
 
         sops = {
           secrets = {
-            "oauth2-cookie-secret" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            "kanidm-oauth2-proxy" = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            "oauth2-cookie-secret" = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
+            "kanidm-oauth2-proxy" = {
+              sopsFile = kanidmSopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
           };
 
           templates = {
@@ -158,9 +207,23 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ready"; expectedBodyRegex = ''OK''; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/ready";
+            expectedBodyRegex = "OK";
+          };
         };
 
         services = {
@@ -227,24 +290,40 @@
             '';
           in
           {
-            ${idmServer} =
-              {
-                sops.secrets.kanidm-oauth2-proxy = { sopsFile = kanidmSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-                services.kanidm.provision = {
-                  systems.oauth2.oauth2-proxy = {
-                    displayName = "Oauth2-Proxy";
-                    originUrl = "https://${serviceDomain}/oauth2/callback";
-                    originLanding = "https://${serviceDomain}/";
-                    basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
-                    preferShortUsername = true;
-                    claimMaps.groups = {
-                      joinType = "array";
-                    };
+            ${idmServer} = {
+              sops.secrets.kanidm-oauth2-proxy = {
+                sopsFile = kanidmSopsFile;
+                owner = "kanidm";
+                group = "kanidm";
+                mode = "0440";
+              };
+              services.kanidm.provision = {
+                systems.oauth2.oauth2-proxy = {
+                  displayName = "Oauth2-Proxy";
+                  originUrl = "https://${serviceDomain}/oauth2/callback";
+                  originLanding = "https://${serviceDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
                   };
                 };
               };
-            ${webProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceAddress serviceDomain serviceName extraConfig; };
-            ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; extraConfig = extraConfig + nginxAccessRules; serviceAddress = globals.hosts.${oauthServer}.wanAddress4; };
+            };
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                servicePort
+                serviceAddress
+                serviceDomain
+                serviceName
+                extraConfig
+                ;
+            };
+            ${homeWebProxy}.services.nginx = confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              extraConfig = extraConfig + nginxAccessRules;
+              serviceAddress = globals.hosts.${oauthServer}.wanAddress4;
+            };
           };
       };
     }

@@ -1,5 +1,14 @@
 {
-  flake.modules.homeManager.git = { lib, config, globals, minimal, confLib, nixosConfig ? null, ... }:
+  flake.modules.homeManager.git =
+    {
+      lib,
+      config,
+      globals,
+      minimal,
+      confLib,
+      nixosConfig ? null,
+      ...
+    }:
     let
       inherit (confLib.getConfig.repo.secrets.common.mail) address1;
       inherit (confLib.getConfig.repo.secrets.common) fullName;
@@ -11,7 +20,8 @@
         swarselsystems.enabledHomeModules = [ "git" ];
         programs.git = {
           enable = true;
-        } // lib.optionalAttrs (!minimal) {
+        }
+        // lib.optionalAttrs (!minimal) {
           settings = {
             alias = {
               a = "add";
@@ -27,7 +37,9 @@
               pp = "push";
             };
             user = {
-              email = lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic) (lib.mkDefault address1);
+              email = lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic) (
+                lib.mkDefault address1
+              );
               name = lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic) fullName;
             };
           };

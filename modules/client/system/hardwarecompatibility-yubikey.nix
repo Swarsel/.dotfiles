@@ -1,6 +1,13 @@
 {
   flake.modules = {
-    nixos.hardwarecompatibility-yubikey = { lib, config, confLib, pkgs, ... }:
+    nixos.hardwarecompatibility-yubikey =
+      {
+        lib,
+        config,
+        confLib,
+        pkgs,
+        ...
+      }:
       let
         inherit (config.swarselsystems) mainUser;
         inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
@@ -35,11 +42,13 @@
               interactive = false; # displays a prompt BEFORE asking for presence
               cue = true; # prints a message that a touch is requrired
               origin = "pam://${mainUser}"; # make the keys work on all machines
-              authfile = pkgs.writeText "u2f-mappings" (lib.concatStrings [
-                mainUser
-                cfg1
-                cfg2
-              ]);
+              authfile = pkgs.writeText "u2f-mappings" (
+                lib.concatStrings [
+                  mainUser
+                  cfg1
+                  cfg2
+                ]
+              );
             };
           };
 
@@ -50,7 +59,15 @@
       };
 
     homeManager = {
-      yubikey = { lib, config, confLib, type, nixosConfig ? null, ... }:
+      yubikey =
+        {
+          lib,
+          config,
+          confLib,
+          type,
+          nixosConfig ? null,
+          ...
+        }:
         let
           inherit (config.swarselsystems) homeDir;
         in
@@ -59,15 +76,20 @@
           config = {
             swarselsystems.enabledHomeModules = [ "yubikey" ];
 
-            pam.yubico.authorizedYubiKeys = lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic) {
-              ids = [
-                confLib.getConfig.repo.secrets.common.yubikeys.dev1
-                confLib.getConfig.secrets.common.yubikeys.dev2
-              ];
-            };
-          } // lib.optionalAttrs (type != "nixos") {
+            pam.yubico.authorizedYubiKeys =
+              lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic)
+                {
+                  ids = [
+                    confLib.getConfig.repo.secrets.common.yubikeys.dev1
+                    confLib.getConfig.secrets.common.yubikeys.dev2
+                  ];
+                };
+          }
+          // lib.optionalAttrs (type != "nixos") {
             sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-              u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
+              u2f-keys = {
+                path = "${homeDir}/.config/Yubico/u2f_keys";
+              };
             };
           };
         };

@@ -1,11 +1,39 @@
 {
   flake.modules.nixos.kavita =
-    { self, lib, pkgs, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      pkgs,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) sopsFile;
 
-      inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer nginxAccessRules homeServiceAddress;
+      inherit
+        (confLib.gen {
+          name = "kavita";
+          port = 8080;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        nginxAccessRules
+        homeServiceAddress
+        ;
 
       kanidmDomain = globals.services.kanidm.domain;
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
@@ -21,23 +49,49 @@
           };
         };
 
-
         sops.secrets = {
-          kavita-token = { inherit sopsFile; owner = serviceUser; };
-          kanidm-kavita = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          kavita-token = {
+            inherit sopsFile;
+            owner = serviceUser;
+          };
+          kanidm-kavita = {
+            sopsFile = kanidmSopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
         };
 
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+          ];
         };
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "<title>Kavita</title>"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "<title>Kavita</title>";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -66,14 +120,28 @@
           '';
         };
 
-
         nodes = {
           ${idmServer} = confLib.mkKanidmOidcSystem {
             inherit serviceName serviceDomain kanidmSopsFile;
             originUrl = "https://${serviceDomain}/signin-oidc";
           };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            maxBody = 0;
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              maxBody = 0;
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

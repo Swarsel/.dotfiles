@@ -1,4 +1,10 @@
-{ name, homeConfig, writeShellApplication, fzf, ... }:
+{
+  name,
+  homeConfig,
+  writeShellApplication,
+  fzf,
+  ...
+}:
 
 writeShellApplication {
   inherit name;

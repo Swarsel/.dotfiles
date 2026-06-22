@@ -1,4 +1,10 @@
-{ self, config, pkgs, lib, ... }:
+{
+  self,
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/files/public/ssh";
   stateVersion = lib.mkDefault "23.05";
@@ -16,7 +22,8 @@ let
     };
     extra-trusted-public-keys = {
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" = true;
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=" = true;
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=" =
+        true;
     };
   };
 in
@@ -53,18 +60,29 @@ in
       channel.enable = false;
       package = pkgs.nixVersions.nix_2_28;
       extraOptions = ''
-        plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-          buildInputs = [config.nix.package pkgs.boost];
-          patches = o.patches or [];
-        })}/lib/nix/plugins
+        plugin-files = ${
+          pkgs.nix-plugins.overrideAttrs (o: {
+            buildInputs = [
+              config.nix.package
+              pkgs.boost
+            ];
+            patches = o.patches or [ ];
+          })
+        }/lib/nix/plugins
         extra-builtins-file = ${../files/nix/extra-builtins.nix}
       '';
 
-      settings.experimental-features = [ "nix-command" "flakes" ];
+      settings.experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
     };
 
     boot = {
-      supportedFilesystems = lib.mkForce [ "btrfs" "vfat" ];
+      supportedFilesystems = lib.mkForce [
+        "btrfs"
+        "vfat"
+      ];
       loader.systemd-boot = {
         enable = true;
       };

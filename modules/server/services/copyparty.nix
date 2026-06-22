@@ -9,10 +9,37 @@
     {
       imports = lib.optionals (inputs ? copyparty) [
         inputs.copyparty.nixosModules.default
-        ({ self, lib, config, globals, confLib, ... }:
+        (
+          {
+            self,
+            lib,
+            config,
+            globals,
+            confLib,
+            ...
+          }:
           let
-            inherit (confLib.gen { name = "copyparty"; port = 3923; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-            inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+            inherit
+              (confLib.gen {
+                name = "copyparty";
+                port = 3923;
+              })
+              servicePort
+              serviceName
+              serviceUser
+              serviceGroup
+              serviceDomain
+              serviceAddress
+              proxyAddress4
+              proxyAddress6
+              ;
+            inherit (confLib.static)
+              isHome
+              webProxy
+              homeWebProxy
+              homeServiceAddress
+              nginxAccessRules
+              ;
 
             inherit (config.swarselsystems) sopsFile mainUser;
 
@@ -26,8 +53,18 @@
             users.persistentIds.${serviceName} = confLib.mkIds 945;
 
             sops.secrets = {
-              copyparty-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0400"; };
-              copyparty-guest-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0400"; };
+              copyparty-password = {
+                inherit sopsFile;
+                owner = serviceUser;
+                group = serviceGroup;
+                mode = "0400";
+              };
+              copyparty-guest-password = {
+                inherit sopsFile;
+                owner = serviceUser;
+                group = serviceGroup;
+                mode = "0400";
+              };
             };
 
             topology.self.services.${serviceName} = {
@@ -38,8 +75,21 @@
 
             globals = {
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-              services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-              monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "copyparty"; };
+              services = confLib.mkServiceGlobal {
+                inherit
+                  serviceName
+                  serviceDomain
+                  proxyAddress4
+                  proxyAddress6
+                  isHome
+                  serviceAddress
+                  homeServiceAddress
+                  ;
+              };
+              monitoring.http = confLib.mkHttpMonitoring {
+                inherit serviceName servicePort;
+                expectedBodyRegex = "copyparty";
+              };
               dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
             };
 
@@ -71,8 +121,18 @@
             };
 
             environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-              { directory = stateDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
-              { directory = cacheDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
+              {
+                directory = stateDir;
+                user = serviceUser;
+                group = serviceGroup;
+                mode = "0700";
+              }
+              {
+                directory = cacheDir;
+                user = serviceUser;
+                group = serviceGroup;
+                mode = "0700";
+              }
             ];
 
             nodes =
@@ -86,21 +146,29 @@
               in
               {
                 ${webProxy}.services.nginx = confLib.genNginx {
-                  inherit serviceAddress servicePort serviceDomain serviceName;
+                  inherit
+                    serviceAddress
+                    servicePort
+                    serviceDomain
+                    serviceName
+                    ;
                   maxBody = 0;
                   proxyWebsockets = true;
                   extraConfigLoc = uploadProxyConfig;
                 };
-                ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx {
-                  inherit servicePort serviceDomain serviceName;
-                  serviceAddress = homeServiceAddress;
-                  maxBody = 0;
-                  proxyWebsockets = true;
-                  extraConfig = nginxAccessRules;
-                  extraConfigLoc = uploadProxyConfig;
-                });
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit servicePort serviceDomain serviceName;
+                    serviceAddress = homeServiceAddress;
+                    maxBody = 0;
+                    proxyWebsockets = true;
+                    extraConfig = nginxAccessRules;
+                    extraConfigLoc = uploadProxyConfig;
+                  }
+                );
               };
-          })
+          }
+        )
       ];
     };
 }

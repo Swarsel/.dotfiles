@@ -1,4 +1,11 @@
-{ self, config, inputs, lib, minimal, ... }:
+{
+  self,
+  config,
+  inputs,
+  lib,
+  minimal,
+  ...
+}:
 let
   primaryUser = config.swarselsystems.mainUser;
 in
@@ -10,15 +17,19 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
-  ] ++ lib.optionals (!minimal) (builtins.attrValues (lib.getAttrs [
-    "profile-personal"
-    "gaming"
-    "nswitch-rcm"
-    "virtualbox"
-    "niri"
-    "noctalia"
   ]
-    inputs.self.modules.nixos));
+  ++ lib.optionals (!minimal) (
+    builtins.attrValues (
+      lib.getAttrs [
+        "profile-personal"
+        "gaming"
+        "nswitch-rcm"
+        "virtualbox"
+        "niri"
+        "noctalia"
+      ] inputs.self.modules.nixos
+    )
+  );
 
   topology.self.interfaces = {
     eth1.network = lib.mkForce "home";
@@ -61,4 +72,5 @@ in
       };
     };
   };
-} // lib.optionalAttrs (!minimal) { }
+}
+// lib.optionalAttrs (!minimal) { }

@@ -1,6 +1,11 @@
 {
   flake.modules.generic.options =
-    { self, config, lib, ... }:
+    {
+      self,
+      config,
+      lib,
+      ...
+    }:
     {
       options.swarselsystems = {
         proxyHost = lib.mkOption {
@@ -122,6 +127,5 @@
           description = "List of enabled home module names, populated automatically by each module when imported. Used for cross-module checks.";
         };
       };
-    }
-  ;
+    };
 }

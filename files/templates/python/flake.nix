@@ -29,11 +29,12 @@
   };
 
   outputs =
-    { nixpkgs
-    , uv2nix
-    , pyproject-nix
-    , pyproject-build-systems
-    , ...
+    {
+      nixpkgs,
+      uv2nix,
+      pyproject-nix,
+      pyproject-build-systems,
+      ...
     }:
     let
       inherit (nixpkgs) lib;
@@ -55,133 +56,137 @@
         # };
       };
 
+      pythonSets = forAllSystems (
+        system:
+        let
+          inherit (pkgs) stdenv;
+          pkgs = nixpkgs.legacyPackages.${system};
+          pyprojectOverrides = final: prev: {
+            # Implement build fixups here.
+            ${pname} = prev.${pname}.overrideAttrs (old: {
 
-      pythonSets = forAllSystems
-        (system:
-          let
-            inherit (pkgs) stdenv;
-            pkgs = nixpkgs.legacyPackages.${system};
-            pyprojectOverrides = final: prev: {
-              # Implement build fixups here.
-              ${pname} = prev.${pname}.overrideAttrs (old: {
+              passthru = old.passthru // {
+                # Put all tests in the passthru.tests attribute set.
+                # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
+                #
+                # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
+                tests =
+                  let
 
-                passthru = old.passthru // {
-                  # Put all tests in the passthru.tests attribute set.
-                  # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
-                  #
-                  # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
-                  tests =
-                    let
-
-                      virtualenv = final.mkVirtualEnv "${pname}-pytest-env" {
-                        ${pname} = [ "test" ];
-                      };
-
-                    in
-                    (old.tests or { })
-                      // {
-                      pytest = stdenv.mkDerivation {
-                        name = "${final.${pname}.name}-pytest";
-                        inherit (final.${pname}) src;
-                        nativeBuildInputs = [
-                          virtualenv
-                        ];
-                        dontConfigure = true;
-
-                        # Because this package is running tests, and not actually building the main package
-                        # the build phase is running the tests.
-                        #
-                        # We also output a HTML coverage report, which is used as the build output.
-                        buildPhase = ''
-                          runHook preBuild
-                          pytest --cov tests --cov-report html
-                          runHook postBuild
-                        '';
-
-                        # Install the HTML coverage report into the build output.
-                        #
-                        # If you wanted to install multiple test output formats such as TAP outputs
-                        # you could make this derivation a multiple-output derivation.
-                        #
-                        # See https://nixos.org/manual/nixpkgs/stable/#chap-multiple-output for more information on multiple outputs.
-                        installPhase = ''
-                          runHook preInstall
-                          mv htmlcov $out
-                          runHook postInstall
-                        '';
-                      };
-
+                    virtualenv = final.mkVirtualEnv "${pname}-pytest-env" {
+                      ${pname} = [ "test" ];
                     };
-                };
-              });
-            };
 
-            baseSet = pkgs.callPackage pyproject-nix.build.packages {
-              python = pkgs.python312;
-            };
-          in
-          baseSet.overrideScope
-            (
-              lib.composeManyExtensions [
-                pyproject-build-systems.overlays.default
-                overlay
-                pyprojectOverrides
-              ]
-            ));
+                  in
+                  (old.tests or { })
+                  // {
+                    pytest = stdenv.mkDerivation {
+                      name = "${final.${pname}.name}-pytest";
+                      inherit (final.${pname}) src;
+                      nativeBuildInputs = [
+                        virtualenv
+                      ];
+                      dontConfigure = true;
+
+                      # Because this package is running tests, and not actually building the main package
+                      # the build phase is running the tests.
+                      #
+                      # We also output a HTML coverage report, which is used as the build output.
+                      buildPhase = ''
+                        runHook preBuild
+                        pytest --cov tests --cov-report html
+                        runHook postBuild
+                      '';
+
+                      # Install the HTML coverage report into the build output.
+                      #
+                      # If you wanted to install multiple test output formats such as TAP outputs
+                      # you could make this derivation a multiple-output derivation.
+                      #
+                      # See https://nixos.org/manual/nixpkgs/stable/#chap-multiple-output for more information on multiple outputs.
+                      installPhase = ''
+                        runHook preInstall
+                        mv htmlcov $out
+                        runHook postInstall
+                      '';
+                    };
+
+                  };
+              };
+            });
+          };
+
+          baseSet = pkgs.callPackage pyproject-nix.build.packages {
+            python = pkgs.python312;
+          };
+        in
+        baseSet.overrideScope (
+          lib.composeManyExtensions [
+            pyproject-build-systems.overlays.default
+            overlay
+            pyprojectOverrides
+          ]
+        )
+      );
 
     in
     {
-      packages = forAllSystems (system:
+      packages = forAllSystems (
+        system:
         let
           pythonSet = pythonSets.${system};
         in
-        { default = pythonSet.mkVirtualEnv "${pname}-env" workspace.deps.default; });
+        {
+          default = pythonSet.mkVirtualEnv "${pname}-env" workspace.deps.default;
+        }
+      );
 
-      devShells = forAllSystems
-        (system:
-          let
-            pythonSet = pythonSets.${system};
-            pkgs = nixpkgs.legacyPackages.${system};
-          in
-          {
-            default =
-              let
-                # Create an overlay enabling editable mode for all local dependencies.
-                editableOverlay = workspace.mkEditablePyprojectOverlay {
-                  # Use environment variable
-                  root = "$REPO_ROOT";
-                  # Optional: Only enable editable for these packages
-                  # members = [ "hello-world" ];
-                };
-
-                # Override previous set with our overrideable overlay.
-                editablePythonSet = pythonSet.overrideScope editableOverlay;
-
-                virtualenv = editablePythonSet.mkVirtualEnv "${pname}-dev-env" {
-                  ${pname} = [ "dev" ];
-                };
-
-              in
-              pkgs.mkShell {
-                packages = [
-                  virtualenv
-                  pkgs.uv
-                ];
-                shellHook = ''
-                  # Undo dependency propagation by nixpkgs.
-                  unset PYTHONPATH
-
-                  # Don't create venv using uv
-                  export UV_NO_SYNC=1
-
-                  # Prevent uv from downloading managed Python's
-                  export UV_PYTHON_DOWNLOADS=never
-
-                  # Get repository root using git. This is expanded at runtime by the editable `.pth` machinery.
-                  export REPO_ROOT=$(git rev-parse --show-toplevel)
-                '';
+      devShells = forAllSystems (
+        system:
+        let
+          pythonSet = pythonSets.${system};
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          default =
+            let
+              # Create an overlay enabling editable mode for all local dependencies.
+              editableOverlay = workspace.mkEditablePyprojectOverlay {
+                # Use environment variable
+                root = "$REPO_ROOT";
+                # Optional: Only enable editable for these packages
+                # members = [ "hello-world" ];
               };
-          });
+
+              # Override previous set with our overrideable overlay.
+              editablePythonSet = pythonSet.overrideScope editableOverlay;
+
+              virtualenv = editablePythonSet.mkVirtualEnv "${pname}-dev-env" {
+                ${pname} = [ "dev" ];
+              };
+
+            in
+            pkgs.mkShell {
+              packages = [
+                virtualenv
+                pkgs.uv
+              ];
+              shellHook = ''
+                # Undo dependency propagation by nixpkgs.
+                unset PYTHONPATH
+
+                # Don't create venv using uv
+                export UV_NO_SYNC=1
+
+                # Prevent uv from downloading managed Python's
+                export UV_PYTHON_DOWNLOADS=never
+
+                # Get repository root using git. This is expanded at runtime by the editable `.pth` machinery.
+                export REPO_ROOT=$(git rev-parse --show-toplevel)
+              '';
+            };
+        }
+      );
 
       checks = forAllSystems (
         system:

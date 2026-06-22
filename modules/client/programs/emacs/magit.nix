@@ -1,5 +1,6 @@
 {
-  flake.modules.homeManager.emacs-init = { config, lib, ... }:
+  flake.modules.homeManager.emacs-init =
+    { config, lib, ... }:
     {
       config.programs.emacs.init.usePackage = {
         general.config = ''

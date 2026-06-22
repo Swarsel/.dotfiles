@@ -1,7 +1,16 @@
 # heavily inspired from https://github.com/oddlama/nix-config/blob/d42cbde676001a7ad8a3cace156e050933a4dcc3/pkgs/deploy.nix
-{ name, bc, nix-output-monitor, writeShellApplication, ... }:
+{
+  name,
+  bc,
+  nix-output-monitor,
+  writeShellApplication,
+  ...
+}:
 writeShellApplication {
-  runtimeInputs = [ bc nix-output-monitor ];
+  runtimeInputs = [
+    bc
+    nix-output-monitor
+  ];
   inherit name;
   text = ''
       set -euo pipefail

@@ -1,4 +1,10 @@
-{ self, config, lib, minimal, ... }:
+{
+  self,
+  config,
+  lib,
+  minimal,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
@@ -6,7 +12,8 @@
 
     self.modules.nixos.systemd-networkd-server
     self.modules.nixos.nix-topology-self
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.bastion
   ];
@@ -39,7 +46,8 @@
     isCloud = true;
     mainUser = "jump";
   };
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   # users.users.swarsel.enable = lib.mkForce false;
   # home-manager.users.swarsel.enable = lib.mkForce false

@@ -17,18 +17,19 @@
           "C-c p" = "projectile-command-map";
         };
         init =
-          if builtins.elem "optional-work" config.swarselsystems.enabledHomeModules
-          then ''
-            (when (file-directory-p swarsel-work-projects-directory)
+          if builtins.elem "optional-work" config.swarselsystems.enabledHomeModules then
+            ''
+              (when (file-directory-p swarsel-work-projects-directory)
+                (when (file-directory-p swarsel-private-projects-directory)
+                  (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
+              (setq projectile-switch-project-action #'magit-status)
+            ''
+          else
+            ''
               (when (file-directory-p swarsel-private-projects-directory)
-                (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
-            (setq projectile-switch-project-action #'magit-status)
-          ''
-          else ''
-            (when (file-directory-p swarsel-private-projects-directory)
-              (setq projectile-project-search-path (list swarsel-private-projects-directory)))
-            (setq projectile-switch-project-action #'magit-status)
-          '';
+                (setq projectile-project-search-path (list swarsel-private-projects-directory)))
+              (setq projectile-switch-project-action #'magit-status)
+            '';
       };
     };
   };

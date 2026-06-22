@@ -4,7 +4,8 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  flake.modules.nixos.dns = { inputs, ... }:
+  flake.modules.nixos.dns =
+    { inputs, ... }:
     {
       _module.args.dns = inputs.dns;
     };

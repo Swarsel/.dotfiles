@@ -1,6 +1,12 @@
 { self, ... }:
 {
-  perSystem = { lib, system, pkgs, ... }:
+  perSystem =
+    {
+      lib,
+      system,
+      pkgs,
+      ...
+    }:
     lib.optionalAttrs (system == "x86_64-linux") {
       packages.bootstrap-install-test = pkgs.writeShellApplication {
         name = "bootstrap-install-test";

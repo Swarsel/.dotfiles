@@ -1,10 +1,41 @@
 {
   flake.modules.nixos.matrix =
-    { self, lib, config, pkgs, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      pkgs,
+      globals,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) sopsFile;
-      inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome isProxied webProxy homeWebProxy idmServer webProxyIf homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "matrix";
+          user = "matrix-synapse";
+          port = 8008;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        isProxied
+        webProxy
+        homeWebProxy
+        idmServer
+        webProxyIf
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       kanidmDomain = globals.services.kanidm.domain;
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
@@ -30,7 +61,6 @@
       config = {
         swarselsystems.enabledServerModules = [ "matrix" ];
 
-
         environment.systemPackages = with pkgs; [
           matrix-synapse
           lottieconverter
@@ -39,12 +69,32 @@
 
         sops = {
           secrets = {
-            matrix-shared-secret = { inherit sopsFile; owner = serviceUser; };
-            mautrix-telegram-as-token = { inherit sopsFile; owner = serviceUser; };
-            mautrix-telegram-hs-token = { inherit sopsFile; owner = serviceUser; };
-            mautrix-telegram-api-id = { inherit sopsFile; owner = serviceUser; };
-            mautrix-telegram-api-hash = { inherit sopsFile; owner = serviceUser; };
-            kanidm-matrix = { sopsFile = kanidmSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            matrix-shared-secret = {
+              inherit sopsFile;
+              owner = serviceUser;
+            };
+            mautrix-telegram-as-token = {
+              inherit sopsFile;
+              owner = serviceUser;
+            };
+            mautrix-telegram-hs-token = {
+              inherit sopsFile;
+              owner = serviceUser;
+            };
+            mautrix-telegram-api-id = {
+              inherit sopsFile;
+              owner = serviceUser;
+            };
+            mautrix-telegram-api-hash = {
+              inherit sopsFile;
+              owner = serviceUser;
+            };
+            kanidm-matrix = {
+              sopsFile = kanidmSopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
           };
           templates = {
             "matrix_user_register.sh".content = ''
@@ -108,20 +158,49 @@
               };
             }
           ];
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "OK"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/health";
+            expectedBodyRegex = "OK";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
-            { directory = "/var/lib/matrix-synapse"; user = serviceUser; group = serviceGroup; }
-            { directory = "/var/lib/mautrix-whatsapp"; user = "mautrix-whatsapp"; group = "mautrix-whatsapp"; }
-            { directory = "/var/lib/mautrix-telegram"; user = "mautrix-telegram"; group = "mautrix-telegram"; }
-            { directory = "/var/lib/mautrix-signal"; user = "mautrix-signal"; group = "mautrix-signal"; }
+            {
+              directory = "/var/lib/matrix-synapse";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+            {
+              directory = "/var/lib/mautrix-whatsapp";
+              user = "mautrix-whatsapp";
+              group = "mautrix-whatsapp";
+            }
+            {
+              directory = "/var/lib/mautrix-telegram";
+              user = "mautrix-telegram";
+              group = "mautrix-telegram";
+            }
+            {
+              directory = "/var/lib/mautrix-signal";
+              user = "mautrix-signal";
+              group = "mautrix-signal";
+            }
           ];
         };
-
 
         services = {
           postgresql = {
@@ -132,10 +211,22 @@
               "mautrix-signal"
             ];
             ensureUsers = [
-              { name = "matrix-synapse"; ensureDBOwnership = true; }
-              { name = "mautrix-telegram"; ensureDBOwnership = true; }
-              { name = "mautrix-whatsapp"; ensureDBOwnership = true; }
-              { name = "mautrix-signal"; ensureDBOwnership = true; }
+              {
+                name = "matrix-synapse";
+                ensureDBOwnership = true;
+              }
+              {
+                name = "mautrix-telegram";
+                ensureDBOwnership = true;
+              }
+              {
+                name = "mautrix-whatsapp";
+                ensureDBOwnership = true;
+              }
+              {
+                name = "mautrix-signal";
+                ensureDBOwnership = true;
+              }
             ];
             initialScript = pkgs.writeText "synapse-init.sql" ''
               CREATE DATABASE "matrix-synapse"
@@ -168,7 +259,11 @@
                   issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
                   client_id = serviceName;
                   client_secret_path = config.sops.secrets.kanidm-matrix.path;
-                  scopes = [ "openid" "email" "profile" ];
+                  scopes = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
                   user_profile_method = "userinfo_endpoint";
                   user_mapping_provider = {
                     config = {
@@ -192,7 +287,10 @@
                   x_forwarded = true;
                   resources = [
                     {
-                      names = [ "client" "federation" ];
+                      names = [
+                        "client"
+                        "federation"
+                      ];
                       compress = true;
                     }
                   ];

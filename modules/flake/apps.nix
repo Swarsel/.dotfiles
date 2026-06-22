@@ -1,19 +1,22 @@
 { self, ... }:
 {
-  perSystem = { system, ... }:
+  perSystem =
+    { system, ... }:
     let
-      mkApps = system: names: self: builtins.listToAttrs (map
-        (name: {
-          inherit name;
-          value = {
-            type = "app";
-            program = "${self.packages.${system}.${name}}/bin/${name}";
-            meta = {
-              description = "Custom app ${name}.";
+      mkApps =
+        system: names: self:
+        builtins.listToAttrs (
+          map (name: {
+            inherit name;
+            value = {
+              type = "app";
+              program = "${self.packages.${system}.${name}}/bin/${name}";
+              meta = {
+                description = "Custom app ${name}.";
+              };
             };
-          };
-        })
-        names);
+          }) names
+        );
 
       appNames = [
         "swarsel-bootstrap"

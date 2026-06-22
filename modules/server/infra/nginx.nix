@@ -30,23 +30,24 @@
                       };
 
                       config = {
-                        extraConfig = lib.mkIf submod.config.recommendedSecurityHeaders (lib.mkBefore ''
-                          # Hide upstream's versions
-                          proxy_hide_header Strict-Transport-Security;
-                          proxy_hide_header Referrer-Policy;
-                          proxy_hide_header X-Content-Type-Options;
-                          proxy_hide_header X-Frame-Options;
+                        extraConfig = lib.mkIf submod.config.recommendedSecurityHeaders (
+                          lib.mkBefore ''
+                            # Hide upstream's versions
+                            proxy_hide_header Strict-Transport-Security;
+                            proxy_hide_header Referrer-Policy;
+                            proxy_hide_header X-Content-Type-Options;
+                            proxy_hide_header X-Frame-Options;
 
-                          # Enable HTTP Strict Transport Security (HSTS)
-                          add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
+                            # Enable HTTP Strict Transport Security (HSTS)
+                            add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
 
-                          # Minimize information leaked to other domains
-                          add_header Referrer-Policy "origin-when-cross-origin";
+                            # Minimize information leaked to other domains
+                            add_header Referrer-Policy "origin-when-cross-origin";
 
-                          add_header X-XSS-Protection "1; mode=block";
-                          add_header X-Frame-Options "${submod.config.X-Frame-Options}";
-                          add_header X-Content-Type-Options "nosniff";
-                        ''
+                            add_header X-XSS-Protection "1; mode=block";
+                            add_header X-Frame-Options "${submod.config.X-Frame-Options}";
+                            add_header X-Content-Type-Options "nosniff";
+                          ''
                         );
                       };
                     })
@@ -60,12 +61,18 @@
       config = {
         swarselsystems.enabledServerModules = [ "nginx" ];
 
-
-        networking.firewall.allowedTCPPorts = [ 80 443 ];
+        networking.firewall.allowedTCPPorts = [
+          80
+          443
+        ];
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
-            { directory = "/var/cache/nginx"; user = "nginx"; group = "nginx"; }
+            {
+              directory = "/var/cache/nginx";
+              user = "nginx";
+              group = "nginx";
+            }
           ];
         };
 

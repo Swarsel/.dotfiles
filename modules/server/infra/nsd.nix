@@ -1,8 +1,25 @@
 {
   flake.modules.nixos.nsd =
-    { self, lib, config, globals, dns, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      dns,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "nsd"; port = 53; }) serviceName servicePort proxyAddress4 proxyAddress6;
+      inherit
+        (confLib.gen {
+          name = "nsd";
+          port = 53;
+        })
+        serviceName
+        servicePort
+        proxyAddress4
+        proxyAddress6
+        ;
       inherit (config.swarselsystems) sopsFile;
     in
     {
@@ -74,7 +91,17 @@
                 ];
 
                 # dnssec = true;
-                data = dns.lib.toString "${globals.domains.main}" (import ./_nsd-site1.nix { inherit config globals dns proxyAddress4 proxyAddress6; });
+                data = dns.lib.toString "${globals.domains.main}" (
+                  import ./_nsd-site1.nix {
+                    inherit
+                      config
+                      globals
+                      dns
+                      proxyAddress4
+                      proxyAddress6
+                      ;
+                  }
+                );
               };
           };
         };

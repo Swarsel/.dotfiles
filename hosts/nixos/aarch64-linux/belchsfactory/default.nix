@@ -1,4 +1,11 @@
-{ self, inputs, config, lib, minimal, ... }:
+{
+  self,
+  inputs,
+  config,
+  lib,
+  minimal,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
@@ -6,7 +13,8 @@
 
     self.modules.nixos.systemd-networkd-server
     self.modules.nixos.nix-topology-self
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.wireguard
     self.modules.nixos.ssh-builder
@@ -23,7 +31,10 @@
   };
 
   # use SSH key with own limits for nixbuild.net instead of the general one in remotebuild.nix
-  sops.secrets.nixbuild-net-key = lib.mkForce { inherit (config.swarselsystems) sopsFile; mode = "0400"; };
+  sops.secrets.nixbuild-net-key = lib.mkForce {
+    inherit (config.swarselsystems) sopsFile;
+    mode = "0400";
+  };
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";

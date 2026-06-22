@@ -1,9 +1,36 @@
 {
   flake.modules.nixos.shlink =
-    { self, lib, config, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "shlink"; port = 8081; dir = "/var/lib/shlink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules scannerDropRules;
+      inherit
+        (confLib.gen {
+          name = "shlink";
+          port = 8081;
+          dir = "/var/lib/shlink";
+        })
+        servicePort
+        serviceName
+        serviceDomain
+        serviceDir
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        topologyContainerName
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        scannerDropRules
+        ;
 
       containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
@@ -16,7 +43,6 @@
 
       config = {
         swarselsystems.enabledServerModules = [ "shlink" ];
-
 
         sops = {
           secrets = {
@@ -76,13 +102,14 @@
                   mode = "0750";
                 };
               };
-            }) [
-            "data"
-            "data/cache"
-            "data/locks"
-            "data/log"
-            "data/proxies"
-          ]
+            })
+            [
+              "data"
+              "data/cache"
+              "data/locks"
+              "data/log"
+              "data/proxies"
+            ]
         );
 
         # networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -94,15 +121,44 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/rest/health"; expectedBodyRegex = ''"status":"pass"''; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/rest/health";
+            expectedBodyRegex = ''"status":"pass"'';
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
-
         nodes = {
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 0; extraConfig = scannerDropRules; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 0; extraConfig = scannerDropRules + nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            maxBody = 0;
+            extraConfig = scannerDropRules;
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              maxBody = 0;
+              extraConfig = scannerDropRules + nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

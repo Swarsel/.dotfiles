@@ -4,24 +4,37 @@ let
 in
 {
   flake.modules = {
-    nixos.gaming = { pkgs, config, withHomeManager, ... }: lib.mkMerge [
+    nixos.gaming =
       {
-        programs.steam = {
-          enable = true;
-          package = pkgs.steam;
-          extraCompatPackages = [
-            pkgs.proton-ge-bin
+        pkgs,
+        config,
+        withHomeManager,
+        ...
+      }:
+      lib.mkMerge [
+        {
+          programs.steam = {
+            enable = true;
+            package = pkgs.steam;
+            extraCompatPackages = [
+              pkgs.proton-ge-bin
+            ];
+          };
+        }
+        (lib.mkIf withHomeManager {
+          home-manager.users."${config.swarselsystems.mainUser}".imports = [
+            fmods.homeManager.gaming
           ];
-        };
-      }
-      (lib.mkIf withHomeManager {
-        home-manager.users."${config.swarselsystems.mainUser}".imports = [
-          fmods.homeManager.gaming
-        ];
-      })
-    ];
+        })
+      ];
 
-    homeManager.gaming = { pkgs, confLib, nixosConfig ? null, ... }:
+    homeManager.gaming =
+      {
+        pkgs,
+        confLib,
+        nixosConfig ? null,
+        ...
+      }:
       let
         isNixos = nixosConfig != null;
       in

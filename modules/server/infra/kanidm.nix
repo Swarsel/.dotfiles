@@ -1,11 +1,38 @@
 {
   flake.modules.nixos.kanidm =
-    { self, lib, pkgs, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      pkgs,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
       certsSopsFile = self + /secrets/repo/certs.yaml;
       inherit (config.swarselsystems) sopsFile;
-      inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "kanidm";
+          port = 8300;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
 
       certBase = "/etc/ssl";
@@ -13,21 +40,14 @@
       privateDir = "${certBase}/private";
       certPathBase = "${certsDir}/${serviceName}.crt";
       certPath =
-        if config.swarselsystems.isImpermanence then
-          "/persist${certPathBase}"
-        else
-          "${certPathBase}";
+        if config.swarselsystems.isImpermanence then "/persist${certPathBase}" else "${certPathBase}";
       keyPathBase = "${privateDir}/${serviceName}.key";
       keyPath =
-        if config.swarselsystems.isImpermanence then
-          "/persist${keyPathBase}"
-        else
-          "${keyPathBase}";
+        if config.swarselsystems.isImpermanence then "/persist${keyPathBase}" else "${keyPathBase}";
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "kanidm" ];
-
 
         users = {
           persistentIds = {
@@ -43,10 +63,30 @@
 
         sops = {
           secrets = {
-            "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            "kanidm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            "kanidm-idm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            "kanidm-self-signed-crt" = {
+              sopsFile = certsSopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
+            "kanidm-self-signed-key" = {
+              sopsFile = certsSopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
+            "kanidm-admin-pw" = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
+            "kanidm-idm-admin-pw" = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
             # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           };
         };
@@ -56,8 +96,23 @@
         globals = {
           general.idmServer = config.node.name;
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/status"; expectedBodyRegex = "true"; scheme = "https"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/status";
+            expectedBodyRegex = "true";
+            scheme = "https";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -70,7 +125,13 @@
           };
 
           "/state" = lib.mkIf config.swarselsystems.isMicroVM {
-            directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+            directories = [
+              {
+                directory = "/var/lib/${serviceName}";
+                user = serviceUser;
+                group = serviceGroup;
+              }
+            ];
           };
         };
 
@@ -94,9 +155,19 @@
                       set -eu
 
                 ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
-                ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
+                ${
+                  if config.swarselsystems.isImpermanence then
+                    "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}"
+                  else
+                    ""
+                }
                 ${pkgs.coreutils}/bin/install -d -m 0755 ${privateDir}
-                ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
+                ${
+                  if config.swarselsystems.isImpermanence then
+                    "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}"
+                  else
+                    ""
+                }
 
                 need_gen=0
                 if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
@@ -135,8 +206,6 @@
             serviceConfig.RestartSec = "30";
           };
         };
-
-
 
         services = {
           ${serviceName} = {
@@ -183,8 +252,23 @@
             '';
           in
           {
-            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; };
-            ${homeWebProxy}.services.nginx = confLib.genNginx { inherit servicePort serviceDomain serviceName; protocol = "https"; noSslVerify = true; extraConfig = extraConfig + nginxAccessRules; serviceAddress = homeServiceAddress; };
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
+              protocol = "https";
+              noSslVerify = true;
+            };
+            ${homeWebProxy}.services.nginx = confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              protocol = "https";
+              noSslVerify = true;
+              extraConfig = extraConfig + nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            };
           };
 
       };

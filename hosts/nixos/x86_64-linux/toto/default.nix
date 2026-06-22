@@ -1,10 +1,18 @@
-{ self, inputs, config, lib, minimal, ... }:
+{
+  self,
+  inputs,
+  config,
+  lib,
+  minimal,
+  ...
+}:
 {
 
   imports = [
     ./disk-config.nix
     ./hardware-configuration.nix
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     inputs.self.modules.nixos.profile-minimal
   ];
 

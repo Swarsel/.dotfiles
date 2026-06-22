@@ -1,4 +1,10 @@
-{ self, lib, minimal, globals, ... }:
+{
+  self,
+  lib,
+  minimal,
+  globals,
+  ...
+}:
 {
 
   imports = [
@@ -6,7 +12,8 @@
 
     self.modules.nixos.systemd-networkd-server
     self.modules.nixos.nix-topology-self
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.smartctl-exporter
   ];
@@ -35,8 +42,12 @@
 
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
-  networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" "enp3s0" ];
+  networking.nftables.firewall.zones.untrusted.interfaces = [
+    "lan"
+    "enp3s0"
+  ];
 
 }

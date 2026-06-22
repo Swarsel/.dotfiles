@@ -1,5 +1,11 @@
 {
-  flake.modules.nixos.boot = { lib, pkgs, globals, ... }:
+  flake.modules.nixos.boot =
+    {
+      lib,
+      pkgs,
+      globals,
+      ...
+    }:
     {
       config = {
         boot = {
@@ -22,6 +28,5 @@
         console.earlySetup = true;
 
       };
-    }
-  ;
+    };
 }

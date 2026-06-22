@@ -1,5 +1,13 @@
 {
-  flake.modules.homeManager.gpg-agent = { self, lib, options, config, pkgs, ... }:
+  flake.modules.homeManager.gpg-agent =
+    {
+      self,
+      lib,
+      options,
+      config,
+      pkgs,
+      ...
+    }:
     let
       inherit (config.swarselsystems) mainUser homeDir;
       withYubikeyAgent = false;
@@ -98,15 +106,24 @@
                 hexStringToBase32 =
                   let
                     mod = a: b: a - a / b * b;
-                    pow2 = lib.elemAt [ 1 2 4 8 16 32 64 128 256 ];
+                    pow2 = lib.elemAt [
+                      1
+                      2
+                      4
+                      8
+                      16
+                      32
+                      64
+                      128
+                      256
+                    ];
 
                     base32Alphabet = lib.stringToCharacters "ybndrfg8ejkmcpqxot1uwisza345h769";
                     hexToIntTable = lib.listToAttrs (
-                      lib.genList
-                        (x: {
-                          name = lib.toLower (lib.toHexString x);
-                          value = x;
-                        }) 16
+                      lib.genList (x: {
+                        name = lib.toLower (lib.toHexString x);
+                        value = x;
+                      }) 16
                     );
 
                     initState = {
@@ -114,7 +131,13 @@
                       buf = 0;
                       bufBits = 0;
                     };
-                    go = { ret, buf, bufBits, }: hex:
+                    go =
+                      {
+                        ret,
+                        buf,
+                        bufBits,
+                      }:
+                      hex:
                       let
                         buf' = buf * pow2 4 + hexToIntTable.${hex};
                         bufBits' = bufBits + 4;
@@ -134,7 +157,8 @@
                         };
                   in
                   hexString: (lib.foldl' go initState (lib.stringToCharacters hexString)).ret;
-                gpgconf = dir:
+                gpgconf =
+                  dir:
                   let
                     hash = lib.substring 0 24 (hexStringToBase32 (builtins.hashString "sha1" homedir));
                     subdir = if homedir == options.programs.gpg.homedir.default then "${dir}" else "d.${hash}/${dir}";

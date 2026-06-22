@@ -1,9 +1,36 @@
 {
   flake.modules.nixos.firefly-iii =
-    { self, lib, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome idmServer webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "firefly-iii";
+          port = 80;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        idmServer
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       nginxGroup = "nginx";
 
@@ -31,7 +58,12 @@
 
         sops = {
           secrets = {
-            "firefly-iii-app-key" = { inherit sopsFile; owner = serviceUser; group = if cfg.enableNginx then nginxGroup else serviceGroup; mode = "0440"; };
+            "firefly-iii-app-key" = {
+              inherit sopsFile;
+              owner = serviceUser;
+              group = if cfg.enableNginx then nginxGroup else serviceGroup;
+              mode = "0440";
+            };
           };
         };
 
@@ -42,13 +74,34 @@
         # };
 
         globals = {
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/health"; expectedBodyRegex = "OK"; hostHeader = serviceDomain; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/health";
+            expectedBodyRegex = "OK";
+            hostHeader = serviceDomain;
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+          ];
         };
 
         services = {
@@ -91,7 +144,6 @@
           };
         };
 
-
         nodes =
           let
             genNginx = toAddress: extraConfig: {
@@ -128,7 +180,10 @@
             };
           in
           {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { serviceName = "firefly"; proxyGroup = "firefly_access"; };
+            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
+              serviceName = "firefly";
+              proxyGroup = "firefly_access";
+            };
             ${webProxy}.services.nginx = genNginx serviceAddress "";
             ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
           };

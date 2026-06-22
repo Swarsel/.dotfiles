@@ -1,9 +1,36 @@
 {
   flake.modules.nixos.freshrss =
-    { self, lib, config, globals, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "freshrss";
+          port = 80;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
 
       inherit (config.swarselsystems) sopsFile;
     in
@@ -29,7 +56,10 @@
 
         sops = {
           secrets = {
-            freshrss-pw = { inherit sopsFile; owner = serviceUser; };
+            freshrss-pw = {
+              inherit sopsFile;
+              owner = serviceUser;
+            };
             # kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
             # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
           };
@@ -61,14 +91,34 @@
         # };
 
         globals = {
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "FreshRSS"; hostHeader = serviceDomain; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "FreshRSS";
+            hostHeader = serviceDomain;
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
 
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+          ];
         };
 
         services.${serviceName} =
@@ -88,7 +138,6 @@
         # systemd.services.freshrss-config.serviceConfig.EnvironmentFile = [
         #   config.sops.templates.freshrss-env.path
         # ];
-
 
         nodes =
           let
@@ -124,7 +173,10 @@
             };
           in
           {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; proxyGroup = "ttrss_access"; };
+            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
+              inherit serviceName;
+              proxyGroup = "ttrss_access";
+            };
             ${webProxy}.services.nginx = genNginx serviceAddress "";
             ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
           };

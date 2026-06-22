@@ -1,5 +1,12 @@
 {
-  flake.modules.homeManager.gammastep = { lib, config, confLib, nixosConfig ? null, ... }:
+  flake.modules.homeManager.gammastep =
+    {
+      lib,
+      config,
+      confLib,
+      nixosConfig ? null,
+      ...
+    }:
     let
       inherit (confLib.getConfig.repo.secrets.common.location) latitude longitude;
     in

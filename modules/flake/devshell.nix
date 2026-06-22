@@ -1,17 +1,28 @@
-{ self, inputs, lib, ... }:
+{
+  self,
+  inputs,
+  lib,
+  ...
+}:
 {
   flake-file.inputs = {
     devshell.url = "github:numtide/devshell";
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
   };
 }
-  // lib.optionalAttrs (inputs ? devshell && inputs ? pre-commit-hooks) {
+// lib.optionalAttrs (inputs ? devshell && inputs ? pre-commit-hooks) {
   imports = [
     inputs.devshell.flakeModule
     inputs.pre-commit-hooks.flakeModule
   ];
 
-  perSystem = { pkgs, config, system, ... }:
+  perSystem =
+    {
+      pkgs,
+      config,
+      system,
+      ...
+    }:
     {
       pre-commit = {
         check.enable = true;
@@ -60,7 +71,9 @@
           in
           {
             packages = [
-              (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.stable25_05.nixVersions."nix_${nix-version}")
+              (builtins.trace "alarm: pinned nix_${nix-version}"
+                pkgs.stable25_05.nixVersions."nix_${nix-version}"
+              )
               pkgs.git
               pkgs.just
               pkgs.age
@@ -70,19 +83,23 @@
               self.packages.${system}.swarsel-bootstrap
             ];
 
-            env =
-              [
-                {
-                  name = "NIX_CONFIG";
-                  value = ''
-                    plugin-files = ${pkgs.stable25_05.nix-plugins.overrideAttrs (o: {
-                      buildInputs = [pkgs.stable25_05.nixVersions."nix_${nix-version}" pkgs.stable25_05.boost];
-                      patches = (o.patches or []) ++ [(self + /files/patches/nix-plugins.patch)];
-                    })}/lib/nix/plugins
-                    extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
-                  '';
-                }
-              ];
+            env = [
+              {
+                name = "NIX_CONFIG";
+                value = ''
+                  plugin-files = ${
+                    pkgs.stable25_05.nix-plugins.overrideAttrs (o: {
+                      buildInputs = [
+                        pkgs.stable25_05.nixVersions."nix_${nix-version}"
+                        pkgs.stable25_05.boost
+                      ];
+                      patches = (o.patches or [ ]) ++ [ (self + /files/patches/nix-plugins.patch) ];
+                    })
+                  }/lib/nix/plugins
+                  extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
+                '';
+              }
+            ];
           };
 
         hooks.devshell.startup.pre-commit.text = config.pre-commit.installationScript;

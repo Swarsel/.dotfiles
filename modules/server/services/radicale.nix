@@ -1,9 +1,34 @@
 {
   flake.modules.nixos.radicale =
-    { lib, config, confLib, ... }:
+    {
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "radicale";
+          port = 8000;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        homeServiceAddress
+        nginxAccessRules
+        ;
       inherit (config.swarselsystems) sopsFile;
 
       cfg = config.services.${serviceName};
@@ -13,7 +38,12 @@
         swarselsystems.enabledServerModules = [ "radicale" ];
 
         sops = {
-          secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          secrets.radicale-user = {
+            inherit sopsFile;
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
 
           templates =
             let
@@ -38,13 +68,32 @@
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+          ];
         };
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Radicale Web Interface"; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Radicale Web Interface";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -57,12 +106,11 @@
                 "[::]:${builtins.toString servicePort}"
               ];
             };
-            auth =
-              {
-                type = "htpasswd";
-                htpasswd_filename = config.sops.templates.radicale-users.path;
-                htpasswd_encryption = "autodetect";
-              };
+            auth = {
+              type = "htpasswd";
+              htpasswd_filename = config.sops.templates.radicale-users.path;
+              htpasswd_encryption = "autodetect";
+            };
             storage = {
               filesystem_folder = "/var/lib/radicale/collections";
             };
@@ -101,8 +149,25 @@
 
         nodes = {
           ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-          ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName; maxBody = 16; maxBodyUnit = "M"; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName; maxBody = 16; maxBodyUnit = "M"; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+          ${webProxy}.services.nginx = confLib.genNginx {
+            inherit
+              serviceAddress
+              servicePort
+              serviceDomain
+              serviceName
+              ;
+            maxBody = 16;
+            maxBodyUnit = "M";
+          };
+          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+            confLib.genNginx {
+              inherit servicePort serviceDomain serviceName;
+              maxBody = 16;
+              maxBodyUnit = "M";
+              extraConfig = nginxAccessRules;
+              serviceAddress = homeServiceAddress;
+            }
+          );
         };
 
       };

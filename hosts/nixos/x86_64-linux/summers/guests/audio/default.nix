@@ -1,4 +1,10 @@
-{ self, lib, pkgs, minimal, ... }:
+{
+  self,
+  lib,
+  pkgs,
+  minimal,
+  ...
+}:
 {
   imports = [
     self.modules.nixos.profile-microvm
@@ -13,19 +19,27 @@
     proxyHost = "twothreetunnel";
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 1024 * 4;
     vcpu = 2;
     qemu.machine = "q35";
     devices = [
-      { bus = "pci"; path = "0000:04:04.0"; }
+      {
+        bus = "pci";
+        path = "0000:04:04.0";
+      }
     ];
   };
 
   environment.persistence."/state".directories = [
-    { directory = "/var/lib/alsa"; user = "root"; group = "root"; }
+    {
+      directory = "/var/lib/alsa";
+      user = "root";
+      group = "root";
+    }
   ];
 
   systemd.services.audio-mixer-init = {

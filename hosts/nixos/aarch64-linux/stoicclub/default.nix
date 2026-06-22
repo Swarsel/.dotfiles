@@ -1,4 +1,9 @@
-{ self, lib, minimal, ... }:
+{
+  self,
+  lib,
+  minimal,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
@@ -6,7 +11,8 @@
 
     self.modules.nixos.systemd-networkd-server
     self.modules.nixos.nix-topology-self
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.nsd
   ];
@@ -30,7 +36,8 @@
     isBastionTarget = true;
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   networking.nftables.firewall.zones.untrusted.interfaces = [ "lan" ];
 }

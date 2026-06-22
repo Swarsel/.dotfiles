@@ -1,6 +1,12 @@
 {
   flake.modules.nixos.ssh-builder =
-    { self, pkgs, config, confLib, ... }:
+    {
+      self,
+      pkgs,
+      config,
+      confLib,
+      ...
+    }:
     let
       ssh-restrict = "restrict,pty,command=\"${wrapper-dispatch-ssh-nix}/bin/wrapper-dispatch-ssh-nix\" ";
 
@@ -29,7 +35,7 @@
             isSystemUser = true;
             group = "builder";
             openssh.authorizedKeys.keys = [
-              ''${ssh-restrict} ${builtins.readFile "${self}/files/public/ssh/builder.pub"}''
+              "${ssh-restrict} ${builtins.readFile "${self}/files/public/ssh/builder.pub"}"
             ];
           };
         };

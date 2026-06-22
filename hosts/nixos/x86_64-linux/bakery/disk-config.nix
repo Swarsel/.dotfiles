@@ -1,7 +1,16 @@
-{ lib, pkgs, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 let
   type = "btrfs";
-  extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+  extraArgs = [
+    "-L"
+    "nixos"
+    "-f"
+  ]; # force overwrite
   subvolumes = {
     "/root" = {
       mountpoint = "/";

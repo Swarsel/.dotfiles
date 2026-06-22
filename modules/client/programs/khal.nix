@@ -1,5 +1,6 @@
 {
-  flake.modules.homeManager.khal = { pkgs, ... }:
+  flake.modules.homeManager.khal =
+    { pkgs, ... }:
     let
       moduleName = "khal";
     in

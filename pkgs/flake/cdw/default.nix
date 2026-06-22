@@ -1,4 +1,9 @@
-{ name, writeShellApplication, fzf, ... }:
+{
+  name,
+  writeShellApplication,
+  fzf,
+  ...
+}:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ fzf ];

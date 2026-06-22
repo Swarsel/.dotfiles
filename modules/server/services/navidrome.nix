@@ -1,9 +1,37 @@
 {
   flake.modules.nixos.navidrome =
-    { self, pkgs, config, lib, globals, confLib, ... }:
+    {
+      self,
+      pkgs,
+      config,
+      lib,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress proxyAddress4 proxyAddress6;
-      inherit (confLib.static) isHome webProxy homeWebProxy idmServer nginxAccessRules homeServiceAddress;
+      inherit
+        (confLib.gen {
+          name = "navidrome";
+          port = 4040;
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceGroup
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        idmServer
+        nginxAccessRules
+        homeServiceAddress
+        ;
     in
     {
       imports = [
@@ -12,7 +40,6 @@
 
       config = {
         swarselsystems.enabledServerModules = [ "navidrome" ];
-
 
         environment.systemPackages = with pkgs; [
           pciutils
@@ -34,7 +61,12 @@
               isSystemUser = true;
               uid = 61593;
               group = serviceGroup;
-              extraGroups = [ "audio" "utmp" "users" "pipewire" ];
+              extraGroups = [
+                "audio"
+                "utmp"
+                "users"
+                "pipewire"
+              ];
             };
           };
         };
@@ -45,8 +77,22 @@
 
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; path = "/ping"; expectedBodyRegex = ''^\.$''; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            path = "/ping";
+            expectedBodyRegex = ''^\.$'';
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
@@ -80,7 +126,13 @@
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; user = serviceUser; group = serviceGroup; }];
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              user = serviceUser;
+              group = serviceGroup;
+            }
+          ];
         };
 
         services.${serviceName} = {
@@ -104,7 +156,10 @@
               Default = "default";
               Devices = [
                 # use mpv --audio-device=help to get these
-                [ "default" "pipewire" ]
+                [
+                  "default"
+                  "pipewire"
+                ]
               ];
             };
             LastFM = {
@@ -118,7 +173,6 @@
             EnableInsightsCollector = false;
           };
         };
-
 
         nodes =
           let

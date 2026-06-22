@@ -1,5 +1,6 @@
 {
-  flake.modules.nixos.firezone-client = { config, confLib, ... }:
+  flake.modules.nixos.firezone-client =
+    { config, confLib, ... }:
     let
       inherit (config.swarselsystems) mainUser;
     in

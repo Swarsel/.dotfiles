@@ -1,7 +1,17 @@
 {
-  flake.modules.homeManager.emacs-init = { pkgs, inputs, config, ... }:
+  flake.modules.homeManager.emacs-init =
+    {
+      pkgs,
+      inputs,
+      config,
+      ...
+    }:
     let
-      calfw = _: (inputs.nixpkgs-dev.legacyPackages.${pkgs.stdenv.hostPlatform.system}.emacsPackagesFor config.programs.emacs.package).calfw;
+      calfw =
+        _:
+        (inputs.nixpkgs-dev.legacyPackages.${pkgs.stdenv.hostPlatform.system}.emacsPackagesFor
+          config.programs.emacs.package
+        ).calfw;
     in
     {
       config.programs.emacs.init.usePackage = {

@@ -1,4 +1,9 @@
-{ self, lib, config, ... }:
+{
+  self,
+  lib,
+  config,
+  ...
+}:
 let
   inherit (config.repo.secrets.local) workUser;
 in

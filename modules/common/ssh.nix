@@ -1,6 +1,14 @@
 {
   flake.modules = {
-    nixos.ssh = { self, lib, config, withHomeManager, confLib, ... }:
+    nixos.ssh =
+      {
+        self,
+        lib,
+        config,
+        withHomeManager,
+        confLib,
+        ...
+      }:
       {
         config = {
           swarselsystems.enabledServerModules = [ "ssh" ];
@@ -46,37 +54,50 @@
         };
       };
 
-    homeManager.ssh = { lib, config, confLib, nixosConfig ? null, ... }: {
-      config = {
-        swarselsystems.enabledHomeModules = [ "ssh" ];
-        programs.ssh = {
-          enable = true;
-          enableDefaultConfig = false;
-          includes = [ "~/.ssh/extra/*" ];
-          extraConfig = ''
-            SetEnv TERM=xterm-256color
-            ServerAliveInterval 20
-          '';
-          settings = {
-            "*" = {
-              forwardAgent = false;
-              addKeysToAgent = "no";
-              compression = false;
-              serverAliveInterval = 0;
-              serverAliveCountMax = 3;
-              hashKnownHosts = false;
-              userKnownHostsFile = "~/.ssh/known_hosts";
-              controlMaster = "no";
-              controlPath = "~/.ssh/master-%r@%n:%p";
-              controlPersist = "no";
+    homeManager.ssh =
+      {
+        lib,
+        config,
+        confLib,
+        nixosConfig ? null,
+        ...
+      }:
+      {
+        config = {
+          swarselsystems.enabledHomeModules = [ "ssh" ];
+          programs.ssh = {
+            enable = true;
+            enableDefaultConfig = false;
+            includes = [ "~/.ssh/extra/*" ];
+            extraConfig = ''
+              SetEnv TERM=xterm-256color
+              ServerAliveInterval 20
+            '';
+            settings = {
+              "*" = {
+                forwardAgent = false;
+                addKeysToAgent = "no";
+                compression = false;
+                serverAliveInterval = 0;
+                serverAliveCountMax = 3;
+                hashKnownHosts = false;
+                userKnownHostsFile = "~/.ssh/known_hosts";
+                controlMaster = "no";
+                controlPath = "~/.ssh/master-%r@%n:%p";
+                controlPersist = "no";
+              };
+            }
+            // confLib.getConfig.repo.secrets.common.ssh.hosts;
+          };
+        }
+        // lib.optionalAttrs (nixosConfig == null) {
+          sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+            builder-key = {
+              path = "${config.home.homeDirectory}/.ssh/builder";
+              mode = "0600";
             };
-          } // confLib.getConfig.repo.secrets.common.ssh.hosts;
-        };
-      } // lib.optionalAttrs (nixosConfig == null) {
-        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-          builder-key = { path = "${config.home.homeDirectory}/.ssh/builder"; mode = "0600"; };
+          };
         };
       };
-    };
   };
 }

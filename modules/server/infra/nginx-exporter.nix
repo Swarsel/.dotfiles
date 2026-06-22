@@ -1,9 +1,20 @@
 {
   flake.modules.nixos.nginx-exporter =
-    { lib, config, confLib, ... }:
+    {
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "nginx-exporter"; port = 9113; })
-        servicePort serviceName;
+      inherit
+        (confLib.gen {
+          name = "nginx-exporter";
+          port = 9113;
+        })
+        servicePort
+        serviceName
+        ;
     in
     {
       config = {
@@ -28,13 +39,15 @@
           port = servicePort;
         };
 
-        environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (lib.mkAfter ''
-          prometheus.scrape "nginx" {
-            targets    = [{"__address__" = "127.0.0.1:${toString servicePort}"}]
-            forward_to = [prometheus.remote_write.mimir.receiver]
-            job_name   = "nginx"
-          }
-        '');
+        environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
+          lib.mkAfter ''
+            prometheus.scrape "nginx" {
+              targets    = [{"__address__" = "127.0.0.1:${toString servicePort}"}]
+              forward_to = [prometheus.remote_write.mimir.receiver]
+              job_name   = "nginx"
+            }
+          ''
+        );
       };
     }
 

@@ -9,8 +9,7 @@
         mini-modeline-truncate-p = false;
         mini-modeline-l-format = false;
         mini-modeline-right-padding = 5;
-        mini-modeline-r-format = ''
-          '("%e" mode-line-front-space mode-line-mule-info mode-line-client mode-line-modified mode-line-remote mode-line-frame-identification mode-line-buffer-identification " " mode-line-position " " mode-name evil-mode-line-tag)'';
+        mini-modeline-r-format = '''("%e" mode-line-front-space mode-line-mule-info mode-line-client mode-line-modified mode-line-remote mode-line-frame-identification mode-line-buffer-identification " " mode-line-position " " mode-name evil-mode-line-tag)'';
       };
       config = ''
         (mini-modeline-mode t)

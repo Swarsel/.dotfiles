@@ -1,4 +1,9 @@
-{ self, lib, minimal, ... }:
+{
+  self,
+  lib,
+  minimal,
+  ...
+}:
 {
   imports = [
     self.modules.nixos.profile-microvm
@@ -17,7 +22,8 @@
     nodeRoles = [ "monitoringServer" ];
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 1024 * 24;

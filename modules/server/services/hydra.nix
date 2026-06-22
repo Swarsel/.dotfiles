@@ -14,10 +14,37 @@
     { inputs, lib, ... }:
     {
       imports = lib.optionals (inputs ? hydra) [
-        ({ inputs, lib, config, globals, confLib, ... }:
+        (
+          {
+            inputs,
+            lib,
+            config,
+            globals,
+            confLib,
+            ...
+          }:
           let
-            inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain proxyAddress4 proxyAddress6;
-            inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+            inherit
+              (confLib.gen {
+                name = "hydra";
+                port = 8002;
+              })
+              serviceName
+              servicePort
+              serviceUser
+              serviceGroup
+              serviceAddress
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              ;
+            inherit (confLib.static)
+              isHome
+              webProxy
+              homeWebProxy
+              homeServiceAddress
+              nginxAccessRules
+              ;
             inherit (config.swarselsystems) sopsFile;
           in
           {
@@ -27,15 +54,32 @@
 
             globals = {
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-              services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
+              services = confLib.mkServiceGlobal {
+                inherit
+                  serviceName
+                  serviceDomain
+                  proxyAddress4
+                  proxyAddress6
+                  isHome
+                  serviceAddress
+                  homeServiceAddress
+                  ;
+              };
               monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
               dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
             };
 
             sops = {
               secrets = {
-                nixbuild-net-key = { mode = "0600"; };
-                hydra-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+                nixbuild-net-key = {
+                  mode = "0600";
+                };
+                hydra-pw = {
+                  inherit sopsFile;
+                  owner = serviceUser;
+                  group = serviceGroup;
+                  mode = "0440";
+                };
               };
               templates = {
                 "hydra-env" = {
@@ -102,7 +146,12 @@
                   hostName = "localhost";
                   protocol = null;
                   system = config.node.arch;
-                  supportedFeatures = [ "kvm" "nixos-test" "big-parallel" "benchmark" ];
+                  supportedFeatures = [
+                    "kvm"
+                    "nixos-test"
+                    "big-parallel"
+                    "benchmark"
+                  ];
                   maxJobs = 4;
                 }
               ];
@@ -123,10 +172,32 @@
                 '';
               in
               {
-                ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-                ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+                ${webProxy}.services.nginx = confLib.genNginx {
+                  inherit
+                    serviceAddress
+                    servicePort
+                    serviceDomain
+                    serviceName
+                    extraConfigLoc
+                    ;
+                  maxBody = 0;
+                };
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit
+                      servicePort
+                      serviceDomain
+                      serviceName
+                      extraConfigLoc
+                      ;
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
               };
-          })
+          }
+        )
       ];
     };
 }

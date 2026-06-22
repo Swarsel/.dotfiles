@@ -1,4 +1,10 @@
-{ self, config, lib, minimal, ... }:
+{
+  self,
+  config,
+  lib,
+  minimal,
+  ...
+}:
 {
   imports = [
     ./hardware-configuration.nix
@@ -6,7 +12,8 @@
 
     self.modules.nixos.systemd-networkd-server
     self.modules.nixos.nix-topology-self
-  ] ++ lib.optionals (!minimal) [
+  ]
+  ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.nginx
     self.modules.nixos.nginx-exporter
@@ -57,7 +64,10 @@
   };
 
   swarselsystems = {
-    nodeRoles = [ "webProxy" "oauthServer" ];
+    nodeRoles = [
+      "webProxy"
+      "oauthServer"
+    ];
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 2 vCPUs, 8GB RAM";
     isImpermanence = true;
@@ -69,7 +79,8 @@
     isLinux = true;
     isCloud = true;
   };
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   networking.nftables = {
     firewall.zones.untrusted.interfaces = [ "lan" ];

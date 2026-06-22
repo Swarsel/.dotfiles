@@ -4,16 +4,25 @@ let
 in
 {
   flake.modules = {
-    nixos.uni = { lib, config, withHomeManager, ... }: {
-      config = { } // lib.optionalAttrs withHomeManager {
+    nixos.uni =
+      {
+        lib,
+        config,
+        withHomeManager,
+        ...
+      }:
+      {
+        config =
+          { }
+          // lib.optionalAttrs withHomeManager {
 
-        home-manager.users."${config.swarselsystems.mainUser}" = {
-          imports = [
-            fmods.homeManager.work
-          ];
-        };
+            home-manager.users."${config.swarselsystems.mainUser}" = {
+              imports = [
+                fmods.homeManager.work
+              ];
+            };
+          };
       };
-    };
 
     homeManager.uni = { confLib, ... }: {
       config = {

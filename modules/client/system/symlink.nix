@@ -16,7 +16,8 @@
 
       xdg.configFile = {
         "tridactyl/tridactylrc".source = self + /files/firefox/tridactyl/tridactylrc;
-        "tridactyl/themes/base16-codeschool.css".source = self + /files/firefox/tridactyl/themes/base16-codeschool.css;
+        "tridactyl/themes/base16-codeschool.css".source =
+          self + /files/firefox/tridactyl/themes/base16-codeschool.css;
         "tridactyl/themes/swarsel.css".source = self + /files/firefox/tridactyl/themes/swarsel.css;
       };
     };

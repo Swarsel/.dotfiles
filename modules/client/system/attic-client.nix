@@ -1,5 +1,11 @@
 {
-  flake.modules.homeManager.attic-client = { config, globals, confLib, ... }:
+  flake.modules.homeManager.attic-client =
+    {
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) mainUser;
     in

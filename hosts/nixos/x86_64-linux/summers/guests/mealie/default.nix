@@ -1,4 +1,9 @@
-{ self, lib, minimal, ... }:
+{
+  self,
+  lib,
+  minimal,
+  ...
+}:
 {
   imports = [
     self.modules.nixos.profile-microvm
@@ -11,7 +16,8 @@
     proxyHost = "twothreetunnel";
   };
 
-} // lib.optionalAttrs (!minimal) {
+}
+// lib.optionalAttrs (!minimal) {
 
   microvm = {
     mem = 1024 * 1;

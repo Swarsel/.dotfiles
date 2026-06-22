@@ -1,10 +1,28 @@
 {
   flake.modules.nixos.alloy =
-    { lib, config, globals, confLib, ... }:
+    {
+      lib,
+      config,
+      globals,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "alloy"; port = 12345; })
-        servicePort serviceName;
-      inherit (confLib.static) isHome webProxy homeWebProxy inWgProxy inWgHome;
+      inherit
+        (confLib.gen {
+          name = "alloy";
+          port = 12345;
+        })
+        servicePort
+        serviceName
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        inWgProxy
+        inWgHome
+        ;
 
       otlpGrpcPort = 4317;
       otlpHttpPort = 4318;
@@ -34,36 +52,51 @@
             inherit otlpGrpcPort otlpHttpPort;
             clients.${config.node.name} = true;
           };
-          monitoring.hostNetworks.${config.node.name} = [ "local-${config.node.name}" ]
-            ++ lib.optional isHome "home-lan"
-            ++ lib.optional inWgHome "wgHome"
-            ++ lib.optional inWgProxy "wgProxy"
-            ++ lib.optional
-            (globals.hosts.${config.node.name}.wanAddress4 != null
-              || globals.hosts.${config.node.name}.wanAddress6 != null) "internet"
-            ++ lib.mapAttrsToList (vlan: _: "${vlan}-vlan")
-            (lib.filterAttrs
-              (_: vlan: vlan ? hosts && vlan.hosts ? "${config.node.name}")
-              (globals.networks.home-lan.vlans or { }));
+          monitoring.hostNetworks.${config.node.name} = [
+            "local-${config.node.name}"
+          ]
+          ++ lib.optional isHome "home-lan"
+          ++ lib.optional inWgHome "wgHome"
+          ++ lib.optional inWgProxy "wgProxy"
+          ++ lib.optional (
+            globals.hosts.${config.node.name}.wanAddress4 != null
+            || globals.hosts.${config.node.name}.wanAddress6 != null
+          ) "internet"
+          ++ lib.mapAttrsToList (vlan: _: "${vlan}-vlan") (
+            lib.filterAttrs (_: vlan: vlan ? hosts && vlan.hosts ? "${config.node.name}") (
+              globals.networks.home-lan.vlans or { }
+            )
+          );
         };
 
         networking.hosts =
           let
             proxyIp =
-              if isHome && inWgHome
-              then wgHomeHosts.${homeWebProxy}.ipv4
-              else if inWgProxy
-              then wgProxyHosts.${webProxy}.ipv4
-              else null;
+              if isHome && inWgHome then
+                wgHomeHosts.${homeWebProxy}.ipv4
+              else if inWgProxy then
+                wgProxyHosts.${webProxy}.ipv4
+              else
+                null;
           in
           lib.optionalAttrs (proxyIp != null) {
-            ${proxyIp} = [ mimirDomain lokiDomain tempoDomain pyroscopeDomain ];
+            ${proxyIp} = [
+              mimirDomain
+              lokiDomain
+              tempoDomain
+              pyroscopeDomain
+            ];
           };
 
         environment = {
           etc."alloy/config.alloy".text = config-alloy;
           persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-            directories = [{ directory = "/var/lib/private/alloy"; mode = "0700"; }];
+            directories = [
+              {
+                directory = "/var/lib/private/alloy";
+                mode = "0700";
+              }
+            ];
           };
         };
 

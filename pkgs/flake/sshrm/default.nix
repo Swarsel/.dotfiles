@@ -1,4 +1,9 @@
-{ name, writeShellApplication, openssh, ... }:
+{
+  name,
+  writeShellApplication,
+  openssh,
+  ...
+}:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ openssh ];

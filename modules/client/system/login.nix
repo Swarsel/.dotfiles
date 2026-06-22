@@ -4,27 +4,34 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  flake.modules.nixos.login = { inputs, config, confLib, ... }: {
-    imports = [ inputs.noctalia-greeter.nixosModules.default ];
+  flake.modules.nixos.login =
+    {
+      inputs,
+      config,
+      confLib,
+      ...
+    }:
+    {
+      imports = [ inputs.noctalia-greeter.nixosModules.default ];
 
-    config = {
+      config = {
 
-      users.persistentIds = {
-        greeter = confLib.mkIds 958;
+        users.persistentIds = {
+          greeter = confLib.mkIds 958;
+        };
+
+        environment = {
+          systemPackages = config.services.displayManager.sessionPackages;
+          pathsToLink = [ "/share/wayland-sessions" ];
+        };
+
+        programs.noctalia-greeter.enable = true;
+
+        services.greetd = {
+          enable = true;
+          settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";
+        };
+
       };
-
-      environment = {
-        systemPackages = config.services.displayManager.sessionPackages;
-        pathsToLink = [ "/share/wayland-sessions" ];
-      };
-
-      programs.noctalia-greeter.enable = true;
-
-      services.greetd = {
-        enable = true;
-        settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";
-      };
-
     };
-  };
 }

@@ -1,9 +1,14 @@
-{ config, lib, pkgs, modulesPath, ... }:
 {
-  imports =
-    [
-      (modulesPath + "/installer/scan/not-detected.nix")
-    ];
+  config,
+  lib,
+  pkgs,
+  modulesPath,
+  ...
+}:
+{
+  imports = [
+    (modulesPath + "/installer/scan/not-detected.nix")
+  ];
 
   # Fix Wlan after suspend or Hibernate
   # environment.etc."systemd/system-sleep/fix-wifi.sh".source =
@@ -51,7 +56,10 @@
       };
     };
 
-    kernelModules = [ "amdgpu" "kvm-amd" ];
+    kernelModules = [
+      "amdgpu"
+      "kvm-amd"
+    ];
     kernelParams = [
       # deep sleep is discontinued by amd
       # "mem_sleep_default=deep"

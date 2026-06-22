@@ -1,9 +1,17 @@
 {
   flake-file.inputs.impermanence.url = "github:nix-community/impermanence";
 
-  flake.modules.nixos.impermanence = { inputs, config, lib, ... }:
+  flake.modules.nixos.impermanence =
+    {
+      inputs,
+      config,
+      lib,
+      ...
+    }:
     let
-      mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+      mapperTarget =
+        lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot"
+          "/dev/disk/by-label/nixos";
       inherit (config.swarselsystems) isImpermanence isCrypted isBtrfs;
     in
     {
@@ -25,7 +33,10 @@
           wantedBy = [ "initrd.target" ];
           # make sure it's done after encryption
           # i.e. LUKS/TPM process
-          after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+          after =
+            lib.swarselsystems.mkIfElseList isCrypted
+              [ "systemd-cryptsetup@cryptroot.service" ]
+              [ "dev-disk-by\\x2dlabel-nixos.device" ];
           requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
           # mount the root fs before clearing
           before = [ "sysroot.mount" ];
@@ -68,22 +79,20 @@
         };
       };
 
-
       environment.persistence."/persist" = lib.mkIf isImpermanence {
         hideMounts = true;
-        directories =
-          [
-            "/root/.dotfiles"
-            "/etc/nix"
-            "/etc/NetworkManager/system-connections"
-            "/var/lib/nixos"
-            "/var/tmp"
-            {
-              directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
-              mode = "1777";
-            }
-            # "/etc/secureboot"
-          ];
+        directories = [
+          "/root/.dotfiles"
+          "/etc/nix"
+          "/etc/NetworkManager/system-connections"
+          "/var/lib/nixos"
+          "/var/tmp"
+          {
+            directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
+            mode = "1777";
+          }
+          # "/etc/secureboot"
+        ];
 
         files = [
           "/etc/ssh/ssh_host_ed25519_key"

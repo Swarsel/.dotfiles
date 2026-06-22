@@ -1,5 +1,6 @@
 {
-  flake.modules.nixos.autologin = { config, ... }:
+  flake.modules.nixos.autologin =
+    { config, ... }:
     let
       inherit (config.swarselsystems) mainUser;
     in

@@ -1,6 +1,13 @@
 {
   flake.modules.nixos.nfs =
-    { lib, config, pkgs, globals, confLib, ... }:
+    {
+      lib,
+      config,
+      pkgs,
+      globals,
+      confLib,
+      ...
+    }:
     let
       nfsUser = globals.user.name;
       inherit (config.swarselsystems) sopsFile;
@@ -13,7 +20,10 @@
           avahi = confLib.mkIds 978;
         };
 
-        sops.secrets.samba-user-pw = { inherit sopsFile; mode = "0400"; };
+        sops.secrets.samba-user-pw = {
+          inherit sopsFile;
+          mode = "0400";
+        };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
@@ -27,7 +37,11 @@
           after = [ "samba-smbd.service" ];
           wantedBy = [ "samba-smbd.service" ];
           partOf = [ "samba-smbd.service" ];
-          path = with pkgs; [ samba4 coreutils gnugrep ];
+          path = with pkgs; [
+            samba4
+            coreutils
+            gnugrep
+          ];
           serviceConfig.Type = "oneshot";
           script = ''
             if pdbedit -L 2>/dev/null | grep -q '^${nfsUser}:'; then

@@ -1,19 +1,26 @@
-{ self, inputs, lib, ... }:
+{
+  self,
+  inputs,
+  lib,
+  ...
+}:
 {
   flake-file.inputs.nix-topology.url = "github:oddlama/nix-topology";
 }
-  // lib.optionalAttrs (inputs ? nix-topology) {
+// lib.optionalAttrs (inputs ? nix-topology) {
   imports = [
     inputs.nix-topology.flakeModule
   ];
 
-  perSystem = { system, ... }:
+  perSystem =
+    { system, ... }:
     let
       inherit (self.outputs) lib;
     in
     {
       topology.modules = [
-        ({ config, ... }:
+        (
+          { config, ... }:
           let
             globals = self.outputs.globals.${system};
             inherit (config.lib.topology)
@@ -73,7 +80,6 @@
                   (mkConnection "hotel" "demo host")
                 ];
               };
-
 
               fritzbox = mkRouter "FRITZ!Box" {
                 info = "FRITZ!Box 7682";
@@ -136,19 +142,41 @@
                   # trunk
                   [ "eth1" ]
                   # devices
-                  [ "eth2" "eth5" "eth6" ]
+                  [
+                    "eth2"
+                    "eth5"
+                    "eth6"
+                  ]
                   # home
-                  [ "eth3" "eth8" ]
+                  [
+                    "eth3"
+                    "eth8"
+                  ]
                   # guests
-                  [ "eth4" "eth7" ]
+                  [
+                    "eth4"
+                    "eth7"
+                  ]
                 ];
                 interfaces = {
-                  eth2 = { network = lib.mkForce "devices"; };
-                  eth3 = { network = lib.mkForce "home"; };
-                  eth5 = { network = lib.mkForce "devices"; };
-                  eth6 = { network = lib.mkForce "devices"; };
-                  eth7 = { network = lib.mkForce "guests"; };
-                  eth8 = { network = lib.mkForce "home"; };
+                  eth2 = {
+                    network = lib.mkForce "devices";
+                  };
+                  eth3 = {
+                    network = lib.mkForce "home";
+                  };
+                  eth5 = {
+                    network = lib.mkForce "devices";
+                  };
+                  eth6 = {
+                    network = lib.mkForce "devices";
+                  };
+                  eth7 = {
+                    network = lib.mkForce "guests";
+                  };
+                  eth8 = {
+                    network = lib.mkForce "home";
+                  };
                 };
                 connections = {
                   eth2 = mkConnection "nswitch" "eth1";
@@ -169,11 +197,22 @@
                   # devices
                   [ "eth2" ]
                   # guests
-                  [ "eth3" "eth4" "eth5" "eth6" "eth7" "eth8" ]
+                  [
+                    "eth3"
+                    "eth4"
+                    "eth5"
+                    "eth6"
+                    "eth7"
+                    "eth8"
+                  ]
                 ];
                 interfaces = {
-                  eth2 = { network = lib.mkForce "devices"; };
-                  eth3 = { network = lib.mkForce "guests"; };
+                  eth2 = {
+                    network = lib.mkForce "devices";
+                  };
+                  eth3 = {
+                    network = lib.mkForce "guests";
+                  };
                 };
                 connections = {
                   eth2 = mkConnection "printer" "eth1";
@@ -271,8 +310,8 @@
 
             };
 
-          })
-
+          }
+        )
 
       ];
     };

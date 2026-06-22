@@ -1,11 +1,26 @@
 {
   flake.modules = {
-    nixos.network = { self, lib, pkgs, config, confLib, ... }:
+    nixos.network =
+      {
+        self,
+        lib,
+        pkgs,
+        config,
+        confLib,
+        ...
+      }:
       let
         certsSopsFile = self + /secrets/repo/certs.yaml;
         clientSopsFile = config.node.secretsDir + "/secrets.yaml";
 
-        inherit (config.repo.secrets.common.network) wlan1 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
+        inherit (config.repo.secrets.common.network)
+          wlan1
+          mobile1
+          vpn1-location
+          vpn1-cipher
+          vpn1-address
+          eduroam-anon
+          ;
 
         iwd = config.networking.networkmanager.wifi.backend == "iwd";
       in
@@ -28,11 +43,17 @@
               eduroam-pw = { };
               pia-vpn-user = { };
               pia-vpn-pw = { };
-              home-wireguard-client-private-key = { sopsFile = clientSopsFile; };
+              home-wireguard-client-private-key = {
+                sopsFile = clientSopsFile;
+              };
               home-wireguard-server-public-key = { };
               home-wireguard-endpoint = { };
-              pia-vpn1-crl-pem = { sopsFile = certsSopsFile; };
-              pia-vpn1-ca-pem = { sopsFile = certsSopsFile; };
+              pia-vpn1-crl-pem = {
+                sopsFile = certsSopsFile;
+              };
+              pia-vpn1-ca-pem = {
+                sopsFile = certsSopsFile;
+              };
             };
             templates = lib.mkIf (!config.swarselsystems.isPublic) {
               "network-manager.env".content = ''
@@ -77,13 +98,18 @@
               checkReversePath = lib.mkDefault false;
               allowedUDPPorts = [ 51820 ]; # 51820: wireguard
               allowedTCPPortRanges = [
-                { from = 1714; to = 1764; } # kde-connect
+                {
+                  from = 1714;
+                  to = 1764;
+                } # kde-connect
               ];
               allowedUDPPortRanges = [
-                { from = 1714; to = 1764; } # kde-connect
+                {
+                  from = 1714;
+                  to = 1764;
+                } # kde-connect
               ];
             };
-
 
             networkmanager = {
               enable = true;
@@ -143,7 +169,9 @@
                         auto-negotiate = "true";
                         cloned-mac-address = "preserve";
                       };
-                      ipv4 = { method = "shared"; };
+                      ipv4 = {
+                        method = "shared";
+                      };
                       ipv6 = {
                         addr-gen-mode = "stable-privacy";
                         method = "auto";
@@ -163,7 +191,9 @@
                         id = "eduroam";
                         type = "wifi";
                       };
-                      ipv4 = { method = "auto"; };
+                      ipv4 = {
+                        method = "auto";
+                      };
                       ipv6 = {
                         addr-gen-mode = "default";
                         method = "auto";
@@ -203,7 +233,9 @@
                         type = "wifi";
                         autoconnect-priority = "500";
                       };
-                      ipv4 = { method = "auto"; };
+                      ipv4 = {
+                        method = "auto";
+                      };
                       ipv6 = {
                         addr-gen-mode = "default";
                         method = "auto";
@@ -227,7 +259,9 @@
                         autoconnect = "false";
                         interface-name = "wg1";
                       };
-                      wireguard = { private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY"; };
+                      wireguard = {
+                        private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY";
+                      };
                       "wireguard-peer.$HOME_WIREGURARD_SERVER_PUBLIC_KEY" = {
                         endpoint = "$HOME_WIREGUARD_ENDPOINT";
                         allowed-ips = home-wireguard-allowed-ips;
@@ -249,7 +283,9 @@
                         id = "PIA ${vpn1-location}";
                         type = "vpn";
                       };
-                      ipv4 = { method = "auto"; };
+                      ipv4 = {
+                        method = "auto";
+                      };
                       ipv6 = {
                         addr-gen-mode = "stable-privacy";
                         method = "auto";
@@ -271,7 +307,9 @@
                         service-type = "org.freedesktop.NetworkManager.openvpn";
                         username = "$PIA_VPN_USER";
                       };
-                      vpn-secrets = { password = "$PIA_VPN_PW"; };
+                      vpn-secrets = {
+                        password = "$PIA_VPN_PW";
+                      };
                     };
 
                     Hotspot = {
@@ -280,7 +318,9 @@
                         id = "Hotspot";
                         type = "wifi";
                       };
-                      ipv4 = { method = "shared"; };
+                      ipv4 = {
+                        method = "shared";
+                      };
                       ipv6 = {
                         addr-gen-mode = "default";
                         method = "ignore";

@@ -4,12 +4,19 @@
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
     {
 
       lib.latexmk = import ./build-document.nix;
 
-    } // flake-utils.lib.eachDefaultSystem (system:
+    }
+    // flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pname = "document";
 
@@ -56,7 +63,10 @@
       in
       rec {
         devShell = pkgs.mkShell {
-          buildInputs = [ latex-packages dev-packages ];
+          buildInputs = [
+            latex-packages
+            dev-packages
+          ];
         };
 
         formatter = pkgs.nixfmt;
@@ -72,7 +82,10 @@
           };
         };
 
-        apps.default = flake-utils.lib.mkApp { drv = "${pkgs.texlivePackages.latexmk}"; exePath = "/bin/latexmk"; };
+        apps.default = flake-utils.lib.mkApp {
+          drv = "${pkgs.texlivePackages.latexmk}";
+          exePath = "/bin/latexmk";
+        };
       }
     );
 }

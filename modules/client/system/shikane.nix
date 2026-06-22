@@ -1,78 +1,88 @@
 {
-  flake.modules.homeManager.shikane = { lib, config, confLib, ... }: {
-    config = {
-      swarselsystems.enabledHomeModules = [ "shikane" ];
+  flake.modules.homeManager.shikane =
+    {
+      lib,
+      config,
+      confLib,
+      ...
+    }:
+    {
+      config = {
+        swarselsystems.enabledHomeModules = [ "shikane" ];
 
-      systemd.user.services.shikane = lib.mkIf (builtins.elem "optional-noctalia" config.swarselsystems.enabledHomeModules && config.swarselsystems.noctalia-systemd) (confLib.overrideTarget "noctalia-shell.target");
-      services.shikane = {
-        enable = true;
-        settings =
-          let
-            homeMonitor = [
-              "m=PHL BDM3270"
-              "s=AU11806002320"
-              "v=Philips Consumer Electronics Company"
-            ];
-            exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
-          in
-          {
-            profile = [
+        systemd.user.services.shikane = lib.mkIf (
+          builtins.elem "optional-noctalia" config.swarselsystems.enabledHomeModules
+          && config.swarselsystems.noctalia-systemd
+        ) (confLib.overrideTarget "noctalia-shell.target");
+        services.shikane = {
+          enable = true;
+          settings =
+            let
+              homeMonitor = [
+                "m=PHL BDM3270"
+                "s=AU11806002320"
+                "v=Philips Consumer Electronics Company"
+              ];
+              exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
+            in
+            {
+              profile = [
 
-              {
-                name = "internal-on";
-                inherit exec;
-                output = [
-                  {
-                    match = config.swarselsystems.sharescreen;
-                    enable = true;
-                    mode = "${config.swarselsystems.highResolution}@165.000";
-                    scale = 1.0;
-                  }
-                ];
-              }
+                {
+                  name = "internal-on";
+                  inherit exec;
+                  output = [
+                    {
+                      match = config.swarselsystems.sharescreen;
+                      enable = true;
+                      mode = "${config.swarselsystems.highResolution}@165.000";
+                      scale = 1.0;
+                    }
+                  ];
+                }
 
-              {
-                name = "home-internal-on";
-                inherit exec;
-                output = [
-                  {
-                    match = config.swarselsystems.sharescreen;
-                    enable = true;
-                    scale = 1.7;
-                    position = "2560,0";
-                  }
-                  {
-                    match = homeMonitor;
-                    enable = true;
-                    scale = 1.0;
-                    mode = "2560x1440";
-                    position = "0,0";
-                  }
-                ];
-              }
+                {
+                  name = "home-internal-on";
+                  inherit exec;
+                  output = [
+                    {
+                      match = config.swarselsystems.sharescreen;
+                      enable = true;
+                      scale = 1.7;
+                      position = "2560,0";
+                    }
+                    {
+                      match = homeMonitor;
+                      enable = true;
+                      scale = 1.0;
+                      mode = "2560x1440";
+                      position = "0,0";
+                    }
+                  ];
+                }
 
-              {
-                name = "home-internal-off";
-                inherit exec;
-                output = [
-                  {
-                    match = config.swarselsystems.sharescreen;
-                    enable = false;
-                    position = "2560,0";
-                  }
-                  {
-                    match = homeMonitor;
-                    scale = 1.0;
-                    enable = true;
-                    mode = "2560x1440";
-                    position = "0,0";
-                  }
-                ];
-              }
+                {
+                  name = "home-internal-off";
+                  inherit exec;
+                  output = [
+                    {
+                      match = config.swarselsystems.sharescreen;
+                      enable = false;
+                      position = "2560,0";
+                    }
+                    {
+                      match = homeMonitor;
+                      scale = 1.0;
+                      enable = true;
+                      mode = "2560x1440";
+                      position = "0,0";
+                    }
+                  ];
+                }
 
-            ];
-          };
+              ];
+            };
+        };
       };
     };
-  };
 }

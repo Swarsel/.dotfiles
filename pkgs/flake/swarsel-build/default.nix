@@ -1,4 +1,9 @@
-{ name, nix-output-monitor, writeShellApplication, ... }:
+{
+  name,
+  nix-output-monitor,
+  writeShellApplication,
+  ...
+}:
 writeShellApplication {
   runtimeInputs = [ nix-output-monitor ];
   inherit name;

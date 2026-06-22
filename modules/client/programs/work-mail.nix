@@ -1,5 +1,12 @@
 {
-  flake.modules.homeManager.work-mail = { config, pkgs, lib, confLib, ... }:
+  flake.modules.homeManager.work-mail =
+    {
+      config,
+      pkgs,
+      lib,
+      confLib,
+      ...
+    }:
     let
       inherit (config.swarselsystems) homeDir;
       inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;

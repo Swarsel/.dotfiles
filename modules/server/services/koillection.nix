@@ -1,9 +1,36 @@
 {
   flake.modules.nixos.koillection =
-    { self, lib, config, confLib, ... }:
+    {
+      self,
+      lib,
+      config,
+      confLib,
+      ...
+    }:
     let
-      inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/var/lib/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress proxyAddress4 proxyAddress6 topologyContainerName;
-      inherit (confLib.static) isHome webProxy homeWebProxy homeServiceAddress nginxAccessRules;
+      inherit
+        (confLib.gen {
+          name = "koillection";
+          port = 2282;
+          dir = "/var/lib/koillection";
+        })
+        servicePort
+        serviceName
+        serviceUser
+        serviceDir
+        serviceDomain
+        serviceAddress
+        proxyAddress4
+        proxyAddress6
+        topologyContainerName
+        ;
+      inherit (confLib.static)
+        isHome
+        webProxy
+        homeWebProxy
+        homeServiceAddress
+        nginxAccessRules
+        ;
       serviceDB = "koillection";
 
       postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
@@ -21,9 +48,13 @@
       config = {
         swarselsystems.enabledServerModules = [ "koillection" ];
 
-
         sops.secrets = {
-          koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
+          koillection-db-password = {
+            inherit sopsFile;
+            owner = postgresUser;
+            group = postgresUser;
+            mode = "0440";
+          };
           koillection-env-file = { inherit sopsFile; };
         };
 
@@ -34,14 +65,32 @@
         };
 
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort postgresPort ]; };
-          services = confLib.mkServiceGlobal { inherit serviceName serviceDomain proxyAddress4 proxyAddress6 isHome serviceAddress homeServiceAddress; };
-          monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; expectedBodyRegex = "Koillection"; };
+          networks = confLib.mkDualFirewallRules {
+            tcpPorts = [
+              servicePort
+              postgresPort
+            ];
+          };
+          services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              serviceDomain
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+          };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Koillection";
+          };
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [{ directory = "/var/lib/${serviceName}"; }];
+          directories = [ { directory = "/var/lib/${serviceName}"; } ];
         };
 
         virtualisation.oci-containers.containers = {
@@ -127,10 +176,30 @@
             '';
           in
           {
-            ${webProxy}.services.nginx = confLib.genNginx { inherit serviceAddress servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (confLib.genNginx { inherit servicePort serviceDomain serviceName extraConfigLoc; maxBody = 0; extraConfig = nginxAccessRules; serviceAddress = homeServiceAddress; });
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                extraConfigLoc
+                ;
+              maxBody = 0;
+            };
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  extraConfigLoc
+                  ;
+                maxBody = 0;
+                extraConfig = nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }
+            );
           };
-
 
       };
     }

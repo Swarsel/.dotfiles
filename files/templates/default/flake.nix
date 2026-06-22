@@ -7,9 +7,10 @@
   };
 
   outputs =
-    { nixpkgs
-    , systems
-    , ...
+    {
+      nixpkgs,
+      systems,
+      ...
     }:
     let
       forEachSystem = nixpkgs.lib.genAttrs (import systems);
