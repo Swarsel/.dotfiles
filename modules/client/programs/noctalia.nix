@@ -142,6 +142,7 @@ in
                   clipboard_enabled = true;
                   clipboard_auto_paste = "off";
                   avatar_path = "${self}/files/icons/swarsel.png";
+                  launch_apps_as_systemd_services = true;
                   settings_show_advanced = true;
                   animation = {
                     enabled = true;
