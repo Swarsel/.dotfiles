@@ -18,7 +18,7 @@
       nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
       nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
       nixpkgs-master.url = "github:nixos/nixpkgs/master";
-      nixpkgs-kernelpin.url = "github:nixos/nixpkgs/dd9b079222d43e1943b6ebd802f04fd959dc8e61?narHash=sha256-I45esRSssFtJ8p/gLHUZ1OUaaTaVLluNkABkk6arQwE%3D";
+      nixpkgs-kernelpin.url = "github:nixos/nixpkgs/567a49d1913ce81ac6e9582e3553dd90a955875f?narHash=sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H%2BCNW1Ck8B%2B8%3D";
       nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
       nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
