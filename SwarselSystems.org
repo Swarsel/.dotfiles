@@ -21988,9 +21988,16 @@ When setting up a new machine:
             nixpkgs.overlays = [
               (
                 final: prev:
-                lib.genAttrs [ "rustdesk-vbc" ] (
-                  name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}
-                )
+                lib.genAttrs [
+                  "rustdesk-vbc"
+                  "aap-mcp-server"
+                  "aci-mcp-server"
+                  "foreman-mcp-server"
+                  "infoblox-mcp-server"
+                  "netbox-mcp-server"
+                  "ontap-mcp"
+                  "palo-alto-mcp"
+                ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
               )
             ];
 
@@ -22291,6 +22298,7 @@ When setting up a new machine:
     flake.modules.homeManager.work-dev =
       {
         self,
+        inputs,
         config,
         pkgs,
         lib,
@@ -22304,6 +22312,19 @@ When setting up a new machine:
         workSopsFile = self + /secrets/work/secrets.yaml;
       in
       {
+        imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
+          inputs.vbc-nix.homeManagerModules.ontap-mcp
+          {
+            swarselsystems.homeSopsSecrets.ontap-mcp-config = {
+              sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
+            };
+            services.ontap-mcp = {
+              enable = true;
+              configFile = confLib.getConfig.sops.secrets."ontap-mcp-config".path;
+            };
+          }
+        ];
+
         config = {
           swarselsystems.homeSopsSecrets = {
             harica-root-ca = {
@@ -22340,8 +22361,17 @@ When setting up a new machine:
 
               vscode-fhs
               claude-code
-              antigravity
+              mcp-grafana
+              terraform-mcp-server
 
+              aap-mcp-server
+              aci-mcp-server
+              foreman-mcp-server
+              infoblox-mcp-server
+              netbox-mcp-server
+              ontap-mcp
+              palo-alto-mcp
+              antigravity
               rustdesk-vbc
             ];
             sessionVariables = {

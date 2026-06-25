@@ -38,9 +38,16 @@ in
           nixpkgs.overlays = [
             (
               final: prev:
-              lib.genAttrs [ "rustdesk-vbc" ] (
-                name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}
-              )
+              lib.genAttrs [
+                "rustdesk-vbc"
+                "aap-mcp-server"
+                "aci-mcp-server"
+                "foreman-mcp-server"
+                "infoblox-mcp-server"
+                "netbox-mcp-server"
+                "ontap-mcp"
+                "palo-alto-mcp"
+              ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
             )
           ];
 

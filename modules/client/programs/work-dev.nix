@@ -2,6 +2,7 @@
   flake.modules.homeManager.work-dev =
     {
       self,
+      inputs,
       config,
       pkgs,
       lib,
@@ -15,6 +16,19 @@
       workSopsFile = self + /secrets/work/secrets.yaml;
     in
     {
+      imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
+        inputs.vbc-nix.homeManagerModules.ontap-mcp
+        {
+          swarselsystems.homeSopsSecrets.ontap-mcp-config = {
+            sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
+          };
+          services.ontap-mcp = {
+            enable = true;
+            configFile = confLib.getConfig.sops.secrets."ontap-mcp-config".path;
+          };
+        }
+      ];
+
       config = {
         swarselsystems.homeSopsSecrets = {
           harica-root-ca = {
@@ -51,8 +65,17 @@
 
             vscode-fhs
             claude-code
-            antigravity
+            mcp-grafana
+            terraform-mcp-server
 
+            aap-mcp-server
+            aci-mcp-server
+            foreman-mcp-server
+            infoblox-mcp-server
+            netbox-mcp-server
+            ontap-mcp
+            palo-alto-mcp
+            antigravity
             rustdesk-vbc
           ];
           sessionVariables = {
