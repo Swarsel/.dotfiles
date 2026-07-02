@@ -9,6 +9,7 @@
     self.modules.nixos.profile-microvm
     self.modules.nixos.ankisync
     self.modules.nixos.invidious-companion
+    self.modules.nixos.socks-proxy
   ];
 
   swarselsystems = {

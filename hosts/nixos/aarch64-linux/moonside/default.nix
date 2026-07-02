@@ -36,6 +36,7 @@ in
     self.modules.nixos.invidious
     self.modules.nixos.firefox-syncserver
     self.modules.nixos.copyparty
+    self.modules.nixos.shopservatory
   ];
 
   system.stateVersion = "23.11";

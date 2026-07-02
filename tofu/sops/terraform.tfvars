@@ -57,6 +57,7 @@ kanidm_clients = [
   "summers-nextcloud",
   "summers-paperless",
   "twothreetunnel",
+  "moonside",
 ]
 
 extra_rules = [

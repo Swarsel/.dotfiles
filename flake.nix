@@ -103,6 +103,10 @@
     };
     pre-commit-hooks.url = "github:cachix/git-hooks.nix";
     repoSecrets.url = "./secrets/repo";
+    shopservatory = {
+      url = "github:Swarsel/shopservatory";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
     smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
     sops.url = "github:Mic92/sops-nix";
