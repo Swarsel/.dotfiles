@@ -44,9 +44,11 @@ in
                 "aci-mcp-server"
                 "foreman-mcp-server"
                 "infoblox-mcp-server"
+                "koppla"
                 "netbox-mcp-server"
                 "ontap-mcp"
                 "palo-alto-mcp"
+                "vcenter-mcp"
               ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
             )
           ];

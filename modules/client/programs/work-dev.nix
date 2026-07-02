@@ -18,13 +18,26 @@
     {
       imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
         inputs.vbc-nix.homeManagerModules.ontap-mcp
+        inputs.vbc-nix.homeManagerModules.claude
         {
-          swarselsystems.homeSopsSecrets.ontap-mcp-config = {
-            sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
+          swarselsystems.homeSopsSecrets = {
+            ontap-mcp-config.sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
+            claude-mcp-env.sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
+            vcenter-config = {
+              sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
+              path = "${homeDir}/.config/vcenter-mcp/config.json";
+            };
           };
           services.ontap-mcp = {
             enable = true;
             configFile = confLib.getConfig.sops.secrets."ontap-mcp-config".path;
+          };
+          programs.claude = {
+            enable = true;
+            mcp = {
+              enable = true;
+              envFile = confLib.getConfig.sops.secrets."claude-mcp-env".path;
+            };
           };
         }
       ];
@@ -64,17 +77,8 @@
             step-cli
 
             vscode-fhs
-            claude-code
-            mcp-grafana
-            terraform-mcp-server
 
-            aap-mcp-server
-            aci-mcp-server
-            foreman-mcp-server
-            infoblox-mcp-server
-            netbox-mcp-server
             ontap-mcp
-            palo-alto-mcp
             antigravity
             rustdesk-vbc
           ];
