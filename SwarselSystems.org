@@ -40069,7 +40069,9 @@ A VLAN can also be used as the initrd network - this is however disabled for the
               currency.target = "EUR";
               scrape = {
                 default_interval = "5m";
-                browser_proxy = "socks5://${globals.services."socks-proxy".serviceAddress}:${builtins.toString globals.services."socks-proxy".extraConfig.port}";
+                browser_proxy = "socks5://${globals.services."socks-proxy".serviceAddress}:${
+                  builtins.toString globals.services."socks-proxy".extraConfig.port
+                }";
               };
               users = [
                 {
@@ -40149,9 +40151,70 @@ A VLAN can also be used as the initrd network - this is however disabled for the
   }
 #+end_src
 
-**** Microsocks
+**** Socks-Proxy
 
-#+begin_src nix-ts :tangle modules/server/services/microsocks.nix
+#+begin_src nix-ts :tangle modules/server/services/socks-proxy.nix
+  {
+    flake.modules.nixos.socks-proxy =
+      {
+        config,
+        globals,
+        confLib,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            name = "socks-proxy";
+            port = 1080;
+            domain = "socks-proxy.${globals.domains.main}";
+          })
+          servicePort
+          serviceName
+          serviceAddress
+          proxyAddress4
+          proxyAddress6
+          ;
+        inherit (confLib.static)
+          isHome
+          webProxy
+          homeServiceAddress
+          ;
+
+        consumer = "moonside";
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+
+          users.persistentIds.microsocks = confLib.mkIds 988;
+
+          services.microsocks = {
+            enable = true;
+            ip = "0.0.0.0";
+            port = servicePort;
+          };
+
+          globals.services = confLib.mkServiceGlobal {
+            inherit
+              serviceName
+              proxyAddress4
+              proxyAddress6
+              isHome
+              serviceAddress
+              homeServiceAddress
+              ;
+            serviceDomain = "socks-proxy.${globals.domains.main}";
+            extra.extraConfig.port = servicePort;
+          };
+
+          globals.networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode.${consumer}.allowedTCPPorts =
+            [
+              servicePort
+            ];
+        };
+      };
+  }
 #+end_src
 
 ** Shared

@@ -115,7 +115,9 @@
             currency.target = "EUR";
             scrape = {
               default_interval = "5m";
-              browser_proxy = "socks5://${globals.services."socks-proxy".serviceAddress}:${builtins.toString globals.services."socks-proxy".extraConfig.port}";
+              browser_proxy = "socks5://${globals.services."socks-proxy".serviceAddress}:${
+                builtins.toString globals.services."socks-proxy".extraConfig.port
+              }";
             };
             users = [
               {

@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.socks-proxy =
     {
-      lib,
       config,
       globals,
       confLib,
@@ -53,9 +52,10 @@
           extra.extraConfig.port = servicePort;
         };
 
-        globals.networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode.${consumer}.allowedTCPPorts = [
-          servicePort
-        ];
+        globals.networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode.${consumer}.allowedTCPPorts =
+          [
+            servicePort
+          ];
       };
     };
 }
