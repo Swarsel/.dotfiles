@@ -19,6 +19,13 @@
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     flake-file.url = "github:vic/flake-file";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    glide-nix = {
+      url = "github:glide-browser/glide.nix";
+      inputs = {
+        home-manager.follows = "home-manager";
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
     home-manager = {
       url = "github:Swarsel/home-manager/main";
       inputs.nixpkgs.follows = "nixpkgs";

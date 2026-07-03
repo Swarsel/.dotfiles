@@ -122,7 +122,10 @@ in
                   opacity = 1.0;
                 }
                 {
-                  matches = [ { app-id = "^firefox$"; } ];
+                  matches = [
+                    { app-id = "^firefox$"; }
+                    { app-id = "^glide$"; }
+                  ];
                   opacity = 0.95;
                 }
                 {
@@ -186,6 +189,7 @@ in
                   matches = [ { title = ".*1Password.*"; } ];
                   excludes = [
                     { app-id = "^firefox$"; }
+                    { app-id = "^glide$"; }
                     { app-id = "^emacs$"; }
                     { app-id = "^kitty$"; }
                   ];
@@ -290,7 +294,7 @@ in
                   # "Mod+q".action = sh "${resizer} && niri msg action close-window";
                   "Mod+q".action = sh "niri msg action close-window";
                   # "Mod+f".action = sh "${resizer} && exec firefox";
-                  "Mod+f".action = sh "exec firefox";
+                  "Mod+f".action = sh "exec glide";
                   # "Mod+Space".action = spawn "noctalia-shell" "ipc" "call" "launcher" "toggle";
                   # "Mod+Space".action = sh "${resizer} && exec noctalia-shell ipc call launcher toggle";
                   "Mod+Space".action = sh "exec noctalia msg panel-toggle launcher";

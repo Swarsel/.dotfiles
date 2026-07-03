@@ -1773,6 +1773,13 @@ A short overview over each notable input and what it does:
       emacs-overlay.url = "github:nix-community/emacs-overlay";
       flake-file.url = "github:vic/flake-file";
       flake-parts.url = "github:hercules-ci/flake-parts";
+      glide-nix = {
+        url = "github:glide-browser/glide.nix";
+        inputs = {
+          home-manager.follows = "home-manager";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
       home-manager = {
         url = "github:Swarsel/home-manager/main";
         inputs.nixpkgs.follows = "nixpkgs";
@@ -2506,6 +2513,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
             homeModules = [
               inputs.nix-index-database.homeModules.nix-index
               inputs.swarsel-nix.homeModules.default
+              inputs.glide-nix.homeModules.default
               self.modules.generic.pii
               nodeModule
             ];
@@ -11120,6 +11128,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
               overwriteBackup = true;
               users.${config.swarselsystems.mainUser}.imports = [
                 inputs.swarsel-nix.homeModules.default
+                inputs.glide-nix.homeModules.default
                 {
                   imports = [
                     self.modules.homeManager.profile-base
@@ -11252,6 +11261,8 @@ In short, the options defined here are passed to the modules systems using =_mod
     flake.modules.generic.vars =
       {
         self,
+        config,
+        lib,
         pkgs,
         globals,
         ...
@@ -11333,17 +11344,143 @@ In short, the options defined here are passed to the modules systems using =_mod
               firefox.profileNames = [ "default" ];
             };
 
+            browserPolicies = {
+              # CaptivePortal = false;
+              AppAutoUpdate = false;
+              BackgroundAppUpdate = false;
+              DisableBuiltinPDFViewer = true;
+              DisableFirefoxStudies = true;
+              DisablePocket = true;
+              DisableFirefoxScreenshots = true;
+              DisableTelemetry = true;
+              DisableFirefoxAccounts = false;
+              DisableProfileImport = true;
+              DisableProfileRefresh = true;
+              DisplayBookmarksToolbar = "always";
+              DontCheckDefaultBrowser = true;
+              NoDefaultBookmarks = true;
+              OfferToSaveLogins = false;
+              OfferToSaveLoginsDefault = false;
+              PasswordManagerEnabled = false;
+              DisableMasterPasswordCreation = true;
+              ExtensionUpdate = false;
+              EnableTrackingProtection = {
+                Value = true;
+                Locked = true;
+                Cryptomining = true;
+                Fingerprinting = true;
+                EmailTracking = true;
+                # Exceptions = ["https://example.com"]
+              };
+              PDFjs = {
+                Enabled = false;
+                EnablePermissions = false;
+              };
+              Handlers = {
+                mimeTypes."application/pdf".action = "saveToDisk";
+                extensions.pdf = {
+                  action = "useHelperApp";
+                  ask = true;
+                  handlers = [
+                    {
+                      name = "GNOME Document Viewer";
+                      path = "${pkgs.evince}/bin/evince";
+                    }
+                  ];
+                };
+              };
+              FirefoxHome = {
+                Search = true;
+                TopSites = true;
+                SponsoredTopSites = false;
+                Highlights = true;
+                Pocket = false;
+                SponsoredPocket = false;
+                Snippets = false;
+                Locked = true;
+              };
+              FirefoxSuggest = {
+                WebSuggestions = false;
+                SponsoredSuggestions = false;
+                ImproveSuggest = false;
+                Locked = true;
+              };
+              SanitizeOnShutdown = {
+                Cache = true;
+                Cookies = false;
+                Downloads = true;
+                FormData = true;
+                History = false;
+                Sessions = false;
+                SiteSettings = false;
+                OfflineApps = true;
+                Locked = true;
+              };
+              SearchEngines = {
+                PreventInstalls = true;
+                Remove = [
+                  "Bing" # Fuck you
+                ];
+              };
+              UserMessaging = {
+                ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
+                FeatureRecommendations = false; # Don’t recommend browser features
+                Locked = true; # Prevent the user from changing user messaging preferences
+                MoreFromMozilla = false; # Don’t show the “More from Mozilla” section in Preferences
+                SkipOnboarding = true; # Don’t show onboarding messages on the new tab page
+                UrlbarInterventions = false; # Don’t offer suggestions in the URL bar
+                WhatsNew = false; # Remove the “What’s New” icon and menuitem
+              };
+              # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
+              "3rdparty".Extensions."uBlock0@raymondhill.net" = {
+                userSettings = [
+                  [
+                    "uiTheme"
+                    "dark"
+                  ]
+                  [
+                    "uiAccentCustom"
+                    "true"
+                  ]
+                  [
+                    "uiAccentCustom0"
+                    config.lib.stylix.colors.withHashtag.base0C
+                  ]
+                  [
+                    "cloudStorageEnabled"
+                    "false"
+                  ]
+                ];
+                toOverwrite.filterLists = [
+                  "DEU-0"
+                  "adguard-generic"
+                  "adguard-annoyance"
+                  "adguard-social"
+                  "adguard-spyware-url"
+                  "easylist"
+                  "easyprivacy"
+                  "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                  "plowe-0"
+                  "ublock-abuse"
+                  "ublock-badware"
+                  "ublock-filters"
+                  "ublock-privacy"
+                  "ublock-quick-fixes"
+                  "ublock-unbreak"
+                  "urlhaus-1"
+                ];
+              };
+            };
+
             firefox = {
               userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
               extensions = {
                 packages = with pkgs.nur.repos.rycee.firefox-addons; [
                   tridactyl
                   tampermonkey
-                  sidebery
                   browserpass
                   clearurls
                   darkreader
-                  # enhancer-for-youtube
                   istilldontcareaboutcookies
                   translate-web-pages
                   ublock-origin
@@ -11355,36 +11492,158 @@ In short, the options defined here are passed to the modules systems using =_mod
                   stylus
                   widegithub
                   enhanced-github
-                  unpaywall
                   don-t-fuck-with-paste
-                  # plasma-integration
-                  noscript
                   redirector
-
-                  # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
-                  # (buildFirefoxXpiAddon {
-                  #   pname = "shortkeys";
-                  #   version = "4.0.2";
-                  #   addonId = "Shortkeys@Shortkeys.com";
-                  #   url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-                  #   sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-                  #   meta = with lib;
-                  #     {
-                  #       description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                  #       mozPermissions = [
-                  #         "tabs"
-                  #         "downloads"
-                  #         "clipboardWrite"
-                  #         "browsingData"
-                  #         "storage"
-                  #         "bookmarks"
-                  #         "sessions"
-                  #         "<all_urls>"
-                  #       ];
-                  #       platforms = platforms.all;
-                  #     };
-                  # })
                 ];
+
+                settings =
+                  lib.optionalAttrs config.programs.password-store.enable {
+                    "browserpass@maximbaz.com" = {
+                      force = true;
+                      settings.stores.default = {
+                        id = "default";
+                        name = "default";
+                        path = config.programs.password-store.settings.PASSWORD_STORE_DIR;
+                      };
+                    };
+                  }
+                  // {
+                    "uBlock0@raymondhill.net" = {
+                      force = true;
+                      settings = rec {
+                        uiTheme = "dark";
+                        uiAccentCustom = true;
+                        uiAccentCustom0 = config.lib.stylix.colors.withHashtag.base0C;
+                        cloudStorageEnabled = false;
+                        importedLists = [
+                          "https://filters.adtidy.org/extension/ublock/filters/3.txt"
+                          "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                        ];
+                        externalLists = lib.concatStringsSep "\n" importedLists;
+                        selectedFilterLists = [
+                          "user-filters"
+                          "DEU-0"
+                          "adguard-generic"
+                          "adguard-annoyance"
+                          "adguard-social"
+                          "adguard-spyware-url"
+                          "easylist"
+                          "easyprivacy"
+                          "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                          "plowe-0"
+                          "ublock-abuse"
+                          "ublock-badware"
+                          "ublock-filters"
+                          "ublock-privacy"
+                          "ublock-quick-fixes"
+                          "ublock-unbreak"
+                          "urlhaus-1"
+                        ];
+                      };
+                    };
+                    "addon@darkreader.org" = {
+                      force = true;
+                      settings = {
+                        syncSettings = false;
+                        schemeVersion = 2;
+                        enabled = true;
+                        enabledByDefault = true;
+                        enabledFor = [ ];
+                        disabledFor = [ "github.com" ];
+                        changeBrowserTheme = false;
+                        detectDarkTheme = true;
+                        enableContextMenus = false;
+                        enableForPDF = true;
+                        enableForProtectedPages = false;
+                        fetchNews = true;
+                        syncSitesFixes = false;
+                        automation = {
+                          enabled = false;
+                          mode = "";
+                          behavior = "OnOff";
+                        };
+                        time = {
+                          activation = "18:00";
+                          deactivation = "9:00";
+                        };
+                        theme = {
+                          mode = 1;
+                          brightness = 100;
+                          contrast = 100;
+                          grayscale = 0;
+                          sepia = 0;
+                          useFont = false;
+                          fontFamily = "Open Sans";
+                          textStroke = 0;
+                          engine = "dynamicTheme";
+                          stylesheet = "";
+                          darkSchemeBackgroundColor = "#181a1b";
+                          darkSchemeTextColor = "#e8e6e3";
+                          lightSchemeBackgroundColor = "#dcdad7";
+                          lightSchemeTextColor = "#181a1b";
+                          scrollbarColor = "";
+                          selectionColor = "auto";
+                          styleSystemControls = false;
+                          lightColorScheme = "Default";
+                          darkColorScheme = "Default";
+                          immediateModify = false;
+                        };
+                      };
+                    };
+                    "redirector@einaregilsson.com" = {
+                      force = true;
+                      settings = {
+                        disabled = false;
+                        enableNotifications = false;
+                        redirects =
+                          map
+                            (
+                              r:
+                              r
+                              // {
+                                error = null;
+                                excludePattern = "";
+                                patternDesc = "";
+                                patternType = "R";
+                                processMatches = "noProcessing";
+                                disabled = false;
+                                grouped = false;
+                                appliesTo = [ "main_frame" ];
+                              }
+                            )
+                            [
+                              {
+                                description = "Youtube";
+                                includePattern = ''(.*\.)?youtube\.com/(.*)'';
+                                redirectUrl = "https://${globals.services.invidious.domain}/$2";
+                                exampleUrl = "https://www.youtube.com/watch?v=9szhjhO9epA";
+                                exampleResult = "https://${globals.services.invidious.domain}/watch?v=9szhjhO9epA";
+                              }
+                              {
+                                description = "Youtu.be";
+                                includePattern = ''(.*\.)?youtu\.be/(.*)'';
+                                redirectUrl = "https://${globals.services.invidious.domain}/$2";
+                                exampleUrl = "https://www.youtu.be/watch?v=9szhjhO9epA";
+                                exampleResult = "https://${globals.services.invidious.domain}/watch?v=9szhjhO9epA";
+                              }
+                              {
+                                description = "Reddit";
+                                includePattern = ''(.*\.)?reddit\.com/(.*)'';
+                                redirectUrl = "https://old.reddit.com/$2";
+                                exampleUrl = "https://www.reddit.com/r/NixOS";
+                                exampleResult = "https://old.reddit.com/r/NixOS";
+                              }
+                              {
+                                description = "Redd.it";
+                                includePattern = ''(.*\.)?redd\.it/(.*)'';
+                                redirectUrl = "https://old.reddit.com/$2";
+                                exampleUrl = "https://redd.it/r/NixOS";
+                                exampleResult = "https://old.reddit.com/r/NixOS";
+                              }
+                            ];
+                      };
+                    };
+                  };
               };
 
               settings = {
@@ -11408,6 +11667,10 @@ In short, the options defined here are passed to the modules systems using =_mod
                 "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
                 "identity.sync.tokenserver.uri" =
                   "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
+                "extensions.webextensions.ExtensionStorageIDB.migrated.uBlock0@raymondhill.net" = false;
+                "extensions.webextensions.ExtensionStorageIDB.migrated.browserpass@maximbaz.com" = false;
+                "extensions.webextensions.ExtensionStorageIDB.migrated.redirector@einaregilsson.com" = false;
+                "extensions.webextensions.ExtensionStorageIDB.migrated.addon@darkreader.org" = false;
               };
 
               search = {
@@ -11516,6 +11779,42 @@ In short, the options defined here are passed to the modules systems using =_mod
                       "@ho"
                       "@hmo"
                     ];
+                  };
+
+                  youtube = {
+                    name = "YouTube";
+                    urls = [
+                      {
+                        template = "https://www.youtube.com/results";
+                        params = [
+                          {
+                            name = "search_query";
+                            value = "{searchTerms}";
+                          }
+                        ];
+                      }
+                    ];
+                    icon = "https://www.youtube.com/favicon.ico";
+                    updateInterval = 24 * 60 * 60 * 1000;
+                    definedAliases = [ "@yt" ];
+                  };
+
+                  github = {
+                    name = "GitHub";
+                    urls = [
+                      {
+                        template = "https://github.com/search";
+                        params = [
+                          {
+                            name = "q";
+                            value = "{searchTerms}";
+                          }
+                        ];
+                      }
+                    ];
+                    icon = "https://github.com/favicon.ico";
+                    updateInterval = 24 * 60 * 60 * 1000;
+                    definedAliases = [ "@gh" ];
                   };
 
                   "Confluence search" = {
@@ -13634,12 +13933,12 @@ Some programs lack a dmenu launcher - I define them myself here.
               "application/sql" = [ "emacsclient.desktop" ];
               "application/vnd.ms-excel" = [ "calc.desktop" ];
               "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
-              "application/x-extension-htm" = [ "firefox.desktop" ];
-              "application/x-extension-html" = [ "firefox.desktop" ];
-              "application/x-extension-shtml" = [ "firefox.desktop" ];
-              "application/x-extension-xht" = [ "firefox.desktop" ];
-              "application/x-extension-xhtml" = [ "firefox.desktop" ];
-              "application/xhtml+xml" = [ "firefox.desktop" ];
+              "application/x-extension-htm" = [ "glide.desktop" ];
+              "application/x-extension-html" = [ "glide.desktop" ];
+              "application/x-extension-shtml" = [ "glide.desktop" ];
+              "application/x-extension-xht" = [ "glide.desktop" ];
+              "application/x-extension-xhtml" = [ "glide.desktop" ];
+              "application/xhtml+xml" = [ "glide.desktop" ];
               "audio/flac" = [ "mpv.desktop" ];
               "audio/mp3" = [ "mpv.desktop" ];
               "audio/ogg" = [ "mpv.desktop" ];
@@ -13650,18 +13949,18 @@ Some programs lack a dmenu launcher - I define them myself here.
               "image/svg" = [ "imv.desktop" ];
               "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
               "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
-              "image/webp" = [ "firefox.desktop" ];
+              "image/webp" = [ "glide.desktop" ];
               "text/csv" = [ "emacsclient.desktop" ];
-              "text/html" = [ "firefox.desktop" ];
+              "text/html" = [ "glide.desktop" ];
               "text/plain" = [ "emacsclient.desktop" ];
               "video/3gp" = [ "umpv.desktop" ];
               "video/flv" = [ "umpv.desktop" ];
               "video/mkv" = [ "umpv.desktop" ];
               "video/mp4" = [ "umpv.desktop" ];
-              "x-scheme-handler/chrome" = [ "firefox.desktop" ];
+              "x-scheme-handler/chrome" = [ "glide.desktop" ];
               "x-scheme-handler/firezone-fd0020211111" = [ "firezone-client-gui-deep-link.desktop" ];
-              "x-scheme-handler/http" = [ "firefox.desktop" ];
-              "x-scheme-handler/https" = [ "firefox.desktop" ];
+              "x-scheme-handler/http" = [ "glide.desktop" ];
+              "x-scheme-handler/https" = [ "glide.desktop" ];
             };
             associations = {
               added = {
@@ -16619,134 +16918,7 @@ Userstyle for the Stylus plugin that enables theatre mode on invidious:
             enable = true;
             package = pkgs.firefox; # uses overrides
             configPath = ".mozilla/firefox";
-            policies = {
-              # CaptivePortal = false;
-              AppAutoUpdate = false;
-              BackgroundAppUpdate = false;
-              DisableBuiltinPDFViewer = true;
-              DisableFirefoxStudies = true;
-              DisablePocket = true;
-              DisableFirefoxScreenshots = true;
-              DisableTelemetry = true;
-              DisableFirefoxAccounts = false;
-              DisableProfileImport = true;
-              DisableProfileRefresh = true;
-              DisplayBookmarksToolbar = "always";
-              DontCheckDefaultBrowser = true;
-              NoDefaultBookmarks = true;
-              OfferToSaveLogins = false;
-              OfferToSaveLoginsDefault = false;
-              PasswordManagerEnabled = false;
-              DisableMasterPasswordCreation = true;
-              ExtensionUpdate = false;
-              EnableTrackingProtection = {
-                Value = true;
-                Locked = true;
-                Cryptomining = true;
-                Fingerprinting = true;
-                EmailTracking = true;
-                # Exceptions = ["https://example.com"]
-              };
-              PDFjs = {
-                Enabled = false;
-                EnablePermissions = false;
-              };
-              Handlers = {
-                mimeTypes."application/pdf".action = "saveToDisk";
-              };
-              extensions = {
-                pdf = {
-                  action = "useHelperApp";
-                  ask = true;
-                  handlers = [
-                    {
-                      name = "GNOME Document Viewer";
-                      path = "${pkgs.evince}/bin/evince";
-                    }
-                  ];
-                };
-              };
-              FirefoxHome = {
-                Search = true;
-                TopSites = true;
-                SponsoredTopSites = false;
-                Highlights = true;
-                Pocket = false;
-                SponsoredPocket = false;
-                Snippets = false;
-                Locked = true;
-              };
-              FirefoxSuggest = {
-                WebSuggestions = false;
-                SponsoredSuggestions = false;
-                ImproveSuggest = false;
-                Locked = true;
-              };
-              SanitizeOnShutdown = {
-                Cache = true;
-                Cookies = false;
-                Downloads = true;
-                FormData = true;
-                History = false;
-                Sessions = false;
-                SiteSettings = false;
-                OfflineApps = true;
-                Locked = true;
-              };
-              SearchEngines = {
-                PreventInstalls = true;
-                Remove = [
-                  "Bing" # Fuck you
-                ];
-              };
-              UserMessaging = {
-                ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
-                FeatureRecommendations = false; # Don’t recommend browser features
-                Locked = true; # Prevent the user from changing user messaging preferences
-                MoreFromMozilla = false; # Don’t show the “More from Mozilla” section in Preferences
-                SkipOnboarding = true; # Don’t show onboarding messages on the new tab page
-                UrlbarInterventions = false; # Don’t offer suggestions in the URL bar
-                WhatsNew = false; # Remove the “What’s New” icon and menuitem
-              };
-              ExtensionSettings = {
-                "3rdparty".Extensions = {
-                  # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
-                  "uBlock0@raymondhill.net".adminSettings = {
-                    userSettings = rec {
-                      uiTheme = "dark";
-                      uiAccentCustom = true;
-                      uiAccentCustom0 = "#0C8084";
-                      cloudStorageEnabled = lib.mkForce false;
-                      importedLists = [
-                        "https://filters.adtidy.org/extension/ublock/filters/3.txt"
-                        "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
-                      ];
-                      externalLists = lib.concatStringsSep "\n" importedLists;
-                    };
-                    selectedFilterLists = [
-                      "CZE-0"
-                      "adguard-generic"
-                      "adguard-annoyance"
-                      "adguard-social"
-                      "adguard-spyware-url"
-                      "easylist"
-                      "easyprivacy"
-                      "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
-                      "plowe-0"
-                      "ublock-abuse"
-                      "ublock-badware"
-                      "ublock-filters"
-                      "ublock-privacy"
-                      "ublock-quick-fixes"
-                      "ublock-unbreak"
-                      "urlhaus-1"
-                    ];
-                  };
-                };
-
-              };
-
-            };
+            policies = vars.browserPolicies;
 
             profiles = {
               default = lib.recursiveUpdate {
@@ -16764,6 +16936,918 @@ Userstyle for the Stylus plugin that enables theatre mode on invidious:
               } vars.firefox;
             };
           };
+        };
+      };
+  }
+#+end_src
+
+**** Glide
+
+Oh boy, it has been a while since I was THIS excited about a program.
+
+Remember the good times of vimperator and pentadactly? When Firefox increased their security around Web Extensions, those add-ons were practically killed. Still, we had [[#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51][tridactyl]] to make up for some of the lost functionality. However, it never did the same thing in the end, as tridactly could only start working once a page and its frames were fully loaded. This yielded a delay in usage that I always disliked.
+
+Also, there were other projects like Vieb, conkeror, qutebrowser, and nyxt, but they all faced some sort of problem:
+- Vieb is chromium-based and does not really support extensions
+- conkeror has not been updated in years and does not support extensions
+- qutebrowser and nyxt do not support extensions
+
+Enter Glide; this crazy thing not only brings back full keyboard functionality at all times, it also allows you to use TypeScript to customize most aspects of the browser! In many ways, you could say it is the Emacs of browsers :) my only gripe here I guess is that I am not the biggest fan of TypeScript (as opposed of the beauty of Common Lisp used by nyxt <3), but that is nagging on a very high level!
+
+In of itself, Glide (for some reason) does not support many of the (in my eyes) most useful keybindings of tridactyl, that being =o=, =t=, and =b= as well as the =vimperator-reflow= find mechanic. I recreated those here for that reason, Also, I was able to integrate [[#h:a2990def-9a2a-491b-9fee-3057dc324c3c][userChrome.css]] directly into the Glide config, for the reasons stated above :) also, it allowed me to not having to use Stylus anymore, as I, again, was able to embed the needed CSS directly in the Glide config.
+
+#+begin_src nix-ts :tangle modules/client/programs/glide.nix
+  {
+    flake-file.inputs.glide-nix = {
+      url = "github:glide-browser/glide.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+
+    flake.modules.homeManager.glide =
+      {
+        config,
+        pkgs,
+        lib,
+        vars,
+        globals,
+        ...
+      }:
+      let
+        palette = lib.getAttrs [
+          "base00"
+          "base01"
+          "base02"
+          "base03"
+          "base04"
+          "base05"
+          "base06"
+          "base07"
+          "base08"
+          "base09"
+          "base0A"
+          "base0B"
+          "base0C"
+          "base0D"
+          "base0E"
+          "base0F"
+        ] config.lib.stylix.colors.withHashtag;
+        paletteCss = lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (name: value: "--${name}: ${value};") palette
+        );
+      in
+      {
+        config = {
+          swarselsystems.enabledHomeModules = [ "glide" ];
+
+          programs.glide-browser = {
+            enable = true;
+            policies = vars.browserPolicies;
+            nativeMessagingHosts = lib.optionals config.programs.password-store.enable [ pkgs.browserpass ];
+            profiles.default = {
+              id = 0;
+              isDefault = true;
+              settings = vars.firefox.settings // {
+                "browser.startup.homepage" = "https://lobste.rs";
+                "browser.urlbar.suggest.quicksuggest.sponsored" = false;
+                "browser.urlbar.suggest.quicksuggest.nonsponsored" = false;
+                "browser.download.open_pdf_attachments_inline" = false;
+              };
+              search = vars.firefox.search;
+              extensions = {
+                packages = lib.filter (
+                  p:
+                  !(builtins.elem (lib.getName p) (
+                    [
+                      "tridactyl"
+                      "stylus"
+                    ]
+                    ++ lib.optional (!config.programs.password-store.enable) "browserpass"
+                  ))
+                ) vars.firefox.extensions.packages;
+                settings = vars.firefox.extensions.settings;
+              };
+            };
+            config = ''
+              /// <reference types="./glide.d.ts" />
+
+              glide.o.hint_size = "16px";
+
+              glide.o.hint_label_generator = glide.hints.label_generators.numeric;
+              glide.o.keymaps_use_physical_layout = "force";
+              glide.o.yank_highlight = "${palette.base09}";
+
+              glide.styles.add(css`
+                :root {
+                  ${paletteCss}
+
+                  --glide-bg: var(--base00);
+                  --glide-fg: var(--base05);
+                  --glide-cmdl-bg: var(--base00);
+                  --glide-cmdl-fg: var(--base0D);
+                  --glide-cmdl-font-family: "Fira Code", monospace;
+                  --glide-cmdl-font-size: 1.5rem;
+                  --glide-cmdl-line-height: 1.5;
+                  --glide-cmplt-bg: var(--base00);
+                  --glide-cmplt-fg: var(--base0D);
+                  --glide-cmplt-font-family: "Fira Code", monospace;
+                  --glide-cmplt-font-size: 0.8rem;
+                  --glide-cmplt-border-top: unset;
+                  --glide-header-first-bg: var(--base01);
+                  --glide-header-second-bg: var(--base01);
+                  --glide-header-third-bg: var(--base01);
+                  --glide-header-font-weight: 200;
+                  --glide-header-border-bottom: unset;
+                  --glide-url-fg: var(--base0B);
+                  --glide-url-bg: var(--base00);
+                  --glide-of-bg: #44391F;
+                  --glide-of-fg: var(--base09);
+                  --glide-status-bg: var(--base00);
+                  --glide-status-fg: var(--base05);
+                  --glide-status-border: 1px solid var(--base03);
+                  --glide-mode-normal: var(--base03);
+                  --glide-mode-insert: var(--base0B);
+                  --glide-mode-visual: var(--base09);
+                  --glide-mode-hint: var(--base0E);
+                  --glide-mode-ignore: var(--base01);
+                  --glide-mode-command: var(--base0D);
+                  --glide-mode-op-pending: var(--base0A);
+                  --glide-search-highlight-color: var(--base0A);
+
+                  --lwt-accent-color: var(--base01) !important;
+                  --lwt-accent-color-inactive: var(--base01) !important;
+                  --lwt-text-color: var(--base05) !important;
+                  --toolbar-bgcolor: var(--base00) !important;
+                  --toolbar-color: var(--base05) !important;
+                  --toolbarbutton-icon-fill: var(--base05) !important;
+                  --toolbarbutton-hover-background: var(--base01) !important;
+                  --toolbarbutton-active-background: var(--base03) !important;
+                  --toolbar-field-background-color: var(--base01) !important;
+                  --toolbar-field-color: var(--base05) !important;
+                  --toolbar-field-focus-background-color: var(--base01) !important;
+                  --toolbar-field-focus-color: var(--base05) !important;
+                  --toolbar-field-border-color: transparent !important;
+                  --toolbar-field-focus-border-color: var(--base0D) !important;
+                  --urlbar-box-bgcolor: var(--base01) !important;
+                  --urlbar-box-focus-bgcolor: var(--base01) !important;
+                  --urlbar-box-hover-bgcolor: var(--base03) !important;
+                  --urlbar-popup-url-color: var(--base0D) !important;
+                  --urlbarView-highlight-background: var(--base03) !important;
+                  --arrowpanel-background: var(--base00) !important;
+                  --arrowpanel-color: var(--base05) !important;
+                  --arrowpanel-border-color: var(--base03) !important;
+                  --panel-background: var(--base00) !important;
+                  --panel-color: var(--base05) !important;
+                  --menu-background-color: var(--base00) !important;
+                  --menu-color: var(--base05) !important;
+                  --menuitem-hover-background-color: var(--base03) !important;
+                  --button-bgcolor: var(--base01) !important;
+                  --button-color: var(--base05) !important;
+                  --button-hover-bgcolor: var(--base03) !important;
+                  --button-primary-bgcolor: var(--base0C) !important;
+                  --button-primary-hover-bgcolor: var(--base0D) !important;
+                  --button-primary-color: var(--base00) !important;
+                  --focus-outline-color: var(--base0D) !important;
+                  --tab-selected-bgcolor: var(--base00) !important;
+                  --tab-selected-textcolor: var(--base0D) !important;
+                  --tab-hover-background-color: var(--base01) !important;
+                  --sidebar-background-color: var(--base00) !important;
+                  --sidebar-text-color: var(--base05) !important;
+                }
+
+                #navigator-toolbox {
+                  background-color: var(--base00) !important;
+                }
+
+                #TabsToolbar {
+                  background-color: var(--base01) !important;
+                }
+
+                #PersonalToolbar {
+                  background-color: var(--base00) !important;
+                  color: var(--base05) !important;
+                }
+
+                #urlbar-background {
+                  background-color: var(--base01) !important;
+                }
+
+                findbar {
+                  background-color: var(--base00) !important;
+                  color: var(--base05) !important;
+                }
+
+                .tabbrowser-tab {
+                  color: var(--base05) !important;
+                }
+
+                .tab-background[selected] {
+                  background-color: var(--base00) !important;
+                }
+
+                .tabbrowser-tab[visuallyselected] {
+                  color: var(--base0D) !important;
+                }
+
+                glide-commandline {
+                  position: fixed !important;
+                  top: 25% !important;
+                  bottom: unset !important;
+                  left: 10% !important;
+                  width: 80% !important;
+                  box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 15px !important;
+                }
+
+                glide-commandline .glide-commandline-container {
+                  box-shadow: none;
+                }
+
+                glide-commandline [anonid="glide-commandline-holder"] {
+                  order: 1;
+                  border: 2px solid var(--base0C);
+                }
+
+                glide-commandline [anonid="glide-commandline-completions"] {
+                  order: 2;
+                  font-weight: 200;
+                }
+
+                glide-commandline [anonid="glide-colon"] {
+                  display: none;
+                }
+
+                glide-commandline input {
+                  padding: 1rem;
+                }
+
+                glide-commandline [anonid="glide-commandline-completions"] > div > table {
+                  padding: 1rem;
+                  padding-top: 0;
+                }
+              `, { id: "theme" });
+
+              const toolbar_hidden_css = css`
+                #navigator-toolbox {
+                  visibility: collapse !important;
+                }
+              `;
+
+              let toolbar_state: "hidden" | "urlbar" | "full" = "hidden";
+              glide.styles.add(toolbar_hidden_css, { id: "toolbar-hidden" });
+
+              function set_toolbar(state: "hidden" | "urlbar" | "full") {
+                toolbar_state = state;
+                glide.styles.remove("toolbar-hidden");
+                if (state === "hidden") {
+                  glide.styles.add(toolbar_hidden_css, { id: "toolbar-hidden" });
+                }
+                glide.o.native_tabs = state === "urlbar" ? "hide" : "show";
+              }
+
+              glide.keymaps.set("normal", "<leader>b", () => set_toolbar(toolbar_state === "urlbar" ? "hidden" : "urlbar"), {
+                description: "Toggle the URL and bookmarks bars",
+              });
+              glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
+                description: "Toggle the full toolbar",
+              });
+
+              glide.autocmds.create("WindowLoaded", () => {
+                if (!document.getElementById("glide-statusline")) {
+                  (document.body ?? document.documentElement)?.appendChild(
+                    DOM.create_element("div", {
+                      id: "glide-statusline",
+                      children: [
+                        DOM.create_element("span", { id: "glide-statusline-mode", children: ["normal"] }),
+                        DOM.create_element("span", { id: "glide-statusline-tabs" }),
+                        DOM.create_element("span", { id: "glide-statusline-msg" }),
+                      ],
+                    }),
+                  );
+                }
+                update_tab_count();
+              });
+
+              glide.styles.add(css`
+                #glide-statusline {
+                  position: fixed;
+                  right: 0;
+                  bottom: 0;
+                  z-index: 2147483645;
+                  display: flex;
+                  gap: 1ex;
+                  padding: 0.8ex;
+                  background: var(--base00);
+                  color: var(--base05);
+                  border: 1px solid var(--base03);
+                  border-right: none;
+                  border-bottom: none;
+                  font-family: "Fira Code", monospace;
+                  font-size: 9px;
+                  line-height: 1;
+                  pointer-events: none;
+                }
+
+                #glide-statusline-mode {
+                  color: var(--glide-current-mode-color, var(--base05));
+                }
+
+                #glide-statusline-msg {
+                  color: var(--base09);
+                }
+
+                #glide-statusline-msg:empty {
+                  display: none;
+                }
+              `, { id: "statusline" });
+
+              let flash_timer: ReturnType<typeof setTimeout> | null = null;
+              function flash_message(msg: string) {
+                const msg_el = document.getElementById("glide-statusline-msg");
+                if (!msg_el) {
+                  return;
+                }
+                msg_el.textContent = msg;
+                if (flash_timer != null) {
+                  clearTimeout(flash_timer);
+                }
+                flash_timer = setTimeout(() => {
+                  msg_el.textContent = "";
+                }, 2000);
+              }
+
+              glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
+                const mode_el = document.getElementById("glide-statusline-mode");
+                if (mode_el) {
+                  mode_el.textContent = new_mode;
+                }
+              });
+
+              async function update_tab_count() {
+                const tabs = await browser.tabs.query({ currentWindow: true });
+                const tabs_el = document.getElementById("glide-statusline-tabs");
+                if (tabs_el) {
+                  tabs_el.textContent = String(tabs.length);
+                }
+              }
+              browser.tabs.onCreated.addListener(update_tab_count);
+              browser.tabs.onRemoved.addListener(update_tab_count);
+
+              const search_engines = [
+                {
+                  name: "NixOS Options",
+                  keyword: "no",
+                  search_url: "https://search.nixos.org/options?query={searchTerms}",
+                },
+                {
+                  name: "Nix Packages",
+                  keyword: "np",
+                  search_url: "https://search.nixos.org/packages?query={searchTerms}",
+                },
+                {
+                  name: "Home Manager Options",
+                  keyword: "hm",
+                  search_url: "https://home-manager-options.extranix.com/?query={searchTerms}",
+                },
+                {
+                  name: "YouTube",
+                  keyword: "yt",
+                  search_url: "https://www.youtube.com/results?search_query={searchTerms}",
+                },
+                {
+                  name: "GitHub",
+                  keyword: "gh",
+                  search_url: "https://github.com/search?q={searchTerms}",
+                },
+                {
+                  name: "Confluence search",
+                  keyword: "@c",
+                  search_url: "https://vbc.atlassian.net/wiki/search?text={searchTerms}",
+                },
+                {
+                  name: "Jira search",
+                  keyword: "@j",
+                  search_url: "https://vbc.atlassian.net/issues/?jql=textfields%20~%20%22{searchTerms}*%22&wildcardFlag=true",
+                },
+              ];
+              const engine_keywords = new Map(search_engines.map((e) => [e.keyword, e.name]));
+
+              function parse_search(args_arr: string[]): { query: string; engine?: string } {
+                const [first, ...rest] = args_arr;
+                if (first != null && rest.length > 0 && engine_keywords.has(first)) {
+                  return { query: rest.join(" "), engine: engine_keywords.get(first) };
+                }
+                return { query: args_arr.join(" ") };
+              }
+
+              function to_url(input: string): string | null {
+                if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) return input;
+                if (!input.includes(" ") && input.includes(".")) return `https://''${input}`;
+                return null;
+              }
+
+              async function do_navigate(target: "current" | "tab" | "window", url: string) {
+                if (target === "current") {
+                  const tab = await glide.tabs.active();
+                  await browser.tabs.update(tab.id, { url });
+                } else if (target === "tab") {
+                  await browser.tabs.create({ url });
+                } else {
+                  await browser.windows.create({ url });
+                }
+              }
+
+              async function do_search(target: "current" | "tab" | "window", search: { query: string; engine?: string }) {
+                if (target === "current") {
+                  const tab = await glide.tabs.active();
+                  await browser.search.search({ ...search, tabId: tab.id });
+                } else if (target === "tab") {
+                  await browser.search.search(search);
+                } else {
+                  const win = await browser.windows.create();
+                  const tab = win.tabs?.[0];
+                  if (tab?.id != null) {
+                    await browser.search.search({ ...search, tabId: tab.id });
+                  }
+                }
+              }
+
+              async function do_open(target: "current" | "tab" | "window", input: string) {
+                const url = to_url(input.trim());
+                if (url) {
+                  await do_navigate(target, url);
+                } else {
+                  await do_search(target, parse_search(input.split(" ").filter(Boolean)));
+                }
+              }
+
+              glide.excmds.create({ name: "open", description: "Open a URL or search in the current tab" }, ({ args_arr }) => do_open("current", args_arr.join(" ")));
+              glide.excmds.create({ name: "tabopen", description: "Open a URL or search in a new tab" }, ({ args_arr }) => do_open("tab", args_arr.join(" ")));
+              glide.excmds.create({ name: "winopen", description: "Open a URL or search in a new window" }, ({ args_arr }) => do_open("window", args_arr.join(" ")));
+              glide.excmds.create({ name: "search", description: "Search in the current tab" }, ({ args_arr }) => do_search("current", parse_search(args_arr)));
+              glide.excmds.create({ name: "tabsearch", description: "Search in a new tab" }, ({ args_arr }) => do_search("tab", parse_search(args_arr)));
+
+              async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
+                const [bookmarks, history] = await Promise.all([
+                  browser.bookmarks.getRecent(100),
+                  browser.history.search({ text: "", startTime: 0, maxResults: 300 }),
+                ]);
+
+                function describe_action(input: string): string {
+                  const trimmed = input.trim();
+                  if (trimmed === "") {
+                    return "Search with the default engine";
+                  }
+                  if (!opts.search_only) {
+                    const url = to_url(trimmed);
+                    if (url) {
+                      return "Open " + url;
+                    }
+                  }
+                  const search = parse_search(trimmed.split(" ").filter(Boolean));
+                  return search.engine ? "Search " + search.engine + ": " + search.query : "Search: " + search.query;
+                }
+
+                const action_text = DOM.create_element("span", { children: describe_action(opts.prefill ?? "") });
+                const options: glide.CommandLineCustomOption[] = [{
+                  label: "search",
+                  render: () => DOM.create_element("td", { attributes: { colspan: "2" }, children: [action_text] }),
+                  matches: ({ input }) => {
+                    action_text.textContent = describe_action(input);
+                    return true;
+                  },
+                  execute: ({ input }) => {
+                    if (opts.search_only) {
+                      do_search(target, parse_search(input.split(" ").filter(Boolean)));
+                    } else {
+                      do_open(target, input);
+                    }
+                  },
+                }];
+
+                const seen = new Set();
+                const entries = [...bookmarks.map((b) => ({ ...b, star: true })), ...history.map((h) => ({ ...h, star: false }))];
+                for (const item of entries) {
+                  if (!item.url || seen.has(item.url)) continue;
+                  seen.add(item.url);
+                  const url = item.url;
+                  options.push({
+                    label: (item.star ? "★ " : "") + (item.title || url),
+                    description: url,
+                    execute: () => do_navigate(target, url),
+                  });
+                }
+
+                await glide.commandline.show({ input: opts.prefill ?? "", title: "History and bookmarks", options });
+              }
+
+              glide.keymaps.set("normal", "o", () => url_commandline("current"), {
+                description: "Open a URL or search",
+              });
+              glide.keymaps.set("normal", "O", async () => {
+                const tab = await glide.tabs.active();
+                await url_commandline("current", { prefill: tab.url });
+              }, { description: "Edit the current URL" });
+              glide.keymaps.set("normal", "t", () => url_commandline("tab"), {
+                description: "Open a URL or search in a new tab",
+              });
+              glide.keymaps.set("normal", "T", async () => {
+                const tab = await glide.tabs.active();
+                await url_commandline("tab", { prefill: tab.url });
+              }, { description: "Open the current URL in a new tab" });
+              glide.keymaps.set("normal", "s", () => url_commandline("current", { search_only: true }), {
+                description: "Search with the default engine",
+              });
+              glide.keymaps.set("normal", "S", () => url_commandline("tab", { search_only: true }), {
+                description: "Search with the default engine in a new tab",
+              });
+              glide.keymaps.set("normal", "w", () => url_commandline("window"), {
+                description: "Open a URL or search in a new window",
+              });
+              glide.keymaps.set("normal", "b", "commandline_show tab ");
+              glide.keymaps.set("normal", "gt", "tab_next");
+              glide.keymaps.set("normal", "gT", "tab_prev");
+              glide.keymaps.set("normal", "u", "tab_reopen");
+
+              glide.keymaps.set("normal", "p", async () => {
+                const text = (await navigator.clipboard.readText()).trim();
+                if (text) {
+                  await do_open("current", text);
+                }
+              }, { description: "Open the clipboard contents" });
+
+              glide.keymaps.set("normal", "yy", async () => {
+                const tab = await glide.tabs.active();
+                const url = tab.url ?? "";
+                await navigator.clipboard.writeText(url);
+                flash_message("yanked " + url);
+              }, { description: "Yank the URL of the current tab" });
+
+              glide.keymaps.set(["normal", "insert", "visual"], "<A-d>", () => {}, {
+                description: "Disabled (would focus the urlbar)",
+              });
+
+              let last_tab_id: number | null = null;
+              browser.tabs.onActivated.addListener((info) => {
+                if (info.previousTabId != null) {
+                  last_tab_id = info.previousTabId;
+                }
+              });
+              glide.keymaps.set("normal", "<C-m>", async () => {
+                if (last_tab_id != null) {
+                  await browser.tabs.update(last_tab_id, { active: true }).catch(() => {});
+                }
+              }, { description: "Switch to the last-active tab" });
+
+              glide.keymaps.set("normal", "gd", async () => {
+                const tab = await glide.tabs.active();
+                await browser.windows.create({ tabId: tab.id });
+              }, { description: "Detach the current tab into a new window" });
+
+              glide.keymaps.set("normal", "gD", async () => {
+                const tab = await glide.tabs.active();
+                const dup = await browser.tabs.duplicate(tab.id);
+                if (dup?.id != null) {
+                  await browser.windows.create({ tabId: dup.id });
+                }
+              }, { description: "Duplicate the current tab into a new window" });
+
+              glide.keymaps.set("normal", "d", async () => {
+                const current = await glide.tabs.active();
+                await glide.excmds.execute("tab_prev");
+                if (current.id != null) {
+                  await browser.tabs.remove(current.id);
+                }
+              }, { description: "Close the current tab and focus the previous one" });
+
+              glide.keymaps.set("normal", "D", "tab_close");
+
+              let hint_session = false;
+              let hint_filter = "";
+              let hint_texts: string[] = [];
+
+              let hint_cooldown_until = 0;
+              let swallowing_keys = false;
+
+              async function swallow_keys(ms: number) {
+                hint_cooldown_until = Date.now() + ms;
+                if (swallowing_keys) {
+                  return;
+                }
+                swallowing_keys = true;
+                try {
+                  while (true) {
+                    const key = await glide.keys.next();
+                    if (Date.now() >= hint_cooldown_until) {
+                      await glide.keys.send(key);
+                      return;
+                    }
+                  }
+                } finally {
+                  swallowing_keys = false;
+                }
+              }
+
+              function hint_label_is_ambiguous(label: string, count: number): boolean {
+                for (let m = 1; m <= count; m++) {
+                  const s = String(m);
+                  if (s !== label && s.startsWith(label)) {
+                    return true;
+                  }
+                }
+                return false;
+              }
+
+              function apply_hint_filter() {
+                const container = document.getElementById("glide-hints-container");
+                if (!container) {
+                  return;
+                }
+                const visible: number[] = [];
+                for (let i = 0; i < container.children.length; i++) {
+                  const marker = container.children[i] as HTMLElement;
+                  const matches = (hint_texts[i] ?? "").includes(hint_filter);
+                  marker.style.display = matches ? "" : "none";
+                  if (matches) {
+                    visible.push(i);
+                  }
+                }
+                if (hint_session && hint_filter.length > 0 && visible.length === 1) {
+                  hint_session = false;
+                  const label = String(visible[0] + 1);
+                  void glide.keys
+                    .send(hint_label_is_ambiguous(label, hint_texts.length) ? label + "<Enter>" : label)
+                    .then(() => swallow_keys(500));
+                }
+              }
+
+              function start_hints(selector?: string, action?: glide.HintAction) {
+                hint_session = true;
+                hint_filter = "";
+                hint_texts = [];
+                glide.hints.show({
+                  selector,
+                  action,
+                  async pick({ hints, content }) {
+                    hint_texts = await content.map((target) => (target.textContent ?? "").toLowerCase());
+                    return hints;
+                  },
+                });
+              }
+
+              glide.keymaps.set("normal", "c", () => start_hints());
+              glide.keymaps.set("normal", "f", () => start_hints());
+              glide.keymaps.set("normal", "F", () => start_hints(undefined, "newtab-click"));
+
+              for (const ch of "abcdefghijklmnopqrstuvwxyz") {
+                glide.keymaps.set("hint", ch, () => {
+                  if (hint_session) {
+                    hint_filter += ch;
+                    apply_hint_filter();
+                  }
+                });
+              }
+              glide.keymaps.set("hint", "<Space>", () => {
+                if (hint_session) {
+                  hint_filter += " ";
+                  apply_hint_filter();
+                }
+              });
+              glide.keymaps.set("hint", "<BS>", () => {
+                if (hint_session) {
+                  hint_filter = hint_filter.slice(0, -1);
+                  apply_hint_filter();
+                }
+              });
+              glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
+                if (new_mode !== "hint") {
+                  hint_session = false;
+                }
+              });
+
+              glide.keymaps.set("normal", "/", () => glide.findbar.open({ query: "" }));
+              glide.keymaps.set("normal", "?", () => glide.findbar.open({ query: "" }));
+              glide.keymaps.set("normal", "n", () => glide.findbar.next_match());
+              glide.keymaps.set("normal", "N", () => glide.findbar.previous_match());
+
+              async function tab_or_tabopen(query: string) {
+                const url = query.includes("://") ? query : `https://''${query}`;
+                const tabs = await browser.tabs.query({ currentWindow: true });
+                const existing = tabs.find((t) => t.url != null && t.url.includes(query));
+                if (existing?.id != null) {
+                  await browser.tabs.update(existing.id, { active: true });
+                } else {
+                  await glide.excmds.execute(`tab_new ''${url}`);
+                }
+              }
+
+              const site_shortcuts = {
+                gwa: "apic-impimba-1.m.imp.ac.at",
+                gwA: "artifactory.imp.ac.at",
+                gwb: "bitbucket.vbc.ac.at",
+                gwc: "vbc.atlassian.net/wiki",
+                gwd: "datadomain-impimba-2.imp.ac.at",
+                gwe: "exivity.vbc.ac.at",
+                gwg: "github.com",
+                gwG: "goc.egi.eu",
+                gwh: "jupyterhub.vbc.ac.at",
+                gwj: "jenkins.vbc.ac.at",
+                gwJ: "test-jenkins.vbc.ac.at",
+                gwl: "lucid.app",
+                gwm: "monitoring.vbc.ac.at/grafana",
+                gwM: "monitoring.vbc.ac.at/prometheus",
+                gwn: "netbox.vbc.ac.at",
+                gwN: "nap.imp.ac.at",
+                gwo: "outlook.office.com",
+                gws: "satellite.vbc.ac.at",
+                gwt: "tower.vbc.ac.at",
+                gwv: "vc-impimba-1.m.imp.ac.at/ui",
+                gwx: "xclarity.vbc.ac.at",
+                ghp: "https://github.com/pulls",
+                ghi: "https://github.com/issues/assigned?q=is%3Aissue%20state%3Aopen%20archived%3Afalse%20(assignee%3A%40me%20OR%20author%3A%40me)%20sort%3Aupdated-desc",
+                ghv: "github.com/orgs/vbc-it/repositories",
+                ghc: "github.com/orgs/CLIP-HPC/repositories",
+                ghd: "github.com/Swarsel/.dotfiles",
+                ghni: "github.com/NixOS/nixpkgs/issues",
+                ghnp: "github.com/NixOS/nixpkgs/pulls",
+                gprn: "www.reddit.com/r/NixOS/",
+                gpd: "discourse.nixos.org/",
+                gpp: "parkour.wien/categories",
+              };
+
+              for (const [keys, target] of Object.entries(site_shortcuts)) {
+                glide.keymaps.set("normal", keys, () => tab_or_tabopen(target), {
+                  description: `Focus or open ''${target}`,
+                });
+              }
+
+              const hint_selectors = {
+                "https?://www\\.google\\.com": `[class="LC20lb MBeuO DKV0Md"], [class="YmvwI"], [class="YyVfkd"], [class="fl"]`,
+                "https?://news\\.ycombinator\\.com": `[class="titleline"], [class="age"]`,
+                "https?://lobste\\.rs": `[class="u-url"], [class="comments_label"]`,
+                "https?://(www\\.|old\\.)?reddit\\.com": `[class="title may-blank loggedin"], [class="bylink comments may-blank"]`,
+                "https?://github\\.com": `[class="Link--primary"], [class="AppHeader-button Button--secondary Button--medium Button p-0 color-fg-muted"], [class="UnderlineNav-item no-wrap js-responsive-underlinenav-item js-selected-navigation-item"], [class="prc-ActionList-ItemLabel-TmBhn"], [class="PRIVATE_TreeView-item-content-text prc-TreeView-TreeViewItemContentText-smZM-"]`,
+                "https?://vbc\\.atlassian\\.net/wiki": `[class="_1reo15vq _18m915vq _1bto1l2s _kqswh2mm _o5721q9c _syaz1fxt"], [class="_11c81ixg _1reo15vq _18m915vq _18s81b66 _kqswh2mm _k48p1wq8 _o5721q9c _1bto1l2s _u5f31b66"], [class="_1r04ze3t _kqswstnw"], [class="css-a61etj"], [class="jira-macro-table-underline-pdfexport"]`,
+              };
+
+              for (const [pattern, selector] of Object.entries(hint_selectors)) {
+                glide.autocmds.create("UrlEnter", new RegExp(pattern), () => {
+                  glide.buf.keymaps.set("normal", "c", () => start_hints(selector));
+                });
+              }
+
+              glide.autocmds.create("UrlEnter", /https?:\/\/www\.google\.com/, () => {
+                glide.buf.keymaps.set("normal", "gi", async () => {
+                  await glide.excmds.execute("focusinput last");
+                  await glide.excmds.execute("caret_move endline");
+                });
+              });
+
+              const invidious_css = css`
+                body {
+                  max-width: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                }
+
+                .pure-u-md-2-3,
+                .pure-u-lg-2-3,
+                .pure-u-md-1-3,
+                .pure-u-lg-1-3 {
+                  width: 100% !important;
+                }
+
+                #contents,
+                .pure-g,
+                .pure-u-md-2-3 > .h-box,
+                .pure-u-lg-2-3 > .h-box {
+                  max-width: 100% !important;
+                  width: 100% !important;
+                  padding-left: 0 !important;
+                  padding-right: 0 !important;
+                  margin-left: 0 !important;
+                  margin-right: 0 !important;
+                }
+
+                #player-container {
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  aspect-ratio: 16 / 9;
+                  height: auto !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  max-height: 90vh !important;
+                }
+
+                .video-js,
+                .video-js video,
+                .video-js .vjs-tech,
+                #player {
+                  width: 100% !important;
+                  height: 100% !important;
+                  padding-top: 0 !important;
+                }
+
+                #player-container + .h-box,
+                #player-container + div {
+                  margin-top: 0.5em !important;
+                  padding-top: 0 !important;
+                }
+              `;
+
+              glide.autocmds.create("UrlEnter", /https:\/\/${
+                lib.replaceStrings [ "." ] [ "\\." ] globals.services.invidious.domain
+              }\/watch/, ({ tab_id }) => {
+                glide.content.execute((css_text) => {
+                  if (!document.getElementById("glide-user-style")) {
+                    const el = document.createElement("style");
+                    el.id = "glide-user-style";
+                    el.textContent = css_text;
+                    document.head.appendChild(el);
+                  }
+                }, { tab_id, args: [invidious_css] });
+              });
+
+              const ignore_mode_sites = [
+                /https?:\/\/pokerogue\.net/,
+                /https?:\/\/typelit\.io/,
+                /https?:\/\/vc-impimba-1\.m\.imp\.ac\.at\/ui\/webconsole/,
+              ];
+
+              for (const pattern of ignore_mode_sites) {
+                glide.autocmds.create("UrlEnter", pattern, () => {
+                  glide.excmds.execute("mode_change ignore");
+                });
+              }
+            '';
+          };
+
+          programs.zsh.sessionVariables = {
+            MOZ_DISABLE_RDD_SANDBOX = "1";
+          };
+
+          home.activation.sponsorblockSettings =
+            let
+              sbJson = pkgs.writeText "sponsorblock-settings.json" (
+                builtins.toJSON {
+                  supportInvidious = true;
+                  invidiousInstances = [
+                    "www.youtubekids.com"
+                    "inv.nadeko.net"
+                    "inv.tux.pizza"
+                    "invidious.adminforge.de"
+                    "invidious.jing.rocks"
+                    "invidious.nerdvpn.de"
+                    "invidious.perennialte.ch"
+                    "invidious.privacyredirect.com"
+                    "invidious.reallyaweso.me"
+                    "invidious.yourdevice.ch"
+                    "iv.ggtyler.dev"
+                    "iv.nboeck.de"
+                    "yewtu.be"
+                    globals.services.invidious.domain
+                  ];
+                  categorySelections = [
+                    {
+                      name = "sponsor";
+                      option = 2;
+                    }
+                    {
+                      name = "poi_highlight";
+                      option = 1;
+                    }
+                    {
+                      name = "exclusive_access";
+                      option = 0;
+                    }
+                    {
+                      name = "selfpromo";
+                      option = 2;
+                    }
+                    {
+                      name = "chapter";
+                      option = 0;
+                    }
+                  ];
+                }
+              );
+            in
+            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              sponsorblockPatch() {
+                sbDb="$1"
+                sbProc="$2"
+                if [ ! -f "$sbDb" ]; then
+                  verboseEcho "sponsorblock: $sbDb does not exist yet, skipping"
+                elif ${pkgs.procps}/bin/pgrep -x "$sbProc" > /dev/null; then
+                  warnEcho "sponsorblock: $sbProc is running, skipping sync-storage update"
+                else
+                  run ${pkgs.sqlite}/bin/sqlite3 "$sbDb" \
+                    "INSERT INTO storage_sync_data(ext_id, data) VALUES('sponsorBlocker@ajay.app', json(readfile('${sbJson}'))) ON CONFLICT(ext_id) DO UPDATE SET data = json_patch(data, json(readfile('${sbJson}'))), sync_change_counter = sync_change_counter + 1;" \
+                    || warnEcho "sponsorblock: failed to update $sbDb"
+                fi
+              }
+              sponsorblockPatch "$HOME/.config/glide/glide/default/storage-sync-v2.sqlite" glide
+              sponsorblockPatch "$HOME/.mozilla/firefox/default/storage-sync-v2.sqlite" firefox
+            '';
         };
       };
   }
@@ -17143,7 +18227,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                         "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
                       "${modifier}+d" = "exec swarselcheck -d";
                       "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-                      "${modifier}+f" = "exec firefox";
+                      "${modifier}+f" = "exec glide";
                       "${modifier}+h" = "exec hyprpicker | wl-copy";
                       "${modifier}+m" = "exec swaymsg workspace back_and_forth";
                       "${modifier}+o" = "exec pass-fuzzel --otp";
@@ -17262,6 +18346,12 @@ Nowadays, all of the Sway stack is kept as a reference.
                         command = "opacity 0.99";
                         criteria = {
                           app_id = "firefox";
+                        };
+                      }
+                      {
+                        command = "opacity 0.99";
+                        criteria = {
+                          app_id = "glide";
                         };
                       }
                       {
@@ -20917,7 +22007,10 @@ Auto login for the initial session.
                     opacity = 1.0;
                   }
                   {
-                    matches = [ { app-id = "^firefox$"; } ];
+                    matches = [
+                      { app-id = "^firefox$"; }
+                      { app-id = "^glide$"; }
+                    ];
                     opacity = 0.95;
                   }
                   {
@@ -20981,6 +22074,7 @@ Auto login for the initial session.
                     matches = [ { title = ".*1Password.*"; } ];
                     excludes = [
                       { app-id = "^firefox$"; }
+                      { app-id = "^glide$"; }
                       { app-id = "^emacs$"; }
                       { app-id = "^kitty$"; }
                     ];
@@ -21085,7 +22179,7 @@ Auto login for the initial session.
                     # "Mod+q".action = sh "${resizer} && niri msg action close-window";
                     "Mod+q".action = sh "niri msg action close-window";
                     # "Mod+f".action = sh "${resizer} && exec firefox";
-                    "Mod+f".action = sh "exec firefox";
+                    "Mod+f".action = sh "exec glide";
                     # "Mod+Space".action = spawn "noctalia-shell" "ipc" "call" "launcher" "toggle";
                     # "Mod+Space".action = sh "${resizer} && exec noctalia-shell ipc call launcher toggle";
                     "Mod+Space".action = sh "exec noctalia msg panel-toggle launcher";
@@ -41713,6 +42807,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
           "element"
           "eza"
           "firefox"
+          "glide"
           "fuzzel"
           "settings"
           "gnome-keyring"
@@ -41780,6 +42875,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
           "direnv"
           "eza"
           "firefox"
+          "glide"
           "fuzzel"
           "settings"
           "git"
@@ -42085,7 +43181,8 @@ In this section I define custom aspect sets. These are mostly used to combine co
         (setq undo-limit 80000000
               evil-want-fine-undo t
               auto-save-default t)
-        (setq browse-url-browser-function 'browse-url-firefox)
+        (setq browse-url-browser-function 'browse-url-generic
+              browse-url-generic-program "glide")
         (global-set-key [remap suspend-frame]
                         (lambda ()
                           (interactive)

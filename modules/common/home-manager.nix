@@ -76,6 +76,7 @@
             overwriteBackup = true;
             users.${config.swarselsystems.mainUser}.imports = [
               inputs.swarsel-nix.homeModules.default
+              inputs.glide-nix.homeModules.default
               {
                 imports = [
                   self.modules.homeManager.profile-base

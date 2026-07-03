@@ -147,6 +147,7 @@
           homeModules = [
             inputs.nix-index-database.homeModules.nix-index
             inputs.swarsel-nix.homeModules.default
+            inputs.glide-nix.homeModules.default
             self.modules.generic.pii
             nodeModule
           ];

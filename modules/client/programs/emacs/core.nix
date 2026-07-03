@@ -64,7 +64,8 @@
       (setq undo-limit 80000000
             evil-want-fine-undo t
             auto-save-default t)
-      (setq browse-url-browser-function 'browse-url-firefox)
+      (setq browse-url-browser-function 'browse-url-generic
+            browse-url-generic-program "glide")
       (global-set-key [remap suspend-frame]
                       (lambda ()
                         (interactive)

@@ -2,6 +2,8 @@
   flake.modules.generic.vars =
     {
       self,
+      config,
+      lib,
       pkgs,
       globals,
       ...
@@ -83,17 +85,143 @@
             firefox.profileNames = [ "default" ];
           };
 
+          browserPolicies = {
+            # CaptivePortal = false;
+            AppAutoUpdate = false;
+            BackgroundAppUpdate = false;
+            DisableBuiltinPDFViewer = true;
+            DisableFirefoxStudies = true;
+            DisablePocket = true;
+            DisableFirefoxScreenshots = true;
+            DisableTelemetry = true;
+            DisableFirefoxAccounts = false;
+            DisableProfileImport = true;
+            DisableProfileRefresh = true;
+            DisplayBookmarksToolbar = "always";
+            DontCheckDefaultBrowser = true;
+            NoDefaultBookmarks = true;
+            OfferToSaveLogins = false;
+            OfferToSaveLoginsDefault = false;
+            PasswordManagerEnabled = false;
+            DisableMasterPasswordCreation = true;
+            ExtensionUpdate = false;
+            EnableTrackingProtection = {
+              Value = true;
+              Locked = true;
+              Cryptomining = true;
+              Fingerprinting = true;
+              EmailTracking = true;
+              # Exceptions = ["https://example.com"]
+            };
+            PDFjs = {
+              Enabled = false;
+              EnablePermissions = false;
+            };
+            Handlers = {
+              mimeTypes."application/pdf".action = "saveToDisk";
+              extensions.pdf = {
+                action = "useHelperApp";
+                ask = true;
+                handlers = [
+                  {
+                    name = "GNOME Document Viewer";
+                    path = "${pkgs.evince}/bin/evince";
+                  }
+                ];
+              };
+            };
+            FirefoxHome = {
+              Search = true;
+              TopSites = true;
+              SponsoredTopSites = false;
+              Highlights = true;
+              Pocket = false;
+              SponsoredPocket = false;
+              Snippets = false;
+              Locked = true;
+            };
+            FirefoxSuggest = {
+              WebSuggestions = false;
+              SponsoredSuggestions = false;
+              ImproveSuggest = false;
+              Locked = true;
+            };
+            SanitizeOnShutdown = {
+              Cache = true;
+              Cookies = false;
+              Downloads = true;
+              FormData = true;
+              History = false;
+              Sessions = false;
+              SiteSettings = false;
+              OfflineApps = true;
+              Locked = true;
+            };
+            SearchEngines = {
+              PreventInstalls = true;
+              Remove = [
+                "Bing" # Fuck you
+              ];
+            };
+            UserMessaging = {
+              ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
+              FeatureRecommendations = false; # Don’t recommend browser features
+              Locked = true; # Prevent the user from changing user messaging preferences
+              MoreFromMozilla = false; # Don’t show the “More from Mozilla” section in Preferences
+              SkipOnboarding = true; # Don’t show onboarding messages on the new tab page
+              UrlbarInterventions = false; # Don’t offer suggestions in the URL bar
+              WhatsNew = false; # Remove the “What’s New” icon and menuitem
+            };
+            # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
+            "3rdparty".Extensions."uBlock0@raymondhill.net" = {
+              userSettings = [
+                [
+                  "uiTheme"
+                  "dark"
+                ]
+                [
+                  "uiAccentCustom"
+                  "true"
+                ]
+                [
+                  "uiAccentCustom0"
+                  config.lib.stylix.colors.withHashtag.base0C
+                ]
+                [
+                  "cloudStorageEnabled"
+                  "false"
+                ]
+              ];
+              toOverwrite.filterLists = [
+                "DEU-0"
+                "adguard-generic"
+                "adguard-annoyance"
+                "adguard-social"
+                "adguard-spyware-url"
+                "easylist"
+                "easyprivacy"
+                "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                "plowe-0"
+                "ublock-abuse"
+                "ublock-badware"
+                "ublock-filters"
+                "ublock-privacy"
+                "ublock-quick-fixes"
+                "ublock-unbreak"
+                "urlhaus-1"
+              ];
+            };
+          };
+
           firefox = {
             userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
             extensions = {
               packages = with pkgs.nur.repos.rycee.firefox-addons; [
                 tridactyl
                 tampermonkey
-                sidebery
                 browserpass
                 clearurls
                 darkreader
-                # enhancer-for-youtube
                 istilldontcareaboutcookies
                 translate-web-pages
                 ublock-origin
@@ -105,36 +233,158 @@
                 stylus
                 widegithub
                 enhanced-github
-                unpaywall
                 don-t-fuck-with-paste
-                # plasma-integration
-                noscript
                 redirector
-
-                # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
-                # (buildFirefoxXpiAddon {
-                #   pname = "shortkeys";
-                #   version = "4.0.2";
-                #   addonId = "Shortkeys@Shortkeys.com";
-                #   url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-                #   sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-                #   meta = with lib;
-                #     {
-                #       description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                #       mozPermissions = [
-                #         "tabs"
-                #         "downloads"
-                #         "clipboardWrite"
-                #         "browsingData"
-                #         "storage"
-                #         "bookmarks"
-                #         "sessions"
-                #         "<all_urls>"
-                #       ];
-                #       platforms = platforms.all;
-                #     };
-                # })
               ];
+
+              settings =
+                lib.optionalAttrs config.programs.password-store.enable {
+                  "browserpass@maximbaz.com" = {
+                    force = true;
+                    settings.stores.default = {
+                      id = "default";
+                      name = "default";
+                      path = config.programs.password-store.settings.PASSWORD_STORE_DIR;
+                    };
+                  };
+                }
+                // {
+                  "uBlock0@raymondhill.net" = {
+                    force = true;
+                    settings = rec {
+                      uiTheme = "dark";
+                      uiAccentCustom = true;
+                      uiAccentCustom0 = config.lib.stylix.colors.withHashtag.base0C;
+                      cloudStorageEnabled = false;
+                      importedLists = [
+                        "https://filters.adtidy.org/extension/ublock/filters/3.txt"
+                        "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                      ];
+                      externalLists = lib.concatStringsSep "\n" importedLists;
+                      selectedFilterLists = [
+                        "user-filters"
+                        "DEU-0"
+                        "adguard-generic"
+                        "adguard-annoyance"
+                        "adguard-social"
+                        "adguard-spyware-url"
+                        "easylist"
+                        "easyprivacy"
+                        "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                        "plowe-0"
+                        "ublock-abuse"
+                        "ublock-badware"
+                        "ublock-filters"
+                        "ublock-privacy"
+                        "ublock-quick-fixes"
+                        "ublock-unbreak"
+                        "urlhaus-1"
+                      ];
+                    };
+                  };
+                  "addon@darkreader.org" = {
+                    force = true;
+                    settings = {
+                      syncSettings = false;
+                      schemeVersion = 2;
+                      enabled = true;
+                      enabledByDefault = true;
+                      enabledFor = [ ];
+                      disabledFor = [ "github.com" ];
+                      changeBrowserTheme = false;
+                      detectDarkTheme = true;
+                      enableContextMenus = false;
+                      enableForPDF = true;
+                      enableForProtectedPages = false;
+                      fetchNews = true;
+                      syncSitesFixes = false;
+                      automation = {
+                        enabled = false;
+                        mode = "";
+                        behavior = "OnOff";
+                      };
+                      time = {
+                        activation = "18:00";
+                        deactivation = "9:00";
+                      };
+                      theme = {
+                        mode = 1;
+                        brightness = 100;
+                        contrast = 100;
+                        grayscale = 0;
+                        sepia = 0;
+                        useFont = false;
+                        fontFamily = "Open Sans";
+                        textStroke = 0;
+                        engine = "dynamicTheme";
+                        stylesheet = "";
+                        darkSchemeBackgroundColor = "#181a1b";
+                        darkSchemeTextColor = "#e8e6e3";
+                        lightSchemeBackgroundColor = "#dcdad7";
+                        lightSchemeTextColor = "#181a1b";
+                        scrollbarColor = "";
+                        selectionColor = "auto";
+                        styleSystemControls = false;
+                        lightColorScheme = "Default";
+                        darkColorScheme = "Default";
+                        immediateModify = false;
+                      };
+                    };
+                  };
+                  "redirector@einaregilsson.com" = {
+                    force = true;
+                    settings = {
+                      disabled = false;
+                      enableNotifications = false;
+                      redirects =
+                        map
+                          (
+                            r:
+                            r
+                            // {
+                              error = null;
+                              excludePattern = "";
+                              patternDesc = "";
+                              patternType = "R";
+                              processMatches = "noProcessing";
+                              disabled = false;
+                              grouped = false;
+                              appliesTo = [ "main_frame" ];
+                            }
+                          )
+                          [
+                            {
+                              description = "Youtube";
+                              includePattern = ''(.*\.)?youtube\.com/(.*)'';
+                              redirectUrl = "https://${globals.services.invidious.domain}/$2";
+                              exampleUrl = "https://www.youtube.com/watch?v=9szhjhO9epA";
+                              exampleResult = "https://${globals.services.invidious.domain}/watch?v=9szhjhO9epA";
+                            }
+                            {
+                              description = "Youtu.be";
+                              includePattern = ''(.*\.)?youtu\.be/(.*)'';
+                              redirectUrl = "https://${globals.services.invidious.domain}/$2";
+                              exampleUrl = "https://www.youtu.be/watch?v=9szhjhO9epA";
+                              exampleResult = "https://${globals.services.invidious.domain}/watch?v=9szhjhO9epA";
+                            }
+                            {
+                              description = "Reddit";
+                              includePattern = ''(.*\.)?reddit\.com/(.*)'';
+                              redirectUrl = "https://old.reddit.com/$2";
+                              exampleUrl = "https://www.reddit.com/r/NixOS";
+                              exampleResult = "https://old.reddit.com/r/NixOS";
+                            }
+                            {
+                              description = "Redd.it";
+                              includePattern = ''(.*\.)?redd\.it/(.*)'';
+                              redirectUrl = "https://old.reddit.com/$2";
+                              exampleUrl = "https://redd.it/r/NixOS";
+                              exampleResult = "https://old.reddit.com/r/NixOS";
+                            }
+                          ];
+                    };
+                  };
+                };
             };
 
             settings = {
@@ -158,6 +408,10 @@
               "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
               "identity.sync.tokenserver.uri" =
                 "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
+              "extensions.webextensions.ExtensionStorageIDB.migrated.uBlock0@raymondhill.net" = false;
+              "extensions.webextensions.ExtensionStorageIDB.migrated.browserpass@maximbaz.com" = false;
+              "extensions.webextensions.ExtensionStorageIDB.migrated.redirector@einaregilsson.com" = false;
+              "extensions.webextensions.ExtensionStorageIDB.migrated.addon@darkreader.org" = false;
             };
 
             search = {
@@ -266,6 +520,42 @@
                     "@ho"
                     "@hmo"
                   ];
+                };
+
+                youtube = {
+                  name = "YouTube";
+                  urls = [
+                    {
+                      template = "https://www.youtube.com/results";
+                      params = [
+                        {
+                          name = "search_query";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
+                  icon = "https://www.youtube.com/favicon.ico";
+                  updateInterval = 24 * 60 * 60 * 1000;
+                  definedAliases = [ "@yt" ];
+                };
+
+                github = {
+                  name = "GitHub";
+                  urls = [
+                    {
+                      template = "https://github.com/search";
+                      params = [
+                        {
+                          name = "q";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
+                  icon = "https://github.com/favicon.ico";
+                  updateInterval = 24 * 60 * 60 * 1000;
+                  definedAliases = [ "@gh" ];
                 };
 
                 "Confluence search" = {

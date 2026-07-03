@@ -179,7 +179,7 @@
                       "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
                     "${modifier}+d" = "exec swarselcheck -d";
                     "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-                    "${modifier}+f" = "exec firefox";
+                    "${modifier}+f" = "exec glide";
                     "${modifier}+h" = "exec hyprpicker | wl-copy";
                     "${modifier}+m" = "exec swaymsg workspace back_and_forth";
                     "${modifier}+o" = "exec pass-fuzzel --otp";
@@ -298,6 +298,12 @@
                       command = "opacity 0.99";
                       criteria = {
                         app_id = "firefox";
+                      };
+                    }
+                    {
+                      command = "opacity 0.99";
+                      criteria = {
+                        app_id = "glide";
                       };
                     }
                     {
