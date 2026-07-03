@@ -31,14 +31,14 @@
 
         globals.networks = lib.mkIf config.swarselsystems.writeGlobalNetworks (
           lib.mapAttrs' (
-            netName: _:
+            netName: net:
             lib.nameValuePair "${netPrefix}-${netName}" {
               hosts.${config.node.name} = {
-                inherit (netConfig.networks.${netName}) id;
-                mac = netConfig.networks.${netName}.mac or null;
+                inherit (net) id;
+                mac = net.mac or null;
               };
             }
-          ) netConfig.networks
+          ) (lib.filterAttrs (_: net: net ? id) netConfig.networks)
         );
 
         globals.hosts.${config.node.name} = {

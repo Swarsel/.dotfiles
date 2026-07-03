@@ -47,9 +47,11 @@ let
         let
           parts = builtins.split "\\." domain;
           domainParts = builtins.filter (x: builtins.isString x && x != "") parts;
-          baseParts = builtins.tail domainParts;
         in
-        builtins.concatStringsSep "." baseParts;
+        if builtins.length domainParts > 0 then
+          builtins.concatStringsSep "." (builtins.tail domainParts)
+        else
+          "";
 
       pkgsFor = lib.genAttrs (import systems) (
         system:
