@@ -61,8 +61,8 @@
               (append
                (list
                 '(undecorated . t)
-                '(background-color . "#1D252C")
-                '(foreground-color . "#A0B3C5")
+                '(background-color . "#1d252c")
+                '(foreground-color . "#a0b3c5")
                 '(font . "FiraCode Nerd Font")
                 '(vertical-scroll-bars . nil)
                 '(horizontal-scroll-bars . nil)
