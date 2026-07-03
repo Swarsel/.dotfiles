@@ -27,6 +27,10 @@
               sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
               path = "${homeDir}/.config/vcenter-mcp/config.json";
             };
+            openshift-kubeconfig = {
+              sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
+              path = "${homeDir}/.config/openshift-mcp/kubeconfig";
+            };
           };
           services.ontap-mcp = {
             enable = true;
@@ -75,11 +79,10 @@
             tigervnc
             # openstackclient
             step-cli
-
             vscode-fhs
+            openshift
 
             ontap-mcp
-            antigravity
             rustdesk-vbc
           ];
           sessionVariables = {

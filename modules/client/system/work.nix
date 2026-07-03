@@ -49,6 +49,7 @@ in
                 "ontap-mcp"
                 "palo-alto-mcp"
                 "vcenter-mcp"
+                "openshift-mcp-server"
               ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
             )
           ];
