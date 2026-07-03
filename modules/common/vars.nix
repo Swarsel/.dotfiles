@@ -91,7 +91,6 @@
             BackgroundAppUpdate = false;
             DisableBuiltinPDFViewer = true;
             DisableFirefoxStudies = true;
-            DisablePocket = true;
             DisableFirefoxScreenshots = true;
             DisableTelemetry = true;
             DisableFirefoxAccounts = false;
@@ -101,7 +100,6 @@
             DontCheckDefaultBrowser = true;
             NoDefaultBookmarks = true;
             OfferToSaveLogins = false;
-            OfferToSaveLoginsDefault = false;
             PasswordManagerEnabled = false;
             DisableMasterPasswordCreation = true;
             ExtensionUpdate = false;
@@ -135,9 +133,6 @@
               TopSites = true;
               SponsoredTopSites = false;
               Highlights = true;
-              Pocket = false;
-              SponsoredPocket = false;
-              Snippets = false;
               Locked = true;
             };
             FirefoxSuggest = {
@@ -172,48 +167,9 @@
               UrlbarInterventions = false; # Don’t offer suggestions in the URL bar
               WhatsNew = false; # Remove the “What’s New” icon and menuitem
             };
-            # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
-            "3rdparty".Extensions."uBlock0@raymondhill.net" = {
-              userSettings = [
-                [
-                  "uiTheme"
-                  "dark"
-                ]
-                [
-                  "uiAccentCustom"
-                  "true"
-                ]
-                [
-                  "uiAccentCustom0"
-                  config.lib.stylix.colors.withHashtag.base0C
-                ]
-                [
-                  "cloudStorageEnabled"
-                  "false"
-                ]
-              ];
-              toOverwrite.filterLists = [
-                "DEU-0"
-                "adguard-generic"
-                "adguard-annoyance"
-                "adguard-social"
-                "adguard-spyware-url"
-                "easylist"
-                "easyprivacy"
-                "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
-                "plowe-0"
-                "ublock-abuse"
-                "ublock-badware"
-                "ublock-filters"
-                "ublock-privacy"
-                "ublock-quick-fixes"
-                "ublock-unbreak"
-                "urlhaus-1"
-              ];
-            };
           };
 
-          firefox = {
+          firefox = rec {
             userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
             extensions = {
               packages = with pkgs.nur.repos.rycee.firefox-addons; [
@@ -390,7 +346,6 @@
             settings = {
               "extensions.autoDisableScopes" = 0;
               "browser.bookmarks.showMobileBookmarks" = true;
-              "browser.autofocus" = false;
               "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
               "browser.search.suggest.enabled" = false;
               "browser.search.suggest.enabled.private" = false;
@@ -398,8 +353,6 @@
               "browser.urlbar.showSearchSuggestionsFirst" = false;
               "browser.topsites.contile.enabled" = false;
               "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
-              "browser.newtabpage.activity-stream.feeds.snippets" = false;
-              "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
               "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = false;
               "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = false;
               "browser.newtabpage.activity-stream.section.highlights.includeVisited" = false;
@@ -408,11 +361,10 @@
               "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
               "identity.sync.tokenserver.uri" =
                 "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
-              "extensions.webextensions.ExtensionStorageIDB.migrated.uBlock0@raymondhill.net" = false;
-              "extensions.webextensions.ExtensionStorageIDB.migrated.browserpass@maximbaz.com" = false;
-              "extensions.webextensions.ExtensionStorageIDB.migrated.redirector@einaregilsson.com" = false;
-              "extensions.webextensions.ExtensionStorageIDB.migrated.addon@darkreader.org" = false;
-            };
+            }
+            // lib.mapAttrs' (
+              id: _: lib.nameValuePair "extensions.webextensions.ExtensionStorageIDB.migrated.${id}" false
+            ) extensions.settings;
 
             search = {
               # default = "Kagi";
