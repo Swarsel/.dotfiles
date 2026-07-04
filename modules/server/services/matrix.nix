@@ -89,6 +89,15 @@
               inherit sopsFile;
               owner = serviceUser;
             };
+            mautrix-whatsapp-pickle-key = {
+              inherit sopsFile;
+            };
+            mautrix-signal-pickle-key = {
+              inherit sopsFile;
+            };
+            matrix-doublepuppet-token = {
+              inherit sopsFile;
+            };
             kanidm-matrix = {
               sopsFile = kanidmSopsFile;
               owner = serviceUser;
@@ -113,6 +122,36 @@
                 MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrix-telegram-hs-token}
                 MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrix-telegram-api-id}
                 MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrix-telegram-api-hash}
+                MAUTRIX_TELEGRAM_DOUBLEPUPPET=${config.sops.placeholder.matrix-doublepuppet-token}
+              '';
+            };
+            mautrixwhatsapp = {
+              owner = serviceUser;
+              content = ''
+                MAUTRIX_WHATSAPP_PICKLE_KEY=${config.sops.placeholder.mautrix-whatsapp-pickle-key}
+                MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
+              '';
+            };
+            mautrixsignal = {
+              owner = serviceUser;
+              content = ''
+                MAUTRIX_SIGNAL_PICKLE_KEY=${config.sops.placeholder.mautrix-signal-pickle-key}
+                MAUTRIX_SIGNAL_BRIDGE_LOGIN_SHARED_SECRET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
+              '';
+            };
+            "doublepuppet.yaml" = {
+              owner = serviceUser;
+              content = ''
+                id: doublepuppet
+                url:
+                as_token: ${config.sops.placeholder.matrix-doublepuppet-token}
+                hs_token: notused
+                sender_localpart: notused
+                rate_limited: false
+                namespaces:
+                  users:
+                  - regex: '@.*:${builtins.replaceStrings [ "." ] [ "\\." ] serviceDomain}'
+                    exclusive: false
               '';
             };
           };
@@ -248,7 +287,7 @@
                   "${dataDir}/telegram-registration.yaml"
                   "${dataDir}/whatsapp-registration.yaml"
                   "${dataDir}/signal-registration.yaml"
-                  "${dataDir}/doublepuppet.yaml"
+                  config.sops.templates."doublepuppet.yaml".path
                 ];
               server_name = serviceDomain;
               public_baseurl = "https://${serviceDomain}";
@@ -332,6 +371,13 @@
                 sync_create_limit = 0;
                 sync_direct_chats = true;
                 telegram_link_preview = true;
+                login_shared_secret_map = {
+                  ${serviceDomain} = "as_token:$MAUTRIX_TELEGRAM_DOUBLEPUPPET";
+                };
+                encryption = {
+                  allow = true;
+                  default = false;
+                };
                 permissions = {
                   "*" = "relaybot";
                   "@swarsel:${serviceDomain}" = "admin";
@@ -352,6 +398,7 @@
           mautrix-whatsapp = {
             enable = true;
             registerToSynapse = false;
+            environmentFile = config.sops.templates.mautrixwhatsapp.path;
             settings = {
               homeserver = {
                 address = "http://localhost:${builtins.toString servicePort}";
@@ -366,12 +413,19 @@
                 hostname = "0.0.0.0";
                 port = whatsappPort;
               };
-              bridge = {
-                displayname_template = "{{or .FullName .PushName .JID}} (WA)";
+              encryption = {
+                allow = true;
+                default = true;
+                pickle_key = "$MAUTRIX_WHATSAPP_PICKLE_KEY";
+              };
+              backfill.enabled = true;
+              network = {
+                displayname_template = "{{or .FullName .PushName .Phone}} (WA)";
+                send_presence_on_typing = true;
+                url_previews = true;
+                extev_polls = true;
                 history_sync = {
-                  backfill = true;
                   max_initial_conversations = -1;
-                  message_count = -1;
                   request_full_sync = true;
                   full_sync_config = {
                     days_limit = 900;
@@ -379,15 +433,8 @@
                     storage_quota_mb = 5000;
                   };
                 };
-                login_shared_secret_map = {
-                  ${serviceDomain} = "as_token:doublepuppet";
-                };
-                sync_manual_marked_unread = true;
-                send_presence_on_typing = true;
-                parallel_member_sync = true;
-                url_previews = true;
-                caption_in_message = true;
-                extev_polls = true;
+              };
+              bridge = {
                 permissions = {
                   "*" = "relay";
                   "@swarsel:${serviceDomain}" = "admin";
@@ -399,6 +446,7 @@
           mautrix-signal = {
             enable = true;
             registerToSynapse = false;
+            environmentFile = config.sops.templates.mautrixsignal.path;
             settings = {
               homeserver = {
                 address = "http://localhost:${builtins.toString servicePort}";
@@ -413,12 +461,13 @@
                 hostname = "0.0.0.0";
                 port = signalPort;
               };
+              encryption = {
+                allow = true;
+                default = true;
+                pickle_key = "$MAUTRIX_SIGNAL_PICKLE_KEY";
+              };
+              network.displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
               bridge = {
-                displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
-                login_shared_secret_map = {
-                  ${serviceDomain} = "as_token:doublepuppet";
-                };
-                caption_in_message = true;
                 permissions = {
                   "*" = "relay";
                   "@swarsel:${serviceDomain}" = "admin";
