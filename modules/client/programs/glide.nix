@@ -50,9 +50,6 @@
             isDefault = true;
             settings = vars.firefox.settings // {
               "browser.startup.homepage" = "https://lobste.rs";
-              "browser.urlbar.suggest.quicksuggest.sponsored" = false;
-              "browser.urlbar.suggest.quicksuggest.nonsponsored" = false;
-              "browser.download.open_pdf_attachments_inline" = false;
             };
             search = vars.firefox.search;
             extensions = {
@@ -173,6 +170,10 @@
                 background-color: var(--base01) !important;
               }
 
+              #urlbar-container {
+                max-width: 50vw !important;
+              }
+
               findbar {
                 background-color: var(--base00) !important;
                 color: var(--base05) !important;
@@ -229,7 +230,29 @@
 
             const toolbar_hidden_css = css`
               #navigator-toolbox {
-                visibility: collapse !important;
+                position: fixed !important;
+                top: 0;
+                width: 100vw;
+                transform: translateY(-100%);
+                opacity: 0;
+                pointer-events: none;
+              }
+
+              #urlbar[popover] {
+                opacity: 0 !important;
+                pointer-events: none !important;
+              }
+
+              :root[customizing] #navigator-toolbox {
+                position: relative !important;
+                transform: none !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+              }
+
+              :root[customizing] #urlbar[popover] {
+                opacity: 1 !important;
+                pointer-events: auto !important;
               }
             `;
 
@@ -246,7 +269,7 @@
             }
 
             glide.keymaps.set("normal", "<leader>b", () => set_toolbar(toolbar_state === "urlbar" ? "hidden" : "urlbar"), {
-              description: "Toggle the URL and bookmarks bars",
+              description: "Toggle the URL bar",
             });
             glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
               description: "Toggle the full toolbar",
@@ -427,11 +450,51 @@
             glide.excmds.create({ name: "search", description: "Search in the current tab" }, ({ args_arr }) => do_search("current", parse_search(args_arr)));
             glide.excmds.create({ name: "tabsearch", description: "Search in a new tab" }, ({ args_arr }) => do_search("tab", parse_search(args_arr)));
 
-            async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
+            let url_entries: { star: boolean; title: string; url: string }[] = [];
+            let url_entries_timer: ReturnType<typeof setTimeout> | null = null;
+
+            async function refresh_url_entries() {
               const [bookmarks, history] = await Promise.all([
-                browser.bookmarks.getRecent(100),
+                browser.bookmarks.search({}),
                 browser.history.search({ text: "", startTime: 0, maxResults: 300 }),
               ]);
+              const seen = new Set();
+              const entries: typeof url_entries = [];
+              for (const item of [...bookmarks.map((b) => ({ ...b, star: true })), ...history.map((h) => ({ ...h, star: false }))]) {
+                if (!item.url || seen.has(item.url)) continue;
+                seen.add(item.url);
+                entries.push({ star: item.star, title: item.title ?? "", url: item.url });
+              }
+              url_entries = entries;
+            }
+
+            function schedule_url_entries_refresh() {
+              try {
+                if (url_entries_timer != null) {
+                  clearTimeout(url_entries_timer);
+                }
+                url_entries_timer = setTimeout(() => {
+                  url_entries_timer = null;
+                  void refresh_url_entries();
+                }, 1000);
+              } catch {
+                return;
+              }
+            }
+
+            glide.autocmds.create("ConfigLoaded", () => {
+              void refresh_url_entries();
+            });
+            browser.bookmarks.onCreated.addListener(schedule_url_entries_refresh);
+            browser.bookmarks.onRemoved.addListener(schedule_url_entries_refresh);
+            browser.bookmarks.onChanged.addListener(schedule_url_entries_refresh);
+            browser.bookmarks.onMoved.addListener(schedule_url_entries_refresh);
+            browser.history.onVisited.addListener(schedule_url_entries_refresh);
+
+            async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
+              if (url_entries.length === 0) {
+                await refresh_url_entries();
+              }
 
               function describe_action(input: string): string {
                 const trimmed = input.trim();
@@ -465,16 +528,53 @@
                 },
               }];
 
-              const seen = new Set();
-              const entries = [...bookmarks.map((b) => ({ ...b, star: true })), ...history.map((h) => ({ ...h, star: false }))];
-              for (const item of entries) {
-                if (!item.url || seen.has(item.url)) continue;
-                seen.add(item.url);
-                const url = item.url;
+              const SLOTS = 30;
+              const slot_items: (typeof url_entries)[number][] = [];
+              const slot_titles: HTMLElement[] = [];
+              const slot_urls: HTMLElement[] = [];
+              let slot_query: string | null = null;
+
+              function recompute_slots(input: string) {
+                if (input === slot_query) {
+                  return;
+                }
+                slot_query = input;
+                const q = input.trim().toLowerCase();
+                slot_items.length = 0;
+                for (const entry of url_entries) {
+                  if (slot_items.length >= SLOTS) break;
+                  if (q === "" || entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q)) {
+                    slot_items.push(entry);
+                  }
+                }
+                for (let i = 0; i < slot_items.length; i++) {
+                  slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
+                  slot_urls[i].textContent = slot_items[i].url;
+                }
+              }
+
+              for (let i = 0; i < SLOTS; i++) {
+                const title_el = DOM.create_element("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
+                const url_el = DOM.create_element("span", { style: { color: "var(--base0B)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
+                slot_titles.push(title_el);
+                slot_urls.push(url_el);
                 options.push({
-                  label: (item.star ? "★ " : "") + (item.title || url),
-                  description: url,
-                  execute: () => do_navigate(target, url),
+                  label: "url-" + i,
+                  render: () => DOM.create_element("td", {
+                    attributes: { colspan: "2" },
+                    style: { display: "flex", justifyContent: "space-between", gap: "2em", overflow: "hidden" },
+                    children: [title_el, url_el],
+                  }),
+                  matches: ({ input }) => {
+                    recompute_slots(input);
+                    return slot_items[i] != null;
+                  },
+                  execute: () => {
+                    const entry = slot_items[i];
+                    if (entry) {
+                      void do_navigate(target, entry.url);
+                    }
+                  },
                 });
               }
 
@@ -826,69 +926,7 @@
           MOZ_DISABLE_RDD_SANDBOX = "1";
         };
 
-        home.activation.sponsorblockSettings =
-          let
-            sbJson = pkgs.writeText "sponsorblock-settings.json" (
-              builtins.toJSON {
-                supportInvidious = true;
-                invidiousInstances = [
-                  "www.youtubekids.com"
-                  "inv.nadeko.net"
-                  "inv.tux.pizza"
-                  "invidious.adminforge.de"
-                  "invidious.jing.rocks"
-                  "invidious.nerdvpn.de"
-                  "invidious.perennialte.ch"
-                  "invidious.privacyredirect.com"
-                  "invidious.reallyaweso.me"
-                  "invidious.yourdevice.ch"
-                  "iv.ggtyler.dev"
-                  "iv.nboeck.de"
-                  "yewtu.be"
-                  globals.services.invidious.domain
-                ];
-                categorySelections = [
-                  {
-                    name = "sponsor";
-                    option = 2;
-                  }
-                  {
-                    name = "poi_highlight";
-                    option = 1;
-                  }
-                  {
-                    name = "exclusive_access";
-                    option = 0;
-                  }
-                  {
-                    name = "selfpromo";
-                    option = 2;
-                  }
-                  {
-                    name = "chapter";
-                    option = 0;
-                  }
-                ];
-              }
-            );
-          in
-          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            sponsorblockPatch() {
-              sbDb="$1"
-              sbProc="$2"
-              if [ ! -f "$sbDb" ]; then
-                verboseEcho "sponsorblock: $sbDb does not exist yet, skipping"
-              elif ${pkgs.procps}/bin/pgrep -x "$sbProc" > /dev/null; then
-                warnEcho "sponsorblock: $sbProc is running, skipping sync-storage update"
-              else
-                run ${pkgs.sqlite}/bin/sqlite3 "$sbDb" \
-                  "INSERT INTO storage_sync_data(ext_id, data) VALUES('sponsorBlocker@ajay.app', json(readfile('${sbJson}'))) ON CONFLICT(ext_id) DO UPDATE SET data = json_patch(data, json(readfile('${sbJson}'))), sync_change_counter = sync_change_counter + 1;" \
-                  || warnEcho "sponsorblock: failed to update $sbDb"
-              fi
-            }
-            sponsorblockPatch "$HOME/.config/glide/glide/default/storage-sync-v2.sqlite" glide
-            sponsorblockPatch "$HOME/.mozilla/firefox/default/storage-sync-v2.sqlite" firefox
-          '';
+        home.activation.sponsorblockSettings = vars.sponsorblockActivation;
       };
     };
 }
