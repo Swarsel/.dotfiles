@@ -442,6 +442,7 @@
                 "https://${globals.services.firefox-syncserver.domain}/1.0/sync/1.5";
               "browser.urlbar.suggest.quicksuggest.sponsored" = false;
               "browser.urlbar.suggest.quicksuggest.nonsponsored" = false;
+              "browser.profiles.enabled" = false;
               "browser.download.open_pdf_attachments_inline" = false;
               "browser.toolbars.bookmarks.visibility" = "never";
               "browser.uiCustomization.state" = builtins.toJSON {
@@ -717,6 +718,23 @@
                 "google".metaData.alias = "@g";
               };
               force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+            };
+          };
+
+          glide = {
+            inherit (firefox) settings search;
+            extensions = {
+              packages = lib.filter (
+                p:
+                !(builtins.elem (lib.getName p) (
+                  [
+                    "tridactyl"
+                    "stylus"
+                  ]
+                  ++ lib.optional (!config.programs.password-store.enable) "browserpass"
+                ))
+              ) firefox.extensions.packages;
+              inherit (firefox.extensions) settings;
             };
           };
         };

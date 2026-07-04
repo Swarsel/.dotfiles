@@ -109,10 +109,6 @@
               site1
               site2
               site3
-              site4
-              site5
-              site6
-              site7
               clouds
               ;
           in
@@ -161,7 +157,7 @@
               "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
             };
 
-            firefox = {
+            firefox = lib.mkIf (!config.programs.glide-browser.enable) {
               profiles =
                 let
                   isDefault = false;
@@ -185,15 +181,24 @@
                     inherit isDefault;
                     id = 3;
                   } vars.firefox;
-                  work = lib.recursiveUpdate {
-                    inherit isDefault;
-                    id = 4;
-                    settings = {
-                      "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                    };
-                  } vars.firefox;
                 };
             };
+
+            glide-browser.profiles =
+              let
+                mkProfile = attrs: lib.recursiveUpdate vars.glide ({ isDefault = false; } // attrs);
+              in
+              lib.mkIf config.programs.glide-browser.enable {
+                "${user1}" = mkProfile {
+                  id = 1;
+                  settings."browser.startup.homepage" = "${site1}|${site2}";
+                };
+                "${user2}" = mkProfile {
+                  id = 2;
+                  settings."browser.startup.homepage" = "${site3}";
+                };
+                "${user3}" = mkProfile { id = 3; };
+              };
 
             chromium = {
               enable = true;
@@ -272,38 +277,24 @@
             };
             desktopEntries =
               let
-                terminal = false;
-                categories = [ "Application" ];
-                icon = "firefox";
+                browser = if config.programs.glide-browser.enable then "glide" else "firefox";
+                browserName = lib.swarselsystems.toCapitalized browser;
+                mkBrowserEntry = profile: {
+                  name = "${browserName} (${profile})";
+                  genericName = "${browserName} ${profile}";
+                  exec = "${browser} -p ${profile}";
+                  terminal = false;
+                  categories = [ "Application" ];
+                  icon = browser;
+                };
               in
-              {
-                firefox_work = {
-                  name = "Firefox (work)";
-                  genericName = "Firefox work";
-                  exec = "firefox -p work";
-                  inherit terminal categories icon;
-                };
-                "firefox_${user1}" = {
-                  name = "Firefox (${user1})";
-                  genericName = "Firefox ${user1}";
-                  exec = "firefox -p ${user1}";
-                  inherit terminal categories icon;
-                };
-
-                "firefox_${user2}" = {
-                  name = "Firefox (${user2})";
-                  genericName = "Firefox ${user2}";
-                  exec = "firefox -p ${user2}";
-                  inherit terminal categories icon;
-                };
-
-                "firefox_${user3}" = {
-                  name = "Firefox (${user3})";
-                  genericName = "Firefox ${user3}";
-                  exec = "firefox -p ${user3}";
-                  inherit terminal categories icon;
-                };
-              };
+              lib.listToAttrs (
+                map (profile: lib.nameValuePair "${browser}_${profile}" (mkBrowserEntry profile)) [
+                  user1
+                  user2
+                  user3
+                ]
+              );
           };
       };
     };

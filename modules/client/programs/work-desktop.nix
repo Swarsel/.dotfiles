@@ -4,6 +4,7 @@
       self,
       config,
       pkgs,
+      lib,
       confLib,
       ...
     }:
@@ -37,11 +38,10 @@
             let
               inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
             in
-            [
+            lib.mkIf (!config.programs.glide-browser.enable) [
               "${user1}"
               "${user2}"
               "${user3}"
-              "work"
             ];
         };
 

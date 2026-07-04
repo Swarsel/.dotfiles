@@ -45,26 +45,10 @@
           enable = true;
           policies = vars.browserPolicies;
           nativeMessagingHosts = lib.optionals config.programs.password-store.enable [ pkgs.browserpass ];
-          profiles.default = {
+          profiles.default = lib.recursiveUpdate vars.glide {
             id = 0;
             isDefault = true;
-            settings = vars.firefox.settings // {
-              "browser.startup.homepage" = "https://lobste.rs";
-            };
-            search = vars.firefox.search;
-            extensions = {
-              packages = lib.filter (
-                p:
-                !(builtins.elem (lib.getName p) (
-                  [
-                    "tridactyl"
-                    "stylus"
-                  ]
-                  ++ lib.optional (!config.programs.password-store.enable) "browserpass"
-                ))
-              ) vars.firefox.extensions.packages;
-              settings = vars.firefox.extensions.settings;
-            };
+            settings."browser.startup.homepage" = "https://lobste.rs";
           };
           config = ''
             /// <reference types="./glide.d.ts" />
@@ -277,12 +261,18 @@
 
             glide.autocmds.create("WindowLoaded", () => {
               if (!document.getElementById("glide-statusline")) {
+                const profile_name = (glide.path.profile_dir.split("/").pop() ?? "").replace(/^[^.]+\./, "");
                 (document.body ?? document.documentElement)?.appendChild(
                   DOM.create_element("div", {
                     id: "glide-statusline",
                     children: [
-                      DOM.create_element("span", { id: "glide-statusline-mode", children: ["normal"] }),
+                      DOM.create_element("span", {
+                        id: "glide-statusline-profile",
+                        children: profile_name === "default" ? [] : [profile_name],
+                      }),
+                      DOM.create_element("span", { id: "glide-statusline-mode" }),
                       DOM.create_element("span", { id: "glide-statusline-tabs" }),
+                      DOM.create_element("span", { id: "glide-statusline-find" }),
                       DOM.create_element("span", { id: "glide-statusline-msg" }),
                     ],
                   }),
@@ -298,6 +288,7 @@
                 bottom: 0;
                 z-index: 2147483645;
                 display: flex;
+                align-items: center;
                 gap: 1ex;
                 padding: 0.8ex;
                 background: var(--base00);
@@ -306,7 +297,7 @@
                 border-right: none;
                 border-bottom: none;
                 font-family: "Fira Code", monospace;
-                font-size: 9px;
+                font-size: 11px;
                 line-height: 1;
                 pointer-events: none;
               }
@@ -315,12 +306,41 @@
                 color: var(--glide-current-mode-color, var(--base05));
               }
 
+              #glide-statusline-mode:empty {
+                display: none;
+              }
+
+              #glide-statusline-profile {
+                color: var(--base0A);
+              }
+
+              #glide-statusline-profile:empty {
+                display: none;
+              }
+
               #glide-statusline-msg {
                 color: var(--base09);
               }
 
               #glide-statusline-msg:empty {
                 display: none;
+              }
+
+              #glide-statusline-find {
+                color: var(--base0B);
+                font-size: 24pt;
+              }
+
+              #glide-statusline-find:empty {
+                display: none;
+              }
+
+              #glide-statusline-find.nomatch {
+                color: var(--base08);
+              }
+
+              #glide-hints-container > * {
+                opacity: 0.6;
               }
             `, { id: "statusline" });
 
@@ -342,15 +362,22 @@
             glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
               const mode_el = document.getElementById("glide-statusline-mode");
               if (mode_el) {
-                mode_el.textContent = new_mode;
+                mode_el.textContent = new_mode === "normal" ? "" : new_mode;
               }
             });
 
             async function update_tab_count() {
-              const tabs = await browser.tabs.query({ currentWindow: true });
-              const tabs_el = document.getElementById("glide-statusline-tabs");
-              if (tabs_el) {
-                tabs_el.textContent = String(tabs.length);
+              for (let attempt = 0; attempt < 10; attempt++) {
+                try {
+                  const tabs = await browser.tabs.query({ currentWindow: true });
+                  const tabs_el = document.getElementById("glide-statusline-tabs");
+                  if (tabs_el) {
+                    tabs_el.textContent = String(tabs.length);
+                  }
+                  return;
+                } catch {
+                  await new Promise((resolve) => setTimeout(resolve, 500));
+                }
               }
             }
             browser.tabs.onCreated.addListener(update_tab_count);
@@ -623,6 +650,15 @@
               flash_message("yanked " + url);
             }, { description: "Yank the URL of the current tab" });
 
+            glide.keymaps.set("normal", "yf", () =>
+              start_hints("a[href]", async ({ content }) => {
+                const href = await content.execute((target) => (target as HTMLAnchorElement).href);
+                if (href) {
+                  await navigator.clipboard.writeText(href);
+                  flash_message("yanked " + href);
+                }
+              }), { description: "Yank a link URL using find hints" });
+
             glide.keymaps.set(["normal", "insert", "visual"], "<A-d>", () => {}, {
               description: "Disabled (would focus the urlbar)",
             });
@@ -665,6 +701,8 @@
             let hint_session = false;
             let hint_filter = "";
             let hint_texts: string[] = [];
+            let hint_active = 0;
+            let hint_visible: number[] = [];
 
             let hint_cooldown_until = 0;
             let swallowing_keys = false;
@@ -698,26 +736,51 @@
               return false;
             }
 
-            function apply_hint_filter() {
+            function update_find_display(no_match = false) {
+              const find_el = document.getElementById("glide-statusline-find");
+              if (!find_el) {
+                return;
+              }
+              find_el.textContent = hint_session ? "find: " + hint_filter : "";
+              find_el.classList.toggle("nomatch", hint_session && no_match);
+            }
+
+            function follow_hint(index: number) {
+              hint_session = false;
+              const label = String(index + 1);
+              void glide.keys
+                .send(hint_label_is_ambiguous(label, hint_texts.length) ? label + "<Enter>" : label)
+                .then(() => swallow_keys(500));
+            }
+
+            function apply_hint_filter(reset_active = true) {
               const container = document.getElementById("glide-hints-container");
               if (!container) {
                 return;
               }
-              const visible: number[] = [];
+              hint_visible = [];
               for (let i = 0; i < container.children.length; i++) {
-                const marker = container.children[i] as HTMLElement;
-                const matches = (hint_texts[i] ?? "").includes(hint_filter);
-                marker.style.display = matches ? "" : "none";
-                if (matches) {
-                  visible.push(i);
+                if ((hint_texts[i] ?? "").includes(hint_filter)) {
+                  hint_visible.push(i);
                 }
               }
-              if (hint_session && hint_filter.length > 0 && visible.length === 1) {
-                hint_session = false;
-                const label = String(visible[0] + 1);
-                void glide.keys
-                  .send(hint_label_is_ambiguous(label, hint_texts.length) ? label + "<Enter>" : label)
-                  .then(() => swallow_keys(500));
+              if (reset_active || hint_visible.length === 0) {
+                hint_active = 0;
+              } else {
+                hint_active = ((hint_active % hint_visible.length) + hint_visible.length) % hint_visible.length;
+              }
+              for (let i = 0; i < container.children.length; i++) {
+                const marker = container.children[i] as HTMLElement;
+                const pos = hint_visible.indexOf(i);
+                marker.style.display = pos === -1 ? "none" : "";
+                const active = pos === hint_active && pos !== -1;
+                marker.style.background = active ? "var(--base0B)" : "";
+                marker.style.color = active ? "var(--base00)" : "";
+                marker.style.opacity = active ? "1" : "";
+              }
+              update_find_display(hint_filter.length > 0 && hint_visible.length === 0);
+              if (hint_session && hint_filter.length > 0 && hint_visible.length === 1) {
+                follow_hint(hint_visible[0]);
               }
             }
 
@@ -725,11 +788,15 @@
               hint_session = true;
               hint_filter = "";
               hint_texts = [];
+              hint_active = 0;
+              hint_visible = [];
+              update_find_display();
               glide.hints.show({
                 selector,
                 action,
                 async pick({ hints, content }) {
                   hint_texts = await content.map((target) => (target.textContent ?? "").toLowerCase());
+                  setTimeout(() => apply_hint_filter(), 0);
                   return hints;
                 },
               });
@@ -739,10 +806,10 @@
             glide.keymaps.set("normal", "f", () => start_hints());
             glide.keymaps.set("normal", "F", () => start_hints(undefined, "newtab-click"));
 
-            for (const ch of "abcdefghijklmnopqrstuvwxyz") {
+            for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-:./_,;!?@#%^&*()+=[]{}~'\"$") {
               glide.keymaps.set("hint", ch, () => {
                 if (hint_session) {
-                  hint_filter += ch;
+                  hint_filter += ch.toLowerCase();
                   apply_hint_filter();
                 }
               });
@@ -751,6 +818,34 @@
               if (hint_session) {
                 hint_filter += " ";
                 apply_hint_filter();
+              }
+            });
+            glide.keymaps.set("hint", "\\", async () => {
+              if (!hint_session) {
+                return;
+              }
+              const key = (await glide.keys.next()) as any;
+              const ch = typeof key === "string" ? key : String(key?.key ?? "");
+              if (ch.length === 1) {
+                hint_filter += ch.toLowerCase();
+                apply_hint_filter();
+              }
+            });
+            glide.keymaps.set("hint", "<Enter>", () => {
+              if (hint_session && hint_visible.length > 0) {
+                follow_hint(hint_visible[hint_active]);
+              }
+            });
+            glide.keymaps.set("hint", "<Tab>", () => {
+              if (hint_session) {
+                hint_active += 1;
+                apply_hint_filter(false);
+              }
+            });
+            glide.keymaps.set("hint", "<S-Tab>", () => {
+              if (hint_session) {
+                hint_active -= 1;
+                apply_hint_filter(false);
               }
             });
             glide.keymaps.set("hint", "<BS>", () => {
@@ -762,6 +857,7 @@
             glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
               if (new_mode !== "hint") {
                 hint_session = false;
+                update_find_display();
               }
             });
 
@@ -906,6 +1002,13 @@
                   document.head.appendChild(el);
                 }
               }, { tab_id, args: [invidious_css] });
+            });
+
+            glide.keymaps.set("normal", "<C-Esc>", () => glide.excmds.execute("mode_change ignore"), {
+              description: "Enter ignore mode",
+            });
+            glide.keymaps.set("ignore", "<C-Esc>", () => glide.excmds.execute("mode_change normal"), {
+              description: "Leave ignore mode",
             });
 
             const ignore_mode_sites = [
