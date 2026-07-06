@@ -48,7 +48,12 @@
           profiles.default = lib.recursiveUpdate vars.glide {
             id = 0;
             isDefault = true;
-            settings."browser.startup.homepage" = "https://lobste.rs";
+            settings = {
+              "browser.startup.homepage" = "https://lobste.rs";
+              "browser.startup.page" = 1;
+              "browser.sessionstore.resume_from_crash" = false;
+              "browser.sessionstore.max_resumed_crashes" = 0;
+            };
           };
           config = ''
             /// <reference types="./glide.d.ts" />
@@ -255,11 +260,125 @@
             glide.keymaps.set("normal", "<leader>b", () => set_toolbar(toolbar_state === "urlbar" ? "hidden" : "urlbar"), {
               description: "Toggle the URL bar",
             });
+            const container_rules: { prefix: string; container: string }[] = [];
+            const container_stores: Record<string, string> = {};
+            const container_names: Record<string, string> = {};
+
+            function match_rule(url: string) {
+              let best: { prefix: string; container: string } | null = null;
+              for (const r of container_rules) {
+                if (url.startsWith(r.prefix) && (best == null || r.prefix.length > best.prefix.length)) {
+                  best = r;
+                }
+              }
+              return best;
+            }
+
+            async function refresh_container_stores() {
+              try {
+                for (const identity of await browser.contextualIdentities.query({})) {
+                  container_stores[identity.name] = identity.cookieStoreId;
+                  container_names[identity.cookieStoreId] = identity.name;
+                }
+              } catch {}
+            }
+
+            const reopening = new Set<number>();
+            async function ensure_container(tab_id: number, url: string) {
+              const rule = match_rule(url);
+              if (!rule || reopening.has(tab_id)) {
+                return;
+              }
+              reopening.add(tab_id);
+              try {
+                if (container_stores[rule.container] == null) {
+                  await refresh_container_stores();
+                }
+                const target = container_stores[rule.container];
+                if (target == null) {
+                  return;
+                }
+                const tab = await browser.tabs.get(tab_id).catch(() => null);
+                if (tab == null || tab.cookieStoreId === target) {
+                  return;
+                }
+                await browser.tabs.create({
+                  cookieStoreId: target,
+                  url,
+                  active: tab.active,
+                  windowId: tab.windowId,
+                  index: tab.index + 1,
+                });
+                await browser.tabs.remove(tab_id);
+              } catch {} finally {
+                reopening.delete(tab_id);
+              }
+            }
+
+            try {
+              browser.webRequest.onBeforeRequest.addListener(
+                (details) => {
+                  if (details.tabId >= 0 && match_rule(details.url)) {
+                    void ensure_container(details.tabId, details.url);
+                  }
+                },
+                { urls: ["<all_urls>"], types: ["main_frame"] },
+              );
+            } catch {}
+
+            async function container_catchup() {
+              try {
+                for (const tab of await browser.tabs.query({})) {
+                  if (tab.id != null && tab.url != null) {
+                    await ensure_container(tab.id, tab.url);
+                  }
+                }
+              } catch {}
+            }
+
+            glide.autocmds.create("ConfigLoaded", async () => {
+              await refresh_container_stores();
+              await container_catchup();
+            });
+            browser.contextualIdentities.onCreated.addListener(() => void refresh_container_stores());
+
+            glide.autocmds.create("UrlEnter", /^https?:/, ({ url, tab_id }) => {
+              void ensure_container(tab_id, url);
+            });
+
+            glide.keymaps.set("normal", "<leader>c", async () => {
+              try {
+                const identities = await browser.contextualIdentities.query({});
+                if (identities.length === 0) {
+                  flash_message("no containers defined");
+                  return;
+                }
+                const [current] = await browser.tabs.query({ active: true, currentWindow: true });
+                const url = current?.url != null && current.url.startsWith("http") ? current.url : undefined;
+                await glide.commandline.show({
+                  title: "Open in container",
+                  options: identities.map((identity) => ({
+                    label: identity.name,
+                    description: (url ? "open current page as " : "open new tab as ") + identity.name,
+                    execute: async () => {
+                      await browser.tabs.create({ cookieStoreId: identity.cookieStoreId, url });
+                    },
+                  })),
+                });
+              } catch {
+                flash_message("containers unavailable");
+              }
+            }, { description: "Open the current page in a container tab" });
+
             glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
               description: "Toggle the full toolbar",
             });
 
-            glide.autocmds.create("WindowLoaded", () => {
+            function ensure_statusline() {
+              const stale = document.getElementById("glide-statusline");
+              if (stale && !document.getElementById("glide-statusline-container")) {
+                stale.remove();
+              }
               if (!document.getElementById("glide-statusline")) {
                 const profile_name = (glide.path.profile_dir.split("/").pop() ?? "").replace(/^[^.]+\./, "");
                 (document.body ?? document.documentElement)?.appendChild(
@@ -270,6 +389,7 @@
                         id: "glide-statusline-profile",
                         children: profile_name === "default" ? [] : [profile_name],
                       }),
+                      DOM.create_element("span", { id: "glide-statusline-container" }),
                       DOM.create_element("span", { id: "glide-statusline-mode" }),
                       DOM.create_element("span", { id: "glide-statusline-tabs" }),
                       DOM.create_element("span", { id: "glide-statusline-find" }),
@@ -279,6 +399,14 @@
                 );
               }
               update_tab_count();
+              void refresh_active_container();
+            }
+
+            glide.autocmds.create("WindowLoaded", ensure_statusline);
+            glide.autocmds.create("ConfigLoaded", () => {
+              if (document.getElementById("glide-statusline")) {
+                ensure_statusline();
+              }
             });
 
             glide.styles.add(css`
@@ -315,6 +443,14 @@
               }
 
               #glide-statusline-profile:empty {
+                display: none;
+              }
+
+              #glide-statusline-container {
+                color: var(--base0C);
+              }
+
+              #glide-statusline-container:empty {
                 display: none;
               }
 
@@ -383,6 +519,50 @@
             browser.tabs.onCreated.addListener(update_tab_count);
             browser.tabs.onRemoved.addListener(update_tab_count);
 
+            function update_container_indicator(store_id?: string) {
+              const container_el = document.getElementById("glide-statusline-container");
+              if (!container_el) {
+                return;
+              }
+              container_el.textContent =
+                store_id != null && store_id !== "firefox-default" ? (container_names[store_id] ?? "") : "";
+            }
+            async function refresh_active_container() {
+              try {
+                const win = await browser.windows.getLastFocused({ populate: true });
+                const active = win.tabs?.find((t) => t.active);
+                await update_container_indicator(active?.cookieStoreId);
+              } catch {}
+            }
+            const tab_containers: Record<number, string> = {};
+            function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
+              if (tab?.id != null && tab.cookieStoreId != null) {
+                tab_containers[tab.id] = tab.cookieStoreId;
+              }
+            }
+            browser.tabs.onCreated.addListener(cache_tab);
+            browser.tabs.onRemoved.addListener((tab_id) => {
+              delete tab_containers[tab_id];
+            });
+            browser.tabs.onActivated.addListener(async (info) => {
+              const cached = tab_containers[info.tabId];
+              if (cached != null) {
+                update_container_indicator(cached);
+                return;
+              }
+              const tab = await browser.tabs.get(info.tabId).catch(() => null);
+              cache_tab(tab);
+              update_container_indicator(tab?.cookieStoreId);
+            });
+            browser.tabs.onUpdated.addListener((_tab_id, _change, tab) => {
+              cache_tab(tab);
+              if (tab.active) {
+                update_container_indicator(tab.cookieStoreId);
+              }
+            });
+            browser.windows.onFocusChanged.addListener(() => void refresh_active_container());
+            setInterval(() => void refresh_active_container(), 1500);
+
             const search_engines = [
               {
                 name: "NixOS Options",
@@ -436,12 +616,22 @@
               return null;
             }
 
+            async function active_is_contained() {
+              const active = await glide.tabs.active();
+              const tab = await browser.tabs.get(active.id).catch(() => null);
+              return { id: active.id, contained: tab != null && tab.cookieStoreId !== "firefox-default" };
+            }
+
             async function do_navigate(target: "current" | "tab" | "window", url: string) {
               if (target === "current") {
-                const tab = await glide.tabs.active();
-                await browser.tabs.update(tab.id, { url });
+                const { id, contained } = await active_is_contained();
+                if (contained) {
+                  await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
+                } else {
+                  await browser.tabs.update(id, { url });
+                }
               } else if (target === "tab") {
-                await browser.tabs.create({ url });
+                await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
               } else {
                 await browser.windows.create({ url });
               }
@@ -449,10 +639,16 @@
 
             async function do_search(target: "current" | "tab" | "window", search: { query: string; engine?: string }) {
               if (target === "current") {
-                const tab = await glide.tabs.active();
-                await browser.search.search({ ...search, tabId: tab.id });
+                const { id, contained } = await active_is_contained();
+                if (contained) {
+                  const created = await browser.tabs.create({ cookieStoreId: "firefox-default" });
+                  await browser.search.search({ ...search, tabId: created.id });
+                } else {
+                  await browser.search.search({ ...search, tabId: id });
+                }
               } else if (target === "tab") {
-                await browser.search.search(search);
+                const created = await browser.tabs.create({ cookieStoreId: "firefox-default" });
+                await browser.search.search({ ...search, tabId: created.id });
               } else {
                 const win = await browser.windows.create();
                 const tab = win.tabs?.[0];
@@ -663,16 +859,17 @@
               description: "Disabled (would focus the urlbar)",
             });
 
-            let last_tab_id: number | null = null;
-            browser.tabs.onActivated.addListener((info) => {
-              if (info.previousTabId != null) {
-                last_tab_id = info.previousTabId;
-              }
-            });
             glide.keymaps.set("normal", "<C-m>", async () => {
-              if (last_tab_id != null) {
-                await browser.tabs.update(last_tab_id, { active: true }).catch(() => {});
-              }
+              try {
+                const win = await browser.windows.getLastFocused({ populate: true });
+                const tabs = (win.tabs ?? [])
+                  .filter((t) => t.id != null)
+                  .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+                const target = tabs[1];
+                if (target?.id != null) {
+                  await browser.tabs.update(target.id, { active: true });
+                }
+              } catch {}
             }, { description: "Switch to the last-active tab" });
 
             glide.keymaps.set("normal", "gd", async () => {
@@ -873,32 +1070,19 @@
               if (existing?.id != null) {
                 await browser.tabs.update(existing.id, { active: true });
               } else {
-                await glide.excmds.execute(`tab_new ''${url}`);
+                await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
               }
             }
 
-            const site_shortcuts = {
-              gwa: "apic-impimba-1.m.imp.ac.at",
-              gwA: "artifactory.imp.ac.at",
-              gwb: "bitbucket.vbc.ac.at",
-              gwc: "vbc.atlassian.net/wiki",
-              gwd: "datadomain-impimba-2.imp.ac.at",
-              gwe: "exivity.vbc.ac.at",
-              gwg: "github.com",
-              gwG: "goc.egi.eu",
-              gwh: "jupyterhub.vbc.ac.at",
-              gwj: "jenkins.vbc.ac.at",
-              gwJ: "test-jenkins.vbc.ac.at",
-              gwl: "lucid.app",
-              gwm: "monitoring.vbc.ac.at/grafana",
-              gwM: "monitoring.vbc.ac.at/prometheus",
-              gwn: "netbox.vbc.ac.at",
-              gwN: "nap.imp.ac.at",
-              gwo: "outlook.office.com",
-              gws: "satellite.vbc.ac.at",
-              gwt: "tower.vbc.ac.at",
-              gwv: "vc-impimba-1.m.imp.ac.at/ui",
-              gwx: "xclarity.vbc.ac.at",
+            function add_site_shortcuts(shortcuts: Record<string, string>) {
+              for (const [keys, target] of Object.entries(shortcuts)) {
+                glide.keymaps.set("normal", keys, () => tab_or_tabopen(target), {
+                  description: `Focus or open ''${target}`,
+                });
+              }
+            }
+
+            add_site_shortcuts({
               ghp: "https://github.com/pulls",
               ghi: "https://github.com/issues/assigned?q=is%3Aissue%20state%3Aopen%20archived%3Afalse%20(assignee%3A%40me%20OR%20author%3A%40me)%20sort%3Aupdated-desc",
               ghv: "github.com/orgs/vbc-it/repositories",
@@ -909,13 +1093,7 @@
               gprn: "www.reddit.com/r/NixOS/",
               gpd: "discourse.nixos.org/",
               gpp: "parkour.wien/categories",
-            };
-
-            for (const [keys, target] of Object.entries(site_shortcuts)) {
-              glide.keymaps.set("normal", keys, () => tab_or_tabopen(target), {
-                description: `Focus or open ''${target}`,
-              });
-            }
+            });
 
             const hint_selectors = {
               "https?://www\\.google\\.com": `[class="LC20lb MBeuO DKV0Md"], [class="YmvwI"], [class="YyVfkd"], [class="fl"]`,

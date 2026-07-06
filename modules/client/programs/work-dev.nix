@@ -106,9 +106,7 @@
               user3
               user3Long
               path1
-              site1
-              site2
-              site3
+              browser
               clouds
               ;
           in
@@ -123,6 +121,15 @@
             };
 
             zsh = {
+              initContent = lib.mkIf config.programs.glide-browser.enable ''
+                step() {
+                  if [[ "$1" == "ssh" && "$2" == "login" ]] && ! pgrep -x .glide-wrapped >/dev/null 2>&1; then
+                    niri msg action spawn -- glide >/dev/null 2>&1 || (setsid glide >/dev/null 2>&1 &)
+                    sleep 5
+                  fi
+                  command step "$@"
+                }
+              '';
               shellAliases = {
                 dssh = "ssh -l ${user1Long}";
                 cssh = "ssh -l ${user2Long}";
@@ -167,14 +174,14 @@
                     inherit isDefault;
                     id = 1;
                     settings = {
-                      "browser.startup.homepage" = "${site1}|${site2}";
+                      "browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user1};
                     };
                   } vars.firefox;
                   "${user2}" = lib.recursiveUpdate {
                     inherit isDefault;
                     id = 2;
                     settings = {
-                      "browser.startup.homepage" = "${site3}";
+                      "browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user2};
                     };
                   } vars.firefox;
                   "${user3}" = lib.recursiveUpdate {
@@ -184,21 +191,66 @@
                 };
             };
 
-            glide-browser.profiles =
-              let
-                mkProfile = attrs: lib.recursiveUpdate vars.glide ({ isDefault = false; } // attrs);
-              in
-              lib.mkIf config.programs.glide-browser.enable {
-                "${user1}" = mkProfile {
-                  id = 1;
-                  settings."browser.startup.homepage" = "${site1}|${site2}";
+            glide-browser = lib.mkIf config.programs.glide-browser.enable {
+              config = lib.mkAfter ''
+                container_rules.push(
+                  ${lib.concatStringsSep "\n  " (
+                    lib.flatten (
+                      lib.mapAttrsToList (
+                        container:
+                        map (prefix: "{ prefix: ${builtins.toJSON prefix}, container: ${builtins.toJSON container} },")
+                      ) browser.containerSites
+                    )
+                  )}
+                );
+                add_site_shortcuts(${builtins.toJSON browser.siteShortcuts});
+              '';
+
+              profiles =
+                let
+                  mkProfile = attrs: lib.recursiveUpdate vars.glide ({ isDefault = false; } // attrs);
+                in
+                {
+                  default = {
+                    containersForce = true;
+                    containers = {
+                      "${user1}" = {
+                        id = 1;
+                        color = "blue";
+                        icon = "briefcase";
+                      };
+                      "${user2}" = {
+                        id = 2;
+                        color = "orange";
+                        icon = "fingerprint";
+                      };
+                      "${user3}" = {
+                        id = 3;
+                        color = "green";
+                        icon = "circle";
+                      };
+                      work = {
+                        id = 4;
+                        color = "purple";
+                        icon = "briefcase";
+                      };
+                    };
+                    settings = {
+                      "privacy.userContext.enabled" = true;
+                      "privacy.userContext.ui.enabled" = true;
+                    };
+                  };
+                  "${user1}" = mkProfile {
+                    id = 1;
+                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user1};
+                  };
+                  "${user2}" = mkProfile {
+                    id = 2;
+                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user2};
+                  };
+                  "${user3}" = mkProfile { id = 3; };
                 };
-                "${user2}" = mkProfile {
-                  id = 2;
-                  settings."browser.startup.homepage" = "${site3}";
-                };
-                "${user3}" = mkProfile { id = 3; };
-              };
+            };
 
             chromium = {
               enable = true;
