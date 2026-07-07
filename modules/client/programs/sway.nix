@@ -214,14 +214,6 @@
                   };
                 };
                 defaultWorkspace = "workspace 1:一";
-                # output = {
-                #   "${config.swarselsystems.sharescreen}" = {
-                #     bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
-                #   };
-                #   "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
-                #     bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
-                #   };
-                # };
                 input = config.swarselsystems.standardinputs;
                 workspaceOutputAssign =
                   let

@@ -58,7 +58,6 @@
         ];
 
         xdg.configFile = {
-          # "zellij/config.kdl".text = import "${self}/files/zellij/config.kdl.nix" { inherit config; };
           "zellij/layouts/swarsel.kdl".text = import "${self}/files/zellij/layouts/swarsel.kdl.nix" {
             inherit config pkgs;
           };

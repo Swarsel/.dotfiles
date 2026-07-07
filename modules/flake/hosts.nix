@@ -29,7 +29,6 @@
     let
       inherit (self) outputs;
       inherit (outputs) lib homeLib;
-      # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
       mkNixosHost =
         { minimal }:
@@ -105,12 +104,6 @@
             globals = config.globals.${arch};
           };
           modules = [
-            # inputs.disko.nixosModules.disko
-            # inputs.sops.nixosModules.sops
-            # inputs.impermanence.nixosModules.impermanence
-            # inputs.lanzaboote.nixosModules.lanzaboote
-            # inputs.fw-fanctrl.nixosModules.default
-            # inputs.nix-topology.nixosModules.default
             inputs.home-manager.darwinModules.home-manager
             "${self}/hosts/darwin/${arch}/${configName}"
             {

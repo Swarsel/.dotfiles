@@ -2560,7 +2560,6 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
       let
         inherit (self) outputs;
         inherit (outputs) lib homeLib;
-        # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
         mkNixosHost =
           { minimal }:
@@ -2636,12 +2635,6 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
               globals = config.globals.${arch};
             };
             modules = [
-              # inputs.disko.nixosModules.disko
-              # inputs.sops.nixosModules.sops
-              # inputs.impermanence.nixosModules.impermanence
-              # inputs.lanzaboote.nixosModules.lanzaboote
-              # inputs.fw-fanctrl.nixosModules.default
-              # inputs.nix-topology.nixosModules.default
               inputs.home-manager.darwinModules.home-manager
               "${self}/hosts/darwin/${arch}/${configName}"
               {
@@ -3762,10 +3755,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
             final: prev:
             let
               modifications = final: prev: {
-                # vesktop = prev.vesktop.override {
-                #   withSystemVencord = true;
-                # };
-
                 lib = prev.lib // {
                   swarselsystems = self.outputs.swarselsystemsLib;
                   hm = self.outputs.homeLib;
@@ -3775,7 +3764,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   nativeMessagingHosts = [
                     prev.tridactyl-native
                     prev.browserpass
-                    # prev.plasma5Packages.plasma-browser-integration
                   ];
                 };
 
@@ -15204,7 +15192,6 @@ Currently I only use it as before with =initExtra= though.
           ];
 
           xdg.configFile = {
-            # "zellij/config.kdl".text = import "${self}/files/zellij/config.kdl.nix" { inherit config; };
             "zellij/layouts/swarsel.kdl".text = import "${self}/files/zellij/layouts/swarsel.kdl.nix" {
               inherit config pkgs;
             };
@@ -18981,14 +18968,6 @@ Nowadays, all of the Sway stack is kept as a reference.
                     };
                   };
                   defaultWorkspace = "workspace 1:一";
-                  # output = {
-                  #   "${config.swarselsystems.sharescreen}" = {
-                  #     bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
-                  #   };
-                  #   "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
-                  #     bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
-                  #   };
-                  # };
                   input = config.swarselsystems.standardinputs;
                   workspaceOutputAssign =
                     let
