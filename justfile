@@ -35,7 +35,7 @@ sync USER HOST:
   rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
 
 sync-secrets USER HOST:
-  rsync -rltv -e "ssh -l {{USER}}" /var/tmp/nix-import-encrypted/1000/ {{USER}}@{{HOST}}:/var/tmp/nix-import-encrypted/0
+  rsync -rltv -e "ssh -l {{USER}}" /var/tmp/nix-import-encrypted/$(id -u)/ {{USER}}@{{HOST}}:/var/tmp/nix-import-encrypted/0
 
 bootstrap DEST CONFIG ARCH="x86_64-linux" NODISKODEPS="":
   nix develop .#deploy --command zsh -c "swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
@@ -50,7 +50,7 @@ decrypt:
   find "$src" -name '*.nix.enc' -print0 | xargs --null -I{} ./files/scripts/sops-decrypt-and-cache.sh --print-out-path {}
 
 decrypt-clean:
-  rm -rf /var/tmp/nix-import-encrypted/$UID
+  rm -rf "/var/tmp/nix-import-encrypted/$(id -u)"
 
 secret-edit FILE="":
   #!/usr/bin/env bash
