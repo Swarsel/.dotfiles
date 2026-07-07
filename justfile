@@ -15,7 +15,7 @@ follows-check *ARGS:
 
 iso CONFIG="live-iso":
   rm -rf result
-  nix build --print-out-paths .#live-iso
+  nix build --print-out-paths .#{{CONFIG}}
 
 demo-test TEST="demo-install-test":
   nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file
