@@ -208,6 +208,10 @@ in
                 '';
               });
 
+              vesktop = prev.vesktop.override {
+                withSystemVencord = true;
+              };
+
             };
           in
           modifications final prev;

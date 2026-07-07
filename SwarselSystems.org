@@ -3794,6 +3794,10 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   '';
                 });
 
+                vesktop = prev.vesktop.override {
+                  withSystemVencord = true;
+                };
+
               };
             in
             modifications final prev;
@@ -23040,8 +23044,8 @@ Auto login for the initial session.
                 "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
                 "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
                 "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
-                "org.freedesktop.impl.portal.ScreenCast" = [ "xdg-desktop-portal-gnome" ];
-                "org.freedesktop.impl.portal.Screenshot" = [ "xdg-desktop-portal-gnome" ];
+                "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+                "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
               };
               extraPortals = [
                 pkgs.gnome-keyring
@@ -39748,7 +39752,9 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
         allowlistIps = config.repo.secrets.local.crowdsec.allowlistIps or [ ];
         allowlistCidrs = config.repo.secrets.local.crowdsec.allowlistCidrs or [ ];
         allowlistAs = config.repo.secrets.local.crowdsec.allowlistAs or [ ];
-        lapiPort = lib.toInt (lib.last (lib.splitString ":" config.services.crowdsec.settings.general.api.server.listen_uri));
+        lapiPort = lib.toInt (
+          lib.last (lib.splitString ":" config.services.crowdsec.settings.general.api.server.listen_uri)
+        );
       in
       {
         options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
