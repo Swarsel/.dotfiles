@@ -1,5 +1,11 @@
 {
-  flake-file.inputs.spicetify-nix.url = "github:Gerg-l/spicetify-nix";
+  flake-file.inputs.spicetify-nix = {
+    url = "github:Gerg-l/spicetify-nix";
+    inputs = {
+      nixpkgs.follows = "nixpkgs";
+      systems.follows = "systems";
+    };
+  };
 
   flake.modules.homeManager.spicetify =
     {

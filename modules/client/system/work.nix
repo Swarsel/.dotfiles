@@ -3,7 +3,14 @@ let
   fmods = config.flake.modules;
 in
 {
-  flake-file.inputs.vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+  flake-file.inputs.vbc-nix = {
+    url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+    inputs = {
+      nixpkgs.follows = "nixpkgs-stable26_05";
+      nixpkgs-2411.follows = "nixpkgs-stable24_11";
+      systems.follows = "systems";
+    };
+  };
 
   flake.modules = {
     nixos.work =

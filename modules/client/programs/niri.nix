@@ -4,8 +4,22 @@ let
 in
 {
   flake-file.inputs = {
-    niri-flake.url = "github:sodiboo/niri-flake";
-    niritiling.url = "github:Swarsel/niritiling/feat/resize";
+    niri-flake = {
+      url = "github:sodiboo/niri-flake";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-stable.follows = "nixpkgs-stable";
+      };
+    };
+    niritiling = {
+      url = "github:Swarsel/niritiling/feat/resize";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+        git-hooks-nix.follows = "pre-commit-hooks";
+      };
+    };
   };
 
   flake.modules = {

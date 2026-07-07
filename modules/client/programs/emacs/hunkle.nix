@@ -1,7 +1,12 @@
 {
   flake-file.inputs.hunkle = {
     url = "github:Swarsel/hunkle";
-    inputs.nixpkgs.follows = "nixpkgs";
+    inputs = {
+      nixpkgs.follows = "nixpkgs";
+      flake-parts.follows = "flake-parts";
+      treefmt-nix.follows = "treefmt-nix";
+      git-hooks-nix.follows = "pre-commit-hooks";
+    };
   };
 
   flake.modules.homeManager.emacs-init = { pkgs, inputs, ... }: {

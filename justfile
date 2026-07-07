@@ -10,6 +10,9 @@ check-trace:
 update:
   nix flake update
 
+follows-check *ARGS:
+  follow-nix {{ARGS}}
+
 iso CONFIG="live-iso":
   rm -rf result
   nix build --print-out-paths .#live-iso

@@ -1762,17 +1762,51 @@ A short overview over each notable input and what it does:
     inputs = {
       copyparty = {
         url = "github:9001/copyparty/hovudstraum";
+        inputs = {
+          flake-utils.follows = "flake-utils";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
+      devshell = {
+        url = "github:numtide/devshell";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      devshell.url = "github:numtide/devshell";
-      disko.url = "github:nix-community/disko";
+      disko = {
+        url = "github:nix-community/disko";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       dns = {
         url = "github:kirelagin/dns.nix";
-        inputs.nixpkgs.follows = "nixpkgs";
+        inputs = {
+          flake-utils.follows = "flake-utils";
+          nixpkgs.follows = "nixpkgs";
+        };
       };
-      emacs-overlay.url = "github:nix-community/emacs-overlay";
+      emacs-overlay = {
+        url = "github:nix-community/emacs-overlay";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          nixpkgs-stable.follows = "nixpkgs-stable";
+        };
+      };
       flake-file.url = "github:vic/flake-file";
-      flake-parts.url = "github:hercules-ci/flake-parts";
+      flake-parts = {
+        url = "github:hercules-ci/flake-parts";
+        inputs.nixpkgs-lib.follows = "nixpkgs";
+      };
+      flake-utils = {
+        url = "github:numtide/flake-utils";
+        inputs.systems.follows = "systems";
+      };
+      follow-nix = {
+        url = "github:Swarsel/follow-nix";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          git-hooks-nix.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+          treefmt-nix.follows = "treefmt-nix";
+        };
+      };
       glide-nix = {
         url = "github:glide-browser/glide.nix";
         inputs = {
@@ -1786,26 +1820,57 @@ A short overview over each notable input and what it does:
       };
       hunkle = {
         url = "github:Swarsel/hunkle";
-        inputs.nixpkgs.follows = "nixpkgs";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          git-hooks-nix.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+          treefmt-nix.follows = "treefmt-nix";
+        };
       };
       hydra = {
         url = "github:nixos/hydra/nix-2.30";
         inputs.nix-eval-jobs.follows = "nix-eval-jobs";
       };
-      impermanence.url = "github:nix-community/impermanence";
+      impermanence = {
+        url = "github:nix-community/impermanence";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       import-tree.url = "github:vic/import-tree";
       invidious-companion = {
         url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
         flake = false;
       };
-      lanzaboote.url = "github:nix-community/lanzaboote";
-      microvm.url = "github:astro/microvm.nix";
+      lanzaboote = {
+        url = "github:nix-community/lanzaboote";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          pre-commit.follows = "pre-commit-hooks";
+        };
+      };
+      microvm = {
+        url = "github:astro/microvm.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       nginx-otel = {
         url = "github:djvcom/nix-nginx-otel";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      niri-flake.url = "github:sodiboo/niri-flake";
-      niritiling.url = "github:Swarsel/niritiling/feat/resize";
+      niri-flake = {
+        url = "github:sodiboo/niri-flake";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          nixpkgs-stable.follows = "nixpkgs-stable";
+        };
+      };
+      niritiling = {
+        url = "github:Swarsel/niritiling/feat/resize";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          git-hooks-nix.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+          treefmt-nix.follows = "treefmt-nix";
+        };
+      };
       nix-darwin = {
         url = "github:lnl7/nix-darwin";
         inputs.nixpkgs.follows = "nixpkgs";
@@ -1818,7 +1883,13 @@ A short overview over each notable input and what it does:
         url = "github:nix-community/nix-index-database";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+      nix-minecraft = {
+        url = "github:Infinidoge/nix-minecraft";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          systems.follows = "systems";
+        };
+      };
       nix-on-droid = {
         url = "github:nix-community/nix-on-droid/release-24.05";
         inputs = {
@@ -1826,26 +1897,46 @@ A short overview over each notable input and what it does:
           nixpkgs.follows = "nixpkgs";
         };
       };
-      nix-topology.url = "github:oddlama/nix-topology";
-      nixgl.url = "github:guibou/nixGL";
-      nixos-extra-modules.url = "github:oddlama/nixos-extra-modules/main";
+      nix-topology = {
+        url = "github:oddlama/nix-topology";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
+      nixgl = {
+        url = "github:guibou/nixGL";
+        inputs = {
+          flake-utils.follows = "flake-utils";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
+      nixos-extra-modules = {
+        url = "github:oddlama/nixos-extra-modules/main";
+        inputs = {
+          devshell.follows = "devshell";
+          flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
+          pre-commit-hooks.follows = "pre-commit-hooks";
+        };
+      };
       nixos-generators = {
         url = "github:nix-community/nixos-generators";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+      nixos-hardware = {
+        url = "github:NixOS/nixos-hardware/master";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       nixos-images.url = "github:Swarsel/nixos-images/main";
       nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
       nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
       nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
       nixpkgs-kernelpin.url = "github:nixos/nixpkgs/567a49d1913ce81ac6e9582e3553dd90a955875f?narHash=sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H%2BCNW1Ck8B%2B8%3D";
-      nixpkgs-master.url = "github:nixos/nixpkgs/master";
-      nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
-      nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
+      nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
       nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
-      nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
-      nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+      nixpkgs-stable26_05.url = "github:NixOS/nixpkgs/nixos-26.05";
       nixpkgsFirezoneProvisioned.url = "github:nixos/nixpkgs/a799d3e3886da994fa307f817a6bc705ae538eeb?narHash=sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY%3D";
       noctalia = {
         url = "github:noctalia-dev/noctalia-shell";
@@ -1855,30 +1946,101 @@ A short overview over each notable input and what it does:
         url = "github:noctalia-dev/noctalia-greeter";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      noctoggle.url = "github:Swarsel/noctoggle";
-      nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
-      nur.url = "github:nix-community/NUR";
+      noctoggle = {
+        url = "github:Swarsel/noctoggle";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          git-hooks-nix.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+          treefmt-nix.follows = "treefmt-nix";
+        };
+      };
+      nswitch-rcm-nix = {
+        url = "github:Swarsel/nswitch-rcm-nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nur = {
+        url = "github:nix-community/NUR";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
       nur-expressions = {
         url = "gitlab:rycee/nur-expressions";
         flake = false;
       };
-      pre-commit-hooks.url = "github:cachix/git-hooks.nix";
+      pre-commit-hooks = {
+        url = "github:cachix/git-hooks.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       repoSecrets.url = "./secrets/repo";
       shopservatory = {
         url = "github:Swarsel/shopservatory";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          git-hooks-nix.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+          treefmt-nix.follows = "treefmt-nix";
+        };
+      };
+      simple-nixos-mailserver = {
+        url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
+        inputs = {
+          git-hooks.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
+      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
+      sops = {
+        url = "github:Mic92/sops-nix";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
-      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
-      sops.url = "github:Mic92/sops-nix";
-      spicetify-nix.url = "github:Gerg-l/spicetify-nix";
-      stylix.url = "github:Swarsel/stylix/feat/noctalia-v5";
-      swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
+      spicetify-nix = {
+        url = "github:Gerg-l/spicetify-nix";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          systems.follows = "systems";
+        };
+      };
+      stylix = {
+        url = "github:Swarsel/stylix/feat/noctalia-v5";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
+          nur.follows = "nur";
+          systems.follows = "systems";
+        };
+      };
+      swarsel-nix = {
+        url = "github:Swarsel/swarsel-nix/main";
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
+          systems.follows = "systems";
+        };
+      };
       systems.url = "github:nix-systems/default";
       topologyPrivate.url = "./files/topology/public";
-      treefmt-nix.url = "github:numtide/treefmt-nix";
-      vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
-      zjstatus.url = "github:dj95/zjstatus";
+      treefmt-nix = {
+        url = "github:numtide/treefmt-nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      vbc-nix = {
+        url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+        inputs = {
+          nixpkgs.follows = "nixpkgs-stable26_05";
+          nixpkgs-2411.follows = "nixpkgs-stable24_11";
+          systems.follows = "systems";
+        };
+      };
+      zjstatus = {
+        url = "github:dj95/zjstatus";
+        inputs = {
+          flake-utils.follows = "flake-utils";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
     };
   }
 #+end_src
@@ -2369,8 +2531,14 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
   { self, inputs, ... }:
   {
     flake-file.inputs = {
-      disko.url = "github:nix-community/disko";
-      microvm.url = "github:astro/microvm.nix";
+      disko = {
+        url = "github:nix-community/disko";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      microvm = {
+        url = "github:astro/microvm.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       nix-index-database = {
         url = "github:nix-community/nix-index-database";
         inputs.nixpkgs.follows = "nixpkgs";
@@ -2671,7 +2839,13 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
     ...
   }:
   {
-    flake-file.inputs.nix-topology.url = "github:oddlama/nix-topology";
+    flake-file.inputs.nix-topology = {
+      url = "github:oddlama/nix-topology";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+      };
+    };
   }
   // lib.optionalAttrs (inputs ? nix-topology) {
     imports = [
@@ -3004,8 +3178,14 @@ Aside from the =default= devShell which is the one that should usually be called
   }:
   {
     flake-file.inputs = {
-      devshell.url = "github:numtide/devshell";
-      pre-commit-hooks.url = "github:cachix/git-hooks.nix";
+      devshell = {
+        url = "github:numtide/devshell";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      pre-commit-hooks = {
+        url = "github:cachix/git-hooks.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
     };
   }
   // lib.optionalAttrs (inputs ? devshell && inputs ? pre-commit-hooks) {
@@ -3266,7 +3446,10 @@ Usually all formatting in this repo is done automatically while editing in emacs
 #+begin_src nix-ts :tangle modules/flake/formatter.nix
   { inputs, lib, ... }:
   {
-    flake-file.inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
+    flake-file.inputs.treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   }
   // lib.optionalAttrs (inputs ? treefmt-nix) {
     imports = [
@@ -3428,7 +3611,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
         "_1password-gui"
         "_1password-gui-beta"
       ];
-      stable24_05 = [ ];
       stable24_11 = [
         "python39"
         "vieb"
@@ -3437,22 +3619,60 @@ On the structure of overlays: as you notice, all of the attributes within overla
         "steam-fhsenv-without-steam"
         "transmission_3"
       ];
-      stable25_11 = [ ];
       stable = [ ];
     };
   in
   {
     flake-file.inputs = {
-      nixgl.url = "github:guibou/nixGL";
-      nur.url = "github:nix-community/NUR";
-      zjstatus.url = "github:dj95/zjstatus";
-      nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+      nixgl = {
+        url = "github:guibou/nixGL";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          flake-utils.follows = "flake-utils";
+        };
+      };
+      nur = {
+        url = "github:nix-community/NUR";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          flake-parts.follows = "flake-parts";
+        };
+      };
+      zjstatus = {
+        url = "github:dj95/zjstatus";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          flake-utils.follows = "flake-utils";
+        };
+      };
+      nix-minecraft = {
+        url = "github:Infinidoge/nix-minecraft";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          systems.follows = "systems";
+        };
+      };
+      follow-nix = {
+        url = "github:Swarsel/follow-nix";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          flake-parts.follows = "flake-parts";
+          treefmt-nix.follows = "treefmt-nix";
+          git-hooks-nix.follows = "pre-commit-hooks";
+        };
+      };
 
-      emacs-overlay.url = "github:nix-community/emacs-overlay";
+      emacs-overlay = {
+        url = "github:nix-community/emacs-overlay";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          nixpkgs-stable.follows = "nixpkgs-stable";
+        };
+      };
     };
 
     flake = {
-      stablePinsUnstable = lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+      stablePinsUnstable = lib.genAttrs lib.swarselsystems.linuxSystems (
         system:
         let
           pkgs = import inputs.nixpkgs {
@@ -3518,6 +3738,9 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 }
                 // lib.optionalAttrs (inputs ? hunkle) {
                   hunkle = inputs.hunkle.packages.${prev.stdenv.hostPlatform.system}.default;
+                }
+                // lib.optionalAttrs (inputs ? follow-nix) {
+                  follow-nix = inputs.follow-nix.packages.${prev.stdenv.hostPlatform.system}.default;
                 };
 
             in
@@ -3614,20 +3837,24 @@ On the structure of overlays: as you notice, all of the attributes within overla
       inputs = {
         flake-file.url = "github:vic/flake-file";
 
-        flake-parts.url = "github:hercules-ci/flake-parts";
+        flake-parts = {
+          url = "github:hercules-ci/flake-parts";
+          inputs.nixpkgs-lib.follows = "nixpkgs";
+        };
         import-tree.url = "github:vic/import-tree";
         systems.url = "github:nix-systems/default";
+        flake-utils = {
+          url = "github:numtide/flake-utils";
+          inputs.systems.follows = "systems";
+        };
 
         nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
         nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
-        nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-        nixpkgs-master.url = "github:nixos/nixpkgs/master";
         nixpkgs-kernelpin.url = "github:nixos/nixpkgs/567a49d1913ce81ac6e9582e3553dd90a955875f?narHash=sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H%2BCNW1Ck8B%2B8%3D";
-        nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
-        nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
+        nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
         nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
         nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
-        nixpkgs-stable25_11.url = "github:NixOS/nixpkgs/nixos-25.11";
+        nixpkgs-stable26_05.url = "github:NixOS/nixpkgs/nixos-26.05";
 
         home-manager = {
           # url = "github:nix-community/home-manager";
@@ -3635,10 +3862,28 @@ On the structure of overlays: as you notice, all of the attributes within overla
           inputs.nixpkgs.follows = "nixpkgs";
         };
 
-        nixos-hardware.url = "github:NixOS/nixos-hardware/master";
-        nixos-extra-modules.url = "github:oddlama/nixos-extra-modules/main";
+        nixos-hardware = {
+          url = "github:NixOS/nixos-hardware/master";
+          inputs.nixpkgs.follows = "nixpkgs";
+        };
+        nixos-extra-modules = {
+          url = "github:oddlama/nixos-extra-modules/main";
+          inputs = {
+            nixpkgs.follows = "nixpkgs";
+            flake-parts.follows = "flake-parts";
+            devshell.follows = "devshell";
+            pre-commit-hooks.follows = "pre-commit-hooks";
+          };
+        };
 
-        swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
+        swarsel-nix = {
+          url = "github:Swarsel/swarsel-nix/main";
+          inputs = {
+            nixpkgs.follows = "nixpkgs";
+            flake-parts.follows = "flake-parts";
+            systems.follows = "systems";
+          };
+        };
       };
     };
   }
@@ -12356,7 +12601,13 @@ This dynamically uses systemd boot or Lanzaboote depending on the minimal system
 
 #+begin_src nix-ts :tangle modules/common/lanzaboote.nix
   {
-    flake-file.inputs.lanzaboote.url = "github:nix-community/lanzaboote";
+    flake-file.inputs.lanzaboote = {
+      url = "github:nix-community/lanzaboote";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        pre-commit.follows = "pre-commit-hooks";
+      };
+    };
 
     flake.modules.nixos.lanzaboote =
       {
@@ -12527,7 +12778,10 @@ I also take some precautions in how I get networking information during stage 1.
   {
     flake-file.inputs.dns = {
       url = "github:kirelagin/dns.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
     };
 
     flake.modules.nixos.dns =
@@ -13296,7 +13550,10 @@ Do note that we have to account for impermanent file systems here, otherwise sys
 
 #+begin_src nix-ts :tangle modules/common/sops.nix
   {
-    flake-file.inputs.sops.url = "github:Mic92/sops-nix";
+    flake-file.inputs.sops = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     flake.modules = {
       nixos.sops =
@@ -13360,7 +13617,10 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 
 #+begin_src nix-ts :tangle modules/common/impermanence.nix
   {
-    flake-file.inputs.impermanence.url = "github:nix-community/impermanence";
+    flake-file.inputs.impermanence = {
+      url = "github:nix-community/impermanence";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     flake.modules.nixos.impermanence =
       {
@@ -13890,6 +14150,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
                 swarsel-switch
                 swarsel-sops
                 sync-org-from-files
+                follow-nix
               ]
               ++ lib.optionals (builtins.elem "sway" config.swarselsystems.enabledHomeModules) [
                 e
@@ -13920,7 +14181,15 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 #+begin_src nix-ts :tangle modules/client/programs/stylix.nix
   {
     # flake-file.inputs.stylix.url = "github:danth/stylix";
-    flake-file.inputs.stylix.url = "github:Swarsel/stylix/feat/noctalia-v5";
+    flake-file.inputs.stylix = {
+      url = "github:Swarsel/stylix/feat/noctalia-v5";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        systems.follows = "systems";
+        nur.follows = "nur";
+      };
+    };
 
     flake.modules = {
       nixos.stylix = { inputs, lib, ... }: {
@@ -19449,7 +19718,13 @@ This service changes the screen hue at night. I am not sure if that really does 
 
 #+begin_src nix-ts :tangle modules/client/programs/spicetify.nix
   {
-    flake-file.inputs.spicetify-nix.url = "github:Gerg-l/spicetify-nix";
+    flake-file.inputs.spicetify-nix = {
+      url = "github:Gerg-l/spicetify-nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        systems.follows = "systems";
+      };
+    };
 
     flake.modules.homeManager.spicetify =
       {
@@ -22345,8 +22620,22 @@ Auto login for the initial session.
   in
   {
     flake-file.inputs = {
-      niri-flake.url = "github:sodiboo/niri-flake";
-      niritiling.url = "github:Swarsel/niritiling/feat/resize";
+      niri-flake = {
+        url = "github:sodiboo/niri-flake";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          nixpkgs-stable.follows = "nixpkgs-stable";
+        };
+      };
+      niritiling = {
+        url = "github:Swarsel/niritiling/feat/resize";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          flake-parts.follows = "flake-parts";
+          treefmt-nix.follows = "treefmt-nix";
+          git-hooks-nix.follows = "pre-commit-hooks";
+        };
+      };
     };
 
     flake.modules = {
@@ -22814,7 +23103,15 @@ Auto login for the initial session.
         url = "github:noctalia-dev/noctalia-shell";
         inputs.nixpkgs.follows = "nixpkgs";
       };
-      noctoggle.url = "github:Swarsel/noctoggle";
+      noctoggle = {
+        url = "github:Swarsel/noctoggle";
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          flake-parts.follows = "flake-parts";
+          treefmt-nix.follows = "treefmt-nix";
+          git-hooks-nix.follows = "pre-commit-hooks";
+        };
+      };
     };
 
     flake.modules = {
@@ -23509,7 +23806,14 @@ When setting up a new machine:
     fmods = config.flake.modules;
   in
   {
-    flake-file.inputs.vbc-nix.url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+    flake-file.inputs.vbc-nix = {
+      url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+      inputs = {
+        nixpkgs.follows = "nixpkgs-stable26_05";
+        nixpkgs-2411.follows = "nixpkgs-stable24_11";
+        systems.follows = "systems";
+      };
+    };
 
     flake.modules = {
       nixos.work =
@@ -24876,7 +25180,10 @@ This smashes Atmosphère 1.3.2 on the switch, which is what I am currenty using.
 
 #+begin_src nix-ts :tangle modules/client/system/nswitch-rcm.nix
   {
-    flake-file.inputs.nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
+    flake-file.inputs.nswitch-rcm-nix = {
+      url = "github:Swarsel/nswitch-rcm-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     flake.modules.nixos.nswitch-rcm = { inputs, lib, ... }: {
       imports = lib.optionals (inputs ? nswitch-rcm-nix) [
@@ -36254,7 +36561,13 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
 
 #+begin_src nix-ts :tangle modules/server/services/mailserver.nix
   {
-    flake-file.inputs.simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
+    flake-file.inputs.simple-nixos-mailserver = {
+      url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        git-hooks.follows = "pre-commit-hooks";
+      };
+    };
 
     flake.modules.nixos.mailserver =
       {
@@ -39660,7 +39973,10 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
   {
     flake-file.inputs.copyparty = {
       url = "github:9001/copyparty/hovudstraum";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
     };
 
     flake.modules.nixos.copyparty =
@@ -40507,7 +40823,12 @@ A VLAN can also be used as the initrd network - this is however disabled for the
   {
     flake-file.inputs.shopservatory = {
       url = "github:Swarsel/shopservatory";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+        git-hooks-nix.follows = "pre-commit-hooks";
+      };
     };
 
     flake.modules.nixos.shopservatory =
@@ -46852,7 +47173,12 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
   {
     flake-file.inputs.hunkle = {
       url = "github:Swarsel/hunkle";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+        git-hooks-nix.follows = "pre-commit-hooks";
+      };
     };
 
     flake.modules.homeManager.emacs-init = { pkgs, inputs, ... }: {

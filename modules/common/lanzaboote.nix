@@ -1,5 +1,11 @@
 {
-  flake-file.inputs.lanzaboote.url = "github:nix-community/lanzaboote";
+  flake-file.inputs.lanzaboote = {
+    url = "github:nix-community/lanzaboote";
+    inputs = {
+      nixpkgs.follows = "nixpkgs";
+      pre-commit.follows = "pre-commit-hooks";
+    };
+  };
 
   flake.modules.nixos.lanzaboote =
     {

@@ -1,5 +1,11 @@
 {
-  flake-file.inputs.simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
+  flake-file.inputs.simple-nixos-mailserver = {
+    url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
+    inputs = {
+      nixpkgs.follows = "nixpkgs";
+      git-hooks.follows = "pre-commit-hooks";
+    };
+  };
 
   flake.modules.nixos.mailserver =
     {

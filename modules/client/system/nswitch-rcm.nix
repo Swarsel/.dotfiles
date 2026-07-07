@@ -1,5 +1,8 @@
 {
-  flake-file.inputs.nswitch-rcm-nix.url = "github:Swarsel/nswitch-rcm-nix";
+  flake-file.inputs.nswitch-rcm-nix = {
+    url = "github:Swarsel/nswitch-rcm-nix";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
   flake.modules.nixos.nswitch-rcm = { inputs, lib, ... }: {
     imports = lib.optionals (inputs ? nswitch-rcm-nix) [

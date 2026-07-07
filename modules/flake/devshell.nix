@@ -6,8 +6,14 @@
 }:
 {
   flake-file.inputs = {
-    devshell.url = "github:numtide/devshell";
-    pre-commit-hooks.url = "github:cachix/git-hooks.nix";
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pre-commit-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 }
 // lib.optionalAttrs (inputs ? devshell && inputs ? pre-commit-hooks) {

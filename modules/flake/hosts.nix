@@ -1,8 +1,14 @@
 { self, inputs, ... }:
 {
   flake-file.inputs = {
-    disko.url = "github:nix-community/disko";
-    microvm.url = "github:astro/microvm.nix";
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";

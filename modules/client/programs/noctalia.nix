@@ -8,7 +8,15 @@ in
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    noctoggle.url = "github:Swarsel/noctoggle";
+    noctoggle = {
+      url = "github:Swarsel/noctoggle";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+        git-hooks-nix.follows = "pre-commit-hooks";
+      };
+    };
   };
 
   flake.modules = {

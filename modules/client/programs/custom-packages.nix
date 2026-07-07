@@ -38,6 +38,7 @@
               swarsel-switch
               swarsel-sops
               sync-org-from-files
+              follow-nix
             ]
             ++ lib.optionals (builtins.elem "sway" config.swarselsystems.enabledHomeModules) [
               e

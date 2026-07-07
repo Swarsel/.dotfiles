@@ -1,7 +1,10 @@
 {
   flake-file.inputs.copyparty = {
     url = "github:9001/copyparty/hovudstraum";
-    inputs.nixpkgs.follows = "nixpkgs";
+    inputs = {
+      nixpkgs.follows = "nixpkgs";
+      flake-utils.follows = "flake-utils";
+    };
   };
 
   flake.modules.nixos.copyparty =

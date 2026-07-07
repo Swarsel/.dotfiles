@@ -12,7 +12,6 @@ let
       "_1password-gui"
       "_1password-gui-beta"
     ];
-    stable24_05 = [ ];
     stable24_11 = [
       "python39"
       "vieb"
@@ -21,22 +20,60 @@ let
       "steam-fhsenv-without-steam"
       "transmission_3"
     ];
-    stable25_11 = [ ];
     stable = [ ];
   };
 in
 {
   flake-file.inputs = {
-    nixgl.url = "github:guibou/nixGL";
-    nur.url = "github:nix-community/NUR";
-    zjstatus.url = "github:dj95/zjstatus";
-    nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+    nixgl = {
+      url = "github:guibou/nixGL";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+      };
+    };
+    zjstatus = {
+      url = "github:dj95/zjstatus";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
+    nix-minecraft = {
+      url = "github:Infinidoge/nix-minecraft";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        systems.follows = "systems";
+      };
+    };
+    follow-nix = {
+      url = "github:Swarsel/follow-nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+        git-hooks-nix.follows = "pre-commit-hooks";
+      };
+    };
 
-    emacs-overlay.url = "github:nix-community/emacs-overlay";
+    emacs-overlay = {
+      url = "github:nix-community/emacs-overlay";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-stable.follows = "nixpkgs-stable";
+      };
+    };
   };
 
   flake = {
-    stablePinsUnstable = lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+    stablePinsUnstable = lib.genAttrs lib.swarselsystems.linuxSystems (
       system:
       let
         pkgs = import inputs.nixpkgs {
@@ -102,6 +139,9 @@ in
               }
               // lib.optionalAttrs (inputs ? hunkle) {
                 hunkle = inputs.hunkle.packages.${prev.stdenv.hostPlatform.system}.default;
+              }
+              // lib.optionalAttrs (inputs ? follow-nix) {
+                follow-nix = inputs.follow-nix.packages.${prev.stdenv.hostPlatform.system}.default;
               };
 
           in
@@ -129,10 +169,6 @@ in
           final: prev:
           let
             modifications = final: prev: {
-              # vesktop = prev.vesktop.override {
-              #   withSystemVencord = true;
-              # };
-
               lib = prev.lib // {
                 swarselsystems = self.outputs.swarselsystemsLib;
                 hm = self.outputs.homeLib;
@@ -142,7 +178,6 @@ in
                 nativeMessagingHosts = [
                   prev.tridactyl-native
                   prev.browserpass
-                  # prev.plasma5Packages.plasma-browser-integration
                 ];
               };
 
