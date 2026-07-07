@@ -23,12 +23,22 @@
       allowlistIps = config.repo.secrets.local.crowdsec.allowlistIps or [ ];
       allowlistCidrs = config.repo.secrets.local.crowdsec.allowlistCidrs or [ ];
       allowlistAs = config.repo.secrets.local.crowdsec.allowlistAs or [ ];
+      lapiPort = lib.toInt (
+        lib.last (lib.splitString ":" config.services.crowdsec.settings.general.api.server.listen_uri)
+      );
     in
     {
       options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
 
       config = {
         swarselsystems.enabledServerModules = [ "crowdsec" ];
+
+        globals.monitoring.http = confLib.mkHttpMonitoring {
+          serviceName = "crowdsec";
+          servicePort = lapiPort;
+          path = "/v1/decisions";
+          expectedStatus = 403;
+        };
 
         users = {
           persistentIds.crowdsec = confLib.mkIds 946;
@@ -117,7 +127,7 @@
                 whitelist = {
                   reason = "Attic binary cache lookups; misses are expected 404s";
                   expression = [
-                    "evt.Meta.http_path matches '\\.nar(info)?$'"
+                    "evt.Meta.http_path matches `\\.nar(info)?$`"
                   ];
                 };
               }
