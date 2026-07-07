@@ -46,17 +46,21 @@ in
             (
               final: prev:
               lib.genAttrs [
-                "rustdesk-vbc"
                 "aap-mcp-server"
                 "aci-mcp-server"
+                "crowdsec-mcp"
                 "foreman-mcp-server"
                 "infoblox-mcp-server"
+                "jenkins-mcp-server"
+                "jfrog-mcp-server"
                 "koppla"
                 "netbox-mcp-server"
                 "ontap-mcp"
-                "palo-alto-mcp"
-                "vcenter-mcp"
                 "openshift-mcp-server"
+                "openstack-mcp-server"
+                "palo-alto-mcp"
+                "rustdesk-vbc"
+                "vcenter-mcp"
               ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
             )
           ];
@@ -113,6 +117,13 @@ in
               package = pkgs._1password-gui-beta;
               polkitPolicyOwners = [ "${mainUser}" ];
             };
+          };
+
+          environment.etc."1password/custom_allowed_browsers" = {
+            text = ''
+              glide
+            '';
+            mode = "0755";
           };
 
           networking = {
