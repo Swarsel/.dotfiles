@@ -86,9 +86,10 @@ let
 
       mkStrong = lib.mkOverride 60;
 
-      # forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-      forEachLinuxSystem =
-        f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f pkgsFor.${system});
+      linuxSystems = builtins.filter (lib.hasSuffix "-linux") (import systems);
+      darwinSystems = builtins.filter (lib.hasSuffix "-darwin") (import systems);
+
+      forEachLinuxSystem = f: lib.genAttrs linuxSystems (system: f pkgsFor.${system});
 
       readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
       readNix =

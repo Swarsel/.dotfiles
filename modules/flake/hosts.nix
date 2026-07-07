@@ -182,22 +182,15 @@
             ];
           };
 
-      linuxArches = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
-      darwinArches = [
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
+      inherit (lib.swarselsystems) linuxSystems darwinSystems;
       mkArches =
         type:
         if (type == "nixos") then
-          linuxArches
+          linuxSystems
         else if (type == "darwin") then
-          darwinArches
+          darwinSystems
         else
-          linuxArches ++ darwinArches;
+          linuxSystems ++ darwinSystems;
 
       readHostDirs =
         hostDir:
