@@ -49115,7 +49115,7 @@ This section now holds some of the configuration files that cannot be defined di
 On my server, I use a reduced, self-contained Emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using =bjm/elfeed-updater=. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using =elfeed-cljsrn= over =elfeed-web=), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change =(elfeed-db-load)= in =bjm/elfeed-updater= to =(elfeed-db-save)=.
 
 
-#+begin_src emacs-lisp :tangle files/emacs/server.el
+#+begin_src emacs-lisp :tangle files/emacs/server.el :mkdirp yes
   (require 'package)
 
   (package-initialize nil)
