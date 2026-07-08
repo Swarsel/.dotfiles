@@ -52361,7 +52361,7 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
       runs-on: ubuntu-latest
       steps:
         - name: Checkout
-          uses: actions/checkout@v4
+          uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
           with:
             fetch-depth: 0
 
@@ -52468,10 +52468,10 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
               --funcall org-html-export-to-html
 
         - name: Setup Pages
-          uses: actions/configure-pages@v4
+          uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d  # v4
 
         - name: Upload artifact
-          uses: actions/upload-pages-artifact@v3
+          uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa  # v3
           with:
             path: 'site'
 
@@ -52484,7 +52484,7 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
       steps:
         - name: Deploy to GitHub Pages
           id: deployment
-          uses: actions/deploy-pages@v4
+          uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e  # v4
 #+end_src
 
 ** GitHub Workflow: Flake check
@@ -52505,12 +52505,12 @@ This is a crude workflow that performs some rudimentary checks on the repository
       name: Check flake
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744  # v3
         - name: Check Nix flake inputs
-          uses: DeterminateSystems/flake-checker-action@v4
+          uses: DeterminateSystems/flake-checker-action@491a84a640191f0cf972bc81af69b0f6c96ed392  # v4
         - name: Install Nix
-          uses: DeterminateSystems/nix-installer-action@v3
-        - uses: DeterminateSystems/magic-nix-cache-action@main
+          uses: DeterminateSystems/nix-installer-action@129f07902485941992791c670de648dbe572a9ac  # v3
+        - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d  # v14
         - name: Check for dead code in .nix files
           run: git ls-files '*.nix' | nix run nixpkgs#deadnix
         - name: Check for lints in .nix files

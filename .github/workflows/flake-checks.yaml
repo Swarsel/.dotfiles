@@ -8,12 +8,12 @@ jobs:
     name: Check flake
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744  # v3
       - name: Check Nix flake inputs
-        uses: DeterminateSystems/flake-checker-action@v4
+        uses: DeterminateSystems/flake-checker-action@491a84a640191f0cf972bc81af69b0f6c96ed392  # v4
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v3
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+        uses: DeterminateSystems/nix-installer-action@129f07902485941992791c670de648dbe572a9ac  # v3
+      - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d  # v14
       - name: Check for dead code in .nix files
         run: git ls-files '*.nix' | nix run nixpkgs#deadnix
       - name: Check for lints in .nix files
