@@ -552,7 +552,7 @@ Let's see this in action:
 
 Calling with explicit values:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { name = "X"; age = "20"; }'
 #+end_src
 
@@ -561,7 +561,7 @@ Calling with explicit values:
 
 Calling by using a default value with =?=:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = {name ? "Default", age }: "${name} is ${age} years old"; in f { age = "20"; }'
 #+end_src
 
@@ -610,7 +610,7 @@ error:
 
 - this behavior can be suppressed by adding an ellipsis =...= to the function arguments (={ name ? "Default", age, ... }:=). Adding this ellipsis =...= to the function definition, we can now pass =another=:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = {name ? "Default", age, ... }: "${name} is ${age} years old"; in f { age = "2"; another = "0"; }'
 #+end_src
 
@@ -621,7 +621,7 @@ The latter is useful mainly in the NixOS module system, where a lot of things wi
 
 Finally, we can make the values in =...= available by using =@= as in =extra @ { name, ... }: "${name} likes ${extra.object}"=:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = extra @ { name, ... }: "${name} likes ${extra.object}"; in f { name = "Nyx"; object = "nix"; }'
 #+end_src
 
@@ -630,7 +630,7 @@ Finally, we can make the values in =...= available by using =@= as in =extra @ {
 
 Note that it is equivalent to write ={} @ extra=:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate 'let f = { name, ... } @ extra: "${name} likes ${extra.object}"; in f { name = "Nyx"; object = "nix"; }'
 #+end_src
 
@@ -671,7 +671,7 @@ This looks cumbersome on first sight, but is for example useful when referencing
 
     - however, =rec= makes =a= available to the scope (also remember that the order of expressions does /not/ matter):
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     rec {
       b = a;
@@ -708,7 +708,7 @@ This looks cumbersome on first sight, but is for example useful when referencing
 
     - using =with= will make it work:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     let
       functions = {
@@ -724,7 +724,7 @@ This looks cumbersome on first sight, but is for example useful when referencing
 
   - generally, the values of the variable in the innermost scope is given precedence in evaluation:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     let
       scope = "outer";
@@ -741,7 +741,7 @@ This looks cumbersome on first sight, but is for example useful when referencing
 
     - the same holds true for =with=:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
     swarsel-instantiate '
       with { scope = "outer"; }; with { scope = "inner"; }; scope
     '
@@ -763,7 +763,7 @@ This looks cumbersome on first sight, but is for example useful when referencing
   The following operators work as you know them from most other programming languages:
     - Any operator involving numbers (=+=, =-=, =*=, =/=)
       /Side note:/ When negating a number in actual nix code you will need to wrap it in parentheses nearly every time due to function evaluation:
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     builtins.toString (-1)
   '
@@ -803,7 +803,7 @@ error:
     - List Concatenations however use the =++= operator
     - you can use the =?= operator on an attribute set to check whether it has an attribute:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     { exists = true; } ? exists
   '
@@ -818,7 +818,7 @@ error:
 
     - Attribute selection (on attribute sets) is done using =.=:
 
-#+begin_src bash :tangle no :exports both
+#+begin_src bash :tangle no :exports both :results discard :eval never-export
   swarsel-instantiate '
     { v = 1; }.v
   '
