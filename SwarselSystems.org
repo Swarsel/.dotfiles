@@ -3217,6 +3217,42 @@ Aside from the =default= devShell which is the one that should usually be called
                 entry = "${inputs.pre-commit-hooks.checks.${system}.pre-commit-hooks}/bin/destroyed-symlinks";
               };
 
+              org-custom-ids = {
+                enable = true;
+                name = "org-custom-ids";
+                description = "Generate a :CUSTOM_ID: for every org heading that is missing one";
+                entry = lib.getExe self.packages.${system}.check-org-custom-ids;
+                files = "^SwarselSystems\\.org$";
+                pass_filenames = true;
+              };
+
+              topology-in-sync = {
+                enable = true;
+                name = "topology-in-sync";
+                description = "Ensure topology.png and topology_small.png are committed together";
+                entry = lib.getExe self.packages.${system}.check-topology-in-sync;
+                files = "^files/topology/topology(_small)?\\.png$";
+                pass_filenames = false;
+              };
+
+              org-in-sync = {
+                enable = true;
+                name = "org-in-sync";
+                description = "Ensure SwarselSystems.org is in sync with its tangled files";
+                entry = lib.getExe self.packages.${system}.check-org-in-sync;
+                always_run = true;
+                pass_filenames = false;
+              };
+
+              modules-tangled = {
+                enable = true;
+                name = "modules-tangled";
+                description = "Ensure every file under modules/ is tangled from SwarselSystems.org";
+                entry = lib.getExe self.packages.${system}.check-modules-tangled;
+                always_run = true;
+                pass_filenames = false;
+              };
+
               shellcheck = {
                 enable = true;
                 entry = "${pkgs.shellcheck}/bin/shellcheck --shell=bash";
@@ -4408,6 +4444,9 @@ This library file defines a few commonly used functions for the tests.
 #+end_src
 
 *** Bootstrapping
+:PROPERTIES:
+:CUSTOM_ID: h:782a1e53-b178-4b87-96ba-2d1d9c2c2bc7
+:END:
 #+begin_src nix-ts :tangle modules/tests/bootstrap-install.nix
   { self, ... }:
   {
@@ -17352,8 +17391,14 @@ Userstyle for the Stylus plugin that enables theatre mode on invidious:
 #+end_src
 
 **** Glide
+:PROPERTIES:
+:CUSTOM_ID: h:69d60e88-73d3-40d4-95ce-eb4596dbc68d
+:END:
 
 ***** Main Config
+:PROPERTIES:
+:CUSTOM_ID: h:bcd2e706-b3d0-470e-a099-d20c4633078e
+:END:
 Oh boy, it has been a while since I was THIS excited about a program.
 
 Remember the good times of vimperator and pentadactly? When Firefox increased their security around Web Extensions, those add-ons were practically killed. Still, we had [[#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51][tridactyl]] to make up for some of the lost functionality. However, it never did the same thing in the end, as tridactly could only start working once a page and its frames were fully loaded. This yielded a delay in usage that I always disliked.
@@ -17423,6 +17468,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Containers
+:PROPERTIES:
+:CUSTOM_ID: h:5e24f694-2974-42a2-a68c-44e9fdf70d04
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/containers.nix
   {
     flake.modules.homeManager.glide = {
@@ -17545,6 +17593,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Findbar
+:PROPERTIES:
+:CUSTOM_ID: h:ab0be983-fff8-4ec0-b9f8-285d4fd69396
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/findbar.nix
   {
     flake.modules.homeManager.glide = {
@@ -17570,6 +17621,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** site-specific hint-selectors
+:PROPERTIES:
+:CUSTOM_ID: h:5620f27d-9148-4d20-8689-121d24e80426
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/hint-selectors.nix
   {
     flake.modules.homeManager.glide = {
@@ -17601,6 +17655,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** find mode (hints, vimperator-reflow)
+:PROPERTIES:
+:CUSTOM_ID: h:53ab8378-6f62-4624-9a96-e7ef42ff1f81
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/hints.nix
   {
     flake.modules.homeManager.glide = {
@@ -17773,6 +17830,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Ignored sites, ignore-mode
+:PROPERTIES:
+:CUSTOM_ID: h:a871e9fa-8859-4bcb-8f58-b0b6f33f3668
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/ignore-mode.nix
   {
     flake.modules.homeManager.glide = {
@@ -17801,6 +17861,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Invidious CSS
+:PROPERTIES:
+:CUSTOM_ID: h:81aef882-ebb6-4149-9132-7e674a812b1e
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/invidious.nix
   {
     flake.modules.homeManager.glide =
@@ -17877,6 +17940,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Search engines
+:PROPERTIES:
+:CUSTOM_ID: h:26478c8e-b24c-4a3a-9866-ef990897dbd8
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/search.nix
   {
     flake.modules.homeManager.glide =
@@ -17984,6 +18050,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Site shortcuts
+:PROPERTIES:
+:CUSTOM_ID: h:5bb0712a-d9b4-449a-a145-afd80a4a0a74
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/site-shortcuts.nix
   {
     flake.modules.homeManager.glide = {
@@ -18014,6 +18083,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Status line
+:PROPERTIES:
+:CUSTOM_ID: h:aa656d15-1abc-4e1a-86a8-88f7723834d7
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/statusline.nix
   {
     flake.modules.homeManager.glide = {
@@ -18213,6 +18285,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** General keybings
+:PROPERTIES:
+:CUSTOM_ID: h:5480c06b-5d3c-41d9-a520-fab64a589268
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/tab-keymaps.nix
   {
     flake.modules.homeManager.glide = {
@@ -18290,6 +18365,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Glide CSS
+:PROPERTIES:
+:CUSTOM_ID: h:67e87706-23c6-44a6-b33b-f2c186798e71
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/theme.nix
   {
     flake.modules.homeManager.glide =
@@ -18484,6 +18562,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Toolbar autohide and states
+:PROPERTIES:
+:CUSTOM_ID: h:9b17115e-2af0-46be-8b41-14355cf8e19b
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/toolbar.nix
   {
     flake.modules.homeManager.glide = {
@@ -18536,6 +18617,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Commands for opening and searching
+:PROPERTIES:
+:CUSTOM_ID: h:30b34765-cf87-4049-a58d-8734bf122da1
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/url-commandline.nix
   {
     flake.modules.homeManager.glide = {
@@ -18743,6 +18827,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Find audio tabs
+:PROPERTIES:
+:CUSTOM_ID: h:4734198e-9c68-4afe-94b9-57c038ef0b9a
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/audio-tabs.nix
   {
     flake.modules.homeManager.glide = {
@@ -18775,6 +18862,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+end_src
 
 ***** Jump to site heading
+:PROPERTIES:
+:CUSTOM_ID: h:425bfb52-108d-4590-8ded-60bdb35cef89
+:END:
 #+begin_src nix-ts :tangle modules/client/programs/glide/heading-jump.nix
   {
     flake.modules.homeManager.glide =
@@ -32356,6 +32446,9 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 #+end_src
 
 **** nginx-exporter
+:PROPERTIES:
+:CUSTOM_ID: h:187d7074-48ec-43b4-8051-e09d494d3700
+:END:
 
 #+begin_src nix-ts :tangle modules/server/infra/nginx-exporter.nix
   {
@@ -41136,6 +41229,9 @@ A VLAN can also be used as the initrd network - this is however disabled for the
 
 
 **** Shopservatory
+:PROPERTIES:
+:CUSTOM_ID: h:3f53b8d5-41c9-477b-a766-80edefe1d2e9
+:END:
 
 #+begin_src nix-ts :tangle modules/server/services/shopservatory.nix
   {
@@ -41343,6 +41439,9 @@ A VLAN can also be used as the initrd network - this is however disabled for the
 #+end_src
 
 **** Socks-Proxy
+:PROPERTIES:
+:CUSTOM_ID: h:600f931f-e857-4d61-aa60-a5bbd7182bbb
+:END:
 
 #+begin_src nix-ts :tangle modules/server/services/socks-proxy.nix
   {
@@ -43524,215 +43623,465 @@ This script can be used to sync changes done to files back into the literate Swa
 
 Another use case for this (and the main point motivating me to do it) was to streamline implementing the changes automatically applied to the nix files by my pre-commit-hooks, so linting etc.
 
-#+begin_src python-ts :eval no :tangle files/scripts/sync-org-from-files.py :shebang #!/usr/bin/env python3
-  import argparse
-  import re
-  import sys
-  from collections import Counter
-  from pathlib import Path
-  from typing import Optional
-
-
-  def parse_tangle_path(line: str) -> Optional[str]:
-      m = re.search(r":tangle\s+(\S+)", line)
-      if not m:
-          return None
-      path = m.group(1)
-      if path == "no":
-          return None
-      return path
-
-
-  def parse_shebang(line: str) -> Optional[str]:
-      m = re.search(r":shebang\s+(.*?)(?=\s+:[A-Za-z0-9_-]+\s|\s*$)", line)
-      if not m:
-          return None
-      value = m.group(1).strip()
-      if value == "":
-          return None
-      return value
-
-
-  def has_noweb(line: str) -> bool:
-      return bool(re.search(r":noweb\s+yes", line))
-
-
-  def indent_content(content: str, spaces: int = 2) -> str:
-      prefix = " " * spaces
-      lines = content.split("\n")
-      result = []
-      for line in lines:
-          if line.strip():
-              result.append(prefix + line)
-          else:
-              result.append("")
-      return "\n".join(result)
-
-
-  def main():
-      parser = argparse.ArgumentParser(description="Sync tangled files back into org source blocks")
-      parser.add_argument("--dry-run", "-n", action="store_true", help="Show what would change without modifying the file")
-      parser.add_argument("--org-file", default="SwarselSystems.org", help="Path to the org file (default: SwarselSystems.org)")
-      parser.add_argument("--repo-root", default=None, help="Repository root (default: parent of org file)")
-      args = parser.parse_args()
-
-      org_path = Path(args.org_file).resolve()
-      if not org_path.exists():
-          print(f"Error: {org_path} not found", file=sys.stderr)
-          sys.exit(1)
-
-      repo_root = Path(args.repo_root).resolve() if args.repo_root else org_path.parent
-
-      with open(org_path, "r") as f:
-          lines = f.readlines()
-
-      tangle_counts: Counter[str] = Counter()
-      for line in lines:
-          lower = line.lower().strip()
-          if lower.startswith("#+begin_src"):
-              tp = parse_tangle_path(line)
-              if tp:
-                  tangle_counts[tp] += 1
-
-      multi_target_files = {p for p, count in tangle_counts.items() if count > 1}
-
-      output_lines: list[str] = []
-      i = 0
-      updated = 0
-      skipped_noweb = 0
-      skipped_multi = 0
-      skipped_missing = 0
-      unchanged = 0
-
-      while i < len(lines):
-          line = lines[i]
-          lower = line.strip().lower()
-
-          if not lower.startswith("#+begin_src"):
-              output_lines.append(line)
-              i += 1
-              continue
-
-          tangle_path = parse_tangle_path(line)
-
-          if tangle_path is None:
-              output_lines.append(line)
-              i += 1
-              continue
-
-          if has_noweb(line):
-              skipped_noweb += 1
-              while i < len(lines):
-                  output_lines.append(lines[i])
-                  if lines[i].strip().lower() == "#+end_src":
-                      i += 1
-                      break
-                  i += 1
-              continue
-
-          if tangle_path in multi_target_files:
-              skipped_multi += 1
-              while i < len(lines):
-                  output_lines.append(lines[i])
-                  if lines[i].strip().lower() == "#+end_src":
-                      i += 1
-                      break
-                  i += 1
-              continue
-
-          file_path = repo_root / tangle_path
-          if not file_path.exists():
-              skipped_missing += 1
-              if args.dry_run:
-                  print(f"  MISSING: {tangle_path}")
-              while i < len(lines):
-                  output_lines.append(lines[i])
-                  if lines[i].strip().lower() == "#+end_src":
-                      i += 1
-                      break
-                  i += 1
-              continue
-
-          file_content = file_path.read_text()
-
-          shebang = parse_shebang(line)
-          if shebang:
-              file_lines = file_content.splitlines()
-              if file_lines and file_lines[0].strip() == shebang:
-                  file_content = "\n".join(file_lines[1:])
-
-          if file_content.endswith("\n"):
-              file_content = file_content[:-1]
-
-          new_body = indent_content(file_content)
-
-          old_body_lines: list[str] = []
-          j = i + 1
-          while j < len(lines) and lines[j].strip().lower() != "#+end_src":
-              old_body_lines.append(lines[j])
-              j += 1
-
-          old_body = "".join(old_body_lines)
-          if old_body.endswith("\n"):
-              old_body = old_body[:-1]
-
-          if old_body == new_body:
-              unchanged += 1
-              while i < len(lines):
-                  output_lines.append(lines[i])
-                  if lines[i].strip().lower() == "#+end_src":
-                      i += 1
-                      break
-                  i += 1
-              continue
-
-          updated += 1
-          if args.dry_run:
-              print(f"  UPDATED: {tangle_path} (line {i + 1})")
-          output_lines.append(line)
-          output_lines.append(new_body + "\n")
-          i += 1
-          while i < len(lines) and lines[i].strip().lower() != "#+end_src":
-              i += 1
-          if i < len(lines):
-              output_lines.append(lines[i])
-              i += 1
-
-      total = updated + unchanged + skipped_noweb + skipped_multi + skipped_missing
-      print(f"\nSync summary:")
-      print(f"  Total tangled blocks: {total}")
-      print(f"  Updated:              {updated}")
-      print(f"  Unchanged:            {unchanged}")
-      print(f"  Skipped (noweb):      {skipped_noweb}")
-      print(f"  Skipped (multi-block):{skipped_multi}")
-      print(f"  Skipped (missing):    {skipped_missing}")
-
-      if not args.dry_run and updated > 0:
-          with open(org_path, "w") as f:
-              f.writelines(output_lines)
-          print(f"\nWrote {org_path}")
-      elif args.dry_run:
-          print(f"\nDry run — no changes written.")
-
-
-  if __name__ == "__main__":
-      main()
-#+end_src
-
 #+begin_src nix-ts :tangle pkgs/flake/sync-org-from-files/default.nix
   {
     name,
-    self,
-    python313,
+    writers,
+    ...
+  }:
+
+  writers.writePython3Bin name
+    {
+      flakeIgnore = [
+        "E501"
+        "F541"
+      ];
+    }
+    ''
+      import argparse
+      import re
+      import sys
+      from collections import Counter
+      from pathlib import Path
+      from typing import Optional
+
+
+      def parse_tangle_path(line: str) -> Optional[str]:
+          m = re.search(r":tangle\s+(\S+)", line)
+          if not m:
+              return None
+          path = m.group(1)
+          if path == "no":
+              return None
+          return path
+
+
+      def parse_shebang(line: str) -> Optional[str]:
+          m = re.search(r":shebang\s+(.*?)(?=\s+:[A-Za-z0-9_-]+\s|\s*$)", line)
+          if not m:
+              return None
+          value = m.group(1).strip()
+          if value == "":
+              return None
+          return value
+
+
+      def has_noweb(line: str) -> bool:
+          return bool(re.search(r":noweb\s+yes", line))
+
+
+      def indent_content(content: str, spaces: int = 2) -> str:
+          prefix = " " * spaces
+          lines = content.split("\n")
+          result = []
+          for line in lines:
+              if line.strip():
+                  result.append(prefix + line)
+              else:
+                  result.append("")
+          return "\n".join(result)
+
+
+      def main():
+          parser = argparse.ArgumentParser(description="Sync tangled files back into org source blocks")
+          parser.add_argument("--dry-run", "-n", action="store_true", help="Show what would change without modifying the file")
+          parser.add_argument("--org-file", default="SwarselSystems.org", help="Path to the org file (default: SwarselSystems.org)")
+          parser.add_argument("--repo-root", default=None, help="Repository root (default: parent of org file)")
+          args = parser.parse_args()
+
+          org_path = Path(args.org_file).resolve()
+          if not org_path.exists():
+              print(f"Error: {org_path} not found", file=sys.stderr)
+              sys.exit(1)
+
+          repo_root = Path(args.repo_root).resolve() if args.repo_root else org_path.parent
+
+          with open(org_path, "r") as f:
+              lines = f.readlines()
+
+          tangle_counts: Counter[str] = Counter()
+          for line in lines:
+              lower = line.lower().strip()
+              if lower.startswith("#+begin_src"):
+                  tp = parse_tangle_path(line)
+                  if tp:
+                      tangle_counts[tp] += 1
+
+          multi_target_files = {p for p, count in tangle_counts.items() if count > 1}
+
+          output_lines: list[str] = []
+          i = 0
+          updated = 0
+          skipped_noweb = 0
+          skipped_multi = 0
+          skipped_missing = 0
+          unchanged = 0
+
+          while i < len(lines):
+              line = lines[i]
+              lower = line.strip().lower()
+
+              if not lower.startswith("#+begin_src"):
+                  output_lines.append(line)
+                  i += 1
+                  continue
+
+              tangle_path = parse_tangle_path(line)
+
+              if tangle_path is None:
+                  output_lines.append(line)
+                  i += 1
+                  continue
+
+              if has_noweb(line):
+                  skipped_noweb += 1
+                  while i < len(lines):
+                      output_lines.append(lines[i])
+                      if lines[i].strip().lower() == "#+end_src":
+                          i += 1
+                          break
+                      i += 1
+                  continue
+
+              if tangle_path in multi_target_files:
+                  skipped_multi += 1
+                  while i < len(lines):
+                      output_lines.append(lines[i])
+                      if lines[i].strip().lower() == "#+end_src":
+                          i += 1
+                          break
+                      i += 1
+                  continue
+
+              file_path = repo_root / tangle_path
+              if not file_path.exists():
+                  skipped_missing += 1
+                  if args.dry_run:
+                      print(f"  MISSING: {tangle_path}")
+                  while i < len(lines):
+                      output_lines.append(lines[i])
+                      if lines[i].strip().lower() == "#+end_src":
+                          i += 1
+                          break
+                      i += 1
+                  continue
+
+              file_content = file_path.read_text()
+
+              shebang = parse_shebang(line)
+              if shebang:
+                  file_lines = file_content.splitlines()
+                  if file_lines and file_lines[0].strip() == shebang:
+                      file_content = "\n".join(file_lines[1:])
+
+              if file_content.endswith("\n"):
+                  file_content = file_content[:-1]
+
+              new_body = indent_content(file_content)
+
+              old_body_lines: list[str] = []
+              j = i + 1
+              while j < len(lines) and lines[j].strip().lower() != "#+end_src":
+                  old_body_lines.append(lines[j])
+                  j += 1
+
+              old_body = "".join(old_body_lines)
+              if old_body.endswith("\n"):
+                  old_body = old_body[:-1]
+
+              if old_body == new_body:
+                  unchanged += 1
+                  while i < len(lines):
+                      output_lines.append(lines[i])
+                      if lines[i].strip().lower() == "#+end_src":
+                          i += 1
+                          break
+                      i += 1
+                  continue
+
+              updated += 1
+              if args.dry_run:
+                  print(f"  UPDATED: {tangle_path} (line {i + 1})")
+              output_lines.append(line)
+              output_lines.append(new_body + "\n")
+              i += 1
+              while i < len(lines) and lines[i].strip().lower() != "#+end_src":
+                  i += 1
+              if i < len(lines):
+                  output_lines.append(lines[i])
+                  i += 1
+
+          total = updated + unchanged + skipped_noweb + skipped_multi + skipped_missing
+          print(f"\nSync summary:")
+          print(f"  Total tangled blocks: {total}")
+          print(f"  Updated:              {updated}")
+          print(f"  Unchanged:            {unchanged}")
+          print(f"  Skipped (noweb):      {skipped_noweb}")
+          print(f"  Skipped (multi-block):{skipped_multi}")
+          print(f"  Skipped (missing):    {skipped_missing}")
+
+          if not args.dry_run and updated > 0:
+              with open(org_path, "w") as f:
+                  f.writelines(output_lines)
+              print(f"\nWrote {org_path}")
+          elif args.dry_run:
+              print(f"\nDry run — no changes written.")
+
+
+      if __name__ == "__main__":
+          main()
+    ''
+#+end_src
+
+***** check-org-custom-ids
+:PROPERTIES:
+:CUSTOM_ID: h:59b883a6-db00-4a53-9319-3856e9d6ab30
+:END:
+
+This script is something I actually needed for a long time. It simply makes sure that all headings in my org file do have a persistent id I can use to define links in it.
+
+#+begin_src nix-ts :tangle pkgs/flake/check-org-custom-ids/default.nix
+  {
+    name,
+    emacs-nox,
+    writers,
+    writeShellApplication,
+    ...
+  }:
+
+  let
+    script = writers.writePython3Bin "check-org-custom-ids-py" { flakeIgnore = [ "E501" ]; } ''
+      import argparse
+      import os
+      import re
+      import subprocess
+      import sys
+      from pathlib import Path
+
+      HEADING = re.compile(r"^\*+ ")
+      PROPERTIES = re.compile(r"^[ \t]*:PROPERTIES:[ \t]*$", re.IGNORECASE)
+      CUSTOM_ID = re.compile(r"^[ \t]*:CUSTOM_ID:[ \t]*\S", re.IGNORECASE)
+      END = re.compile(r"^[ \t]*:END:[ \t]*$", re.IGNORECASE)
+
+      FIX_ELISP = """
+      (progn
+        (require 'org)
+        (require 'org-id)
+        (find-file (car command-line-args-left))
+        (org-mode)
+        (org-map-entries
+         (lambda ()
+           (let ((id (org-entry-get (point) "CUSTOM_ID")))
+             (unless (and id (stringp id) (string-match-p "\\\\S-" id))
+               (org-entry-put (point) "CUSTOM_ID" (org-id-new "h"))))))
+        (save-buffer))
+      """
+
+
+      def missing_ids(path: Path) -> list[tuple[int, str]]:
+          lines = path.read_text(encoding="utf-8").splitlines()
+          missing = []
+          i = 0
+          n = len(lines)
+          while i < n:
+              if not HEADING.match(lines[i]):
+                  i += 1
+                  continue
+              heading_line, heading_text = i + 1, lines[i]
+              i += 1
+              if i >= n or not PROPERTIES.match(lines[i]):
+                  missing.append((heading_line, heading_text))
+                  continue
+              i += 1
+              found = False
+              while i < n and not END.match(lines[i]):
+                  if CUSTOM_ID.match(lines[i]):
+                      found = True
+                  i += 1
+              if not found:
+                  missing.append((heading_line, heading_text))
+          return missing
+
+
+      def report(path: Path, missing: list[tuple[int, str]]) -> None:
+          print(f"{path}: {len(missing)} heading(s) without a :CUSTOM_ID:")
+          for line, text in missing:
+              print(f"  {path}:{line}: {text}")
+
+
+      def generate(path: Path, emacs: str) -> None:
+          subprocess.run(
+              [emacs, "--batch", "--eval", FIX_ELISP, str(path)],
+              check=True,
+          )
+
+
+      def main() -> int:
+          parser = argparse.ArgumentParser()
+          parser.add_argument(
+              "--check",
+              action="store_true",
+              help="only report headings missing a :CUSTOM_ID:, do not generate them",
+          )
+          parser.add_argument(
+              "--emacs",
+              default=os.environ.get("EMACS", "emacs"),
+              help="path to the emacs binary used to generate CUSTOM_IDs",
+          )
+          parser.add_argument("files", nargs="+", type=Path)
+          args = parser.parse_args()
+
+          status = 0
+          for path in args.files:
+              missing = missing_ids(path)
+              if not missing:
+                  continue
+              if args.check:
+                  status = 1
+                  report(path, missing)
+              else:
+                  report(path, missing)
+                  generate(path, args.emacs)
+                  print(f"{path}: generated {len(missing)} CUSTOM_ID(s); review and re-stage.")
+                  status = 1
+          return status
+
+
+      if __name__ == "__main__":
+          sys.exit(main())
+    '';
+  in
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ emacs-nox ];
+    text = ''
+      export EMACS=${emacs-nox}/bin/emacs
+      exec ${script}/bin/check-org-custom-ids-py "$@"
+    '';
+  }
+#+end_src
+
+***** check-topology-in-sync
+:PROPERTIES:
+:CUSTOM_ID: h:886e6175-486a-4c0a-9487-84a82b7eeb2e
+:END:
+
+This is a crude fix that simply makes sure that if I stage a new topology graph, I have also staged a change in the thumbnail.
+
+[[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: automate this
+
+#+begin_src nix-ts :tangle pkgs/flake/check-topology-in-sync/default.nix
+  {
+    name,
+    git,
     writeShellApplication,
     ...
   }:
 
   writeShellApplication {
     inherit name;
-    runtimeInputs = [ python313 ];
+    runtimeInputs = [ git ];
     text = ''
-      exec ${python313}/bin/python3 ${self}/files/scripts/sync-org-from-files.py "$@"
+      big="files/topology/topology.png"
+      small="files/topology/topology_small.png"
+
+      staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+      big_staged=false
+      small_staged=false
+      while IFS= read -r file; do
+          [[ $file == "$big" ]] && big_staged=true
+          [[ $file == "$small" ]] && small_staged=true
+      done <<< "$staged"
+
+      if [[ $big_staged == true && $small_staged == false ]]; then
+          echo "$big changed but $small was not regenerated in this commit."
+          exit 1
+      fi
+
+      if [[ $small_staged == true && $big_staged == false ]]; then
+          echo "$small changed but $big was not updated in this commit."
+          exit 1
+      fi
+    '';
+  }
+#+end_src
+
+***** check-org-in-sync
+:PROPERTIES:
+:CUSTOM_ID: h:73566c77-0aa4-4785-99da-260c40984c31
+:END:
+
+Calls [[#h:0d64a607-e96e-48a9-aa66-6d968fa20df9][sync-org-from-files]] --dry-run during pre-commit hooks to make sure I tangled the file.
+
+#+begin_src nix-ts :tangle pkgs/flake/check-org-in-sync/default.nix
+  {
+    name,
+    self,
+    stdenv,
+    writeShellApplication,
+    ...
+  }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ self.packages.${stdenv.hostPlatform.system}.sync-org-from-files ];
+    text = ''
+      output="$(sync-org-from-files --dry-run "$@")"
+      echo "$output"
+      updated="$(echo "$output" | sed -n 's/^  Updated:[[:space:]]*\([0-9]\+\)$/\1/p')"
+      if [[ ''${updated:-0} -ne 0 ]]; then
+          echo
+          echo "org file is out of sync with $updated tangled file(s); run sync-org-from-files and stage SwarselSystems.org."
+          exit 1
+      fi
+    '';
+  }
+#+end_src
+
+***** check-modules-tangled
+:PROPERTIES:
+:CUSTOM_ID: h:4ee1e6cb-2ce9-4d14-9e14-959d791dba11
+:END:
+
+Makes sure that all files in =modules/= are actually defined in =SwarselSystems.org= - this makes sure that if I ever decide to remove or rename a module, its own file cannot live on undetected in the repo (it would be picked up by =import-tree=, which in many cases would not be a problem because it would result in a differently named flake-parts module, but I would rather make sure).
+
+#+begin_src nix-ts :tangle pkgs/flake/check-modules-tangled/default.nix
+  {
+    name,
+    coreutils,
+    findutils,
+    gnugrep,
+    gnused,
+    writeShellApplication,
+    ...
+  }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [
+      coreutils
+      findutils
+      gnugrep
+      gnused
+    ];
+    text = ''
+      org="SwarselSystems.org"
+
+      on_disk="$(find modules -type f | sort -u)"
+      tangled="$(grep -oE ':tangle[[:space:]]+(\S+)' "$org" | sed -E 's/:tangle[[:space:]]+//' | grep '^modules/' | sort -u)"
+
+      untracked="$(comm -23 <(echo "$on_disk") <(echo "$tangled"))"
+
+      if [[ -n "$untracked" ]]; then
+          echo "The following files under modules/ are not tangled from $org:"
+          while IFS= read -r file; do
+              echo "  $file"
+          done <<< "$untracked"
+          echo
+          echo "Add a source block with :tangle <path> for each, or remove the file."
+          exit 1
+      fi
     '';
   }
 #+end_src
@@ -47522,6 +47871,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
   }
 #+end_src
 *** apheleia
+:PROPERTIES:
+:CUSTOM_ID: h:a2d27074-f432-4968-960e-23147db54591
+:END:
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/apheleia.nix
   {
@@ -47532,6 +47884,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
   }
 #+end_src
 *** jinx
+:PROPERTIES:
+:CUSTOM_ID: h:58e4f5aa-e826-4f0a-bb64-cb9251d5473a
+:END:
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/jinx.nix
   {
@@ -47562,6 +47917,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
   }
 #+end_src
 *** pulsar
+:PROPERTIES:
+:CUSTOM_ID: h:8595e35f-1604-4799-9fd8-591b41cc0ba5
+:END:
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/pulsar.nix
   {
@@ -54705,6 +55063,9 @@ This is the state of the repository when I decided to migrate to flakes. At this
 :PROPERTIES:
 :CUSTOM_ID: h:15ee6287-207f-49a5-8bf0-cf66707b892c
 :END:
+
+Enhancemets:
+- generate the topology thumbnail automatically either upon html export or github workflow
 
 Fixes:
 - split off invidious-companion into own VM(?)
