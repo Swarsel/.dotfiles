@@ -15,6 +15,7 @@
 #+MACRO: count-lines (eval (count-lines (point-min) (point-max)))
 #+MACRO: count-src-lines (eval (let ((total 0)) (org-babel-map-src-blocks nil (setq total (+ total (1- (length (split-string body "\n")))))) total))
 #+MACRO: days-since (eval (number-to-string (- (org-today) (org-time-string-to-absolute (format "%s-%s-%s" $1 $2 $3)))))
+#+MACRO: topology-revision-date (eval (string-trim (shell-command-to-string "git log -1 --format=%cd --date=format:%F -- files/topology/topology.png")))
 #+MACRO: NOTE (eval "This file has {{{count-words}}} words spanning {{{count-lines}}} lines (of which {{{count-src-lines}}} are code) and was last revised on {{{revision-date}}}.")
 
 *{{{NOTE(If you can see this, you might want to switch to [[https://swarsel.github.io/.dotfiles/][the hmtl version of this document]] in order to have working links and other QoL functions while reading this file.)}}}*
@@ -39,7 +40,7 @@ The literate configuration approach lets me explain my choices to my future self
 
 [[https://github.com/Swarsel/.dotfiles/tree/main/files/topology/topology.png][file:./files/topology/topology_small.png]]
 
-/(click to enlarge)/
+/(click to enlarge; topology graph last updated on {{{topology-revision-date}}}.)/
 
 This project manages my entire IT infrastructure. In particular:
 
@@ -52361,6 +52362,8 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
       steps:
         - name: Checkout
           uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
 
         - name: Install Nix
           uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3  # v31.10.6
