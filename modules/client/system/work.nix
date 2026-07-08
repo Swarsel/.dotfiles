@@ -42,6 +42,8 @@ in
         };
         config = {
 
+          repo.secretFiles.work = ../../../secrets/work/pii.nix.enc;
+
           nixpkgs.overlays = [
             (
               final: prev:

@@ -66,6 +66,10 @@ extra_rules = [
     age_keys   = ["pyramid"]
   },
   {
+    path_regex = "secrets/work/[^/]+\\.enc$"
+    age_keys   = ["pyramid", "buildbot"]
+  },
+  {
     path_regex = "secrets/general/invidious-companion.yaml$"
     age_keys   = ["moonside", "summers-ankisync"]
   },

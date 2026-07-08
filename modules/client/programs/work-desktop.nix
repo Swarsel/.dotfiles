@@ -12,7 +12,7 @@
       config = {
         wayland.windowManager.sway =
           let
-            inherit (confLib.getConfig.repo.secrets.local.work)
+            inherit (confLib.getConfig.repo.secrets.work)
               user1
               user1Long
               domain1
@@ -36,7 +36,7 @@
         stylix = {
           targets.firefox.profileNames =
             let
-              inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+              inherit (confLib.getConfig.repo.secrets.work) user1 user2 user3;
             in
             lib.mkIf (!config.programs.glide-browser.enable) [
               "${user1}"

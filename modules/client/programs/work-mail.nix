@@ -9,19 +9,18 @@
     }:
     let
       inherit (config.swarselsystems) homeDir;
-      inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
-      inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
+      inherit (confLib.getConfig.repo.secrets.work) mailAddress;
     in
     {
       config = {
         systemd.user.sessionVariables = lib.optionalAttrs (!config.swarselsystems.isPublic) {
-          SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
+          SWARSEL_MAIL_ALL = lib.mkForce "${confLib.getConfig.repo.secrets.common.mail.allMailAddresses},${mailAddress}";
           SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
         };
 
         accounts.email.accounts.work =
           let
-            inherit (confLib.getConfig.repo.secrets.local.work) mailName;
+            inherit (confLib.getConfig.repo.secrets.work) mailName;
           in
           {
             primary = false;

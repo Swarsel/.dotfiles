@@ -113,7 +113,7 @@
 
         programs =
           let
-            inherit (confLib.getConfig.repo.secrets.local.work)
+            inherit (confLib.getConfig.repo.secrets.work)
               user1
               user1Long
               user2
@@ -175,7 +175,7 @@
               };
             };
 
-            ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.local.work.sshConfig {
+            ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.work.sshConfig {
               "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
             };
 
@@ -334,7 +334,7 @@
 
         xdg =
           let
-            inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+            inherit (confLib.getConfig.repo.secrets.work) user1 user2 user3;
           in
           {
             mimeApps = {

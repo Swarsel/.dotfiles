@@ -23822,6 +23822,8 @@ When setting up a new machine:
           };
           config = {
 
+            repo.secretFiles.work = ../../../secrets/work/pii.nix.enc;
+
             nixpkgs.overlays = [
               (
                 final: prev:
@@ -24260,7 +24262,7 @@ When setting up a new machine:
 
           programs =
             let
-              inherit (confLib.getConfig.repo.secrets.local.work)
+              inherit (confLib.getConfig.repo.secrets.work)
                 user1
                 user1Long
                 user2
@@ -24322,7 +24324,7 @@ When setting up a new machine:
                 };
               };
 
-              ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.local.work.sshConfig {
+              ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.work.sshConfig {
                 "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
               };
 
@@ -24481,7 +24483,7 @@ When setting up a new machine:
 
           xdg =
             let
-              inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+              inherit (confLib.getConfig.repo.secrets.work) user1 user2 user3;
             in
             {
               mimeApps = {
@@ -24532,19 +24534,18 @@ When setting up a new machine:
       }:
       let
         inherit (config.swarselsystems) homeDir;
-        inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
-        inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
+        inherit (confLib.getConfig.repo.secrets.work) mailAddress;
       in
       {
         config = {
           systemd.user.sessionVariables = lib.optionalAttrs (!config.swarselsystems.isPublic) {
-            SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
+            SWARSEL_MAIL_ALL = lib.mkForce "${confLib.getConfig.repo.secrets.common.mail.allMailAddresses},${mailAddress}";
             SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
           };
 
           accounts.email.accounts.work =
             let
-              inherit (confLib.getConfig.repo.secrets.local.work) mailName;
+              inherit (confLib.getConfig.repo.secrets.work) mailName;
             in
             {
               primary = false;
@@ -24652,7 +24653,7 @@ When setting up a new machine:
         config = {
           wayland.windowManager.sway =
             let
-              inherit (confLib.getConfig.repo.secrets.local.work)
+              inherit (confLib.getConfig.repo.secrets.work)
                 user1
                 user1Long
                 domain1
@@ -24676,7 +24677,7 @@ When setting up a new machine:
           stylix = {
             targets.firefox.profileNames =
               let
-                inherit (confLib.getConfig.repo.secrets.local.work) user1 user2 user3;
+                inherit (confLib.getConfig.repo.secrets.work) user1 user2 user3;
               in
               lib.mkIf (!config.programs.glide-browser.enable) [
                 "${user1}"
@@ -47564,6 +47565,10 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     {
       path_regex = "secrets/work/[^/]+\\.(yaml|json|env|ini)$"
       age_keys   = ["pyramid"]
+    },
+    {
+      path_regex = "secrets/work/[^/]+\\.enc$"
+      age_keys   = ["pyramid", "buildbot"]
     },
     {
       path_regex = "secrets/general/invidious-companion.yaml$"
