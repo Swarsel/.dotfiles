@@ -31,6 +31,7 @@
               sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
               path = "${homeDir}/.config/openshift-mcp/kubeconfig";
             };
+            context7-mcp-env.sopsFile = workSopsFile;
           };
           services.ontap-mcp = {
             enable = true;
@@ -41,6 +42,16 @@
             mcp = {
               enable = true;
               envFile = confLib.getConfig.sops.secrets."claude-mcp-env".path;
+              extraEnvFiles = [ confLib.getConfig.sops.secrets."context7-mcp-env".path ];
+              extraServers = {
+                context7 = {
+                  type = "http";
+                  url = "https://mcp.context7.com/mcp";
+                  headers = {
+                    Authorization = "Bearer \${CONTEXT7_API_KEY}";
+                  };
+                };
+              };
             };
           };
         }
