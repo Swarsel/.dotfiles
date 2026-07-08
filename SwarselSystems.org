@@ -11645,9 +11645,6 @@ In short, the options defined here are passed to the modules systems using =_mod
               };
               SearchEngines = {
                 PreventInstalls = true;
-                Remove = [
-                  "Bing" # Fuck you
-                ];
               };
               UserMessaging = {
                 ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
@@ -12207,7 +12204,28 @@ In short, the options defined here are passed to the modules systems using =_mod
                     ];
                   };
 
-                  "google".metaData.alias = "@g";
+                  "google" = {
+                    name = "Google";
+                    urls = [
+                      {
+                        template = "https://www.google.com/search";
+                        params = [
+                          {
+                            name = "q";
+                            value = "{searchTerms}";
+                          }
+                        ];
+                      }
+                    ];
+                    icon = "https://www.google.com/favicon.ico";
+                    definedAliases = [ "@g" ];
+                  };
+
+                  "bing".metaData.hidden = true;
+                  "ddg".metaData.hidden = true;
+                  "ecosia".metaData.hidden = true;
+                  "perplexity".metaData.hidden = true;
+                  "wikipedia".metaData.hidden = true;
                 };
                 force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
               };
@@ -17334,6 +17352,7 @@ Userstyle for the Stylus plugin that enables theatre mode on invidious:
 
 **** Glide
 
+***** Main Config
 Oh boy, it has been a while since I was THIS excited about a program.
 
 Remember the good times of vimperator and pentadactly? When Firefox increased their security around Web Extensions, those add-ons were practically killed. Still, we had [[#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51][tridactyl]] to make up for some of the lost functionality. However, it never did the same thing in the end, as tridactly could only start working once a page and its frames were fully loaded. This yielded a delay in usage that I always disliked.
@@ -17361,9 +17380,919 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         pkgs,
         lib,
         vars,
-        globals,
         ...
       }:
+      {
+        config = {
+          swarselsystems.enabledHomeModules = [ "glide" ];
+
+          programs.glide-browser = {
+            enable = true;
+            policies = vars.browserPolicies;
+            nativeMessagingHosts = lib.optionals config.programs.password-store.enable [ pkgs.browserpass ];
+            profiles.default = lib.recursiveUpdate vars.glide {
+              id = 0;
+              isDefault = true;
+              settings = {
+                "browser.startup.homepage" = "https://lobste.rs";
+                "browser.startup.page" = 1;
+                "browser.sessionstore.resume_from_crash" = false;
+                "browser.sessionstore.max_resumed_crashes" = 0;
+              };
+            };
+            config = lib.mkBefore ''
+              /// <reference types="./glide.d.ts" />
+
+              glide.o.hint_size = "16px";
+
+              glide.o.hint_label_generator = glide.hints.label_generators.numeric;
+              glide.o.keymaps_use_physical_layout = "force";
+              glide.o.yank_highlight = "${config.lib.stylix.colors.withHashtag.base09}";
+            '';
+          };
+
+          programs.zsh.sessionVariables = {
+            MOZ_DISABLE_RDD_SANDBOX = "1";
+          };
+
+          home.activation.sponsorblockSettings = vars.sponsorblockActivation;
+        };
+      };
+  }
+#+end_src
+
+***** Containers
+#+begin_src nix-ts :tangle modules/client/programs/glide/containers.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        const container_rules: { prefix: string; container: string }[] = [];
+        const container_stores: Record<string, string> = {};
+        const container_names: Record<string, string> = {};
+
+        function match_rule(url: string) {
+          let best: { prefix: string; container: string } | null = null;
+          for (const r of container_rules) {
+            if (url.startsWith(r.prefix) && (best == null || r.prefix.length > best.prefix.length)) {
+              best = r;
+            }
+          }
+          return best;
+        }
+
+        async function refresh_container_stores() {
+          try {
+            for (const identity of await browser.contextualIdentities.query({})) {
+              container_stores[identity.name] = identity.cookieStoreId;
+              container_names[identity.cookieStoreId] = identity.name;
+            }
+          } catch {}
+        }
+
+        const reopening = new Set<number>();
+        async function ensure_container(tab_id: number, url: string) {
+          const rule = match_rule(url);
+          if (!rule || reopening.has(tab_id)) {
+            return;
+          }
+          reopening.add(tab_id);
+          try {
+            if (container_stores[rule.container] == null) {
+              await refresh_container_stores();
+            }
+            const target = container_stores[rule.container];
+            if (target == null) {
+              return;
+            }
+            const tab = await browser.tabs.get(tab_id).catch(() => null);
+            if (tab == null || tab.cookieStoreId === target) {
+              return;
+            }
+            await browser.tabs.create({
+              cookieStoreId: target,
+              url,
+              active: tab.active,
+              windowId: tab.windowId,
+              index: tab.index + 1,
+            });
+            await browser.tabs.remove(tab_id);
+          } catch {} finally {
+            reopening.delete(tab_id);
+          }
+        }
+
+        async function container_catchup() {
+          try {
+            for (const tab of await browser.tabs.query({})) {
+              if (tab.id != null && tab.url != null) {
+                await ensure_container(tab.id, tab.url);
+              }
+            }
+          } catch {}
+        }
+
+        glide.autocmds.create("ConfigLoaded", async () => {
+          try {
+            browser.webRequest.onBeforeRequest.addListener(
+              (details) => {
+                if (details.tabId >= 0 && match_rule(details.url)) {
+                  void ensure_container(details.tabId, details.url);
+                }
+              },
+              { urls: ["<all_urls>"], types: ["main_frame"] },
+            );
+          } catch {}
+          browser.contextualIdentities.onCreated.addListener(() => void refresh_container_stores());
+          await refresh_container_stores();
+          await container_catchup();
+        });
+
+        glide.autocmds.create("UrlEnter", /^https?:/, ({ url, tab_id }) => {
+          void ensure_container(tab_id, url);
+        });
+
+        glide.keymaps.set("normal", "<leader>c", async () => {
+          try {
+            const identities = await browser.contextualIdentities.query({});
+            if (identities.length === 0) {
+              flash_message("no containers defined");
+              return;
+            }
+            const [current] = await browser.tabs.query({ active: true, currentWindow: true });
+            const url = current?.url != null && current.url.startsWith("http") ? current.url : undefined;
+            await glide.commandline.show({
+              title: "Open in container",
+              options: identities.map((identity) => ({
+                label: identity.name,
+                description: (url ? "open current page as " : "open new tab as ") + identity.name,
+                execute: async () => {
+                  await browser.tabs.create({ cookieStoreId: identity.cookieStoreId, url });
+                },
+              })),
+            });
+          } catch {
+            flash_message("containers unavailable");
+          }
+        }, { description: "Open the current page in a container tab" });
+
+        glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
+          description: "Toggle the full toolbar",
+        });
+      '';
+    };
+  }
+#+end_src
+
+***** Findbar
+#+begin_src nix-ts :tangle modules/client/programs/glide/findbar.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        glide.keymaps.set("normal", "/", () => glide.findbar.open({ query: "" }));
+        glide.keymaps.set("normal", "?", () => glide.findbar.open({ query: "" }));
+        glide.keymaps.set("normal", "n", () => glide.findbar.next_match());
+        glide.keymaps.set("normal", "N", () => glide.findbar.previous_match());
+
+        async function tab_or_tabopen(query: string) {
+          const url = query.includes("://") ? query : `https://''${query}`;
+          const tabs = await browser.tabs.query({ currentWindow: true });
+          const existing = tabs.find((t) => t.url != null && t.url.includes(query));
+          if (existing?.id != null) {
+            await browser.tabs.update(existing.id, { active: true });
+          } else {
+            await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
+          }
+        }
+      '';
+    };
+  }
+#+end_src
+
+***** site-specific hint-selectors
+#+begin_src nix-ts :tangle modules/client/programs/glide/hint-selectors.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        const hint_selectors = {
+          "https?://www\\.google\\.com": `[class="LC20lb MBeuO DKV0Md"], [class="YmvwI"], [class="YyVfkd"], [class="fl"]`,
+          "https?://news\\.ycombinator\\.com": `[class="titleline"], [class="age"]`,
+          "https?://lobste\\.rs": `[class="u-url"], [class="comments_label"]`,
+          "https?://(www\\.|old\\.)?reddit\\.com": `[class="title may-blank loggedin"], [class="bylink comments may-blank"]`,
+          "https?://github\\.com": `[class="Link--primary"], [class="AppHeader-button Button--secondary Button--medium Button p-0 color-fg-muted"], [class="UnderlineNav-item no-wrap js-responsive-underlinenav-item js-selected-navigation-item"], [class="prc-ActionList-ItemLabel-TmBhn"], [class="PRIVATE_TreeView-item-content-text prc-TreeView-TreeViewItemContentText-smZM-"]`,
+          "https?://vbc\\.atlassian\\.net/wiki": `[class="_1reo15vq _18m915vq _1bto1l2s _kqswh2mm _o5721q9c _syaz1fxt"], [class="_11c81ixg _1reo15vq _18m915vq _18s81b66 _kqswh2mm _k48p1wq8 _o5721q9c _1bto1l2s _u5f31b66"], [class="_1r04ze3t _kqswstnw"], [class="css-a61etj"], [class="jira-macro-table-underline-pdfexport"]`,
+        };
+
+        for (const [pattern, selector] of Object.entries(hint_selectors)) {
+          glide.autocmds.create("UrlEnter", new RegExp(pattern), () => {
+            glide.buf.keymaps.set("normal", "c", () => start_hints(selector));
+          });
+        }
+
+        glide.autocmds.create("UrlEnter", /https?:\/\/www\.google\.com/, () => {
+          glide.buf.keymaps.set("normal", "gi", async () => {
+            await glide.excmds.execute("focusinput last");
+            await glide.excmds.execute("caret_move endline");
+          });
+        });
+      '';
+    };
+  }
+#+end_src
+
+***** find mode (hints, vimperator-reflow)
+#+begin_src nix-ts :tangle modules/client/programs/glide/hints.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        let hint_session = false;
+        let hint_filter = "";
+        let hint_texts: string[] = [];
+        let hint_active = 0;
+        let hint_visible: number[] = [];
+
+        let hint_cooldown_until = 0;
+        let swallowing_keys = false;
+
+        async function swallow_keys(ms: number) {
+          hint_cooldown_until = Date.now() + ms;
+          if (swallowing_keys) {
+            return;
+          }
+          swallowing_keys = true;
+          try {
+            while (true) {
+              const key = await glide.keys.next();
+              if (Date.now() >= hint_cooldown_until) {
+                await glide.keys.send(key);
+                return;
+              }
+            }
+          } finally {
+            swallowing_keys = false;
+          }
+        }
+
+        function hint_label_is_ambiguous(label: string, count: number): boolean {
+          for (let m = 1; m <= count; m++) {
+            const s = String(m);
+            if (s !== label && s.startsWith(label)) {
+              return true;
+            }
+          }
+          return false;
+        }
+
+        function update_find_display(no_match = false) {
+          const find_el = document.getElementById("glide-statusline-find");
+          if (!find_el) {
+            return;
+          }
+          find_el.textContent = hint_session ? "find: " + hint_filter : "";
+          find_el.classList.toggle("nomatch", hint_session && no_match);
+        }
+
+        function follow_hint(index: number) {
+          hint_session = false;
+          const label = String(index + 1);
+          void glide.keys
+            .send(hint_label_is_ambiguous(label, hint_texts.length) ? label + "<Enter>" : label)
+            .then(() => swallow_keys(500));
+        }
+
+        function apply_hint_filter(reset_active = true) {
+          const container = document.getElementById("glide-hints-container");
+          if (!container) {
+            return;
+          }
+          hint_visible = [];
+          for (let i = 0; i < container.children.length; i++) {
+            if ((hint_texts[i] ?? "").includes(hint_filter)) {
+              hint_visible.push(i);
+            }
+          }
+          if (reset_active || hint_visible.length === 0) {
+            hint_active = 0;
+          } else {
+            hint_active = ((hint_active % hint_visible.length) + hint_visible.length) % hint_visible.length;
+          }
+          for (let i = 0; i < container.children.length; i++) {
+            const marker = container.children[i] as HTMLElement;
+            const pos = hint_visible.indexOf(i);
+            marker.style.display = pos === -1 ? "none" : "";
+            const active = pos === hint_active && pos !== -1;
+            marker.style.background = active ? "var(--base0B)" : "";
+            marker.style.color = active ? "var(--base00)" : "";
+            marker.style.opacity = active ? "1" : "";
+          }
+          update_find_display(hint_filter.length > 0 && hint_visible.length === 0);
+          if (hint_session && hint_filter.length > 0 && hint_visible.length === 1) {
+            follow_hint(hint_visible[0]);
+          }
+        }
+
+        function start_hints(selector?: string, action?: glide.HintAction) {
+          hint_session = true;
+          hint_filter = "";
+          hint_texts = [];
+          hint_active = 0;
+          hint_visible = [];
+          update_find_display();
+          glide.hints.show({
+            selector,
+            action,
+            async pick({ hints, content }) {
+              hint_texts = await content.map((target) => (target.textContent ?? "").toLowerCase());
+              setTimeout(() => apply_hint_filter(), 0);
+              return hints;
+            },
+          });
+        }
+
+        glide.keymaps.set("normal", "c", () => start_hints());
+        glide.keymaps.set("normal", "f", () => start_hints());
+        glide.keymaps.set("normal", "F", () => start_hints(undefined, "newtab-click"));
+
+        for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-:./_,;!?@#%^&*()+=[]{}~'\"$") {
+          glide.keymaps.set("hint", ch, () => {
+            if (hint_session) {
+              hint_filter += ch.toLowerCase();
+              apply_hint_filter();
+            }
+          });
+        }
+        glide.keymaps.set("hint", "<Space>", () => {
+          if (hint_session) {
+            hint_filter += " ";
+            apply_hint_filter();
+          }
+        });
+        glide.keymaps.set("hint", "\\", async () => {
+          if (!hint_session) {
+            return;
+          }
+          const key = (await glide.keys.next()) as any;
+          const ch = typeof key === "string" ? key : String(key?.key ?? "");
+          if (ch.length === 1) {
+            hint_filter += ch.toLowerCase();
+            apply_hint_filter();
+          }
+        });
+        glide.keymaps.set("hint", "<Enter>", () => {
+          if (hint_session && hint_visible.length > 0) {
+            follow_hint(hint_visible[hint_active]);
+          }
+        });
+        glide.keymaps.set("hint", "<Tab>", () => {
+          if (hint_session) {
+            hint_active += 1;
+            apply_hint_filter(false);
+          }
+        });
+        glide.keymaps.set("hint", "<S-Tab>", () => {
+          if (hint_session) {
+            hint_active -= 1;
+            apply_hint_filter(false);
+          }
+        });
+        glide.keymaps.set("hint", "<BS>", () => {
+          if (hint_session) {
+            hint_filter = hint_filter.slice(0, -1);
+            apply_hint_filter();
+          }
+        });
+        glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
+          if (new_mode !== "hint") {
+            hint_session = false;
+            update_find_display();
+          }
+        });
+      '';
+    };
+  }
+#+end_src
+
+***** Ignored sites, ignore-mode
+#+begin_src nix-ts :tangle modules/client/programs/glide/ignore-mode.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        glide.keymaps.set("normal", "<C-Esc>", () => glide.excmds.execute("mode_change ignore"), {
+          description: "Enter ignore mode",
+        });
+        glide.keymaps.set("ignore", "<C-Esc>", () => glide.excmds.execute("mode_change normal"), {
+          description: "Leave ignore mode",
+        });
+
+        const ignore_mode_sites = [
+          /https?:\/\/pokerogue\.net/,
+          /https?:\/\/typelit\.io/,
+          /https?:\/\/vc-impimba-1\.m\.imp\.ac\.at\/ui\/webconsole/,
+        ];
+
+        for (const pattern of ignore_mode_sites) {
+          glide.autocmds.create("UrlEnter", pattern, () => {
+            glide.excmds.execute("mode_change ignore");
+          });
+        }
+      '';
+    };
+  }
+#+end_src
+
+***** Invidious CSS
+#+begin_src nix-ts :tangle modules/client/programs/glide/invidious.nix
+  {
+    flake.modules.homeManager.glide =
+      { lib, globals, ... }:
+      {
+        programs.glide-browser.config = ''
+          const invidious_css = css`
+            body {
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+
+            .pure-u-md-2-3,
+            .pure-u-lg-2-3,
+            .pure-u-md-1-3,
+            .pure-u-lg-1-3 {
+              width: 100% !important;
+            }
+
+            #contents,
+            .pure-g,
+            .pure-u-md-2-3 > .h-box,
+            .pure-u-lg-2-3 > .h-box {
+              max-width: 100% !important;
+              width: 100% !important;
+              padding-left: 0 !important;
+              padding-right: 0 !important;
+              margin-left: 0 !important;
+              margin-right: 0 !important;
+            }
+
+            #player-container {
+              width: 100% !important;
+              max-width: 100% !important;
+              aspect-ratio: 16 / 9;
+              height: auto !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              max-height: 90vh !important;
+            }
+
+            .video-js,
+            .video-js video,
+            .video-js .vjs-tech,
+            #player {
+              width: 100% !important;
+              height: 100% !important;
+              padding-top: 0 !important;
+            }
+
+            #player-container + .h-box,
+            #player-container + div {
+              margin-top: 0.5em !important;
+              padding-top: 0 !important;
+            }
+          `;
+
+          glide.autocmds.create("UrlEnter", /https:\/\/${
+            lib.replaceStrings [ "." ] [ "\\." ] globals.services.invidious.domain
+          }\/watch/, ({ tab_id }) => {
+            glide.content.execute((css_text) => {
+              if (!document.getElementById("glide-user-style")) {
+                const el = document.createElement("style");
+                el.id = "glide-user-style";
+                el.textContent = css_text;
+                document.head.appendChild(el);
+              }
+            }, { tab_id, args: [invidious_css] });
+          });
+        '';
+      };
+  }
+#+end_src
+
+***** Search engines
+#+begin_src nix-ts :tangle modules/client/programs/glide/search.nix
+  {
+    flake.modules.homeManager.glide =
+      { lib, vars, ... }:
+      let
+        engineAliases = lib.filterAttrs (_: aliases: aliases != [ ]) (
+          lib.mapAttrs' (
+            key: v: lib.nameValuePair (v.name or key) (v.definedAliases or [ ])
+          ) vars.glide.search.engines
+        );
+        keywordEntries = lib.concatLists (
+          lib.mapAttrsToList (
+            name: aliases:
+            map (alias: [
+              (lib.removePrefix "@" alias)
+              name
+            ]) aliases
+          ) engineAliases
+        );
+        engineList = lib.mapAttrsToList (name: aliases: {
+          inherit name;
+          keyword = lib.head aliases;
+        }) engineAliases;
+      in
+      {
+        programs.glide-browser.config = ''
+          const engine_keywords = new Map<string, string>(
+            ${builtins.toJSON keywordEntries}.flatMap(([kw, name]) => [[kw, name], ["@" + kw, name]]),
+          );
+          const search_engine_list: { name: string; keyword: string }[] = ${builtins.toJSON engineList};
+
+          function parse_search(args_arr: string[]): { query: string; engine?: string } {
+            const [first, ...rest] = args_arr;
+            if (first != null && rest.length > 0 && engine_keywords.has(first)) {
+              return { query: rest.join(" "), engine: engine_keywords.get(first) };
+            }
+            return { query: args_arr.join(" ") };
+          }
+
+          function to_url(input: string): string | null {
+            if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) return input;
+            if (!input.includes(" ") && input.includes(".")) return `https://''${input}`;
+            return null;
+          }
+
+          async function active_is_contained() {
+            const active = await glide.tabs.active();
+            const tab = await browser.tabs.get(active.id).catch(() => null);
+            return { id: active.id, contained: tab != null && tab.cookieStoreId !== "firefox-default" };
+          }
+
+          async function do_navigate(target: "current" | "tab" | "window", url: string) {
+            if (target === "current") {
+              const { id, contained } = await active_is_contained();
+              if (contained) {
+                await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
+              } else {
+                await browser.tabs.update(id, { url });
+              }
+            } else if (target === "tab") {
+              await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
+            } else {
+              await browser.windows.create({ url });
+            }
+          }
+
+          async function do_search(target: "current" | "tab" | "window", search: { query: string; engine?: string }) {
+            if (target === "current") {
+              const { id, contained } = await active_is_contained();
+              if (contained) {
+                const created = await browser.tabs.create({ cookieStoreId: "firefox-default" });
+                await browser.search.search({ ...search, tabId: created.id });
+              } else {
+                await browser.search.search({ ...search, tabId: id });
+              }
+            } else if (target === "tab") {
+              const created = await browser.tabs.create({ cookieStoreId: "firefox-default" });
+              await browser.search.search({ ...search, tabId: created.id });
+            } else {
+              const win = await browser.windows.create();
+              const tab = win.tabs?.[0];
+              if (tab?.id != null) {
+                await browser.search.search({ ...search, tabId: tab.id });
+              }
+            }
+          }
+
+          async function do_open(target: "current" | "tab" | "window", input: string) {
+            const url = to_url(input.trim());
+            if (url) {
+              await do_navigate(target, url);
+            } else {
+              await do_search(target, parse_search(input.split(" ").filter(Boolean)));
+            }
+          }
+
+          glide.excmds.create({ name: "open", description: "Open a URL or search in the current tab" }, ({ args_arr }) => do_open("current", args_arr.join(" ")));
+          glide.excmds.create({ name: "tabopen", description: "Open a URL or search in a new tab" }, ({ args_arr }) => do_open("tab", args_arr.join(" ")));
+          glide.excmds.create({ name: "winopen", description: "Open a URL or search in a new window" }, ({ args_arr }) => do_open("window", args_arr.join(" ")));
+          glide.excmds.create({ name: "search", description: "Search in the current tab" }, ({ args_arr }) => do_search("current", parse_search(args_arr)));
+          glide.excmds.create({ name: "tabsearch", description: "Search in a new tab" }, ({ args_arr }) => do_search("tab", parse_search(args_arr)));
+        '';
+      };
+  }
+#+end_src
+
+***** Site shortcuts
+#+begin_src nix-ts :tangle modules/client/programs/glide/site-shortcuts.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        function add_site_shortcuts(shortcuts: Record<string, string>) {
+          for (const [keys, target] of Object.entries(shortcuts)) {
+            glide.keymaps.set("normal", keys, () => tab_or_tabopen(target), {
+              description: `Focus or open ''${target}`,
+            });
+          }
+        }
+
+        add_site_shortcuts({
+          ghp: "https://github.com/pulls",
+          ghi: "https://github.com/issues/assigned?q=is%3Aissue%20state%3Aopen%20archived%3Afalse%20(assignee%3A%40me%20OR%20author%3A%40me)%20sort%3Aupdated-desc",
+          ghv: "github.com/orgs/vbc-it/repositories",
+          ghc: "github.com/orgs/CLIP-HPC/repositories",
+          ghd: "github.com/Swarsel/.dotfiles",
+          ghni: "github.com/NixOS/nixpkgs/issues",
+          ghnp: "github.com/NixOS/nixpkgs/pulls",
+          gprn: "www.reddit.com/r/NixOS/",
+          gpd: "discourse.nixos.org/",
+          gpp: "parkour.wien/categories",
+        });
+      '';
+    };
+  }
+#+end_src
+
+***** Status line
+#+begin_src nix-ts :tangle modules/client/programs/glide/statusline.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        function ensure_statusline() {
+          const stale = document.getElementById("glide-statusline");
+          if (stale && !document.getElementById("glide-statusline-container")) {
+            stale.remove();
+          }
+          if (!document.getElementById("glide-statusline")) {
+            const profile_name = (glide.path.profile_dir.split("/").pop() ?? "").replace(/^[^.]+\./, "");
+            (document.body ?? document.documentElement)?.appendChild(
+              DOM.create_element("div", {
+                id: "glide-statusline",
+                children: [
+                  DOM.create_element("span", {
+                    id: "glide-statusline-profile",
+                    children: profile_name === "default" ? [] : [profile_name],
+                  }),
+                  DOM.create_element("span", { id: "glide-statusline-container" }),
+                  DOM.create_element("span", { id: "glide-statusline-mode" }),
+                  DOM.create_element("span", { id: "glide-statusline-tabs" }),
+                  DOM.create_element("span", { id: "glide-statusline-find" }),
+                  DOM.create_element("span", { id: "glide-statusline-msg" }),
+                ],
+              }),
+            );
+          }
+          update_tab_count();
+          void refresh_active_container();
+        }
+
+        glide.autocmds.create("WindowLoaded", ensure_statusline);
+        glide.autocmds.create("ConfigLoaded", () => {
+          if (document.getElementById("glide-statusline")) {
+            ensure_statusline();
+          }
+        });
+
+        glide.styles.add(css`
+          #glide-statusline {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            z-index: 2147483645;
+            display: flex;
+            align-items: center;
+            gap: 1ex;
+            padding: 0.8ex;
+            background: var(--base00);
+            color: var(--base05);
+            border: 1px solid var(--base03);
+            border-right: none;
+            border-bottom: none;
+            font-family: "Fira Code", monospace;
+            font-size: 11px;
+            line-height: 1;
+            pointer-events: none;
+          }
+
+          #glide-statusline-mode {
+            color: var(--glide-current-mode-color, var(--base05));
+          }
+
+          #glide-statusline-mode:empty {
+            display: none;
+          }
+
+          #glide-statusline-profile {
+            color: var(--base0A);
+          }
+
+          #glide-statusline-profile:empty {
+            display: none;
+          }
+
+          #glide-statusline-container {
+            color: var(--base0C);
+          }
+
+          #glide-statusline-container:empty {
+            display: none;
+          }
+
+          #glide-statusline-msg {
+            color: var(--base09);
+          }
+
+          #glide-statusline-msg:empty {
+            display: none;
+          }
+
+          #glide-statusline-find {
+            color: var(--base0B);
+            font-size: 24pt;
+          }
+
+          #glide-statusline-find:empty {
+            display: none;
+          }
+
+          #glide-statusline-find.nomatch {
+            color: var(--base08);
+          }
+
+          #glide-hints-container > * {
+            opacity: 0.6;
+          }
+        `, { id: "statusline" });
+
+        let flash_timer: ReturnType<typeof setTimeout> | null = null;
+        function flash_message(msg: string) {
+          const msg_el = document.getElementById("glide-statusline-msg");
+          if (!msg_el) {
+            return;
+          }
+          msg_el.textContent = msg;
+          if (flash_timer != null) {
+            clearTimeout(flash_timer);
+          }
+          flash_timer = setTimeout(() => {
+            msg_el.textContent = "";
+          }, 2000);
+        }
+
+        glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
+          const mode_el = document.getElementById("glide-statusline-mode");
+          if (mode_el) {
+            mode_el.textContent = new_mode === "normal" ? "" : new_mode;
+          }
+        });
+
+        async function update_tab_count() {
+          for (let attempt = 0; attempt < 10; attempt++) {
+            try {
+              const tabs = await browser.tabs.query({ currentWindow: true });
+              const tabs_el = document.getElementById("glide-statusline-tabs");
+              if (tabs_el) {
+                tabs_el.textContent = String(tabs.length);
+              }
+              return;
+            } catch {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+          }
+        }
+        function update_container_indicator(store_id?: string) {
+          const container_el = document.getElementById("glide-statusline-container");
+          if (!container_el) {
+            return;
+          }
+          container_el.textContent =
+            store_id != null && store_id !== "firefox-default" ? (container_names[store_id] ?? "") : "";
+        }
+        async function refresh_active_container() {
+          try {
+            const win = await browser.windows.getLastFocused({ populate: true });
+            const active = win.tabs?.find((t) => t.active);
+            await update_container_indicator(active?.cookieStoreId);
+          } catch {}
+        }
+        const tab_containers: Record<number, string> = {};
+        function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
+          if (tab?.id != null && tab.cookieStoreId != null) {
+            tab_containers[tab.id] = tab.cookieStoreId;
+          }
+        }
+        glide.autocmds.create("ConfigLoaded", () => {
+          browser.tabs.onCreated.addListener(update_tab_count);
+          browser.tabs.onRemoved.addListener(update_tab_count);
+          browser.tabs.onCreated.addListener(cache_tab);
+          browser.tabs.onRemoved.addListener((tab_id) => {
+            delete tab_containers[tab_id];
+          });
+          browser.tabs.onActivated.addListener(async (info) => {
+            const cached = tab_containers[info.tabId];
+            if (cached != null) {
+              update_container_indicator(cached);
+              return;
+            }
+            const tab = await browser.tabs.get(info.tabId).catch(() => null);
+            cache_tab(tab);
+            update_container_indicator(tab?.cookieStoreId);
+          });
+          browser.tabs.onUpdated.addListener((_tab_id, _change, tab) => {
+            cache_tab(tab);
+            if (tab.active) {
+              update_container_indicator(tab.cookieStoreId);
+            }
+          });
+          browser.windows.onFocusChanged.addListener(() => void refresh_active_container());
+        });
+        setInterval(() => void refresh_active_container(), 1500);
+      '';
+    };
+  }
+#+end_src
+
+***** General keybings
+#+begin_src nix-ts :tangle modules/client/programs/glide/tab-keymaps.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        glide.keymaps.set("normal", "b", "commandline_show tab ");
+        glide.keymaps.set("normal", "gt", "tab_next");
+        glide.keymaps.set("normal", "gT", "tab_prev");
+        glide.keymaps.set("normal", "u", "tab_reopen");
+
+        glide.keymaps.set("normal", "p", async () => {
+          const text = (await navigator.clipboard.readText()).trim();
+          if (text) {
+            await do_open("current", text);
+          }
+        }, { description: "Open the clipboard contents" });
+
+        glide.keymaps.set("normal", "yy", async () => {
+          const tab = await glide.tabs.active();
+          const url = tab.url ?? "";
+          await navigator.clipboard.writeText(url);
+          flash_message("yanked " + url);
+        }, { description: "Yank the URL of the current tab" });
+
+        glide.keymaps.set("normal", "yf", () =>
+          start_hints("a[href]", async ({ content }) => {
+            const href = await content.execute((target) => (target as HTMLAnchorElement).href);
+            if (href) {
+              await navigator.clipboard.writeText(href);
+              flash_message("yanked " + href);
+            }
+          }), { description: "Yank a link URL using find hints" });
+
+        glide.keymaps.set(["normal", "insert", "visual"], "<A-d>", () => {}, {
+          description: "Disabled (would focus the urlbar)",
+        });
+
+        glide.keymaps.set("normal", "<C-m>", async () => {
+          try {
+            const win = await browser.windows.getLastFocused({ populate: true });
+            const tabs = (win.tabs ?? [])
+              .filter((t) => t.id != null)
+              .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+            const target = tabs[1];
+            if (target?.id != null) {
+              await browser.tabs.update(target.id, { active: true });
+            }
+          } catch {}
+        }, { description: "Switch to the last-active tab" });
+
+        glide.keymaps.set("normal", "gd", async () => {
+          const tab = await glide.tabs.active();
+          await browser.windows.create({ tabId: tab.id });
+        }, { description: "Detach the current tab into a new window" });
+
+        glide.keymaps.set("normal", "gD", async () => {
+          const tab = await glide.tabs.active();
+          const dup = await browser.tabs.duplicate(tab.id);
+          if (dup?.id != null) {
+            await browser.windows.create({ tabId: dup.id });
+          }
+        }, { description: "Duplicate the current tab into a new window" });
+
+        glide.keymaps.set("normal", "d", async () => {
+          const current = await glide.tabs.active();
+          await glide.excmds.execute("tab_prev");
+          if (current.id != null) {
+            await browser.tabs.remove(current.id);
+          }
+        }, { description: "Close the current tab and focus the previous one" });
+
+        glide.keymaps.set("normal", "D", "tab_close");
+      '';
+    };
+  }
+#+end_src
+
+***** Glide CSS
+#+begin_src nix-ts :tangle modules/client/programs/glide/theme.nix
+  {
+    flake.modules.homeManager.glide =
+      { config, lib, ... }:
       let
         palette = lib.getAttrs [
           "base00"
@@ -17388,1177 +18317,540 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         );
       in
       {
-        config = {
-          swarselsystems.enabledHomeModules = [ "glide" ];
+        programs.glide-browser.config = ''
+          glide.styles.add(css`
+            :root {
+              ${paletteCss}
 
-          programs.glide-browser = {
-            enable = true;
-            policies = vars.browserPolicies;
-            nativeMessagingHosts = lib.optionals config.programs.password-store.enable [ pkgs.browserpass ];
-            profiles.default = lib.recursiveUpdate vars.glide {
-              id = 0;
-              isDefault = true;
-              settings = {
-                "browser.startup.homepage" = "https://lobste.rs";
-                "browser.startup.page" = 1;
-                "browser.sessionstore.resume_from_crash" = false;
-                "browser.sessionstore.max_resumed_crashes" = 0;
-              };
-            };
-            config = ''
-              /// <reference types="./glide.d.ts" />
+              --glide-bg: var(--base00);
+              --glide-fg: var(--base05);
+              --glide-cmdl-bg: var(--base00);
+              --glide-cmdl-fg: var(--base0D);
+              --glide-cmdl-font-family: "Fira Code", monospace;
+              --glide-cmdl-font-size: 1.5rem;
+              --glide-cmdl-line-height: 1.5;
+              --glide-cmplt-bg: var(--base00);
+              --glide-cmplt-fg: var(--base0D);
+              --glide-cmplt-font-family: "Fira Code", monospace;
+              --glide-cmplt-font-size: 0.8rem;
+              --glide-cmplt-border-top: unset;
+              --glide-header-first-bg: var(--base01);
+              --glide-header-second-bg: var(--base01);
+              --glide-header-third-bg: var(--base01);
+              --glide-header-font-weight: 200;
+              --glide-header-border-bottom: unset;
+              --glide-url-fg: var(--base0B);
+              --glide-url-bg: var(--base00);
+              --glide-of-bg: #44391F;
+              --glide-of-fg: var(--base09);
+              --glide-status-bg: var(--base00);
+              --glide-status-fg: var(--base05);
+              --glide-status-border: 1px solid var(--base03);
+              --glide-mode-normal: var(--base03);
+              --glide-mode-insert: var(--base0B);
+              --glide-mode-visual: var(--base09);
+              --glide-mode-hint: var(--base0E);
+              --glide-mode-ignore: var(--base01);
+              --glide-mode-command: var(--base0D);
+              --glide-mode-op-pending: var(--base0A);
+              --glide-search-highlight-color: var(--base0A);
 
-              glide.o.hint_size = "16px";
+              --lwt-accent-color: var(--base01) !important;
+              --lwt-accent-color-inactive: var(--base01) !important;
+              --lwt-text-color: var(--base05) !important;
+              --toolbar-bgcolor: var(--base00) !important;
+              --toolbar-color: var(--base05) !important;
+              --toolbarbutton-icon-fill: var(--base05) !important;
+              --toolbarbutton-hover-background: var(--base01) !important;
+              --toolbarbutton-active-background: var(--base03) !important;
+              --toolbar-field-background-color: var(--base01) !important;
+              --toolbar-field-color: var(--base05) !important;
+              --toolbar-field-focus-background-color: var(--base01) !important;
+              --toolbar-field-focus-color: var(--base05) !important;
+              --toolbar-field-border-color: transparent !important;
+              --toolbar-field-focus-border-color: var(--base0D) !important;
+              --urlbar-box-bgcolor: var(--base01) !important;
+              --urlbar-box-focus-bgcolor: var(--base01) !important;
+              --urlbar-box-hover-bgcolor: var(--base03) !important;
+              --urlbar-popup-url-color: var(--base0D) !important;
+              --urlbarView-highlight-background: var(--base03) !important;
+              --arrowpanel-background: var(--base00) !important;
+              --arrowpanel-color: var(--base05) !important;
+              --arrowpanel-border-color: var(--base03) !important;
+              --panel-background: var(--base00) !important;
+              --panel-color: var(--base05) !important;
+              --menu-background-color: var(--base00) !important;
+              --menu-color: var(--base05) !important;
+              --menuitem-hover-background-color: var(--base03) !important;
+              --button-bgcolor: var(--base01) !important;
+              --button-color: var(--base05) !important;
+              --button-hover-bgcolor: var(--base03) !important;
+              --button-primary-bgcolor: var(--base0C) !important;
+              --button-primary-hover-bgcolor: var(--base0D) !important;
+              --button-primary-color: var(--base00) !important;
+              --focus-outline-color: var(--base0D) !important;
+              --tab-selected-bgcolor: var(--base00) !important;
+              --tab-selected-textcolor: var(--base0D) !important;
+              --tab-hover-background-color: var(--base01) !important;
+              --sidebar-background-color: var(--base00) !important;
+              --sidebar-text-color: var(--base05) !important;
+            }
 
-              glide.o.hint_label_generator = glide.hints.label_generators.numeric;
-              glide.o.keymaps_use_physical_layout = "force";
-              glide.o.yank_highlight = "${palette.base09}";
+            #navigator-toolbox {
+              background-color: var(--base00) !important;
+            }
 
-              glide.styles.add(css`
-                :root {
-                  ${paletteCss}
+            #TabsToolbar {
+              background-color: var(--base01) !important;
+            }
 
-                  --glide-bg: var(--base00);
-                  --glide-fg: var(--base05);
-                  --glide-cmdl-bg: var(--base00);
-                  --glide-cmdl-fg: var(--base0D);
-                  --glide-cmdl-font-family: "Fira Code", monospace;
-                  --glide-cmdl-font-size: 1.5rem;
-                  --glide-cmdl-line-height: 1.5;
-                  --glide-cmplt-bg: var(--base00);
-                  --glide-cmplt-fg: var(--base0D);
-                  --glide-cmplt-font-family: "Fira Code", monospace;
-                  --glide-cmplt-font-size: 0.8rem;
-                  --glide-cmplt-border-top: unset;
-                  --glide-header-first-bg: var(--base01);
-                  --glide-header-second-bg: var(--base01);
-                  --glide-header-third-bg: var(--base01);
-                  --glide-header-font-weight: 200;
-                  --glide-header-border-bottom: unset;
-                  --glide-url-fg: var(--base0B);
-                  --glide-url-bg: var(--base00);
-                  --glide-of-bg: #44391F;
-                  --glide-of-fg: var(--base09);
-                  --glide-status-bg: var(--base00);
-                  --glide-status-fg: var(--base05);
-                  --glide-status-border: 1px solid var(--base03);
-                  --glide-mode-normal: var(--base03);
-                  --glide-mode-insert: var(--base0B);
-                  --glide-mode-visual: var(--base09);
-                  --glide-mode-hint: var(--base0E);
-                  --glide-mode-ignore: var(--base01);
-                  --glide-mode-command: var(--base0D);
-                  --glide-mode-op-pending: var(--base0A);
-                  --glide-search-highlight-color: var(--base0A);
+            #PersonalToolbar {
+              background-color: var(--base00) !important;
+              color: var(--base05) !important;
+            }
 
-                  --lwt-accent-color: var(--base01) !important;
-                  --lwt-accent-color-inactive: var(--base01) !important;
-                  --lwt-text-color: var(--base05) !important;
-                  --toolbar-bgcolor: var(--base00) !important;
-                  --toolbar-color: var(--base05) !important;
-                  --toolbarbutton-icon-fill: var(--base05) !important;
-                  --toolbarbutton-hover-background: var(--base01) !important;
-                  --toolbarbutton-active-background: var(--base03) !important;
-                  --toolbar-field-background-color: var(--base01) !important;
-                  --toolbar-field-color: var(--base05) !important;
-                  --toolbar-field-focus-background-color: var(--base01) !important;
-                  --toolbar-field-focus-color: var(--base05) !important;
-                  --toolbar-field-border-color: transparent !important;
-                  --toolbar-field-focus-border-color: var(--base0D) !important;
-                  --urlbar-box-bgcolor: var(--base01) !important;
-                  --urlbar-box-focus-bgcolor: var(--base01) !important;
-                  --urlbar-box-hover-bgcolor: var(--base03) !important;
-                  --urlbar-popup-url-color: var(--base0D) !important;
-                  --urlbarView-highlight-background: var(--base03) !important;
-                  --arrowpanel-background: var(--base00) !important;
-                  --arrowpanel-color: var(--base05) !important;
-                  --arrowpanel-border-color: var(--base03) !important;
-                  --panel-background: var(--base00) !important;
-                  --panel-color: var(--base05) !important;
-                  --menu-background-color: var(--base00) !important;
-                  --menu-color: var(--base05) !important;
-                  --menuitem-hover-background-color: var(--base03) !important;
-                  --button-bgcolor: var(--base01) !important;
-                  --button-color: var(--base05) !important;
-                  --button-hover-bgcolor: var(--base03) !important;
-                  --button-primary-bgcolor: var(--base0C) !important;
-                  --button-primary-hover-bgcolor: var(--base0D) !important;
-                  --button-primary-color: var(--base00) !important;
-                  --focus-outline-color: var(--base0D) !important;
-                  --tab-selected-bgcolor: var(--base00) !important;
-                  --tab-selected-textcolor: var(--base0D) !important;
-                  --tab-hover-background-color: var(--base01) !important;
-                  --sidebar-background-color: var(--base00) !important;
-                  --sidebar-text-color: var(--base05) !important;
-                }
+            #urlbar-background {
+              background-color: var(--base01) !important;
+            }
 
-                #navigator-toolbox {
-                  background-color: var(--base00) !important;
-                }
+            #urlbar-container {
+              max-width: 50vw !important;
+            }
 
-                #TabsToolbar {
-                  background-color: var(--base01) !important;
-                }
+            findbar {
+              background-color: var(--base00) !important;
+              color: var(--base05) !important;
+            }
 
-                #PersonalToolbar {
-                  background-color: var(--base00) !important;
-                  color: var(--base05) !important;
-                }
+            .tabbrowser-tab {
+              color: var(--base05) !important;
+            }
 
-                #urlbar-background {
-                  background-color: var(--base01) !important;
-                }
+            .tab-background[selected] {
+              background-color: var(--base00) !important;
+            }
 
-                #urlbar-container {
-                  max-width: 50vw !important;
-                }
+            .tabbrowser-tab[visuallyselected] {
+              color: var(--base0D) !important;
+            }
 
-                findbar {
-                  background-color: var(--base00) !important;
-                  color: var(--base05) !important;
-                }
+            glide-commandline {
+              position: fixed !important;
+              top: 25% !important;
+              bottom: unset !important;
+              left: 10% !important;
+              width: 80% !important;
+              box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 15px !important;
+            }
 
-                .tabbrowser-tab {
-                  color: var(--base05) !important;
-                }
+            glide-commandline .glide-commandline-container {
+              box-shadow: none;
+            }
 
-                .tab-background[selected] {
-                  background-color: var(--base00) !important;
-                }
+            glide-commandline [anonid="glide-commandline-holder"] {
+              order: 1;
+              border: 2px solid var(--base0C);
+            }
 
-                .tabbrowser-tab[visuallyselected] {
-                  color: var(--base0D) !important;
-                }
+            glide-commandline [anonid="glide-commandline-completions"] {
+              order: 2;
+              font-weight: 200;
+            }
 
-                glide-commandline {
-                  position: fixed !important;
-                  top: 25% !important;
-                  bottom: unset !important;
-                  left: 10% !important;
-                  width: 80% !important;
-                  box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 15px !important;
-                }
+            glide-commandline [anonid="glide-colon"] {
+              display: none;
+            }
 
-                glide-commandline .glide-commandline-container {
-                  box-shadow: none;
-                }
+            glide-commandline input {
+              padding: 1rem;
+            }
 
-                glide-commandline [anonid="glide-commandline-holder"] {
-                  order: 1;
-                  border: 2px solid var(--base0C);
-                }
+            glide-commandline [anonid="glide-commandline-completions"] > div > table {
+              padding: 1rem;
+              padding-top: 0;
+              width: 100%;
+              table-layout: fixed;
+            }
 
-                glide-commandline [anonid="glide-commandline-completions"] {
-                  order: 2;
-                  font-weight: 200;
-                }
+            glide-commandline [anonid="glide-commandline-completions"] tr > td {
+              width: 100%;
+              max-width: 0;
+            }
+          `, { id: "theme" });
+        '';
+      };
+  }
+#+end_src
 
-                glide-commandline [anonid="glide-colon"] {
-                  display: none;
-                }
+***** Toolbar autohide and states
+#+begin_src nix-ts :tangle modules/client/programs/glide/toolbar.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        const toolbar_hidden_css = css`
+          #navigator-toolbox {
+            position: fixed !important;
+            top: 0;
+            width: 100vw;
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+          }
 
-                glide-commandline input {
-                  padding: 1rem;
-                }
+          #urlbar[popover] {
+            opacity: 0 !important;
+            pointer-events: none !important;
+          }
 
-                glide-commandline [anonid="glide-commandline-completions"] > div > table {
-                  padding: 1rem;
-                  padding-top: 0;
-                }
-              `, { id: "theme" });
+          :root[customizing] #navigator-toolbox {
+            position: relative !important;
+            transform: none !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+          }
 
-              const toolbar_hidden_css = css`
-                #navigator-toolbox {
-                  position: fixed !important;
-                  top: 0;
-                  width: 100vw;
-                  transform: translateY(-100%);
-                  opacity: 0;
-                  pointer-events: none;
-                }
+          :root[customizing] #urlbar[popover] {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+          }
+        `;
 
-                #urlbar[popover] {
-                  opacity: 0 !important;
-                  pointer-events: none !important;
-                }
+        let toolbar_state: "hidden" | "urlbar" | "full" = "hidden";
+        glide.styles.add(toolbar_hidden_css, { id: "toolbar-hidden" });
 
-                :root[customizing] #navigator-toolbox {
-                  position: relative !important;
-                  transform: none !important;
-                  opacity: 1 !important;
-                  pointer-events: auto !important;
-                }
+        function set_toolbar(state: "hidden" | "urlbar" | "full") {
+          toolbar_state = state;
+          glide.styles.remove("toolbar-hidden");
+          if (state === "hidden") {
+            glide.styles.add(toolbar_hidden_css, { id: "toolbar-hidden" });
+          }
+          glide.o.native_tabs = state === "urlbar" ? "hide" : "show";
+        }
 
-                :root[customizing] #urlbar[popover] {
-                  opacity: 1 !important;
-                  pointer-events: auto !important;
-                }
-              `;
+        glide.keymaps.set("normal", "<leader>b", () => set_toolbar(toolbar_state === "urlbar" ? "hidden" : "urlbar"), {
+          description: "Toggle the URL bar",
+        });'';
+    };
+  }
+#+end_src
 
-              let toolbar_state: "hidden" | "urlbar" | "full" = "hidden";
-              glide.styles.add(toolbar_hidden_css, { id: "toolbar-hidden" });
+***** Commands for opening and searching
+#+begin_src nix-ts :tangle modules/client/programs/glide/url-commandline.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        let url_entries: { star: boolean; title: string; url: string }[] = [];
+        let url_entries_timer: ReturnType<typeof setTimeout> | null = null;
 
-              function set_toolbar(state: "hidden" | "urlbar" | "full") {
-                toolbar_state = state;
-                glide.styles.remove("toolbar-hidden");
-                if (state === "hidden") {
-                  glide.styles.add(toolbar_hidden_css, { id: "toolbar-hidden" });
-                }
-                glide.o.native_tabs = state === "urlbar" ? "hide" : "show";
+        async function refresh_url_entries() {
+          const [bookmarks, history] = await Promise.all([
+            browser.bookmarks.search({}),
+            browser.history.search({ text: "", startTime: 0, maxResults: 300 }),
+          ]);
+          history.sort((a, b) => (b.lastVisitTime ?? 0) - (a.lastVisitTime ?? 0));
+          const seen = new Set();
+          const entries: typeof url_entries = [];
+          for (const item of [...history.map((h) => ({ ...h, star: false })), ...bookmarks.map((b) => ({ ...b, star: true }))]) {
+            if (!item.url || seen.has(item.url)) continue;
+            seen.add(item.url);
+            entries.push({ star: item.star, title: item.title ?? "", url: item.url });
+          }
+          url_entries = entries;
+        }
+
+        function schedule_url_entries_refresh() {
+          try {
+            if (url_entries_timer != null) {
+              clearTimeout(url_entries_timer);
+            }
+            url_entries_timer = setTimeout(() => {
+              url_entries_timer = null;
+              void refresh_url_entries();
+            }, 1000);
+          } catch {
+            return;
+          }
+        }
+
+        glide.autocmds.create("ConfigLoaded", () => {
+          browser.bookmarks.onCreated.addListener(schedule_url_entries_refresh);
+          browser.bookmarks.onRemoved.addListener(schedule_url_entries_refresh);
+          browser.bookmarks.onChanged.addListener(schedule_url_entries_refresh);
+          browser.bookmarks.onMoved.addListener(schedule_url_entries_refresh);
+          browser.history.onVisited.addListener(schedule_url_entries_refresh);
+          void refresh_url_entries();
+        });
+
+        async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
+          if (url_entries.length === 0) {
+            await refresh_url_entries();
+          }
+
+          function describe_action(input: string): string {
+            const trimmed = input.trim();
+            if (trimmed === "") {
+              return "Search with the default engine";
+            }
+            if (!opts.search_only) {
+              const url = to_url(trimmed);
+              if (url) {
+                return "Open " + url;
               }
+            }
+            const search = parse_search(trimmed.split(" ").filter(Boolean));
+            return search.engine ? "Search " + search.engine + ": " + search.query : "Search: " + search.query;
+          }
 
-              glide.keymaps.set("normal", "<leader>b", () => set_toolbar(toolbar_state === "urlbar" ? "hidden" : "urlbar"), {
-                description: "Toggle the URL bar",
-              });
-              const container_rules: { prefix: string; container: string }[] = [];
-              const container_stores: Record<string, string> = {};
-              const container_names: Record<string, string> = {};
-
-              function match_rule(url: string) {
-                let best: { prefix: string; container: string } | null = null;
-                for (const r of container_rules) {
-                  if (url.startsWith(r.prefix) && (best == null || r.prefix.length > best.prefix.length)) {
-                    best = r;
-                  }
-                }
-                return best;
+          const action_text = DOM.create_element("span", { children: describe_action(opts.prefill ?? "") });
+          const options: glide.CommandLineCustomOption[] = [{
+            label: "search",
+            render: () => DOM.create_element("td", { attributes: { colspan: "2" }, children: [action_text] }),
+            matches: ({ input }) => {
+              action_text.textContent = describe_action(input);
+              return true;
+            },
+            execute: ({ input }) => {
+              if (opts.search_only) {
+                do_search(target, parse_search(input.split(" ").filter(Boolean)));
+              } else {
+                do_open(target, input);
               }
+            },
+          }];
 
-              async function refresh_container_stores() {
-                try {
-                  for (const identity of await browser.contextualIdentities.query({})) {
-                    container_stores[identity.name] = identity.cookieStoreId;
-                    container_names[identity.cookieStoreId] = identity.name;
-                  }
-                } catch {}
-              }
+          function query_without_keyword(input: string): string {
+            const parts = input.trim().split(" ").filter(Boolean);
+            if (parts.length >= 1 && engine_keywords.has(parts[0])) {
+              return parts.slice(1).join(" ");
+            }
+            return input.trim();
+          }
 
-              const reopening = new Set<number>();
-              async function ensure_container(tab_id: number, url: string) {
-                const rule = match_rule(url);
-                if (!rule || reopening.has(tab_id)) {
-                  return;
+          for (const engine of search_engine_list) {
+            const kw_el = DOM.create_element("span", { style: { color: "var(--base0A)", whiteSpace: "nowrap" }, children: [engine.keyword] });
+            const name_el = DOM.create_element("span", { style: { color: "var(--base05)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: ["Search using " + engine.name] });
+            options.push({
+              label: "engine-" + engine.keyword,
+              render: () => DOM.create_element("td", {
+                attributes: { colspan: "2" },
+                children: [
+                  DOM.create_element("div", {
+                    style: { display: "flex", width: "100%", minWidth: "0", gap: "1.5em", overflow: "hidden" },
+                    children: [kw_el, name_el],
+                  }),
+                ],
+              }),
+              matches: ({ input }) => {
+                const first = input.trim().split(" ").filter(Boolean)[0];
+                const keyword_match = first != null && engine_keywords.get(first) === engine.name;
+                if (!opts.search_only && !keyword_match) {
+                  return false;
                 }
-                reopening.add(tab_id);
-                try {
-                  if (container_stores[rule.container] == null) {
-                    await refresh_container_stores();
-                  }
-                  const target = container_stores[rule.container];
-                  if (target == null) {
-                    return;
-                  }
-                  const tab = await browser.tabs.get(tab_id).catch(() => null);
-                  if (tab == null || tab.cookieStoreId === target) {
-                    return;
-                  }
-                  await browser.tabs.create({
-                    cookieStoreId: target,
-                    url,
-                    active: tab.active,
-                    windowId: tab.windowId,
-                    index: tab.index + 1,
-                  });
-                  await browser.tabs.remove(tab_id);
-                } catch {} finally {
-                  reopening.delete(tab_id);
-                }
-              }
+                const q = query_without_keyword(input);
+                name_el.textContent = q === "" ? "Search using " + engine.name : "Search using " + engine.name + ": " + q;
+                return true;
+              },
+              execute: ({ input }) => {
+                void do_search(target, { query: query_without_keyword(input), engine: engine.name });
+              },
+            });
+          }
 
-              try {
-                browser.webRequest.onBeforeRequest.addListener(
-                  (details) => {
-                    if (details.tabId >= 0 && match_rule(details.url)) {
-                      void ensure_container(details.tabId, details.url);
-                    }
-                  },
-                  { urls: ["<all_urls>"], types: ["main_frame"] },
+          const SLOTS = 30;
+          const slot_items: (typeof url_entries)[number][] = [];
+          const slot_titles: HTMLElement[] = [];
+          const slot_urls: HTMLElement[] = [];
+          let slot_query: string | null = null;
+
+          function recompute_slots(input: string) {
+            if (input === slot_query) {
+              return;
+            }
+            slot_query = input;
+            const q = input.trim().toLowerCase();
+            slot_items.length = 0;
+            for (const entry of url_entries) {
+              if (slot_items.length >= SLOTS) break;
+              if (q === "" || entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q)) {
+                slot_items.push(entry);
+              }
+            }
+            for (let i = 0; i < slot_items.length; i++) {
+              slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
+              slot_urls[i].textContent = slot_items[i].url;
+            }
+          }
+
+          for (let i = 0; i < SLOTS; i++) {
+            const title_el = DOM.create_element("span", { style: { flex: "1 1 50%", minWidth: "0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
+            const url_el = DOM.create_element("span", { style: { flex: "1 1 50%", minWidth: "0", textAlign: "right", color: "var(--base0B)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
+            slot_titles.push(title_el);
+            slot_urls.push(url_el);
+            options.push({
+              label: "url-" + i,
+              render: () => DOM.create_element("td", {
+                attributes: { colspan: "2" },
+                children: [
+                  DOM.create_element("div", {
+                    style: { display: "flex", width: "100%", minWidth: "0", justifyContent: "space-between", gap: "2em", overflow: "hidden" },
+                    children: [title_el, url_el],
+                  }),
+                ],
+              }),
+              matches: ({ input }) => {
+                recompute_slots(input);
+                return slot_items[i] != null;
+              },
+              execute: () => {
+                const entry = slot_items[i];
+                if (entry) {
+                  void do_navigate(target, entry.url);
+                }
+              },
+            });
+          }
+
+          recompute_slots(opts.prefill ?? "");
+          await glide.commandline.show({ input: opts.prefill ?? "", title: "History and bookmarks", options });
+        }
+
+        glide.keymaps.set("normal", "o", () => url_commandline("current"), {
+          description: "Open a URL or search",
+        });
+        glide.keymaps.set("normal", "O", async () => {
+          const tab = await glide.tabs.active();
+          await url_commandline("current", { prefill: tab.url });
+        }, { description: "Edit the current URL" });
+        glide.keymaps.set("normal", "t", () => url_commandline("tab"), {
+          description: "Open a URL or search in a new tab",
+        });
+        glide.keymaps.set("normal", "T", async () => {
+          const tab = await glide.tabs.active();
+          await url_commandline("tab", { prefill: tab.url });
+        }, { description: "Open the current URL in a new tab" });
+        glide.keymaps.set("normal", "s", () => url_commandline("current", { search_only: true }), {
+          description: "Search with the default engine",
+        });
+        glide.keymaps.set("normal", "S", () => url_commandline("tab", { search_only: true }), {
+          description: "Search with the default engine in a new tab",
+        });
+        glide.keymaps.set("normal", "w", () => url_commandline("window"), {
+          description: "Open a URL or search in a new window",
+        });'';
+    };
+  }
+#+end_src
+
+***** Find audio tabs
+#+begin_src nix-ts :tangle modules/client/programs/glide/audio-tabs.nix
+  {
+    flake.modules.homeManager.glide = {
+      programs.glide-browser.config = ''
+        glide.keymaps.set("normal", "<leader>A", async () => {
+          const audible = await browser.tabs.query({ audible: true });
+          if (audible.length === 0) {
+            flash_message("no audible tabs");
+            return;
+          }
+          await glide.commandline.show({
+            title: "Audible tabs",
+            options: audible.map((tab) => ({
+              label: tab.title ?? tab.url ?? String(tab.id),
+              description: tab.url ?? "",
+              execute: async () => {
+                if (tab.windowId != null) {
+                  await browser.windows.update(tab.windowId, { focused: true });
+                }
+                if (tab.id != null) {
+                  await browser.tabs.update(tab.id, { active: true });
+                }
+              },
+            })),
+          });
+        }, { description: "Jump to a tab that is playing audio" });
+      '';
+    };
+  }
+#+end_src
+
+***** Jump to site heading
+#+begin_src nix-ts :tangle modules/client/programs/glide/heading-jump.nix
+  {
+    flake.modules.homeManager.glide =
+      { config, ... }:
+      {
+        programs.glide-browser.config = ''
+          interface Heading {
+            text: string;
+            level: number;
+            xpath: string;
+          }
+
+          glide.keymaps.set("normal", "<leader>h", async () => {
+            const tab_id = (await glide.tabs.active()).id;
+
+            const headings = await glide.content.execute((): Heading[] => {
+              function is_visible(el: HTMLElement): boolean {
+                const style = window.getComputedStyle(el);
+                return (
+                  style.display !== "none" &&
+                  style.visibility !== "hidden" &&
+                  style.opacity !== "0" &&
+                  el.offsetParent !== null
                 );
-              } catch {}
-
-              async function container_catchup() {
-                try {
-                  for (const tab of await browser.tabs.query({})) {
-                    if (tab.id != null && tab.url != null) {
-                      await ensure_container(tab.id, tab.url);
-                    }
+              }
+              function xpath_for(node: Element): string {
+                let path = "";
+                for (let el: Element | null = node; el; el = el.parentElement) {
+                  let index = 0;
+                  for (let sib = el.previousElementSibling; sib; sib = sib.previousElementSibling) {
+                    if (sib.tagName === el.tagName) index++;
                   }
-                } catch {}
+                  path = "/" + el.tagName.toLowerCase() + "[" + (index + 1) + "]" + path;
+                }
+                return path;
               }
+              return Array.from(document.querySelectorAll("h1, h2, h3, h4, h5, h6"))
+                .filter((el) => is_visible(el as HTMLElement))
+                .map((el) => ({
+                  text: (el.textContent ?? "").trim(),
+                  level: Number(el.tagName[1]),
+                  xpath: xpath_for(el),
+                }))
+                .filter((h) => h.text !== "");
+            }, { tab_id });
 
-              glide.autocmds.create("ConfigLoaded", async () => {
-                await refresh_container_stores();
-                await container_catchup();
-              });
-              browser.contextualIdentities.onCreated.addListener(() => void refresh_container_stores());
+            if (headings.length === 0) {
+              flash_message("no headings found");
+              return;
+            }
 
-              glide.autocmds.create("UrlEnter", /^https?:/, ({ url, tab_id }) => {
-                void ensure_container(tab_id, url);
-              });
-
-              glide.keymaps.set("normal", "<leader>c", async () => {
-                try {
-                  const identities = await browser.contextualIdentities.query({});
-                  if (identities.length === 0) {
-                    flash_message("no containers defined");
-                    return;
-                  }
-                  const [current] = await browser.tabs.query({ active: true, currentWindow: true });
-                  const url = current?.url != null && current.url.startsWith("http") ? current.url : undefined;
-                  await glide.commandline.show({
-                    title: "Open in container",
-                    options: identities.map((identity) => ({
-                      label: identity.name,
-                      description: (url ? "open current page as " : "open new tab as ") + identity.name,
-                      execute: async () => {
-                        await browser.tabs.create({ cookieStoreId: identity.cookieStoreId, url });
-                      },
-                    })),
-                  });
-                } catch {
-                  flash_message("containers unavailable");
-                }
-              }, { description: "Open the current page in a container tab" });
-
-              glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
-                description: "Toggle the full toolbar",
-              });
-
-              function ensure_statusline() {
-                const stale = document.getElementById("glide-statusline");
-                if (stale && !document.getElementById("glide-statusline-container")) {
-                  stale.remove();
-                }
-                if (!document.getElementById("glide-statusline")) {
-                  const profile_name = (glide.path.profile_dir.split("/").pop() ?? "").replace(/^[^.]+\./, "");
-                  (document.body ?? document.documentElement)?.appendChild(
-                    DOM.create_element("div", {
-                      id: "glide-statusline",
-                      children: [
-                        DOM.create_element("span", {
-                          id: "glide-statusline-profile",
-                          children: profile_name === "default" ? [] : [profile_name],
-                        }),
-                        DOM.create_element("span", { id: "glide-statusline-container" }),
-                        DOM.create_element("span", { id: "glide-statusline-mode" }),
-                        DOM.create_element("span", { id: "glide-statusline-tabs" }),
-                        DOM.create_element("span", { id: "glide-statusline-find" }),
-                        DOM.create_element("span", { id: "glide-statusline-msg" }),
-                      ],
-                    }),
-                  );
-                }
-                update_tab_count();
-                void refresh_active_container();
-              }
-
-              glide.autocmds.create("WindowLoaded", ensure_statusline);
-              glide.autocmds.create("ConfigLoaded", () => {
-                if (document.getElementById("glide-statusline")) {
-                  ensure_statusline();
-                }
-              });
-
-              glide.styles.add(css`
-                #glide-statusline {
-                  position: fixed;
-                  right: 0;
-                  bottom: 0;
-                  z-index: 2147483645;
-                  display: flex;
-                  align-items: center;
-                  gap: 1ex;
-                  padding: 0.8ex;
-                  background: var(--base00);
-                  color: var(--base05);
-                  border: 1px solid var(--base03);
-                  border-right: none;
-                  border-bottom: none;
-                  font-family: "Fira Code", monospace;
-                  font-size: 11px;
-                  line-height: 1;
-                  pointer-events: none;
-                }
-
-                #glide-statusline-mode {
-                  color: var(--glide-current-mode-color, var(--base05));
-                }
-
-                #glide-statusline-mode:empty {
-                  display: none;
-                }
-
-                #glide-statusline-profile {
-                  color: var(--base0A);
-                }
-
-                #glide-statusline-profile:empty {
-                  display: none;
-                }
-
-                #glide-statusline-container {
-                  color: var(--base0C);
-                }
-
-                #glide-statusline-container:empty {
-                  display: none;
-                }
-
-                #glide-statusline-msg {
-                  color: var(--base09);
-                }
-
-                #glide-statusline-msg:empty {
-                  display: none;
-                }
-
-                #glide-statusline-find {
-                  color: var(--base0B);
-                  font-size: 24pt;
-                }
-
-                #glide-statusline-find:empty {
-                  display: none;
-                }
-
-                #glide-statusline-find.nomatch {
-                  color: var(--base08);
-                }
-
-                #glide-hints-container > * {
-                  opacity: 0.6;
-                }
-              `, { id: "statusline" });
-
-              let flash_timer: ReturnType<typeof setTimeout> | null = null;
-              function flash_message(msg: string) {
-                const msg_el = document.getElementById("glide-statusline-msg");
-                if (!msg_el) {
-                  return;
-                }
-                msg_el.textContent = msg;
-                if (flash_timer != null) {
-                  clearTimeout(flash_timer);
-                }
-                flash_timer = setTimeout(() => {
-                  msg_el.textContent = "";
-                }, 2000);
-              }
-
-              glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
-                const mode_el = document.getElementById("glide-statusline-mode");
-                if (mode_el) {
-                  mode_el.textContent = new_mode === "normal" ? "" : new_mode;
-                }
-              });
-
-              async function update_tab_count() {
-                for (let attempt = 0; attempt < 10; attempt++) {
-                  try {
-                    const tabs = await browser.tabs.query({ currentWindow: true });
-                    const tabs_el = document.getElementById("glide-statusline-tabs");
-                    if (tabs_el) {
-                      tabs_el.textContent = String(tabs.length);
-                    }
-                    return;
-                  } catch {
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-                  }
-                }
-              }
-              browser.tabs.onCreated.addListener(update_tab_count);
-              browser.tabs.onRemoved.addListener(update_tab_count);
-
-              function update_container_indicator(store_id?: string) {
-                const container_el = document.getElementById("glide-statusline-container");
-                if (!container_el) {
-                  return;
-                }
-                container_el.textContent =
-                  store_id != null && store_id !== "firefox-default" ? (container_names[store_id] ?? "") : "";
-              }
-              async function refresh_active_container() {
-                try {
-                  const win = await browser.windows.getLastFocused({ populate: true });
-                  const active = win.tabs?.find((t) => t.active);
-                  await update_container_indicator(active?.cookieStoreId);
-                } catch {}
-              }
-              const tab_containers: Record<number, string> = {};
-              function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
-                if (tab?.id != null && tab.cookieStoreId != null) {
-                  tab_containers[tab.id] = tab.cookieStoreId;
-                }
-              }
-              browser.tabs.onCreated.addListener(cache_tab);
-              browser.tabs.onRemoved.addListener((tab_id) => {
-                delete tab_containers[tab_id];
-              });
-              browser.tabs.onActivated.addListener(async (info) => {
-                const cached = tab_containers[info.tabId];
-                if (cached != null) {
-                  update_container_indicator(cached);
-                  return;
-                }
-                const tab = await browser.tabs.get(info.tabId).catch(() => null);
-                cache_tab(tab);
-                update_container_indicator(tab?.cookieStoreId);
-              });
-              browser.tabs.onUpdated.addListener((_tab_id, _change, tab) => {
-                cache_tab(tab);
-                if (tab.active) {
-                  update_container_indicator(tab.cookieStoreId);
-                }
-              });
-              browser.windows.onFocusChanged.addListener(() => void refresh_active_container());
-              setInterval(() => void refresh_active_container(), 1500);
-
-              const search_engines = [
-                {
-                  name: "NixOS Options",
-                  keyword: "no",
-                  search_url: "https://search.nixos.org/options?query={searchTerms}",
+            await glide.commandline.show({
+              title: "Jump to heading",
+              options: headings.map((heading) => ({
+                label: "  ".repeat(heading.level - 1) + heading.text,
+                execute: async () => {
+                  await glide.content.execute((xpath: string, color: string) => {
+                    const target = document.evaluate(
+                      xpath,
+                      document,
+                      null,
+                      XPathResult.FIRST_ORDERED_NODE_TYPE,
+                      null,
+                    ).singleNodeValue as HTMLElement | null;
+                    if (!target) return;
+                    target.scrollIntoView({ behavior: "smooth", block: "start" });
+                    const previous = target.style.outline;
+                    target.style.outline = "2px solid " + color;
+                    setTimeout(() => {
+                      target.style.outline = previous;
+                    }, 2000);
+                  }, { tab_id, args: [heading.xpath, "${config.lib.stylix.colors.withHashtag.base09}"] });
                 },
-                {
-                  name: "Nix Packages",
-                  keyword: "np",
-                  search_url: "https://search.nixos.org/packages?query={searchTerms}",
-                },
-                {
-                  name: "Home Manager Options",
-                  keyword: "hm",
-                  search_url: "https://home-manager-options.extranix.com/?query={searchTerms}",
-                },
-                {
-                  name: "YouTube",
-                  keyword: "yt",
-                  search_url: "https://www.youtube.com/results?search_query={searchTerms}",
-                },
-                {
-                  name: "GitHub",
-                  keyword: "gh",
-                  search_url: "https://github.com/search?q={searchTerms}",
-                },
-                {
-                  name: "Confluence search",
-                  keyword: "@c",
-                  search_url: "https://vbc.atlassian.net/wiki/search?text={searchTerms}",
-                },
-                {
-                  name: "Jira search",
-                  keyword: "@j",
-                  search_url: "https://vbc.atlassian.net/issues/?jql=textfields%20~%20%22{searchTerms}*%22&wildcardFlag=true",
-                },
-              ];
-              const engine_keywords = new Map(search_engines.map((e) => [e.keyword, e.name]));
-
-              function parse_search(args_arr: string[]): { query: string; engine?: string } {
-                const [first, ...rest] = args_arr;
-                if (first != null && rest.length > 0 && engine_keywords.has(first)) {
-                  return { query: rest.join(" "), engine: engine_keywords.get(first) };
-                }
-                return { query: args_arr.join(" ") };
-              }
-
-              function to_url(input: string): string | null {
-                if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) return input;
-                if (!input.includes(" ") && input.includes(".")) return `https://''${input}`;
-                return null;
-              }
-
-              async function active_is_contained() {
-                const active = await glide.tabs.active();
-                const tab = await browser.tabs.get(active.id).catch(() => null);
-                return { id: active.id, contained: tab != null && tab.cookieStoreId !== "firefox-default" };
-              }
-
-              async function do_navigate(target: "current" | "tab" | "window", url: string) {
-                if (target === "current") {
-                  const { id, contained } = await active_is_contained();
-                  if (contained) {
-                    await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
-                  } else {
-                    await browser.tabs.update(id, { url });
-                  }
-                } else if (target === "tab") {
-                  await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
-                } else {
-                  await browser.windows.create({ url });
-                }
-              }
-
-              async function do_search(target: "current" | "tab" | "window", search: { query: string; engine?: string }) {
-                if (target === "current") {
-                  const { id, contained } = await active_is_contained();
-                  if (contained) {
-                    const created = await browser.tabs.create({ cookieStoreId: "firefox-default" });
-                    await browser.search.search({ ...search, tabId: created.id });
-                  } else {
-                    await browser.search.search({ ...search, tabId: id });
-                  }
-                } else if (target === "tab") {
-                  const created = await browser.tabs.create({ cookieStoreId: "firefox-default" });
-                  await browser.search.search({ ...search, tabId: created.id });
-                } else {
-                  const win = await browser.windows.create();
-                  const tab = win.tabs?.[0];
-                  if (tab?.id != null) {
-                    await browser.search.search({ ...search, tabId: tab.id });
-                  }
-                }
-              }
-
-              async function do_open(target: "current" | "tab" | "window", input: string) {
-                const url = to_url(input.trim());
-                if (url) {
-                  await do_navigate(target, url);
-                } else {
-                  await do_search(target, parse_search(input.split(" ").filter(Boolean)));
-                }
-              }
-
-              glide.excmds.create({ name: "open", description: "Open a URL or search in the current tab" }, ({ args_arr }) => do_open("current", args_arr.join(" ")));
-              glide.excmds.create({ name: "tabopen", description: "Open a URL or search in a new tab" }, ({ args_arr }) => do_open("tab", args_arr.join(" ")));
-              glide.excmds.create({ name: "winopen", description: "Open a URL or search in a new window" }, ({ args_arr }) => do_open("window", args_arr.join(" ")));
-              glide.excmds.create({ name: "search", description: "Search in the current tab" }, ({ args_arr }) => do_search("current", parse_search(args_arr)));
-              glide.excmds.create({ name: "tabsearch", description: "Search in a new tab" }, ({ args_arr }) => do_search("tab", parse_search(args_arr)));
-
-              let url_entries: { star: boolean; title: string; url: string }[] = [];
-              let url_entries_timer: ReturnType<typeof setTimeout> | null = null;
-
-              async function refresh_url_entries() {
-                const [bookmarks, history] = await Promise.all([
-                  browser.bookmarks.search({}),
-                  browser.history.search({ text: "", startTime: 0, maxResults: 300 }),
-                ]);
-                const seen = new Set();
-                const entries: typeof url_entries = [];
-                for (const item of [...bookmarks.map((b) => ({ ...b, star: true })), ...history.map((h) => ({ ...h, star: false }))]) {
-                  if (!item.url || seen.has(item.url)) continue;
-                  seen.add(item.url);
-                  entries.push({ star: item.star, title: item.title ?? "", url: item.url });
-                }
-                url_entries = entries;
-              }
-
-              function schedule_url_entries_refresh() {
-                try {
-                  if (url_entries_timer != null) {
-                    clearTimeout(url_entries_timer);
-                  }
-                  url_entries_timer = setTimeout(() => {
-                    url_entries_timer = null;
-                    void refresh_url_entries();
-                  }, 1000);
-                } catch {
-                  return;
-                }
-              }
-
-              glide.autocmds.create("ConfigLoaded", () => {
-                void refresh_url_entries();
-              });
-              browser.bookmarks.onCreated.addListener(schedule_url_entries_refresh);
-              browser.bookmarks.onRemoved.addListener(schedule_url_entries_refresh);
-              browser.bookmarks.onChanged.addListener(schedule_url_entries_refresh);
-              browser.bookmarks.onMoved.addListener(schedule_url_entries_refresh);
-              browser.history.onVisited.addListener(schedule_url_entries_refresh);
-
-              async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
-                if (url_entries.length === 0) {
-                  await refresh_url_entries();
-                }
-
-                function describe_action(input: string): string {
-                  const trimmed = input.trim();
-                  if (trimmed === "") {
-                    return "Search with the default engine";
-                  }
-                  if (!opts.search_only) {
-                    const url = to_url(trimmed);
-                    if (url) {
-                      return "Open " + url;
-                    }
-                  }
-                  const search = parse_search(trimmed.split(" ").filter(Boolean));
-                  return search.engine ? "Search " + search.engine + ": " + search.query : "Search: " + search.query;
-                }
-
-                const action_text = DOM.create_element("span", { children: describe_action(opts.prefill ?? "") });
-                const options: glide.CommandLineCustomOption[] = [{
-                  label: "search",
-                  render: () => DOM.create_element("td", { attributes: { colspan: "2" }, children: [action_text] }),
-                  matches: ({ input }) => {
-                    action_text.textContent = describe_action(input);
-                    return true;
-                  },
-                  execute: ({ input }) => {
-                    if (opts.search_only) {
-                      do_search(target, parse_search(input.split(" ").filter(Boolean)));
-                    } else {
-                      do_open(target, input);
-                    }
-                  },
-                }];
-
-                const SLOTS = 30;
-                const slot_items: (typeof url_entries)[number][] = [];
-                const slot_titles: HTMLElement[] = [];
-                const slot_urls: HTMLElement[] = [];
-                let slot_query: string | null = null;
-
-                function recompute_slots(input: string) {
-                  if (input === slot_query) {
-                    return;
-                  }
-                  slot_query = input;
-                  const q = input.trim().toLowerCase();
-                  slot_items.length = 0;
-                  for (const entry of url_entries) {
-                    if (slot_items.length >= SLOTS) break;
-                    if (q === "" || entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q)) {
-                      slot_items.push(entry);
-                    }
-                  }
-                  for (let i = 0; i < slot_items.length; i++) {
-                    slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
-                    slot_urls[i].textContent = slot_items[i].url;
-                  }
-                }
-
-                for (let i = 0; i < SLOTS; i++) {
-                  const title_el = DOM.create_element("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
-                  const url_el = DOM.create_element("span", { style: { color: "var(--base0B)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
-                  slot_titles.push(title_el);
-                  slot_urls.push(url_el);
-                  options.push({
-                    label: "url-" + i,
-                    render: () => DOM.create_element("td", {
-                      attributes: { colspan: "2" },
-                      style: { display: "flex", justifyContent: "space-between", gap: "2em", overflow: "hidden" },
-                      children: [title_el, url_el],
-                    }),
-                    matches: ({ input }) => {
-                      recompute_slots(input);
-                      return slot_items[i] != null;
-                    },
-                    execute: () => {
-                      const entry = slot_items[i];
-                      if (entry) {
-                        void do_navigate(target, entry.url);
-                      }
-                    },
-                  });
-                }
-
-                await glide.commandline.show({ input: opts.prefill ?? "", title: "History and bookmarks", options });
-              }
-
-              glide.keymaps.set("normal", "o", () => url_commandline("current"), {
-                description: "Open a URL or search",
-              });
-              glide.keymaps.set("normal", "O", async () => {
-                const tab = await glide.tabs.active();
-                await url_commandline("current", { prefill: tab.url });
-              }, { description: "Edit the current URL" });
-              glide.keymaps.set("normal", "t", () => url_commandline("tab"), {
-                description: "Open a URL or search in a new tab",
-              });
-              glide.keymaps.set("normal", "T", async () => {
-                const tab = await glide.tabs.active();
-                await url_commandline("tab", { prefill: tab.url });
-              }, { description: "Open the current URL in a new tab" });
-              glide.keymaps.set("normal", "s", () => url_commandline("current", { search_only: true }), {
-                description: "Search with the default engine",
-              });
-              glide.keymaps.set("normal", "S", () => url_commandline("tab", { search_only: true }), {
-                description: "Search with the default engine in a new tab",
-              });
-              glide.keymaps.set("normal", "w", () => url_commandline("window"), {
-                description: "Open a URL or search in a new window",
-              });
-              glide.keymaps.set("normal", "b", "commandline_show tab ");
-              glide.keymaps.set("normal", "gt", "tab_next");
-              glide.keymaps.set("normal", "gT", "tab_prev");
-              glide.keymaps.set("normal", "u", "tab_reopen");
-
-              glide.keymaps.set("normal", "p", async () => {
-                const text = (await navigator.clipboard.readText()).trim();
-                if (text) {
-                  await do_open("current", text);
-                }
-              }, { description: "Open the clipboard contents" });
-
-              glide.keymaps.set("normal", "yy", async () => {
-                const tab = await glide.tabs.active();
-                const url = tab.url ?? "";
-                await navigator.clipboard.writeText(url);
-                flash_message("yanked " + url);
-              }, { description: "Yank the URL of the current tab" });
-
-              glide.keymaps.set("normal", "yf", () =>
-                start_hints("a[href]", async ({ content }) => {
-                  const href = await content.execute((target) => (target as HTMLAnchorElement).href);
-                  if (href) {
-                    await navigator.clipboard.writeText(href);
-                    flash_message("yanked " + href);
-                  }
-                }), { description: "Yank a link URL using find hints" });
-
-              glide.keymaps.set(["normal", "insert", "visual"], "<A-d>", () => {}, {
-                description: "Disabled (would focus the urlbar)",
-              });
-
-              glide.keymaps.set("normal", "<C-m>", async () => {
-                try {
-                  const win = await browser.windows.getLastFocused({ populate: true });
-                  const tabs = (win.tabs ?? [])
-                    .filter((t) => t.id != null)
-                    .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
-                  const target = tabs[1];
-                  if (target?.id != null) {
-                    await browser.tabs.update(target.id, { active: true });
-                  }
-                } catch {}
-              }, { description: "Switch to the last-active tab" });
-
-              glide.keymaps.set("normal", "gd", async () => {
-                const tab = await glide.tabs.active();
-                await browser.windows.create({ tabId: tab.id });
-              }, { description: "Detach the current tab into a new window" });
-
-              glide.keymaps.set("normal", "gD", async () => {
-                const tab = await glide.tabs.active();
-                const dup = await browser.tabs.duplicate(tab.id);
-                if (dup?.id != null) {
-                  await browser.windows.create({ tabId: dup.id });
-                }
-              }, { description: "Duplicate the current tab into a new window" });
-
-              glide.keymaps.set("normal", "d", async () => {
-                const current = await glide.tabs.active();
-                await glide.excmds.execute("tab_prev");
-                if (current.id != null) {
-                  await browser.tabs.remove(current.id);
-                }
-              }, { description: "Close the current tab and focus the previous one" });
-
-              glide.keymaps.set("normal", "D", "tab_close");
-
-              let hint_session = false;
-              let hint_filter = "";
-              let hint_texts: string[] = [];
-              let hint_active = 0;
-              let hint_visible: number[] = [];
-
-              let hint_cooldown_until = 0;
-              let swallowing_keys = false;
-
-              async function swallow_keys(ms: number) {
-                hint_cooldown_until = Date.now() + ms;
-                if (swallowing_keys) {
-                  return;
-                }
-                swallowing_keys = true;
-                try {
-                  while (true) {
-                    const key = await glide.keys.next();
-                    if (Date.now() >= hint_cooldown_until) {
-                      await glide.keys.send(key);
-                      return;
-                    }
-                  }
-                } finally {
-                  swallowing_keys = false;
-                }
-              }
-
-              function hint_label_is_ambiguous(label: string, count: number): boolean {
-                for (let m = 1; m <= count; m++) {
-                  const s = String(m);
-                  if (s !== label && s.startsWith(label)) {
-                    return true;
-                  }
-                }
-                return false;
-              }
-
-              function update_find_display(no_match = false) {
-                const find_el = document.getElementById("glide-statusline-find");
-                if (!find_el) {
-                  return;
-                }
-                find_el.textContent = hint_session ? "find: " + hint_filter : "";
-                find_el.classList.toggle("nomatch", hint_session && no_match);
-              }
-
-              function follow_hint(index: number) {
-                hint_session = false;
-                const label = String(index + 1);
-                void glide.keys
-                  .send(hint_label_is_ambiguous(label, hint_texts.length) ? label + "<Enter>" : label)
-                  .then(() => swallow_keys(500));
-              }
-
-              function apply_hint_filter(reset_active = true) {
-                const container = document.getElementById("glide-hints-container");
-                if (!container) {
-                  return;
-                }
-                hint_visible = [];
-                for (let i = 0; i < container.children.length; i++) {
-                  if ((hint_texts[i] ?? "").includes(hint_filter)) {
-                    hint_visible.push(i);
-                  }
-                }
-                if (reset_active || hint_visible.length === 0) {
-                  hint_active = 0;
-                } else {
-                  hint_active = ((hint_active % hint_visible.length) + hint_visible.length) % hint_visible.length;
-                }
-                for (let i = 0; i < container.children.length; i++) {
-                  const marker = container.children[i] as HTMLElement;
-                  const pos = hint_visible.indexOf(i);
-                  marker.style.display = pos === -1 ? "none" : "";
-                  const active = pos === hint_active && pos !== -1;
-                  marker.style.background = active ? "var(--base0B)" : "";
-                  marker.style.color = active ? "var(--base00)" : "";
-                  marker.style.opacity = active ? "1" : "";
-                }
-                update_find_display(hint_filter.length > 0 && hint_visible.length === 0);
-                if (hint_session && hint_filter.length > 0 && hint_visible.length === 1) {
-                  follow_hint(hint_visible[0]);
-                }
-              }
-
-              function start_hints(selector?: string, action?: glide.HintAction) {
-                hint_session = true;
-                hint_filter = "";
-                hint_texts = [];
-                hint_active = 0;
-                hint_visible = [];
-                update_find_display();
-                glide.hints.show({
-                  selector,
-                  action,
-                  async pick({ hints, content }) {
-                    hint_texts = await content.map((target) => (target.textContent ?? "").toLowerCase());
-                    setTimeout(() => apply_hint_filter(), 0);
-                    return hints;
-                  },
-                });
-              }
-
-              glide.keymaps.set("normal", "c", () => start_hints());
-              glide.keymaps.set("normal", "f", () => start_hints());
-              glide.keymaps.set("normal", "F", () => start_hints(undefined, "newtab-click"));
-
-              for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-:./_,;!?@#%^&*()+=[]{}~'\"$") {
-                glide.keymaps.set("hint", ch, () => {
-                  if (hint_session) {
-                    hint_filter += ch.toLowerCase();
-                    apply_hint_filter();
-                  }
-                });
-              }
-              glide.keymaps.set("hint", "<Space>", () => {
-                if (hint_session) {
-                  hint_filter += " ";
-                  apply_hint_filter();
-                }
-              });
-              glide.keymaps.set("hint", "\\", async () => {
-                if (!hint_session) {
-                  return;
-                }
-                const key = (await glide.keys.next()) as any;
-                const ch = typeof key === "string" ? key : String(key?.key ?? "");
-                if (ch.length === 1) {
-                  hint_filter += ch.toLowerCase();
-                  apply_hint_filter();
-                }
-              });
-              glide.keymaps.set("hint", "<Enter>", () => {
-                if (hint_session && hint_visible.length > 0) {
-                  follow_hint(hint_visible[hint_active]);
-                }
-              });
-              glide.keymaps.set("hint", "<Tab>", () => {
-                if (hint_session) {
-                  hint_active += 1;
-                  apply_hint_filter(false);
-                }
-              });
-              glide.keymaps.set("hint", "<S-Tab>", () => {
-                if (hint_session) {
-                  hint_active -= 1;
-                  apply_hint_filter(false);
-                }
-              });
-              glide.keymaps.set("hint", "<BS>", () => {
-                if (hint_session) {
-                  hint_filter = hint_filter.slice(0, -1);
-                  apply_hint_filter();
-                }
-              });
-              glide.autocmds.create("ModeChanged", "*", ({ new_mode }) => {
-                if (new_mode !== "hint") {
-                  hint_session = false;
-                  update_find_display();
-                }
-              });
-
-              glide.keymaps.set("normal", "/", () => glide.findbar.open({ query: "" }));
-              glide.keymaps.set("normal", "?", () => glide.findbar.open({ query: "" }));
-              glide.keymaps.set("normal", "n", () => glide.findbar.next_match());
-              glide.keymaps.set("normal", "N", () => glide.findbar.previous_match());
-
-              async function tab_or_tabopen(query: string) {
-                const url = query.includes("://") ? query : `https://''${query}`;
-                const tabs = await browser.tabs.query({ currentWindow: true });
-                const existing = tabs.find((t) => t.url != null && t.url.includes(query));
-                if (existing?.id != null) {
-                  await browser.tabs.update(existing.id, { active: true });
-                } else {
-                  await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
-                }
-              }
-
-              function add_site_shortcuts(shortcuts: Record<string, string>) {
-                for (const [keys, target] of Object.entries(shortcuts)) {
-                  glide.keymaps.set("normal", keys, () => tab_or_tabopen(target), {
-                    description: `Focus or open ''${target}`,
-                  });
-                }
-              }
-
-              add_site_shortcuts({
-                ghp: "https://github.com/pulls",
-                ghi: "https://github.com/issues/assigned?q=is%3Aissue%20state%3Aopen%20archived%3Afalse%20(assignee%3A%40me%20OR%20author%3A%40me)%20sort%3Aupdated-desc",
-                ghv: "github.com/orgs/vbc-it/repositories",
-                ghc: "github.com/orgs/CLIP-HPC/repositories",
-                ghd: "github.com/Swarsel/.dotfiles",
-                ghni: "github.com/NixOS/nixpkgs/issues",
-                ghnp: "github.com/NixOS/nixpkgs/pulls",
-                gprn: "www.reddit.com/r/NixOS/",
-                gpd: "discourse.nixos.org/",
-                gpp: "parkour.wien/categories",
-              });
-
-              const hint_selectors = {
-                "https?://www\\.google\\.com": `[class="LC20lb MBeuO DKV0Md"], [class="YmvwI"], [class="YyVfkd"], [class="fl"]`,
-                "https?://news\\.ycombinator\\.com": `[class="titleline"], [class="age"]`,
-                "https?://lobste\\.rs": `[class="u-url"], [class="comments_label"]`,
-                "https?://(www\\.|old\\.)?reddit\\.com": `[class="title may-blank loggedin"], [class="bylink comments may-blank"]`,
-                "https?://github\\.com": `[class="Link--primary"], [class="AppHeader-button Button--secondary Button--medium Button p-0 color-fg-muted"], [class="UnderlineNav-item no-wrap js-responsive-underlinenav-item js-selected-navigation-item"], [class="prc-ActionList-ItemLabel-TmBhn"], [class="PRIVATE_TreeView-item-content-text prc-TreeView-TreeViewItemContentText-smZM-"]`,
-                "https?://vbc\\.atlassian\\.net/wiki": `[class="_1reo15vq _18m915vq _1bto1l2s _kqswh2mm _o5721q9c _syaz1fxt"], [class="_11c81ixg _1reo15vq _18m915vq _18s81b66 _kqswh2mm _k48p1wq8 _o5721q9c _1bto1l2s _u5f31b66"], [class="_1r04ze3t _kqswstnw"], [class="css-a61etj"], [class="jira-macro-table-underline-pdfexport"]`,
-              };
-
-              for (const [pattern, selector] of Object.entries(hint_selectors)) {
-                glide.autocmds.create("UrlEnter", new RegExp(pattern), () => {
-                  glide.buf.keymaps.set("normal", "c", () => start_hints(selector));
-                });
-              }
-
-              glide.autocmds.create("UrlEnter", /https?:\/\/www\.google\.com/, () => {
-                glide.buf.keymaps.set("normal", "gi", async () => {
-                  await glide.excmds.execute("focusinput last");
-                  await glide.excmds.execute("caret_move endline");
-                });
-              });
-
-              const invidious_css = css`
-                body {
-                  max-width: 100% !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                }
-
-                .pure-u-md-2-3,
-                .pure-u-lg-2-3,
-                .pure-u-md-1-3,
-                .pure-u-lg-1-3 {
-                  width: 100% !important;
-                }
-
-                #contents,
-                .pure-g,
-                .pure-u-md-2-3 > .h-box,
-                .pure-u-lg-2-3 > .h-box {
-                  max-width: 100% !important;
-                  width: 100% !important;
-                  padding-left: 0 !important;
-                  padding-right: 0 !important;
-                  margin-left: 0 !important;
-                  margin-right: 0 !important;
-                }
-
-                #player-container {
-                  width: 100% !important;
-                  max-width: 100% !important;
-                  aspect-ratio: 16 / 9;
-                  height: auto !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  max-height: 90vh !important;
-                }
-
-                .video-js,
-                .video-js video,
-                .video-js .vjs-tech,
-                #player {
-                  width: 100% !important;
-                  height: 100% !important;
-                  padding-top: 0 !important;
-                }
-
-                #player-container + .h-box,
-                #player-container + div {
-                  margin-top: 0.5em !important;
-                  padding-top: 0 !important;
-                }
-              `;
-
-              glide.autocmds.create("UrlEnter", /https:\/\/${
-                lib.replaceStrings [ "." ] [ "\\." ] globals.services.invidious.domain
-              }\/watch/, ({ tab_id }) => {
-                glide.content.execute((css_text) => {
-                  if (!document.getElementById("glide-user-style")) {
-                    const el = document.createElement("style");
-                    el.id = "glide-user-style";
-                    el.textContent = css_text;
-                    document.head.appendChild(el);
-                  }
-                }, { tab_id, args: [invidious_css] });
-              });
-
-              glide.keymaps.set("normal", "<C-Esc>", () => glide.excmds.execute("mode_change ignore"), {
-                description: "Enter ignore mode",
-              });
-              glide.keymaps.set("ignore", "<C-Esc>", () => glide.excmds.execute("mode_change normal"), {
-                description: "Leave ignore mode",
-              });
-
-              const ignore_mode_sites = [
-                /https?:\/\/pokerogue\.net/,
-                /https?:\/\/typelit\.io/,
-                /https?:\/\/vc-impimba-1\.m\.imp\.ac\.at\/ui\/webconsole/,
-              ];
-
-              for (const pattern of ignore_mode_sites) {
-                glide.autocmds.create("UrlEnter", pattern, () => {
-                  glide.excmds.execute("mode_change ignore");
-                });
-              }
-            '';
-          };
-
-          programs.zsh.sessionVariables = {
-            MOZ_DISABLE_RDD_SANDBOX = "1";
-          };
-
-          home.activation.sponsorblockSettings = vars.sponsorblockActivation;
-        };
+              })),
+            });
+          }, { description: "Jump to a heading on the current page" });
+        '';
       };
   }
 #+end_src

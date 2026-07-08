@@ -153,9 +153,6 @@
             };
             SearchEngines = {
               PreventInstalls = true;
-              Remove = [
-                "Bing" # Fuck you
-              ];
             };
             UserMessaging = {
               ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
@@ -715,7 +712,28 @@
                   ];
                 };
 
-                "google".metaData.alias = "@g";
+                "google" = {
+                  name = "Google";
+                  urls = [
+                    {
+                      template = "https://www.google.com/search";
+                      params = [
+                        {
+                          name = "q";
+                          value = "{searchTerms}";
+                        }
+                      ];
+                    }
+                  ];
+                  icon = "https://www.google.com/favicon.ico";
+                  definedAliases = [ "@g" ];
+                };
+
+                "bing".metaData.hidden = true;
+                "ddg".metaData.hidden = true;
+                "ecosia".metaData.hidden = true;
+                "perplexity".metaData.hidden = true;
+                "wikipedia".metaData.hidden = true;
               };
               force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
             };
