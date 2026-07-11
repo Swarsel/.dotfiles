@@ -3146,18 +3146,14 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
   }
 #+end_src
 
-** Devshell (checks/pre-commit-hooks)
+** Pre-commit hooks (checks)
 :PROPERTIES:
 :CUSTOM_ID: h:4d0548db-99b2-4e07-b762-6d86fbb26d4c
 :END:
 
 This file defines a number of checks that can either be run by calling =nix flake check= or while in a =nix-shell= or =nix develop=. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as =statix= and =deadnix=).
 
-The devshell also provides a number of useful shorthand commands, as well as a 'safe' version of nixpkgs that I can use to rebuild from in case a version bump in nixpkgs suddenly breaks [[https://github.com/shlevy/nix-plugins][nix-plugins]].
-
-Aside from the =default= devShell which is the one that should usually be called interactively, I also define a =deploy= devshell: this one compiles nix-plugins against an earlier version of nix, which is needed so that the version nixos-anywhere that I am using works. However, that version is a little annoying since it had a bug in nix-plugins that is here fixed using a patch file. I guess it also serves as another fallback should problems with the current nix-plugins version arise.
-
-#+begin_src nix-ts :tangle modules/flake/devshell.nix
+#+begin_src nix-ts :tangle modules/flake/precommit.nix
   {
     self,
     inputs,
@@ -3165,27 +3161,19 @@ Aside from the =default= devShell which is the one that should usually be called
     ...
   }:
   {
-    flake-file.inputs = {
-      devshell = {
-        url = "github:numtide/devshell";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-      pre-commit-hooks = {
-        url = "github:cachix/git-hooks.nix";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
+    flake-file.inputs.pre-commit-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   }
-  // lib.optionalAttrs (inputs ? devshell && inputs ? pre-commit-hooks) {
+  // lib.optionalAttrs (inputs ? pre-commit-hooks) {
     imports = [
-      inputs.devshell.flakeModule
       inputs.pre-commit-hooks.flakeModule
     ];
 
     perSystem =
       {
         pkgs,
-        config,
         system,
         ...
       }:
@@ -3265,7 +3253,45 @@ Aside from the =default= devShell which is the one that should usually be called
             };
           };
         };
+      };
+  }
+#+end_src
 
+** Devshell
+:PROPERTIES:
+:CUSTOM_ID: h:e2b8c6a4-2f7d-4c1e-9a3b-5d8f0c1a6b42
+:END:
+
+This file provides a number of useful shorthand commands, as well as a 'safe' version of nixpkgs that I can use to rebuild from in case a version bump in nixpkgs suddenly breaks [[https://github.com/shlevy/nix-plugins][nix-plugins]].
+
+Aside from the =default= devShell which is the one that should usually be called interactively, I also define a =deploy= devshell: this one compiles nix-plugins against an earlier version of nix, which is needed so that the version nixos-anywhere that I am using works. However, that version is a little annoying since it had a bug in nix-plugins that is here fixed using a patch file. I guess it also serves as another fallback should problems with the current nix-plugins version arise.
+
+#+begin_src nix-ts :tangle modules/flake/devshell.nix
+  {
+    self,
+    inputs,
+    lib,
+    ...
+  }:
+  {
+    flake-file.inputs.devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  }
+  // lib.optionalAttrs (inputs ? devshell) {
+    imports = [
+      inputs.devshell.flakeModule
+    ];
+
+    perSystem =
+      {
+        pkgs,
+        config,
+        system,
+        ...
+      }:
+      {
         devshells = {
           deploy =
             let
