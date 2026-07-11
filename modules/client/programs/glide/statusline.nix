@@ -17,6 +17,7 @@
                   children: profile_name === "default" ? [] : [profile_name],
                 }),
                 DOM.create_element("span", { id: "glide-statusline-container" }),
+                DOM.create_element("span", { id: "glide-statusline-root" }),
                 DOM.create_element("span", { id: "glide-statusline-mode" }),
                 DOM.create_element("span", { id: "glide-statusline-tabs" }),
                 DOM.create_element("span", { id: "glide-statusline-find" }),
@@ -27,6 +28,7 @@
         }
         update_tab_count();
         void refresh_active_container();
+        void refresh_active_root();
       }
 
       glide.autocmds.create("WindowLoaded", ensure_statusline);
@@ -78,6 +80,14 @@
         }
 
         #glide-statusline-container:empty {
+          display: none;
+        }
+
+        #glide-statusline-root {
+          color: var(--base0D);
+        }
+
+        #glide-statusline-root:empty {
           display: none;
         }
 
@@ -158,6 +168,33 @@
           await update_container_indicator(active?.cookieStoreId);
         } catch {}
       }
+      async function update_root_indicator(tab_id?: number) {
+        const root_el = document.getElementById("glide-statusline-root");
+        if (!root_el) {
+          return;
+        }
+        if (tab_id == null) {
+          root_el.textContent = "";
+          return;
+        }
+        const at_root = await glide.content
+          .execute(() => {
+            const nav = (window as unknown as { navigation?: { currentEntry?: { index: number } } }).navigation;
+            if (nav?.currentEntry != null) {
+              return nav.currentEntry.index <= 0;
+            }
+            return history.length <= 1;
+          }, { tab_id })
+          .catch(() => false);
+        root_el.textContent = at_root ? "/" : "";
+      }
+      async function refresh_active_root() {
+        try {
+          const win = await browser.windows.getLastFocused({ populate: true });
+          const active = win.tabs?.find((t) => t.active);
+          await update_root_indicator(active?.id);
+        } catch {}
+      }
       const tab_containers: Record<number, string> = {};
       function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
         if (tab?.id != null && tab.cookieStoreId != null) {
@@ -172,6 +209,7 @@
           delete tab_containers[tab_id];
         });
         browser.tabs.onActivated.addListener(async (info) => {
+          void update_root_indicator(info.tabId);
           const cached = tab_containers[info.tabId];
           if (cached != null) {
             update_container_indicator(cached);
@@ -181,15 +219,35 @@
           cache_tab(tab);
           update_container_indicator(tab?.cookieStoreId);
         });
-        browser.tabs.onUpdated.addListener((_tab_id, _change, tab) => {
+        browser.tabs.onUpdated.addListener((tab_id, change, tab) => {
           cache_tab(tab);
           if (tab.active) {
             update_container_indicator(tab.cookieStoreId);
+            if (change.url != null || change.status === "complete") {
+              void update_root_indicator(tab_id);
+            }
           }
         });
-        browser.windows.onFocusChanged.addListener(() => void refresh_active_container());
+        browser.windows.onFocusChanged.addListener(() => {
+          void refresh_active_container();
+          void refresh_active_root();
+        });
+        const on_navigation = async (details: { tabId: number; frameId: number }) => {
+          if (details.frameId !== 0) {
+            return;
+          }
+          const tab = await browser.tabs.get(details.tabId).catch(() => null);
+          if (tab?.active) {
+            void update_root_indicator(details.tabId);
+          }
+        };
+        browser.webNavigation.onCommitted.addListener(on_navigation);
+        browser.webNavigation.onHistoryStateUpdated.addListener(on_navigation);
       });
-      setInterval(() => void refresh_active_container(), 1500);
+      setInterval(() => {
+        void refresh_active_container();
+        void refresh_active_root();
+      }, 1500);
     '';
   };
 }
