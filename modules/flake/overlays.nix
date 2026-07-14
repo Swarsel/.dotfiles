@@ -9,8 +9,8 @@ let
       "firezone-server-web"
       "firezone-server-api"
       "firezone-server-domain"
-      "_1password-gui"
-      "_1password-gui-beta"
+      # "_1password-gui"
+      # "_1password-gui-beta"
     ];
     stable24_11 = [
       "python39"
