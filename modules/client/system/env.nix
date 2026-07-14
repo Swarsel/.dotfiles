@@ -60,6 +60,7 @@
           openrouterApi
           instaDomain
           sportDomain
+          hfApi
           ;
         inherit (config.swarselsystems) isPublic homeDir;
 
@@ -96,6 +97,7 @@
             SWARSEL_FULLNAME = fullName;
             SWARSEL_MAIL_ALL = lib.mkDefault allMailAddresses;
             GITHUB_NOTIFICATION_TOKEN_PATH = confLib.getConfig.sops.secrets.github-notifications-token.path;
+            HF_TOKEN = hfApi;
             OPENROUTER_API_KEY = openrouterApi;
           };
         };
