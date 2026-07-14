@@ -50,9 +50,14 @@ in
               lib.genAttrs [
                 "aap-mcp-server"
                 "aci-mcp-server"
+                "artifactory-mcp"
                 "crowdsec-mcp"
+                "defender-mcp"
                 "foreman-mcp-server"
                 "infoblox-mcp-server"
+                "intune-mcp"
+                "ise-mcp"
+                "jamf-mcp"
                 "jenkins-mcp-server"
                 "jfrog-mcp-server"
                 "koppla"
@@ -62,6 +67,7 @@ in
                 "openstack-mcp-server"
                 "palo-alto-mcp"
                 "rustdesk-vbc"
+                "snipeit-mcp"
                 "vcenter-mcp"
               ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
             )
