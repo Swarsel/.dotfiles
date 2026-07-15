@@ -989,7 +989,7 @@ I will now list output names and explain what they to; some outputs are what I c
 
 - =nixosConfigurations=: A set of NixOS host configurations
 - =devShells=: *system-scoped*. A set of devshells that can be used by calling [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]]. Defaults to the devshell called =default=.
-- =nixosModules=: A set of nixos [[#h:de7bc464-e04f-45d4-9d29-e46592535419][Modules]]. By default, when consuming one of these modules but not specifying which one, the overlay =default= will be chosen.
+- =nixosModules=: A set of NixOS [[#h:de7bc464-e04f-45d4-9d29-e46592535419][Modules]]. By default, when consuming one of these modules but not specifying which one, the overlay =default= will be chosen.
 - =overlays=: A set of nixpkgs [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. By default, when consuming one of these overlays but not specifying which one, the overlay =default= will be chosen.
 - =checks=: *system-scoped*. Flake checks to perform when calling [[#h:b07b1776-75cd-4a40-9e71-fb00eab65c6f][nix flake check]]
 - =formatter=: *system-scoped*. Formatting package/config to use when calling [[#h:cf6cc5fa-cbaa-415a-b1d8-c6c5b7016700][nix fmt]]
@@ -1004,7 +1004,7 @@ The following are also recognized by nix, but are deprecated:
 
 - =devShell=: *system-scoped, deprecated*. A single devshell that can be used by calling [[#h:c22f65c4-4c0d-4aea-9b70-d34c295764f0][nix develop]].
 - =overlay=: *deprecated*. A single overlay.
-- =nixosModule=: *deprecated*. A single nixos module.
+- =nixosModule=: *deprecated*. A single NixOS module.
 - =defaultApp=: *system-scoped, deprecated*. The app that this flake should default to. Instead, you can also define =apps.<system>.default=.
 - =defaultPackage=: *system-scoped, deprecated*. The package that this flake should default to. Instead, you can also define =packages.<system>.default=.
 - =defaultTemplates=: *deprecated*. The template that this flake should default to. Instead, you can also define =templates.default=.
@@ -2168,7 +2168,7 @@ A breakdown for the functions that have a non-obvious purpose:
 - =pkgsFor=: This function reads all available systems from nixpkgs and generates pkgs for them. This is needed for my generation of home-manager and nix-on-droid systems in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]].
   - uses [[#h:94690fcb-e039-49da-9bd3-610fa80fa08b][nixpkgs.lib.genAttrs]]
   - Also, in that function I am defining the =pkgs= that should be used when I reference =pkgs= in the actual configuration. I want to make sure that the correct system is used (keep in mind this is for home-manager configurations, which need that info! As a remark, you would not set this for a NixOS host), that I load my [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]] (extra packages and modifications that I add to =pkgs=), as well as a setting that allows me to install unfree software. As a base package set I choose =nixpkgs= from my inputs (and so does nearly every configuration out there. Keep in mind however that you could use any package set here! =nixpkgs= however also comes with a lot of useful =lib= functions (that are not =builtins= to the nix language!))
-- =mkTrueOption=: Defines a nixos module option that is by default enables (as opposed to =mkEnableOption= which are per default disabled).
+- =mkTrueOption=: Defines a NixOS module option that is by default enables (as opposed to =mkEnableOption= which are per default disabled).
   - uses lib.mkOption to create the defaulted option.
 - =mkStrong=:
   - An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 60), which is higher than setting an option normally (i.e. =option = value=; which has priority 100), but being of lower priority than using [[#h:16599d68-0ca5-40fa-810e-76b5c739b2b1][nixpkgs.lib.mkForce]], which has priority 50 (lower priority takes precedence). For completeness' sake, the priority set when using [[#h:41180e6c-2a13-4b46-89b2-791562b4b816][nixpkgs.lib.mkDefault]] is 1000 (a very low value).
@@ -2529,7 +2529,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
  - =mkHostsForArch= does the same for full NixOS configurations
  - =mkConfigurationsPerArch= is the wrapper that calls =mkHalfHostsForArch= or =mkHostsForArch= depending on the config it is called for, holding all configurations in principal
  - =halfConfigurationsPerArch= returns all halfConfigurations of a certain type (android or home-manager only)
- - =ConfigurationsPerArch= does the same for full NixOS systems (NixOS or darwin). These can further be specialized by passing in the corresponding =minimal= arg that is used during bootstrapping.
+ - =ConfigurationsPerArch= does the same for full NixOS systems (NixOS or Darwin). These can further be specialized by passing in the corresponding =minimal= arg that is used during bootstrapping.
 
 #+begin_src nix-ts :tangle modules/flake/hosts.nix
   { self, inputs, ... }:
@@ -2816,7 +2816,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
 :CUSTOM_ID: h:391e7712-fef3-4f13-a3ed-d36e228166fd
 :END:
 
-This defines some topology for the [[https://github.com/oddlama/nix-topology][nix-topology]] modole that can not otherwise be parsed from the config (or is global). For example, this is used to define a number of switches, printers and routers. The topology graph is built from left to right, meaning that =nodes.internet = mkInternet { connections = [ (mkConnection "moonside" "wan") ]; };= means that the node =internet= 'initiates' the connection to the node =moonside= (=internet= will be on the left).
+This defines some topology for the [[https://github.com/oddlama/nix-topology][nix-topology]] module that can not otherwise be parsed from the config (or is global). For example, this is used to define a number of switches, printers and routers. The topology graph is built from left to right, meaning that =nodes.internet = mkInternet { connections = [ (mkConnection "moonside" "wan") ]; };= means that the node =internet= 'initiates' the connection to the node =moonside= (=internet= will be on the left).
 
 Another note concerning [[https://flake.parts/][flake-parts]]:
   - =perSystem= is a mechanism that tells flake-parts to build the following attribute set for all systems. This replaces the need to handle myself any =system= or =pkgs= variables, this is done by flake-parts. In this case this is needed so that the topology diagram can be built locally.
@@ -3266,7 +3266,7 @@ This file defines a number of checks that can either be run by calling =nix flak
 
 This file provides a number of useful shorthand commands, as well as a 'safe' version of nixpkgs that I can use to rebuild from in case a version bump in nixpkgs suddenly breaks [[https://github.com/shlevy/nix-plugins][nix-plugins]].
 
-Aside from the =default= devShell which is the one that should usually be called interactively, I also define a =deploy= devshell: this one compiles nix-plugins against an earlier version of nix, which is needed so that the version nixos-anywhere that I am using works. However, that version is a little annoying since it had a bug in nix-plugins that is here fixed using a patch file. I guess it also serves as another fallback should problems with the current nix-plugins version arise.
+Aside from the =default= devShell which is the one that should usually be called interactively, I also define a =deploy= devshell: this one compiles nix-plugins against an earlier version of nix, which is needed so that the version NixOS-anywhere that I am using works. However, that version is a little annoying since it had a bug in nix-plugins that is here fixed using a patch file. I guess it also serves as another fallback should problems with the current nix-plugins version arise.
 
 #+begin_src nix-ts :tangle modules/flake/devshell.nix
   {
@@ -3493,7 +3493,7 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
 
 Defines a formatter that can be called using =nix fmt=.
 
-Usually all formatting in this repo is done automatically while editing in emacs. However, it is nice to have a backup formatter to rely on and treefmt is extermely nice to work with, as it allows setting formatters for all kinds of aspects of the flake.
+Usually all formatting in this repo is done automatically while editing in Emacs. However, it is nice to have a backup formatter to rely on and treefmt is extremely nice to work with, as it allows setting formatters for all kinds of aspects of the flake.
 
 #+begin_src nix-ts :tangle modules/flake/formatter.nix
   { inputs, lib, ... }:
@@ -3571,10 +3571,10 @@ This exposes all of my modular configuration as modules. Other people can use th
 :CUSTOM_ID: h:52e1fae8-0e8c-4be6-a6ce-758ada652dd3
 :END:
 
-This defines some apps; they differ from normal packages in that they can be called using =nix run <repo><appName>=. So, for example, I can call my deployment script using =nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n <CONFIGURATION_NAME> -d <TARGET_IP>= (here I did not specify =#swarsel-bootstrap= since it is set as the default. In general, whenever the =#...= part is ommitted, the object under the default attribute will be used. This is also true for =nixosConfigurations=: in that case, the default will be the current hostname of the machine).
+This defines some apps; they differ from normal packages in that they can be called using =nix run <repo><appName>=. So, for example, I can call my deployment script using =nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n <CONFIGURATION_NAME> -d <TARGET_IP>= (here I did not specify =#swarsel-bootstrap= since it is set as the default. In general, whenever the =#...= part is omitted, the object under the default attribute will be used. This is also true for =nixosConfigurations=: in that case, the default will be the current hostname of the machine).
 
 - uses [[#h:c63cd469-7724-4a05-b932-8843722a00f0][builtins.listToAttrs]]
-- uses [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]] to add the default output to thte set of built apps.
+- uses [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]] to add the default output to the set of built apps.
 
 #+begin_src nix-ts :tangle modules/flake/apps.nix
   { self, ... }:
@@ -3626,9 +3626,9 @@ The first overlay stage is responsible for extending the base nixpkgs:
    These are for the aforementioned added packages.
    NOTE: The packages themselves are built in [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]]; here, we just add them to the overlay that we then use in the configuration.
 2) =nixpkgs-stable-versions=
-   These are simply mirrors of other branches of nixpkgs (mostly past stable branches). Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways. Automatically fetches all inputs names =nixpkgs-<suffix>= and adds them under the name in =<suffix>=. They will be available under =pkgs.<suffix>=.
+   These are simply mirrors of other branches of nixpkgs (mostly past stable branches). Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyway. Automatically fetches all inputs names =nixpkgs-<suffix>= and adds them under the name in =<suffix>=. They will be available under =pkgs.<suffix>=.
 
-The second stage of overlays is responsible to replace packages in nixpkgs with stable versions. The benefit here is that I have a central place (this part of the config) where I can declare what needs to be stable - broken packages tend to be enduser packages, as packages with huge dependency chains will normally be caught earlier upstream if there is a failure (see [[#h:b562adaf-536c-4267-88a5-026d8a0cda61][Current issues]]). In effect, that means I can override package =xyz= right here, and then use =pkgs.xyz= in the rest of the config, whereas I would need to use =pkgs.<suffix>.xyz= if I were to only use =nixpkgs-stable-versions= from the first stage.
+The second stage of overlays is responsible to replace packages in nixpkgs with stable versions. The benefit here is that I have a central place (this part of the config) where I can declare what needs to be stable - broken packages tend to be end-user packages, as packages with huge dependency chains will normally be caught earlier upstream if there is a failure (see [[#h:b562adaf-536c-4267-88a5-026d8a0cda61][Current issues]]). In effect, that means I can override package =xyz= right here, and then use =pkgs.xyz= in the rest of the config, whereas I would need to use =pkgs.<suffix>.xyz= if I were to only use =nixpkgs-stable-versions= from the first stage.
 
 Note that packages with bigger dependencies should NOT be added here. Such as:
 
@@ -3638,7 +3638,7 @@ Note that packages with bigger dependencies should NOT be added here. Such as:
 
 As doing so will trigger enormous rebuilds of e.g. =electron=.
 
-The third stage takes care of further modifications that should be performed to the packages after they have been overridden in stages 1 and 2: These modifications are for packages that do not fit my usecase, meaning I need to perform modifications on them.
+The third stage takes care of further modifications that should be performed to the packages after they have been overridden in stages 1 and 2: These modifications are for packages that do not fit my use case, meaning I need to perform modifications on them.
 
 As part of the modifications, I add some of my own library functions to be used alongside the functions provided by =nixpkgs= and =home-manager=.
 
@@ -3646,7 +3646,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
   - So, in =additions=, the =final= set is the same as in =modifications=, but their =prev= sets differ.
   - This starts to make a difference when you use multiple overlays and have one overlay depend on the modifications in another overlay.
 
-- The =_= argument is used like in a number of other programing languages and signals that the argument is never actually used in the function.
+- The =_= argument is used like in a number of other programming languages and signals that the argument is never actually used in the function.
 
 #+begin_src nix-ts :tangle modules/flake/overlays.nix
   { self, inputs, ... }:
@@ -3970,7 +3970,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
     ];
   }
 #+end_src
-** Installer images (live iso, kexec)
+** Installer images (live ISO, kexec)
 :PROPERTIES:
 :CUSTOM_ID: h:1d1ccae5-62ca-4d37-a28e-c59987850ed2
 :END:
@@ -3979,7 +3979,7 @@ This sections makes use of [[https://github.com/nix-community/nixos-generators][
 
 In a similar way, =nix build --print-out-paths --no-link <flake-path>.#pnap-kexec --system <system>= will build the kexec tarball that I need when using disko to deploy to a low-RAM systems.
 
-This is an improvement to what I did earlier, where I did not use =nixos-generators= but instead manually imported the needed modules to make this configration into a bootable USB image. Now, I can just write this in the same way that I would to write any other configuration.
+This is an improvement to what I did earlier, where I did not use =nixos-generators= but instead manually imported the needed modules to make this configuration into a bootable USB image. Now, I can just write this in the same way that I would to write any other configuration.
 
 #+begin_src nix-ts :tangle modules/flake/iso.nix
   { self, inputs, ... }:
@@ -4662,7 +4662,7 @@ This library file defines a few commonly used functions for the tests.
 :CUSTOM_ID: h:1d4514b4-e952-4faf-b30e-d89e73a526c6
 :END:
 
-When using tools like (the builtin) =nixos-rebuild= or =nixos-anywhere=, these tools expect the flake to have a certain structure; namely, they expect to find an output named =nixosConfigurations=, which is implicitely used when passing =--flake .#<config name>= (it is used in front of =<config name>=).
+When using tools like (the builtin) =nixos-rebuild= or =nixos-anywhere=, these tools expect the flake to have a certain structure; namely, they expect to find an output named =nixosConfigurations=, which is implicitly used when passing =--flake .#<config name>= (it is used in front of =<config name>=).
 
 When I define my configurations, I am actually defining two versions for each actual system:
   - One 'regular' config that should be used by all rebuild tools such as =nixos-rebuild=
@@ -4699,9 +4699,9 @@ This section holds most of the relevant NixOS side of configuration.
 In the [[#h:a86fe971-f169-4052-aacf-15e0f267c6cd][Introduction (no code)]], I mentioned that this is a nearly fully declarative config. In fact, most client configs are in one way or another not fully declarative. I use oneshotting systemd services + sentinel files for most such tasks (which makes them declarative!), but some of them I would rather perform manually once. This mainly concerns work related things.
 
 Whenever I encounter a configuration bit that needs manual steps, I use a [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]] to tangle that bit of information into a central place (here). I discern between the following scenarios:
-  - =setup=: Used in a standard NixOs + home-manager deployment
+  - =setup=: Used in a standard NixOS + home-manager deployment
   - =worksetup=: Stuff to be done only on work machines
-  - =homemanageronlysetup=: Steps that are needed only on machines that are not running NixOs.
+  - =homemanageronlysetup=: Steps that are needed only on machines that are not running NixOS.
 *** Steps to setup/upgrade home-manager only
 :PROPERTIES:
 :CUSTOM_ID: h:360f9da1-334e-4b04-b049-45085db8f10c
@@ -4787,7 +4787,7 @@ If the new machine is home-manager only, perform these steps:
 :END:
 
 Besides the manual steps outlined above, sometimes things break when I update this flake. The fix, for me, is most of the times one of these two:
-  - instead of the broken package, use the package from the latest stable nixpkgs release where the package is still functoning (this is why I pull all of these in as inputs)
+  - instead of the broken package, use the package from the latest stable nixpkgs release where the package is still functioning (this is why I pull all of these in as inputs)
   - if the broken component is critical, I perform manual patches/overrides.
 
 In order to keep track of these changes, I gather them here in a similar style to what you saw in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]. I simply prefix them with the date and check them after a while to see if things got better.
@@ -4935,7 +4935,7 @@ This is the template that I use for new deployments of personal machines. Server
 :CUSTOM_ID: h:24757d1e-6e88-4843-ab20-5e0c1b7ae29e
 :END:
 
-Acceptance of arbitraty argumments is here needed because =disko= passes =diskoFile= to this file.
+Acceptance of arbitrary arguments is here needed because =disko= passes =diskoFile= to this file.
 
 #+begin_src nix-ts :tangle files/templates/hosts/nixos/disk-config.nix
   {
@@ -5818,7 +5818,7 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
 :CUSTOM_ID: h:82bf7fb1-631b-4acd-966b-d0c71a9eb463
 :END:
 
-This is my current main server at home; all services except filesystem backups run in separate microvms (see [[#h:5e571d89-6590-4aa4-a5f4-5c871683d09b][Guests]]). Generally, all services that have any amount of significant data will be run on this server, and not on the Oracle Cloud instances.
+This is my current main server at home; all services except filesystem backups run in separate MicroVMs (see [[#h:5e571d89-6590-4aa4-a5f4-5c871683d09b][Guests]]). Generally, all services that have any amount of significant data will be run on this server, and not on the Oracle Cloud instances.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -6927,7 +6927,7 @@ This is my current main server at home; all services except filesystem backups r
 :CUSTOM_ID: h:58c7563e-6954-42e6-a622-9d06523e8e24
 :END:
 
-This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b772c3][Router]]). It also provides an http proxy endpoint in my local network over DNS rewrites.
+This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b772c3][Router]]). It also provides an HTTP proxy endpoint in my local network over DNS rewrites.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -7271,7 +7271,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
   }
 #+end_src
 
-****** Nginx
+****** NGINX
 :PROPERTIES:
 :CUSTOM_ID: h:90dc7f71-f9da-49ef-b273-edfab7daaa05
 :END:
@@ -7342,7 +7342,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
 :END:
 
-A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations (the darwin configuration is severely under-developed).
+A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-Darwin configurations (the Darwin configuration is severely under-developed).
 
 #+begin_src nix-ts :tangle hosts/darwin/x86_64-darwin/machpizza/default.nix
   {
@@ -7786,7 +7786,7 @@ This machine used to be my proxy server, a functionality that is now provided by
 :CUSTOM_ID: h:90457194-6b97-4cd6-90bc-4f42d0d69f51
 :END:
 
-This machine acts as my build farm and nix binary cache. It also provides an S3 bucket that is meant to be used for the binary cache (however, it is ocasionally used to have a separate object storage).
+This machine acts as my build farm and nix binary cache. It also provides an S3 bucket that is meant to be used for the binary cache (however, it is occasionally used to have a separate object storage).
 
 ***** Main Configuration
 :PROPERTIES:
@@ -8489,7 +8489,7 @@ This servers is an SSH bastion responsible for shielding my others cloud instanc
 :CUSTOM_ID: h:19300583-322b-4e0b-b657-857fbf23dfa1
 :END:
 
-This host acts as my main http proxy for external access.
+This host acts as my main HTTP proxy for external access.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -8760,7 +8760,7 @@ This host acts as my main http proxy for external access.
 :CUSTOM_ID: h:81bc8746-b46b-4d29-87de-ddbd77788b43
 :END:
 
-This is my mailserver. Since I do not really want to trust Oracle Cloud with any important data, I am running this one on Hetzner.
+This is my mail server. Since I do not really want to trust Oracle Cloud with any important data, I am running this one on Hetzner.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -9205,7 +9205,7 @@ Steps to recover using live ISO:
  - mounted other subvolumes: =mount -t btrfs -o subvol=<name> /dev/mapper/cryptroot /mnt/<name>= for all subvolumes
  - mounted boot: =mount -o umask=077 /dev/<boot device> /mnt/boot=
  - mount sbctl keys: =mount -o bind /mnt/persist/var/lib/sbctl /mnt/var/lib/sbctl=
- - make it look like nixos system: =touch /mnt/etc/NIXOS=
+ - make it look like NixOS system: =touch /mnt/etc/NIXOS=
  - chroot: =nixos-enter=
  - Then to e.g. fix missing bootloader entries: =/nix/var/nix/profiles/system/bin/switch-to-configuration boot=
 
@@ -9570,7 +9570,7 @@ This live ISO config provides a secure environment for setting up cryptographic 
 :CUSTOM_ID: h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9
 :END:
 
-This is a specialized kexec image that I use to have disko available on RAM-limited machines, as the kexec provided directly by nixos-anywhere does not include it. Note that I had to strip most other stuff from this image, so this is not a good image for general deployment.
+This is a specialized kexec image that I use to have disko available on RAM-limited machines, as the kexec provided directly by NixOS-anywhere does not include it. Note that I had to strip most other stuff from this image, so this is not a good image for general deployment.
 
 #+begin_src nix-ts :tangle install/kexec.nix
   {
@@ -9681,7 +9681,7 @@ This is a specialized kexec image that I use to have disko available on RAM-limi
 :CUSTOM_ID: h:e1498bef-ec67-483d-bf02-76264e30be8e
 :END:
 
-This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys). Values that are normally read from the encrypted repository secrets are taken from the plaintext example files in =files/demo= instead (see [[#h:dca96f1a-3297-4b72-8d35-f107325cde12][Demo secrets and input stubs]]), which the install scripts swap in via =--override-input repoSecrets=. The end-to-end installation of this host is covered by the [[#h:84e74ffb-d454-4744-bd89-4e65e122ced5][Demo tests]].
+This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys). Values that are normally read from the encrypted repository secrets are taken from the plain text example files in =files/demo= instead (see [[#h:dca96f1a-3297-4b72-8d35-f107325cde12][Demo secrets and input stubs]]), which the install scripts swap in via =--override-input repoSecrets=. The end-to-end installation of this host is covered by the [[#h:84e74ffb-d454-4744-bd89-4e65e122ced5][Demo tests]].
 
 I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
 ****** Main configuration
@@ -9924,7 +9924,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:dca96f1a-3297-4b72-8d35-f107325cde12
 :END:
 
-Building this configuration without my SSH keys is made possible by two overridable inputs: =vbc-nix= (a private work repository, only consumed by the work hosts) and =repoSecrets= (a local subflake at =./secrets/repo= that points at the sops-encrypted repository secrets). The =swarsel-install= and =swarsel-rebuild= scripts detect a missing key and pass =--override-input= flags that replace these inputs with public stand-ins, so no part of the evaluation ever needs to decrypt anything.
+Building this configuration without my SSH keys is made possible by two overridable inputs: =vbc-nix= (a private work repository, only consumed by the work hosts) and =repoSecrets= (a local sub-flake at =./secrets/repo= that points at the sops-encrypted repository secrets). The =swarsel-install= and =swarsel-rebuild= scripts detect a missing key and pass =--override-input= flags that replace these inputs with public stand-ins, so no part of the evaluation ever needs to decrypt anything.
 
 The private secrets input simply exposes the paths of the encrypted files:
 
@@ -9939,7 +9939,7 @@ The private secrets input simply exposes the paths of the encrypted files:
   }
 #+end_src
 
-The demo replacement exposes plaintext example files instead and sets =isDemo=, which also disables the cross-host globals aggregation (which would otherwise pull in every host's encrypted local secrets):
+The demo replacement exposes plain text example files instead and sets =isDemo=, which also disables the cross-host globals aggregation (which would otherwise pull in every host's encrypted local secrets):
 
 #+begin_src nix-ts :tangle files/demo/flake.nix
   {
@@ -10214,11 +10214,11 @@ This section of code allows different =nixosConfigurations= (i.e. hosts) to "sen
 An example:
 
 [[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]] provides a service and loads a module. In that module I can then also define:
-  - nginx config for the internal proxy [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][hintbooth-nginx]]
-  - nginx config for the external proxy [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]]
-  - dns records to be published by [[#h:1888ded8-69dc-431f-bb39-5089a8e8b1f4][Stoicclub (OCI)]]
+  - NGINX config for the internal proxy [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][hintbooth-nginx]]
+  - NGINX config for the external proxy [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]]
+  - DNS records to be published by [[#h:1888ded8-69dc-431f-bb39-5089a8e8b1f4][Stoicclub (OCI)]]
 
-Note that not all configuration can be sent by default, rather it has bo be defined in =forwardedOptions= below (otherwise we get an infinite recursion error). For options that do not take a submodule as argument, we need to define every last option we set by hand - see for example the =services.firezone.gateway= options below, where we redefine =[ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]=.
+Note that not all configuration can be sent by default, rather it has to be defined in =forwardedOptions= below (otherwise we get an infinite recursion error). For options that do not take a submodule as argument, we need to define every last option we set by hand - see for example the =services.firezone.gateway= options below, where we redefine =[ "enable" "name" "apiUrl" "tokenFile" "package" "logLevel" ]=.
 
 #+begin_src nix-ts :tangle modules/common/nodes.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
@@ -10959,8 +10959,8 @@ A breakdown of the flags being set:
   - bash-prompt-prefix: adds a prefix to shells spawned by =nix develop=
   - [min,max]-free: amounts of space where intermittent GC will be run during builds
   - flake registry: URI of the global flake registry (I disable it)
-  - auto-optimise-store: create hardlinks in the nix store to save space
-  - warn-dirty: I do not need to see the warning when I have uncommited changes
+  - auto-optimize-store: create hardlinks in the nix store to save space
+  - warn-dirty: I do not need to see the warning when I have uncommitted changes
   - max-jobs: How many build jobs should be run in parallel. =auto= sets this to the number of CPUs (which is all) - on systems with many cores this can lead to OOM situations. The default is now =1=, but used to be =auto=, I set this manually just to be safe in the future.
   - use-cgroups: Actually run builds within cgroups
   - netrc-file: sets the netrc file that is used to authenticate to remote machines (used during e.g. nix build) - this is needed for my attic cache
@@ -11358,7 +11358,7 @@ A breakdown of the flags being set:
 :CUSTOM_ID: h:7f6d6908-4d02-4907-9c70-f802f4358520
 :END:
 
-We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = self= line (=inherit ...=). This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
+We enable the use of =home-manager= as a NixOS module. A nice trick here is the =extraSpecialArgs = self= line (=inherit ...=). This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/common/home-manager.nix
   {
@@ -11551,13 +11551,13 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
   }
 #+end_src
 
-**** Variables (vars; holds firefox & stylix config parts)
+**** Variables (vars; holds Firefox & stylix config parts)
 :PROPERTIES:
 :CUSTOM_ID: h:ea362c55-97b4-45fd-bf41-ab461c444212
 :END:
 
 At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
-Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably.
+Set in Firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably.
 
 For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
 
@@ -12336,7 +12336,7 @@ In short, the options defined here are passed to the modules systems using =_mod
 :CUSTOM_ID: h:7248f338-8cad-4443-9060-deae7955b26f
 :END:
 
-Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
+Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyway.
 
 #+begin_src nix-ts :tangle modules/common/xserver.nix
   {
@@ -12358,7 +12358,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 :CUSTOM_ID: h:852d59ab-63c3-4831-993d-b5e23b877796
 :END:
 
-Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
+Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OSes. We fix that bug here as well.
 
 #+begin_src nix-ts :tangle modules/common/time.nix
   {
@@ -12401,7 +12401,7 @@ Two modes of operation are supported:
 
 Both cases should return the proper values - in the second case the parent set must be passed to the inherit under =options.repo.secrets=.
 
-In general, there are three types of pii file:
+In general, there are three types of PII file:
 - Per-node secrets: found under the nodes =secretDir= as =pii.nix.enc= (exposed as =config.repo.secrets.local=)
 - Common secrets: found in =secrets/repo/pii.nix.enc= (exposed as =config.repo.secrets.common=)
   - if those use =globals= as in input argument, it needs to have ={ }= as an input argument as we cannot pass it to the global evaluator.
@@ -12411,9 +12411,9 @@ In general, there are three types of pii file:
 This system, while highly pleasant to work with during everyday use, sometimes has quirks:
 - =nixos-rebuild= cannot be used
   - this is because we need to call =nix build= in a separate step where [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]] will be cached. Once we have a finished build we can switch to that (all of this is handled by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]])
-  - this is a bit cumbersome for hosts that are not supported by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]] (currently this is mostly home-manager only configurations). In principal, building their config locally should work without issue, however, sometimes the decrypt step hiccups. In that case I usually resort to scp'ing the decrypted secrets to the host in question using [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]]'s =just secrets= command. After that, the secrets in =/var/tmp/nix-import-encrypted= need to be moved to the correct dir depending on the build user uid (0/root or 1000/swarsel). After that I delete the cached secrets again.
+  - this is a bit cumbersome for hosts that are not supported by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]] (currently this is mostly home-manager only configurations). In principal, building their config locally should work without issue, however, sometimes the decrypt step hiccups. In that case I usually resort to scp'ing the decrypted secrets to the host in question using [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]]'s =just secrets= command. After that, the secrets in =/var/tmp/nix-import-encrypted= need to be moved to the correct dir depending on the build user UID (0/root or 1000/swarsel). After that I delete the cached secrets again.
 - the used nix version needs to be kept in sync with the version of nix that nix-plugins is compiled against
-  - currently, this mostly poses an issue when provisioning new hosts - the version of nixos-anywhere that I am using uses nix =2.28.x=, so I wrote a dedicated [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks)]] (called =deploy=) that is used to set this environment up. This devshell is automatically used by the [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]] command =just bootstrap=.
+  - currently, this mostly poses an issue when provisioning new hosts - the version of NixOS-anywhere that I am using uses nix =2.28.x=, so I wrote a dedicated [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks)]] (called =deploy=) that is used to set this environment up. This devshell is automatically used by the [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]] command =just bootstrap=.
 
 #+begin_src nix-ts :tangle modules/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
@@ -12762,7 +12762,7 @@ lspci -k -d 14c3:0616
 
 A little note about the secrets part:
 
-systemd-initrd provides a lightweight SSH server in form of dropbear - in order to not crash we need to have a hostkey ready in the initrd. I achieve this by generating a hostkey in the build process in casy I am doing an initial install (another way - and safer - would be to push that in [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] I guess) - this results in the hostkey landing in the nix store. However, I only ever spend like 5 minutes in this state before I rebuild to the full system, where this hostkey is no longer used. This is because upon first activation, we will then run another =ssh-keygen= that will then write to persisted storage. All "unlock" SSH hosts are to be reached over port 2222, and =systemctl default= will be run immediately upon login, which will guide towards attaining a working system (in normal operation, it will simply ask for the password).
+systemd-initrd provides a lightweight SSH server in form of dropbear - in order to not crash we need to have a hostkey ready in the initrd. I achieve this by generating a hostkey in the build process in case I am doing an initial install (another way - and safer - would be to push that in [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] I guess) - this results in the hostkey landing in the nix store. However, I only ever spend like 5 minutes in this state before I rebuild to the full system, where this hostkey is no longer used. This is because upon first activation, we will then run another =ssh-keygen= that will then write to persisted storage. All "unlock" SSH hosts are to be reached over port 2222, and =systemctl default= will be run immediately upon login, which will guide towards attaining a working system (in normal operation, it will simply ask for the password).
 
 I also take some precautions in how I get networking information during stage 1. For the most part, I just use [[#h:12370671-7892-4a74-a804-84f871acde06][systemd-networkd (server)]], however, for hosts in my local network, I take another step to define the network in the =kernelParams=, to make extra sure I can reach it.
 
@@ -12852,7 +12852,7 @@ I also take some precautions in how I get networking information during stage 1.
   }
 #+end_src
 
-**** dns
+**** DNS
 :PROPERTIES:
 :CUSTOM_ID: h:20bae48f-dbbf-4b8d-9a6a-f174a0bf95b8
 :END:
@@ -13471,7 +13471,7 @@ This literally just adds the btrfs parameters.
 :CUSTOM_ID: h:a1311b07-2a8d-4c1f-addc-8572fc184e0d
 :END:
 
-Here I set some general boot options, mostly enabling an emergency shell and some extra tools that would normally not be available in stage 1. Also I reduce the bootloaders default timeout because I do not really need that anymore ever since I have stopped to use specialisations.
+Here I set some general boot options, mostly enabling an emergency shell and some extra tools that would normally not be available in stage 1. Also I reduce the bootloaders default timeout because I do not really need that anymore ever since I have stopped to use specializations.
 
 #+begin_src nix-ts :tangle modules/common/boot.nix
   {
@@ -13626,7 +13626,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
 :END:
 
-I use sops-nix to handle secrets that I want to have available on my machines at all times. For some reason validateSopsFiles needs to be turned off, probably because my age keys are not real age keys but just the host ssh keys being read in by =ssh-go-age=. The default sopsfile is the one that is available to all systems - if the secret in question is not in that file, we need to override =sopsFile= in the respective secret.
+I use sops-nix to handle secrets that I want to have available on my machines at all times. For some reason validateSopsFiles needs to be turned off, probably because my age keys are not real age keys but just the host ssh keys being read in by =ssh-go-age=. The default sopsFile is the one that is available to all systems - if the secret in question is not in that file, we need to override =sopsFile= in the respective secret.
 
 Do note that we have to account for impermanent file systems here, otherwise system activation will fail because the secret files cannot be found.
 
@@ -13812,7 +13812,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 :CUSTOM_ID: h:13ea6bdd-2f35-4ab8-8f6d-ae77b567ebc5
 :END:
 
-This is the main declarative nftables configuration that I run on all servers. It basically just makes sure that the rules remain in place even when nfables stops and that the =networking.allowed*Port[...]= options work on the untrusted zone.
+This is the main declarative nftables configuration that I run on all servers. It basically just makes sure that the rules remain in place even when nftables stops and that the =networking.allowed*Port[...]= options work on the untrusted zone.
 
 #+begin_src nix-ts :tangle modules/common/nftables.nix
   {
@@ -13905,7 +13905,7 @@ This is the main declarative nftables configuration that I run on all servers. I
 :CUSTOM_ID: h:2ae284ba-423e-4181-9447-a45ff7187591
 :END:
 
-When using microvms, I opted to use ZFS with it, and mount datasets into the microvms. That however means that we need to make sure that userids stay consistent between microvm reboots. This could be done by persisting =/var/lib/nixos=, but even then it would not be guaranteed that all UIDs/GIDs match up with the hypervising host, which would not be a big problem, but I like to keep it consistent anyways.
+When using MicroVMs, I opted to use ZFS with it, and mount datasets into the MicroVMs. That however means that we need to make sure that userids stay consistent between MicroVM reboots. This could be done by persisting =/var/lib/nixos=, but even then it would not be guaranteed that all UIDs/GIDs match up with the hypervising host, which would not be a big problem, but I like to keep it consistent anyway.
 
 With this, evaluation will fail if there are any users/groups that are not declaratively managed.
 
@@ -14133,9 +14133,9 @@ With this, evaluation will fail if there are any users/groups that are not decla
 :CUSTOM_ID: h:90af1862-90b3-4c93-8730-2443bc62986a
 :END:
 
-This integrates nixGL into home-manager. NixGL provies OpenGL and Vulkan APIs to nix installed utilities. This is needed for graphical applications on non-NixOS systems.
+This integrates nixGL into home-manager. NixGL provides OpenGL and Vulkan APIs to nix installed utilities. This is needed for graphical applications on non-NixOS systems.
 
-to get the info for the secondary gpu, use `lspci -nn | grep VGA`
+to get the info for the secondary GPU, use `lspci -nn | grep VGA`
 It can be set to either:
   - a number, selecting the n-th non-default GPU
   - a PCI bus id in the form =pci-XXX_YY_ZZ_U=
@@ -14469,10 +14469,10 @@ Some programs lack a dmenu launcher - I define them myself here.
 
 This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
 
-As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
+As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the Wayland related variables are stored.
 
 Also, we link some files to the users XDG configuration home:
-Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
+Also in Firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
 
 #+begin_src nix-ts :tangle modules/client/system/symlink.nix
   {
@@ -14699,7 +14699,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 :CUSTOM_ID: h:419675ec-3310-438e-80ae-9eaa798a319d
 :END:
 
-Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
+Here I set up my git config, automatic signing of commits, useful aliases for my most used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix-ts :tangle modules/client/programs/git.nix
   {
@@ -14811,7 +14811,7 @@ Here I only need to set basic layout options - the rest is being managed by styl
 :CUSTOM_ID: h:55212502-c8f6-43af-ae99-55c8377ef34e
 :END:
 
-Starship makes my =zsh= look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
+Starship makes my =zsh= look cooler! I have symbols for most programming languages and tool chains, also I build my own powerline.
 
 #+begin_src nix-ts :tangle modules/client/programs/starship.nix
   {
@@ -15305,7 +15305,7 @@ Currently I only use it as before with =initExtra= though.
       };
   }
 #+end_src
-***** Keybinds
+***** Keybindings
 :PROPERTIES:
 :CUSTOM_ID: h:f65f9574-3b50-472d-8e24-2023271d1887
 :END:
@@ -16920,11 +16920,11 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
 :CUSTOM_ID: h:0bf51f63-01c0-4053-a591-7f0c5697c690
 :END:
 
-Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
+Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `CPU` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
 
-This section is mostly used to deliver the correct information to Waybar. AMD systems have changing hwmon paths that can be specifically set here. Also the cpu count can be set here for Waybars cpu module, but 8 is usually a good setting to show
+This section is mostly used to deliver the correct information to Waybar. AMD systems have changing hwmon paths that can be specifically set here. Also the CPU count can be set here for Waybar's CPU module, but 8 is usually a good setting to show
 
-These are explicit waybar options. Laptops do not need the battery module. However, this leads to a slight problem with theming: my waybar modules alternate their background-color between black and grey. The battery module is usually on grey background. If I were to simply delete that, I would now have two modules on black background. To avoid this, I define a pseudo-module =custom/pseudobat= that simply shows a static image and calls =wlogout= on right click. This wastes a little bit of screen space, but that is a price I am willing to pay for consistency.
+These are explicit Waybar options. Laptops do not need the battery module. However, this leads to a slight problem with theming: my Waybar modules alternate their background-color between black and gray. The battery module is usually on gray background. If I were to simply delete that, I would now have two modules on black background. To avoid this, I define a pseudo-module =custom/pseudobat= that simply shows a static image and calls =wlogout= on right click. This wastes a little bit of screen space, but that is a price I am willing to pay for consistency.
 
 The rest of the related configuration is found here:
 - [[#h:0bf51f63-01c0-4053-a591-7f0c5697c690][Waybar]]
@@ -17305,15 +17305,15 @@ The rest of the related configuration is found here:
 :CUSTOM_ID: h:fbec0bd4-690b-4f79-8b2b-a40263760a96
 :END:
 
-Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely =tridactyl= and =browserpass=.
+Setting up Firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely =tridactyl= and =browserpass=.
 
-Also, using NUR with rycee's firefox addons, it is very convenient for me to add firefox addons here that will be automatically installed.
+Also, using NUR with rycee's Firefox addons, it is very convenient for me to add Firefox addons here that will be automatically installed.
 
 Also, I setup some search aliases for functions I often use, such as NixOS options search (=@no=)
 
-I used to build the firefox addon =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
+I used to build the Firefox add-on =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
 
-Userstyle for the Stylus plugin that enables theatre mode on invidious:
+Userstyle for the Stylus plugin that enables theater mode on invidious:
 
 #+begin_src css-ts
   /* ==UserStyle==
@@ -17444,7 +17444,7 @@ Userstyle for the Stylus plugin that enables theatre mode on invidious:
 :END:
 Oh boy, it has been a while since I was THIS excited about a program.
 
-Remember the good times of vimperator and pentadactly? When Firefox increased their security around Web Extensions, those add-ons were practically killed. Still, we had [[#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51][tridactyl]] to make up for some of the lost functionality. However, it never did the same thing in the end, as tridactly could only start working once a page and its frames were fully loaded. This yielded a delay in usage that I always disliked.
+Remember the good times of vimperator and pentadactly? When Firefox increased their security around Web Extensions, those add-ons were practically killed. Still, we had [[#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51][tridactyl]] to make up for some of the lost functionality. However, it never did the same thing in the end, as tridactyl could only start working once a page and its frames were fully loaded. This yielded a delay in usage that I always disliked.
 
 Also, there were other projects like Vieb, conkeror, qutebrowser, and nyxt, but they all faced some sort of problem:
 - Vieb is chromium-based and does not really support extensions
@@ -18408,7 +18408,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
   }
 #+end_src
 
-***** General keybings
+***** General keybindings
 :PROPERTIES:
 :CUSTOM_ID: h:5480c06b-5d3c-41d9-a520-fab64a589268
 :END:
@@ -18685,7 +18685,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
   }
 #+end_src
 
-***** Toolbar autohide and states
+***** Toolbar auto-hide and states
 :PROPERTIES:
 :CUSTOM_ID: h:9b17115e-2af0-46be-8b41-14355cf8e19b
 :END:
@@ -19145,7 +19145,7 @@ Normally, I want to push all nix build artifacts to my main cache automatically,
 
 Desktop notifications!
 
-The `extraConfig` section here CANNOT be reindented. This has something to do with how nix handles multiline strings, when indented Mako will fail to start. This might be a mako bug as well.
+The `extraConfig` section here CANNOT be reindented. This has something to do with how nix handles multi-line strings, when indented Mako will fail to start. This might be a Mako bug as well.
 
 #+begin_src nix-ts :tangle modules/client/system/mako.nix
   {
@@ -19937,7 +19937,7 @@ Nowadays, all of the Sway stack is kept as a reference.
 :CUSTOM_ID: h:7d384e3b-1be7-4644-b304-ada4af0b692b
 :END:
 
-Settings that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
+Settings that are needed for the GPG-agent. Also we are enabling Emacs support for unlocking my Yubikey here.
 
 In recent times, I often need support for SK keys (on HSKs) as well as certificate based login using step CA. Both of these are not present in gpg-agent, which is why in the new setup I run on ssh-agent per default, and only use gpg-agents' ssh login for hosts that need it. Interestingly, the other way around (which I would prefer) does not seem to work.
 
@@ -20165,7 +20165,7 @@ When setting up a new machine:
 :CUSTOM_ID: h:74e236be-a977-4d38-b8c5-0b9feef8af91
 :END:
 
-This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
+This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyway.
 
 #+begin_src nix-ts :tangle modules/client/system/gammastep.nix
   {
@@ -21110,7 +21110,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 :CUSTOM_ID: h:f4006367-0965-4b4f-a3b0-45f63b07d2b8
 :END:
 
-Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
+Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on Wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
 
 #+begin_src nix-ts :tangle modules/client/system/env.nix
   {
@@ -22179,7 +22179,7 @@ This is a super-convenient configuration bit that lets my remap my =CAPS= key to
 :CUSTOM_ID: h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b
 :END:
 
-This is an unused service that can also be used to remap keybinds. I tried to use this in the past to implement the self-hiding topbar that I know from [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] in [[#h:58162d08-3ded-441d-861e-2ebf30e32538][Niri]]. That did not work. Still, it cannot hurt to keep this reference in here.
+This is an unused service that can also be used to remap keybindings. I tried to use this in the past to implement the self-hiding top bar that I know from [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] in [[#h:58162d08-3ded-441d-861e-2ebf30e32538][Niri]]. That did not work. Still, it cannot hurt to keep this reference in here.
 
 #+begin_src nix-ts :tangle modules/client/system/keyd.nix
   {
@@ -22555,7 +22555,7 @@ This loads some udev rules that I need for my split keyboards.
 :CUSTOM_ID: h:eae45839-223a-4027-bce3-e26e092c9096
 :END:
 
-This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway/niri on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there.n
+This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway/Niri on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there.n
 
 #+begin_src nix-ts :tangle modules/client/system/login.nix
   {
@@ -22724,7 +22724,7 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
   }
 #+end_src
 
-**** Summary of nixos-rebuild diff
+**** Summary of NixOS-rebuild diff
 :PROPERTIES:
 :CUSTOM_ID: h:b751d77d-246c-4bd6-b689-3467d82bf9c3
 :END:
@@ -22795,9 +22795,9 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 :CUSTOM_ID: h:872d5f46-2ffd-4076-9a2c-98783dd29434
 :END:
 
-This allows me to use screen sharing on Wayland when using [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]]. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
+This allows me to use screen sharing on Wayland when using [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]]. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyway.
 
-Nowadays, I only need to enable portals in general for use with [[#h:58162d08-3ded-441d-861e-2ebf30e32538][Niri]], which implements screensharing using gnome-portal (which allows for neat things like hiding shared windows based on =app_id=).
+Nowadays, I only need to enable portals in general for use with [[#h:58162d08-3ded-441d-861e-2ebf30e32538][Niri]], which implements Screensharing using gnome-portal (which allows for neat things like hiding shared windows based on =app_id=).
 
 #+begin_src nix-ts :tangle modules/client/system/xdg-portal.nix
   {
@@ -22827,7 +22827,7 @@ Nowadays, I only need to enable portals in general for use with [[#h:58162d08-3d
 :CUSTOM_ID: h:1bef3914-a258-4585-b232-e0fbe9e7a9b5
 :END:
 
-I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS (which has not happened in a while, but you never know). It is always the goal to quickly get things working on NixOS, but this should usually prevent me from getting completely stuck.
+I am using distrobox to quickly circumvent issues that I cannot immediately solve on NixOS (which has not happened in a while, but you never know). It is always the goal to quickly get things working on NixOS, but this should usually prevent me from getting completely stuck.
 
 #+begin_src nix-ts :tangle modules/client/system/distrobox.nix
   {
@@ -22851,11 +22851,11 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
   }
 #+end_src
 
-**** Appimage
+**** AppImage
 :PROPERTIES:
 :CUSTOM_ID: h:cfc22f8d-251e-4636-98d6-a43cdb112b68
 :END:
-Adds the necessary tools to allow .appimage programs handling easily.
+Adds the necessary tools to allow .AppImage programs handling easily.
 
 #+begin_src nix-ts :tangle modules/client/system/appimage.nix
   {
@@ -22877,7 +22877,7 @@ Adds the necessary tools to allow .appimage programs handling easily.
 
 This turns off the display when the lid is closed. When we are docked it just turns it off, when using the laptop standalone it instead sends it to suspend.
 
-Notably we also make sure to handle the fingerprint sensor especially, because it can misfire or stop working on wakeup otherwise.
+Notably we also make sure to handle the fingerprint sensor especially, because it can misfire or stop working on wake-up otherwise.
 
 #+begin_src nix-ts :tangle modules/client/system/lid.nix
   {
@@ -22924,7 +22924,7 @@ Notably we also make sure to handle the fingerprint sensor especially, because i
 :CUSTOM_ID: h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17
 :END:
 
-Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
+Since I hide the Waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
 
 Nowadays, I have replaced this with [[#h:96e05275-38df-401b-8809-d45d8f59e43c][Noctalia-shell]].
 
@@ -22993,7 +22993,7 @@ Auto login for the initial session. This basically skips the [[#h:eae45839-223a-
 :CUSTOM_ID: h:74f5961d-2881-4a42-b99f-94c8f70c8196
 :END:
 
-UWSM is a helper tool meant to help with chaining systemd services correctly. When starting/ending sessions using it, we can be sure that the corresponding services also start and end with it - this is not standard behaviour!
+UWSM is a helper tool meant to help with chaining systemd services correctly. When starting/ending sessions using it, we can be sure that the corresponding services also start and end with it - this is not standard behavior!
 
 #+begin_src nix-ts :tangle modules/client/system/uwsm.nix
   {
@@ -24651,7 +24651,7 @@ When setting up a new machine:
 :CUSTOM_ID: h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6
 :END:
 
-The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
+The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different Firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 When setting up a new machine:
 
@@ -25706,7 +25706,7 @@ This holds configuration that is specific to framework laptops.
 :CUSTOM_ID: h:5c41c4ee-22ca-405b-9e4f-cc4051634edd
 :END:
 
-This smashes Atmosphère 1.3.2 on the switch, which is what I am currenty using.
+This smashes Atmosphère 1.3.2 on the switch, which is what I am currently using.
 
 #+begin_src nix-ts :tangle modules/client/system/nswitch-rcm.nix
   {
@@ -25737,7 +25737,7 @@ This smashes Atmosphère 1.3.2 on the switch, which is what I am currenty using.
 :CUSTOM_ID: h:b3523246-14e9-4284-ba22-cebc5ca36732
 :END:
 
-This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow. I only use this privately to run an old editor that does not run well under wine, so I put it into it's own specialisation.
+This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow. I only use this privately to run an old editor that does not run well under wine, so I put it into it's own specialization.
 
 #+begin_src nix-ts :tangle modules/client/system/virtualbox.nix
   {
@@ -25866,7 +25866,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:6f2967d9-7e32-4605-bb5c-5e27770bec0f
 :END:
 
-This is a collection of packages that are useful for server-type hosts that do not really fit into other modules; the optional part of the list is for packages that are built as part of [[#h:c01a91b8-b751-4978-b987-733de63c8211][Packages (config)]]; systems that are not built with home-manager will not be able to pass the required parameters to build these packages, hence we cannot build them here. This mostly applies to microvms.
+This is a collection of packages that are useful for server-type hosts that do not really fit into other modules; the optional part of the list is for packages that are built as part of [[#h:c01a91b8-b751-4978-b987-733de63c8211][Packages (config)]]; systems that are not built with home-manager will not be able to pass the required parameters to build these packages, hence we cannot build them here. This mostly applies to MicroVMs.
 
 #+begin_src nix-ts :tangle modules/server/infra/packages.nix
   {
@@ -25908,12 +25908,12 @@ This is a collection of packages that are useful for server-type hosts that do n
   }
 #+end_src
 
-**** microvm-host
+**** MicroVM-host
 :PROPERTIES:
 :CUSTOM_ID: h:ded3276e-3e97-4863-a29e-b978d8aae1c9
 :END:
 
-There is only one thing of interest here; by default, my setup (where microvms use macvtaps on a certain vlan) creates a race condition between the setting up of said vlan devices and the bringing up of the macvtap interface of the microvm in systemd. Hence, the most important snippet here is fixing that ordering.
+There is only one thing of interest here; by default, my setup (where MicroVMs use macvtaps on a certain vlan) creates a race condition between the setting up of said vlan devices and the bringing up of the macvtap interface of the MicroVM in systemd. Hence, the most important snippet here is fixing that ordering.
 
 #+begin_src nix-ts :tangle modules/server/infra/microvm-host.nix
   {
@@ -25954,12 +25954,12 @@ There is only one thing of interest here; by default, my setup (where microvms u
   }
 #+end_src
 
-**** microvm-guest
+**** MicroVM-guest
 :PROPERTIES:
 :CUSTOM_ID: h:46419b40-c40b-4b55-ac6f-a30169322bd6
 :END:
 
-Some standard options that should be set for every microvm guest. We set the default
+Some standard options that should be set for every MicroVM guest. We set the default
 
 #+begin_src nix-ts :tangle modules/server/infra/microvm-guest.nix
   {
@@ -26030,11 +26030,11 @@ Some standard options that should be set for every microvm guest. We set the def
   }
 #+end_src
 
-**** microvm-guest-shares
+**** MicroVM-guest-shares
 :PROPERTIES:
 :CUSTOM_ID: h:1ba0d688-e20c-418f-bb73-6c73662e20e9
 :END:
-Some standard options that should be set for every microvm guest. We set the default
+Some standard options that should be set for every MicroVM guest. We set the default
 
 #+begin_src nix-ts :tangle modules/server/infra/microvm-guest-shares.nix
   {
@@ -26163,7 +26163,7 @@ This set of options enables the network of the system to be managed by =systemd-
 :CUSTOM_ID: h:12370671-7892-4a74-a804-84f871acde06
 :END:
 
-Some standard options that should be set vor every microvm guest. We set the default
+Some standard options that should be set for every MicroVM guest. We set the default
 
 #+begin_src nix-ts :tangle modules/server/infra/systemd-networkd-server.nix
   {
@@ -26239,15 +26239,15 @@ Some standard options that should be set vor every microvm guest. We set the def
 
 This sets up the networking framework that is needed for a server that manages its VLAN interfaces using =systemd-networkd=. A host that is not both in the home network and using VLANs should rather be using [[#h:12370671-7892-4a74-a804-84f871acde06][systemd-networkd (server base)]] only.
 
-We will differentiate between a host that uses microvms versus a host that is not using them.
+We will differentiate between a host that uses MicroVMs versus a host that is not using them.
 
-For a host with microvms the general idea is as follows:
-- For each local VLAN we create a VLAN here - we also create a macvlan interface for the hosts which is bound to the respective VLAN interface; also binding to that VLAN interface are the macvtap devices that are being created by the microvm module.
+For a host with MicroVMs the general idea is as follows:
+- For each local VLAN we create a VLAN here - we also create a macvlan interface for the hosts which is bound to the respective VLAN interface; also binding to that VLAN interface are the macvtap devices that are being created by the MicroVM module.
   - normally, a guest using macvtap is not reachable by the host unless using a switch that supports hairpin-mode. However, consumers of the same VLAN can still communicate, which is realized using the macvlan =me-*= interface.
   - even then, the kernel will only route requests when the underlying interface is up. In the case that no physical ports are used, this means that the bridge interface would effectively not work (even when administratively set to UP using =activationPolicy=) - the aforementioned =veth= takes care of that problem.
-    - this is really only a consideration for the [[#h:b54f2bbb-0088-46b2-957d-fd8234b772c3][Router]] (because if the interface to the router is missing on the hosts, there will be no connectivity anyways) and is hence implemented there
+    - this is really only a consideration for the [[#h:b54f2bbb-0088-46b2-957d-fd8234b772c3][Router]] (because if the interface to the router is missing on the hosts, there will be no connectivity anyway) and is hence implemented there
 
-The principle is the same for a host without microvms, but we do not need the local =me-*= interfaces and can ignore =macvtap= config.
+The principle is the same for a host without MicroVMs, but we do not need the local =me-*= interfaces and can ignore =macvtap= config.
 
 A VLAN can also be used as the initrd network - this is however disabled for the router host. For that host, we need to connect from the =FritzBox!= side in case we need to reboot it - this also acts as a safety net.
 
@@ -26610,7 +26610,7 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
 :CUSTOM_ID: h:302468d2-106a-41c8-b2bc-9fdc40064a9c
 :END:
 
-This is the general NGINX config usind on [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]] and the [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][Nginx]] guest on [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]. The virtualhosts themselves are declared in the respective service modules.
+This is the general NGINX config using on [[#h:19300583-322b-4e0b-b657-857fbf23dfa1][Twothreetunnel (OCI)]] and the [[#h:90dc7f71-f9da-49ef-b273-edfab7daaa05][Nginx]] guest on [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hintbooth (Router: HUNSN RM02)]]. The virtual hosts themselves are declared in the respective service modules.
 
 #+begin_src nix-ts :tangle modules/server/infra/nginx.nix
   {
@@ -26988,7 +26988,7 @@ This section is mainly used to populate entries in =globals.networks= with the i
 :CUSTOM_ID: h:046d3d66-1f13-4a41-a6b7-7ed76f863773
 :END:
 
-By default, attic only provides a cli client to authenticate to caches. I want all my servers to use my main binary cache, which is what I set up here.
+By default, attic only provides a CLI client to authenticate to caches. I want all my servers to use my main binary cache, which is what I set up here.
 
 #+begin_src nix-ts :tangle modules/server/infra/attic-setup.nix
   {
@@ -27093,17 +27093,17 @@ By default, attic only provides a cli client to authenticate to caches. I want a
 :CUSTOM_ID: h:8cf0018d-00ba-4616-87d9-f91c614face9
 :END:
 
-I use wireguard for two things:
+I use Wireguard for two things:
 - proxying of my services (both internal and external) to my proxy node
 - proxying of my internal services to an internal [[#h:302468d2-106a-41c8-b2bc-9fdc40064a9c][NGINX]] in order to save on bandwidth
 
-At current, this means that I am running two wireguard interfaces - the following configuration allows me to define an arbitrary number of wireguard interfaces that each host can be part of (either as "client" or "server"). All of these connections are really point-to-point. On the client side, I set =persistentKeepalive= unconditionally, which is lazy (and a bit of a security issue).
+At current, this means that I am running two Wireguard interfaces - the following configuration allows me to define an arbitrary number of Wireguard interfaces that each host can be part of (either as "client" or "server"). All of these connections are really point-to-point. On the client side, I set =persistentKeepalive= unconditionally, which is lazy (and a bit of a security issue).
 
-In order to define a new wireguard interface, I have to:
+In order to define a new Wireguard interface, I have to:
 
 - add another <nodeName>-<wgInterfaceName> network to globals
   - add its members under hosts
-  - add the =wgInterfaceName= together with id to the server nodes local pii
+  - add the =wgInterfaceName= together with id to the server nodes local PII
   - make sure all members have their private keys in their secrets file and their public key under =secrets/public/wg=
   - make sure that all preshared keys exist in =secrets/repo/wg.yaml=
 
@@ -27455,23 +27455,23 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   - six LAN ports, five of which are bridged
     - lan1–lan5 are enslaved into said bridge and behave as a single VLAN‑aware switch
       - all VLANs are defined under =globals.networks.home-lan.vlans=
-      - for each VLAN, a routed interface me-${vlanName} is created on the router (NOTE: this interface also serves as the communication link to the local microvms - the respective extra interfaces are defined in [[#h:049fc27e-a28f-4ff0-b5f0-d81401bdd56f][systemd-networkd (server home)]])
+      - for each VLAN, a routed interface me-${vlanName} is created on the router (NOTE: this interface also serves as the communication link to the local MicroVMs - the respective extra interfaces are defined in [[#h:049fc27e-a28f-4ff0-b5f0-d81401bdd56f][systemd-networkd (server home)]])
       - RA and forwarding are enabled on these me-* interfaces so the router advertises vlanCfg.cidrv6 and routes between VLANs / WAN / WireGuard
     - the sixth LAN port is used as the WAN / untrusted uplink to the =Fritz!Box=
     - the mapping from MAC addresses to interfaces is defined in =config.repo.secrets.local.networking.networks.<ifName>.mac= (and performed in [[#h:99bf6c0e-2566-4a50-b219-fb6a7d4fb2cd][systemd-networkd (base)]] using =renameInterfacesByMac=)
-  - connectivity to microvms should not be lost in case there is no cable connected to the router
+  - connectivity to MicroVMs should not be lost in case there is no cable connected to the router
       - this is achieved by connecting the veth interface pair veth-br / veth-int
       - veth-br is part of the bridge and carries all VLANs tagged, as if it were another physical switch port
-      - veth-int stays on the host side and is used as the internal attachment point for microvms / guests
+      - veth-int stays on the host side and is used as the internal attachment point for MicroVMs / guests
       - ConfigureWithoutCarrier and ActivationPolicy = "always-up" are used so that the bridge and veth side stay UP; this however does not guarantee connectivity by itself as the kernel will not route packets if the underlying interface is not up (see also [[#h:049fc27e-a28f-4ff0-b5f0-d81401bdd56f][systemd-networkd (server home)]])
     - nftables firewall is derived from the same VLAN definitions:
         - a zone =vlan-*= is created for each VLAN and bound to =me-*=, as well as zones for WAN, WG, and DNS
-        - all internal =vlan-*= zones are allowed to go to untrusted; NAT is implemented via a custom postrouting chain that masquerades both IPv4 and IPv6 traffic
+        - all internal =vlan-*= zones are allowed to go to untrusted; NAT is implemented via a custom post-routing chain that masquerades both IPv4 and IPv6 traffic
         - any VLAN with internet access is allowed to reach AdGuardHome for DNS (access-adguardhome-dns)
-          - this is important so that we can make use of the internal nginx instance to prevent bottlenecks over the web proxy
+          - this is important so that we can make use of the internal NGINX instance to prevent bottlenecks over the web proxy
         - policy between internal networks:
           - the home VLAN is allowed to access the services and devices VLANs
-          - the services VLAN is allowed to reach selected ports on local (currently wireguard)
+          - the services VLAN is allowed to reach selected ports on local (currently Wireguard)
           - WireGuard peers in wgHome are allowed to talk to each other (wgHome → wgHome)
     - global IPv4/IPv6 forwarding is enabled via boot.kernel.sysctl so this host acts as the main router between all VLANs, the WireGuard network, and the WAN (untrusted)
 
@@ -27801,12 +27801,12 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
   }
 #+end_src
 
-**** kavita
+**** Kavita
 :PROPERTIES:
 :CUSTOM_ID: h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295
 :END:
 
-Kavita is the service I use for my library management. It seems more tailored towards comics/graphic novels, but still I prefer its interface to what calibre offers.
+Kavita is the service I use for my library management. It seems more tailored towards comics/graphic novels, but still I prefer its interface to what Calibre offers.
 
 #+begin_src nix-ts :tangle modules/server/services/kavita.nix
   {
@@ -27967,7 +27967,7 @@ Kavita is the service I use for my library management. It seems more tailored to
 :CUSTOM_ID: h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b
 :END:
 
-My video streaming service of choice. In the past I used plex, but I prefer using jellyfin now, which looks more clean (and is not payment incentivised).
+My video streaming service of choice. In the past I used Plex, but I prefer using Jellyfin now, which looks more clean (and is not payment incentivized).
 
 Using the SSO Plugin is sadly not declarative:
 1) Login as admin
@@ -28162,12 +28162,12 @@ Using the SSO Plugin is sadly not declarative:
   }
 #+end_src
 
-**** navidrome
+**** Navidrome
 :PROPERTIES:
 :CUSTOM_ID: h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72
 :END:
 
-My music streaming service. In the past I used subsonic and gonic, but I prefer the tag based management.
+My music streaming service. In the past I used subsonic and Gonic, but I prefer the tag based management.
 
 After the first login when setting up, you need to add a password to the user that is created using OIDC. This is so that login using DSub2 becomes possible.
 
@@ -28417,12 +28417,12 @@ After the first login when setting up, you need to add a password to the user th
   }
 #+end_src
 
-**** spotifyd
+**** Spotifyd
 :PROPERTIES:
 :CUSTOM_ID: h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41
 :END:
 
-Simple config for running spotifyd which allows me to remote play spotify songs on my speakers.
+Simple config for running Spotifyd which allows me to remote play spotify songs on my speakers.
 
 #+begin_src nix-ts :tangle modules/server/services/spotifyd.nix
   {
@@ -28509,7 +28509,7 @@ Simple config for running spotifyd which allows me to remote play spotify songs 
   }
 #+end_src
 
-**** mpd
+**** MPD
 :PROPERTIES:
 :CUSTOM_ID: h:baa4149b-3788-4b05-87ec-0ee9d0726117
 :END:
@@ -28696,12 +28696,12 @@ Needed for audio and stuff.
   }
 #+end_src
 
-**** postgresql
+**** PostgreSQL
 :PROPERTIES:
 :CUSTOM_ID: h:6ca43d5a-8ba6-4cd1-96b9-f088f11662c0
 :END:
 
-Many services require a databasee, and I like to go with full postgres when giving the chance. Each host will usually run its own instance instead of maintaining a centralised one.
+Many services require a database, and I like to go with full postgres when giving the chance. Each host will usually run its own instance instead of maintaining a centralized one.
 
 #+begin_src nix-ts :tangle modules/server/infra/postgresql.nix
   {
@@ -28763,7 +28763,7 @@ Many services require a databasee, and I like to go with full postgres when givi
   }
 #+end_src
 
-**** podman
+**** Podman
 :PROPERTIES:
 :CUSTOM_ID: h:669e1715-7685-4157-8283-a1f8f39212eb
 :END:
@@ -28838,7 +28838,7 @@ Allows me to spin up containers for services that do not provide NixOS options.
 :CUSTOM_ID: h:1e68d84a-8f99-422f-89ac-78f664ac0013
 :END:
 
-My messenger of choice. I use this mainly to bridge messages of whatsapp/telegram/signal into it, which allows me to only use a single app for all of my communication needs.
+My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegram/signal into it, which allows me to only use a single app for all of my communication needs.
 
 #+begin_src nix-ts :tangle modules/server/services/matrix.nix
   {
@@ -29404,18 +29404,18 @@ My messenger of choice. I use this mainly to bridge messages of whatsapp/telegra
   }
 #+end_src
 
-**** nextcloud
+**** Nextcloud
 :PROPERTIES:
 :CUSTOM_ID: h:d11ad8d5-25d7-4691-b319-61c16ccef715
 :END:
 
-My file server. I aim to decomission this as soon as I can, however, I need a replacement for the cospend plugin (a shared expense manager).
+My file server. I aim to decommission this as soon as I can, however, I need a replacement for the Cospend plugin (a shared expense manager).
 
 Social Login (OIDC) setup:
 
 1) login as admin > administration settings
 2) Administration tab: Social login:
-   - Checkboxes:
+   - Check-boxes:
 
 | Setting                                                 | Value |
 |---------------------------------------------------------+-------|
@@ -29641,7 +29641,7 @@ Social Login (OIDC) setup:
   }
 #+end_src
 
-**** immich (use db)
+**** Immich (use db)
 :PROPERTIES:
 :CUSTOM_ID: h:33bad8ad-b362-4bf1-8a49-b9df92329aed
 :END:
@@ -30032,7 +30032,7 @@ My photo service. It does some cool things like face recognition automatically (
   }
 #+end_src
 
-**** paperless (tika, gotenberg)
+**** paperless (Tika, Gotenberg)
 :PROPERTIES:
 :CUSTOM_ID: h:89638fb5-0593-4420-9567-f85f0223e341
 :END:
@@ -31093,7 +31093,7 @@ I use this configuration for sailing.
 :CUSTOM_ID: h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d
 :END:
 
-This is the server syncthings config, which makes sure that the servers nevers override client data. They also store more folders that the clients.
+This is the server syncthings config, which makes sure that the servers never override client data. They also store more folders that the clients.
 
 #+begin_src nix-ts :tangle modules/server/services/syncthing.nix
   {
@@ -31418,7 +31418,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   }
 #+end_src
 
-**** grafana
+**** Grafana
 :PROPERTIES:
 :CUSTOM_ID: h:a31c7192-e11d-4a26-915d-1bbc38e373d3
 :END:
@@ -32007,7 +32007,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   }
 #+end_src
 
-**** gotify
+**** Gotify
 :PROPERTIES:
 :CUSTOM_ID: h:d7c3b89b-59de-4b8e-a183-3332af42cf12
 :END:
@@ -32146,7 +32146,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   }
 #+end_src
 
-**** pyroscope
+**** Pyroscope
 :PROPERTIES:
 :CUSTOM_ID: h:229bed99-631a-404d-b7bf-e946aef92da9
 :END:
@@ -32352,7 +32352,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   }
 #+end_src
 
-**** loki
+**** Loki
 :PROPERTIES:
 :CUSTOM_ID: h:8457dd3f-4da3-4dfc-81bf-538d5acfa236
 :END:
@@ -33155,7 +33155,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   }
 #+end_src
 
-**** mimir
+**** Mimir
 :PROPERTIES:
 :CUSTOM_ID: h:c1cc8647-f81b-4967-972f-d869cf741507
 :END:
@@ -33558,7 +33558,7 @@ This is my Jenkins instance. It is used to automatically build a new system when
 :CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
 :END:
 
-This was an approach of hosting an RSS server from within emacs. That would have been useful as it would have allowed me to allow my feeds from any device. However, it proved impossible to do bidirectional syncing, so I abandoned this configuration in favor of [[#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d][FreshRSS]].
+This was an approach of hosting an RSS server from within Emacs. That would have been useful as it would have allowed me to allow my feeds from any device. However, it proved impossible to do bidirectional syncing, so I abandoned this configuration in favor of [[#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d][FreshRSS]].
 
 #+begin_src nix-ts :tangle modules/server/services/server-emacs.nix
   {
@@ -33609,13 +33609,13 @@ This was an approach of hosting an RSS server from within emacs. That would have
 :CUSTOM_ID: h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d
 :END:
 
-FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct service. This also has its upsides because I jave more control over the state this way.
+FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct service. This also has its upsides because I have more control over the state this way.
 
 It serves both a Greader API at https://${serviceName}/api/greader.php, as well as a Fever API at     https://${serviceName}/api/fever.php.
 
 I am using this with CapyReader on my phone, set it up as a FreshRSS account with Server URL =https://${serviceName}/api/greader.php
 
-FreshRSS claims to support HTTP header auth, but at least it does not work with my oauth2-proxy setup. Until this is fixed, I resorted to the "form" login, since I mostly do not use the web version anyways.
+FreshRSS claims to support HTTP header Auth, but at least it does not work with my oauth2-proxy setup. Until this is fixed, I resorted to the "form" login, since I mostly do not use the web version anyway.
 
 #+begin_src nix-ts :tangle modules/server/services/freshrss.nix
   {
@@ -33808,12 +33808,12 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   }
 #+end_src
 
-**** forgejo (git server)
+**** Forgejo (git server)
 :PROPERTIES:
 :CUSTOM_ID: h:a9965660-4358-4b9a-8c46-d55f28598344
 :END:
 
-My selfhosted git solution.
+My self-hosted git solution.
 
 [[#h:15ee6287-207f-49a5-8bf0-cf66707b892c][Appendix E: Current TODOs]]: federate
 
@@ -34190,12 +34190,12 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
 :CUSTOM_ID: h:ee625136-29ab-4696-919f-7b0d0042f6dd
 :END:
 
-The forgejo configuration is a little broken and will show a 500 error when signing in through kanidm. However, when pressing back and refreshing the page, I am logged in. Currently I cannot be bothered to fix this.
+The Forgejo configuration is a little broken and will show a 500 error when signing in through kanidm. However, when pressing back and refreshing the page, I am logged in. Currently I cannot be bothered to fix this.
 
-A stupid (but simple) way to get the =originUrl= is to simply set any URL there and try to auth using kanidm. Then check the logs (=journalctl -eu kanidm=) and check for the line that says something along the lines of
+A stupid (but simple) way to get the =originUrl= is to simply set any URL there and try to Auth using kanidm. Then check the logs (=journalctl -eu kanidm=) and check for the line that says something along the lines of
   `🚧 [warn]: Invalid OAuth2 redirect_uri (must be an exact match to a redirect-url) - got <your =originURL=>`
 
-To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://<kanidmDomain>/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
+To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://<kanidmDomain>/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clientId being the client name as specified in kanidm.
 
 Create user:
 
@@ -35038,7 +35038,7 @@ My expenses tracker.
 :CUSTOM_ID: h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2
 :END:
 
-My collection tracker. I am not too happy with its GUI, but the API is good, and I mostly use it to check what I have manually anyways.
+My collection tracker. I am not too happy with its GUI, but the API is good, and I mostly use it to check what I have manually anyway.
 
 #+begin_src nix-ts :tangle modules/server/services/koillection.nix
   {
@@ -35256,7 +35256,7 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
 :CUSTOM_ID: h:27eac8b9-c202-4e45-9b80-42592f1e41c8
 :END:
 
-Used to sync shell history accross machines and have it backed up somewhere.
+Used to sync shell history across machines and have it backed up somewhere.
 
 #+begin_src nix-ts :tangle modules/server/services/atuin.nix
   {
@@ -35379,7 +35379,7 @@ Used to sync shell history accross machines and have it backed up somewhere.
 :CUSTOM_ID: h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6
 :END:
 
-Selfhosted calendar and contacts.
+Self-hosted calendar and contacts.
 
 #+begin_src nix-ts :tangle modules/server/services/radicale.nix
   {
@@ -35561,12 +35561,12 @@ Selfhosted calendar and contacts.
   }
 #+end_src
 
-**** croc
+**** Croc
 :PROPERTIES:
 :CUSTOM_ID: h:f922e8d6-f6e8-4779-a7ad-4037229c9bf0
 :END:
 
-P2P filesharing similar to what you might know from wormhole(/-rs), but fully self-hosted.
+P2P file-sharing similar to what you might know from wormhole(/-rs), but fully self-hosted.
 
 #+begin_src nix-ts :tangle modules/server/services/croc.nix
   {
@@ -35665,12 +35665,12 @@ P2P filesharing similar to what you might know from wormhole(/-rs), but fully se
   }
 #+end_src
 
-**** microbin
+**** Microbin
 :PROPERTIES:
 :CUSTOM_ID: h:13071cc3-5cba-44b5-8b5b-2a27be22e021
 :END:
 
-Basically a selfhosted pastebin that also offers syntax highlighting.
+Basically a self-hosted Pastebin that also offers syntax highlighting.
 
 #+begin_src nix-ts :tangle modules/server/services/microbin.nix
   {
@@ -35870,7 +35870,7 @@ Basically a selfhosted pastebin that also offers syntax highlighting.
   }
 #+end_src
 
-**** shlink
+**** Shlink
 :PROPERTIES:
 :CUSTOM_ID: h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c
 :END:
@@ -36058,7 +36058,7 @@ Image sharing service similar to imgur.
 Deployment notes:
   - enable user: =podman exec -it slink slink user:activate --email=<mail>=
   - make user admin: =podman  exec -it slink slink user:grant:role --email=<mail> ROLE_ADMIN=
-  - finally, disable new user registration in web ui
+  - finally, disable new user registration in web UI
 
 #+begin_src nix-ts :tangle modules/server/services/slink.nix
   {
@@ -36363,7 +36363,7 @@ This is an asset management system. However, for my needs it is a bit too convol
 :CUSTOM_ID: h:5b4feb1b-e7a3-43f1-9930-8d00012742ad
 :END:
 
-My asset manager. I use it to track tools, cables and boardgames mostly.
+My asset manager. I use it to track tools, cables and board games mostly.
 
 #+begin_src nix-ts :tangle modules/server/services/homebox.nix
   {
@@ -37241,7 +37241,7 @@ Now, I have a separate setting for this (=nodeRoles=) in which I can define ALL 
   }
 #+end_src
 
-**** nsd (dns)
+**** NSD (dns)
 :PROPERTIES:
 :CUSTOM_ID: h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a
 :END:
@@ -37362,7 +37362,7 @@ This is the setup of my authoritative dns server. This here is the general confi
       };
   }
 #+end_src
-***** nsd (dns) - site1
+***** NSD (dns) - site1
 :PROPERTIES:
 :CUSTOM_ID: h:dc1dbc54-46f7-406d-a551-527e97439614
 :END:
@@ -37506,7 +37506,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
 :CUSTOM_ID: h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6
 :END:
 
-Handles my minecraft server. It runs forge, so the full server is not NixOS managed, but merely the service that starts it (good enough I guess.)
+Handles my Minecraft server. It runs forge, so the full server is not NixOS managed, but merely the service that starts it (good enough I guess.)
 
 #+begin_src nix-ts :tangle modules/server/services/minecraft.nix
   {
@@ -37594,16 +37594,16 @@ Handles my minecraft server. It runs forge, so the full server is not NixOS mana
       };
   }
 #+end_src
-**** Mailserver
+**** Mail server
 :PROPERTIES:
 :CUSTOM_ID: h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2
 :END:
 
-This runs a mailserver using simple-nixos-mailserver.
+This runs a mail server using simple-nixos-mailserver.
 
 When changing the hashed passwords, =dovecot= needs to be restarted manually, it will not happen upon rebuild.
 
-Currently, the web UI for this is a bit wonky and requires reloading the page sometimes in order to show anything (this is because my security settings are too strict - even with the security headers off! - , but I do not have time to look into it) - in any case, I do rather use [[#h:b92a18cf-eec3-4605-a8c2-37133ade3574][mu4e]] along with =pizauth=, with the web UI just being a fallback in case I need to acccess special fringe accounts.
+Currently, the web UI for this is a bit wonky and requires reloading the page sometimes in order to show anything (this is because my security settings are too strict - even with the security headers off! - , but I do not have time to look into it) - in any case, I do rather use [[#h:b92a18cf-eec3-4605-a8c2-37133ade3574][mu4e]] along with =pizauth=, with the web UI just being a fallback in case I need to access special fringe accounts.
 
 #+begin_src nix-ts :tangle modules/server/services/mailserver.nix
   {
@@ -37940,7 +37940,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
 :CUSTOM_ID: h:092593d2-0ca0-4f86-9951-6127a3594e25
 :END:
 
-This is my nix binary cache (similar to cachix). It is what I use in conjunction with [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]] in order to save time when rebuilding. All packages that are built by Client machines are pushed using [[#h:79ebe062-d5f5-46a4-9e7b-bd3df0c8699b][attic store push service]], and system configurations in the above are as well.
+This is my nix binary cache (similar to Cachix). It is what I use in conjunction with [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]] in order to save time when rebuilding. All packages that are built by Client machines are pushed using [[#h:79ebe062-d5f5-46a4-9e7b-bd3df0c8699b][attic store push service]], and system configurations in the above are as well.
 
 Generate the attic server token using =openssl genrsa -traditional 4096 | base64 -w0=
 
@@ -38162,7 +38162,7 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
 :CUSTOM_ID: h:59f9ba07-8f63-4317-8def-83855a2a2ac1
 :END:
 
-My buildserver config.
+My build-server config.
 
 Need to create user manually:
 
@@ -38170,7 +38170,7 @@ Need to create user manually:
 $ hydra-create-user alice --full-name 'Alice Q. User' \
     --email-address 'alice@example.org' --password-prompt --role admin
 
-I used this for the short timeframe before I started using nix-plugins for [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]]. Ever since, I was never again able to get it to work, even when building hydra on the correct nix version in regards to nix-plugins. Nowadays, I have moved to [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]].
+I used this for the short time-frame before I started using nix-plugins for [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]]. Ever since, I was never again able to get it to work, even when building hydra on the correct nix version in regards to nix-plugins. Nowadays, I have moved to [[#h:63fb1f37-fe2a-4289-ae10-b11a48d6ea32][Buildbot]].
 
 
 #+begin_src nix-ts :tangle modules/server/services/hydra.nix
@@ -38383,7 +38383,7 @@ I used this for the short timeframe before I started using nix-plugins for [[#h:
 :CUSTOM_ID: h:82f3b6af-89a4-4eef-9f24-8d64855c862d
 :END:
 
-This is the dhcp config that runs on my router.
+This is the DHCP config that runs on my router.
 
 IPv4 and v6 require slightly different configurations each, hence I keep the bulk of it as a function that can simply check the version for the few areas where it matters.
 
@@ -39157,7 +39157,7 @@ Sometimes the GUI login fails:
 :CUSTOM_ID: h:ecb66cb8-12b5-44e8-ad6b-7848711e1ffe
 :END:
 
-Handles my home DNS server. It also provides some nice blocklists, but the main usecase is the rewrite of service records to the homeProxy IP, which circumvents bottlenecks by connecting out to the external proxy.
+Handles my home DNS server. It also provides some nice block-lists, but the main use case is the rewrite of service records to the homeProxy IP, which circumvents bottlenecks by connecting out to the external proxy.
 
 #+begin_src nix-ts :tangle modules/server/infra/adguardhome.nix
   {
@@ -39330,7 +39330,7 @@ Handles my home DNS server. It also provides some nice blocklists, but the main 
 
 As my configuration grows, the chance that an odd package is broken on unstable grows with it; manually pushing the flake versions hence bears the risk of running into broken builds; also, many of my configurations take a considerable time to build.
 
-Both of these problems can be alleviated by using a service that runs builds for all of my configurations automatically. This setup runs a build of the current configuration state every day; additionally, once per week, we will also update the inputs, and if all confgurations build, a PR will be opened in my project repository. If a build failed, it will instead try again the next day - the failed build might then be fixed.
+Both of these problems can be alleviated by using a service that runs builds for all of my configurations automatically. This setup runs a build of the current configuration state every day; additionally, once per week, we will also update the inputs, and if all configurations build, a PR will be opened in my project repository. If a build failed, it will instead try again the next day - the failed build might then be fixed.
 
 Using this mechanisms, I can quite simply jump between working states of all configurations. Additionally, by pushing to [[#h:092593d2-0ca0-4f86-9951-6127a3594e25][Attic (nix binary cache)]] as part of the jobs, I also make sure that the configurations I move to are already fully cached either in the public cache or my own.
 
@@ -40270,7 +40270,7 @@ Apart from that, this has some nice features like the ability to turn off commen
 
 I use this in conjunction with the [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Firefox]] plugin "Redirector" to make sure that all YouTube URLs instead point to my Invidious instance.
 
-For sponsorblock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Firefox]] under Miscellaneous > Support 3rd Party YouTube-Sites > Add 3rd-Party Client Instance > <invidiousDomain>
+For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f79-8b2b-a40263760a96][Firefox]] under Miscellaneous > Support 3rd Party YouTube-Sites > Add 3rd-Party Client Instance > <invidiousDomain>
 
 #+begin_src nix-ts :tangle modules/server/services/invidious.nix
   {
@@ -40452,7 +40452,7 @@ For sponsorblock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
 :CUSTOM_ID: h:ae3a2918-4796-4e7a-b2a9-e2381b235c75
 :END:
 
-In the recent efforts of the Invidious team to make sure that the service works, the sig-helper as well as session generator were dropped in favor of this companion app. Sadly this is a deno app, which can not be packaged cleanly in nix as of writing (<2026-05-18 Mo>). What I thus do is to use the unpatched binary together with [[#h:404cc18b-b5f8-48d9-a407-a0fd70d57f46][nix-ld]] (although I use a more lightweight setup here) .
+In the recent efforts of the Invidious team to make sure that the service works, the sig-helper as well as session generator were dropped in favor of this companion app. Sadly this is a Deno app, which can not be packaged cleanly in nix as of writing (<2026-05-18 Mo>). What I thus do is to use the unpatched binary together with [[#h:404cc18b-b5f8-48d9-a407-a0fd70d57f46][nix-ld]] (although I use a more lightweight setup here) .
 
 The tool itself fetches a token that can then be used by Invidious to start a session. Sadly, most VPS providers' IP ranges have been blocked by YouTube for this purpose, so I run this app on a local server instead.
 
@@ -40632,12 +40632,12 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
   }
 #+end_src
 
-**** firefox-syncserver
+**** Firefox-syncserver
 :PROPERTIES:
 :CUSTOM_ID: h:37aae782-848c-45fe-bfd3-705c0eb1319c
 :END:
 
-I only use firefox sync for bookmarks and history; to me, those are not "important" information, hence I keep this service in the cloud.
+I only use Firefox sync for bookmarks and history; to me, those are not "important" information, hence I keep this service in the cloud.
 
 Setting it up on android:
 
@@ -41924,7 +41924,7 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 :CUSTOM_ID: h:1834df06-9238-4efa-9af6-851dafe66c68
 :END:
 
-This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm scratchpad window that I sometimes use for calling a command quickly, in case it is on the screen. After emacs closes, the kittyterm window is then shown again if it was visible earlier.
+This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm scratchpad window that I sometimes use for calling a command quickly, in case it is on the screen. After Emacs closes, the kittyterm window is then shown again if it was visible earlier.
 
 #+begin_src nix-ts :tangle pkgs/flake/e/default.nix
   {
@@ -41975,7 +41975,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 :CUSTOM_ID: h:504c2685-756f-4cd2-83b6-3a78452a248a
 :END:
 
-A version of =e= for usage with niri
+A version of =e= for usage with Niri
 
 #+begin_src nix-ts :tangle pkgs/flake/e-niri/default.nix
   {
@@ -42118,7 +42118,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   }
 #+end_src
 
-***** swarselcheck-niri
+***** swarselcheck-Niri
 :PROPERTIES:
 :CUSTOM_ID: h:96da8360-2d23-4e86-9602-415fbdb972af
 :END:
@@ -42222,7 +42222,7 @@ This is a small convenience launcher that opens my preferred terminal multiplexe
 :CUSTOM_ID: h:f93f66f9-6b8b-478e-b139-b2f382c1f25e
 :END:
 
-This scripts checks if there are uncommited changes in either my dotfile repo, my university repo, or my passfile repo. In that case a warning will be shown in waybar.
+This scripts checks if there are uncommitted changes in either my dotfile repo, my university repo, or my passfile repo. In that case a warning will be shown in Waybar.
 
 #+begin_src nix-ts :tangle pkgs/flake/waybarupdate/default.nix
   {
@@ -42326,12 +42326,12 @@ This utility is used to compare the current state of the root directory with the
   }
 #+end_src
 
-***** github-notifications
+***** GitHub-notifications
 :PROPERTIES:
 :CUSTOM_ID: h:a9398c4e-4d3b-4942-b03c-192f9c0517e5
 :END:
 
-This is a simple github notification counter, only used in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] stack. [[#h:96e05275-38df-401b-8809-d45d8f59e43c][Noctalia]] has a native plugin for this (Github-Feed), and it can do much more.
+This is a simple GitHub notification counter, only used in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] stack. [[#h:96e05275-38df-401b-8809-d45d8f59e43c][Noctalia]] has a native plugin for this (GitHub-Feed), and it can do much more.
 
 #+begin_src nix-ts :tangle pkgs/flake/github-notifications/default.nix
   {
@@ -42359,7 +42359,7 @@ This is a simple github notification counter, only used in the [[#h:02df9dfc-d1a
 :CUSTOM_ID: h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5
 :END:
 
-This is a small helper for mirroring my screen onto another output (for example an external monitor or projector when screen sharing). It uses =wl-mirror= to mirror the given source output fullscreen onto a target output (located via =wlr-randr=), and toggles =mako= into do-not-disturb mode while mirroring so that notifications do not leak onto the shared screen.
+This is a small helper for mirroring my screen onto another output (for example an external monitor or projector when screen sharing). It uses =wl-mirror= to mirror the given source output full-screen onto a target output (located via =wlr-randr=), and toggles =mako= into do-not-disturb mode while mirroring so that notifications do not leak onto the shared screen.
 
 
 #+begin_src nix-ts :tangle pkgs/flake/kanshare/default.nix
@@ -55310,8 +55310,8 @@ This is the state of the repository when I decided to migrate to flakes. At this
 :CUSTOM_ID: h:15ee6287-207f-49a5-8bf0-cf66707b892c
 :END:
 
-Enhancemets:
-- generate the topology thumbnail automatically either upon html export or github workflow
+Enhancements:
+- generate the topology thumbnail automatically either upon html export or GitHub workflow
 
 Fixes:
 - split off invidious-companion into own VM(?)
@@ -55319,3 +55319,7 @@ Fixes:
 Blocked:
 - look into self-hosted Cospend (Spliit module?) to deprecate Nextcloud
 - fix router bridge interfaces after kitchen construction concludes
+
+# Local Variables:
+# jinx-local-words: "jellyfin worktree"
+# End:
