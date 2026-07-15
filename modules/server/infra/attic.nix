@@ -4,7 +4,6 @@
       self,
       lib,
       config,
-      pkgs,
       globals,
       confLib,
       ...
@@ -89,28 +88,6 @@
 
         services.atticd = {
           enable = true;
-          # NOTE: remove once https://github.com/zhaofengli/attic/pull/268 is merged
-          package = pkgs.attic-server.overrideAttrs (oldAttrs: {
-            patches = (oldAttrs.patches or [ ]) ++ [
-              (pkgs.writeText "remove-s3-checksums.patch" ''
-                diff --git a/server/src/storage/s3.rs b/server/src/storage/s3.rs
-                index 1d5719f3..036f3263 100644
-                --- a/server/src/storage/s3.rs
-                +++ b/server/src/storage/s3.rs
-                @@ -278,10 +278,6 @@ impl StorageBackend for S3Backend {
-                                 CompletedPart::builder()
-                                     .set_e_tag(part.e_tag().map(str::to_string))
-                                     .set_part_number(Some(part_number as i32))
-                -                    .set_checksum_crc32(part.checksum_crc32().map(str::to_string))
-                -                    .set_checksum_crc32_c(part.checksum_crc32_c().map(str::to_string))
-                -                    .set_checksum_sha1(part.checksum_sha1().map(str::to_string))
-                -                    .set_checksum_sha256(part.checksum_sha256().map(str::to_string))
-                                     .build()
-                             })
-                             .collect::<Vec<_>>();
-              '')
-            ];
-          });
           environmentFile = config.sops.templates."attic.env".path;
           settings = {
             listen = "[::]:${builtins.toString servicePort}";
