@@ -47,6 +47,7 @@
       webPort = 8080;
       relayPort = 3478;
       relayHealthPort = 8082;
+      relayStunHealthPort = 8083;
       domainPort = 9003;
 
       firezoneTargetVLANs = [
@@ -133,6 +134,12 @@
               serviceName = "firezone-relay";
               servicePort = relayHealthPort;
               path = "/healthz";
+            })
+            (confLib.mkHttpMonitoring {
+              serviceName = "firezone-relay-stun";
+              servicePort = relayStunHealthPort;
+              path = "/healthz";
+              expectedBodyRegex = ''"status":"ok"'';
             })
             {
               firezone-gateway = {
@@ -375,6 +382,51 @@
           )
           {
             firezone-relay.environment.HEALTH_CHECK_ADDR = "0.0.0.0:${toString relayHealthPort}";
+            firezone-relay-stun-healthcheck = {
+              description = "STUN responsiveness healthcheck for the Firezone relay";
+              after = [ "firezone-relay.service" ];
+              wantedBy = [ "multi-user.target" ];
+              serviceConfig = {
+                DynamicUser = true;
+                Restart = "always";
+                RestartSec = "5s";
+                ExecStart = "${lib.getExe pkgs.python3} ${pkgs.writeText "firezone-relay-stun-healthcheck.py" ''
+                  import http.server
+                  import os
+                  import socket
+                  import struct
+
+
+                  class Handler(http.server.BaseHTTPRequestHandler):
+                      def do_GET(self):
+                          req = struct.pack("!HHI", 1, 0, 0x2112A442) + os.urandom(12)
+                          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                          sock.settimeout(3)
+                          try:
+                              sock.sendto(req, ("127.0.0.1", ${toString relayPort}))
+                              resp = sock.recvfrom(2048)[0]
+                              ok = resp[0:2] == b"\x01\x01" and resp[8:20] == req[8:20]
+                          except OSError:
+                              ok = False
+                          finally:
+                              sock.close()
+                          body = b'{"status":"ok"}' if ok else b'{"status":"unresponsive"}'
+                          self.send_response(200 if ok else 503)
+                          self.send_header("Content-Type", "application/json")
+                          self.send_header("Content-Length", str(len(body)))
+                          self.end_headers()
+                          self.wfile.write(body)
+
+                      def log_message(self, fmt, *args):
+                          pass
+
+
+                  http.server.ThreadingHTTPServer(
+                      ("127.0.0.1", ${toString relayStunHealthPort}), Handler
+                  ).serve_forever()
+                ''}";
+              };
+            };
           }
         ];
 

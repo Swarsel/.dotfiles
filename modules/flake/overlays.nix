@@ -200,6 +200,16 @@ in
                 ]
               );
 
+              syncstorage-rs =
+                (prev.syncstorage-rs.override {
+                  python3 = prev.python313;
+                }).overrideAttrs
+                  (old: {
+                    env = (old.env or { }) // {
+                      RUSTFLAGS = (old.env.RUSTFLAGS or "") + " -Aambiguous_glob_imports";
+                    };
+                  });
+
               shikane = prev.shikane.overrideAttrs (old: {
                 postPatch = (old.postPatch or "") + ''
                   substituteInPlace src/settings.rs \

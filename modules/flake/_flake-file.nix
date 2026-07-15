@@ -30,8 +30,8 @@
       nixpkgs-stable26_05.url = "github:NixOS/nixpkgs/nixos-26.05";
 
       home-manager = {
-        # url = "github:nix-community/home-manager";
-        url = "github:Swarsel/home-manager/main";
+        url = "github:nix-community/home-manager";
+        # url = "github:Swarsel/home-manager/main";
         inputs.nixpkgs.follows = "nixpkgs";
       };
 

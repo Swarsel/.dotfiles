@@ -1,7 +1,6 @@
 {
-  # flake-file.inputs.stylix.url = "github:danth/stylix";
   flake-file.inputs.stylix = {
-    url = "github:Swarsel/stylix/feat/noctalia-v5";
+    url = "github:danth/stylix";
     inputs = {
       nixpkgs.follows = "nixpkgs";
       flake-parts.follows = "flake-parts";

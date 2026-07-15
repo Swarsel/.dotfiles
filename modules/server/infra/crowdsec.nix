@@ -10,6 +10,12 @@
     }:
     let
       inherit (config.swarselsystems) sopsFile;
+      inherit
+        (confLib.gen {
+          name = "crowdsec";
+        })
+        serviceName
+        ;
       bootstrap = config.swarselsystems.crowdsecBootstrap;
       jumphost = globals.general.jumphost or null;
       jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
@@ -38,6 +44,10 @@
           servicePort = lapiPort;
           path = "/v1/decisions";
           expectedStatus = 403;
+        };
+
+        topology.self.services.${serviceName} = {
+          name = lib.swarselsystems.toCapitalized serviceName;
         };
 
         users = {

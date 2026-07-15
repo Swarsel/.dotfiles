@@ -61,7 +61,7 @@
       };
     };
     home-manager = {
-      url = "github:Swarsel/home-manager/main";
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunkle = {
@@ -144,7 +144,7 @@
       };
     };
     nix-topology = {
-      url = "github:oddlama/nix-topology";
+      url = "github:Swarsel/nix-topology/dev";
       inputs = {
         flake-parts.follows = "flake-parts";
         nixpkgs.follows = "nixpkgs";
@@ -250,7 +250,7 @@
       };
     };
     stylix = {
-      url = "github:Swarsel/stylix/feat/noctalia-v5";
+      url = "github:danth/stylix";
       inputs = {
         flake-parts.follows = "flake-parts";
         nixpkgs.follows = "nixpkgs";

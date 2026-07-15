@@ -1818,7 +1818,7 @@ A short overview over each notable input and what it does:
         };
       };
       home-manager = {
-        url = "github:Swarsel/home-manager/main";
+        url = "github:nix-community/home-manager";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       hunkle = {
@@ -1901,7 +1901,7 @@ A short overview over each notable input and what it does:
         };
       };
       nix-topology = {
-        url = "github:oddlama/nix-topology";
+        url = "github:Swarsel/nix-topology/dev";
         inputs = {
           flake-parts.follows = "flake-parts";
           nixpkgs.follows = "nixpkgs";
@@ -2007,7 +2007,7 @@ A short overview over each notable input and what it does:
         };
       };
       stylix = {
-        url = "github:Swarsel/stylix/feat/noctalia-v5";
+        url = "github:danth/stylix";
         inputs = {
           flake-parts.follows = "flake-parts";
           nixpkgs.follows = "nixpkgs";
@@ -3851,6 +3851,16 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   ]
                 );
 
+                syncstorage-rs =
+                  (prev.syncstorage-rs.override {
+                    python3 = prev.python313;
+                  }).overrideAttrs
+                    (old: {
+                      env = (old.env or { }) // {
+                        RUSTFLAGS = (old.env.RUSTFLAGS or "") + " -Aambiguous_glob_imports";
+                      };
+                    });
+
                 shikane = prev.shikane.overrideAttrs (old: {
                   postPatch = (old.postPatch or "") + ''
                     substituteInPlace src/settings.rs \
@@ -3908,8 +3918,8 @@ On the structure of overlays: as you notice, all of the attributes within overla
         nixpkgs-stable26_05.url = "github:NixOS/nixpkgs/nixos-26.05";
 
         home-manager = {
-          # url = "github:nix-community/home-manager";
-          url = "github:Swarsel/home-manager/main";
+          url = "github:nix-community/home-manager";
+          # url = "github:Swarsel/home-manager/main";
           inputs.nixpkgs.follows = "nixpkgs";
         };
 
@@ -14252,9 +14262,8 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 
 #+begin_src nix-ts :tangle modules/client/programs/stylix.nix
   {
-    # flake-file.inputs.stylix.url = "github:danth/stylix";
     flake-file.inputs.stylix = {
-      url = "github:Swarsel/stylix/feat/noctalia-v5";
+      url = "github:danth/stylix";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
@@ -38553,6 +38562,12 @@ This has some state:
 Sometimes the gateway fails to start if the main node encounters a =SystemLimitError= with too many stale web@localdomain entries, in that case just do
 =systemctl restart firezone-server-domain firezone-server-api firezone-server-web= on the main node
 
+Sometimes the GUI login fails:
+1) =pgrep -af open-deep-link= probably has a lingering process (=journalctl --user -u firezone-applet -e= showing nothing after "Opening deep-link")
+2) =systemctl --user restart firezone-applet.service=
+3) Sign In, do not press cancel
+4) If nothing happens =systemctl restart firezone-tunnel-service=, followed by another applet restart
+
 #+begin_src nix-ts :tangle modules/server/infra/firezone.nix
   {
     # this one still supports provision, name is not nixpgks-[...] on purpose to avoid adding to the overlay
@@ -38603,6 +38618,7 @@ Sometimes the gateway fails to start if the main node encounters a =SystemLimitE
         webPort = 8080;
         relayPort = 3478;
         relayHealthPort = 8082;
+        relayStunHealthPort = 8083;
         domainPort = 9003;
 
         firezoneTargetVLANs = [
@@ -38689,6 +38705,12 @@ Sometimes the gateway fails to start if the main node encounters a =SystemLimitE
                 serviceName = "firezone-relay";
                 servicePort = relayHealthPort;
                 path = "/healthz";
+              })
+              (confLib.mkHttpMonitoring {
+                serviceName = "firezone-relay-stun";
+                servicePort = relayStunHealthPort;
+                path = "/healthz";
+                expectedBodyRegex = ''"status":"ok"'';
               })
               {
                 firezone-gateway = {
@@ -38931,6 +38953,51 @@ Sometimes the gateway fails to start if the main node encounters a =SystemLimitE
             )
             {
               firezone-relay.environment.HEALTH_CHECK_ADDR = "0.0.0.0:${toString relayHealthPort}";
+              firezone-relay-stun-healthcheck = {
+                description = "STUN responsiveness healthcheck for the Firezone relay";
+                after = [ "firezone-relay.service" ];
+                wantedBy = [ "multi-user.target" ];
+                serviceConfig = {
+                  DynamicUser = true;
+                  Restart = "always";
+                  RestartSec = "5s";
+                  ExecStart = "${lib.getExe pkgs.python3} ${pkgs.writeText "firezone-relay-stun-healthcheck.py" ''
+                    import http.server
+                    import os
+                    import socket
+                    import struct
+
+
+                    class Handler(http.server.BaseHTTPRequestHandler):
+                        def do_GET(self):
+                            req = struct.pack("!HHI", 1, 0, 0x2112A442) + os.urandom(12)
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                            sock.settimeout(3)
+                            try:
+                                sock.sendto(req, ("127.0.0.1", ${toString relayPort}))
+                                resp = sock.recvfrom(2048)[0]
+                                ok = resp[0:2] == b"\x01\x01" and resp[8:20] == req[8:20]
+                            except OSError:
+                                ok = False
+                            finally:
+                                sock.close()
+                            body = b'{"status":"ok"}' if ok else b'{"status":"unresponsive"}'
+                            self.send_response(200 if ok else 503)
+                            self.send_header("Content-Type", "application/json")
+                            self.send_header("Content-Length", str(len(body)))
+                            self.end_headers()
+                            self.wfile.write(body)
+
+                        def log_message(self, fmt, *args):
+                            pass
+
+
+                    http.server.ThreadingHTTPServer(
+                        ("127.0.0.1", ${toString relayStunHealthPort}), Handler
+                    ).serve_forever()
+                  ''}";
+                };
+              };
             }
           ];
 
@@ -40664,10 +40731,6 @@ Setting it up on android:
                 mode = "0400";
               };
             };
-          };
-
-          topology.self.services.${serviceName} = {
-            info = "https://${serviceDomain}";
           };
 
           globals = {
