@@ -191,7 +191,7 @@
             {
               directory = "/var/lib/transmission";
               user = "transmission";
-              group = "transmission";
+              group = "users";
             }
           ];
         };
@@ -213,6 +213,7 @@
             openRPCPort = false;
             package = pkgs.transmission_3;
             openPeerPorts = false;
+            group = "users";
             credentialsFile = config.sops.templates."transmission-credentials.json".path;
             settings = {
               rpc-bind-address = "127.0.0.1";
@@ -284,8 +285,8 @@
 
         systemd = {
           tmpfiles.rules = [
-            "d /storage/CHANGEME 0755 transmission transmission -"
-            "d /storage/CHANGEME/seed 0755 transmission transmission -"
+            "d /storage/CHANGEME 0755 transmission users -"
+            "d /storage/CHANGEME/seed 0755 transmission users -"
           ];
 
           paths.transmission-peer-port = {
