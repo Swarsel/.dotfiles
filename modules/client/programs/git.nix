@@ -12,12 +12,18 @@
     let
       inherit (confLib.getConfig.repo.secrets.common.mail) address1;
       inherit (confLib.getConfig.repo.secrets.common) fullName;
+      inherit (config.swarselsystems) mainUser homeDir;
 
       gitUser = globals.user.name;
     in
     {
       config = {
         swarselsystems.enabledHomeModules = [ "git" ];
+
+        systemd.user.tmpfiles.rules = [
+          "f ${homeDir}/.gitconfig 0644 ${mainUser} users - -"
+        ];
+
         programs.git = {
           enable = true;
         }
