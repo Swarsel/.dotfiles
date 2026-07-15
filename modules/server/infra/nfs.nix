@@ -69,6 +69,8 @@
               writable = "true";
               comment = "Eternor";
               "valid users" = nfsUser;
+              "create mask" = "0660";
+              "directory mask" = "2770";
             };
           };
 
