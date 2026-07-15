@@ -59,6 +59,12 @@
 
         users.persistentIds.${serviceName} = confLib.mkIds 987;
 
+        topology.self.services.${serviceName} = {
+          name = lib.swarselsystems.toCapitalized serviceName;
+          info = "https://${serviceDomain}";
+          icon = "services.not-available";
+        };
+
         sops = {
           secrets = {
             shopservatory-telegram-token = {
@@ -137,12 +143,6 @@
               name = "kanidm";
             };
           };
-        };
-
-        topology.self.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
-          icon = "services.not-available";
         };
 
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [

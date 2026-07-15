@@ -1,6 +1,7 @@
 {
   flake.modules.nixos.socks-proxy =
     {
+      lib,
       config,
       globals,
       confLib,
@@ -32,6 +33,12 @@
         swarselsystems.enabledServerModules = [ serviceName ];
 
         users.persistentIds.microsocks = confLib.mkIds 988;
+
+        topology.self.services.${serviceName} = {
+          name = lib.swarselsystems.toCapitalized serviceName;
+          info = "https://${serviceAddress}";
+          icon = "services.not-available";
+        };
 
         services.microsocks = {
           enable = true;

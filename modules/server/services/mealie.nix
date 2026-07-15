@@ -38,9 +38,7 @@
         swarselsystems.enabledServerModules = [ serviceName ];
 
         topology.self.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
           info = "https://${serviceDomain}";
-          icon = "services.not-available";
         };
 
         sops = {

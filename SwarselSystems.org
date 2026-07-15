@@ -2830,7 +2830,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
   }:
   {
     flake-file.inputs.nix-topology = {
-      url = "github:oddlama/nix-topology";
+      url = "github:Swarsel/nix-topology/dev";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
@@ -40829,6 +40829,12 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
       }:
       let
         inherit (config.swarselsystems) sopsFile;
+        inherit
+          (confLib.gen {
+            name = "crowdsec";
+          })
+          serviceName
+          ;
         bootstrap = config.swarselsystems.crowdsecBootstrap;
         jumphost = globals.general.jumphost or null;
         jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
@@ -40857,6 +40863,10 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             servicePort = lapiPort;
             path = "/v1/decisions";
             expectedStatus = 403;
+          };
+
+          topology.self.services.${serviceName} = {
+            name = lib.swarselsystems.toCapitalized serviceName;
           };
 
           users = {
@@ -41299,9 +41309,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           swarselsystems.enabledServerModules = [ serviceName ];
 
           topology.self.services.${serviceName} = {
-            name = lib.swarselsystems.toCapitalized serviceName;
             info = "https://${serviceDomain}";
-            icon = "services.not-available";
           };
 
           sops = {
@@ -41474,6 +41482,12 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
 
           users.persistentIds.${serviceName} = confLib.mkIds 987;
 
+          topology.self.services.${serviceName} = {
+            name = lib.swarselsystems.toCapitalized serviceName;
+            info = "https://${serviceDomain}";
+            icon = "services.not-available";
+          };
+
           sops = {
             secrets = {
               shopservatory-telegram-token = {
@@ -41554,12 +41568,6 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             };
           };
 
-          topology.self.services.${serviceName} = {
-            name = lib.swarselsystems.toCapitalized serviceName;
-            info = "https://${serviceDomain}";
-            icon = "services.not-available";
-          };
-
           environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
             {
               directory = serviceDir;
@@ -41626,6 +41634,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
   {
     flake.modules.nixos.socks-proxy =
       {
+        lib,
         config,
         globals,
         confLib,
@@ -41657,6 +41666,12 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           swarselsystems.enabledServerModules = [ serviceName ];
 
           users.persistentIds.microsocks = confLib.mkIds 988;
+
+          topology.self.services.${serviceName} = {
+            name = lib.swarselsystems.toCapitalized serviceName;
+            info = "https://${serviceAddress}";
+            icon = "services.not-available";
+          };
 
           services.microsocks = {
             enable = true;
@@ -44261,6 +44276,74 @@ Makes sure that all files in =modules/= are actually defined in =SwarselSystems.
           echo "Add a source block with :tangle <path> for each, or remove the file."
           exit 1
       fi
+    '';
+  }
+#+end_src
+
+***** build-topology-images
+:PROPERTIES:
+:CUSTOM_ID: h:81315c26-22cc-4dee-afbc-578d6de91c03
+:END:
+
+Recreates the topology diagram + thumbnail.
+
+#+begin_src nix-ts :tangle pkgs/flake/build-topology-images/default.nix
+  {
+    self,
+    name,
+    stdenv,
+    git,
+    nix,
+    chromium,
+    imagemagick,
+    writeShellApplication,
+    ...
+  }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [
+      git
+      nix
+      chromium
+      imagemagick
+    ];
+    text = ''
+      flake="''${FLAKE:-$(git rev-parse --show-toplevel 2> /dev/null || pwd)}"
+      [[ -e "$flake/flake.nix" ]] \
+        || { echo "could not locate dotfiles flake (set \$FLAKE)" >&2; exit 1; }
+
+      out="$flake/files/topology"
+      mkdir -p "$out"
+
+      result="$(nix build --no-link --print-out-paths --builders "" \
+        --override-input topologyPrivate "${self}/files/topology/private" \
+        "$flake#topology.${stdenv.hostPlatform.system}.config.output")"
+
+      svg="$result/main.svg"
+      read -r width height < <(
+        sed -n 's/.*<svg[^>]*width="\([0-9.]*\)"[^>]*height="\([0-9.]*\)".*/\1 \2/p' "$svg" | head -1
+      )
+      [[ -n "$width" && -n "$height" ]] \
+        || { echo "could not parse svg dimensions from $svg" >&2; exit 1; }
+
+      profile="$(mktemp -d)"
+      trap 'rm -rf "$profile"' EXIT
+
+      chromium \
+        --headless \
+        --no-sandbox \
+        --hide-scrollbars \
+        --force-device-scale-factor=1 \
+        --user-data-dir="$profile" \
+        --default-background-color=00000000 \
+        --window-size="''${width%.*},''${height%.*}" \
+        --screenshot="$out/topology.png" \
+        "file://$svg"
+
+      magick "$out/topology.png" -resize 500x "$out/topology_small.png"
+
+      echo "wrote $out/topology.png and $out/topology_small.png"
     '';
   }
 #+end_src

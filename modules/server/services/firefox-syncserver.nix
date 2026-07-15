@@ -67,10 +67,6 @@
           };
         };
 
-        topology.self.services.${serviceName} = {
-          info = "https://${serviceDomain}";
-        };
-
         globals = {
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {

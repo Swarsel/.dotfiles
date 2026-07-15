@@ -6,7 +6,7 @@
 }:
 {
   flake-file.inputs.nix-topology = {
-    url = "github:oddlama/nix-topology";
+    url = "github:Swarsel/nix-topology/dev";
     inputs = {
       nixpkgs.follows = "nixpkgs";
       flake-parts.follows = "flake-parts";
