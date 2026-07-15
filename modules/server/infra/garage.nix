@@ -242,8 +242,6 @@
             };
 
             script = ''
-              garage status
-
               # Checking repeatedly with garage status until getting 0 exit code
               while ! garage status >/dev/null 2>&1; do
                 echo "Garage not yet operational, waiting..."
