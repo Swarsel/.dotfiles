@@ -18,12 +18,23 @@ iso CONFIG="live-iso":
   nix build --print-out-paths .#{{CONFIG}}
 
 demo-test TEST="demo-install-test":
-  nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file
+  nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./hosts/utility/hotel/secrets --override-input vbc-nix path:./files/stub --no-write-lock-file
 
 demo-full-test: (demo-test "demo-full-test")
 
 bootstrap-test:
   nix develop .#deploy --command nix run .#bootstrap-install-test
+
+sandbox:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  vm=$(nix build --no-link --print-out-paths .#nixosConfigurations.vacanthouse.config.system.build.vm)
+  sudo systemd-run --collect --pty --same-dir --wait --uid="$USER" \
+    -p AmbientCapabilities=CAP_NET_BIND_SERVICE \
+    "$vm/bin/run-vacanthouse-vm"
+
+sandbox-test:
+  nix build -L --no-link .#sandbox-test
 
 iso-install DRIVE: iso
   sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync

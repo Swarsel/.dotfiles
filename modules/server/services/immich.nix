@@ -334,45 +334,51 @@
               send_timeout            7200s;
             '';
           in
-          {
-            ${idmServer} =
-              lib.recursiveUpdate
-                (confLib.mkKanidmOidcSystem {
-                  inherit serviceName serviceDomain kanidmSopsFile;
-                  originUrl = [
-                    "https://${serviceDomain}/auth/login"
-                    "https://${serviceDomain}/user-settings"
-                    "app.immich:///oauth-callback"
-                    "https://${serviceDomain}/api/oauth/mobile-redirect"
-                  ];
-                })
-                {
-                  services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
-                };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                extraConfigLoc
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
+          lib.mkMerge [
+            {
+              ${idmServer} =
+                lib.recursiveUpdate
+                  (confLib.mkKanidmOidcSystem {
+                    inherit serviceName serviceDomain kanidmSopsFile;
+                    originUrl = [
+                      "https://${serviceDomain}/auth/login"
+                      "https://${serviceDomain}/user-settings"
+                      "app.immich:///oauth-callback"
+                      "https://${serviceDomain}/api/oauth/mobile-redirect"
+                    ];
+                  })
+                  {
+                    services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
+                  };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
+                  serviceAddress
                   servicePort
                   serviceDomain
                   serviceName
                   extraConfigLoc
                   ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit
+                    servicePort
+                    serviceDomain
+                    serviceName
+                    extraConfigLoc
+                    ;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
       };
     }

@@ -119,13 +119,19 @@ writeShellApplication {
     if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
       yellow "The ssh key for this configuration is not available."
       green "Overriding private inputs so that the configuration is buildable ..."
-      demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/files/demo" --no-write-lock-file)
+      demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/hosts/utility/hotel/secrets" --no-write-lock-file)
     else
       green "Valid SSH key found! Continuing with installation"
     fi
 
-    green "Reading system information for $target_config ..."
-    settings=$(nix eval "''${demo_flags[@]}" --json .#nixosConfigurationsMinimal."$target_config".config.swarselsystems --apply 'c: { inherit (c) rootDisk isCrypted isImpermanence isSwap isSecureBoot; }')
+    target_attr="$target_config"
+    if [[ $target_arch != "x86_64-linux" ]] && [[ $(nix eval "''${demo_flags[@]}" .#nixosConfigurationsMinimal --apply "c: c ? \"$target_config-$target_arch\"" 2> /dev/null) == "true" ]]; then
+      target_attr="$target_config-$target_arch"
+      green "Using arch-specific configuration $target_attr"
+    fi
+
+    green "Reading system information for $target_attr ..."
+    settings=$(nix eval "''${demo_flags[@]}" --json .#nixosConfigurationsMinimal."$target_attr".config.swarselsystems --apply 'c: { inherit (c) rootDisk isCrypted isImpermanence isSwap isSecureBoot; }')
 
     DISK=$(jq -r .rootDisk <<< "$settings")
     green "Root Disk in config: $DISK"
@@ -184,7 +190,7 @@ writeShellApplication {
     fi
 
     green "Setting up disk ..."
-    disko_script=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.destroyFormatMount)
+    disko_script=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_attr".config.system.build.destroyFormatMount)
     sudo "$disko_script"/bin/disko-destroy-format-mount --yes-wipe-all-disks
 
     if [[ $skip_hardware_config -eq 1 ]]; then
@@ -192,11 +198,11 @@ writeShellApplication {
     else
       green "Generating hardware configuration ..."
       sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
-      git add hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
+      git add "$(realpath --relative-to=. hosts/nixos/"$target_arch"/"$target_config")"/hardware-configuration.nix
     fi
 
     green "Building flake $target_config ..."
-    store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
+    store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_attr".config.system.build.toplevel)
 
     green "Copying configuration to target ..."
     sudo mkdir -p /mnt"$persist_dir"/home/"$target_user"/

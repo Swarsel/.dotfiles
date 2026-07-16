@@ -239,7 +239,7 @@ writeShellApplication {
 
     cd "$FLAKE"
 
-    rm install/flake.lock || true
+    rm files/install/flake.lock || true
     git_root=$(git rev-parse --show-toplevel)
     green "Wiping known_hosts of $target_destination"
     sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -283,10 +283,10 @@ writeShellApplication {
 
     if [[ $no_disko_deps == "true" ]]; then
       green "Building without disko dependencies (using custom kexec)"
-      "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
+      "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./files/install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
     else
       green "Building with disko dependencies (using nixos-images kexec)"
-      "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+      "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./files/install#"$target_hostname" root@"$target_destination"
     fi
 
     echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
@@ -409,11 +409,11 @@ writeShellApplication {
       deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
       nixfmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
       (pre-commit run --all-files 2> /dev/null || true) || true
-      git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix"
+      git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/hardware-configuration.nix"
       git add "$git_root/.sops.yaml"
       git add "$git_root/tofu/sops/terraform.tfvars"
       git add "$git_root/secrets" 2> /dev/null || true
-      git add "$git_root/hosts/nixos/$target_arch/$target_hostname/secrets" 2> /dev/null || true
+      git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/secrets" 2> /dev/null || true
       git commit -m "feat: deployed $target_hostname" || true
       if confirm n "Push the committed changes to the remote?"; then
         git push

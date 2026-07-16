@@ -166,7 +166,7 @@
           );
         };
       };
-      config = lib.mkIf (config.node.name == "twothreetunnel") {
+      config = lib.mkIf (builtins.elem "oauthServer" config.swarselsystems.nodeRoles) {
         swarselsystems.enabledServerModules = [ "oauth2-proxy" ];
 
         sops = {
@@ -289,42 +289,48 @@
                 allow ${globals.networks.home-lan.vlans.services.cidrv6};
             '';
           in
-          {
-            ${idmServer} = {
-              sops.secrets.kanidm-oauth2-proxy = {
-                sopsFile = kanidmSopsFile;
-                owner = "kanidm";
-                group = "kanidm";
-                mode = "0440";
-              };
-              services.kanidm.provision = {
-                systems.oauth2.oauth2-proxy = {
-                  displayName = "Oauth2-Proxy";
-                  originUrl = "https://${serviceDomain}/oauth2/callback";
-                  originLanding = "https://${serviceDomain}/";
-                  basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
-                  preferShortUsername = true;
-                  claimMaps.groups = {
-                    joinType = "array";
+          lib.mkMerge [
+            {
+              ${idmServer} = {
+                sops.secrets.kanidm-oauth2-proxy = {
+                  sopsFile = kanidmSopsFile;
+                  owner = "kanidm";
+                  group = "kanidm";
+                  mode = "0440";
+                };
+                services.kanidm.provision = {
+                  systems.oauth2.oauth2-proxy = {
+                    displayName = "Oauth2-Proxy";
+                    originUrl = "https://${serviceDomain}/oauth2/callback";
+                    originLanding = "https://${serviceDomain}/";
+                    basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
+                    preferShortUsername = true;
+                    claimMaps.groups = {
+                      joinType = "array";
+                    };
                   };
                 };
               };
-            };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                servicePort
-                serviceAddress
-                serviceDomain
-                serviceName
-                extraConfig
-                ;
-            };
-            ${homeWebProxy}.services.nginx = confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              extraConfig = extraConfig + nginxAccessRules;
-              serviceAddress = globals.hosts.${oauthServer}.wanAddress4;
-            };
-          };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  servicePort
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  extraConfig
+                  ;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                extraConfig = extraConfig + nginxAccessRules;
+                serviceAddress = globals.hosts.${oauthServer}.wanAddress4;
+              };
+            }
+          ];
       };
     }
 

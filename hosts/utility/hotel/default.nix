@@ -4,6 +4,7 @@
   config,
   pkgs,
   lib,
+  arch,
   minimal,
   ...
 }:
@@ -34,6 +35,12 @@ in
   environment.variables = {
     WLR_RENDERER_ALLOW_SOFTWARE = 1;
   };
+
+  hardware.graphics.enable32Bit = lib.mkIf (arch != "x86_64-linux") (lib.mkForce false);
+
+  nixpkgs.overlays = lib.mkAfter [ (_: prev: { niri-stable = prev.niri; }) ];
+
+  services.printing.drivers = lib.mkIf (arch != "x86_64-linux") (lib.mkForce [ ]);
 
   topology.self.interfaces."demo host" = { };
 

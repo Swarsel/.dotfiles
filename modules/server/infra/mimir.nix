@@ -149,6 +149,8 @@
               maxBody = 0;
               extraConfig = wgProxyAccessRules;
             };
+          }
+          {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
                 inherit servicePort serviceDomain serviceName;
@@ -157,6 +159,8 @@
                 extraConfig = nginxAccessRules;
               }
             );
+          }
+          {
             ${globals.general.monitoringServer}.services.grafana.provision = {
               datasources.settings.datasources = [
                 {

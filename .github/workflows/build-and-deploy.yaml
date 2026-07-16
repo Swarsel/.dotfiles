@@ -1,20 +1,16 @@
 name: Build and Deploy
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: "pages"
   cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,26 +19,21 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
           fetch-depth: 0
-
       - name: Install Nix
         uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3  # v31.10.6
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-
       - name: Install Emacs
         run: nix profile install nixpkgs#emacs
-
       - name: Install supporting packages
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential git
-
       - name: Expose system libstdc++ for tree-sitter grammars
         run: |
           mkdir -p "$HOME/cxx-shim"
           ln -sf /usr/lib/x86_64-linux-gnu/libstdc++.so.6 "$HOME/cxx-shim/libstdc++.so.6"
           echo "CXX_SHIM=$HOME/cxx-shim" >> "$GITHUB_ENV"
-
       - name: Install tree-sitter language grammars
         env:
           LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
@@ -63,7 +54,6 @@ jobs:
             --eval "(dolist (lang (mapcar #'car treesit-language-source-alist))
                      (unless (treesit-language-available-p lang)
                        (treesit-install-language-grammar lang)))"
-
       - name: Install htmlize and language major modes
         env:
           LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
@@ -77,12 +67,10 @@ jobs:
             --eval "(package-initialize)" \
             --eval "(package-refresh-contents)" \
             --eval "(dolist (pkg '(transient htmlize nix-mode nix-ts-mode markdown-mode terraform-mode)) (package-install pkg))"
-
       - name: Prepare site images
         run: |
           mkdir -p site/files/topology
           cp files/topology/topology_small.png site/files/topology/topology_small.png
-
       - name: Tangle files & export to HTML
         env:
           LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
@@ -125,15 +113,12 @@ jobs:
             --visit=SwarselSystems.org \
             --funcall org-babel-tangle \
             --funcall org-html-export-to-html
-
       - name: Setup Pages
         uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d  # v4
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa  # v3
         with:
           path: 'site'
-
   deploy:
     environment:
       name: github-pages

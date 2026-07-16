@@ -140,26 +140,30 @@
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
-        nodes = {
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit
-              serviceAddress
-              servicePort
-              serviceDomain
-              serviceName
-              ;
-            maxBody = 0;
-            extraConfig = scannerDropRules;
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
+        nodes = lib.mkMerge [
+          {
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               maxBody = 0;
-              extraConfig = scannerDropRules + nginxAccessRules;
-              serviceAddress = homeServiceAddress;
-            }
-          );
-        };
+              extraConfig = scannerDropRules;
+            };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                maxBody = 0;
+                extraConfig = scannerDropRules + nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }
+            );
+          }
+        ];
 
       };
     }

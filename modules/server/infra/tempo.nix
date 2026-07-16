@@ -189,7 +189,11 @@
           lib.mkMerge [
             {
               ${webProxy}.services.nginx = genNginx serviceAddress wgProxyAccessRules;
+            }
+            {
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+            }
+            {
               ${globals.general.monitoringServer}.services.grafana = {
                 settings = {
                   "tracing.opentelemetry" = {

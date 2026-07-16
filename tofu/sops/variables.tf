@@ -30,6 +30,7 @@ variable "host_configs" {
     type         = string
     arch         = string
     age_key_name = optional(string)
+    path         = optional(string)
     guests       = optional(list(string), [])
     repo_access  = optional(bool, true)
     has_age_key  = optional(bool, true)

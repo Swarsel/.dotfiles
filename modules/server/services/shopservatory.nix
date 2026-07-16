@@ -175,28 +175,34 @@
           dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
 
-        nodes = {
-          ${idmServer} = confLib.mkKanidmOidcSystem {
-            inherit serviceName serviceDomain kanidmSopsFile;
-            originUrl = "https://${serviceDomain}/auth/callback";
-          };
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit
-              serviceAddress
-              serviceName
-              serviceDomain
-              servicePort
-              ;
-            extraConfig = scannerDropRules;
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            confLib.genNginx {
-              inherit serviceName serviceDomain servicePort;
-              serviceAddress = homeServiceAddress;
-              extraConfig = scannerDropRules + nginxAccessRules;
-            }
-          );
-        };
+        nodes = lib.mkMerge [
+          {
+            ${idmServer} = confLib.mkKanidmOidcSystem {
+              inherit serviceName serviceDomain kanidmSopsFile;
+              originUrl = "https://${serviceDomain}/auth/callback";
+            };
+          }
+          {
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                serviceName
+                serviceDomain
+                servicePort
+                ;
+              extraConfig = scannerDropRules;
+            };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit serviceName serviceDomain servicePort;
+                serviceAddress = homeServiceAddress;
+                extraConfig = scannerDropRules + nginxAccessRules;
+              }
+            );
+          }
+        ];
       };
     };
 }

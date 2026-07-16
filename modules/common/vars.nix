@@ -87,6 +87,10 @@
 
           browserPolicies = {
             # CaptivePortal = false;
+            Certificates = {
+              ImportEnterpriseRoots = true;
+              Install = [ "${self}/files/public/certs/ca.crt" ];
+            };
             AppAutoUpdate = false;
             BackgroundAppUpdate = false;
             DisableBuiltinPDFViewer = true;

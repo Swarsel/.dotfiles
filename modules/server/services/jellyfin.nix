@@ -112,29 +112,35 @@
           ];
         };
 
-        nodes = {
-          ${idmServer} = confLib.mkKanidmOidcSystem {
-            inherit serviceName serviceDomain kanidmSopsFile;
-            originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
-          };
-          ${webProxy}.services.nginx = lib.recursiveUpdate (confLib.genNginx {
-            inherit
-              serviceAddress
-              servicePort
-              serviceDomain
-              serviceName
-              ;
-            maxBody = 0;
-          }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            lib.recursiveUpdate (confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
+        nodes = lib.mkMerge [
+          {
+            ${idmServer} = confLib.mkKanidmOidcSystem {
+              inherit serviceName serviceDomain kanidmSopsFile;
+              originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
+            };
+          }
+          {
+            ${webProxy}.services.nginx = lib.recursiveUpdate (confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               maxBody = 0;
-              extraConfig = nginxAccessRules;
-              serviceAddress = homeServiceAddress;
-            }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
-          );
-        };
+            }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              lib.recursiveUpdate (confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                maxBody = 0;
+                extraConfig = nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
+            );
+          }
+        ];
 
       };
     }

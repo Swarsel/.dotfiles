@@ -35,6 +35,14 @@
                 bluez
                 wireguard-tools
               ]
+              ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
+                # ledger packages
+                ledger-live-desktop
+
+                # keyboards
+                vial
+                via
+              ]
               ++ lib.optionals config.swarselsystems.isFullBuild [
                 # yubikey packages
                 yubikey-personalization
@@ -45,9 +53,6 @@
                 cfssl
                 pcsc-tools
                 pcscliteWithPolkit.out
-
-                # ledger packages
-                ledger-live-desktop
 
                 # pinentry
                 dbus
@@ -71,8 +76,6 @@
 
                 # keyboards
                 qmk
-                vial
-                via
 
                 # kde-connect
                 xdg-desktop-portal

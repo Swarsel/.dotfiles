@@ -188,35 +188,41 @@
               send_timeout            300;
             '';
           in
-          {
-            ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
-            };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                extraConfigLoc
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
+          lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
+              };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
+                  serviceAddress
                   servicePort
                   serviceDomain
                   serviceName
                   extraConfigLoc
                   ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit
+                    servicePort
+                    serviceDomain
+                    serviceName
+                    extraConfigLoc
+                    ;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
       };
     }

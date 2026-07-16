@@ -117,23 +117,27 @@
           { directory = "/var/lib/private/firefox-syncserver"; }
         ];
 
-        nodes = {
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit
-              serviceAddress
-              servicePort
-              serviceDomain
-              serviceName
-              ;
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              extraConfig = nginxAccessRules;
-              serviceAddress = homeServiceAddress;
-            }
-          );
-        };
+        nodes = lib.mkMerge [
+          {
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
+            };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                extraConfig = nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }
+            );
+          }
+        ];
 
       };
 

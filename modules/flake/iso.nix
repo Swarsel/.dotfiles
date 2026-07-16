@@ -20,7 +20,7 @@
           specialArgs = { inherit self; };
           modules = [
             inputs.home-manager.nixosModules.home-manager
-            "${self}/install/installer-config.nix"
+            "${self}/hosts/utility/drugstore"
           ];
           format =
             {
@@ -34,7 +34,7 @@
           inherit pkgs system;
           modules = [
             inputs.home-manager.nixosModules.home-manager
-            "${self}/install/keygen-config.nix"
+            "${self}/hosts/utility/policestation"
           ];
           format =
             {
@@ -48,7 +48,7 @@
         swarsel-kexec =
           (inputs.smallpkgs.legacyPackages.${system}.nixos [
             {
-              imports = [ "${self}/install/kexec.nix" ];
+              imports = [ "${self}/hosts/utility/brickroad" ];
               _file = __curPos.file;
               system.kexec-installer.name = "swarsel-kexec";
             }

@@ -14,6 +14,7 @@ keys:
     - &stoicclub age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm
     - &summers age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u
     - &twothreetunnel age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d
+    - &vacanthouse age1qt0aw537kymdx6eaje5447vmfp9yeskpzxgcte325p4zd0h0kcsshjsseu
     - &winters age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza
     - &hintbooth-adguardhome age1c2enwel9un28dcs4wg0vcyamx9a4a6g3walkhu8w5lqhmd804paq9d24as
     - &hintbooth-nginx age1nanlervuderw4qskcuessycqy2yfmptl6nym9scgp9ky2265ssmq3u73r0
@@ -240,6 +241,13 @@ creation_rules:
       age:
       - *summers-kanidm
       - *moonside
+  - path_regex: secrets/kanidm/vacanthouse.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers-kanidm
+      - *vacanthouse
   - path_regex: hosts/nixos/x86_64-linux/bakery/secrets/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -389,6 +397,19 @@ creation_rules:
       - *swarsel
       age:
       - *twothreetunnel
+      - *buildbot
+  - path_regex: hosts/utility/vacanthouse/secrets/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *vacanthouse
+  - path_regex: hosts/utility/vacanthouse/secrets/[^/]+\.enc$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *vacanthouse
       - *buildbot
   - path_regex: hosts/nixos/x86_64-linux/winters/secrets/[^/]+\.(yaml|json|env|ini)$
     key_groups:

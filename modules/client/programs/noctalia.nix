@@ -146,6 +146,7 @@ in
               settings = {
                 shell = {
                   time_format = "{:%H:%M}";
+                  external_ip_enabled = true;
                   telemetry_enabled = false;
                   clipboard_enabled = true;
                   clipboard_auto_paste = "off";
@@ -252,7 +253,7 @@ in
                   start = [ "workspaces" ];
                   center = [
                     "active_window"
-                    "noctalia/screen_recorder:recorder"
+                    "recorder_2"
                   ];
                   end = [
                     "tray"
@@ -446,6 +447,8 @@ in
                   position = "center_right";
                   orientation = "vertical";
                   background_opacity = 0.5;
+                  position_vertical = "center_right";
+
                 };
 
                 audio = {
@@ -503,21 +506,25 @@ in
                   ];
                 };
 
-                plugins.enabled = [ "noctalia/screen_recorder" ];
+                plugins.enabled = [
+                  "noctalia/screen_recorder"
+                  "noctalia/kaomoji"
+                  "whyoolw/sharednd"
+                ];
 
                 plugin_settings."noctalia/screen_recorder" = {
-                  video_source = "portal";
-                  filename_pattern = "recording_%Y%m%d_%H%M%S";
-                  frame_rate = 60;
-                  video_codec = "h264";
-                  quality = "very_high";
-                  resolution = "original";
-                  audio_source = "default_output";
                   audio_codec = "opus";
-                  show_cursor = true;
+                  audio_source = "default_output";
                   color_range = "limited";
                   copy_to_clipboard = true;
+                  filename_pattern = "recording_%Y%m%d_%H%M%S";
+                  frame_rate = 60;
                   hide_inactive = true;
+                  quality = "very_high";
+                  resolution = "original";
+                  show_cursor = true;
+                  video_codec = "h264";
+                  video_source = "portal";
                 };
               };
             };

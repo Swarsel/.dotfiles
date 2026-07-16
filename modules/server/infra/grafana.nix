@@ -226,46 +226,52 @@
 
         systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
 
-        nodes = {
-          ${idmServer} =
-            lib.recursiveUpdate
-              (confLib.mkKanidmOidcSystem {
-                inherit serviceName serviceDomain kanidmSopsFile;
-                originUrl = "https://${serviceDomain}/login/generic_oauth";
-                extraGroups = [
-                  "grafana.editors"
-                  "grafana.admins"
-                  "grafana.server-admins"
-                ];
-              })
-              {
-                services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "grafana.editors" = [ "editor" ];
-                    "grafana.admins" = [ "admin" ];
-                    "grafana.server-admins" = [ "server_admin" ];
+        nodes = lib.mkMerge [
+          {
+            ${idmServer} =
+              lib.recursiveUpdate
+                (confLib.mkKanidmOidcSystem {
+                  inherit serviceName serviceDomain kanidmSopsFile;
+                  originUrl = "https://${serviceDomain}/login/generic_oauth";
+                  extraGroups = [
+                    "grafana.editors"
+                    "grafana.admins"
+                    "grafana.server-admins"
+                  ];
+                })
+                {
+                  services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup = {
+                      "grafana.editors" = [ "editor" ];
+                      "grafana.admins" = [ "admin" ];
+                      "grafana.server-admins" = [ "server_admin" ];
+                    };
                   };
                 };
-              };
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit
-              serviceAddress
-              servicePort
-              serviceDomain
-              serviceName
-              ;
-            proxyWebsockets = true;
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              serviceAddress = homeServiceAddress;
+          }
+          {
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               proxyWebsockets = true;
-              extraConfig = nginxAccessRules;
-            }
-          );
-        };
+            };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                serviceAddress = homeServiceAddress;
+                proxyWebsockets = true;
+                extraConfig = nginxAccessRules;
+              }
+            );
+          }
+        ];
       };
     }
 

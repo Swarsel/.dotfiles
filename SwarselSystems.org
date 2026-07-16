@@ -1936,6 +1936,7 @@ A short overview over each notable input and what it does:
       nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
       nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
       nixpkgs-kernelpin.url = "github:nixos/nixpkgs/567a49d1913ce81ac6e9582e3553dd90a955875f?narHash=sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H%2BCNW1Ck8B%2B8%3D";
+      nixpkgs-sandbox.url = "github:tebriel/nixpkgs/homebox/0.26.2";
       nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
       nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
@@ -2719,12 +2720,36 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
           else
             linuxSystems ++ darwinSystems;
 
-        readHostDirs =
-          hostDir:
+        readHostsOfType =
+          entryType: hostDir:
           if builtins.pathExists hostDir then
-            builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir hostDir))
+            builtins.attrNames (lib.filterAttrs (_: type: type == entryType) (builtins.readDir hostDir))
           else
             [ ];
+
+        readHostDirs = readHostsOfType "directory";
+
+        utilityHostArches = lib.foldl' (
+          acc: arch:
+          acc
+          // lib.genAttrs (readHostsOfType "symlink" "${self}/hosts/nixos/${arch}") (
+            host: (acc.${host} or [ ]) ++ [ arch ]
+          )
+        ) { } lib.swarselsystems.linuxSystems;
+
+        utilityHostName =
+          host: arch:
+          let
+            arches = utilityHostArches.${host};
+            primary = if builtins.elem "x86_64-linux" arches then "x86_64-linux" else builtins.head arches;
+          in
+          if arch == primary then host else "${host}-${arch}";
+
+        utilityHostNames =
+          lib.concatLists (
+            lib.mapAttrsToList (host: arches: map (utilityHostName host) arches) utilityHostArches
+          )
+          ++ readHostDirs "${self}/hosts/utility";
 
         mkHalfHostsForArch =
           type: arch:
@@ -2742,6 +2767,15 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
           in
           if (type == "nixos") then
             lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
+            // lib.listToAttrs (
+              map
+                (host: lib.nameValuePair (utilityHostName host arch) (mkNixosHost { inherit minimal; } host arch))
+                (
+                  builtins.filter (host: builtins.elem arch utilityHostArches.${host}) (
+                    builtins.attrNames utilityHostArches
+                  )
+                )
+            )
           else if (type == "darwin") then
             lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
           else
@@ -2787,7 +2821,9 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
 
         diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
-        nodes = config.nixosConfigurations // config.darwinConfigurations // config.guestConfigurations;
+        nodes = builtins.removeAttrs (
+          config.nixosConfigurations // config.darwinConfigurations // config.guestConfigurations
+        ) utilityHostNames;
 
         guestResources = lib.mapAttrs (
           name: _:
@@ -3191,7 +3227,13 @@ This file defines a number of checks that can either be run by calling =nix flak
               check-shebang-scripts-are-executable.enable = false;
               check-merge-conflicts.enable = true;
               deadnix.enable = true;
-              detect-private-keys.enable = true;
+              detect-private-keys = {
+                enable = true;
+                excludes = [
+                  "files/public/certs"
+                  "files/public/age"
+                ];
+              };
               end-of-file-fixer.enable = true;
               fix-byte-order-marker.enable = true;
               flake-checker.enable = true;
@@ -3339,7 +3381,9 @@ Aside from the =default= devShell which is the one that should usually be called
             in
             {
               packages = [
-                (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.nixVersions."nix_${nix-version}")
+                (builtins.trace "alarm: pinned nix_${nix-version}"
+                  pkgs.stable26_05.nixVersions."nix_${nix-version}"
+                )
                 pkgs.git
                 pkgs.just
                 pkgs.age
@@ -3426,8 +3470,8 @@ Aside from the =default= devShell which is the one that should usually be called
 
               env =
                 let
-                  nix-plugins = pkgs.nix-plugins.override {
-                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                  nix-plugins = pkgs.stable26_05.nix-plugins.override {
+                    nixComponents = pkgs.stable26_05.nixVersions."nixComponents_${nix-version}";
                   };
                 in
                 [
@@ -4004,7 +4048,7 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
             specialArgs = { inherit self; };
             modules = [
               inputs.home-manager.nixosModules.home-manager
-              "${self}/install/installer-config.nix"
+              "${self}/hosts/utility/drugstore"
             ];
             format =
               {
@@ -4018,7 +4062,7 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
             inherit pkgs system;
             modules = [
               inputs.home-manager.nixosModules.home-manager
-              "${self}/install/keygen-config.nix"
+              "${self}/hosts/utility/policestation"
             ];
             format =
               {
@@ -4032,7 +4076,7 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
           swarsel-kexec =
             (inputs.smallpkgs.legacyPackages.${system}.nixos [
               {
-                imports = [ "${self}/install/kexec.nix" ];
+                imports = [ "${self}/hosts/utility/brickroad" ];
                 _file = __curPos.file;
                 system.kexec-installer.name = "swarsel-kexec";
               }
@@ -4066,30 +4110,44 @@ This library file defines a few commonly used functions for the tests.
         _module.args.testsLib = rec {
           inputSources =
             let
+              inherit ((builtins.fromJSON (builtins.readFile "${self}/flake.lock"))) nodes root;
+
+              resolveEdge =
+                edge:
+                if builtins.isString edge then
+                  edge
+                else
+                  builtins.foldl' (key: name: resolveEdge nodes.${key}.inputs.${name}) root edge;
+
+              edges =
+                key:
+                builtins.map resolveEdge (
+                  builtins.attrValues (
+                    builtins.removeAttrs (nodes.${key}.inputs or { }) (
+                      lib.optionals (key == root) [
+                        "vbc-nix"
+                        "repoSecrets"
+                      ]
+                    )
+                  )
+                );
+
               go =
                 seen: queue:
                 if queue == [ ] then
                   seen
                 else
                   let
-                    input = builtins.head queue;
+                    key = builtins.head queue;
                     rest = builtins.tail queue;
-                    key = if input ? outPath then builtins.unsafeDiscardStringContext input.outPath else null;
                   in
-                  if key == null || seen ? ${key} then
+                  if key == root || seen ? ${key} then
                     go seen rest
                   else
-                    go (seen // { ${key} = input; }) (rest ++ builtins.attrValues (input.inputs or { }));
+                    go (seen // { ${key} = true; }) (rest ++ edges key);
             in
-            builtins.attrValues (
-              go { } (
-                builtins.attrValues (
-                  builtins.removeAttrs self.inputs [
-                    "vbc-nix"
-                    "repoSecrets"
-                  ]
-                )
-              )
+            builtins.map (key: builtins.fetchTree nodes.${key}.locked) (
+              builtins.filter (key: nodes.${key}.locked.type != "path") (builtins.attrNames (go { } (edges root)))
             );
 
           mkDemoTest =
@@ -4097,7 +4155,7 @@ This library file defines a few commonly used functions for the tests.
             if !(inputs.repoSecrets.isDemo or false) then
               pkgs.runCommand "${name}-needs-demo-overrides" { } ''
                 echo "${name} must be built against the demo secrets so that the prebuilt system matches what swarsel-install builds inside the VM:" >&2
-                echo "  nix build .#${name} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file" >&2
+                echo "  nix build .#${name} --override-input repoSecrets path:./hosts/utility/hotel/secrets --override-input vbc-nix path:./files/stub --no-write-lock-file" >&2
                 echo "or run 'just demo-test'." >&2
                 exit 1
               ''
@@ -4128,7 +4186,7 @@ This library file defines a few commonly used functions for the tests.
             { lib, ... }: {
               imports = [
                 inputs.home-manager.nixosModules.home-manager
-                "${self}/install/installer-config.nix"
+                "${self}/hosts/utility/drugstore"
                 "${inputs.nixpkgs}/nixos/modules/profiles/installation-device.nix"
                 "${inputs.nixpkgs}/nixos/modules/profiles/base.nix"
                 "${inputs.nixpkgs}/nixos/tests/common/auto-format-root-device.nix"
@@ -4657,6 +4715,136 @@ This library file defines a few commonly used functions for the tests.
   }
 #+end_src
 
+*** Sandbox
+:PROPERTIES:
+:CUSTOM_ID: h:f15ddb15-d74b-4c17-ab95-cdec33822fcc
+:END:
+
+#+begin_src nix-ts :tangle modules/tests/sandbox.nix
+  { self, inputs, ... }:
+  let
+    arch = "x86_64-linux";
+    configName = "vacanthouse";
+    hostDir = "${self}/hosts/utility/${configName}";
+
+    overlays = [
+      self.overlays.default
+      self.overlays.stables
+      self.overlays.modifications
+    ];
+
+    sandboxPkgs = import inputs.nixpkgs-sandbox {
+      system = arch;
+      inherit overlays;
+      config.allowUnfree = true;
+    };
+
+    inherit (sandboxPkgs) lib;
+
+    mkSpecialArgs = nodes: {
+      inherit
+        inputs
+        self
+        lib
+        nodes
+        configName
+        arch
+        ;
+      inherit (self) outputs;
+      inherit (self.outputs) homeLib;
+      globals =
+        (lib.evalModules {
+          prefix = [ "globals" ];
+          specialArgs = {
+            inherit lib inputs nodes;
+            inherit (inputs.topologyPrivate) topologyPrivate;
+          };
+          modules = [
+            self.modules.generic.globals
+            "${hostDir}/secrets/globals.nix"
+            { globals = lib.mkMerge nodes.${configName}.config._globalsDefs; }
+          ];
+        }).config.globals;
+      minimal = false;
+      type = "nixos";
+      withHomeManager = false;
+      extraModules = [ ];
+    };
+
+    nodeModule = {
+      networking.hostName = configName;
+
+      nixpkgs = {
+        hostPlatform = arch;
+        inherit overlays;
+        config.allowUnfree = true;
+      };
+
+      node = {
+        name = configName;
+        inherit arch;
+        type = "nixos";
+        secretsDir = ../../hosts/utility/vacanthouse/secrets;
+        configDir = ../../hosts/utility/vacanthouse;
+        lockFromBootstrapping = true;
+      };
+
+      swarselsystems.mainUser = "swarsel";
+    };
+
+    vacanthouse = inputs.nixpkgs-sandbox.lib.nixosSystem {
+      specialArgs = mkSpecialArgs { ${configName} = vacanthouse; };
+      modules = [
+        hostDir
+        nodeModule
+      ];
+    };
+  in
+  {
+    flake-file.inputs.nixpkgs-sandbox.url = "github:tebriel/nixpkgs/homebox/0.26.2";
+
+    flake.nixosConfigurations.${configName} = vacanthouse;
+
+    perSystem =
+      { lib, system, ... }:
+      lib.optionalAttrs (system == arch) {
+        packages.sandbox-test = sandboxPkgs.testers.runNixOSTest (
+          { nodes, ... }:
+          {
+            name = "sandbox-${configName}";
+
+            node = {
+              specialArgs = mkSpecialArgs { ${configName}.config = nodes.${configName}; };
+              pkgsReadOnly = false;
+            };
+
+            nodes.${configName} = {
+              imports = [
+                hostDir
+                nodeModule
+              ];
+              virtualisation = {
+                cores = 2;
+                memorySize = 4096;
+              };
+            };
+
+            testScript = ''
+              vacanthouse.start()
+              vacanthouse.wait_for_unit("multi-user.target")
+              vacanthouse.wait_for_unit("kanidm.service")
+              vacanthouse.wait_until_succeeds("curl -sSf https://kanidm.swarsel.internal/status", timeout=600)
+              vacanthouse.succeed("curl -sSf https://kanidm.swarsel.internal/oauth2/openid/homebox/.well-known/openid-configuration")
+              vacanthouse.wait_until_succeeds("curl -sSf http://127.0.0.1:3004/ready", timeout=600)
+              vacanthouse.succeed("curl -sSf -o /dev/null https://oauth.swarsel.internal/oauth2/sign_in")
+              vacanthouse.wait_until_succeeds("curl -sSf https://homebox.swarsel.internal/api/v1/status", timeout=600)
+            '';
+          }
+        );
+      };
+  }
+#+end_src
+
 ** Installer flake
 :PROPERTIES:
 :CUSTOM_ID: h:1d4514b4-e952-4faf-b30e-d89e73a526c6
@@ -4675,11 +4863,11 @@ Now, I could of course define a =<name>= and =<name>-minimal= attribute for each
 
 Hence, what I instead do is to define another output =nixosConfigurationsMinimal= as an output to this flakes' config, and then use it to set the =nixosConfigurations= of another, minimal, flake that I keep in =install/=. When using =nixos-anywhere= during initial deployment, I will then point it to that minimal flake, where the minimal configs can be found.
 
-#+begin_src nix-ts :tangle install/flake.nix
+#+begin_src nix-ts :tangle files/install/flake.nix
   {
     description = "Minimal installer flake - automatically generated by SwarselSystems.org";
 
-    inputs.swarsel.url = "./..";
+    inputs.swarsel.url = "./../..";
 
     outputs = { swarsel, ... }: { nixosConfigurations = swarsel.nixosConfigurationsMinimal; };
   }
@@ -9004,7 +9192,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :PROPERTIES:
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/toto/default.nix
+#+begin_src nix-ts :tangle hosts/utility/toto/default.nix
   {
     self,
     inputs,
@@ -9051,12 +9239,51 @@ This is a slim setup for developing base configuration. I do not track the hardw
   }
 #+end_src
 
+***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:f0a157d0-6823-48bc-b774-6cc819169c29
+:END:
+
+#+begin_src nix-ts :tangle hosts/utility/toto/hardware-configuration.nix
+  # Do not modify this file!  It was generated by ‘nixos-generate-config’
+  # and may be overwritten by future invocations.  Please make changes
+  # to /etc/nixos/configuration.nix instead.
+  { lib, modulesPath, ... }:
+
+  {
+    imports = [
+      (modulesPath + "/profiles/qemu-guest.nix")
+    ];
+
+    boot = {
+      initrd.availableKernelModules = [
+        "ahci"
+        "xhci_pci"
+        "virtio_pci"
+        "sr_mod"
+        "virtio_blk"
+      ];
+      initrd.kernelModules = [ ];
+      kernelModules = [ "kvm-amd" ];
+      extraModulePackages = [ ];
+    };
+
+    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+    # (the default) this is the recommended approach. When using systemd-networkd it's
+    # still possible to use this option, but it's recommended to use it in conjunction
+    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+    networking.useDHCP = lib.mkDefault true;
+    # networking.interfaces.enp1s0.useDHCP = lib.mkDefault true;
+
+    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  }
+#+end_src
 ***** disko
 :PROPERTIES:
 :CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/toto/disk-config.nix
+#+begin_src nix-ts :tangle hosts/utility/toto/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   {
     lib,
@@ -9210,7 +9437,7 @@ Steps to recover using live ISO:
  - Then to e.g. fix missing bootloader entries: =/nix/var/nix/profiles/system/bin/switch-to-configuration boot=
 
 
-#+begin_src nix-ts :tangle install/installer-config.nix
+#+begin_src nix-ts :tangle hosts/utility/drugstore/default.nix
   {
     self,
     config,
@@ -9271,7 +9498,9 @@ Steps to recover using live ISO:
 
       nix = {
         channel.enable = false;
-        package = pkgs.nixVersions.nix_2_28;
+        package =
+          (import self.inputs.nixpkgs-stable26_05 { inherit (pkgs.stdenv.hostPlatform) system; })
+          .nixVersions.nix_2_28;
         extraOptions = ''
           plugin-files = ${
             pkgs.nix-plugins.overrideAttrs (o: {
@@ -9282,7 +9511,7 @@ Steps to recover using live ISO:
               patches = o.patches or [ ];
             })
           }/lib/nix/plugins
-          extra-builtins-file = ${../files/nix/extra-builtins.nix}
+          extra-builtins-file = ${../../../files/nix/extra-builtins.nix}
         '';
 
         settings.experimental-features = [
@@ -9413,7 +9642,7 @@ Steps to recover using live ISO:
 
 This live ISO config provides a secure environment for setting up cryptographic keys. All networking capabilities are turned off and only necessary tools for generating the keys are enabled.
 
-#+begin_src nix-ts :tangle install/keygen-config.nix
+#+begin_src nix-ts :tangle hosts/utility/policestation/default.nix
   {
     config,
     pkgs,
@@ -9572,7 +9801,7 @@ This live ISO config provides a secure environment for setting up cryptographic 
 
 This is a specialized kexec image that I use to have disko available on RAM-limited machines, as the kexec provided directly by NixOS-anywhere does not include it. Note that I had to strip most other stuff from this image, so this is not a good image for general deployment.
 
-#+begin_src nix-ts :tangle install/kexec.nix
+#+begin_src nix-ts :tangle hosts/utility/brickroad/default.nix
   {
     lib,
     pkgs,
@@ -9676,7 +9905,7 @@ This is a specialized kexec image that I use to have disko available on RAM-limi
   }
 #+end_src
 
-***** Hotel (Demo Physical/VM)
+**** Hotel (Demo Physical/VM)
 :PROPERTIES:
 :CUSTOM_ID: h:e1498bef-ec67-483d-bf02-76264e30be8e
 :END:
@@ -9684,18 +9913,19 @@ This is a specialized kexec image that I use to have disko available on RAM-limi
 This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys). Values that are normally read from the encrypted repository secrets are taken from the plain text example files in =files/demo= instead (see [[#h:dca96f1a-3297-4b72-8d35-f107325cde12][Demo secrets and input stubs]]), which the install scripts swap in via =--override-input repoSecrets=. The end-to-end installation of this host is covered by the [[#h:84e74ffb-d454-4744-bd89-4e65e122ced5][Demo tests]].
 
 I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
-****** Main configuration
+***** Main configuration
 :PROPERTIES:
 :CUSTOM_ID: h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/default.nix
+#+begin_src nix-ts :tangle hosts/utility/hotel/default.nix
   {
     self,
     inputs,
     config,
     pkgs,
     lib,
+    arch,
     minimal,
     ...
   }:
@@ -9726,6 +9956,12 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
     environment.variables = {
       WLR_RENDERER_ALLOW_SOFTWARE = 1;
     };
+
+    hardware.graphics.enable32Bit = lib.mkIf (arch != "x86_64-linux") (lib.mkForce false);
+
+    nixpkgs.overlays = lib.mkAfter [ (_: prev: { niri-stable = prev.niri; }) ];
+
+    services.printing.drivers = lib.mkIf (arch != "x86_64-linux") (lib.mkForce [ ]);
 
     topology.self.interfaces."demo host" = { };
 
@@ -9760,12 +9996,12 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
   }
 #+end_src
 
-****** disko
+***** disko
 :PROPERTIES:
 :CUSTOM_ID: h:849e4233-ba40-4fec-acfe-0d76e1e4371b
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/disk-config.nix
+#+begin_src nix-ts :tangle hosts/utility/hotel/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   {
     lib,
@@ -9901,25 +10137,25 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
   }
 #+end_src
 
-****** NixOS dummy options configuration
+***** NixOS dummy options configuration
 :PROPERTIES:
 :CUSTOM_ID: h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/options.nix
+#+begin_src nix-ts :tangle hosts/utility/hotel/options.nix
   _: { }
 #+end_src
 
-****** home-manager dummy options configuration
+***** home-manager dummy options configuration
 :PROPERTIES:
 :CUSTOM_ID: h:88ccb198-74b9-4269-8e22-af1277f44667
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/options-home.nix
+#+begin_src nix-ts :tangle hosts/utility/hotel/options-home.nix
   _: { }
 #+end_src
 
-****** Demo secrets and input stubs
+***** Demo secrets and input stubs
 :PROPERTIES:
 :CUSTOM_ID: h:dca96f1a-3297-4b72-8d35-f107325cde12
 :END:
@@ -9930,7 +10166,7 @@ The private secrets input simply exposes the paths of the encrypted files:
 
 #+begin_src nix-ts :tangle secrets/repo/flake.nix
   {
-    description = "Repository secrets for SwarselSystems. Override this input with ./files/demo to build without access to the encrypted files.";
+    description = "Repository secrets for SwarselSystems. Override this input with ./hosts/utility/hotel/secrets to build without access to the encrypted files.";
 
     outputs = _: {
       pii = ./pii.nix.enc;
@@ -9941,7 +10177,7 @@ The private secrets input simply exposes the paths of the encrypted files:
 
 The demo replacement exposes plain text example files instead and sets =isDemo=, which also disables the cross-host globals aggregation (which would otherwise pull in every host's encrypted local secrets):
 
-#+begin_src nix-ts :tangle files/demo/flake.nix
+#+begin_src nix-ts :tangle hosts/utility/hotel/secrets/flake.nix
   {
     description = "Example repository secrets used for building the public demo configuration.";
 
@@ -9953,179 +10189,29 @@ The demo replacement exposes plain text example files instead and sets =isDemo=,
   }
 #+end_src
 
-#+begin_src nix-ts :tangle files/demo/pii.nix
+#+begin_src nix-ts :tangle hosts/utility/hotel/secrets/pii.nix
   {
-    ipv4 = "203.0.113.1";
-    wireguardEndpoint = "vpn.example.org";
-    atticPublicKey = "demo:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-    sportDomain = "sport.example.org";
-    instaDomain = "insta.example.org";
-
-    noctaliaGithubToken = "";
-
-    builder1-ip = "203.0.113.2";
-    builder1-pubHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-    builder1-pubHostKey-b64 = "";
-    builder2-ip = "203.0.113.3";
-    builder2-pubHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-    builder2-pubHostKey-b64 = "";
-    jump-pubHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-    jump-pubHostKey-b64 = "";
-
-    dnsProvider = "example";
-    dnsBase = "example.org";
-    dnsMail = "hostmaster@example.org";
-    openrouterApi = "";
-    emacs.radicaleUser = "demo";
-    irc.irc_nick1 = "demo";
     fullName = "Demo User";
-    workHostName = "demo-work";
+    checkerURLs = "https://example.org";
     caldavTasksEndpoint = "https://radicale.example.org/demo/tasks/";
-
-    location = {
-      timezone = "Europe/Vienna";
-      timezoneSpecific = "Europe/Vienna";
-      latitude = "16.0";
-      longitude = "16.0";
-    };
-
-    syncthing = {
-      devices = {
-        demo1.id = "AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA";
-        demo2.id = "AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAA-AAAAAAB";
-      };
-    };
-
-    obsidian = {
-      userIgnoreFilters = [ ];
-    };
-
-    calendar = {
-      source1 = "https://calendar.example.org/demo/calendar1/";
-      source1-name = "calendar1";
-      source2 = "https://calendar.example.org/demo/calendar2/";
-      source2-name = "calendar2";
-      source3 = "https://calendar.example.org/demo/calendar3/";
-      source3-name = "calendar3";
-    };
-
-    mail = {
-      address1 = "demo@example.org";
-      address2 = "demo2@example.org";
-      address2-name = "demo2";
-      address3 = "demo3@example.org";
-      address3-name = "demo3";
-      address4 = "demo4@example.org";
-      addressWork = "demo@work.example.org";
-      addressWork-name = "demo-work";
-      allMailAddresses = "demo@example.org demo2@example.org demo3@example.org demo4@example.org";
-    };
-
-    yubikeys = {
-      dev1 = "0000000";
-      cfg1 = "00000000000000000000000000000000";
-      dev2 = "0000001";
-      cfg2 = "00000000000000000000000000000001";
-    };
-
-    network = {
-      wlan1 = "DemoWifi";
-      wlan2 = "DemoWifi2";
-      mobile1 = "DemoHotspot";
-      eduroam-anon = "anonymous@example.org";
-      vpn1-location = "demo";
-      vpn1-cipher = "aes-256-gcm";
-      vpn1-address = "vpn.example.org";
-    };
-
-    services.domains = {
-      kavita = "kavita.example.org";
-      jellyfin = "jellyfin.example.org";
-      navidrome = "navidrome.example.org";
-      matrix = "matrix.example.org";
-      nextcloud = "nextcloud.example.org";
-      immich = "immich.example.org";
-      paperless = "paperless.example.org";
-      syncthing1 = "syncthing1.example.org";
-      syncthing-summers-storage = "syncthing-storage.example.org";
-      syncthing2 = "syncthing2.example.org";
-      syncthing3 = "syncthing3.example.org";
-      syncthing-moonside = "syncthing-moonside.example.org";
-      grafana = "grafana.example.org";
-      jenkins = "jenkins.example.org";
-      freshrss = "freshrss.example.org";
-      forgejo = "forgejo.example.org";
-      ankisync = "ankisync.example.org";
-      kanidm = "kanidm.example.org";
-      oauth2-proxy = "oauth2-proxy.example.org";
-      firefly-iii = "firefly.example.org";
-      koillection = "koillection.example.org";
-      atuin = "atuin.example.org";
-      radicale = "radicale.example.org";
-      croc = "croc.example.org";
-      microbin = "microbin.example.org";
-      shlink = "shlink.example.org";
-      slink = "slink.example.org";
-      transmission = "transmission.example.org";
-      snipeit = "snipeit.example.org";
-      homebox = "homebox.example.org";
-      garage-belchsfactory = "garage1.example.org";
-      garage-winters = "garage2.example.org";
-      minecraft = "minecraft.example.org";
-      mailserver = "mail.example.org";
-      attic = "attic.example.org";
-      garage-web-belchsfactory = "garage-web1.example.org";
-      garage-web-winters = "garage-web2.example.org";
-      garage-admin-belchsfactory = "garage-admin1.example.org";
-      garage-admin-winters = "garage-admin2.example.org";
-      hydra = "hydra.example.org";
-      buildbot = "buildbot.example.org";
-      roundcube = "roundcube.example.org";
-      firezone = "firezone.example.org";
-      adguardhome = "adguardhome.example.org";
-      searx = "searx.example.org";
-      invidious = "invidious.example.org";
-      firefox-syncserver = "firefox-sync.example.org";
-      loki = "loki.example.org";
-      tempo = "tempo.example.org";
-      mimir = "mimir.example.org";
-      pyroscope = "pyroscope.example.org";
-      gotify = "gotify.example.org";
-      copyparty = "copyparty.example.org";
-      mealie = "mealie.example.org";
-    };
-
-    ssh.hosts = { };
+    irc.irc_nick1 = "demo";
+    location.timezoneSpecific = "Europe/Vienna";
   }
 #+end_src
 
-#+begin_src nix-ts :tangle files/demo/globals.nix
+#+begin_src nix-ts :tangle hosts/utility/hotel/secrets/globals.nix
   {
     globals = {
       root.hashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0"; # setup
 
-      user = {
-        name = "demo";
-        work = "demo";
-      };
-
       general = {
-        internetVLANs = [ "home" ];
-        homeProxy = "demo-homeproxy";
-        routerServer = "demo-router";
-        webProxy = "demo-webproxy";
-        dnsServer = "demo-dns";
-        homeDnsServer = "demo-homedns";
-        homeWebProxy = "demo-homewebproxy";
-        idmServer = "demo-idm";
-        oauthServer = "demo-oauth";
-        monitoringServer = "demo-monitoring";
-        homeSyncthingServer = "demo-syncthing";
-      };
-
-      domains = {
-        main = "example.org";
-        externalDns = [ "9.9.9.9" ];
+        homeProxy = "shim";
+        webProxy = "shim";
+        routerServer = "shim";
+        homeWebProxy = "shim";
+        idmServer = "shim";
+        monitoringServer = "shim";
+        homeSyncthingServer = "shim";
       };
 
       services = {
@@ -10133,49 +10219,15 @@ The demo replacement exposes plain text example files instead and sets =isDemo=,
           clients = { };
           otlpGrpcPort = 4317;
         };
-        syncthing-demo-syncthing.extraConfig.devices = { };
+        syncthing-shim.extraConfig.devices = { };
         ankisync.domain = "ankisync.example.org";
         attic.domain = "attic.example.org";
         atuin.domain = "atuin.example.org";
-        croc.domain = "croc.example.org";
         firefox-syncserver.domain = "firefox-sync.example.org";
-        firezone.domain = "firezone.example.org";
-        freshrss.domain = "freshrss.example.org";
-        gotify.domain = "gotify.example.org";
         invidious.domain = "invidious.example.org";
         kanidm.domain = "kanidm.example.org";
-        loki = {
-          domain = "loki.example.org";
-          extraConfig.host = "demo-monitoring";
-        };
-        mailserver.domain = "mail.example.org";
         matrix.domain = "matrix.example.org";
-        mimir = {
-          domain = "mimir.example.org";
-          extraConfig.host = "demo-monitoring";
-        };
-        navidrome.domain = "navidrome.example.org";
-        nextcloud.domain = "nextcloud.example.org";
-        pyroscope = {
-          domain = "pyroscope.example.org";
-          extraConfig.host = "demo-monitoring";
-        };
-        radicale.domain = "radicale.example.org";
-        roundcube.domain = "roundcube.example.org";
         searx.domain = "searx.example.org";
-        tempo.domain = "tempo.example.org";
-      };
-
-      networks = { };
-
-      hosts = {
-        hotel = {
-          defaultGateway4 = null;
-          defaultGateway6 = null;
-          wanAddress4 = null;
-          wanAddress6 = null;
-          isHome = false;
-        };
       };
     };
   }
@@ -10191,6 +10243,279 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
   }
 #+end_src
 
+**** Vacant House (Test Environment)
+:PROPERTIES:
+:CUSTOM_ID: h:cb88ca57-0896-452f-9cfb-65d3731cfc5e
+:END:
+
+***** Main configuration
+:PROPERTIES:
+:CUSTOM_ID: h:7b4a6588-71c5-4cf8-a690-fd7cce96f625
+:END:
+
+#+begin_src nix-ts :tangle hosts/utility/vacanthouse/default.nix
+  {
+    self,
+    lib,
+    config,
+    pkgs,
+    globals,
+    ...
+  }:
+  {
+    imports = [
+      self.modules.generic.meta
+      self.modules.generic.options
+      self.modules.generic.globals
+      self.modules.generic.config-lib
+      self.modules.generic.pii
+      self.modules.nixos.nodes
+      self.modules.nixos.node-roles
+      self.modules.nixos.nftables
+      self.modules.nixos.id
+      self.modules.nixos.impermanence
+      self.modules.nixos.topology
+      self.modules.nixos.sops
+      self.modules.nixos.users
+      self.modules.nixos.nginx
+      self.modules.nixos.kanidm
+      self.modules.nixos.oauth2-proxy
+      ./sandbox.nix
+    ];
+
+    options.sandbox.tlsDomains = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+    };
+
+    config = {
+      sandbox.tlsDomains = [
+        globals.services.kanidm.domain
+        globals.services.oauth2-proxy.domain
+      ];
+
+      swarselsystems = {
+        isLinux = true;
+        isPublic = true;
+        nodeRoles = [
+          "webProxy"
+          "oauthServer"
+        ];
+      };
+
+      repo.secretFiles = {
+        common = lib.mkForce ./secrets/pii.nix;
+        local = ./secrets/pii-local.nix;
+      };
+
+      sops = {
+        age = {
+          sshKeyPaths = lib.mkForce [ ];
+          keyFile = "/var/lib/sops-nix/key.txt";
+        };
+
+        secrets = {
+          kanidm-self-signed-crt.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
+          kanidm-self-signed-key.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
+          kanidm-oauth2-proxy = {
+            owner = lib.mkForce "kanidm";
+            group = lib.mkForce "kanidm";
+            mode = lib.mkForce "0440";
+          };
+        };
+
+        templates.motd = {
+          mode = "0444";
+          content = ''
+
+            vacanthouse sandbox
+            ===================
+            kanidm idm_admin password: ${config.sops.placeholder.kanidm-idm-admin-pw}
+
+            set a credential for the sandbox person:
+              kanidm login -D idm_admin
+              kanidm person credential create-reset-token sandbox
+
+          '';
+        };
+      };
+
+      system.activationScripts = {
+        sandboxAgeKey.text = ''
+          install -d -m 700 /var/lib/sops-nix
+          install -m 600 ${../../../files/public/age/vacanthouse.key} /var/lib/sops-nix/key.txt
+        '';
+        setupSecrets.deps = [ "sandboxAgeKey" ];
+      };
+
+      networking = {
+        hosts."127.0.0.1" = config.sandbox.tlsDomains;
+        firewall.allowedTCPPorts = [ 8300 ];
+      };
+
+      services.nginx.virtualHosts = lib.genAttrs config.sandbox.tlsDomains (_: {
+        useACMEHost = lib.mkForce null;
+        sslCertificate = "${../../../files/public/certs/wildcard.crt}";
+        sslCertificateKey = "${../../../files/public/certs/wildcard.key}";
+      });
+
+      security.pki.certificateFiles = [ ../../../files/public/certs/ca.crt ];
+
+      users.motdFile = config.sops.templates.motd.path;
+
+      services.kanidm.provision = {
+        groups."sandbox.access".members = [ "sandbox" ];
+        systems.oauth2.oauth2-proxy = {
+          scopeMaps."sandbox.access" = [
+            "openid"
+            "email"
+            "profile"
+          ];
+          claimMaps.groups.valuesByGroup."sandbox.access" = [ "sandbox_access" ];
+        };
+      };
+
+      systemd.tmpfiles.rules = [
+        "d /etc/ssl/private 0755 root root -"
+        "C+ /etc/ssl/certs/kanidm.crt 0644 kanidm kanidm - ${../../../files/public/certs/wildcard.crt}"
+        "C+ /etc/ssl/private/kanidm.key 0600 kanidm kanidm - ${../../../files/public/certs/wildcard.key}"
+        "C /root/.bash_history 0600 root root - ${pkgs.writeText "sandbox-seed-history" ''
+          cat /run/secrets/kanidm-idm-admin-pw
+          kanidm login -D idm_admin
+          kanidm person credential create-reset-token sandbox
+        ''}"
+      ];
+
+      fileSystems."/" = {
+        device = "/dev/disk/by-label/nixos";
+        fsType = "ext4";
+      };
+
+      boot.loader.grub.enable = false;
+
+      system.stateVersion = "24.11";
+
+      virtualisation.vmVariant.virtualisation = {
+        cores = 2;
+        memorySize = 4096;
+        graphics = false;
+        forwardPorts = [
+          {
+            from = "host";
+            host.port = 80;
+            guest.port = 80;
+          }
+          {
+            from = "host";
+            host.port = 443;
+            guest.port = 443;
+          }
+          {
+            from = "host";
+            host.port = 8300;
+            guest.port = 8300;
+          }
+        ];
+      };
+    };
+  }
+#+end_src
+
+***** Test Sandbox
+:PROPERTIES:
+:CUSTOM_ID: h:1baf4335-5578-44a2-86e6-880b29333b25
+:END:
+
+#+begin_src nix-ts :tangle hosts/utility/vacanthouse/sandbox.nix
+  {
+    self,
+    lib,
+    globals,
+    ...
+  }:
+  {
+    imports = [
+      self.modules.nixos.homebox
+    ];
+
+    config = {
+      sandbox.tlsDomains = [ globals.services.homebox.domain ];
+
+      networking.firewall.allowedTCPPorts = [ 7745 ];
+
+      sops.secrets.kanidm-homebox = {
+        owner = lib.mkForce "kanidm";
+        group = lib.mkForce "kanidm";
+        mode = lib.mkForce "0440";
+      };
+
+      services.kanidm.provision.groups."homebox.access".members = [ "sandbox" ];
+
+      systemd.services.homebox = {
+        wants = [ "kanidm.service" ];
+        after = [
+          "kanidm.service"
+          "nginx.service"
+        ];
+      };
+
+      virtualisation.vmVariant.virtualisation.forwardPorts = [
+        {
+          from = "host";
+          host.port = 7745;
+          guest.port = 7745;
+        }
+      ];
+    };
+  }
+#+end_src
+
+***** Sandbox secrets and input stubs
+:PROPERTIES:
+:CUSTOM_ID: h:aff65011-69ec-44f0-b211-b4722be6254b
+:END:
+
+#+begin_src nix-ts :tangle hosts/utility/vacanthouse/secrets/pii.nix
+  {
+    services.domains = {
+      kanidm = "kanidm.swarsel.internal";
+      oauth2-proxy = "oauth.swarsel.internal";
+      homebox = "homebox.swarsel.internal";
+    };
+  }
+#+end_src
+
+#+begin_src nix-ts :tangle hosts/utility/vacanthouse/secrets/pii-local.nix
+  {
+    persons.sandbox = {
+      displayName = "Sandbox User";
+      mailAddresses = [ "sandbox@swarsel.internal" ];
+    };
+  }
+#+end_src
+
+#+begin_src nix-ts :tangle hosts/utility/vacanthouse/secrets/globals.nix
+  {
+    globals = {
+      root.hashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0";
+
+      general = {
+        homeProxy = "shim";
+        homeWebProxy = "shim";
+      };
+
+      domains.main = "swarsel.internal";
+
+      services.alloy.extraConfig.otlpGrpcPort = 4317;
+
+      networks.home-lan.vlans.services = {
+        id = 10;
+        cidrv4 = "192.168.110.0/24";
+        cidrv6 = "fd00:5a4d:10::/64";
+      };
+    };
+  }
+#+end_src
 
 ** Modules
 :PROPERTIES:
@@ -11657,6 +11982,10 @@ In short, the options defined here are passed to the modules systems using =_mod
 
             browserPolicies = {
               # CaptivePortal = false;
+              Certificates = {
+                ImportEnterpriseRoots = true;
+                Install = [ "${self}/files/public/certs/ca.crt" ];
+              };
               AppAutoUpdate = false;
               BackgroundAppUpdate = false;
               DisableBuiltinPDFViewer = true;
@@ -20814,6 +21143,14 @@ Mostly used to install some compilers and lsp's that I want to have available wh
                   bluez
                   wireguard-tools
                 ]
+                ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
+                  # ledger packages
+                  ledger-live-desktop
+
+                  # keyboards
+                  vial
+                  via
+                ]
                 ++ lib.optionals config.swarselsystems.isFullBuild [
                   # yubikey packages
                   yubikey-personalization
@@ -20824,9 +21161,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
                   cfssl
                   pcsc-tools
                   pcscliteWithPolkit.out
-
-                  # ledger packages
-                  ledger-live-desktop
 
                   # pinentry
                   dbus
@@ -20850,8 +21184,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
                   # keyboards
                   qmk
-                  vial
-                  via
 
                   # kde-connect
                   xdg-desktop-portal
@@ -22536,17 +22868,28 @@ This loads some udev rules that I need for my split keyboards.
 
 #+begin_src nix-ts :tangle modules/client/system/hardwarecompatibility-keyboards.nix
   {
-    flake.modules.nixos.hardwarecompatibility-keyboards = { pkgs, confLib, ... }: {
-      config = {
-        users.persistentIds.plugdev = confLib.mkIds 953;
+    flake.modules.nixos.hardwarecompatibility-keyboards =
+      {
+        pkgs,
+        lib,
+        confLib,
+        ...
+      }:
+      {
+        config = {
+          users.persistentIds.plugdev = confLib.mkIds 953;
 
-        services.udev.packages = with pkgs; [
-          qmk-udev-rules
-          vial
-          via
-        ];
+          services.udev.packages =
+            with pkgs;
+            [
+              qmk-udev-rules
+            ]
+            ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
+              vial
+              via
+            ];
+        };
       };
-    };
   }
 #+end_src
 
@@ -22610,114 +22953,118 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
 
 #+begin_src nix-ts :tangle modules/client/system/nix-ld.nix
   {
-    flake.modules.nixos.nix-ld = { pkgs, ... }: {
+    flake.modules.nixos.nix-ld = { pkgs, lib, ... }: {
       config = {
         programs.nix-ld = {
           enable = true;
-          libraries = with pkgs; [
-            SDL
-            SDL2
-            SDL2_image
-            SDL2_mixer
-            SDL2_ttf
-            SDL_image
-            SDL_mixer
-            SDL_ttf
-            alsa-lib
-            at-spi2-atk
-            at-spi2-core
-            atk
-            bzip2
-            cairo
-            cups
-            curl
-            dbus
-            dbus-glib
-            expat
-            ffmpeg
-            flac
-            fontconfig
-            freeglut
-            freetype
-            fuse3
-            gdk-pixbuf
-            glew_1_10
-            glib
-            gnome2.GConf
-            pango
-            gtk2
-            gtk3
-            icu
-            libGL
-            libappindicator-gtk2
-            libappindicator-gtk3
-            libcaca
-            libcanberra
-            libcap
-            libdbusmenu-gtk2
-            libdrm
-            libelf
-            libgbm
-            libgcrypt
-            libglvnd
-            libidn
-            libindicator-gtk2
-            libjpeg
-            libmikmod
-            libnotify
-            libogg
-            libpng
-            libpng12
-            libpulseaudio
-            librsvg
-            libsamplerate
-            libtheora
-            libtiff
-            libudev0-shim
-            libunwind
-            libusb1
-            libuuid
-            libva
-            libvdpau
-            libvorbis
-            libvpx
-            libxkbcommon
-            libxml2
-            libz
-            mesa
-            nspr
-            nss
-            openssl
-            pango
-            pipewire
-            pixman
-            speex
-            steam-fhsenv-without-steam
-            systemd
-            tbb
-            vulkan-loader
-            libice
-            libsm
-            libx11
-            libxscrnsaver
-            libxcomposite
-            libxcursor
-            libxdamage
-            libxext
-            libxfixes
-            libxft
-            libxi
-            libxinerama
-            libxmu
-            libxrandr
-            libxrender
-            libxt
-            libxtst
-            libxxf86vm
-            libxcb
-            libxshmfence
-            zlib
-          ];
+          libraries =
+            with pkgs;
+            [
+              SDL
+              SDL2
+              SDL2_image
+              SDL2_mixer
+              SDL2_ttf
+              SDL_image
+              SDL_mixer
+              SDL_ttf
+              alsa-lib
+              at-spi2-atk
+              at-spi2-core
+              atk
+              bzip2
+              cairo
+              cups
+              curl
+              dbus
+              dbus-glib
+              expat
+              ffmpeg
+              flac
+              fontconfig
+              freeglut
+              freetype
+              fuse3
+              gdk-pixbuf
+              glew_1_10
+              glib
+              gnome2.GConf
+              pango
+              gtk2
+              gtk3
+              icu
+              libGL
+              libappindicator-gtk2
+              libappindicator-gtk3
+              libcaca
+              libcanberra
+              libcap
+              libdbusmenu-gtk2
+              libdrm
+              libelf
+              libgbm
+              libgcrypt
+              libglvnd
+              libidn
+              libindicator-gtk2
+              libjpeg
+              libmikmod
+              libnotify
+              libogg
+              libpng
+              libpng12
+              libpulseaudio
+              librsvg
+              libsamplerate
+              libtheora
+              libtiff
+              libudev0-shim
+              libunwind
+              libusb1
+              libuuid
+              libva
+              libvdpau
+              libvorbis
+              libvpx
+              libxkbcommon
+              libxml2
+              libz
+              mesa
+              nspr
+              nss
+              openssl
+              pango
+              pipewire
+              pixman
+              speex
+              systemd
+              tbb
+              vulkan-loader
+              libice
+              libsm
+              libx11
+              libxscrnsaver
+              libxcomposite
+              libxcursor
+              libxdamage
+              libxext
+              libxfixes
+              libxft
+              libxi
+              libxinerama
+              libxmu
+              libxrandr
+              libxrender
+              libxt
+              libxtst
+              libxxf86vm
+              libxcb
+              libxshmfence
+              zlib
+            ]
+            ++ lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [
+              steam-fhsenv-without-steam
+            ];
         };
       };
     };
@@ -23727,6 +24074,7 @@ Auto login for the initial session.
                 settings = {
                   shell = {
                     time_format = "{:%H:%M}";
+                    external_ip_enabled = true;
                     telemetry_enabled = false;
                     clipboard_enabled = true;
                     clipboard_auto_paste = "off";
@@ -23833,7 +24181,7 @@ Auto login for the initial session.
                     start = [ "workspaces" ];
                     center = [
                       "active_window"
-                      "noctalia/screen_recorder:recorder"
+                      "recorder_2"
                     ];
                     end = [
                       "tray"
@@ -24027,6 +24375,8 @@ Auto login for the initial session.
                     position = "center_right";
                     orientation = "vertical";
                     background_opacity = 0.5;
+                    position_vertical = "center_right";
+
                   };
 
                   audio = {
@@ -24084,21 +24434,25 @@ Auto login for the initial session.
                     ];
                   };
 
-                  plugins.enabled = [ "noctalia/screen_recorder" ];
+                  plugins.enabled = [
+                    "noctalia/screen_recorder"
+                    "noctalia/kaomoji"
+                    "whyoolw/sharednd"
+                  ];
 
                   plugin_settings."noctalia/screen_recorder" = {
-                    video_source = "portal";
-                    filename_pattern = "recording_%Y%m%d_%H%M%S";
-                    frame_rate = 60;
-                    video_codec = "h264";
-                    quality = "very_high";
-                    resolution = "original";
-                    audio_source = "default_output";
                     audio_codec = "opus";
-                    show_cursor = true;
+                    audio_source = "default_output";
                     color_range = "limited";
                     copy_to_clipboard = true;
+                    filename_pattern = "recording_%Y%m%d_%H%M%S";
+                    frame_rate = 60;
                     hide_inactive = true;
+                    quality = "very_high";
+                    resolution = "original";
+                    show_cursor = true;
+                    video_codec = "h264";
+                    video_source = "portal";
                   };
                 };
               };
@@ -25799,6 +26153,25 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
         virtualisation.vmware.guest.enable = true;
       };
     };
+  }
+#+end_src
+**** Sandbox Access for Clients
+:PROPERTIES:
+:CUSTOM_ID: h:8465cc0a-0cc4-410b-928e-8c36f1b47bec
+:END:
+
+#+begin_src nix-ts :tangle modules/client/system/sandbox-access.nix
+  {
+    flake.modules.nixos.sandbox-access =
+      { self, ... }:
+      {
+        networking.hosts."127.0.0.1" =
+          builtins.attrValues (import "${self}/hosts/utility/vacanthouse/secrets/pii.nix").services.domains;
+
+        security.pki.certificateFiles = [
+          "${self}/files/public/certs/ca.crt"
+        ];
+      };
   }
 #+end_src
 
@@ -27931,29 +28304,35 @@ Kavita is the service I use for my library management. It seems more tailored to
             '';
           };
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/signin-oidc";
-            };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/signin-oidc";
+              };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -28131,29 +28510,35 @@ Using the SSO Plugin is sadly not declarative:
             ];
           };
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
-            };
-            ${webProxy}.services.nginx = lib.recursiveUpdate (confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              lib.recursiveUpdate (confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
+              };
+            }
+            {
+              ${webProxy}.services.nginx = lib.recursiveUpdate (confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
-            );
-          };
+              }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                lib.recursiveUpdate (confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
+              );
+            }
+          ];
 
         };
       }
@@ -28404,11 +28789,11 @@ After the first login when setting up, you need to add a password to the user th
                 };
               };
             in
-            {
-              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-              ${webProxy}.services.nginx = genNginx serviceAddress "";
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-            };
+            lib.mkMerge [
+              { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
+            ];
 
         };
       }
@@ -29388,14 +29773,16 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 };
               };
             in
-            {
-              ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit serviceName serviceDomain kanidmSopsFile;
-                originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
-              };
-              ${webProxy}.services.nginx = genNginx serviceAddress "";
-              ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
-            };
+            lib.mkMerge [
+              {
+                ${idmServer} = confLib.mkKanidmOidcSystem {
+                  inherit serviceName serviceDomain kanidmSopsFile;
+                  originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
+                };
+              }
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+            ];
 
         };
       }
@@ -29592,47 +29979,53 @@ Social Login (OIDC) setup:
                 send_timeout            7200s;
               '';
             in
-            {
-              ${idmServer} =
-                lib.recursiveUpdate
-                  (confLib.mkKanidmOidcSystem {
-                    inherit serviceName serviceDomain kanidmSopsFile;
-                    originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
-                    extraGroups = [ "nextcloud.admins" ];
-                  })
-                  {
-                    services.kanidm.provision.systems.oauth2.nextcloud = {
-                      allowInsecureClientDisablePkce = true;
-                      claimMaps.groups = {
-                        joinType = "array";
-                        valuesByGroup."nextcloud.admins" = [ "admin" ];
+            lib.mkMerge [
+              {
+                ${idmServer} =
+                  lib.recursiveUpdate
+                    (confLib.mkKanidmOidcSystem {
+                      inherit serviceName serviceDomain kanidmSopsFile;
+                      originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+                      extraGroups = [ "nextcloud.admins" ];
+                    })
+                    {
+                      services.kanidm.provision.systems.oauth2.nextcloud = {
+                        allowInsecureClientDisablePkce = true;
+                        claimMaps.groups = {
+                          joinType = "array";
+                          valuesByGroup."nextcloud.admins" = [ "admin" ];
+                        };
                       };
                     };
-                  };
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  servicePort
-                  serviceDomain
-                  serviceName
-                  extraConfigLoc
-                  ;
-                maxBody = 0;
-              };
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                confLib.genNginx {
+              }
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
                   inherit
+                    serviceAddress
                     servicePort
                     serviceDomain
                     serviceName
                     extraConfigLoc
                     ;
                   maxBody = 0;
-                  extraConfig = nginxAccessRules;
-                  serviceAddress = homeServiceAddress;
-                }
-              );
-            };
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit
+                      servicePort
+                      serviceDomain
+                      serviceName
+                      extraConfigLoc
+                      ;
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
+              }
+            ];
 
         };
       }
@@ -29985,45 +30378,51 @@ My photo service. It does some cool things like face recognition automatically (
                 send_timeout            7200s;
               '';
             in
-            {
-              ${idmServer} =
-                lib.recursiveUpdate
-                  (confLib.mkKanidmOidcSystem {
-                    inherit serviceName serviceDomain kanidmSopsFile;
-                    originUrl = [
-                      "https://${serviceDomain}/auth/login"
-                      "https://${serviceDomain}/user-settings"
-                      "app.immich:///oauth-callback"
-                      "https://${serviceDomain}/api/oauth/mobile-redirect"
-                    ];
-                  })
-                  {
-                    services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
-                  };
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  servicePort
-                  serviceDomain
-                  serviceName
-                  extraConfigLoc
-                  ;
-                maxBody = 0;
-              };
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                confLib.genNginx {
+            lib.mkMerge [
+              {
+                ${idmServer} =
+                  lib.recursiveUpdate
+                    (confLib.mkKanidmOidcSystem {
+                      inherit serviceName serviceDomain kanidmSopsFile;
+                      originUrl = [
+                        "https://${serviceDomain}/auth/login"
+                        "https://${serviceDomain}/user-settings"
+                        "app.immich:///oauth-callback"
+                        "https://${serviceDomain}/api/oauth/mobile-redirect"
+                      ];
+                    })
+                    {
+                      services.kanidm.provision.systems.oauth2.immich.enableLegacyCrypto = true;
+                    };
+              }
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
                   inherit
+                    serviceAddress
                     servicePort
                     serviceDomain
                     serviceName
                     extraConfigLoc
                     ;
                   maxBody = 0;
-                  extraConfig = nginxAccessRules;
-                  serviceAddress = homeServiceAddress;
-                }
-              );
-            };
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit
+                      servicePort
+                      serviceDomain
+                      serviceName
+                      extraConfigLoc
+                      ;
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
+              }
+            ];
 
         };
       }
@@ -30232,35 +30631,41 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 send_timeout            300;
               '';
             in
-            {
-              ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit serviceName serviceDomain kanidmSopsFile;
-                originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
-              };
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  servicePort
-                  serviceDomain
-                  serviceName
-                  extraConfigLoc
-                  ;
-                maxBody = 0;
-              };
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                confLib.genNginx {
+            lib.mkMerge [
+              {
+                ${idmServer} = confLib.mkKanidmOidcSystem {
+                  inherit serviceName serviceDomain kanidmSopsFile;
+                  originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
+                };
+              }
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
                   inherit
+                    serviceAddress
                     servicePort
                     serviceDomain
                     serviceName
                     extraConfigLoc
                     ;
                   maxBody = 0;
-                  extraConfig = nginxAccessRules;
-                  serviceAddress = homeServiceAddress;
-                }
-              );
-            };
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit
+                      servicePort
+                      serviceDomain
+                      serviceName
+                      extraConfigLoc
+                      ;
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
+              }
+            ];
 
         };
       }
@@ -31276,22 +31681,26 @@ This is the server syncthings config, which makes sure that the servers never ov
             };
           };
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit serviceAddress servicePort serviceDomain;
-              serviceName = specificServiceName;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit serviceAddress servicePort serviceDomain;
                 serviceName = specificServiceName;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain;
+                  serviceName = specificServiceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -31652,46 +32061,52 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
           systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
 
-          nodes = {
-            ${idmServer} =
-              lib.recursiveUpdate
-                (confLib.mkKanidmOidcSystem {
-                  inherit serviceName serviceDomain kanidmSopsFile;
-                  originUrl = "https://${serviceDomain}/login/generic_oauth";
-                  extraGroups = [
-                    "grafana.editors"
-                    "grafana.admins"
-                    "grafana.server-admins"
-                  ];
-                })
-                {
-                  services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
-                    joinType = "array";
-                    valuesByGroup = {
-                      "grafana.editors" = [ "editor" ];
-                      "grafana.admins" = [ "admin" ];
-                      "grafana.server-admins" = [ "server_admin" ];
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} =
+                lib.recursiveUpdate
+                  (confLib.mkKanidmOidcSystem {
+                    inherit serviceName serviceDomain kanidmSopsFile;
+                    originUrl = "https://${serviceDomain}/login/generic_oauth";
+                    extraGroups = [
+                      "grafana.editors"
+                      "grafana.admins"
+                      "grafana.server-admins"
+                    ];
+                  })
+                  {
+                    services.kanidm.provision.systems.oauth2.grafana.claimMaps.groups = {
+                      joinType = "array";
+                      valuesByGroup = {
+                        "grafana.editors" = [ "editor" ];
+                        "grafana.admins" = [ "admin" ];
+                        "grafana.server-admins" = [ "server_admin" ];
+                      };
                     };
                   };
-                };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              proxyWebsockets = true;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                serviceAddress = homeServiceAddress;
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 proxyWebsockets = true;
-                extraConfig = nginxAccessRules;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  serviceAddress = homeServiceAddress;
+                  proxyWebsockets = true;
+                  extraConfig = nginxAccessRules;
+                }
+              );
+            }
+          ];
         };
       }
 
@@ -31896,7 +32311,11 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
             lib.mkMerge [
               {
                 ${webProxy}.services.nginx = genNginx serviceAddress wgProxyAccessRules;
+              }
+              {
                 ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+              }
+              {
                 ${globals.general.monitoringServer}.services.grafana = {
                   settings = {
                     "tracing.opentelemetry" = {
@@ -32115,30 +32534,34 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 
           systemd.services.gotify-server.serviceConfig.RestartSec = lib.mkForce "60";
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              proxyWebsockets = true;
-              maxBody = 50;
-              maxBodyUnit = "M";
-              # extraConfig = wgProxyAccessRules;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                serviceAddress = homeServiceAddress;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 proxyWebsockets = true;
                 maxBody = 50;
                 maxBodyUnit = "M";
-                extraConfig = nginxAccessRules;
-              }
-            );
-          };
+                # extraConfig = wgProxyAccessRules;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  serviceAddress = homeServiceAddress;
+                  proxyWebsockets = true;
+                  maxBody = 50;
+                  maxBodyUnit = "M";
+                  extraConfig = nginxAccessRules;
+                }
+              );
+            }
+          ];
         };
       }
 
@@ -32269,6 +32692,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 maxBody = 0;
                 extraConfig = wgProxyAccessRules;
               };
+            }
+            {
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
                   inherit servicePort serviceDomain serviceName;
@@ -32277,6 +32702,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                   extraConfig = nginxAccessRules;
                 }
               );
+            }
+            {
               ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [
                 {
                   name = "Pyroscope";
@@ -32516,6 +32943,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 maxBody = 0;
                 extraConfig = wgProxyAccessRules;
               };
+            }
+            {
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
                   inherit servicePort serviceDomain serviceName;
@@ -32524,6 +32953,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                   extraConfig = nginxAccessRules;
                 }
               );
+            }
+            {
               ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [
                 {
                   name = "Loki";
@@ -33312,6 +33743,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 maxBody = 0;
                 extraConfig = wgProxyAccessRules;
               };
+            }
+            {
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
                   inherit servicePort serviceDomain serviceName;
@@ -33320,6 +33753,8 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                   extraConfig = nginxAccessRules;
                 }
               );
+            }
+            {
               ${globals.general.monitoringServer}.services.grafana.provision = {
                 datasources.settings.datasources = [
                   {
@@ -33526,25 +33961,29 @@ This is my Jenkins instance. It is used to automatically build a new system when
             home = "/var/lib/${serviceName}";
           };
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -33792,14 +34231,16 @@ FreshRSS claims to support HTTP header Auth, but at least it does not work with 
                 };
               };
             in
-            {
-              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
-                inherit serviceName;
-                proxyGroup = "ttrss_access";
-              };
-              ${webProxy}.services.nginx = genNginx serviceAddress "";
-              ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
-            };
+            lib.mkMerge [
+              {
+                ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
+                  inherit serviceName;
+                  proxyGroup = "ttrss_access";
+                };
+              }
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+            ];
 
         };
       }
@@ -34017,43 +34458,49 @@ My self-hosted git solution.
               '';
           };
 
-          nodes = {
-            ${idmServer} =
-              lib.recursiveUpdate
-                (confLib.mkKanidmOidcSystem {
-                  inherit serviceName serviceDomain kanidmSopsFile;
-                  originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
-                  extraGroups = [ "forgejo.admins" ];
-                })
-                {
-                  services.kanidm.provision.systems.oauth2.forgejo = {
-                    # XXX: PKCE is currently not supported by gitea/forgejo,
-                    # see https://github.com/go-gitea/gitea/issues/21376.
-                    allowInsecureClientDisablePkce = true;
-                    claimMaps.groups = {
-                      joinType = "array";
-                      valuesByGroup."forgejo.admins" = [ "admin" ];
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} =
+                lib.recursiveUpdate
+                  (confLib.mkKanidmOidcSystem {
+                    inherit serviceName serviceDomain kanidmSopsFile;
+                    originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+                    extraGroups = [ "forgejo.admins" ];
+                  })
+                  {
+                    services.kanidm.provision.systems.oauth2.forgejo = {
+                      # XXX: PKCE is currently not supported by gitea/forgejo,
+                      # see https://github.com/go-gitea/gitea/issues/21376.
+                      allowInsecureClientDisablePkce = true;
+                      claimMaps.groups = {
+                        joinType = "array";
+                        valuesByGroup."forgejo.admins" = [ "admin" ];
+                      };
                     };
                   };
-                };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -34158,25 +34605,29 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
             ];
           };
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -34457,25 +34908,29 @@ kanidm person credential create-reset-token <user>
                 allow ${globals.networks.home-lan.vlans.services.cidrv6};
               '';
             in
-            {
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  servicePort
-                  serviceDomain
-                  serviceName
-                  ;
-                protocol = "https";
-                noSslVerify = true;
-              };
-              ${homeWebProxy}.services.nginx = confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                protocol = "https";
-                noSslVerify = true;
-                extraConfig = extraConfig + nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              };
-            };
+            lib.mkMerge [
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
+                  inherit
+                    serviceAddress
+                    servicePort
+                    serviceDomain
+                    serviceName
+                    ;
+                  protocol = "https";
+                  noSslVerify = true;
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  protocol = "https";
+                  noSslVerify = true;
+                  extraConfig = extraConfig + nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                };
+              }
+            ];
 
         };
       }
@@ -34662,7 +35117,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
             );
           };
         };
-        config = lib.mkIf (config.node.name == "twothreetunnel") {
+        config = lib.mkIf (builtins.elem "oauthServer" config.swarselsystems.nodeRoles) {
           swarselsystems.enabledServerModules = [ "oauth2-proxy" ];
 
           sops = {
@@ -34785,42 +35240,48 @@ This can be used to add OIDC in a way to services that do not support it nativel
                   allow ${globals.networks.home-lan.vlans.services.cidrv6};
               '';
             in
-            {
-              ${idmServer} = {
-                sops.secrets.kanidm-oauth2-proxy = {
-                  sopsFile = kanidmSopsFile;
-                  owner = "kanidm";
-                  group = "kanidm";
-                  mode = "0440";
-                };
-                services.kanidm.provision = {
-                  systems.oauth2.oauth2-proxy = {
-                    displayName = "Oauth2-Proxy";
-                    originUrl = "https://${serviceDomain}/oauth2/callback";
-                    originLanding = "https://${serviceDomain}/";
-                    basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
-                    preferShortUsername = true;
-                    claimMaps.groups = {
-                      joinType = "array";
+            lib.mkMerge [
+              {
+                ${idmServer} = {
+                  sops.secrets.kanidm-oauth2-proxy = {
+                    sopsFile = kanidmSopsFile;
+                    owner = "kanidm";
+                    group = "kanidm";
+                    mode = "0440";
+                  };
+                  services.kanidm.provision = {
+                    systems.oauth2.oauth2-proxy = {
+                      displayName = "Oauth2-Proxy";
+                      originUrl = "https://${serviceDomain}/oauth2/callback";
+                      originLanding = "https://${serviceDomain}/";
+                      basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
+                      preferShortUsername = true;
+                      claimMaps.groups = {
+                        joinType = "array";
+                      };
                     };
                   };
                 };
-              };
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  servicePort
-                  serviceAddress
-                  serviceDomain
-                  serviceName
-                  extraConfig
-                  ;
-              };
-              ${homeWebProxy}.services.nginx = confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                extraConfig = extraConfig + nginxAccessRules;
-                serviceAddress = globals.hosts.${oauthServer}.wanAddress4;
-              };
-            };
+              }
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
+                  inherit
+                    servicePort
+                    serviceAddress
+                    serviceDomain
+                    serviceName
+                    extraConfig
+                    ;
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  extraConfig = extraConfig + nginxAccessRules;
+                  serviceAddress = globals.hosts.${oauthServer}.wanAddress4;
+                };
+              }
+            ];
         };
       }
 
@@ -35017,14 +35478,16 @@ My expenses tracker.
                 };
               };
             in
-            {
-              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
-                serviceName = "firefly";
-                proxyGroup = "firefly_access";
-              };
-              ${webProxy}.services.nginx = genNginx serviceAddress "";
-              ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
-            };
+            lib.mkMerge [
+              {
+                ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
+                  serviceName = "firefly";
+                  proxyGroup = "firefly_access";
+                };
+              }
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+            ];
 
         };
       }
@@ -35218,31 +35681,35 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
                 proxy_busy_buffers_size    256k;
               '';
             in
-            {
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  servicePort
-                  serviceDomain
-                  serviceName
-                  extraConfigLoc
-                  ;
-                maxBody = 0;
-              };
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                confLib.genNginx {
+            lib.mkMerge [
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
                   inherit
+                    serviceAddress
                     servicePort
                     serviceDomain
                     serviceName
                     extraConfigLoc
                     ;
                   maxBody = 0;
-                  extraConfig = nginxAccessRules;
-                  serviceAddress = homeServiceAddress;
-                }
-              );
-            };
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit
+                      servicePort
+                      serviceDomain
+                      serviceName
+                      extraConfigLoc
+                      ;
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
+              }
+            ];
 
         };
       }
@@ -35327,25 +35794,29 @@ Used to sync shell history across machines and have it backed up somewhere.
               openRegistration = false;
             };
 
-            nodes = {
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  servicePort
-                  serviceDomain
-                  serviceName
-                  ;
-                maxBody = 0;
-              };
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                confLib.genNginx {
-                  inherit servicePort serviceDomain serviceName;
+            nodes = lib.mkMerge [
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
+                  inherit
+                    serviceAddress
+                    servicePort
+                    serviceDomain
+                    serviceName
+                    ;
                   maxBody = 0;
-                  extraConfig = nginxAccessRules;
-                  serviceAddress = homeServiceAddress;
-                }
-              );
-            };
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit servicePort serviceDomain serviceName;
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
+              }
+            ];
 
           };
         };
@@ -35531,28 +36002,34 @@ Self-hosted calendar and contacts.
 
           # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 16;
-              maxBodyUnit = "M";
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 16;
                 maxBodyUnit = "M";
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 16;
+                  maxBodyUnit = "M";
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -35840,27 +36317,31 @@ Basically a self-hosted Pastebin that also offers syntax highlighting.
             }
           ];
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 1;
-              maxBodyUnit = "G";
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 1;
                 maxBodyUnit = "G";
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 1;
+                  maxBodyUnit = "G";
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
 
@@ -36020,26 +36501,30 @@ Self-hosted link shortener.
             dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
           };
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-              extraConfig = scannerDropRules;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = scannerDropRules + nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+                extraConfig = scannerDropRules;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = scannerDropRules + nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -36218,13 +36703,15 @@ Deployment notes:
                 };
               };
             in
-            {
-              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-              ${webProxy}.services.nginx = genNginx serviceAddress scannerDropRules;
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                genNginx homeServiceAddress (scannerDropRules + nginxAccessRules)
-              );
-            };
+            lib.mkMerge [
+              { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+              { ${webProxy}.services.nginx = genNginx serviceAddress scannerDropRules; }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  genNginx homeServiceAddress (scannerDropRules + nginxAccessRules)
+                );
+              }
+            ];
 
         };
       }
@@ -36332,25 +36819,29 @@ This is an asset management system. However, for my needs it is a bit too convol
             };
           };
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -36491,29 +36982,35 @@ My asset manager. I use it to track tools, cables and board games mostly.
 
           # networking.firewall.allowedTCPPorts = [ servicePort ];
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
-            };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
+              };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -37124,10 +37621,10 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
                 };
               };
             in
-            {
-              ${webProxy}.services.nginx = genNginx serviceAddress "";
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-            };
+            lib.mkMerge [
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
+            ];
 
         };
       }
@@ -37906,29 +38403,33 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                     proxy_ssl_name ${roundcubeDomain};
                   '';
                 in
-                {
-                  ${webProxy}.services.nginx = confLib.genNginx {
-                    inherit
-                      serviceAddress
-                      servicePort
-                      serviceName
-                      extraConfigLoc
-                      ;
-                    serviceDomain = roundcubeDomain;
-                    protocol = "https";
-                    maxBody = 0;
-                  };
-                  ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                    confLib.genNginx {
-                      inherit servicePort serviceName extraConfigLoc;
+                lib.mkMerge [
+                  {
+                    ${webProxy}.services.nginx = confLib.genNginx {
+                      inherit
+                        serviceAddress
+                        servicePort
+                        serviceName
+                        extraConfigLoc
+                        ;
                       serviceDomain = roundcubeDomain;
                       protocol = "https";
                       maxBody = 0;
-                      extraConfig = nginxAccessRules;
-                      serviceAddress = homeServiceAddress;
-                    }
-                  );
-                };
+                    };
+                  }
+                  {
+                    ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                      confLib.genNginx {
+                        inherit servicePort serviceName extraConfigLoc;
+                        serviceDomain = roundcubeDomain;
+                        protocol = "https";
+                        maxBody = 0;
+                        extraConfig = nginxAccessRules;
+                        serviceAddress = homeServiceAddress;
+                      }
+                    );
+                  }
+                ];
             }
           )
         ];
@@ -38125,31 +38626,35 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
                 proxy_request_buffering    off;
               '';
             in
-            {
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  servicePort
-                  serviceDomain
-                  serviceName
-                  extraConfigLoc
-                  ;
-                maxBody = 0;
-              };
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                confLib.genNginx {
+            lib.mkMerge [
+              {
+                ${webProxy}.services.nginx = confLib.genNginx {
                   inherit
+                    serviceAddress
                     servicePort
                     serviceDomain
                     serviceName
                     extraConfigLoc
                     ;
                   maxBody = 0;
-                  extraConfig = nginxAccessRules;
-                  serviceAddress = homeServiceAddress;
-                }
-              );
-            };
+                };
+              }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                  confLib.genNginx {
+                    inherit
+                      servicePort
+                      serviceDomain
+                      serviceName
+                      extraConfigLoc
+                      ;
+                    maxBody = 0;
+                    extraConfig = nginxAccessRules;
+                    serviceAddress = homeServiceAddress;
+                  }
+                );
+              }
+            ];
 
         };
       }
@@ -38347,31 +38852,35 @@ I used this for the short time-frame before I started using nix-plugins for [[#h
                     proxy_set_header  X-Request-Base    /hydra;
                   '';
                 in
-                {
-                  ${webProxy}.services.nginx = confLib.genNginx {
-                    inherit
-                      serviceAddress
-                      servicePort
-                      serviceDomain
-                      serviceName
-                      extraConfigLoc
-                      ;
-                    maxBody = 0;
-                  };
-                  ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                    confLib.genNginx {
+                lib.mkMerge [
+                  {
+                    ${webProxy}.services.nginx = confLib.genNginx {
                       inherit
+                        serviceAddress
                         servicePort
                         serviceDomain
                         serviceName
                         extraConfigLoc
                         ;
                       maxBody = 0;
-                      extraConfig = nginxAccessRules;
-                      serviceAddress = homeServiceAddress;
-                    }
-                  );
-                };
+                    };
+                  }
+                  {
+                    ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                      confLib.genNginx {
+                        inherit
+                          servicePort
+                          serviceDomain
+                          serviceName
+                          extraConfigLoc
+                          ;
+                        maxBody = 0;
+                        extraConfig = nginxAccessRules;
+                        serviceAddress = homeServiceAddress;
+                      }
+                    );
+                  }
+                ];
             }
           )
         ];
@@ -39019,106 +39528,110 @@ Sometimes the GUI login fails:
                   };
                 };
               in
-              {
-                ${homeProxy} =
-                  let
-                    nodeCfg = nodes.${homeProxy}.config;
-                    nodePkgs = nodes.${homeProxy}.pkgs;
-                  in
-                  {
-                    sops.secrets.firezone-gateway-token = {
-                      inherit (nodeCfg.swarselsystems) sopsFile;
-                      mode = "0400";
-                    };
-                    networking.nftables = {
-                      firewall = {
-                        zones.firezone.interfaces = [ "tun-firezone" ];
-                        rules = {
-                          # masquerade firezone traffic
+              lib.mkMerge [
+                {
+                  ${homeProxy} =
+                    let
+                      nodeCfg = nodes.${homeProxy}.config;
+                      nodePkgs = nodes.${homeProxy}.pkgs;
+                    in
+                    {
+                      sops.secrets.firezone-gateway-token = {
+                        inherit (nodeCfg.swarselsystems) sopsFile;
+                        mode = "0400";
+                      };
+                      networking.nftables = {
+                        firewall = {
+                          zones.firezone.interfaces = [ "tun-firezone" ];
+                          rules = {
+                            # masquerade firezone traffic
+                            masquerade-firezone = {
+                              from = [ "firezone" ];
+                              to = firezoneTargetZones;
+                              # masquerade = true; NOTE: custom rule below for ip4 + ip6
+                              late = true; # Only accept after any rejects have been processed
+                              verdict = "accept";
+                            };
+                            # forward firezone traffic
+                            forward-incoming-firezone-traffic = {
+                              from = [ "firezone" ];
+                              to = firezoneTargetZones;
+                              verdict = "accept";
+                            };
+
+                            # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
+                            forward-outgoing-firezone-traffic = {
+                              from = firezoneTargetZones;
+                              to = [ "firezone" ];
+                              verdict = "accept";
+                            };
+                          };
+                        };
+                        chains.postrouting = {
                           masquerade-firezone = {
-                            from = [ "firezone" ];
-                            to = firezoneTargetZones;
-                            # masquerade = true; NOTE: custom rule below for ip4 + ip6
-                            late = true; # Only accept after any rejects have been processed
-                            verdict = "accept";
-                          };
-                          # forward firezone traffic
-                          forward-incoming-firezone-traffic = {
-                            from = [ "firezone" ];
-                            to = firezoneTargetZones;
-                            verdict = "accept";
-                          };
-
-                          # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
-                          forward-outgoing-firezone-traffic = {
-                            from = firezoneTargetZones;
-                            to = [ "firezone" ];
-                            verdict = "accept";
+                            after = [ "hook" ];
+                            late = true;
+                            rules = lib.concatMap (
+                              sourceZone:
+                              lib.forEach firezoneTargetZones (
+                                targetZone:
+                                lib.concatStringsSep " " [
+                                  "meta protocol { ip, ip6 }"
+                                  (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
+                                  (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
+                                  "masquerade random"
+                                ]
+                              )
+                            ) [ "firezone" ];
                           };
                         };
                       };
-                      chains.postrouting = {
-                        masquerade-firezone = {
-                          after = [ "hook" ];
-                          late = true;
-                          rules = lib.concatMap (
-                            sourceZone:
-                            lib.forEach firezoneTargetZones (
-                              targetZone:
-                              lib.concatStringsSep " " [
-                                "meta protocol { ip, ip6 }"
-                                (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
-                                (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
-                                "masquerade random"
-                              ]
-                            )
-                          ) [ "firezone" ];
-                        };
+
+                      environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
+                        {
+                          directory = "${serviceDir}-gateway";
+                          mode = "0700";
+                        }
+                      ];
+
+                      boot.kernel.sysctl = {
+                        "net.core.wmem_max" = 16777216;
+                        "net.core.rmem_max" = 134217728;
+                      };
+                      services.firezone.gateway = {
+                        enable = true;
+                        # logLevel = "trace";
+                        inherit (nodeCfg.node) name;
+                        apiUrl = "wss://${globals.services.firezone.domain}/api/";
+                        tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
+                        package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
+                      };
+
+                      topology.self.services."${serviceName}-gateway" = {
+                        name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
+                        icon = "${self}/files/topology-images/${serviceName}.png";
                       };
                     };
-
-                    environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
-                      {
-                        directory = "${serviceDir}-gateway";
-                        mode = "0700";
-                      }
-                    ];
-
-                    boot.kernel.sysctl = {
-                      "net.core.wmem_max" = 16777216;
-                      "net.core.rmem_max" = 134217728;
+                }
+                {
+                  ${idmServer} =
+                    let
+                      accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
+                      externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
+                    in
+                    confLib.mkKanidmOidcSystem {
+                      inherit serviceName serviceDomain kanidmSopsFile;
+                      displayName = "Firezone VPN";
+                      # NOTE: state: both uuids are runtime values
+                      originUrl = [
+                        "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
+                        "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
+                      ];
                     };
-                    services.firezone.gateway = {
-                      enable = true;
-                      # logLevel = "trace";
-                      inherit (nodeCfg.node) name;
-                      apiUrl = "wss://${globals.services.firezone.domain}/api/";
-                      tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
-                      package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
-                    };
-
-                    topology.self.services."${serviceName}-gateway" = {
-                      name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
-                      icon = "${self}/files/topology-images/${serviceName}.png";
-                    };
-                  };
-                ${idmServer} =
-                  let
-                    accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
-                    externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
-                  in
-                  confLib.mkKanidmOidcSystem {
-                    inherit serviceName serviceDomain kanidmSopsFile;
-                    displayName = "Firezone VPN";
-                    # NOTE: state: both uuids are runtime values
-                    originUrl = [
-                      "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
-                      "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
-                    ];
-                  };
-                ${webProxy}.services.nginx = genNginx serviceAddress "";
-                ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-              }
+                }
+                { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+                { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
+              ]
             )
             {
               ${monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [
@@ -39293,30 +39806,36 @@ Handles my home DNS server. It also provides some nice block-lists, but the main
             }
           ];
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              proxyWebsockets = true;
-              oauth2 = true;
-              oauth2Groups = [ "adguardhome_access" ];
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 proxyWebsockets = true;
                 oauth2 = true;
                 oauth2Groups = [ "adguardhome_access" ];
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  proxyWebsockets = true;
+                  oauth2 = true;
+                  oauth2Groups = [ "adguardhome_access" ];
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
         };
       }
 
@@ -39874,29 +40393,35 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
             }
           ];
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              proxyWebsockets = true;
-              oauth2 = true;
-              oauth2Groups = [ "buildbot_access" ];
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 proxyWebsockets = true;
+                oauth2 = true;
                 oauth2Groups = [ "buildbot_access" ];
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  proxyWebsockets = true;
+                  oauth2Groups = [ "buildbot_access" ];
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
       }
@@ -40228,28 +40753,34 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
             }
           ];
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              oauth2 = true;
-              oauth2Groups = [ "searx_access" ];
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 oauth2 = true;
                 oauth2Groups = [ "searx_access" ];
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  oauth2 = true;
+                  oauth2Groups = [ "searx_access" ];
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
 
@@ -40432,12 +40963,11 @@ For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
                 };
               };
             in
-            {
-              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-              ${webProxy}.services.nginx = genNginx serviceAddress "";
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-
-            };
+            lib.mkMerge [
+              { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
+            ];
 
         };
 
@@ -40619,12 +41149,14 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
                     };
                   };
                 in
-                {
-                  ${webProxy}.services.nginx = genNginx serviceAddress "";
-                  ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                    lib.recursiveUpdate (genNginx homeServiceAddress nginxAccessRules) homeInvidiousFallback
-                  );
-                };
+                lib.mkMerge [
+                  { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+                  {
+                    ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                      lib.recursiveUpdate (genNginx homeServiceAddress nginxAccessRules) homeInvidiousFallback
+                    );
+                  }
+                ];
             }
           )
         ];
@@ -40767,23 +41299,27 @@ Setting it up on android:
             { directory = "/var/lib/private/firefox-syncserver"; }
           ];
 
-          nodes = {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
 
         };
 
@@ -41216,29 +41752,33 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                     proxy_send_timeout 1d;
                   '';
                 in
-                {
-                  ${webProxy}.services.nginx = confLib.genNginx {
-                    inherit
-                      serviceAddress
-                      servicePort
-                      serviceDomain
-                      serviceName
-                      ;
-                    maxBody = 0;
-                    proxyWebsockets = true;
-                    extraConfigLoc = uploadProxyConfig;
-                  };
-                  ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                    confLib.genNginx {
-                      inherit servicePort serviceDomain serviceName;
-                      serviceAddress = homeServiceAddress;
+                lib.mkMerge [
+                  {
+                    ${webProxy}.services.nginx = confLib.genNginx {
+                      inherit
+                        serviceAddress
+                        servicePort
+                        serviceDomain
+                        serviceName
+                        ;
                       maxBody = 0;
                       proxyWebsockets = true;
-                      extraConfig = nginxAccessRules;
                       extraConfigLoc = uploadProxyConfig;
-                    }
-                  );
-                };
+                    };
+                  }
+                  {
+                    ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                      confLib.genNginx {
+                        inherit servicePort serviceDomain serviceName;
+                        serviceAddress = homeServiceAddress;
+                        maxBody = 0;
+                        proxyWebsockets = true;
+                        extraConfig = nginxAccessRules;
+                        extraConfigLoc = uploadProxyConfig;
+                      }
+                    );
+                  }
+                ];
             }
           )
         ];
@@ -41356,42 +41896,48 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             };
           };
 
-          nodes = {
-            ${idmServer} =
-              lib.recursiveUpdate
-                (confLib.mkKanidmOidcSystem {
-                  inherit serviceName serviceDomain kanidmSopsFile;
-                  originUrl = "https://${serviceDomain}/login";
-                  extraGroups = [ "${serviceName}.admins" ];
-                })
-                {
-                  services.kanidm.provision.systems.oauth2.${serviceName}.scopeMaps."${serviceName}.access" =
-                    lib.mkForce
-                      [
-                        "openid"
-                        "email"
-                        "profile"
-                        "groups"
-                      ];
-                };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              maxBody = 0;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} =
+                lib.recursiveUpdate
+                  (confLib.mkKanidmOidcSystem {
+                    inherit serviceName serviceDomain kanidmSopsFile;
+                    originUrl = "https://${serviceDomain}/login";
+                    extraGroups = [ "${serviceName}.admins" ];
+                  })
+                  {
+                    services.kanidm.provision.systems.oauth2.${serviceName}.scopeMaps."${serviceName}.access" =
+                      lib.mkForce
+                        [
+                          "openid"
+                          "email"
+                          "profile"
+                          "groups"
+                        ];
+                  };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
                 maxBody = 0;
-                extraConfig = nginxAccessRules;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          };
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit servicePort serviceDomain serviceName;
+                  maxBody = 0;
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
         };
       }
 
@@ -41582,28 +42128,34 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
           };
 
-          nodes = {
-            ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/auth/callback";
-            };
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                serviceName
-                serviceDomain
-                servicePort
-                ;
-              extraConfig = scannerDropRules;
-            };
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit serviceName serviceDomain servicePort;
-                serviceAddress = homeServiceAddress;
-                extraConfig = scannerDropRules + nginxAccessRules;
-              }
-            );
-          };
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/auth/callback";
+              };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  serviceName
+                  serviceDomain
+                  servicePort
+                  ;
+                extraConfig = scannerDropRules;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit serviceName serviceDomain servicePort;
+                  serviceAddress = homeServiceAddress;
+                  extraConfig = scannerDropRules + nginxAccessRules;
+                }
+              );
+            }
+          ];
         };
       };
   }
@@ -42638,7 +43190,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
       cd "$FLAKE"
 
-      rm install/flake.lock || true
+      rm files/install/flake.lock || true
       git_root=$(git rev-parse --show-toplevel)
       green "Wiping known_hosts of $target_destination"
       sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -42682,10 +43234,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
       if [[ $no_disko_deps == "true" ]]; then
         green "Building without disko dependencies (using custom kexec)"
-        "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
+        "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./files/install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
       else
         green "Building with disko dependencies (using nixos-images kexec)"
-        "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+        "''${nixos_anywhere[@]}" "''${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./files/install#"$target_hostname" root@"$target_destination"
       fi
 
       echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
@@ -42808,11 +43360,11 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
         nixfmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
         (pre-commit run --all-files 2> /dev/null || true) || true
-        git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix"
+        git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/hardware-configuration.nix"
         git add "$git_root/.sops.yaml"
         git add "$git_root/tofu/sops/terraform.tfvars"
         git add "$git_root/secrets" 2> /dev/null || true
-        git add "$git_root/hosts/nixos/$target_arch/$target_hostname/secrets" 2> /dev/null || true
+        git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/secrets" 2> /dev/null || true
         git commit -m "feat: deployed $target_hostname" || true
         if confirm n "Push the committed changes to the remote?"; then
           git push
@@ -42942,20 +43494,26 @@ This script is a local fallback bootstrap path: it prepares a buildable clone on
       if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
         yellow "The ssh key for this configuration is not available."
         green "Overriding private inputs so that the configuration is buildable ..."
-        demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/files/demo" --no-write-lock-file)
+        demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/hosts/utility/hotel/secrets" --no-write-lock-file)
       else
         green "Valid SSH key found! Continuing with installation"
+      fi
+
+      target_attr="$target_config"
+      if [[ $target_arch != "x86_64-linux" ]] && [[ $(nix eval "''${demo_flags[@]}" .#nixosConfigurations --apply "c: c ? \"$target_config-$target_arch\"" 2> /dev/null) == "true" ]]; then
+        target_attr="$target_config-$target_arch"
+        green "Using arch-specific configuration $target_attr"
       fi
 
       if [[ $skip_hardware_config -eq 1 ]]; then
         yellow "Keeping hardware configuration from the repository"
       else
         sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
-        git add hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
+        git add "$(realpath --relative-to=. hosts/nixos/"$target_arch"/"$target_config")"/hardware-configuration.nix
       fi
 
-      green "Building flake $target_config"
-      store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurations."$target_config".config.system.build.toplevel)
+      green "Building flake $target_attr"
+      store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurations."$target_attr".config.system.build.toplevel)
 
       green "Activating configuration $target_config on next boot"
       sudo nix-env --profile /nix/var/nix/profiles/system --set "$store_path"
@@ -43094,13 +43652,19 @@ This script wipes the target disk using the disko script generated by the target
       if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
         yellow "The ssh key for this configuration is not available."
         green "Overriding private inputs so that the configuration is buildable ..."
-        demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/files/demo" --no-write-lock-file)
+        demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/hosts/utility/hotel/secrets" --no-write-lock-file)
       else
         green "Valid SSH key found! Continuing with installation"
       fi
 
-      green "Reading system information for $target_config ..."
-      settings=$(nix eval "''${demo_flags[@]}" --json .#nixosConfigurationsMinimal."$target_config".config.swarselsystems --apply 'c: { inherit (c) rootDisk isCrypted isImpermanence isSwap isSecureBoot; }')
+      target_attr="$target_config"
+      if [[ $target_arch != "x86_64-linux" ]] && [[ $(nix eval "''${demo_flags[@]}" .#nixosConfigurationsMinimal --apply "c: c ? \"$target_config-$target_arch\"" 2> /dev/null) == "true" ]]; then
+        target_attr="$target_config-$target_arch"
+        green "Using arch-specific configuration $target_attr"
+      fi
+
+      green "Reading system information for $target_attr ..."
+      settings=$(nix eval "''${demo_flags[@]}" --json .#nixosConfigurationsMinimal."$target_attr".config.swarselsystems --apply 'c: { inherit (c) rootDisk isCrypted isImpermanence isSwap isSecureBoot; }')
 
       DISK=$(jq -r .rootDisk <<< "$settings")
       green "Root Disk in config: $DISK"
@@ -43159,7 +43723,7 @@ This script wipes the target disk using the disko script generated by the target
       fi
 
       green "Setting up disk ..."
-      disko_script=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.destroyFormatMount)
+      disko_script=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_attr".config.system.build.destroyFormatMount)
       sudo "$disko_script"/bin/disko-destroy-format-mount --yes-wipe-all-disks
 
       if [[ $skip_hardware_config -eq 1 ]]; then
@@ -43167,11 +43731,11 @@ This script wipes the target disk using the disko script generated by the target
       else
         green "Generating hardware configuration ..."
         sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
-        git add hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
+        git add "$(realpath --relative-to=. hosts/nixos/"$target_arch"/"$target_config")"/hardware-configuration.nix
       fi
 
       green "Building flake $target_config ..."
-      store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
+      store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_attr".config.system.build.toplevel)
 
       green "Copying configuration to target ..."
       sudo mkdir -p /mnt"$persist_dir"/home/"$target_user"/
@@ -44612,6 +45176,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
         ]
         ++ pickN [
           "hardwarecompatibility-yubikey"
+          "sandbox-access"
           "ssh"
         ];
 
@@ -48268,14 +48833,18 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       }
     ]
 
+    host_paths = {
+      for name, cfg in var.host_configs : name => coalesce(cfg.path, "hosts/${cfg.type}/${cfg.arch}/${name}")
+    }
+
     host_rules = flatten([
       for name, cfg in var.host_configs : [
         {
-          path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/[^/]+\\.(yaml|json|env|ini)$"
+          path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.(yaml|json|env|ini)$"
           age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name)] : []
         },
         {
-          path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/[^/]+\\.enc$"
+          path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.enc$"
           age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name), "buildbot"] : ["buildbot"]
         },
       ]
@@ -48285,11 +48854,11 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       for name, cfg in var.host_configs : [
         for guest in cfg.guests : [
           {
-            path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/${guest}/[^/]+\\.(yaml|json|env|ini)$"
+            path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.(yaml|json|env|ini)$"
             age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}"]
           },
           {
-            path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/${guest}/[^/]+\\.enc$"
+            path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.enc$"
             age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}", "buildbot"]
           },
         ]
@@ -48371,6 +48940,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       type         = string
       arch         = string
       age_key_name = optional(string)
+      path         = optional(string)
       guests       = optional(list(string), [])
       repo_access  = optional(bool, true)
       has_age_key  = optional(bool, true)
@@ -48425,6 +48995,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
     toto           = "placeholder"
     twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
+    vacanthouse    = "age1qt0aw537kymdx6eaje5447vmfp9yeskpzxgcte325p4zd0h0kcsshjsseu"
     winters        = "age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza"
   }
 
@@ -48467,6 +49038,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     "summers-paperless",
     "twothreetunnel",
     "moonside",
+    "vacanthouse",
   ]
 
   extra_rules = [
@@ -48575,6 +49147,13 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       arch        = "x86_64-darwin"
       guests      = []
       has_age_key = false
+    }
+    vacanthouse = {
+      type        = "utility"
+      arch        = "x86_64-linux"
+      path        = "hosts/utility/vacanthouse"
+      guests      = []
+      repo_access = false
     }
   }
 
@@ -50736,12 +51315,23 @@ This file defines a few workflows that I often need to run when working on my co
     nix build --print-out-paths .#{{CONFIG}}
 
   demo-test TEST="demo-install-test":
-    nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file
+    nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./hosts/utility/hotel/secrets --override-input vbc-nix path:./files/stub --no-write-lock-file
 
   demo-full-test: (demo-test "demo-full-test")
 
   bootstrap-test:
     nix develop .#deploy --command nix run .#bootstrap-install-test
+
+  sandbox:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    vm=$(nix build --no-link --print-out-paths .#nixosConfigurations.vacanthouse.config.system.build.vm)
+    sudo systemd-run --collect --pty --same-dir --wait --uid="$USER" \
+      -p AmbientCapabilities=CAP_NET_BIND_SERVICE \
+      "$vm/bin/run-vacanthouse-vm"
+
+  sandbox-test:
+    nix build -L --no-link .#sandbox-test
 
   iso-install DRIVE: iso
     sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
@@ -52667,19 +53257,22 @@ The double source block is intended here to circumvent a org-babel convenience w
 Here lies defined the README for GitHub and Forgejo:
 
 #+begin_src markdown :tangle .github/README.md :noweb yes :mkdirp yes
-  [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FSwarsel%2F.dotfiles%2Fbadge%3Fref%3Dmain&style=flat&labelColor=11111b)](https://actions-badge.atrox.dev/Swarsel/.dotfiles/goto?ref=main)
-
-    ###### Disclaimer
-
-    You probably do not want to use this setup verbatim. This is made to fit my specific use cases, and I do not guarantee best practises everywhere. Changes are made on a daily basis.
-
-    That being said, there is a lot of general configuration that you *probably* can use without changes; if you only want to use this repository as a starting point for your own configuration, you should be fine. See below for more information. Also, if you see something that can be done more efficiently or better in general, please let me know! :)
-
-    # \~SwarselSystems\~
+  <h1 id="header" align="center">
+      <img width="150" height="140" alt="nixos logo using earthbound giant step icon" src="https://github.com/Swarsel/.dotfiles/blob/main/.github/logo.svg" />
+      <br>
+      ~SwarselSystems~
+    </h1>
 
     <p align="center">
-      <img width="49%" title="Tiling" alt="swarselsystems_preview1" src="https://github.com/user-attachments/assets/f6021ab9-6289-497d-8747-28f5d526b75a" />
-      <img width="49%" title="Waybar" alt="swarselsystems_preview2" src="https://github.com/user-attachments/assets/1160d9f7-710c-4046-8fcf-476bb4a0be84" />
+      <i>"With NixOS, your <a href="https://github.com/user-attachments/assets/58742580-fb02-4b51-978a-364f5df1ddbd">entire system</a> is just one file: <code>/etc/nixos/configuration.nix</code>!"</i><br>
+      ... I took that <i><a href="https://swarsel.github.io/.dotfiles/">literally</a></i>.
+    </p>
+
+    <p align="center">
+      <img width="49%" alt="screenshot showing emacs and glide" src="https://github.com/user-attachments/assets/3e5874be-ab3a-4cc5-88aa-28a8032799a7" />
+      <img width="49%" alt="screenshot showing fastfetch and music player" src="https://github.com/user-attachments/assets/1a329b72-d404-49cb-8873-4de6a684d1cf" />
+      <img width="49%" alt="screenshot showing noctalia bar" src="https://github.com/user-attachments/assets/394ff2ca-859b-4886-9125-2cf64d68f2ea" />
+      <img width="49%" alt="screenshot showing wallpaper" src="https://github.com/user-attachments/assets/824a4fab-5d47-4468-859d-d59f9e0982c5" />
     </p>
 
     ## Overview
@@ -52695,8 +53288,8 @@ Here lies defined the README for GitHub and Forgejo:
       - Dynamically generated config:
         - host configurations
         - dns records
-        - network setup (+ wireguard mesh on systemd-networkd)
-      - Remote Builders for `[x86_64,aarch64]-linux` running on buildbot, feeding a private nix binary cache and updating the flake on a weekly basis
+        - network setup (+ WireGuard mesh on systemd-networkd)
+      - Remote Builders for `[x86_64,aarch64]-linux` running on Buildbot, feeding a private nix binary cache and updating the flake on a weekly basis
       - Bootstrapping:
         - Limited local installer (no secrets handling) with a (kinda un-)supported demo build
         - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
@@ -52709,12 +53302,33 @@ Here lies defined the README for GitHub and Forgejo:
       - Secure boot using [Lanzaboote](https://github.com/nix-community/lanzaboote)
       - BTRFS-based [Impermanence](https://github.com/nix-community/impermanence)
       - Configuration shared between configurations (configuration for one nixosConfiguration can be defined in another nixosConfiguration)
-      - Global attributes shared between all configurations to reduce attribute redeclaration
+      - Global attributes shared between all configurations to reduce attribute re-declaration
       - [Config library](https://github.com/Swarsel/.dotfiles/blob/9acfc5f93457ec14773cc0616cab616917cc8af5/modules/shared/config-lib.nix#L4) for defining config-based functions for generating service information
       - Reduced friction between full NixOS- and home-manager-only deployments
         - efficient secrets handling depending on system context
         - automatic config sharing between contexts
-        - denritic structure for keeping features in a centralised manner
+        - dendritic structure for keeping features in a centralized manner
+
+    ## Infrastructure
+
+    <details>
+      <summary>Click here for a summary of my infrastructure</summary>
+
+  <img alt="full topology diagram" src="https://github.com/Swarsel/.dotfiles/blob/main/files/topology/topology.png" />
+
+    ### Programs
+
+  <<programs>>
+
+    ### Services
+
+  <<services>>
+
+    ### Hosts
+
+  <<hosts>>
+
+    </details>
 
 
     ## Documentation
@@ -52746,7 +53360,7 @@ Here lies defined the README for GitHub and Forgejo:
     ```
 
     This will activate the `hotel` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
-    Since you do not have my SSH keys, the installer automatically replaces the private flake inputs (my work repository and the encrypted repository secrets) with public demo stand-ins via `--override-input` - nothing in the repository is modified for this. This should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
+    Since you do not have my SSH keys, the installer automatically replaces the private flake inputs (my work repository and the encrypted repository secrets) with public demo stand-ins via `--override-input` - nothing in the repository is modified for this. This should only be used to evaluate the system - if you want to use it long-term, you will need to create a fork and make some changes.
     </details>
 
     ### Deployment
@@ -52767,7 +53381,7 @@ Here lies defined the README for GitHub and Forgejo:
       - you will have to choose a disk encryption password (if you want that feature)
       - you will have to confirm once that the target system has rebooted
       - you will have to enter the root password once during the final system install
-    5) That should be it! The installer will take care of setting up disks, secrets, and the rest of the hardware configuration! You will still have to sign in manually to some webservices etc.
+    5) That should be it! The installer will take care of setting up disks, secrets, and the rest of the hardware configuration! You will still have to sign in manually to some web services etc.
 
     #### Local deployment (recommended for setting up the first system)
 
@@ -52939,27 +53553,21 @@ Here lies defined the README for GitHub and Forgejo:
 :PROPERTIES:
 :CUSTOM_ID: h:abed312c-5bf7-43f5-b0d0-43cce513ccb9
 :END:
-
 This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9eea-387a97490676][HTML version of this document]]. It will first tangle this file, which will generate the =style.css= that is going to be used by the site before exporting the file to html, which will generate the =index.html=. Finally we build the site.
-
 #+begin_src yaml :tangle .github/workflows/build-and-deploy.yaml :mkdirp yes
   name: Build and Deploy
-
   on:
     push:
       branches:
         - main
     workflow_dispatch:
-
   permissions:
     contents: read
     pages: write
     id-token: write
-
   concurrency:
     group: "pages"
     cancel-in-progress: false
-
   jobs:
     build:
       runs-on: ubuntu-latest
@@ -52968,26 +53576,21 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
           uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
           with:
             fetch-depth: 0
-
         - name: Install Nix
           uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3  # v31.10.6
           with:
             nix_path: nixpkgs=channel:nixos-unstable
-
         - name: Install Emacs
           run: nix profile install nixpkgs#emacs
-
         - name: Install supporting packages
           run: |
             sudo apt-get update
             sudo apt-get install -y build-essential git
-
         - name: Expose system libstdc++ for tree-sitter grammars
           run: |
             mkdir -p "$HOME/cxx-shim"
             ln -sf /usr/lib/x86_64-linux-gnu/libstdc++.so.6 "$HOME/cxx-shim/libstdc++.so.6"
             echo "CXX_SHIM=$HOME/cxx-shim" >> "$GITHUB_ENV"
-
         - name: Install tree-sitter language grammars
           env:
             LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
@@ -53008,7 +53611,6 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
               --eval "(dolist (lang (mapcar #'car treesit-language-source-alist))
                        (unless (treesit-language-available-p lang)
                          (treesit-install-language-grammar lang)))"
-
         - name: Install htmlize and language major modes
           env:
             LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
@@ -53022,12 +53624,10 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
               --eval "(package-initialize)" \
               --eval "(package-refresh-contents)" \
               --eval "(dolist (pkg '(transient htmlize nix-mode nix-ts-mode markdown-mode terraform-mode)) (package-install pkg))"
-
         - name: Prepare site images
           run: |
             mkdir -p site/files/topology
             cp files/topology/topology_small.png site/files/topology/topology_small.png
-
         - name: Tangle files & export to HTML
           env:
             LD_LIBRARY_PATH: ${{ env.CXX_SHIM }}
@@ -53070,15 +53670,12 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
               --visit=SwarselSystems.org \
               --funcall org-babel-tangle \
               --funcall org-html-export-to-html
-
         - name: Setup Pages
           uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d  # v4
-
         - name: Upload artifact
           uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa  # v3
           with:
             path: 'site'
-
     deploy:
       environment:
         name: github-pages
@@ -53090,14 +53687,11 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
           id: deployment
           uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e  # v4
 #+end_src
-
 ** GitHub Workflow: Flake check
 :PROPERTIES:
 :CUSTOM_ID: h:c2b8c7a5-9aa6-42d5-a55a-67b2010d09c2
 :END:
-
 This is a crude workflow that performs some rudimentary checks on the repository. As long as [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks/pre-commit-hooks)]] are used, this should never fail.
-
 #+begin_src yaml :tangle .github/workflows/flake-checks.yaml :mkdirp yes
   name: Flake check
   on:
@@ -53122,12 +53716,10 @@ This is a crude workflow that performs some rudimentary checks on the repository
         - name: Check formatting in .nix files
           run: git ls-files '*.nix' | xargs nix run nixpkgs#nixfmt -- --check
 #+end_src
-
 ** Private topology flake
 :PROPERTIES:
 :CUSTOM_ID: h:7967d45f-5b37-4580-8a4c-fa5ba0ce7a25
 :END:
-
 This flake is automatically loaded as an override when building the repo topology using the alias =build-topology= defined in [[#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5][zsh]].
 
 #+begin_src nix-ts :tangle files/topology/private/flake.nix
@@ -53141,9 +53733,7 @@ This flake is automatically loaded as an override when building the repo topolog
 :PROPERTIES:
 :CUSTOM_ID: h:c88d569e-70c4-4dd6-a959-be649fdeaa71
 :END:
-
 This flake is loaded per default as an input to not obfuscate values that could be exposed to nix-topology.
-
 #+begin_src nix-ts :tangle files/topology/public/flake.nix
   {
     description = "Flake that sets topologyPrivate to false for general purpose.";
@@ -53155,7 +53745,6 @@ This flake is loaded per default as an input to not obfuscate values that could 
 :PROPERTIES:
 :CUSTOM_ID: h:b6bcb9a1-d8fb-498e-a460-f1af583ad610
 :END:
-
 #+begin_src json-ts :tangle files/grafana/service-status.json :mkdirp yes
   {
     "annotations": [

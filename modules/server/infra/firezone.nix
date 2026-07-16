@@ -464,106 +464,110 @@
                 };
               };
             in
-            {
-              ${homeProxy} =
-                let
-                  nodeCfg = nodes.${homeProxy}.config;
-                  nodePkgs = nodes.${homeProxy}.pkgs;
-                in
-                {
-                  sops.secrets.firezone-gateway-token = {
-                    inherit (nodeCfg.swarselsystems) sopsFile;
-                    mode = "0400";
-                  };
-                  networking.nftables = {
-                    firewall = {
-                      zones.firezone.interfaces = [ "tun-firezone" ];
-                      rules = {
-                        # masquerade firezone traffic
+            lib.mkMerge [
+              {
+                ${homeProxy} =
+                  let
+                    nodeCfg = nodes.${homeProxy}.config;
+                    nodePkgs = nodes.${homeProxy}.pkgs;
+                  in
+                  {
+                    sops.secrets.firezone-gateway-token = {
+                      inherit (nodeCfg.swarselsystems) sopsFile;
+                      mode = "0400";
+                    };
+                    networking.nftables = {
+                      firewall = {
+                        zones.firezone.interfaces = [ "tun-firezone" ];
+                        rules = {
+                          # masquerade firezone traffic
+                          masquerade-firezone = {
+                            from = [ "firezone" ];
+                            to = firezoneTargetZones;
+                            # masquerade = true; NOTE: custom rule below for ip4 + ip6
+                            late = true; # Only accept after any rejects have been processed
+                            verdict = "accept";
+                          };
+                          # forward firezone traffic
+                          forward-incoming-firezone-traffic = {
+                            from = [ "firezone" ];
+                            to = firezoneTargetZones;
+                            verdict = "accept";
+                          };
+
+                          # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
+                          forward-outgoing-firezone-traffic = {
+                            from = firezoneTargetZones;
+                            to = [ "firezone" ];
+                            verdict = "accept";
+                          };
+                        };
+                      };
+                      chains.postrouting = {
                         masquerade-firezone = {
-                          from = [ "firezone" ];
-                          to = firezoneTargetZones;
-                          # masquerade = true; NOTE: custom rule below for ip4 + ip6
-                          late = true; # Only accept after any rejects have been processed
-                          verdict = "accept";
-                        };
-                        # forward firezone traffic
-                        forward-incoming-firezone-traffic = {
-                          from = [ "firezone" ];
-                          to = firezoneTargetZones;
-                          verdict = "accept";
-                        };
-
-                        # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
-                        forward-outgoing-firezone-traffic = {
-                          from = firezoneTargetZones;
-                          to = [ "firezone" ];
-                          verdict = "accept";
+                          after = [ "hook" ];
+                          late = true;
+                          rules = lib.concatMap (
+                            sourceZone:
+                            lib.forEach firezoneTargetZones (
+                              targetZone:
+                              lib.concatStringsSep " " [
+                                "meta protocol { ip, ip6 }"
+                                (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
+                                (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
+                                "masquerade random"
+                              ]
+                            )
+                          ) [ "firezone" ];
                         };
                       };
                     };
-                    chains.postrouting = {
-                      masquerade-firezone = {
-                        after = [ "hook" ];
-                        late = true;
-                        rules = lib.concatMap (
-                          sourceZone:
-                          lib.forEach firezoneTargetZones (
-                            targetZone:
-                            lib.concatStringsSep " " [
-                              "meta protocol { ip, ip6 }"
-                              (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
-                              (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
-                              "masquerade random"
-                            ]
-                          )
-                        ) [ "firezone" ];
-                      };
+
+                    environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
+                      {
+                        directory = "${serviceDir}-gateway";
+                        mode = "0700";
+                      }
+                    ];
+
+                    boot.kernel.sysctl = {
+                      "net.core.wmem_max" = 16777216;
+                      "net.core.rmem_max" = 134217728;
+                    };
+                    services.firezone.gateway = {
+                      enable = true;
+                      # logLevel = "trace";
+                      inherit (nodeCfg.node) name;
+                      apiUrl = "wss://${globals.services.firezone.domain}/api/";
+                      tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
+                      package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
+                    };
+
+                    topology.self.services."${serviceName}-gateway" = {
+                      name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
+                      icon = "${self}/files/topology-images/${serviceName}.png";
                     };
                   };
-
-                  environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
-                    {
-                      directory = "${serviceDir}-gateway";
-                      mode = "0700";
-                    }
-                  ];
-
-                  boot.kernel.sysctl = {
-                    "net.core.wmem_max" = 16777216;
-                    "net.core.rmem_max" = 134217728;
+              }
+              {
+                ${idmServer} =
+                  let
+                    accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
+                    externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
+                  in
+                  confLib.mkKanidmOidcSystem {
+                    inherit serviceName serviceDomain kanidmSopsFile;
+                    displayName = "Firezone VPN";
+                    # NOTE: state: both uuids are runtime values
+                    originUrl = [
+                      "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
+                      "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
+                    ];
                   };
-                  services.firezone.gateway = {
-                    enable = true;
-                    # logLevel = "trace";
-                    inherit (nodeCfg.node) name;
-                    apiUrl = "wss://${globals.services.firezone.domain}/api/";
-                    tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
-                    package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
-                  };
-
-                  topology.self.services."${serviceName}-gateway" = {
-                    name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
-                    icon = "${self}/files/topology-images/${serviceName}.png";
-                  };
-                };
-              ${idmServer} =
-                let
-                  accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
-                  externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
-                in
-                confLib.mkKanidmOidcSystem {
-                  inherit serviceName serviceDomain kanidmSopsFile;
-                  displayName = "Firezone VPN";
-                  # NOTE: state: both uuids are runtime values
-                  originUrl = [
-                    "https://${serviceDomain}/${accountId}/sign_in/providers/${externalId}/handle_callback"
-                    "https://${serviceDomain}/${accountId}/settings/identity_providers/openid_connect/${externalId}/handle_callback"
-                  ];
-                };
-              ${webProxy}.services.nginx = genNginx serviceAddress "";
-              ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-            }
+              }
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
+            ]
           )
           {
             ${monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [

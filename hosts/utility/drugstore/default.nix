@@ -58,7 +58,9 @@ in
 
     nix = {
       channel.enable = false;
-      package = pkgs.nixVersions.nix_2_28;
+      package =
+        (import self.inputs.nixpkgs-stable26_05 { inherit (pkgs.stdenv.hostPlatform) system; })
+        .nixVersions.nix_2_28;
       extraOptions = ''
         plugin-files = ${
           pkgs.nix-plugins.overrideAttrs (o: {
@@ -69,7 +71,7 @@ in
             patches = o.patches or [ ];
           })
         }/lib/nix/plugins
-        extra-builtins-file = ${../files/nix/extra-builtins.nix}
+        extra-builtins-file = ${../../../files/nix/extra-builtins.nix}
       '';
 
       settings.experimental-features = [

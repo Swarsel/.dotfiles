@@ -101,6 +101,7 @@ in
       ]
       ++ pickN [
         "hardwarecompatibility-yubikey"
+        "sandbox-access"
         "ssh"
       ];
 

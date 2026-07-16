@@ -172,14 +172,16 @@
               };
             };
           in
-          {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
-              inherit serviceName;
-              proxyGroup = "ttrss_access";
-            };
-            ${webProxy}.services.nginx = genNginx serviceAddress "";
-            ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
-          };
+          lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
+                inherit serviceName;
+                proxyGroup = "ttrss_access";
+              };
+            }
+            { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+            { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+          ];
 
       };
     }

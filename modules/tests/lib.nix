@@ -11,30 +11,44 @@
       _module.args.testsLib = rec {
         inputSources =
           let
+            inherit ((builtins.fromJSON (builtins.readFile "${self}/flake.lock"))) nodes root;
+
+            resolveEdge =
+              edge:
+              if builtins.isString edge then
+                edge
+              else
+                builtins.foldl' (key: name: resolveEdge nodes.${key}.inputs.${name}) root edge;
+
+            edges =
+              key:
+              builtins.map resolveEdge (
+                builtins.attrValues (
+                  builtins.removeAttrs (nodes.${key}.inputs or { }) (
+                    lib.optionals (key == root) [
+                      "vbc-nix"
+                      "repoSecrets"
+                    ]
+                  )
+                )
+              );
+
             go =
               seen: queue:
               if queue == [ ] then
                 seen
               else
                 let
-                  input = builtins.head queue;
+                  key = builtins.head queue;
                   rest = builtins.tail queue;
-                  key = if input ? outPath then builtins.unsafeDiscardStringContext input.outPath else null;
                 in
-                if key == null || seen ? ${key} then
+                if key == root || seen ? ${key} then
                   go seen rest
                 else
-                  go (seen // { ${key} = input; }) (rest ++ builtins.attrValues (input.inputs or { }));
+                  go (seen // { ${key} = true; }) (rest ++ edges key);
           in
-          builtins.attrValues (
-            go { } (
-              builtins.attrValues (
-                builtins.removeAttrs self.inputs [
-                  "vbc-nix"
-                  "repoSecrets"
-                ]
-              )
-            )
+          builtins.map (key: builtins.fetchTree nodes.${key}.locked) (
+            builtins.filter (key: nodes.${key}.locked.type != "path") (builtins.attrNames (go { } (edges root)))
           );
 
         mkDemoTest =
@@ -42,7 +56,7 @@
           if !(inputs.repoSecrets.isDemo or false) then
             pkgs.runCommand "${name}-needs-demo-overrides" { } ''
               echo "${name} must be built against the demo secrets so that the prebuilt system matches what swarsel-install builds inside the VM:" >&2
-              echo "  nix build .#${name} --override-input repoSecrets path:./files/demo --override-input vbc-nix path:./files/stub --no-write-lock-file" >&2
+              echo "  nix build .#${name} --override-input repoSecrets path:./hosts/utility/hotel/secrets --override-input vbc-nix path:./files/stub --no-write-lock-file" >&2
               echo "or run 'just demo-test'." >&2
               exit 1
             ''
@@ -73,7 +87,7 @@
           { lib, ... }: {
             imports = [
               inputs.home-manager.nixosModules.home-manager
-              "${self}/install/installer-config.nix"
+              "${self}/hosts/utility/drugstore"
               "${inputs.nixpkgs}/nixos/modules/profiles/installation-device.nix"
               "${inputs.nixpkgs}/nixos/modules/profiles/base.nix"
               "${inputs.nixpkgs}/nixos/tests/common/auto-format-root-device.nix"

@@ -251,25 +251,29 @@
               allow ${globals.networks.home-lan.vlans.services.cidrv6};
             '';
           in
-          {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                servicePort
-                serviceDomain
-                serviceName
-                ;
-              protocol = "https";
-              noSslVerify = true;
-            };
-            ${homeWebProxy}.services.nginx = confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              protocol = "https";
-              noSslVerify = true;
-              extraConfig = extraConfig + nginxAccessRules;
-              serviceAddress = homeServiceAddress;
-            };
-          };
+          lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  servicePort
+                  serviceDomain
+                  serviceName
+                  ;
+                protocol = "https";
+                noSslVerify = true;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                protocol = "https";
+                noSslVerify = true;
+                extraConfig = extraConfig + nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              };
+            }
+          ];
 
       };
     }

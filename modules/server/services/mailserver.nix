@@ -298,29 +298,33 @@
                   proxy_ssl_name ${roundcubeDomain};
                 '';
               in
-              {
-                ${webProxy}.services.nginx = confLib.genNginx {
-                  inherit
-                    serviceAddress
-                    servicePort
-                    serviceName
-                    extraConfigLoc
-                    ;
-                  serviceDomain = roundcubeDomain;
-                  protocol = "https";
-                  maxBody = 0;
-                };
-                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                  confLib.genNginx {
-                    inherit servicePort serviceName extraConfigLoc;
+              lib.mkMerge [
+                {
+                  ${webProxy}.services.nginx = confLib.genNginx {
+                    inherit
+                      serviceAddress
+                      servicePort
+                      serviceName
+                      extraConfigLoc
+                      ;
                     serviceDomain = roundcubeDomain;
                     protocol = "https";
                     maxBody = 0;
-                    extraConfig = nginxAccessRules;
-                    serviceAddress = homeServiceAddress;
-                  }
-                );
-              };
+                  };
+                }
+                {
+                  ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                    confLib.genNginx {
+                      inherit servicePort serviceName extraConfigLoc;
+                      serviceDomain = roundcubeDomain;
+                      protocol = "https";
+                      maxBody = 0;
+                      extraConfig = nginxAccessRules;
+                      serviceAddress = homeServiceAddress;
+                    }
+                  );
+                }
+              ];
           }
         )
       ];

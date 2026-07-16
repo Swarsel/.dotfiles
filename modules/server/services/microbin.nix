@@ -165,27 +165,31 @@
           }
         ];
 
-        nodes = {
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit
-              serviceAddress
-              servicePort
-              serviceDomain
-              serviceName
-              ;
-            maxBody = 1;
-            maxBodyUnit = "G";
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
+        nodes = lib.mkMerge [
+          {
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               maxBody = 1;
               maxBodyUnit = "G";
-              extraConfig = nginxAccessRules;
-              serviceAddress = homeServiceAddress;
-            }
-          );
-        };
+            };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                maxBody = 1;
+                maxBodyUnit = "G";
+                extraConfig = nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }
+            );
+          }
+        ];
 
       };
 

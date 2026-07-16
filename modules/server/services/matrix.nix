@@ -545,14 +545,16 @@
               };
             };
           in
-          {
-            ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
-              originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
-            };
-            ${webProxy}.services.nginx = genNginx serviceAddress "";
-            ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
-          };
+          lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOidcSystem {
+                inherit serviceName serviceDomain kanidmSopsFile;
+                originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
+              };
+            }
+            { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+            { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+          ];
 
       };
     }

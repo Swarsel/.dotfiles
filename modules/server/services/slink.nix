@@ -155,13 +155,15 @@
               };
             };
           in
-          {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-            ${webProxy}.services.nginx = genNginx serviceAddress scannerDropRules;
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              genNginx homeServiceAddress (scannerDropRules + nginxAccessRules)
-            );
-          };
+          lib.mkMerge [
+            { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+            { ${webProxy}.services.nginx = genNginx serviceAddress scannerDropRules; }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                genNginx homeServiceAddress (scannerDropRules + nginxAccessRules)
+              );
+            }
+          ];
 
       };
     }

@@ -16,6 +16,7 @@ hosts = {
   summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
   toto           = "placeholder"
   twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
+  vacanthouse    = "age1qt0aw537kymdx6eaje5447vmfp9yeskpzxgcte325p4zd0h0kcsshjsseu"
   winters        = "age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza"
 }
 
@@ -58,6 +59,7 @@ kanidm_clients = [
   "summers-paperless",
   "twothreetunnel",
   "moonside",
+  "vacanthouse",
 ]
 
 extra_rules = [
@@ -166,6 +168,13 @@ host_configs = {
     arch        = "x86_64-darwin"
     guests      = []
     has_age_key = false
+  }
+  vacanthouse = {
+    type        = "utility"
+    arch        = "x86_64-linux"
+    path        = "hosts/utility/vacanthouse"
+    guests      = []
+    repo_access = false
   }
 }
 

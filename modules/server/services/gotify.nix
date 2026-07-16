@@ -100,30 +100,34 @@
 
         systemd.services.gotify-server.serviceConfig.RestartSec = lib.mkForce "60";
 
-        nodes = {
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit
-              serviceAddress
-              servicePort
-              serviceDomain
-              serviceName
-              ;
-            proxyWebsockets = true;
-            maxBody = 50;
-            maxBodyUnit = "M";
-            # extraConfig = wgProxyAccessRules;
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
-              serviceAddress = homeServiceAddress;
+        nodes = lib.mkMerge [
+          {
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               proxyWebsockets = true;
               maxBody = 50;
               maxBodyUnit = "M";
-              extraConfig = nginxAccessRules;
-            }
-          );
-        };
+              # extraConfig = wgProxyAccessRules;
+            };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                serviceAddress = homeServiceAddress;
+                proxyWebsockets = true;
+                maxBody = 50;
+                maxBodyUnit = "M";
+                extraConfig = nginxAccessRules;
+              }
+            );
+          }
+        ];
       };
     }
 

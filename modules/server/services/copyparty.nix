@@ -147,29 +147,33 @@
                   proxy_send_timeout 1d;
                 '';
               in
-              {
-                ${webProxy}.services.nginx = confLib.genNginx {
-                  inherit
-                    serviceAddress
-                    servicePort
-                    serviceDomain
-                    serviceName
-                    ;
-                  maxBody = 0;
-                  proxyWebsockets = true;
-                  extraConfigLoc = uploadProxyConfig;
-                };
-                ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-                  confLib.genNginx {
-                    inherit servicePort serviceDomain serviceName;
-                    serviceAddress = homeServiceAddress;
+              lib.mkMerge [
+                {
+                  ${webProxy}.services.nginx = confLib.genNginx {
+                    inherit
+                      serviceAddress
+                      servicePort
+                      serviceDomain
+                      serviceName
+                      ;
                     maxBody = 0;
                     proxyWebsockets = true;
-                    extraConfig = nginxAccessRules;
                     extraConfigLoc = uploadProxyConfig;
-                  }
-                );
-              };
+                  };
+                }
+                {
+                  ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                    confLib.genNginx {
+                      inherit servicePort serviceDomain serviceName;
+                      serviceAddress = homeServiceAddress;
+                      maxBody = 0;
+                      proxyWebsockets = true;
+                      extraConfig = nginxAccessRules;
+                      extraConfigLoc = uploadProxyConfig;
+                    }
+                  );
+                }
+              ];
           }
         )
       ];

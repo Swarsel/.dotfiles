@@ -49,14 +49,18 @@ locals {
     }
   ]
 
+  host_paths = {
+    for name, cfg in var.host_configs : name => coalesce(cfg.path, "hosts/${cfg.type}/${cfg.arch}/${name}")
+  }
+
   host_rules = flatten([
     for name, cfg in var.host_configs : [
       {
-        path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/[^/]+\\.(yaml|json|env|ini)$"
+        path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.(yaml|json|env|ini)$"
         age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name)] : []
       },
       {
-        path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/[^/]+\\.enc$"
+        path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.enc$"
         age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name), "buildbot"] : ["buildbot"]
       },
     ]
@@ -66,11 +70,11 @@ locals {
     for name, cfg in var.host_configs : [
       for guest in cfg.guests : [
         {
-          path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/${guest}/[^/]+\\.(yaml|json|env|ini)$"
+          path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.(yaml|json|env|ini)$"
           age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}"]
         },
         {
-          path_regex = "hosts/${cfg.type}/${cfg.arch}/${name}/secrets/${guest}/[^/]+\\.enc$"
+          path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.enc$"
           age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}", "buildbot"]
         },
       ]

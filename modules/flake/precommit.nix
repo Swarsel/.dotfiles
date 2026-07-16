@@ -33,7 +33,13 @@
             check-shebang-scripts-are-executable.enable = false;
             check-merge-conflicts.enable = true;
             deadnix.enable = true;
-            detect-private-keys.enable = true;
+            detect-private-keys = {
+              enable = true;
+              excludes = [
+                "files/public/certs"
+                "files/public/age"
+              ];
+            };
             end-of-file-fixer.enable = true;
             fix-byte-order-marker.enable = true;
             flake-checker.enable = true;

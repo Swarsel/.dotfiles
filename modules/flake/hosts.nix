@@ -185,12 +185,36 @@
         else
           linuxSystems ++ darwinSystems;
 
-      readHostDirs =
-        hostDir:
+      readHostsOfType =
+        entryType: hostDir:
         if builtins.pathExists hostDir then
-          builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir hostDir))
+          builtins.attrNames (lib.filterAttrs (_: type: type == entryType) (builtins.readDir hostDir))
         else
           [ ];
+
+      readHostDirs = readHostsOfType "directory";
+
+      utilityHostArches = lib.foldl' (
+        acc: arch:
+        acc
+        // lib.genAttrs (readHostsOfType "symlink" "${self}/hosts/nixos/${arch}") (
+          host: (acc.${host} or [ ]) ++ [ arch ]
+        )
+      ) { } lib.swarselsystems.linuxSystems;
+
+      utilityHostName =
+        host: arch:
+        let
+          arches = utilityHostArches.${host};
+          primary = if builtins.elem "x86_64-linux" arches then "x86_64-linux" else builtins.head arches;
+        in
+        if arch == primary then host else "${host}-${arch}";
+
+      utilityHostNames =
+        lib.concatLists (
+          lib.mapAttrsToList (host: arches: map (utilityHostName host) arches) utilityHostArches
+        )
+        ++ readHostDirs "${self}/hosts/utility";
 
       mkHalfHostsForArch =
         type: arch:
@@ -208,6 +232,15 @@
         in
         if (type == "nixos") then
           lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
+          // lib.listToAttrs (
+            map
+              (host: lib.nameValuePair (utilityHostName host arch) (mkNixosHost { inherit minimal; } host arch))
+              (
+                builtins.filter (host: builtins.elem arch utilityHostArches.${host}) (
+                  builtins.attrNames utilityHostArches
+                )
+              )
+          )
         else if (type == "darwin") then
           lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
         else
@@ -253,7 +286,9 @@
 
       diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
-      nodes = config.nixosConfigurations // config.darwinConfigurations // config.guestConfigurations;
+      nodes = builtins.removeAttrs (
+        config.nixosConfigurations // config.darwinConfigurations // config.guestConfigurations
+      ) utilityHostNames;
 
       guestResources = lib.mapAttrs (
         name: _:

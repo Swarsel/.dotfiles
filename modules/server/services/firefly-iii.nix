@@ -179,14 +179,16 @@
               };
             };
           in
-          {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
-              serviceName = "firefly";
-              proxyGroup = "firefly_access";
-            };
-            ${webProxy}.services.nginx = genNginx serviceAddress "";
-            ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules;
-          };
+          lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
+                serviceName = "firefly";
+                proxyGroup = "firefly_access";
+              };
+            }
+            { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+            { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+          ];
 
       };
     }

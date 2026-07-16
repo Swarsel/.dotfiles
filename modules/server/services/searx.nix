@@ -312,28 +312,34 @@
           }
         ];
 
-        nodes = {
-          ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-          ${webProxy}.services.nginx = confLib.genNginx {
-            inherit
-              serviceAddress
-              servicePort
-              serviceDomain
-              serviceName
-              ;
-            oauth2 = true;
-            oauth2Groups = [ "searx_access" ];
-          };
-          ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-            confLib.genNginx {
-              inherit servicePort serviceDomain serviceName;
+        nodes = lib.mkMerge [
+          {
+            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+          }
+          {
+            ${webProxy}.services.nginx = confLib.genNginx {
+              inherit
+                serviceAddress
+                servicePort
+                serviceDomain
+                serviceName
+                ;
               oauth2 = true;
               oauth2Groups = [ "searx_access" ];
-              extraConfig = nginxAccessRules;
-              serviceAddress = homeServiceAddress;
-            }
-          );
-        };
+            };
+          }
+          {
+            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+              confLib.genNginx {
+                inherit servicePort serviceDomain serviceName;
+                oauth2 = true;
+                oauth2Groups = [ "searx_access" ];
+                extraConfig = nginxAccessRules;
+                serviceAddress = homeServiceAddress;
+              }
+            );
+          }
+        ];
 
       };
 

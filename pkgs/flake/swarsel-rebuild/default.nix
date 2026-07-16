@@ -104,20 +104,26 @@ writeShellApplication {
     if [[ $local_keys != *"''${pub_arr[1]}"* ]]; then
       yellow "The ssh key for this configuration is not available."
       green "Overriding private inputs so that the configuration is buildable ..."
-      demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/files/demo" --no-write-lock-file)
+      demo_flags=(--override-input vbc-nix "path:$PWD/files/stub" --override-input repoSecrets "path:$PWD/hosts/utility/hotel/secrets" --no-write-lock-file)
     else
       green "Valid SSH key found! Continuing with installation"
+    fi
+
+    target_attr="$target_config"
+    if [[ $target_arch != "x86_64-linux" ]] && [[ $(nix eval "''${demo_flags[@]}" .#nixosConfigurations --apply "c: c ? \"$target_config-$target_arch\"" 2> /dev/null) == "true" ]]; then
+      target_attr="$target_config-$target_arch"
+      green "Using arch-specific configuration $target_attr"
     fi
 
     if [[ $skip_hardware_config -eq 1 ]]; then
       yellow "Keeping hardware configuration from the repository"
     else
       sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
-      git add hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
+      git add "$(realpath --relative-to=. hosts/nixos/"$target_arch"/"$target_config")"/hardware-configuration.nix
     fi
 
-    green "Building flake $target_config"
-    store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurations."$target_config".config.system.build.toplevel)
+    green "Building flake $target_attr"
+    store_path=$(nix build "''${demo_flags[@]}" --no-link --print-out-paths .#nixosConfigurations."$target_attr".config.system.build.toplevel)
 
     green "Activating configuration $target_config on next boot"
     sudo nix-env --profile /nix/var/nix/profiles/system --set "$store_path"

@@ -454,10 +454,10 @@
               };
             };
           in
-          {
-            ${webProxy}.services.nginx = genNginx serviceAddress "";
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-          };
+          lib.mkMerge [
+            { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+            { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
+          ];
 
       };
     }

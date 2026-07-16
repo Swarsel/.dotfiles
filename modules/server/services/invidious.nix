@@ -157,12 +157,11 @@
               };
             };
           in
-          {
-            ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-            ${webProxy}.services.nginx = genNginx serviceAddress "";
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
-
-          };
+          lib.mkMerge [
+            { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+            { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+            { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
+          ];
 
       };
 

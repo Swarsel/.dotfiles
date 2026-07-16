@@ -68,7 +68,9 @@
           in
           {
             packages = [
-              (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.nixVersions."nix_${nix-version}")
+              (builtins.trace "alarm: pinned nix_${nix-version}"
+                pkgs.stable26_05.nixVersions."nix_${nix-version}"
+              )
               pkgs.git
               pkgs.just
               pkgs.age
@@ -155,8 +157,8 @@
 
             env =
               let
-                nix-plugins = pkgs.nix-plugins.override {
-                  nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                nix-plugins = pkgs.stable26_05.nix-plugins.override {
+                  nixComponents = pkgs.stable26_05.nixVersions."nixComponents_${nix-version}";
                 };
               in
               [
