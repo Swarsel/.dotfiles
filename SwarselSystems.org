@@ -319,28 +319,29 @@ It is also possible to pass it as a function:
 Here I give a brief overview over the host machines that I am using. This is held in markdown so that I can render it into my [[#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec][GitHub Readme]] without further effort.
 
 #+begin_src markdown :tangle no :noweb-ref hosts
-  | Name                | Hardware                                            | Use                                                             |
-  |---------------------|-----------------------------------------------------|-----------------------------------------------------------------|
-  |💻 **pyramid**       | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                                     |
-  |💻 **bakery**        | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                                 |
-  |💻 **machpizza**     | MacBook Pro 2016                                    | MacOS reference and build sandbox                               |
-  |🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference               |
-  |🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, data storage             |
-  |🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                                  |
-  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router, DNS Resolver, home NGINX endpoint                       |
-  |☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative DNS server                                        |
-  |☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                                     |
-  |☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                                   |
-  |☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                                      |
-  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Game servers, syncthing + other lightweight services            |
-  |☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binary cache                              |
-  |🪟 **chaostheater**  | Asus Z97-A, i7-4790k, GTX970, 32GB RAM              | Home Game Streaming Server (Windows/AtlasOS, not nix-managed)   |
-  |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                                           |
-  |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts                 |
-  |💿 **policestation** | -                                                   | NixOS live ISO for generating cryptographic keys                  |
-  |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines             |
-  |❔ **hotel**         | -                                                   | Demo config for checking out this configuration                 |
-  |❔ **toto**          | -                                                   | Helper configuration for testing purposes                       |
+  | Name                  | Hardware                                            | Use                                                           |
+  |-----------------------|-----------------------------------------------------|---------------------------------------------------------------|
+  | 💻 **bakery**         | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                               |
+  | 💻 **machpizza**      | MacBook Pro 2016                                    | MacOS reference and build sandbox                             |
+  | 💻 **pyramid**        | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                                   |
+  | 🏠 **treehouse**      | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference             |
+  | 🖥️ **hintbooth**      | HUNSN RM02, 8GB RAM                                 | Router, DNS Resolver, home NGINX endpoint                     |
+  | 🖥️ **summers**        | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, data storage           |
+  | 🖥️ **winters**        | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                                |
+  | ☁️ **belchsfactory**  | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binary cache                            |
+  | ☁️ **eagleland**      | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                                    |
+  | ☁️ **liliputsteps**   | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                                   |
+  | ☁️ **moonside**       | Cloud Server: 4 vCPUs, 24GB RAM                     | Game servers, syncthing + other lightweight services          |
+  | ☁️ **stoicclub**      | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative DNS server                                      |
+  | ☁️ **twothreetunnel** | Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                                 |
+  | 🪟 **chaostheater**   | Asus Z97-A, i7-4790k, GTX970, 32GB RAM              | Home Game Streaming Server (Windows/AtlasOS, not nix-managed) |
+  | 📱 **magicant**       | Samsung Galaxy Z Flip 6                             | Phone                                                         |
+  | 💿 **brickroad**      | -                                                   | Kexec tarball for bootstrapping low-memory machines           |
+  | 💿 **drugstore**      | -                                                   | NixOS-installer ISO for bootstrapping new hosts               |
+  | 💿 **policestation**  | -                                                   | NixOS live ISO for generating cryptographic keys              |
+  | ❔ **hotel**          | -                                                   | Demo config for checking out this configuration               |
+  | ❔ **toto**           | -                                                   | Helper configuration for deployment testing                   |
+  | ❔ **vacanthouse**    | -                                                   | Staging environment                                           |
 #+end_src
 
 ** Programs
@@ -353,20 +354,19 @@ This is meant to give a brief overview over the main programs/components that I 
 On [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]], I run a combination of different services that are all replaced by [[#h:96e05275-38df-401b-8809-d45d8f59e43c][Noctalia Shell]] when I am running on [[#h:58162d08-3ded-441d-861e-2ebf30e32538][Niri]], which has grown to become my default recently.
 
 #+begin_src markdown :tangle no :noweb-ref programs
-  | Topic         | Program                                                                                                                     |
-  |---------------|-----------------------------------------------------------------------------------------------------------------------------|
-  |🐚 **Shell**   | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/zsh.nix)                                           |
-  |🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/system/login.nix)                                     |
-  |🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/sway.nix) or [Niri](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/niri.nix)                                       |
-  |⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/waybar.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix)                                   |
-  |✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el)                                                 |
-  |🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/kitty.nix)                                       |
-  |🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/fuzzel.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix)                                    |
-  |🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/system/mako.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix)                                        |
-  |🌐 **Browser** | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/firefox.nix)                                       |
-  |🎨 **Theme**   | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/stylix.nix)       |
+  | Topic           | Program                                                                                                                                                                                              |
+  |-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | ⛩️ **Bar**      | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/waybar.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix) |
+  | ✒️ **Editor**   | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el)                                                                                                                          |
+  | 🌐 **Browser**  | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/firefox.nix)                                                                                                        |
+  | 🎨 **Theme**    | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/stylix.nix)                                                                                 |
+  | 🐚 **Shell**    | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/zsh.nix)                                                                                                                |
+  | 🖥️ **Terminal** | [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/kitty.nix)                                                                                                            |
+  | 🚀 **Launcher** | [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/fuzzel.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix) |
+  | 🚨 **Alerts**   | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/system/mako.nix) or [Noctalia Shell](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix)       |
+  | 🚪 **DM**       | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/system/login.nix)                                                                                                             |
+  | 🪟 **WM**       | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/sway.nix) or [Niri](https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/niri.nix)                 |
 #+end_src
-
 
 
 ** Services
@@ -377,46 +377,46 @@ On [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]], I run a combination of dif
 This is a comprehensive list of the services/components ran by my server machines.
 
 #+begin_src markdown :tangle no :noweb-ref services
-  | Topic                      | Program                                                                                                           |
-  |------------------------------|----------------------------------------------------------------------------------------------------------------|
-  |📖 **Books**                | [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/kavita.nix)                       |
-  |📼 **Videos**               | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/jellyfin.nix)                   |
-  |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mpd.nix)                             |
-  |🗨️ **Messaging**            | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/matrix.nix)                       |
-  |📁 **Filesharing**          | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/nextcloud.nix) +  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/copyparty.nix) +  [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/croc.nix)                           |
-  |🎞️ **Photos**               | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/immich.nix)                       |
-  |📄 **Documents**            | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/paperless.nix)                 |
-  |🔄 **File Sync**            | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/syncthing.nix)                 |
-  |💾 **Backups**              | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/restic.nix)                          |
-  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/alloy.nix) + [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/gotify.nix)                       |
-  |🍴 **RSS**                  | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/freshrss.nix)                   |
-  |🌳 **Git**                  | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/forgejo.nix)                     |
-  |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/ankisync.nix)                      |
-  |🪪 **SSO**                  | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/oauth2-proxy.nix)              |
-  |💸 **Finance**              | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefly-iii.nix)             |
-  |🃏 **Collections**          | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/koillection.nix)             |
-  |🗃️ **Shell History**        | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/atuin.nix)                         |
-  |📅 **CalDav/CardDav**       | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/radicale.nix)                   |
-  |✂️ **Paste Tool**           | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/microbin.nix)                   |
-  |📸 **Image Sharing**        | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/slink.nix)                         |
-  |🔗 **Link Shortener**       | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/shlink.nix)                       |
-  |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/minecraft.nix)                 |
-  |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/garage.nix)                          |
-  |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/attic.nix)                            |
-  |🐙 **Nix Build farm**       | [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/buildbot.nix)                   |
-  |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/opkssh.nix)                          |
-  |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/homebox.nix)                     |
-  |👀 **DNS Records**          | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/nsd.nix)                                |
-  |✉️ **Mail**                 | [simple-nixos-mailserver](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mailserver.nix)  |
-  |🚇 **VPN Access**           | [Firezone](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/firezone.nix)                      |
-  |🛡️ **Local DNS Resolver**   | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/adguardhome.nix)                        |
-  |🛎️ **DHCP**                 | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/kea.nix)                                |
-  |🔎 **Search Engine**        | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/searx.nix)                       |
-  |📺 **Video Streaming**      | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious-companion.nix)                                                                                                                                               |
-  |🐽 **Threat Detection**     | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/crowdsec.nix)                      |
-  |🍽️ **Recipes**              | [Mealie](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mealie.nix)                       |
-  |🦊 **Firefox Sync**         | [Firefox-Syncserver](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefox-syncserver.nix)                                                                                                                                      |
-  |🪎 **Second Hand Site Info**| [Shopservatory](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/shopservatory.nix) + [Socks Proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/socks-proxy.nix)                    |
+  | Topic                        | Program                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+  |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | ☁️ **S3**                    | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/garage.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+  | ⚓ **Anki Sync**             | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/ankisync.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+  | ⛏️ **Minecraft**             | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/minecraft.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+  | ✂️ **Paste Tool**            | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/microbin.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+  | ✉️ **Mail**                  | [simple-nixos-mailserver](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mailserver.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+  | 🃏 **Collections**           | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/koillection.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+  | 🌳 **Git**                   | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/forgejo.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+  | 🍴 **RSS**                   | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/freshrss.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+  | 🍽️ **Recipes**               | [Mealie](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mealie.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | 🎞️ **Photos**                | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/immich.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | 🎵 **Music**                 | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mpd.nix)                                                                                                                                                                                                                                                                                                                                                               |
+  | 🐙 **Nix Build farm**        | [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/buildbot.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+  | 🐽 **Threat Detection**      | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/crowdsec.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+  | 👀 **DNS Records**           | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/nsd.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+  | 👁️ **Monitoring**            | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/alloy.nix) + [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/gotify.nix) |
+  | 💸 **Finance**               | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefly-iii.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+  | 💾 **Backups**               | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/restic.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+  | 📁 **Filesharing**           | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/nextcloud.nix) +  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/copyparty.nix) +  [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/croc.nix)                                                                                                                                                                                                                                                                                                                                                           |
+  | 📄 **Documents**             | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/paperless.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+  | 📅 **CalDav/CardDav**        | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/radicale.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+  | 📖 **Books**                 | [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/kavita.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | 📸 **Image Sharing**         | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/slink.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+  | 📺 **Video Streaming**       | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious-companion.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+  | 📼 **Videos**                | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/jellyfin.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+  | 🔄 **File Sync**             | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/syncthing.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+  | 🔎 **Search Engine**         | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/searx.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | 🔑 **Cert-based SSH**        | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/opkssh.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+  | 🔗 **Link Shortener**        | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/shlink.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | 🔨 **Home Asset Management** | [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/homebox.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+  | 🕸️ **Nix Binary Cache**      | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/attic.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+  | 🗃️ **Shell History**         | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/atuin.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+  | 🗨️ **Messaging**             | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/matrix.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | 🚇 **VPN Access**            | [Firezone](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/firezone.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+  | 🛎️ **DHCP**                  | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/kea.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+  | 🛡️ **Local DNS Resolver**    | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/adguardhome.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+  | 🦊 **Firefox Sync**          | [Firefox-Syncserver](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefox-syncserver.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+  | 🪎 **Second Hand Site Info** | [Shopservatory](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/shopservatory.nix) + [Socks Proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/socks-proxy.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+  | 🪪 **SSO**                   | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/oauth2-proxy.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 #+end_src
 
 * An introduction to nix
@@ -53258,9 +53258,11 @@ Here lies defined the README for GitHub and Forgejo:
 
 #+begin_src markdown :tangle .github/README.md :noweb yes :mkdirp yes
   <h1 id="header" align="center">
-      <img width="150" height="140" alt="nixos logo using earthbound giant step icon" src="https://github.com/Swarsel/.dotfiles/blob/main/.github/logo.svg" />
+      <img width="150" height="140" alt="nixos logo using earthbound giant step icon" src="https://github.com/Swarsel/.dotfiles/blob/main/files/icons/logo.svg" />
       <br>
+      &emsp;&emsp;
       ~SwarselSystems~
+      <sup><sub><sup><sub><i>(née .dotfiles)</i></sub></sup></sub></sup>
     </h1>
 
     <p align="center">
@@ -53318,15 +53320,21 @@ Here lies defined the README for GitHub and Forgejo:
 
     ### Programs
 
+
   <<programs>>
+
 
     ### Services
 
+
   <<services>>
+
 
     ### Hosts
 
+
   <<hosts>>
+
 
     </details>
 
@@ -53392,57 +53400,54 @@ Here lies defined the README for GitHub and Forgejo:
     Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-install -- -n <CONFIGURATION_NAME>` at step 2.
     </details>
 
-    ## Infrastructure
+    ## Attributions, Acknowledgments, Inspirations, etc.
+
+    I would like to express my gratitude (not solely) to:
 
     <details>
-      <summary>Click here for a summary of my infrastructure</summary>
-
-  <img width="4681" height="9890" alt="topology" src="https://github.com/user-attachments/assets/58742580-fb02-4b51-978a-364f5df1ddbd" />
-
-
-    ### Programs
-
-    <<programs>>
-
-    ### Services
-
-    <<services>>
-
-    ### Hosts
-
-    <<hosts>>
+      <summary>The people who help maintain <a href="https://github.com/orgs/NixOS/people">NixOS</a>, <a href="https://github.com/orgs/nix-community/people">nix-community</a>, and other nix-related projects.</summary>
     </details>
 
-    ## General Nix tips & useful links
-
     <details>
-      <summary>Click here for a summary of nix tips & links</summary>
+      <summary>The people who have inspired me with their configurations</summary>
 
-    - Below is a small list of tips that should be helpful if you are new to the nix ecosystem:
+    - [theSuess](https://github.com/theSuess) with their [home-manager](https://code.kulupu.party/thesuess/home-manager)
+    - [hlissner](https://github.com/hlissner) with their [dotfiles](https://github.com/hlissner/dotfiles)
+    - [AntonHakansson](https://github.com/AntonHakansson) with their [nixos-config](https://github.com/AntonHakansson/nixos-config?tab=readme-ov-file)
+    - [EmergentMind](https://github.com/EmergentMind) with their [nix-config](https://github.com/EmergentMind/nix-config)
+    - [oddlama](https://github.com/oddlama) with their [nix-config](https://github.com/oddlama/nix-config)
+    </details>
 
-      - Temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
-        - if you need multiple packages, you can do `nix shell nixpkgs#{<pkg1>,<pkg2>,<pkg3>}`.
-        - you can set `nix.registry` to add more flakes to your registry. I use this to add a `n` shorthand to `nixpkgs`, which allows me to do `nix shell n#{<pkg1>,<pkg2>,<pkg3>}`.
-      - Alternatively, use [comma](https://github.com/nix-community/comma)
-        - More info on `nix [...]` commands: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
-        - some examples:
-          - `nix flake update <input-name>` lets you update a specific input only.
-          - `nix repl <your flake path>` gives quick insight into your written configuration.
-          - `nix eval <your flake path>#<config attribute>` quickly returns an attribute in your written configuration
-          - `nix fmt` formats your flake using the formatter specified under `formatter` in your `flake.nix`
-      - When you are trying to setup a new configuration part, [GitHub code search](https://github.com/search?q=language%3ANix&type=code) can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
-      - getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
-      - you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell <NIXPKGS_REVISION> <PACKAGE>`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
-      - when developing modules in a dev branch of another flake, you can use `--override-input` to temporarily use the local directory as the flake source.
-      - including `nixosConfig ? config` in your module arguments is a smart way of enabling a module to pull in config from NixOS or home-manager config, no matter if it is a NixOS system or not.
-      - you can have a quick cli evaluation for nix commands with e.g. `nixpgks.lib` available using `nix-instantiate --strict --eval --expr "let lib = import <nixpkgs/lib>; in <expression>"`.
-      - if you are looking for a specific library, `nix-locate` makes it easy to look for them.
-      - to look at the dependencies pulled in by a tool, use `nix-tree`
-        - to find out which derivation uses another derivation, use `nix store --query --referrers <derivation>`
-      - to get a neat overview of your config changes in recent generations, use `nix profile diff-closures --profile /nix/var/nix/profiles/system`
-        - to get instead the changes since the last boot, use `nix profile diff-closures /run/*-system`
-        - if you just need the generation numbers, use `sudo nix-env --list-generations --profile /nix/var/nix/profiles/system`
-        - to then switch to another generation, you can use `sudo nix-env --switch-generation <generation number> -p /nix/var/nix/profiles/system` followed by `sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch`
+    If you feel that I forgot to pay you tribute for code that I used in this repository, please shoot me a message and I will fix it :)
+
+  ## FAQ
+
+  Q: <i>How do I get started with nix?</i><br>
+  <details><summary>A: Click here for a small list of tips that should be helpful if you are new to the nix ecosystem</summary>
+
+    - Temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
+      - if you need multiple packages, you can do `nix shell nixpkgs#{<pkg1>,<pkg2>,<pkg3>}`.
+      - you can set `nix.registry` to add more flakes to your registry. I use this to add a `n` shorthand to `nixpkgs`, which allows me to do `nix shell n#{<pkg1>,<pkg2>,<pkg3>}`.
+    - Alternatively, use [comma](https://github.com/nix-community/comma)
+      - More info on `nix [...]` commands: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
+      - some examples:
+        - `nix flake update <input-name>` lets you update a specific input only.
+        - `nix repl <your flake path>` gives quick insight into your written configuration.
+        - `nix eval <your flake path>#<config attribute>` quickly returns an attribute in your written configuration
+        - `nix fmt` formats your flake using the formatter specified under `formatter` in your `flake.nix`
+    - When you are trying to setup a new configuration part, [GitHub code search](https://github.com/search?q=language%3ANix&type=code) can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
+    - getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
+    - you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell <NIXPKGS_REVISION> <PACKAGE>`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
+    - when developing modules in a dev branch of another flake, you can use `--override-input` to temporarily use the local directory as the flake source.
+    - including `nixosConfig ? config` in your module arguments is a smart way of enabling a module to pull in config from NixOS or home-manager config, no matter if it is a NixOS system or not.
+    - you can have a quick CLI evaluation for nix commands with e.g. `nixpgks.lib` available using `nix-instantiate --strict --eval --expr "let lib = import <nixpkgs/lib>; in <expression>"`.
+    - if you are looking for a specific library, `nix-locate` makes it easy to look for them.
+    - to look at the dependencies pulled in by a tool, use `nix-tree`
+      - to find out which derivation uses another derivation, use `nix store --query --referrers <derivation>`
+    - to get a neat overview of your config changes in recent generations, use `nix profile diff-closures --profile /nix/var/nix/profiles/system`
+      - to get instead the changes since the last boot, use `nix profile diff-closures /run/*-system`
+      - if you just need the generation numbers, use `sudo nix-env --list-generations --profile /nix/var/nix/profiles/system`
+      - to then switch to another generation, you can use `sudo nix-env --switch-generation <generation number> -p /nix/var/nix/profiles/system` followed by `sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch`
 
     - These links are your best friends:
       - The nix documentation: https://nix.dev/
@@ -53454,7 +53459,7 @@ Here lies defined the README for GitHub and Forgejo:
         - and the nix package version search: https://lazamar.co.uk/nix-versions/
       - The NixOS option search https://search.nixos.org/options
       - [mipmip](https://github.com/mipmip)'s home-manager option search: https://mipmip.github.io/home-manager-option-search/
-      - [Alan Pearce](https://alanpearce.eu/)'s nix-darwin search: https://searchix.alanpearce.eu/options/darwin/search (which supports all of the other versions as well :o)
+      - [Alan Pearce](https://alanpearce.eu/)'s `nix-darwin` search: https://searchix.alanpearce.eu/options/darwin/search (which supports all of the other versions as well :o)
       - For the above, you can use the CLI tool [manix](https://github.com/mlvzk/manix)
       - Nix function search: https://noogle.dev/
       - Search for nix-community options: https://search.nüschtos.de/
@@ -53473,19 +53478,21 @@ Here lies defined the README for GitHub and Forgejo:
         - Why to use flakes and introduction to flakes: https://www.tweag.io/blog/2020-05-25-flakes/
         - The [NixOS & Flakes Book](https://nixos-and-flakes.thiscute.world/)
         - and [Wombat's book](https://mhwombat.codeberg.page/nix-book/)
+        - as well as [Ekala's book](https://ekala-project.github.io/nix-book/)
         - or the [Zero to Nix series](https://zero-to-nix.com/)
+        - last but not least, [NixOS in Production](https://leanpub.com/nixos-in-production)
         - Practical nix flakes article: https://serokell.io/blog/practical-nix-flakes
       - A bit on Overlays:
         - Overview on overlays: [Mastering Nixpkgs overlays article](https://nixcademy.com/posts/mastering-nixpkgs-overlays-techniques-and-best-practice/)
-        - Some examples on best practises: [Do's and Don'ts of overlays](https://flyingcircus.io/news/detailsansicht/nixos-the-dos-and-donts-of-nixpkgs-overlays)
+        - Some examples on best practices: [Do's and Don'ts of overlays](https://flyingcircus.io/news/detailsansicht/nixos-the-dos-and-donts-of-nixpkgs-overlays)
         - Blog article about overrides: https://bobvanderlinden.me/customizing-packages-in-nix/#using-modified-packages
       - Also useful is the [official NixOS Wiki](https://wiki.nixos.org/wiki/NixOS_Wiki)
         - there is also the [unofficial NixOS Wiki](https://nixos.wiki/) that tends to be a bit outdated, use with care
     - Some resources for specific nix tools:
       - Flake output reference: https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/outputs
       - You can find public repositories with modules at https://nur.nix-community.org/ (you should check what you are installing however):
-        - I like to use this for rycee's firefox extensions: https://nur.nix-community.org/repos/rycee/
-      - List of nerdfonts: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
+        - I like to use this for rycee's Firefox extensions: https://nur.nix-community.org/repos/rycee/
+      - List of nerd-fonts: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
       - Stylix configuration options: https://danth.github.io/stylix/
       - nix-on-droid options: https://nix-community.github.io/nix-on-droid/nix-on-droid-options.html#sec-options
     - Very useful tools that are mostly not directly used in configuration but instead called on need:
@@ -53495,58 +53502,13 @@ Here lies defined the README for GitHub and Forgejo:
     - And a few links that are not directly nix-related, but may still serve you well:
       - List of pre-commit-hooks: https://devenv.sh/reference/options/#pre-commithooks
       - Waybar configuration: https://github.com/Alexays/Waybar/wiki
-    </details>
 
-    ## Attributions, Acknowledgements, Inspirations, etc.
+   </details>
 
-    These are in random order (also known as 'the order in which I discovered them'). I would like to express my gratitude to:
+  <br>
 
-    <details>
-      <summary>The great people who have contributed code for the nix-community, with special mentions for (this list is unfairly incomplete)</summary>
-
-    - [guibou](https://github.com/guibou/)
-    - [rycee](https://github.com/rycee)
-    - [adisbladis](https://github.com/adisbladis)
-    - [Mic92](https://github.com/Mic92/sops-nix)
-    - [lassulus](https://github.com/lassulus)
-    - [danth](https://github.com/danth/)
-    - [LnL7](https://github.com/LnL7)
-    - [t184256](https://github.com/t184256)
-    - [bennofs](https://github.com/bennofs)
-    - [Pandapip1](https://github.com/Pandapip1)
-    - [zowoq](https://github.com/zowoq)
-    - [numtide](https://github.com/numtide)
-    - [hsjobeki](https://github.com/hsjobeki)
-    - [blitz](https://github.com/blitz)
-    - [RaitoBezarius](https://github.com/RaitoBezarius)
-    - [nikstur](https://github.com/nikstur)
-    - [talyz](https://github.com/talyz)
-    - [infinisil](https://github.com/infinisil)
-    - [zhaofengli](https://github.com/zhaofengli)
-    - [Artturin](https://github.com/Artturin)
-    - [oddlama](https://github.com/oddlama)
-    </details>
-
-    <details>
-      <summary>The people who have inspired me with their configurations (sadly also highly incomplete)</summary>
-
-    - [theSuess](https://github.com/theSuess) with their [home-manager](https://code.kulupu.party/thesuess/home-manager)
-    - [hlissner](https://github.com/hlissner) with their [dotfiles](https://github.com/hlissner/dotfiles)
-    - [drduh](https://github.com/drduh/YubiKey-Guide) with their [YubiKey-Guide](https://github.com/drduh/YubiKey-Guide)
-    - [AntonHakansson](https://github.com/AntonHakansson) with their [nixos-config](https://github.com/AntonHakansson/nixos-config?tab=readme-ov-file)
-    - [Guekka](https://github.com/Guekka/) with their [blog](https://guekka.github.io/)
-    - [NotAShelf](https://github.com/NotAShelf) with their [nyx](https://github.com/NotAShelf/nyx)
-    - [Misterio77](https://github.com/Misterio77) with their [nix-config](https://github.com/Misterio77/nix-config)
-    - [0xdade](https://github.com/0xdade) with their [blog](https://0xda.de/blog/)
-    - [EmergentMind](https://github.com/EmergentMind) with their [nix-config](https://github.com/EmergentMind/nix-config)
-    - [librephoenix](https://github.com/librephoenix) with their [nixos-config](https://github.com/librephoenix/nixos-config)
-    - [Xe](https://github.com/Xe) with their [blog](https://xeiaso.net/blog/)
-    - [oddlama](https://github.com/oddlama) with their [nix-config](https:/github.com/oddlama/nix-config)
-    </details>
-
-    If you feel that I forgot to pay you tribute for code that I used in this repository, please shoot me a message and I will fix it :)
-
-
+  Q: <i>Why Is this just called `.dotfiles`?</i><br>
+  <details><summary>A: Would you rename your children once they turn 18?</summary></details>
 #+end_src
 
 ** GitHub Workflow: Build-and-deploy
