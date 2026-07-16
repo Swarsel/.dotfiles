@@ -32,15 +32,14 @@
 
   swarselsystems = {
     info = "TEMPLATE";
-    rootDisk = "TEMPLATE"; # /dev/disk/by-id/[...]
-    isLinux = true;
     isBtrfs = true;
-    isImpermanence = true;
-    isSecureBoot = true;
     isCrypted = true;
+    isImpermanence = true;
+    isLinux = true;
+    isSecureBoot = true;
     isSwap = true;
+    rootDisk = "TEMPLATE"; # /dev/disk/by-id/[...]
     swapSize = "16G";
-
     # ---- CLIENT-ONLY ----
     # isLaptop = true;
     # hasBluetooth = true;
@@ -49,7 +48,6 @@
     # lowResolution = "<resolution for sharing the screen>";
     # highResolution = "<standard resolution>";
     # sharescreen = "<output>";
-
     # ---- SERVER-ONLY ----
     # flakePath = "/root/.dotfiles";
     # isCloud = true;

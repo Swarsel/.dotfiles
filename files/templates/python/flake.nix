@@ -5,35 +5,35 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    pyproject-build-systems = {
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        pyproject-nix.follows = "pyproject-nix";
+        uv2nix.follows = "uv2nix";
+      };
+      url = "github:pyproject-nix/build-system-pkgs";
+    };
+
     pyproject-nix = {
-      url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:pyproject-nix/pyproject.nix";
     };
 
     uv2nix = {
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        pyproject-nix.follows = "pyproject-nix";
+      };
       url = "github:pyproject-nix/uv2nix";
-      inputs = {
-        pyproject-nix.follows = "pyproject-nix";
-        nixpkgs.follows = "nixpkgs";
-      };
-    };
-
-    pyproject-build-systems = {
-      url = "github:pyproject-nix/build-system-pkgs";
-      inputs = {
-        pyproject-nix.follows = "pyproject-nix";
-        uv2nix.follows = "uv2nix";
-        nixpkgs.follows = "nixpkgs";
-      };
     };
   };
 
   outputs =
     {
       nixpkgs,
-      uv2nix,
-      pyproject-nix,
       pyproject-build-systems,
+      pyproject-nix,
+      uv2nix,
       ...
     }:
     let
@@ -81,13 +81,7 @@
                   (old.tests or { })
                   // {
                     pytest = stdenv.mkDerivation {
-                      name = "${final.${pname}.name}-pytest";
                       inherit (final.${pname}) src;
-                      nativeBuildInputs = [
-                        virtualenv
-                      ];
-                      dontConfigure = true;
-
                       # Because this package is running tests, and not actually building the main package
                       # the build phase is running the tests.
                       #
@@ -97,7 +91,7 @@
                         pytest --cov tests --cov-report html
                         runHook postBuild
                       '';
-
+                      dontConfigure = true;
                       # Install the HTML coverage report into the build output.
                       #
                       # If you wanted to install multiple test output formats such as TAP outputs
@@ -109,6 +103,10 @@
                         mv htmlcov $out
                         runHook postInstall
                       '';
+                      name = "${final.${pname}.name}-pytest";
+                      nativeBuildInputs = [
+                        virtualenv
+                      ];
                     };
 
                   };
@@ -131,13 +129,13 @@
 
     in
     {
-      packages = forAllSystems (
+      checks = forAllSystems (
         system:
         let
           pythonSet = pythonSets.${system};
         in
         {
-          default = pythonSet.mkVirtualEnv "${pname}-env" workspace.deps.default;
+          inherit (pythonSet.${pname}.passthru.tests) pytest;
         }
       );
 
@@ -188,17 +186,17 @@
         }
       );
 
-      checks = forAllSystems (
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
+
+      packages = forAllSystems (
         system:
         let
           pythonSet = pythonSets.${system};
         in
         {
-          inherit (pythonSet.${pname}.passthru.tests) pytest;
+          default = pythonSet.mkVirtualEnv "${pname}-env" workspace.deps.default;
         }
       );
-
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
 
     };
 }

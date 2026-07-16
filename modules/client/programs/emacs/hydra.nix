@@ -6,7 +6,6 @@
     '';
 
     hydra = {
-      enable = true;
       config = ''
         (defhydra hydra-text-scale (:timeout 4)
           "scale text"
@@ -14,6 +13,7 @@
           ("k" text-scale-decrease "out")
           ("f" nil "finished" :exit t))
       '';
+      enable = true;
     };
   };
 }

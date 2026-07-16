@@ -1,10 +1,10 @@
 {
   name,
-  writeShellApplication,
-  wlr-randr,
   busybox,
-  wl-mirror,
   mako,
+  wl-mirror,
+  wlr-randr,
+  writeShellApplication,
   ...
 }:
 

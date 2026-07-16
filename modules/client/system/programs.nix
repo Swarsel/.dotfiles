@@ -1,15 +1,5 @@
 {
   flake.modules = {
-    nixos.programs = {
-      config = {
-        programs = {
-          dconf.enable = true;
-          evince.enable = true;
-          kdeconnect.enable = true;
-        };
-      };
-    };
-
     homeManager.programs = { pkgs, ... }: {
       config = {
         swarselsystems.enabledHomeModules = [ "programs" ];
@@ -45,61 +35,69 @@
             enable = true;
             layout = [
               {
-                label = "lock";
                 action = "loginctl lock-session";
-                text = "Lock";
+                circular = true;
                 keybind = "l";
-                circular = true;
+                label = "lock";
+                text = "Lock";
               }
               {
-                label = "hibernate";
                 action = "systemctl hibernate";
-                text = "Hibernate";
+                circular = true;
                 keybind = "h";
-                circular = true;
+                label = "hibernate";
+                text = "Hibernate";
               }
               {
-                label = "logout";
                 action = "loginctl terminate-user $USER";
-                text = "Logout";
+                circular = true;
                 keybind = "u";
-                circular = true;
+                label = "logout";
+                text = "Logout";
               }
               {
-                label = "shutdown";
                 action = "systemctl poweroff";
-                text = "Shutdown";
+                circular = true;
                 keybind = "p";
-                circular = true;
+                label = "shutdown";
+                text = "Shutdown";
               }
               {
-                label = "suspend";
                 action = "systemctl suspend";
-                text = "Suspend";
-                keybind = "s";
                 circular = true;
+                keybind = "s";
+                label = "suspend";
+                text = "Suspend";
               }
               {
-                label = "reboot";
                 action = "systemctl reboot";
-                text = "Reboot";
-                keybind = "r";
                 circular = true;
+                keybind = "r";
+                label = "reboot";
+                text = "Reboot";
               }
             ];
           };
           yt-dlp.enable = true;
           zoxide = {
-            enable = true;
-            enableZshIntegration = true;
             options = [
               "--cmd cd"
             ];
+            enable = true;
+            enableZshIntegration = true;
           };
         };
-
         home.sessionVariables = {
           _ZO_EXCLUDE_DIRS = "$HOME:$HOME/.ansible/*:$HOME/test/*:/persist";
+        };
+      };
+    };
+    nixos.programs = {
+      config = {
+        programs = {
+          dconf.enable = true;
+          evince.enable = true;
+          kdeconnect.enable = true;
         };
       };
     };

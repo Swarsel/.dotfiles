@@ -2,9 +2,9 @@
   flake.modules.nixos.nextcloud =
     {
       self,
-      pkgs,
-      lib,
       config,
+      lib,
+      pkgs,
       confLib,
       ...
     }:
@@ -16,22 +16,22 @@
           name = "nextcloud";
           port = 80;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        idmServer
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        idmServer
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       nextcloudVersion = "33";
@@ -42,103 +42,96 @@
       imports = [
         self.modules.nixos.nginx
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "nextcloud" ];
-
-        sops.secrets = {
-          nextcloud-admin-pw = {
-            inherit sopsFile;
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
           };
-          kanidm-nextcloud = {
-            sopsFile = kanidmSopsFile;
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = ''"installed":\s*true'';
+            hostHeader = serviceDomain;
+            path = "/status.php";
           };
         };
-
+        sops.secrets = {
+          kanidm-nextcloud = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = kanidmSopsFile;
+          };
+          nextcloud-admin-pw = {
+            inherit sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+          };
+        };
         users.persistentIds = {
           nextcloud = confLib.mkIds 990;
           redis-nextcloud = confLib.mkIds 976;
         };
-
-        globals = {
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/status.php";
-            expectedBodyRegex = ''"installed":\s*true'';
-            hostHeader = serviceDomain;
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-            {
-              directory = "/var/lib/redis-${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
         services = {
           ${serviceName} = {
-            enable = true;
-            settings = {
-              trusted_proxies = [ "0.0.0.0" ];
-              overwriteprotocol = "https";
-            };
-            package = pkgs."nextcloud${nextcloudVersion}";
-            hostName = serviceDomain;
-            home = "/var/lib/${serviceName}";
-            datadir = "/var/lib/${serviceName}";
-            https = true;
-            configureRedis = true;
-            maxUploadSize = "64G";
-            extraApps = {
-              inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps)
-                mail
-                calendar
-                contacts
-                cospend
-                phonetrack
-                polls
-                tasks
-                sociallogin
-                forms
-                tables
-                ;
-            };
-            extraAppsEnable = true;
             config = {
               inherit adminuser;
               adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
               dbtype = "sqlite";
             };
+            enable = true;
+            package = pkgs."nextcloud${nextcloudVersion}";
+            configureRedis = true;
+            datadir = "/var/lib/${serviceName}";
+            extraApps = {
+              inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps)
+                calendar
+                contacts
+                cospend
+                forms
+                mail
+                phonetrack
+                polls
+                sociallogin
+                tables
+                tasks
+                ;
+            };
+            extraAppsEnable = true;
+            home = "/var/lib/${serviceName}";
+            hostName = serviceDomain;
+            https = true;
+            maxUploadSize = "64G";
+            settings = {
+              overwriteprotocol = "https";
+              trusted_proxies = [ "0.0.0.0" ];
+            };
           };
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+            {
+              directory = "/var/lib/redis-${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
         nodes =
           let
             extraConfigLoc = ''
@@ -154,9 +147,9 @@
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit serviceName serviceDomain kanidmSopsFile;
-                    originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+                    inherit kanidmSopsFile serviceDomain serviceName;
                     extraGroups = [ "nextcloud.admins" ];
+                    originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
                   })
                   {
                     services.kanidm.provision.systems.oauth2.nextcloud = {
@@ -171,11 +164,11 @@
             {
               ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
+                  extraConfigLoc
                   serviceAddress
-                  servicePort
                   serviceDomain
                   serviceName
-                  extraConfigLoc
+                  servicePort
                   ;
                 maxBody = 0;
               };
@@ -184,13 +177,13 @@
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
                   inherit
-                    servicePort
+                    extraConfigLoc
                     serviceDomain
                     serviceName
-                    extraConfigLoc
+                    servicePort
                     ;
-                  maxBody = 0;
                   extraConfig = nginxAccessRules;
+                  maxBody = 0;
                   serviceAddress = homeServiceAddress;
                 }
               );

@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.node-roles =
-    { lib, config, ... }:
+    { config, lib, ... }:
     {
       config = {
         globals.general = lib.listToAttrs (

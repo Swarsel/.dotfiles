@@ -2,10 +2,10 @@
   flake.modules.nixos.mealie =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -14,20 +14,20 @@
           name = "mealie";
           port = 9000;
         })
-        servicePort
-        serviceName
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
@@ -36,42 +36,56 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
         topology.self.services.${serviceName} = {
           info = "https://${serviceDomain}";
         };
-
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = ''"production":\s*true'';
+            path = "/api/app/about";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
         sops = {
           secrets.kanidm-mealie = {
-            sopsFile = kanidmSopsFile;
             mode = "0400";
+            sopsFile = kanidmSopsFile;
           };
           templates.mealie-oidc-env.content = ''
             OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-mealie}
           '';
         };
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
+        services.${serviceName} = {
+          enable = true;
+          credentialsFile = config.sops.templates.mealie-oidc-env.path;
+          settings = {
+            ALLOW_SIGNUP = "false";
+            BASE_URL = "https://${serviceDomain}";
+            OIDC_ADMIN_GROUP = "${serviceName}.admins@${kanidmDomain}";
+            OIDC_AUTH_ENABLED = "true";
+            OIDC_AUTO_REDIRECT = "true";
+            OIDC_CLIENT_ID = serviceName;
+            OIDC_CONFIGURATION_URL = "https://${kanidmDomain}/oauth2/openid/${serviceName}/.well-known/openid-configuration";
+            OIDC_GROUPS_CLAIM = "groups";
+            OIDC_PROVIDER_NAME = "Kanidm";
+            OIDC_SIGNUP_ENABLED = "true";
+            OIDC_USER_GROUP = "${serviceName}.access@${kanidmDomain}";
+            TZ = config.repo.secrets.common.location.timezone;
           };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/api/app/about";
-            expectedBodyRegex = ''"production":\s*true'';
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
-
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
             {
@@ -80,35 +94,14 @@
             }
           ];
         };
-
-        services.${serviceName} = {
-          enable = true;
-          credentialsFile = config.sops.templates.mealie-oidc-env.path;
-          settings = {
-            ALLOW_SIGNUP = "false";
-            BASE_URL = "https://${serviceDomain}";
-            TZ = config.repo.secrets.common.location.timezone;
-
-            OIDC_AUTH_ENABLED = "true";
-            OIDC_PROVIDER_NAME = "Kanidm";
-            OIDC_CONFIGURATION_URL = "https://${kanidmDomain}/oauth2/openid/${serviceName}/.well-known/openid-configuration";
-            OIDC_CLIENT_ID = serviceName;
-            OIDC_USER_GROUP = "${serviceName}.access@${kanidmDomain}";
-            OIDC_ADMIN_GROUP = "${serviceName}.admins@${kanidmDomain}";
-            OIDC_AUTO_REDIRECT = "true";
-            OIDC_SIGNUP_ENABLED = "true";
-            OIDC_GROUPS_CLAIM = "groups";
-          };
-        };
-
         nodes = lib.mkMerge [
           {
             ${idmServer} =
               lib.recursiveUpdate
                 (confLib.mkKanidmOidcSystem {
-                  inherit serviceName serviceDomain kanidmSopsFile;
-                  originUrl = "https://${serviceDomain}/login";
+                  inherit kanidmSopsFile serviceDomain serviceName;
                   extraGroups = [ "${serviceName}.admins" ];
+                  originUrl = "https://${serviceDomain}/login";
                 })
                 {
                   services.kanidm.provision.systems.oauth2.${serviceName}.scopeMaps."${serviceName}.access" =
@@ -125,9 +118,9 @@
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
               maxBody = 0;
             };
@@ -135,9 +128,9 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
                 serviceAddress = homeServiceAddress;
               }
             );

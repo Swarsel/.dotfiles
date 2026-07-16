@@ -2,10 +2,10 @@
   flake.modules.nixos.invidious =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -14,21 +14,21 @@
           name = "invidious";
           port = 3001;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        idmServer
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        idmServer
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       sopsFile = self + /secrets/general/invidious-companion.yaml;
@@ -37,10 +37,31 @@
       imports = [
         self.modules.nixos.postgresql
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "invidious" ];
-
+        topology.self.services.${serviceName} = {
+          info = "https://${serviceDomain}";
+        };
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            alertFor = "30m";
+            expectedBodyRegex = "Invidious";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
         sops = {
           secrets = {
             invidious-companion-key = {
@@ -58,78 +79,51 @@
             };
           };
         };
-
-        topology.self.services.${serviceName} = {
-          info = "https://${serviceDomain}";
-        };
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            expectedBodyRegex = "Invidious";
-            alertFor = "30m";
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
-        services.${serviceName} = {
-          enable = true;
-          port = 3001;
-          domain = serviceDomain;
-          sig-helper.enable = true;
-          http3-ytproxy.enable = true;
-          nginx.enable = true;
-          extraSettingsFile = config.sops.templates.invidiousExtraSettings.path;
-          settings = {
-            invidious_companion = [
-              {
-                # private_url = "http://127.0.0.1:8282/companion";
-                public_url = "https://${serviceDomain}/companion";
-                private_url = "https://${serviceDomain}/companion";
-              }
-            ];
-            db.user = serviceUser;
-            external_port = 80;
-            https_only = false;
-            popular_enabled = false;
-            default_user_preferences = {
-              dark_mode = "dark";
-              feed_menu = [
-                "Subscriptions"
-                "Playlists"
-                "Trending"
+        services = {
+          ${serviceName} = {
+            enable = true;
+            domain = serviceDomain;
+            extraSettingsFile = config.sops.templates.invidiousExtraSettings.path;
+            http3-ytproxy.enable = true;
+            nginx.enable = true;
+            port = 3001;
+            settings = {
+              db.user = serviceUser;
+              default_user_preferences = {
+                dark_mode = "dark";
+                default_home = "Subscriptions";
+                extend_desc = true;
+                feed_menu = [
+                  "Subscriptions"
+                  "Playlists"
+                  "Trending"
+                ];
+                local = true;
+                player_style = "youtube";
+                quality = "dash";
+                save_player_pos = true;
+              };
+              external_port = 80;
+              https_only = false;
+              invidious_companion = [
+                {
+                  private_url = "https://${serviceDomain}/companion";
+                  # private_url = "http://127.0.0.1:8282/companion";
+                  public_url = "https://${serviceDomain}/companion";
+                }
               ];
-              default_home = "Subscriptions";
-              player_style = "youtube";
-              quality = "dash";
-              save_player_pos = true;
-              local = true;
-              extend_desc = true;
+              popular_enabled = false;
             };
+            sig-helper.enable = true;
+          };
+          nginx.virtualHosts.${serviceDomain} = {
+            enableACME = false;
+            forceSSL = false;
           };
         };
-
-        services.nginx.virtualHosts.${serviceDomain} = {
-          enableACME = false;
-          forceSSL = false;
-        };
-
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           { directory = "/var/lib/private/invidious"; }
         ];
-
         nodes =
           let
             genNginx = toAddress: extraConfig: {
@@ -142,17 +136,19 @@
               };
               virtualHosts = {
                 "${serviceDomain}" = {
-                  useACMEHost = globals.domains.main;
-                  forceSSL = true;
-                  acmeRoot = null;
-                  oauth2.enable = true;
-                  oauth2.allowedGroups = [ "invidious_access" ];
                   inherit extraConfig;
+                  acmeRoot = null;
+                  forceSSL = true;
                   locations = {
                     "/" = {
                       proxyPass = "http://${serviceName}";
                     };
                   };
+                  oauth2 = {
+                    enable = true;
+                    allowedGroups = [ "invidious_access" ];
+                  };
+                  useACMEHost = globals.domains.main;
                 };
               };
             };

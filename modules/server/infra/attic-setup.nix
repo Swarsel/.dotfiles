@@ -1,22 +1,16 @@
 {
   flake.modules.nixos.attic-setup =
     {
-      lib,
       config,
+      lib,
       pkgs,
       globals,
       ...
     }:
 
     {
-      key = "swarsel/server/attic-setup";
       config = {
         swarselsystems.enabledServerModules = [ "attic-setup" ];
-
-        environment.systemPackages = with pkgs; [
-          attic-client
-        ];
-
         sops = {
           secrets = {
             attic-cache-key = { };
@@ -28,22 +22,12 @@
             '';
           };
         };
-
+        environment.systemPackages = with pkgs; [
+          attic-client
+        ];
         systemd.services.attic-cache-setup = {
-          description = "Ensure attic is authenticated to cache";
-          wantedBy = [ "multi-user.target" ];
           after = [ "network-online.target" ];
-          wants = [ "network-online.target" ];
-
-          serviceConfig = {
-            Type = "oneshot";
-            EnvironmentFile = [
-              config.sops.templates.attic-env.path
-            ];
-            Restart = "on-failure";
-            RestartSec = 60;
-            RemainAfterExit = true;
-          };
+          description = "Ensure attic is authenticated to cache";
           script =
             let
               attic = lib.getExe pkgs.attic-client;
@@ -84,10 +68,22 @@
               install -d -m 700 -o buildbot -g buildbot /home/buildbot/.config/attic
               install -m 600 -o buildbot -g buildbot ${configFile} /home/buildbot/.config/attic/config.toml
             '';
+          serviceConfig = {
+            EnvironmentFile = [
+              config.sops.templates.attic-env.path
+            ];
+            RemainAfterExit = true;
+            Restart = "on-failure";
+            RestartSec = 60;
+            Type = "oneshot";
+          };
+          wantedBy = [ "multi-user.target" ];
+          wants = [ "network-online.target" ];
 
         };
 
       };
+      key = "swarsel/server/attic-setup";
 
     }
 

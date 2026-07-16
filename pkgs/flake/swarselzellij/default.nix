@@ -1,7 +1,7 @@
 {
   name,
-  writeShellApplication,
   kitty,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

@@ -1,47 +1,46 @@
 {
   flake-file.inputs.lanzaboote = {
-    url = "github:nix-community/lanzaboote";
     inputs = {
       nixpkgs.follows = "nixpkgs";
       pre-commit.follows = "pre-commit-hooks";
     };
+    url = "github:nix-community/lanzaboote";
   };
 
   flake.modules.nixos.lanzaboote =
     {
       inputs,
+      config,
       lib,
       pkgs,
-      config,
       minimal,
       ...
     }:
     let
-      inherit (config.swarselsystems) isSecureBoot isImpermanence;
+      inherit (config.swarselsystems) isImpermanence isSecureBoot;
     in
     {
       imports = [ inputs.lanzaboote.nixosModules.lanzaboote ];
-
-      environment.systemPackages = lib.mkIf isSecureBoot [
-        pkgs.sbctl
-      ];
-
-      environment.persistence."/persist" = lib.mkIf (isImpermanence && isSecureBoot) {
-        directories = [ { directory = "/var/lib/sbctl"; } ];
-      };
-
       boot = {
+        lanzaboote = lib.mkIf (!minimal && isSecureBoot) {
+          enable = true;
+          configurationLimit = 6;
+          pkiBundle = "/var/lib/sbctl";
+        };
         loader = {
           efi.canTouchEfiVariables = true;
           systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !isSecureBoot) (lib.mkForce true) (
             lib.mkForce false
           );
         };
-        lanzaboote = lib.mkIf (!minimal && isSecureBoot) {
-          enable = true;
-          pkiBundle = "/var/lib/sbctl";
-          configurationLimit = 6;
+      };
+      environment = {
+        persistence."/persist" = lib.mkIf (isImpermanence && isSecureBoot) {
+          directories = [ { directory = "/var/lib/sbctl"; } ];
         };
+        systemPackages = lib.mkIf isSecureBoot [
+          pkgs.sbctl
+        ];
       };
     };
 }

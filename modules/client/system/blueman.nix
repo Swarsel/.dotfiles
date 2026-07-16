@@ -1,5 +1,11 @@
 {
   flake.modules = {
+    homeManager.blueman-applet = {
+      config = {
+        swarselsystems.enabledHomeModules = [ "blueman-applet" ];
+        services.blueman-applet.enable = true;
+      };
+    };
     nixos.blueman = {
       config = {
         services = {
@@ -8,13 +14,6 @@
           };
           hardware.bolt.enable = true;
         };
-      };
-    };
-
-    homeManager.blueman-applet = {
-      config = {
-        swarselsystems.enabledHomeModules = [ "blueman-applet" ];
-        services.blueman-applet.enable = true;
       };
     };
   };

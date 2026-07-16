@@ -2,10 +2,10 @@
   flake.modules.nixos.firefly-iii =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -14,22 +14,22 @@
           name = "firefly-iii";
           port = 80;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        idmServer
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        idmServer
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       nginxGroup = "nginx";
@@ -43,86 +43,71 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "firefly-iii" ];
-
-        users = {
-          persistentIds = {
-            firefly-iii = confLib.mkIds 983;
-          };
-          groups.${serviceGroup} = { };
-          users.${serviceUser} = {
-            group = lib.mkForce serviceGroup;
-            extraGroups = lib.mkIf cfg.enableNginx [ nginxGroup ];
-            isSystemUser = true;
-          };
-        };
-
-        sops = {
-          secrets = {
-            "firefly-iii-app-key" = {
-              inherit sopsFile;
-              owner = serviceUser;
-              group = if cfg.enableNginx then nginxGroup else serviceGroup;
-              mode = "0440";
-            };
-          };
-        };
-
         # topology.self.services.${serviceName} = {
         #   name = "Firefly-III";
         #   info = "https://${serviceDomain}";
         #   icon = "${self}/files/topology-images/${serviceName}.png";
         # };
-
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
-            path = "/health";
             expectedBodyRegex = "OK";
             hostHeader = serviceDomain;
+            path = "/health";
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
+        sops = {
+          secrets = {
+            "firefly-iii-app-key" = {
+              inherit sopsFile;
+              group = if cfg.enableNginx then nginxGroup else serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            };
+          };
         };
-
+        users = {
+          users.${serviceUser} = {
+            extraGroups = lib.mkIf cfg.enableNginx [ nginxGroup ];
+            group = lib.mkForce serviceGroup;
+            isSystemUser = true;
+          };
+          groups.${serviceGroup} = { };
+          persistentIds = {
+            firefly-iii = confLib.mkIds 983;
+          };
+        };
         services = {
           ${serviceName} = {
             enable = true;
-            user = serviceUser;
-            group = if cfg.enableNginx then nginxGroup else serviceGroup;
             dataDir = "/var/lib/${serviceName}";
+            enableNginx = true;
+            group = if cfg.enableNginx then nginxGroup else serviceGroup;
             settings = {
-              TZ = config.repo.secrets.common.location.timezone;
-              APP_URL = "https://${serviceDomain}";
-              APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
               APP_ENV = "local";
+              APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
+              APP_URL = "https://${serviceDomain}";
               DB_CONNECTION = "sqlite";
               TRUSTED_PROXIES = "**";
+              TZ = config.repo.secrets.common.location.timezone;
               # turning these on breaks api access using the waterfly app
               # AUTHENTICATION_GUARD = "remote_user_guard";
               # AUTHENTICATION_GUARD_HEADER = "X-User";
               # AUTHENTICATION_GUARD_EMAIL = "X-Email";
             };
-            enableNginx = true;
+            user = serviceUser;
             virtualHost = serviceDomain;
           };
 
@@ -143,7 +128,15 @@
             };
           };
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
         nodes =
           let
             genNginx = toAddress: extraConfig: {
@@ -156,25 +149,24 @@
               };
               virtualHosts = {
                 "${serviceDomain}" = {
-                  useACMEHost = globals.domains.main;
-
-                  forceSSL = true;
-                  acmeRoot = null;
-                  oauth2 = {
-                    enable = true;
-                    allowedGroups = [ "firefly_access" ];
-                  };
                   inherit extraConfig;
+                  acmeRoot = null;
+                  forceSSL = true;
                   locations = {
                     "/" = {
                       proxyPass = "http://${serviceName}";
                     };
                     "/api" = {
+                      bypassAuth = true;
                       proxyPass = "http://${serviceName}";
                       setOauth2Headers = false;
-                      bypassAuth = true;
                     };
                   };
+                  oauth2 = {
+                    enable = true;
+                    allowedGroups = [ "firefly_access" ];
+                  };
+                  useACMEHost = globals.domains.main;
                 };
               };
             };
@@ -182,8 +174,8 @@
           lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOauth2ProxyAccess {
-                serviceName = "firefly";
                 proxyGroup = "firefly_access";
+                serviceName = "firefly";
               };
             }
             { ${webProxy}.services.nginx = genNginx serviceAddress ""; }

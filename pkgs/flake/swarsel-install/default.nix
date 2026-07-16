@@ -1,8 +1,8 @@
 {
   name,
-  writeShellApplication,
   git,
   jq,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

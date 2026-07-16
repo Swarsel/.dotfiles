@@ -1,19 +1,19 @@
 {
   flake.modules.homeManager.nixgl =
     {
-      lib,
-      config,
       inputs,
+      config,
+      lib,
       nixosConfig ? null,
       ...
     }:
     {
       options.swarselsystems = {
-        isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
         SecondaryGpuCard = lib.mkOption {
-          type = lib.types.str;
           default = "";
+          type = lib.types.str;
         };
+        isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
       };
       config = {
         swarselsystems.enabledHomeModules = [ "nixgl" ];
@@ -21,18 +21,18 @@
           {
             inherit (inputs.nixgl) packages;
             defaultWrapper = "mesa";
-            vulkan.enable = false;
             installScripts = [
               "mesa"
               "mesaPrime"
             ];
+            vulkan.enable = false;
           }
           // lib.optionalAttrs config.swarselsystems.isSecondaryGpu {
+            offloadWrapper = "mesaPrime";
             prime = {
               card = config.swarselsystems.secondaryGpuCard;
               installScript = "mesa";
             };
-            offloadWrapper = "mesaPrime";
           }
         );
       };

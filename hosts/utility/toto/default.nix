@@ -16,29 +16,28 @@
     inputs.self.modules.nixos.profile-minimal
   ];
 
-  topology.self.interfaces."bootstrapper" = { };
-
-  node.lockFromBootstrapping = lib.mkForce false;
-
-  networking = {
-    hostName = "toto";
-    firewall.enable = false;
-  };
-
-  sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
-
   swarselsystems = {
     info = "~SwarselSystems~ remote install helper";
-    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
-    isImpermanence = true;
+    isBtrfs = true;
     isCrypted = false;
+    isImpermanence = true;
+    isLaptop = false;
+    isLinux = true;
     isSecureBoot = false;
     isSwap = true;
-    swapSize = "2G";
     rootDisk = "/dev/vda";
-    isBtrfs = true;
-    isLinux = true;
-    isLaptop = false;
+    swapSize = "2G";
+    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
   };
+
+  topology.self.interfaces."bootstrapper" = { };
+  sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
+
+  networking = {
+    firewall.enable = false;
+    hostName = "toto";
+  };
+
+  node.lockFromBootstrapping = lib.mkForce false;
 
 }

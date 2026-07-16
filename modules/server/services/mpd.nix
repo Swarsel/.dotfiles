@@ -2,8 +2,8 @@
   flake.modules.nixos.mpd =
     {
       self,
-      lib,
       config,
+      lib,
       pkgs,
       confLib,
       ...
@@ -15,10 +15,10 @@
           name = "mpd";
           port = 6600;
         })
-        servicePort
-        serviceName
-        serviceUser
         serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static) routerServer;
     in
@@ -26,74 +26,35 @@
       imports = [
         self.modules.nixos.server-pipewire
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "mpd" ];
-        users = {
-          groups = {
-            mpd = { };
+        sops = {
+          secrets.mpd-pw = {
+            inherit sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
-
+        };
+        users = {
           users = {
             ${serviceUser} = {
-              isSystemUser = true;
-              group = serviceGroup;
               extraGroups = [
                 "audio"
                 "utmp"
                 "users"
                 "pipewire"
               ];
+              group = serviceGroup;
+              isSystemUser = true;
             };
           };
-        };
-
-        sops = {
-          secrets.mpd-pw = {
-            inherit sopsFile;
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
+          groups = {
+            mpd = { };
           };
         };
-
-        environment.systemPackages = with pkgs; [
-          pciutils
-          alsa-utils
-          mpv
-        ];
-
-        # topology.self.services.${serviceName} = {
-        #   info = "http://localhost:${builtins.toString servicePort}";
-        #   icon = lib.mkForce "${self}/files/topology-images/mpd.png";
-        # };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = "mpd";
-              group = "mpd";
-            }
-          ];
-        };
-
         services.${serviceName} = {
           enable = true;
-          openFirewall = true;
-          settings = {
-            music_directory = "/storage/Music";
-            bind_to_address = "any";
-            port = servicePort;
-            audio_output = [
-              {
-                type = "pipewire";
-                name = "PipeWire";
-              }
-            ];
-          };
-          user = serviceUser;
-          group = serviceGroup;
           credentials = [
             {
               passwordFile = config.sops.secrets.mpd-pw.path;
@@ -105,14 +66,47 @@
               ];
             }
           ];
+          group = serviceGroup;
+          openFirewall = true;
+          settings = {
+            audio_output = [
+              {
+                name = "PipeWire";
+                type = "pipewire";
+              }
+            ];
+            bind_to_address = "any";
+            music_directory = "/storage/Music";
+            port = servicePort;
+          };
+          user = serviceUser;
         };
-
+        environment = {
+          # topology.self.services.${serviceName} = {
+          #   info = "http://localhost:${builtins.toString servicePort}";
+          #   icon = lib.mkForce "${self}/files/topology-images/mpd.png";
+          # };
+          persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+            directories = [
+              {
+                directory = "/var/lib/${serviceName}";
+                group = "mpd";
+                user = "mpd";
+              }
+            ];
+          };
+          systemPackages = with pkgs; [
+            pciutils
+            alsa-utils
+            mpv
+          ];
+        };
         nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
-          from = [ "untrusted" ];
-          to = [ "vlan-services" ];
           extraLines = [
             "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
           ];
+          from = [ "untrusted" ];
+          to = [ "vlan-services" ];
         };
       };
 

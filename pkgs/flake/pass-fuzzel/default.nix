@@ -1,9 +1,9 @@
 {
   name,
-  writeShellApplication,
+  fuzzel,
   libnotify,
   pass,
-  fuzzel,
+  writeShellApplication,
   wtype,
   ...
 }:

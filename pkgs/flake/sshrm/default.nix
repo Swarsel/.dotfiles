@@ -1,7 +1,7 @@
 {
   name,
-  writeShellApplication,
   openssh,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

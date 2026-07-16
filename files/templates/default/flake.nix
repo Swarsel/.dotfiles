@@ -17,8 +17,6 @@
       pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
     in
     {
-      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
-
       devShells = forEachSystem (system: {
         default = pkgsFor.${system}.mkShell {
           packages = with pkgsFor.${system}; [
@@ -26,6 +24,8 @@
           ];
         };
       });
+
+      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
 
     };
 }

@@ -2,8 +2,8 @@
   flake.modules.nixos.ssh-builder =
     {
       self,
-      pkgs,
       config,
+      pkgs,
       confLib,
       ...
     }:
@@ -28,18 +28,17 @@
       config = {
         swarselsystems.enabledServerModules = [ "ssh-builder" ];
         users = {
-          persistentIds.builder = confLib.mkIds 965;
-          groups.builder = { };
           users.builder = {
-            useDefaultShell = true;
-            isSystemUser = true;
             group = "builder";
+            isSystemUser = true;
             openssh.authorizedKeys.keys = [
               "${ssh-restrict} ${builtins.readFile "${self}/files/public/ssh/builder.pub"}"
             ];
+            useDefaultShell = true;
           };
+          groups.builder = { };
+          persistentIds.builder = confLib.mkIds 965;
         };
-
         services.openssh = {
           settings = {
             AllowUsers = [

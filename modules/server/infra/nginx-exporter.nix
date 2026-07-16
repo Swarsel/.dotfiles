@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.nginx-exporter =
     {
-      lib,
       config,
+      lib,
       confLib,
       ...
     }:
@@ -12,33 +12,30 @@
           name = "nginx-exporter";
           port = 9113;
         })
-        servicePort
         serviceName
+        servicePort
         ;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
+        topology.self.services.${serviceName} = {
+          icon = "services.prometheus";
+          name = serviceName;
+        };
         globals = {
           services.${serviceName}.extraConfig = {
             port = servicePort;
           };
         };
-
-        topology.self.services.${serviceName} = {
-          name = serviceName;
-          icon = "services.prometheus";
+        services = {
+          nginx.statusPage = true;
+          prometheus.exporters.nginx = {
+            enable = true;
+            listenAddress = "127.0.0.1";
+            port = servicePort;
+          };
         };
-
-        services.nginx.statusPage = true;
-
-        services.prometheus.exporters.nginx = {
-          enable = true;
-          listenAddress = "127.0.0.1";
-          port = servicePort;
-        };
-
         environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
           lib.mkAfter ''
             prometheus.scrape "nginx" {

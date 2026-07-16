@@ -2,8 +2,8 @@
   self,
   inputs,
   config,
-  pkgs,
   lib,
+  pkgs,
   arch,
   minimal,
   ...
@@ -32,44 +32,47 @@ in
     )
   );
 
+  swarselsystems = {
+    inherit mainUser;
+    info = "~SwarselSystems~ demo host";
+    isBtrfs = false;
+    isCrypted = true;
+    isImpermanence = true;
+    isLinux = true;
+    isPublic = true;
+    isSecureBoot = false;
+    isSwap = true;
+    rootDisk = "/dev/vda";
+    swapSize = "4G";
+    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+  };
+
+  topology.self.interfaces."demo host" = { };
+
+  services = {
+    printing.drivers = lib.mkIf (arch != "x86_64-linux") (lib.mkForce [ ]);
+    qemuGuest.enable = true;
+  };
+
+  boot = {
+    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    loader = {
+      efi.canTouchEfiVariables = true;
+      systemd-boot.enable = lib.mkForce true;
+    };
+  };
+
   environment.variables = {
     WLR_RENDERER_ALLOW_SOFTWARE = 1;
   };
 
   hardware.graphics.enable32Bit = lib.mkIf (arch != "x86_64-linux") (lib.mkForce false);
 
-  nixpkgs.overlays = lib.mkAfter [ (_: prev: { niri-stable = prev.niri; }) ];
-
-  services.printing.drivers = lib.mkIf (arch != "x86_64-linux") (lib.mkForce [ ]);
-
-  topology.self.interfaces."demo host" = { };
-
-  services.qemuGuest.enable = true;
-
-  boot = {
-    loader.systemd-boot.enable = lib.mkForce true;
-    loader.efi.canTouchEfiVariables = true;
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-  };
-
   networking = {
-    hostName = "hotel";
     firewall.enable = true;
+    hostName = "hotel";
   };
 
-  swarselsystems = {
-    info = "~SwarselSystems~ demo host";
-    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
-    isImpermanence = true;
-    isCrypted = true;
-    isSecureBoot = false;
-    isSwap = true;
-    swapSize = "4G";
-    rootDisk = "/dev/vda";
-    isBtrfs = false;
-    inherit mainUser;
-    isLinux = true;
-    isPublic = true;
-  };
+  nixpkgs.overlays = lib.mkAfter [ (_: prev: { niri-stable = prev.niri; }) ];
 
 }

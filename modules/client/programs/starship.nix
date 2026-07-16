@@ -6,55 +6,37 @@
         enable = true;
         enableZshIntegration = true;
         settings = {
+          package.symbol = "󰏗 ";
           add_newline = false;
-          format = "$shlvl$character";
-          right_format = "$all";
-          command_timeout = 3000;
-
-          directory.substitutions = {
-            "Documents" = "󰈙 ";
-            "Downloads" = " ";
-            "Music" = " ";
-            "Pictures" = " ";
-          };
-
-          git_status = {
-            style = "bg:#394260";
-            format = "[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style) ";
-          };
-
-          character = {
-            success_symbol = "[λ](bold green)";
-            error_symbol = "[λ](bold red)";
-          };
-
-          shlvl = {
-            disabled = false;
-            symbol = "↳";
-            format = "[$symbol]($style) ";
-            repeat = true;
-            repeat_offset = 1;
-            style = "blue";
-          };
-
-          nix_shell = {
-            disabled = false;
-            heuristic = true;
-            format = "[$symbol$name]($style)";
-            symbol = " ";
-          };
-
           aws.symbol = " ";
           buf.symbol = " ";
           c.symbol = " ";
+          character = {
+            error_symbol = "[λ](bold red)";
+            success_symbol = "[λ](bold green)";
+          };
+          command_timeout = 3000;
           conda.symbol = " ";
           dart.symbol = " ";
-          directory.read_only = " 󰌾";
+          directory = {
+            read_only = " 󰌾";
+            substitutions = {
+              "Documents" = "󰈙 ";
+              "Downloads" = " ";
+              "Music" = " ";
+              "Pictures" = " ";
+            };
+          };
           docker_context.symbol = " ";
           elixir.symbol = " ";
           elm.symbol = " ";
+          format = "$shlvl$character";
           fossil_branch.symbol = " ";
           git_branch.symbol = " ";
+          git_status = {
+            format = "[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style) ";
+            style = "bg:#394260";
+          };
           golang.symbol = " ";
           guix_shell.symbol = " ";
           haskell.symbol = " ";
@@ -67,6 +49,12 @@
           memory_usage.symbol = "󰍛 ";
           meson.symbol = "󰔷 ";
           nim.symbol = "󰆥 ";
+          nix_shell = {
+            disabled = false;
+            format = "[$symbol$name]($style)";
+            heuristic = true;
+            symbol = " ";
+          };
           nodejs.symbol = " ";
           os.symbols = {
             Alpaquita = " ";
@@ -96,26 +84,34 @@
             NetBSD = " ";
             NixOS = " ";
             OpenBSD = "󰈺 ";
-            openSUSE = " ";
             OracleLinux = "󰌷 ";
             Pop = " ";
             Raspbian = " ";
-            Redhat = " ";
             RedHatEnterprise = " ";
+            Redhat = " ";
             Redox = "󰀘 ";
-            Solus = "󰠳 ";
             SUSE = " ";
+            Solus = "󰠳 ";
             Ubuntu = " ";
             Unknown = " ";
             Windows = "󰍲 ";
+            openSUSE = " ";
           };
-          package.symbol = "󰏗 ";
           pijul_channel.symbol = " ";
           python.symbol = " ";
+          right_format = "$all";
           rlang.symbol = "󰟔 ";
           ruby.symbol = " ";
           rust.symbol = " ";
           scala.symbol = " ";
+          shlvl = {
+            disabled = false;
+            format = "[$symbol]($style) ";
+            repeat = true;
+            repeat_offset = 1;
+            style = "blue";
+            symbol = "↳";
+          };
 
         };
       };

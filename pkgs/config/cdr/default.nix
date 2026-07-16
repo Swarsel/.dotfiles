@@ -1,8 +1,8 @@
 {
   name,
   homeConfig,
-  writeShellApplication,
   fzf,
+  writeShellApplication,
   ...
 }:
 

@@ -1,7 +1,7 @@
 {
   self,
-  lib,
   config,
+  lib,
   ...
 }:
 let
@@ -12,20 +12,20 @@ in
     self.modules.darwin.profile-darwin
   ];
 
+  users.users.${workUser}.home = "/home/${workUser}";
   services.karabiner-elements.enable = true;
 
-  system.primaryUser = workUser;
-  users.users.${workUser}.home = "/home/${workUser}";
-
   home-manager.users.${workUser} = {
-    home.username = lib.mkForce workUser;
     swarselsystems = {
+      flakePath = "/home/${workUser}/.dotfiles";
+      homeDir = "/home/${workUser}";
+      isBtrfs = false;
       isDarwin = true;
       isLaptop = true;
-      isBtrfs = false;
       mainUser = workUser;
-      homeDir = "/home/${workUser}";
-      flakePath = "/home/${workUser}/.dotfiles";
     };
+    home.username = lib.mkForce workUser;
   };
+
+  system.primaryUser = workUser;
 }

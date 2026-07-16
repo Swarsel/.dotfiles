@@ -1,32 +1,6 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-    general.config = ''
-      (swarsel/leader-keys
-        "eo" '(evil-jump-backward :which-key "cursor jump backwards")
-        "eO" '(evil-jump-forward :which-key "cursor jump forwards")
-        "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
-        "tp" '(evil-cleverparens-mode :wk "cleverparens"))
-    '';
-
     evil = {
-      enable = true;
-      init = ''
-        (defun swarsel/toggle-evil-state ()
-          (interactive)
-          (if (or (evil-emacs-state-p) (evil-insert-state-p))
-              (evil-normal-state)
-            (evil-emacs-state)))
-
-        (setq evil-want-integration t)
-        (setq evil-want-keybinding nil)
-        (setq evil-want-C-u-scroll t)
-        (setq evil-want-C-i-jump nil)
-        (setq evil-want-Y-yank-to-eol t)
-        (setq evil-shift-width 2)
-        (setq evil-respect-visual-line-mode nil)
-        (setq evil-split-window-below t)
-        (setq evil-vsplit-window-right t)
-      '';
       config = ''
         (evil-mode 1)
 
@@ -58,58 +32,74 @@
         (add-hook 'org-capture-mode-hook 'evil-insert-state)
         (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert))
       '';
-    };
-
-    evil-collection = {
       enable = true;
-      after = [ "evil" ];
-      config = "(evil-collection-init)";
-    };
+      init = ''
+        (defun swarsel/toggle-evil-state ()
+          (interactive)
+          (if (or (evil-emacs-state-p) (evil-insert-state-p))
+              (evil-normal-state)
+            (evil-emacs-state)))
 
-    evil-snipe = {
-      enable = true;
-      after = [ "evil" ];
-      demand = true;
-      config = ''
-        (evil-snipe-mode +1)
-        (evil-snipe-override-mode +1)
+        (setq evil-want-integration t)
+        (setq evil-want-keybinding nil)
+        (setq evil-want-C-u-scroll t)
+        (setq evil-want-C-i-jump nil)
+        (setq evil-want-Y-yank-to-eol t)
+        (setq evil-shift-width 2)
+        (setq evil-respect-visual-line-mode nil)
+        (setq evil-split-window-below t)
+        (setq evil-vsplit-window-right t)
       '';
     };
-
     evil-cleverparens.enable = true;
-
-    evil-surround = {
-      enable = true;
-      config = "(global-evil-surround-mode 1)";
-    };
-
-    evil-visual-mark-mode = {
-      enable = true;
-      command = [ "evil-visual-mark-mode" ];
-    };
-
-    evil-textobj-tree-sitter = {
-      enable = true;
-      config = ''
-        (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
-        (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
-        (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer)))))
-      '';
-    };
-
-    evil-numbers.enable = true;
-
-    evil-mc = {
+    evil-collection = {
+      config = "(evil-collection-init)";
       enable = true;
       after = [ "evil" ];
-      config = "(global-evil-mc-mode 1)";
     };
-
+    evil-mc = {
+      config = "(global-evil-mc-mode 1)";
+      enable = true;
+      after = [ "evil" ];
+    };
     evil-nerd-commenter = {
       enable = true;
       bind = {
         "M-/" = "evilnc-comment-or-uncomment-lines";
       };
     };
+    evil-numbers.enable = true;
+    evil-snipe = {
+      config = ''
+        (evil-snipe-mode +1)
+        (evil-snipe-override-mode +1)
+      '';
+      enable = true;
+      after = [ "evil" ];
+      demand = true;
+    };
+    evil-surround = {
+      config = "(global-evil-surround-mode 1)";
+      enable = true;
+    };
+    evil-textobj-tree-sitter = {
+      config = ''
+        (define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+        (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+        (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer)))))
+      '';
+      enable = true;
+    };
+    evil-visual-mark-mode = {
+      enable = true;
+      command = [ "evil-visual-mark-mode" ];
+    };
+    general.config = ''
+      (swarsel/leader-keys
+        "eo" '(evil-jump-backward :which-key "cursor jump backwards")
+        "eO" '(evil-jump-forward :which-key "cursor jump forwards")
+        "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
+        "tp" '(evil-cleverparens-mode :wk "cleverparens"))
+    '';
   };
 }

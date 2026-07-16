@@ -1,43 +1,39 @@
 {
   flake.modules.nixos.server-pipewire =
     {
-      lib,
       config,
+      lib,
       confLib,
       ...
     }:
     {
-      key = "swarsel/server/server-pipewire";
       config = {
 
         swarselsystems.enabledServerModules = [ "pipewire" ];
-
-        security.rtkit.enable = true; # this is required for pipewire real-time access
-
         users.persistentIds.rtkit = confLib.mkIds 996;
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/pipewire";
-              user = "pipewire";
-              group = "pipewire";
-            }
-          ];
-        };
-
         services.pipewire = {
           enable = true;
-          pulse.enable = true;
-          jack.enable = true;
-          audio.enable = true;
-          wireplumber.enable = true;
           alsa = {
             enable = true;
             support32Bit = true;
           };
+          audio.enable = true;
+          jack.enable = true;
+          pulse.enable = true;
+          wireplumber.enable = true;
         };
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/pipewire";
+              group = "pipewire";
+              user = "pipewire";
+            }
+          ];
+        };
+        security.rtkit.enable = true; # this is required for pipewire real-time access
       };
+      key = "swarsel/server/server-pipewire";
 
     }
 

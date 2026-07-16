@@ -7,11 +7,11 @@
   ...
 }:
 writeShellApplication {
+  inherit name;
   runtimeInputs = [
     bc
     nix-output-monitor
   ];
-  inherit name;
   text = ''
       set -euo pipefail
       shopt -s lastpipe # allow cmd | readarray

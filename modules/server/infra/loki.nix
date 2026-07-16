@@ -1,35 +1,35 @@
 {
   flake.modules.nixos.loki =
     {
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
       inherit
         (confLib.gen {
+          dir = "/var/lib/loki";
           name = "loki";
           port = 3100;
-          dir = "/var/lib/loki";
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDir
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         wgProxyAccessRules
         ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
@@ -37,148 +37,135 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
-        users.persistentIds.loki = confLib.mkIds 948;
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
             extra.extraConfig = {
-              port = servicePort;
               host = config.node.name;
+              port = servicePort;
             };
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
-            path = "/ready";
             expectedBodyRegex = "ready";
+            path = "/ready";
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
-        networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = serviceDir;
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
+        users.persistentIds.loki = confLib.mkIds 948;
         services.${serviceName} = {
           enable = true;
-          dataDir = serviceDir;
           configuration = {
             analytics.reporting_enabled = false;
             auth_enabled = false;
-
-            server = {
-              http_listen_address = "0.0.0.0";
-              http_listen_port = servicePort;
-              grpc_listen_port = 9094;
-              log_level = "warn";
-            };
-
             common = {
+              instance_addr = "127.0.0.1";
               path_prefix = serviceDir;
+              replication_factor = 1;
+              ring.kvstore.store = "inmemory";
               storage.filesystem = {
                 chunks_directory = "${serviceDir}/chunks";
                 rules_directory = "${serviceDir}/rules";
               };
-              replication_factor = 1;
-              ring.kvstore.store = "inmemory";
-              instance_addr = "127.0.0.1";
             };
-
-            schema_config.configs = [
-              {
-                from = "2026-01-01";
-                store = "tsdb";
-                object_store = "filesystem";
-                schema = "v13";
-                index = {
-                  prefix = "index_";
-                  period = "24h";
-                };
-              }
-            ];
-
+            compactor = {
+              compactor_ring.kvstore.store = "inmemory";
+              retention_enabled = false;
+              working_directory = "${serviceDir}/compactor";
+            };
             ingester = {
               chunk_idle_period = "5m";
               chunk_retain_period = "30s";
             };
-
             limits_config = {
+              allow_structured_metadata = true;
               reject_old_samples = true;
               reject_old_samples_max_age = "168h";
-              allow_structured_metadata = true;
             };
-
-            compactor = {
-              working_directory = "${serviceDir}/compactor";
-              compactor_ring.kvstore.store = "inmemory";
-              retention_enabled = false;
+            schema_config.configs = [
+              {
+                from = "2026-01-01";
+                index = {
+                  period = "24h";
+                  prefix = "index_";
+                };
+                object_store = "filesystem";
+                schema = "v13";
+                store = "tsdb";
+              }
+            ];
+            server = {
+              grpc_listen_port = 9094;
+              http_listen_address = "0.0.0.0";
+              http_listen_port = servicePort;
+              log_level = "warn";
             };
           };
+          dataDir = serviceDir;
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = serviceDir;
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
+        networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services.loki = {
-          serviceConfig.RestartSec = lib.mkForce "60";
           environment = {
-            OTEL_TRACES_EXPORTER = "otlp";
-            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
             OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString otlpGrpcPort}";
+            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
             OTEL_SERVICE_NAME = "loki-${config.node.name}";
+            OTEL_TRACES_EXPORTER = "otlp";
           };
+          serviceConfig.RestartSec = lib.mkForce "60";
         };
-
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
-              maxBody = 0;
               extraConfig = wgProxyAccessRules;
+              maxBody = 0;
             };
           }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                serviceAddress = homeServiceAddress;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
+                serviceAddress = homeServiceAddress;
               }
             );
           }
           {
             ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [
               {
-                name = "Loki";
-                uid = "loki";
-                type = "loki";
                 access = "proxy";
+                name = "Loki";
+                type = "loki";
+                uid = "loki";
                 url = confLib.mkAlloyPushUrl {
-                  host = globals.general.monitoringServer;
                   domain = serviceDomain;
-                  port = servicePort;
+                  host = globals.general.monitoringServer;
                   path = "";
+                  port = servicePort;
                 };
               }
             ];
@@ -211,10 +198,10 @@
                 endpoint {
                   url = "${
                     confLib.mkAlloyPushUrl {
-                      host = alloyHost;
                       domain = serviceDomain;
-                      port = servicePort;
+                      host = alloyHost;
                       path = "/loki/api/v1/push";
+                      port = servicePort;
                     }
                   }"
                 }

@@ -2,9 +2,9 @@
   self,
   config,
   lib,
-  minimal,
-  globals,
   confLib,
+  globals,
+  minimal,
   ...
 }:
 let
@@ -22,37 +22,36 @@ in
   ];
 
   swarselsystems = {
-    nodeRoles = [ "homeWebProxy" ];
-    isMicroVM = true;
     isImpermanence = true;
+    isMicroVM = true;
+    nodeRoles = [ "homeWebProxy" ];
     proxyHost = config.node.name;
   };
 
 }
 // lib.optionalAttrs (!minimal) {
 
-  microvm = {
-    mem = 3072 * 1;
-    vcpu = 1;
-  };
-
   services.nginx = {
     upstreams.fritzbox = {
       servers.${globals.networks.home-lan.hosts.fritzbox.ipv4} = { };
     };
     virtualHosts.${globals.services.fritzbox.domain} = {
-      useACMEHost = globals.domains.main;
-      forceSSL = true;
       acmeRoot = null;
-      locations."/" = {
-        proxyPass = "http://fritzbox";
-        proxyWebsockets = true;
-      };
       extraConfig = ''
         proxy_ssl_verify off;
       ''
       + nginxAccessRules;
+      forceSSL = true;
+      locations."/" = {
+        proxyPass = "http://fritzbox";
+        proxyWebsockets = true;
+      };
+      useACMEHost = globals.domains.main;
     };
+  };
+  microvm = {
+    mem = 3072 * 1;
+    vcpu = 1;
   };
 
 }

@@ -1,12 +1,33 @@
 {
   flake.modules.homeManager.zellij-keybinds =
-    { lib, config, ... }:
+    { config, lib, ... }:
     {
       config = lib.mkIf (builtins.elem "zellij" config.swarselsystems.enabledHomeModules) {
         programs.zellij = {
           settings.keybinds = {
             _props.clear-defaults = true;
-
+            entersearch = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl c" ];
+                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "esc" ];
+                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "enter" ];
+                    _children = [ { SwitchToMode._args = [ "search" ]; } ];
+                  };
+                }
+              ];
+            };
             locked = {
               _children = [
                 {
@@ -17,7 +38,64 @@
                 }
               ];
             };
-
+            move = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl h" ];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "left" ];
+                    _children = [ { MovePane._args = [ "left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "down" ];
+                    _children = [ { MovePane._args = [ "down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "up" ];
+                    _children = [ { MovePane._args = [ "up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "right" ];
+                    _children = [ { MovePane._args = [ "right" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "h" ];
+                    _children = [ { MovePane._args = [ "left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "j" ];
+                    _children = [ { MovePane._args = [ "down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "k" ];
+                    _children = [ { MovePane._args = [ "up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "l" ];
+                    _children = [ { MovePane._args = [ "right" ]; } ];
+                  };
+                }
+              ];
+            };
             pane = {
               _children = [
                 {
@@ -127,7 +205,582 @@
                 }
               ];
             };
-
+            renamepane = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "esc" ];
+                    _children = [
+                      { UndoRenamePane = { }; }
+                      { SwitchToMode._args = [ "pane" ]; }
+                    ];
+                  };
+                }
+              ];
+            };
+            renametab = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "esc" ];
+                    _children = [
+                      { UndoRenameTab = { }; }
+                      { SwitchToMode._args = [ "tab" ]; }
+                    ];
+                  };
+                }
+              ];
+            };
+            resize = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl n" ];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "left" ];
+                    _children = [ { Resize._args = [ "Increase left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "down" ];
+                    _children = [ { Resize._args = [ "Increase down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "up" ];
+                    _children = [ { Resize._args = [ "Increase up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "right" ];
+                    _children = [ { Resize._args = [ "Increase right" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "+" ];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "-" ];
+                    _children = [ { Resize._args = [ "Decrease" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "=" ];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "H" ];
+                    _children = [ { Resize._args = [ "Decrease left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "J" ];
+                    _children = [ { Resize._args = [ "Decrease down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "K" ];
+                    _children = [ { Resize._args = [ "Decrease up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "L" ];
+                    _children = [ { Resize._args = [ "Decrease right" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "h" ];
+                    _children = [ { Resize._args = [ "Increase left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "j" ];
+                    _children = [ { Resize._args = [ "Increase down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "k" ];
+                    _children = [ { Resize._args = [ "Increase up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "l" ];
+                    _children = [ { Resize._args = [ "Increase right" ]; } ];
+                  };
+                }
+              ];
+            };
+            scroll = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "e" ];
+                    _children = [
+                      { EditScrollback = { }; }
+                      { SwitchToMode._args = [ "normal" ]; }
+                    ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "s" ];
+                    _children = [
+                      { SwitchToMode._args = [ "entersearch" ]; }
+                      { SearchInput._args = [ 0 ]; }
+                    ];
+                  };
+                }
+              ];
+            };
+            search = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "c" ];
+                    _children = [ { SearchToggleOption._args = [ "CaseSensitivity" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "n" ];
+                    _children = [ { Search._args = [ "down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "o" ];
+                    _children = [ { SearchToggleOption._args = [ "WholeWord" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "p" ];
+                    _children = [ { Search._args = [ "up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "w" ];
+                    _children = [ { SearchToggleOption._args = [ "Wrap" ]; } ];
+                  };
+                }
+              ];
+            };
+            session = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl o" ];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "c" ];
+                    _children = [
+                      {
+                        LaunchOrFocusPlugin = {
+                          _args = [ "configuration" ];
+                          _children = [
+                            { floating._args = [ true ]; }
+                            { move_to_focused_tab._args = [ true ]; }
+                          ];
+                        };
+                      }
+                      { SwitchToMode._args = [ "normal" ]; }
+                    ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "p" ];
+                    _children = [
+                      {
+                        LaunchOrFocusPlugin = {
+                          _args = [ "plugin-manager" ];
+                          _children = [
+                            { floating._args = [ true ]; }
+                            { move_to_focused_tab._args = [ true ]; }
+                          ];
+                        };
+                      }
+                      { SwitchToMode._args = [ "normal" ]; }
+                    ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "w" ];
+                    _children = [
+                      {
+                        LaunchOrFocusPlugin = {
+                          _args = [ "session-manager" ];
+                          _children = [
+                            { floating._args = [ true ]; }
+                            { move_to_focused_tab._args = [ true ]; }
+                          ];
+                        };
+                      }
+                      { SwitchToMode._args = [ "normal" ]; }
+                    ];
+                  };
+                }
+              ];
+            };
+            "shared_among \"pane\" \"tmux\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "x" ];
+                    _children = [
+                      { CloseFocus = { }; }
+                      { SwitchToMode._args = [ "normal" ]; }
+                    ];
+                  };
+                }
+              ];
+            };
+            "shared_among \"renametab\" \"renamepane\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl c" ];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_among \"scroll\" \"search\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "PageDown" ];
+                    _children = [ { PageScrollDown = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "PageUp" ];
+                    _children = [ { PageScrollUp = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "left" ];
+                    _children = [ { PageScrollUp = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "down" ];
+                    _children = [ { ScrollDown = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "up" ];
+                    _children = [ { ScrollUp = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "right" ];
+                    _children = [ { PageScrollDown = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Ctrl b" ];
+                    _children = [ { PageScrollUp = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Ctrl c" ];
+                    _children = [
+                      { ScrollToBottom = { }; }
+                      { SwitchToMode._args = [ "normal" ]; }
+                    ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "d" ];
+                    _children = [ { HalfPageScrollDown = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Ctrl f" ];
+                    _children = [ { PageScrollDown = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "h" ];
+                    _children = [ { PageScrollUp = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "j" ];
+                    _children = [ { ScrollDown = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "k" ];
+                    _children = [ { ScrollUp = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "l" ];
+                    _children = [ { PageScrollDown = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Ctrl s" ];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "u" ];
+                    _children = [ { HalfPageScrollUp = { }; } ];
+                  };
+                }
+              ];
+            };
+            "shared_among \"session\" \"tmux\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "d" ];
+                    _children = [ { Detach = { }; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Alt left" ];
+                    _children = [ { MoveFocusOrTab._args = [ "left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt down" ];
+                    _children = [ { MoveFocus._args = [ "down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt up" ];
+                    _children = [ { MoveFocus._args = [ "up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt right" ];
+                    _children = [ { MoveFocusOrTab._args = [ "right" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt +" ];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt -" ];
+                    _children = [ { Resize._args = [ "Decrease" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt =" ];
+                    _children = [ { Resize._args = [ "Increase" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt r" ];
+                    _children = [
+                      {
+                        WriteChars._args = [ "source cdr" ];
+                      }
+                      {
+                        WriteChars._args = [ "\n" ];
+                      }
+                    ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt f" ];
+                    _children = [ { ToggleFloatingPanes = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Ctrl g" ];
+                    _children = [ { SwitchToMode._args = [ "locked" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt h" ];
+                    _children = [ { MoveFocusOrTab._args = [ "left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt i" ];
+                    _children = [ { MoveTab._args = [ "left" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt j" ];
+                    _children = [ { MoveFocus._args = [ "down" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt k" ];
+                    _children = [ { MoveFocus._args = [ "up" ]; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt p" ];
+                    _children = [ { NewPane = { }; } ];
+                  };
+                }
+                {
+                  bind = {
+                    _args = [ "Alt n" ];
+                    _children = [ { NewTab = { }; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\" \"move\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl h" ];
+                    _children = [ { SwitchToMode._args = [ "move" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\" \"pane\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl p" ];
+                    _children = [ { SwitchToMode._args = [ "pane" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\" \"resize\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl n" ];
+                    _children = [ { SwitchToMode._args = [ "resize" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\" \"scroll\" \"search\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl s" ];
+                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\" \"scroll\" \"search\" \"tmux\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl b" ];
+                    _children = [ { SwitchToMode._args = [ "tmux" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\" \"session\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl o" ];
+                    _children = [ { SwitchToMode._args = [ "session" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"locked\" \"tab\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "Ctrl t" ];
+                    _children = [ { SwitchToMode._args = [ "tab" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"normal\" \"locked\" \"entersearch\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "enter" ];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
+                  };
+                }
+              ];
+            };
+            "shared_except \"normal\" \"locked\" \"entersearch\" \"renametab\" \"renamepane\"" = {
+              _children = [
+                {
+                  bind = {
+                    _args = [ "esc" ];
+                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
+                  };
+                }
+              ];
+            };
             tab = {
               _children = [
                 {
@@ -303,679 +956,6 @@
                 }
               ];
             };
-
-            resize = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl n" ];
-                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "left" ];
-                    _children = [ { Resize._args = [ "Increase left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "down" ];
-                    _children = [ { Resize._args = [ "Increase down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "up" ];
-                    _children = [ { Resize._args = [ "Increase up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "right" ];
-                    _children = [ { Resize._args = [ "Increase right" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "+" ];
-                    _children = [ { Resize._args = [ "Increase" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "-" ];
-                    _children = [ { Resize._args = [ "Decrease" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "=" ];
-                    _children = [ { Resize._args = [ "Increase" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "H" ];
-                    _children = [ { Resize._args = [ "Decrease left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "J" ];
-                    _children = [ { Resize._args = [ "Decrease down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "K" ];
-                    _children = [ { Resize._args = [ "Decrease up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "L" ];
-                    _children = [ { Resize._args = [ "Decrease right" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "h" ];
-                    _children = [ { Resize._args = [ "Increase left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "j" ];
-                    _children = [ { Resize._args = [ "Increase down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "k" ];
-                    _children = [ { Resize._args = [ "Increase up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "l" ];
-                    _children = [ { Resize._args = [ "Increase right" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            move = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl h" ];
-                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "left" ];
-                    _children = [ { MovePane._args = [ "left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "down" ];
-                    _children = [ { MovePane._args = [ "down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "up" ];
-                    _children = [ { MovePane._args = [ "up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "right" ];
-                    _children = [ { MovePane._args = [ "right" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "h" ];
-                    _children = [ { MovePane._args = [ "left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "j" ];
-                    _children = [ { MovePane._args = [ "down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "k" ];
-                    _children = [ { MovePane._args = [ "up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "l" ];
-                    _children = [ { MovePane._args = [ "right" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            scroll = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "e" ];
-                    _children = [
-                      { EditScrollback = { }; }
-                      { SwitchToMode._args = [ "normal" ]; }
-                    ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "s" ];
-                    _children = [
-                      { SwitchToMode._args = [ "entersearch" ]; }
-                      { SearchInput._args = [ 0 ]; }
-                    ];
-                  };
-                }
-              ];
-            };
-
-            search = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "c" ];
-                    _children = [ { SearchToggleOption._args = [ "CaseSensitivity" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "n" ];
-                    _children = [ { Search._args = [ "down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "o" ];
-                    _children = [ { SearchToggleOption._args = [ "WholeWord" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "p" ];
-                    _children = [ { Search._args = [ "up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "w" ];
-                    _children = [ { SearchToggleOption._args = [ "Wrap" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            session = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl o" ];
-                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "c" ];
-                    _children = [
-                      {
-                        LaunchOrFocusPlugin._args = [ "configuration" ];
-                        LaunchOrFocusPlugin._children = [
-                          { floating._args = [ true ]; }
-                          { move_to_focused_tab._args = [ true ]; }
-                        ];
-                      }
-                      { SwitchToMode._args = [ "normal" ]; }
-                    ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "p" ];
-                    _children = [
-                      {
-                        LaunchOrFocusPlugin._args = [ "plugin-manager" ];
-                        LaunchOrFocusPlugin._children = [
-                          { floating._args = [ true ]; }
-                          { move_to_focused_tab._args = [ true ]; }
-                        ];
-                      }
-                      { SwitchToMode._args = [ "normal" ]; }
-                    ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "w" ];
-                    _children = [
-                      {
-                        LaunchOrFocusPlugin._args = [ "session-manager" ];
-                        LaunchOrFocusPlugin._children = [
-                          { floating._args = [ true ]; }
-                          { move_to_focused_tab._args = [ true ]; }
-                        ];
-                      }
-                      { SwitchToMode._args = [ "normal" ]; }
-                    ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Alt left" ];
-                    _children = [ { MoveFocusOrTab._args = [ "left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt down" ];
-                    _children = [ { MoveFocus._args = [ "down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt up" ];
-                    _children = [ { MoveFocus._args = [ "up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt right" ];
-                    _children = [ { MoveFocusOrTab._args = [ "right" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt +" ];
-                    _children = [ { Resize._args = [ "Increase" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt -" ];
-                    _children = [ { Resize._args = [ "Decrease" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt =" ];
-                    _children = [ { Resize._args = [ "Increase" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt r" ];
-                    _children = [
-                      {
-                        WriteChars._args = [ "source cdr" ];
-                      }
-                      {
-                        WriteChars._args = [ "\n" ];
-                      }
-                    ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt f" ];
-                    _children = [ { ToggleFloatingPanes = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Ctrl g" ];
-                    _children = [ { SwitchToMode._args = [ "locked" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt h" ];
-                    _children = [ { MoveFocusOrTab._args = [ "left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt i" ];
-                    _children = [ { MoveTab._args = [ "left" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt j" ];
-                    _children = [ { MoveFocus._args = [ "down" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt k" ];
-                    _children = [ { MoveFocus._args = [ "up" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt p" ];
-                    _children = [ { NewPane = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Alt n" ];
-                    _children = [ { NewTab = { }; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\" \"move\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl h" ];
-                    _children = [ { SwitchToMode._args = [ "move" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\" \"session\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl o" ];
-                    _children = [ { SwitchToMode._args = [ "session" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\" \"scroll\" \"search\" \"tmux\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl b" ];
-                    _children = [ { SwitchToMode._args = [ "tmux" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\" \"scroll\" \"search\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl s" ];
-                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\" \"tab\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl t" ];
-                    _children = [ { SwitchToMode._args = [ "tab" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\" \"pane\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl p" ];
-                    _children = [ { SwitchToMode._args = [ "pane" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"locked\" \"resize\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl n" ];
-                    _children = [ { SwitchToMode._args = [ "resize" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"normal\" \"locked\" \"entersearch\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "enter" ];
-                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_except \"normal\" \"locked\" \"entersearch\" \"renametab\" \"renamepane\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "esc" ];
-                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            "shared_among \"pane\" \"tmux\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "x" ];
-                    _children = [
-                      { CloseFocus = { }; }
-                      { SwitchToMode._args = [ "normal" ]; }
-                    ];
-                  };
-                }
-              ];
-            };
-
-            "shared_among \"scroll\" \"search\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "PageDown" ];
-                    _children = [ { PageScrollDown = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "PageUp" ];
-                    _children = [ { PageScrollUp = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "left" ];
-                    _children = [ { PageScrollUp = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "down" ];
-                    _children = [ { ScrollDown = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "up" ];
-                    _children = [ { ScrollUp = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "right" ];
-                    _children = [ { PageScrollDown = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Ctrl b" ];
-                    _children = [ { PageScrollUp = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Ctrl c" ];
-                    _children = [
-                      { ScrollToBottom = { }; }
-                      { SwitchToMode._args = [ "normal" ]; }
-                    ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "d" ];
-                    _children = [ { HalfPageScrollDown = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Ctrl f" ];
-                    _children = [ { PageScrollDown = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "h" ];
-                    _children = [ { PageScrollUp = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "j" ];
-                    _children = [ { ScrollDown = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "k" ];
-                    _children = [ { ScrollUp = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "l" ];
-                    _children = [ { PageScrollDown = { }; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "Ctrl s" ];
-                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "u" ];
-                    _children = [ { HalfPageScrollUp = { }; } ];
-                  };
-                }
-              ];
-            };
-
-            entersearch = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl c" ];
-                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "esc" ];
-                    _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
-                  };
-                }
-                {
-                  bind = {
-                    _args = [ "enter" ];
-                    _children = [ { SwitchToMode._args = [ "search" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            renametab = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "esc" ];
-                    _children = [
-                      { UndoRenameTab = { }; }
-                      { SwitchToMode._args = [ "tab" ]; }
-                    ];
-                  };
-                }
-              ];
-            };
-
-            "shared_among \"renametab\" \"renamepane\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "Ctrl c" ];
-                    _children = [ { SwitchToMode._args = [ "normal" ]; } ];
-                  };
-                }
-              ];
-            };
-
-            renamepane = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "esc" ];
-                    _children = [
-                      { UndoRenamePane = { }; }
-                      { SwitchToMode._args = [ "pane" ]; }
-                    ];
-                  };
-                }
-              ];
-            };
-
-            "shared_among \"session\" \"tmux\"" = {
-              _children = [
-                {
-                  bind = {
-                    _args = [ "d" ];
-                    _children = [ { Detach = { }; } ];
-                  };
-                }
-              ];
-            };
-
             tmux = {
               _children = [
                 {

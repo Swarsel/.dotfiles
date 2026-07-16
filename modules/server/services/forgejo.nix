@@ -2,11 +2,11 @@
   flake.modules.nixos.forgejo =
     {
       self,
-      lib,
       config,
+      lib,
       pkgs,
-      globals,
       confLib,
+      globals,
       ...
     }:
     let
@@ -15,22 +15,22 @@
           name = "forgejo";
           port = 3004;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
@@ -39,90 +39,58 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "forgejo" ];
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        users = {
-          persistentIds = {
-            forgejo = confLib.mkIds 985;
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = ''"status":\s*"pass"'';
+            failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"'';
+            path = "/api/healthz";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
+        sops.secrets = {
+          kanidm-forgejo = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = kanidmSopsFile;
+          };
+        };
+        # networking.firewall.allowedTCPPorts = [ servicePort ];
+        users = {
           users.${serviceUser} = {
             group = serviceGroup;
             isSystemUser = true;
           };
+          persistentIds = {
+            forgejo = confLib.mkIds 985;
+          };
         };
-
         users.groups.${serviceGroup} = { };
-
-        sops.secrets = {
-          kanidm-forgejo = {
-            sopsFile = kanidmSopsFile;
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
-          };
-        };
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/api/healthz";
-            expectedBodyRegex = ''"status":\s*"pass"'';
-            failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"'';
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
         services.${serviceName} = {
           enable = true;
-          stateDir = "/var/lib/${serviceName}";
-          user = serviceUser;
           group = serviceGroup;
           lfs.enable = lib.mkDefault true;
           settings = {
             DEFAULT = {
               APP_NAME = "~SwaGit~";
             };
-            server = {
-              PROTOCOL = "http";
-              HTTP_PORT = servicePort;
-              HTTP_ADDR = "0.0.0.0";
-              DOMAIN = serviceDomain;
-              ROOT_URL = "https://${serviceDomain}";
-            };
             federation = {
               ENABLED = true;
               SHARE_USER_STATISTICS = false;
             };
-            service = {
-              DISABLE_REGISTRATION = false;
-              ALLOW_ONLY_INTERNAL_REGISTRATION = false;
-              ALLOW_ONLY_EXTERNAL_REGISTRATION = true;
-              SHOW_REGISTRATION_BUTTON = false;
-            };
-            session.COOKIE_SECURE = true;
             oauth2_client = {
               # Never use auto account linking with this, otherwise users cannot change
               # their new user name and they could potentially overtake other users accounts
@@ -130,19 +98,42 @@
               # With "login" linking the user must choose a non-existing username first or login
               # with the existing account to link.
               ACCOUNT_LINKING = "login";
-              USERNAME = "nickname";
               # This does not mean that you cannot register via oauth, but just that there should
               # be a confirmation dialog shown to the user before the account is actually created.
               # This dialog allows changing user name and email address before creating the account.
               ENABLE_AUTO_REGISTRATION = false;
               REGISTER_EMAIL_CONFIRM = false;
               UPDATE_AVATAR = true;
+              USERNAME = "nickname";
             };
+            server = {
+              DOMAIN = serviceDomain;
+              HTTP_ADDR = "0.0.0.0";
+              HTTP_PORT = servicePort;
+              PROTOCOL = "http";
+              ROOT_URL = "https://${serviceDomain}";
+            };
+            service = {
+              ALLOW_ONLY_EXTERNAL_REGISTRATION = true;
+              ALLOW_ONLY_INTERNAL_REGISTRATION = false;
+              DISABLE_REGISTRATION = false;
+              SHOW_REGISTRATION_BUTTON = false;
+            };
+            session.COOKIE_SECURE = true;
           };
+          stateDir = "/var/lib/${serviceName}";
+          user = serviceUser;
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
         systemd.services.${serviceName} = {
-          serviceConfig.RestartSec = "60"; # Retry every minute
           preStart =
             let
               exe = lib.getExe config.services.forgejo.package;
@@ -195,16 +186,16 @@
                 ${exe} admin auth update-oauth --id "$provider_id" ${args} --secret "$SECRET"
               fi
             '';
+          serviceConfig.RestartSec = "60"; # Retry every minute
         };
-
         nodes = lib.mkMerge [
           {
             ${idmServer} =
               lib.recursiveUpdate
                 (confLib.mkKanidmOidcSystem {
-                  inherit serviceName serviceDomain kanidmSopsFile;
-                  originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+                  inherit kanidmSopsFile serviceDomain serviceName;
                   extraGroups = [ "forgejo.admins" ];
+                  originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
                 })
                 {
                   services.kanidm.provision.systems.oauth2.forgejo = {
@@ -222,9 +213,9 @@
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
               maxBody = 0;
             };
@@ -232,9 +223,9 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
                 serviceAddress = homeServiceAddress;
               }
             );

@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.router =
     {
-      lib,
       config,
+      lib,
       confLib,
       globals,
       ...
@@ -40,28 +40,6 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "router" ];
-
-        users.persistentIds = {
-          avahi = confLib.mkIds 978;
-        };
-        services.avahi = {
-          enable = true;
-          reflector = true;
-          openFirewall = true;
-        };
-
-        networking.nameservers = [
-          globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4
-          globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
-        ];
-        services.resolved = {
-          settings.Resolve.MulticastDNS = "no";
-          fallbackDns = [
-            "1.1.1.1"
-            "9.9.9.9"
-          ];
-        };
-
         topology.self.interfaces =
           (lib.mapAttrs' (
             vlanName: _:
@@ -75,104 +53,118 @@
               network = lib.mkForce vlanName;
             }
           ) globals.networks.home-lan.vlans);
-
-        networking.nftables = {
-          firewall = {
-            zones = {
-              untrusted.interfaces = [ "lan" ];
-              wgHome.interfaces = [ "wgHome" ];
-              adguardhome.ipv4Addresses = [
-                globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4
-              ];
-              adguardhome.ipv6Addresses = [
-                globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
-              ];
-            }
-            // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
-              vlanName: _: {
-                "vlan-${vlanName}".interfaces = [ "me-${vlanName}" ];
-              }
-            );
-
-            rules = {
-              masquerade-internet = {
-                from = map (name: "vlan-${name}") globals.general.internetVLANs;
-                to = [ "untrusted" ];
-                # masquerade = true; NOTE: custom rule below for ip4 + ip6
-                late = true; # Only accept after any rejects have been processed
-                verdict = "accept";
-              };
-
-              # Allow access to the AdGuardHome DNS server from any VLAN that has internet access
-              access-adguardhome-dns = {
-                from = map (name: "vlan-${name}") globals.general.internetVLANs;
-                to = [ "adguardhome" ];
-                verdict = "accept";
-              };
-
-              # Allow devices in the home VLAN to talk to any of the services or home devices.
-              access-services = {
-                from = [ "vlan-home" ];
-                to = [
-                  "vlan-services"
-                  "vlan-devices"
-                ];
-                late = true;
-                verdict = "accept";
-              };
-
-              # Allow mDNS from any VLAN (plus FritzBox-LAN) into the router
-              mdns-to-local = {
-                from = [
-                  "vlan-services"
-                  "vlan-home"
-                  "vlan-devices"
-                  "vlan-guests"
-                  "untrusted"
-                ];
-                to = [ "local" ];
-                allowedUDPPorts = [ 5353 ];
-              };
-
-              # Allow the services VLAN to talk to our wireguard server
-              services-to-local = {
-                from = [ "vlan-services" ];
-                to = [ "local" ];
-                allowedUDPPorts = [
-                  52829
-                  547
-                ];
-              };
-
-            };
+        users.persistentIds = {
+          avahi = confLib.mkIds 978;
+        };
+        services = {
+          avahi = {
+            enable = true;
+            openFirewall = true;
+            reflector = true;
           };
+          resolved = {
+            fallbackDns = [
+              "1.1.1.1"
+              "9.9.9.9"
+            ];
+            settings.Resolve.MulticastDNS = "no";
+          };
+        };
+        boot.kernel.sysctl = {
+          "net.ipv4.conf.all.forwarding" = true;
+          "net.ipv4.ip_forward" = 1;
+          "net.ipv6.conf.all.forwarding" = true;
+        };
+        networking = {
+          nameservers = [
+            globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4
+            globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
+          ];
+          nftables = {
+            chains.postrouting = {
+              masquerade-internet = {
+                after = [ "hook" ];
+                late = true;
+                rules = lib.forEach (map (name: "vlan-${name}") globals.general.internetVLANs) (
+                  zone:
+                  lib.concatStringsSep " " [
+                    "meta protocol { ip, ip6 }"
+                    (lib.head config.networking.nftables.firewall.zones.${zone}.ingressExpression)
+                    (lib.head config.networking.nftables.firewall.zones.untrusted.egressExpression)
+                    "masquerade random"
+                  ]
+                );
+              };
+            };
+            firewall = {
+              rules = {
+                # Allow access to the AdGuardHome DNS server from any VLAN that has internet access
+                access-adguardhome-dns = {
+                  from = map (name: "vlan-${name}") globals.general.internetVLANs;
+                  to = [ "adguardhome" ];
+                  verdict = "accept";
+                };
+                # Allow devices in the home VLAN to talk to any of the services or home devices.
+                access-services = {
+                  from = [ "vlan-home" ];
+                  late = true;
+                  to = [
+                    "vlan-services"
+                    "vlan-devices"
+                  ];
+                  verdict = "accept";
+                };
+                masquerade-internet = {
+                  from = map (name: "vlan-${name}") globals.general.internetVLANs;
+                  # masquerade = true; NOTE: custom rule above for ip4 + ip6
+                  late = true; # Only accept after any rejects have been processed
+                  to = [ "untrusted" ];
+                  verdict = "accept";
+                };
+                # Allow mDNS from any VLAN (plus FritzBox-LAN) into the router
+                mdns-to-local = {
+                  allowedUDPPorts = [ 5353 ];
+                  from = [
+                    "vlan-services"
+                    "vlan-home"
+                    "vlan-devices"
+                    "vlan-guests"
+                    "untrusted"
+                  ];
+                  to = [ "local" ];
+                };
+                # Allow the services VLAN to talk to our wireguard server
+                services-to-local = {
+                  allowedUDPPorts = [
+                    52829
+                    547
+                  ];
+                  from = [ "vlan-services" ];
+                  to = [ "local" ];
+                };
 
-          chains.postrouting = {
-            masquerade-internet = {
-              after = [ "hook" ];
-              late = true;
-              rules = lib.forEach (map (name: "vlan-${name}") globals.general.internetVLANs) (
-                zone:
-                lib.concatStringsSep " " [
-                  "meta protocol { ip, ip6 }"
-                  (lib.head config.networking.nftables.firewall.zones.${zone}.ingressExpression)
-                  (lib.head config.networking.nftables.firewall.zones.untrusted.egressExpression)
-                  "masquerade random"
-                ]
+              };
+              zones = {
+                adguardhome = {
+                  ipv4Addresses = [
+                    globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4
+                  ];
+                  ipv6Addresses = [
+                    globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
+                  ];
+                };
+                untrusted.interfaces = [ "lan" ];
+                wgHome.interfaces = [ "wgHome" ];
+              }
+              // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
+                vlanName: _: {
+                  "vlan-${vlanName}".interfaces = [ "me-${vlanName}" ];
+                }
               );
             };
           };
         };
-
-        boot.kernel.sysctl = {
-          "net.ipv4.ip_forward" = 1;
-          "net.ipv4.conf.all.forwarding" = true;
-          "net.ipv6.conf.all.forwarding" = true;
-        };
-
         systemd.network = {
-          wait-online.anyInterface = true;
-
           netdevs = {
             "10-veth" = {
               netdevConfig = {
@@ -184,104 +176,99 @@
               };
             };
             "20-br" = {
+              bridgeConfig = {
+                VLANFiltering = true;
+              };
               netdevConfig = {
                 Kind = "bridge";
                 Name = "br";
               };
-              bridgeConfig = {
-                VLANFiltering = true;
-              };
             };
           };
           networks = {
+            "15-veth-br" = {
+              inherit bridgeVLANs;
+              linkConfig = {
+                RequiredForOnline = "no";
+              };
+              matchConfig.Name = "veth-br";
+              networkConfig = {
+                Bridge = "br";
+              };
+            };
+            "15-veth-int" = {
+              linkConfig = {
+                ActivationPolicy = "always-up";
+                RequiredForOnline = "no";
+              };
+              matchConfig.Name = "veth-int";
+              networkConfig = {
+                ConfigureWithoutCarrier = true;
+                LinkLocalAddressing = "no";
+              };
+              vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+            };
+            # br
+            "30-lan1" = {
+              bridgeVLANs = lan1VLANs;
+              linkConfig.RequiredForOnline = "enslaved";
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan1.mac;
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            # winters
+            "30-lan2" = {
+              bridgeVLANs = lan2VLANs;
+              linkConfig.RequiredForOnline = "enslaved";
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            # summers
+            "30-lan3" = {
+              bridgeVLANs = lan3VLANs;
+              linkConfig.RequiredForOnline = "enslaved";
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan3.mac;
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            # summers
+            "30-lan4" = {
+              bridgeVLANs = lan4VLANs;
+              linkConfig.RequiredForOnline = "enslaved";
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
+            # lr
+            "30-lan5" = {
+              bridgeVLANs = lan5VLANs;
+              linkConfig.RequiredForOnline = "enslaved";
+              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan5.mac;
+              networkConfig = {
+                Bridge = "br";
+                ConfigureWithoutCarrier = true;
+              };
+            };
             "40-br" = {
-              matchConfig.Name = "br";
               bridgeConfig = { };
               linkConfig = {
                 ActivationPolicy = "always-up";
                 RequiredForOnline = "no";
               };
+              matchConfig.Name = "br";
               networkConfig = {
                 ConfigureWithoutCarrier = true;
                 LinkLocalAddressing = "no";
               };
-            };
-            "15-veth-br" = {
-              matchConfig.Name = "veth-br";
-
-              linkConfig = {
-                RequiredForOnline = "no";
-              };
-
-              networkConfig = {
-                Bridge = "br";
-              };
-              inherit bridgeVLANs;
-            };
-            "15-veth-int" = {
-              matchConfig.Name = "veth-int";
-
-              linkConfig = {
-                ActivationPolicy = "always-up";
-                RequiredForOnline = "no";
-              };
-
-              networkConfig = {
-                ConfigureWithoutCarrier = true;
-                LinkLocalAddressing = "no";
-              };
-
-              vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
-            };
-            # br
-            "30-lan1" = {
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan1.mac;
-              linkConfig.RequiredForOnline = "enslaved";
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-              bridgeVLANs = lan1VLANs;
-            };
-            # winters
-            "30-lan2" = {
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
-              linkConfig.RequiredForOnline = "enslaved";
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-              bridgeVLANs = lan2VLANs;
-            };
-            # summers
-            "30-lan3" = {
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan3.mac;
-              linkConfig.RequiredForOnline = "enslaved";
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-              bridgeVLANs = lan3VLANs;
-            };
-            # summers
-            "30-lan4" = {
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
-              linkConfig.RequiredForOnline = "enslaved";
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-              bridgeVLANs = lan4VLANs;
-            };
-            # lr
-            "30-lan5" = {
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan5.mac;
-              linkConfig.RequiredForOnline = "enslaved";
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-              bridgeVLANs = lan5VLANs;
             };
           }
           // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
@@ -291,13 +278,6 @@
                   vlanCfg.hosts.${config.node.name}.cidrv4
                   vlanCfg.hosts.${config.node.name}.cidrv6
                 ];
-                matchConfig.Name = "me-${vlanName}";
-                networkConfig = {
-                  IPv4Forwarding = "yes";
-                  IPv6PrivacyExtensions = "yes";
-                  IPv6SendRA = true;
-                  IPv6AcceptRA = false;
-                };
                 ipv6Prefixes = [
                   {
                     Prefix = vlanCfg.cidrv6;
@@ -308,9 +288,17 @@
                   OtherInformation = true; # optional, for “other info” via DHCPv6
                 };
                 linkConfig.RequiredForOnline = "routable";
+                matchConfig.Name = "me-${vlanName}";
+                networkConfig = {
+                  IPv4Forwarding = "yes";
+                  IPv6AcceptRA = false;
+                  IPv6PrivacyExtensions = "yes";
+                  IPv6SendRA = true;
+                };
               };
             }
           );
+          wait-online.anyInterface = true;
 
         };
 

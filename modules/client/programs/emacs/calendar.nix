@@ -1,9 +1,9 @@
 {
   flake.modules.homeManager.emacs-init =
     {
-      pkgs,
       inputs,
       config,
+      pkgs,
       ...
     }:
     let
@@ -15,25 +15,15 @@
     in
     {
       config.programs.emacs.init.usePackage = {
-        general.config = ''
-          (swarsel/leader-keys
-            "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar"))
-        '';
-
-        org-caldav = {
-          enable = true;
-          init = ''
-            (setq swarsel-caldav-synced 0)
-          '';
-          config = ''
-            (setq org-icalendar-alarm-time 1)
-            (setq org-icalendar-include-todo t)
-            (setq org-icalendar-use-deadline '(event-if-todo event-if-not-todo todo-due))
-            (setq org-icalendar-use-scheduled '(todo-start event-if-todo event-if-not-todo))
-          '';
-        };
-
         calfw = {
+          config = ''
+            (bind-key "g" 'cfw:refresh-calendar-buffer cfw:calendar-mode-map)
+            (bind-key "q" 'evil-quit cfw:details-mode-map)
+            (setq calendar-day-name-array
+                  ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
+
+            (setq calendar-week-start-day 1)
+          '';
           enable = true;
           package = calfw;
           bind = {
@@ -55,13 +45,21 @@
             (require 'calfw-org)
             (require 'calfw-ical)
           '';
+        };
+        general.config = ''
+          (swarsel/leader-keys
+            "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar"))
+        '';
+        org-caldav = {
           config = ''
-            (bind-key "g" 'cfw:refresh-calendar-buffer cfw:calendar-mode-map)
-            (bind-key "q" 'evil-quit cfw:details-mode-map)
-            (setq calendar-day-name-array
-                  ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
-
-            (setq calendar-week-start-day 1)
+            (setq org-icalendar-alarm-time 1)
+            (setq org-icalendar-include-todo t)
+            (setq org-icalendar-use-deadline '(event-if-todo event-if-not-todo todo-due))
+            (setq org-icalendar-use-scheduled '(todo-start event-if-todo event-if-not-todo))
+          '';
+          enable = true;
+          init = ''
+            (setq swarsel-caldav-synced 0)
           '';
         };
       };

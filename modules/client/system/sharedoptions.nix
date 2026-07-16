@@ -1,8 +1,8 @@
 {
   flake.modules.homeManager.sharedoptions =
     {
-      lib,
       config,
+      lib,
       nixosConfig ? null,
       ...
     }:
@@ -14,37 +14,28 @@
     {
       options.swarselsystems = {
         homeSopsSecrets = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.attrsOf lib.types.anything);
           default = { };
           description = ''
             sops secrets needed by home-manager features; routed to the home-manager sops module (for standalone hosts) or nixos sops (faster activation).
           '';
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.anything);
         };
         homeSopsTemplates = lib.mkOption {
-          type = lib.types.lazyAttrsOf (lib.types.lazyAttrsOf lib.types.anything);
           default = { };
           description = ''
             sops templates needed by home-manager features; see homeSopsSecrets.
           '';
+          type = lib.types.lazyAttrsOf (lib.types.lazyAttrsOf lib.types.anything);
         };
         inputs = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
           default = { };
-        };
-        monitors = lib.mkOption {
           type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-          default = { };
         };
         keybindings = lib.mkOption {
-          type = lib.types.attrsOf lib.types.str;
           default = { };
-        };
-        startup = lib.mkOption {
-          type = lib.types.listOf (lib.types.attrsOf lib.types.str);
-          default = [ ];
+          type = lib.types.attrsOf lib.types.str;
         };
         kyria = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
           default = {
             "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
               xkb_layout = "us";
@@ -56,19 +47,22 @@
             };
           };
           internal = true;
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        };
+        monitors = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
         };
         standardinputs = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
           default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
           internal = true;
-        };
-        touchpad = lib.mkOption {
           type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-          default = { };
-          internal = true;
+        };
+        startup = lib.mkOption {
+          default = [ ];
+          type = lib.types.listOf (lib.types.attrsOf lib.types.str);
         };
         swayfxConfig = lib.mkOption {
-          type = lib.types.str;
           default = ''
             blur enable
             blur_xray disable
@@ -80,6 +74,12 @@
             default_dim_inactive 0.02
           '';
           internal = true;
+          type = lib.types.str;
+        };
+        touchpad = lib.mkOption {
+          default = { };
+          internal = true;
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
         };
       };
       # config.swarselsystems = mirrorAttrs;

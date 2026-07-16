@@ -3,8 +3,8 @@
   perSystem =
     {
       lib,
-      system,
       pkgs,
+      system,
       testsLib,
       ...
     }:
@@ -18,32 +18,6 @@
         in
         testsLib.mkDemoTest "demo-full-test" {
           globalTimeout = 8 * 3600;
-
-          nodes = {
-            installer = testsLib.installerNode {
-              diskSize = 96 * 1024;
-              extraDependencies = [
-                minimalToplevel
-                hotelMinimal.config.system.build.destroyFormatMount
-                fullToplevel
-                pkgs.swarsel-rebuild
-              ];
-            };
-
-            target = testsLib.targetNode {
-              toplevel = minimalToplevel;
-              memorySize = 10240;
-              cores = 4;
-            };
-
-            full = testsLib.targetNode {
-              toplevel = fullToplevel;
-              memorySize = 8192;
-              cores = 4;
-              quiet = false;
-            };
-          };
-
           testScript = ''
             installer.start()
             installer.wait_for_unit("multi-user.target")
@@ -75,12 +49,12 @@
                 time.sleep(30)
 
             ${testsLib.consoleMarkerLoopScript {
-              machine = "target";
-              title = "Check that a second system generation exists";
               command = "test -e /nix/var/nix/profiles/system-2-link";
-              marker = "gen";
-              tries = 3;
               failure = "nixos-rebuild did not create a second system generation";
+              machine = "target";
+              marker = "gen";
+              title = "Check that a second system generation exists";
+              tries = 3;
             }}
 
             target.crash()
@@ -91,6 +65,28 @@
 
             full.crash()
           '';
+          nodes = {
+            full = testsLib.targetNode {
+              cores = 4;
+              memorySize = 8192;
+              quiet = false;
+              toplevel = fullToplevel;
+            };
+            installer = testsLib.installerNode {
+              diskSize = 96 * 1024;
+              extraDependencies = [
+                minimalToplevel
+                hotelMinimal.config.system.build.destroyFormatMount
+                fullToplevel
+                pkgs.swarsel-rebuild
+              ];
+            };
+            target = testsLib.targetNode {
+              cores = 4;
+              memorySize = 10240;
+              toplevel = minimalToplevel;
+            };
+          };
         };
     };
 }

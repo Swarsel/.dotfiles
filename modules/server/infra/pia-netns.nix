@@ -1,9 +1,9 @@
 {
   flake.modules.nixos.pia-netns =
     {
+      config,
       lib,
       pkgs,
-      config,
       ...
     }:
     let
@@ -224,56 +224,49 @@
     {
       options.services.pia-netns = {
         enable = lib.mkEnableOption "PIA WireGuard VPN inside a Linux network namespace";
-
-        namespace = lib.mkOption {
-          type = lib.types.str;
-          default = "pia";
-        };
-
-        region = lib.mkOption {
-          type = lib.types.str;
-          example = "sweden";
-        };
-
         credentialsFile = lib.mkOption {
-          type = lib.types.path;
           description = "File with PIA username on line 1 and password on line 2.";
+          type = lib.types.path;
         };
-
         dns = lib.mkOption {
-          type = lib.types.bool;
           default = true;
+          type = lib.types.bool;
         };
-
+        namespace = lib.mkOption {
+          default = "pia";
+          type = lib.types.str;
+        };
         portForwarding = {
           enable = lib.mkEnableOption "PIA port forwarding with keepalive";
 
           portFile = lib.mkOption {
-            type = lib.types.path;
             default = "/run/pia/forwarded-port";
             description = "Where the forwarded port number is written (mode 0644).";
+            type = lib.types.path;
           };
         };
+        region = lib.mkOption {
+          example = "sweden";
+          type = lib.types.str;
+        };
       };
-
       config = lib.mkIf cfg.enable {
         boot.kernelModules = [ "wireguard" ];
 
         systemd.services.pia-netns = {
-          description = "PIA WireGuard tunnel in network namespace";
           after = [ "network-online.target" ];
-          wants = [ "network-online.target" ];
-          wantedBy = [ "multi-user.target" ];
-
+          description = "PIA WireGuard tunnel in network namespace";
           serviceConfig = {
-            Type = "notify";
-            NotifyAccess = "exec";
             ExecStart = lib.getExe piaUp;
             ExecStop = lib.getExe piaDown;
+            NotifyAccess = "exec";
             Restart = "on-failure";
             RestartSec = "30s";
             TimeoutStartSec = "120s";
+            Type = "notify";
           };
+          wantedBy = [ "multi-user.target" ];
+          wants = [ "network-online.target" ];
         };
       };
     }

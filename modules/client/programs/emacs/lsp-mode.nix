@@ -1,7 +1,26 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-    lsp-mode = {
+    dape = {
       enable = true;
+      custom = {
+        dape-buffer-window-arrangement = "'right";
+        dape-inlay-hints = true;
+      };
+    };
+    lsp-bridge = {
+      enable = true;
+      package = "lsp-bridge";
+    };
+    lsp-mode = {
+      config = ''
+        (lsp-register-client
+           (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
+                            :major-modes '(nix-mode nix-ts-mode)
+                            :priority 0
+                            :server-id 'nixd))
+      '';
+      enable = true;
+      command = [ "lsp" ];
       init = ''
         (setq lsp-keymap-prefix "C-c l")
           (setq lsp-auto-guess-root "t")
@@ -35,29 +54,7 @@
           (dolist (lang org-babel-lang-list)
             (eval `(lsp-org-babel-enable ,lang)))
       '';
-      command = [ "lsp" ];
-      config = ''
-        (lsp-register-client
-           (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
-                            :major-modes '(nix-mode nix-ts-mode)
-                            :priority 0
-                            :server-id 'nixd))
-      '';
     };
-
-    dape = {
-      enable = true;
-      custom = {
-        dape-buffer-window-arrangement = "'right";
-        dape-inlay-hints = true;
-      };
-    };
-
-    lsp-bridge = {
-      enable = true;
-      package = "lsp-bridge";
-    };
-
     sideline-flymake = {
       enable = true;
       hook = [ "(flymake-mode . sideline-mode)" ];

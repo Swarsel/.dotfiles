@@ -1,9 +1,9 @@
 {
   flake.modules.nixos.jenkins =
     {
-      pkgs,
-      lib,
       config,
+      lib,
+      pkgs,
       confLib,
       ...
     }:
@@ -13,62 +13,50 @@
           name = "jenkins";
           port = 8088;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         ;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "jenkins" ];
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
-            path = "/login";
             expectedBodyRegex = "Jenkins";
+            path = "/login";
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
         services.jenkins = {
           enable = true;
-          withCLI = true;
-          port = servicePort;
+          home = "/var/lib/${serviceName}";
+          listenAddress = "0.0.0.0";
           packages = [
             pkgs.stdenv
             pkgs.git
@@ -76,18 +64,26 @@
             config.programs.ssh.package
             pkgs.nix
           ];
-          listenAddress = "0.0.0.0";
-          home = "/var/lib/${serviceName}";
+          port = servicePort;
+          withCLI = true;
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
               maxBody = 0;
             };
@@ -95,9 +91,9 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
                 serviceAddress = homeServiceAddress;
               }
             );

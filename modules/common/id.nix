@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.id =
     {
-      lib,
       config,
+      lib,
       confLib,
       ...
     }:
@@ -22,31 +22,6 @@
     {
       options = {
         users = {
-          persistentIds = mkOption {
-            default = { };
-            description = ''
-              Maps a user or group name to its expected uid/gid values. If a user/group is
-              used on the system without specifying a uid/gid, this module will assign the
-              corresponding ids defined here, or show an error if the definition is missing.
-            '';
-            type = types.attrsOf (
-              types.submodule {
-                options = {
-                  uid = mkOption {
-                    type = types.nullOr types.int;
-                    default = null;
-                    description = "The uid to assign if it is missing in `users.users.<name>`.";
-                  };
-                  gid = mkOption {
-                    type = types.nullOr types.int;
-                    default = null;
-                    description = "The gid to assign if it is missing in `users.groups.<name>`.";
-                  };
-                };
-              }
-            );
-          };
-
           users = mkOption {
             type = types.attrsOf (
               types.submodule (
@@ -61,7 +36,6 @@
               )
             );
           };
-
           groups = mkOption {
             type = types.attrsOf (
               types.submodule (
@@ -76,9 +50,41 @@
               )
             );
           };
+          persistentIds = mkOption {
+            default = { };
+            description = ''
+              Maps a user or group name to its expected uid/gid values. If a user/group is
+              used on the system without specifying a uid/gid, this module will assign the
+              corresponding ids defined here, or show an error if the definition is missing.
+            '';
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  gid = mkOption {
+                    default = null;
+                    description = "The gid to assign if it is missing in `users.groups.<name>`.";
+                    type = types.nullOr types.int;
+                  };
+                  uid = mkOption {
+                    default = null;
+                    description = "The uid to assign if it is missing in `users.users.<name>`.";
+                    type = types.nullOr types.int;
+                  };
+                };
+              }
+            );
+          };
         };
       };
       config = {
+        users.persistentIds = {
+          dhcpcd = lib.mkIf config.networking.useDHCP (confLib.mkIds 952);
+          nscd = confLib.mkIds 972;
+          polkituser = confLib.mkIds 973;
+          resolvconf = lib.mkIf config.networking.resolvconf.enable (confLib.mkIds 951);
+          systemd-coredump = confLib.mkIds 998;
+          systemd-oom = confLib.mkIds 997;
+        };
         assertions =
           concatLists (
             flip mapAttrsToList config.users.users (
@@ -100,14 +106,6 @@
               message = "non-persistent gid detected for '${name}', please assign one via `users.persistentIds`";
             }
           );
-        users.persistentIds = {
-          systemd-coredump = confLib.mkIds 998;
-          systemd-oom = confLib.mkIds 997;
-          polkituser = confLib.mkIds 973;
-          nscd = confLib.mkIds 972;
-          dhcpcd = lib.mkIf config.networking.useDHCP (confLib.mkIds 952);
-          resolvconf = lib.mkIf config.networking.resolvconf.enable (confLib.mkIds 951);
-        };
       };
     };
 }

@@ -1,7 +1,7 @@
 {
   name,
-  sops,
   homeConfig,
+  sops,
   writeShellApplication,
   ...
 }:

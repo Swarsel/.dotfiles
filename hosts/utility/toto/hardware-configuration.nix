@@ -9,16 +9,18 @@
   ];
 
   boot = {
-    initrd.availableKernelModules = [
-      "ahci"
-      "xhci_pci"
-      "virtio_pci"
-      "sr_mod"
-      "virtio_blk"
-    ];
-    initrd.kernelModules = [ ];
-    kernelModules = [ "kvm-amd" ];
     extraModulePackages = [ ];
+    initrd = {
+      availableKernelModules = [
+        "ahci"
+        "xhci_pci"
+        "virtio_pci"
+        "sr_mod"
+        "virtio_blk"
+      ];
+      kernelModules = [ ];
+    };
+    kernelModules = [ "kvm-amd" ];
   };
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
@@ -27,6 +29,5 @@
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = lib.mkDefault true;
   # networking.interfaces.enp1s0.useDHCP = lib.mkDefault true;
-
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }

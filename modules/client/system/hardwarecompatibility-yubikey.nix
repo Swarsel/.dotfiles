@@ -1,68 +1,10 @@
 {
   flake.modules = {
-    nixos.hardwarecompatibility-yubikey =
-      {
-        lib,
-        config,
-        confLib,
-        pkgs,
-        ...
-      }:
-      let
-        inherit (config.swarselsystems) mainUser;
-        inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
-      in
-      {
-        config = {
-
-          users.persistentIds = {
-            pcscd = confLib.mkIds 956;
-          };
-          programs.ssh = {
-            startAgent = false; # yes we want this to use FIDO2 keys
-            # enableAskPassword = true;
-            # askPassword = lib.getExe pkgs.kdePackages.ksshaskpass;
-          };
-          services = {
-            gnome.gcr-ssh-agent.enable = false;
-            yubikey-agent.enable = false;
-            pcscd.enable = true;
-
-            udev.packages = with pkgs; [
-              yubikey-personalization
-            ];
-          };
-
-          hardware.gpgSmartcards.enable = true;
-
-          security.pam.u2f = {
-            enable = true;
-            control = "sufficient";
-            settings = {
-              interactive = false; # displays a prompt BEFORE asking for presence
-              cue = true; # prints a message that a touch is requrired
-              origin = "pam://${mainUser}"; # make the keys work on all machines
-              authfile = pkgs.writeText "u2f-mappings" (
-                lib.concatStrings [
-                  mainUser
-                  cfg1
-                  cfg2
-                ]
-              );
-            };
-          };
-
-          environment.systemPackages = with pkgs; [
-            kdePackages.ksshaskpass
-          ];
-        };
-      };
-
     homeManager = {
       yubikey =
         {
-          lib,
           config,
+          lib,
           confLib,
           type,
           nixosConfig ? null,
@@ -75,7 +17,6 @@
 
           config = {
             swarselsystems.enabledHomeModules = [ "yubikey" ];
-
             pam.yubico.authorizedYubiKeys =
               lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic)
                 {
@@ -97,34 +38,91 @@
       yubikey-touch-detector = { pkgs, ... }: {
         config = {
           swarselsystems.enabledHomeModules = [ "yubikeytouch" ];
-          systemd.user.services.yubikey-touch-detector = {
-            Unit = {
-              Description = "Detects when your YubiKey is waiting for a touch";
-              Requires = [ "yubikey-touch-detector.socket" ];
-            };
-            Service = {
-              ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector --libnotify";
-              EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
-            };
-            Install = {
-              Also = [ "yubikey-touch-detector.socket" ];
-              WantedBy = [ "default.target" ];
-            };
-          };
-          systemd.user.sockets.yubikey-touch-detector = {
-            Unit = {
-              Description = "Unix socket activation for YubiKey touch detector service";
-            };
-            Socket = {
-              ListenStream = "%t/yubikey-touch-detector.socket";
-              RemoveOnStop = true;
-            };
-            Install = {
-              WantedBy = [ "sockets.target" ];
+          systemd = {
+            user = {
+              services.yubikey-touch-detector = {
+                Install = {
+                  Also = [ "yubikey-touch-detector.socket" ];
+                  WantedBy = [ "default.target" ];
+                };
+                Service = {
+                  EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
+                  ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector --libnotify";
+                };
+                Unit = {
+                  Description = "Detects when your YubiKey is waiting for a touch";
+                  Requires = [ "yubikey-touch-detector.socket" ];
+                };
+              };
+              sockets.yubikey-touch-detector = {
+                Install = {
+                  WantedBy = [ "sockets.target" ];
+                };
+                Socket = {
+                  ListenStream = "%t/yubikey-touch-detector.socket";
+                  RemoveOnStop = true;
+                };
+                Unit = {
+                  Description = "Unix socket activation for YubiKey touch detector service";
+                };
+              };
             };
           };
         };
       };
     };
+    nixos.hardwarecompatibility-yubikey =
+      {
+        config,
+        lib,
+        pkgs,
+        confLib,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems) mainUser;
+        inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
+      in
+      {
+        config = {
+
+          users.persistentIds = {
+            pcscd = confLib.mkIds 956;
+          };
+          services = {
+            gnome.gcr-ssh-agent.enable = false;
+            pcscd.enable = true;
+            udev.packages = with pkgs; [
+              yubikey-personalization
+            ];
+            yubikey-agent.enable = false;
+          };
+          programs.ssh = {
+            startAgent = false; # yes we want this to use FIDO2 keys
+            # enableAskPassword = true;
+            # askPassword = lib.getExe pkgs.kdePackages.ksshaskpass;
+          };
+          environment.systemPackages = with pkgs; [
+            kdePackages.ksshaskpass
+          ];
+          hardware.gpgSmartcards.enable = true;
+          security.pam.u2f = {
+            enable = true;
+            control = "sufficient";
+            settings = {
+              authfile = pkgs.writeText "u2f-mappings" (
+                lib.concatStrings [
+                  mainUser
+                  cfg1
+                  cfg2
+                ]
+              );
+              cue = true; # prints a message that a touch is requrired
+              interactive = false; # displays a prompt BEFORE asking for presence
+              origin = "pam://${mainUser}"; # make the keys work on all machines
+            };
+          };
+        };
+      };
   };
 }

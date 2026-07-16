@@ -3,13 +3,13 @@ let
   pname = "mgba";
   version = "0.10.4";
   src = fetchurl {
-    url = "https://github.com/mgba-emu/mgba/releases/download/${version}/mGBA-${version}-appimage-x64.appimage";
     hash = "sha256-rDihDfuA8DqxvCe6UeavCzpjeU+fSqUbFnyTNC2dc1I=";
+    url = "https://github.com/mgba-emu/mgba/releases/download/${version}/mGBA-${version}-appimage-x64.appimage";
   };
-  appimageContents = appimageTools.extractType2 { inherit pname version src; };
+  appimageContents = appimageTools.extractType2 { inherit pname src version; };
 in
 appimageTools.wrapType2 {
-  inherit pname version src;
+  inherit pname src version;
   extraInstallCommands = ''
     install -Dm444 ${appimageContents}/io.mgba.mGBA.desktop -t $out/share/applications
     substituteInPlace $out/share/applications/io.mgba.mGBA.desktop \

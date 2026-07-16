@@ -16,34 +16,28 @@
             checkUpdates = false;
             customTitleBar = false;
             disableMinSize = true;
-            minimizeToTray = true;
-            tray = true;
-            staticTitle = true;
-            hardwareAcceleration = true;
             discordBranch = "stable";
+            hardwareAcceleration = true;
+            minimizeToTray = true;
+            staticTitle = true;
+            tray = true;
           };
           vencord = {
-            useSystem = true;
             settings = {
               autoUpdate = false;
               autoUpdateNotification = false;
+              disableMinSize = true;
               enableReactDevtools = false;
               frameless = false;
-              transparent = false;
-              winCtrlQ = false;
               notifyAboutUpdates = false;
-              useQuickCss = true;
-              disableMinSize = true;
-              winNativeTitleBar = false;
               plugins = {
-                MessageLogger = {
-                  enabled = true;
-                  ignoreSelf = true;
-                };
                 ChatInputButtonAPI = {
                   enabled = false;
                 };
                 CommandsAPI = {
+                  enabled = true;
+                };
+                FakeNitro = {
                   enabled = true;
                 };
                 MemberListDecoratorsAPI = {
@@ -58,6 +52,10 @@
                 MessageEventsAPI = {
                   enabled = false;
                 };
+                MessageLogger = {
+                  enabled = true;
+                  ignoreSelf = true;
+                };
                 MessagePopoverAPI = {
                   enabled = false;
                 };
@@ -70,11 +68,13 @@
                 UserSettingsAPI = {
                   enabled = true;
                 };
-                FakeNitro = {
-                  enabled = true;
-                };
               };
+              transparent = false;
+              useQuickCss = true;
+              winCtrlQ = false;
+              winNativeTitleBar = false;
             };
+            useSystem = true;
           };
         };
       };

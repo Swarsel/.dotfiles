@@ -11,6 +11,16 @@
     inputs.self.modules.homeManager.profile-dgxspark
   ];
 
+  # programs.zsh.initContent = "
+  #   export GPG_TTY=\"$(tty)\"
+  # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  # gpgconf --launch gpg-agent
+  #       ";
+  swarselsystems = {
+    isLaptop = false;
+    wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
+  };
+
   services.xcape = {
     enable = true;
     mapExpression = {
@@ -21,14 +31,5 @@
   home.packages = with pkgs; [
     attic-client
   ];
-  # programs.zsh.initContent = "
-  #   export GPG_TTY=\"$(tty)\"
-  # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-  # gpgconf --launch gpg-agent
-  #       ";
-  swarselsystems = {
-    isLaptop = false;
-    wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
-  };
 
 }

@@ -2,10 +2,10 @@
   flake.modules.nixos.ankisync =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -15,19 +15,19 @@
           name = "ankisync";
           port = 27701;
         })
-        servicePort
-        serviceName
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       ankiUser = globals.user.name;
@@ -35,65 +35,58 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "ankisync" ];
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        sops.secrets.anki-pw = {
-          inherit sopsFile;
-          owner = "root";
-        };
-
         topology.self.services.anki = {
-          name = lib.mkForce "Anki Sync Server";
           icon = lib.mkForce "${self}/files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
+          name = lib.mkForce "Anki Sync Server";
         };
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
             expectedStatus = 404;
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [ { directory = "/var/lib/private/anki-sync-server"; } ];
+        # networking.firewall.allowedTCPPorts = [ servicePort ];
+        sops.secrets.anki-pw = {
+          inherit sopsFile;
+          owner = "root";
         };
-
         services.anki-sync-server = {
-          enable = true;
-          port = servicePort;
-          address = "0.0.0.0";
           # openFirewall = true;
           users = [
             {
-              username = ankiUser;
               passwordFile = config.sops.secrets.anki-pw.path;
+              username = ankiUser;
             }
           ];
+          enable = true;
+          address = "0.0.0.0";
+          port = servicePort;
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [ { directory = "/var/lib/private/anki-sync-server"; } ];
+        };
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
               maxBody = 0;
             };
@@ -101,9 +94,9 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
                 serviceAddress = homeServiceAddress;
               }
             );

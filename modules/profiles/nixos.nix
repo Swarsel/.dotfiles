@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ config, lib, ... }:
 let
   fmods = config.flake.modules;
   pickN = names: builtins.attrValues (lib.getAttrs names fmods.nixos);
@@ -26,7 +26,36 @@ in
           fmods.generic.pii
         ];
     };
-
+    profile-personal = { config, ... }: {
+      imports = [
+        fmods.nixos.profile-public
+      ]
+      ++ pickN [
+        "hardwarecompatibility-yubikey"
+        "sandbox-access"
+        "ssh"
+      ];
+      home-manager.users."${config.swarselsystems.mainUser}".imports = [
+        fmods.homeManager.profile-personal
+      ];
+    };
+    profile-public = { config, ... }: {
+      imports = [
+        fmods.nixos.profile-public-small
+      ]
+      ++ pickN [
+        "appimage"
+        "distrobox"
+        "hardwarecompatibility-keyboards"
+        "hardwarecompatibility-ledger"
+        "lid"
+        "networkdevices"
+        "nix-ld"
+      ];
+      home-manager.users."${config.swarselsystems.mainUser}".imports = [
+        fmods.homeManager.profile-public
+      ];
+    };
     profile-public-small = { config, ... }: {
       imports =
         pickN [
@@ -70,43 +99,8 @@ in
         ++ [
           fmods.generic.pii
         ];
-
       home-manager.users."${config.swarselsystems.mainUser}".imports = [
         fmods.homeManager.profile-public-small
-      ];
-    };
-
-    profile-public = { config, ... }: {
-      imports = [
-        fmods.nixos.profile-public-small
-      ]
-      ++ pickN [
-        "appimage"
-        "distrobox"
-        "hardwarecompatibility-keyboards"
-        "hardwarecompatibility-ledger"
-        "lid"
-        "networkdevices"
-        "nix-ld"
-      ];
-
-      home-manager.users."${config.swarselsystems.mainUser}".imports = [
-        fmods.homeManager.profile-public
-      ];
-    };
-
-    profile-personal = { config, ... }: {
-      imports = [
-        fmods.nixos.profile-public
-      ]
-      ++ pickN [
-        "hardwarecompatibility-yubikey"
-        "sandbox-access"
-        "ssh"
-      ];
-
-      home-manager.users."${config.swarselsystems.mainUser}".imports = [
-        fmods.homeManager.profile-personal
       ];
     };
   };

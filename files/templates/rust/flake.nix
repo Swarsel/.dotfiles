@@ -3,21 +3,22 @@
   description = "Rust Flake using Fenix and Naersk";
 
   inputs = {
+    fenix = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:nix-community/fenix";
+    };
+
+    naersk.url = "github:nix-community/naersk";
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     systems.url = "github:nix-systems/default";
-    naersk.url = "github:nix-community/naersk";
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
     {
       self,
-      nixpkgs,
-      naersk,
       fenix,
+      naersk,
+      nixpkgs,
       systems,
       ...
     }:
@@ -36,10 +37,19 @@
       rust-toolchain = forEachSystem (system: pkgsFor.${system}.fenix.stable);
     in
     {
-      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
+      apps = forEachSystem (system: {
+        default = {
+          program = "${self.packages.${system}.default}/bin/rust";
+          type = "app";
+        };
+      });
 
       devShells = forEachSystem (system: {
         default = pkgsFor.${system}.mkShell {
+          RUST_SRC_PATH = "${rust-toolchain.${system}.rust-src}/lib/rustlib/src/rust/library";
+          env = {
+            RUST_BACKTRACE = "full";
+          };
           packages = with rust-toolchain.${system}; [
             cargo
             rustc
@@ -47,12 +57,10 @@
             rustfmt
             rust-analyzer
           ];
-          env = {
-            RUST_BACKTRACE = "full";
-          };
-          RUST_SRC_PATH = "${rust-toolchain.${system}.rust-src}/lib/rustlib/src/rust/library";
         };
       });
+
+      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
 
       packages = forEachSystem (system: {
         default =
@@ -62,13 +70,6 @@
             {
               src = ./.;
             };
-      });
-
-      apps = forEachSystem (system: {
-        default = {
-          type = "app";
-          program = "${self.packages.${system}.default}/bin/rust";
-        };
       });
     };
 }

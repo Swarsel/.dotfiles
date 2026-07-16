@@ -32,7 +32,6 @@
     };
 
     shackle = {
-      enable = true;
       config = ''
         (setq shackle-rules '(("*Messages*" :select t :popup t :align right :size 0.3)
                               ("*Warnings*" :ignore t :popup t :align right :size 0.3)
@@ -46,6 +45,7 @@
                               (help-mode :select t :popup t :align right :size 0.4)))
         (shackle-mode 1)
       '';
+      enable = true;
     };
   };
 }

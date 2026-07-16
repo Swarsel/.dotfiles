@@ -1,10 +1,10 @@
 {
   flake-file.inputs.simple-nixos-mailserver = {
-    url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
     inputs = {
-      nixpkgs.follows = "nixpkgs";
       git-hooks.follows = "pre-commit-hooks";
+      nixpkgs.follows = "nixpkgs";
     };
+    url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
   };
 
   flake.modules.nixos.mailserver =
@@ -23,51 +23,51 @@
         (
           {
             self,
-            lib,
             config,
-            globals,
-            dns,
+            lib,
             confLib,
+            dns,
+            globals,
             ...
           }:
           let
             inherit (config.swarselsystems) sopsFile;
             inherit
               (confLib.gen {
-                name = "mailserver";
                 dir = "/var/lib/dovecot";
-                user = "virtualMail";
                 group = "virtualMail";
+                name = "mailserver";
                 port = 443;
+                user = "virtualMail";
               })
-              serviceName
-              serviceDir
-              servicePort
-              serviceUser
-              serviceGroup
-              serviceAddress
-              serviceDomain
               proxyAddress4
               proxyAddress6
+              serviceAddress
+              serviceDir
+              serviceDomain
+              serviceGroup
+              serviceName
+              servicePort
+              serviceUser
               ;
             inherit (confLib.static)
-              isHome
-              webProxy
-              homeWebProxy
               homeServiceAddress
+              homeWebProxy
+              isHome
               nginxAccessRules
+              webProxy
               ;
             inherit (config.repo.secrets.local.mailserver)
-              user1
               alias1_1
               alias1_2
               alias1_3
               alias1_4
-              user2
               alias2_1
               alias2_2
               alias2_3
               alias2_4
+              user1
+              user2
               user3
               ;
             baseDomain = globals.domains.main;
@@ -78,51 +78,16 @@
           in
           {
             swarselsystems.enabledServerModules = [ "mailserver" ];
-
-            users = {
-              persistentIds = {
-                knot-resolver = confLib.mkIds 963;
-                postfix-tlspol = confLib.mkIds 962;
-                roundcube = confLib.mkIds 961;
-                redis-rspamd = confLib.mkIds 960;
-              };
-            };
-
-            globals = {
-              dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-                "${globals.services.${serviceName}.subDomain}" =
-                  dns.lib.combinators.host endpointAddress4 endpointAddress6;
-                "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-              };
-              services = {
-                ${serviceName} = {
-                  domain = serviceDomain;
-                  proxyAddress4 = endpointAddress4;
-                  proxyAddress6 = endpointAddress6;
-                };
-                roundcube = {
-                  domain = roundcubeDomain;
-                  inherit
-                    proxyAddress4
-                    proxyAddress6
-                    isHome
-                    serviceAddress
-                    ;
-                  homeServiceAddress = lib.mkIf isHome homeServiceAddress;
-                };
-              };
-            };
-
             topology.self.services = lib.listToAttrs (
               map
                 (
                   service:
                   lib.nameValuePair "${service}" {
-                    name = lib.swarselsystems.toCapitalized service;
+                    icon = "${self}/files/topology-images/${service}.png";
                     info = lib.mkIf (service == "postfix" || service == "roundcube") (
                       if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}"
                     );
-                    icon = "${self}/files/topology-images/${service}.png";
+                    name = lib.swarselsystems.toCapitalized service;
                   }
                 )
                 [
@@ -133,7 +98,30 @@
                   "roundcube"
                 ]
             );
-
+            globals = {
+              services = {
+                ${serviceName} = {
+                  domain = serviceDomain;
+                  proxyAddress4 = endpointAddress4;
+                  proxyAddress6 = endpointAddress6;
+                };
+                roundcube = {
+                  inherit
+                    isHome
+                    proxyAddress4
+                    proxyAddress6
+                    serviceAddress
+                    ;
+                  domain = roundcubeDomain;
+                  homeServiceAddress = lib.mkIf isHome homeServiceAddress;
+                };
+              };
+              dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+                "${globals.services.${serviceName}.subDomain}" =
+                  dns.lib.combinators.host endpointAddress4 endpointAddress6;
+                "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+              };
+            };
             sops.secrets = {
               user1-hashed-pw = {
                 inherit sopsFile;
@@ -148,149 +136,152 @@
                 owner = serviceUser;
               };
             };
-
+            users = {
+              persistentIds = {
+                knot-resolver = confLib.mkIds 963;
+                postfix-tlspol = confLib.mkIds 962;
+                redis-rspamd = confLib.mkIds 960;
+                roundcube = confLib.mkIds 961;
+              };
+            };
+            services = {
+              nginx = {
+                virtualHosts = {
+                  "${roundcubeDomain}" = {
+                    acmeRoot = null;
+                    enableACME = false;
+                    forceSSL = true;
+                    locations = {
+                      "/".recommendedSecurityHeaders = false;
+                      "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders =
+                        false;
+                      "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
+                      "~* \\.php(/|$)".recommendedSecurityHeaders = false;
+                    };
+                    useACMEHost = globals.domains.main;
+                  };
+                };
+              };
+              roundcube = {
+                enable = true;
+                configureNginx = true;
+                extraConfig = ''
+                  $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
+                  $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
+                  $config['smtp_user'] = "%u";
+                  $config['smtp_pass'] = "%p";
+                '';
+                # this is the url of the vhost, not necessarily the same as the fqdn of
+                # the mailserver
+                hostName = roundcubeDomain;
+              };
+            };
             environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
               {
                 directory = "/var/vmail";
-                user = serviceUser;
                 group = serviceGroup;
                 mode = "0770";
+                user = serviceUser;
               }
               {
                 directory = "/var/sieve";
-                user = serviceUser;
                 group = serviceGroup;
                 mode = "0770";
+                user = serviceUser;
               }
               {
                 directory = "/var/dkim";
-                user = "rspamd";
                 group = "rspamd";
                 mode = "0700";
+                user = "rspamd";
               }
               {
                 directory = serviceDir;
-                user = serviceUser;
                 group = serviceGroup;
                 mode = "0700";
+                user = serviceUser;
               }
               # { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
               {
                 directory = "/var/lib/rspamd";
-                user = "rspamd";
                 group = "rspamd";
                 mode = "0700";
+                user = "rspamd";
               }
               {
                 directory = "/var/lib/roundcube";
-                user = "roundcube";
                 group = "roundcube";
                 mode = "0700";
+                user = "roundcube";
               }
               {
                 directory = "/var/lib/redis-rspamd";
-                user = "redis-rspamd";
                 group = "redis-rspamd";
                 mode = "0700";
+                user = "redis-rspamd";
               }
               {
                 directory = "/var/lib/postfix";
-                user = "root";
                 group = "root";
                 mode = "0755";
+                user = "root";
               }
               {
                 directory = "/var/lib/knot-resolver";
-                user = "knot-resolver";
                 group = "knot-resolver";
                 mode = "0770";
+                user = "knot-resolver";
               }
             ];
-
             mailserver = {
               enable = true;
-              stateVersion = 3;
-              fqdn = serviceDomain;
-              domains = [ baseDomain ];
-              indexDir = "${serviceDir}/indices";
-              openFirewall = true;
-              # certificateScheme = "acme";
-              dmarcReporting.enable = true;
-              enableSubmission = true;
-              enableSubmissionSsl = true;
-              enableImapSsl = true;
-              x509.useACMEHost = globals.domains.main;
-
               accounts = {
                 "${user1}@${baseDomain}" = {
-                  hashedPasswordFile = config.sops.secrets.user1-hashed-pw.path;
                   aliases = [
                     "${alias1_1}@${baseDomain}"
                     "${alias1_2}@${baseDomain}"
                     "${alias1_3}@${baseDomain}"
                     "${alias1_4}@${baseDomain}"
                   ];
+                  hashedPasswordFile = config.sops.secrets.user1-hashed-pw.path;
                 };
                 "${user2}@${baseDomain}" = {
-                  hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
                   aliases = [
                     "${alias2_1}@${baseDomain}"
                     "${alias2_2}@${baseDomain}"
                     "${alias2_3}@${baseDomain}"
                     "${alias2_4}@${baseDomain}"
                   ];
+                  hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
                   sendOnly = true;
                 };
                 "${user3}@${baseDomain}" = {
-                  hashedPasswordFile = config.sops.secrets.user3-hashed-pw.path;
                   aliases = [
                     "@${baseDomain}"
                   ];
                   catchAll = [
                     baseDomain
                   ];
+                  hashedPasswordFile = config.sops.secrets.user3-hashed-pw.path;
                 };
               };
+              # certificateScheme = "acme";
+              dmarcReporting.enable = true;
+              domains = [ baseDomain ];
+              enableImapSsl = true;
+              enableSubmission = true;
+              enableSubmissionSsl = true;
+              fqdn = serviceDomain;
+              indexDir = "${serviceDir}/indices";
+              openFirewall = true;
+              stateVersion = 3;
+              x509.useACMEHost = globals.domains.main;
             };
-
-            services.roundcube = {
-              enable = true;
-              # this is the url of the vhost, not necessarily the same as the fqdn of
-              # the mailserver
-              hostName = roundcubeDomain;
-              extraConfig = ''
-                $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
-                $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
-                $config['smtp_user'] = "%u";
-                $config['smtp_pass'] = "%p";
-              '';
-              configureNginx = true;
-            };
-
             # the rest of the ports are managed by snm
             networking.firewall.allowedTCPPorts = [
               80
               443
             ];
-
-            services.nginx = {
-              virtualHosts = {
-                "${roundcubeDomain}" = {
-                  useACMEHost = globals.domains.main;
-                  enableACME = false;
-                  forceSSL = true;
-                  acmeRoot = null;
-                  locations = {
-                    "/".recommendedSecurityHeaders = false;
-                    "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
-                    "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders =
-                      false;
-                    "~* \\.php(/|$)".recommendedSecurityHeaders = false;
-                  };
-                };
-              };
-            };
-
             nodes =
               let
                 extraConfigLoc = ''
@@ -302,25 +293,25 @@
                 {
                   ${webProxy}.services.nginx = confLib.genNginx {
                     inherit
-                      serviceAddress
-                      servicePort
-                      serviceName
                       extraConfigLoc
+                      serviceAddress
+                      serviceName
+                      servicePort
                       ;
-                    serviceDomain = roundcubeDomain;
-                    protocol = "https";
                     maxBody = 0;
+                    protocol = "https";
+                    serviceDomain = roundcubeDomain;
                   };
                 }
                 {
                   ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                     confLib.genNginx {
-                      inherit servicePort serviceName extraConfigLoc;
-                      serviceDomain = roundcubeDomain;
-                      protocol = "https";
-                      maxBody = 0;
+                      inherit extraConfigLoc serviceName servicePort;
                       extraConfig = nginxAccessRules;
+                      maxBody = 0;
+                      protocol = "https";
                       serviceAddress = homeServiceAddress;
+                      serviceDomain = roundcubeDomain;
                     }
                   );
                 }

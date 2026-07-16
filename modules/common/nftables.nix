@@ -9,13 +9,48 @@
       };
 
     nftables-rules =
-      { lib, config, ... }:
+      { config, lib, ... }:
       {
-        key = "swarsel/nftables-rules";
         config = {
           swarselsystems.enabledServerModules = [ "nftables" ];
-
           networking.nftables = {
+            firewall = {
+              enable = true;
+              localZoneName = "local";
+              rules = {
+                icmp-and-igmp = {
+                  after = [
+                    "ct"
+                    "ssh"
+                  ];
+                  extraLines = [
+                    "meta l4proto ipv6-icmp accept"
+                    "meta l4proto icmp accept"
+                    "ip protocol igmp accept"
+                  ];
+                  from = "all";
+                  to = [ "local" ];
+                };
+                untrusted-to-local = {
+                  inherit (config.networking.firewall)
+                    allowedTCPPortRanges
+                    allowedTCPPorts
+                    allowedUDPPortRanges
+                    allowedUDPPorts
+                    ;
+                  from = [ "untrusted" ];
+                  to = [ "local" ];
+                };
+              };
+              snippets = {
+                nnf-common.enable = false;
+                nnf-conntrack.enable = true;
+                nnf-dhcpv6.enable = true;
+                nnf-drop.enable = true;
+                nnf-loopback.enable = true;
+                nnf-ssh.enable = true;
+              };
+            };
             stopRuleset = lib.mkDefault ''
               table inet filter {
                 chain input {
@@ -37,48 +72,10 @@
                 }
               }
             '';
-
-            firewall = {
-              enable = true;
-              localZoneName = "local";
-              snippets = {
-                nnf-common.enable = false;
-                nnf-conntrack.enable = true;
-                nnf-drop.enable = true;
-                nnf-loopback.enable = true;
-                nnf-ssh.enable = true;
-                nnf-dhcpv6.enable = true;
-              };
-
-              rules.untrusted-to-local = {
-                from = [ "untrusted" ];
-                to = [ "local" ];
-
-                inherit (config.networking.firewall)
-                  allowedTCPPorts
-                  allowedTCPPortRanges
-                  allowedUDPPorts
-                  allowedUDPPortRanges
-                  ;
-              };
-
-              rules.icmp-and-igmp = {
-                after = [
-                  "ct"
-                  "ssh"
-                ];
-                from = "all";
-                to = [ "local" ];
-                extraLines = [
-                  "meta l4proto ipv6-icmp accept"
-                  "meta l4proto icmp accept"
-                  "ip protocol igmp accept"
-                ];
-              };
-            };
           };
 
         };
+        key = "swarsel/nftables-rules";
       };
   };
 }

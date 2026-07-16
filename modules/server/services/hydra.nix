@@ -1,12 +1,13 @@
 {
   flake-file.inputs = {
     hydra = {
-      url = "github:nixos/hydra/nix-2.30";
       inputs.nix-eval-jobs.follows = "nix-eval-jobs";
+      url = "github:nixos/hydra/nix-2.30";
     };
+
     nix-eval-jobs = {
-      url = "github:nix-community/nix-eval-jobs";
       flake = false;
+      url = "github:nix-community/nix-eval-jobs";
     };
   };
 
@@ -17,10 +18,10 @@
         (
           {
             inputs,
-            lib,
             config,
-            globals,
+            lib,
             confLib,
+            globals,
             ...
           }:
           let
@@ -29,56 +30,53 @@
                 name = "hydra";
                 port = 8002;
               })
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceGroup
               serviceName
               servicePort
               serviceUser
-              serviceGroup
-              serviceAddress
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
               ;
             inherit (confLib.static)
-              isHome
-              webProxy
-              homeWebProxy
               homeServiceAddress
+              homeWebProxy
+              isHome
               nginxAccessRules
+              webProxy
               ;
             inherit (config.swarselsystems) sopsFile;
           in
           {
             swarselsystems.enabledServerModules = [ "hydra" ];
-
             topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
             globals = {
-              networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
               services = confLib.mkServiceGlobal {
                 inherit
-                  serviceName
-                  serviceDomain
+                  homeServiceAddress
+                  isHome
                   proxyAddress4
                   proxyAddress6
-                  isHome
                   serviceAddress
-                  homeServiceAddress
+                  serviceDomain
+                  serviceName
                   ;
               };
+              dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
               monitoring.http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
-              dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+              networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             };
-
             sops = {
               secrets = {
-                nixbuild-net-key = {
-                  mode = "0600";
-                };
                 hydra-pw = {
                   inherit sopsFile;
-                  owner = serviceUser;
                   group = serviceGroup;
                   mode = "0440";
+                  owner = serviceUser;
+                };
+                nixbuild-net-key = {
+                  mode = "0600";
                 };
               };
               templates = {
@@ -86,46 +84,61 @@
                   content = ''
                     HYDRA_PW="${config.sops.placeholder.hydra-pw}"
                   '';
-                  owner = serviceUser;
                   group = serviceGroup;
                   mode = "0440";
+                  owner = serviceUser;
                 };
               };
             };
-
             services.hydra = {
               enable = true;
               package = inputs.hydra.packages.${config.node.arch}.hydra;
-              port = servicePort;
-              hydraURL = "https://${serviceDomain}";
-              listenHost = "*";
-              notificationSender = "hydra@${globals.domains.main}";
-              minimumDiskFreeEvaluator = 20; # 20G
-              minimumDiskFree = 20; # 20G
-              useSubstitutes = true;
-              smtpHost = globals.services.mailserver.domain;
               buildMachinesFiles = [
                 "/etc/nix/machines"
               ];
               extraConfig = ''
                 using_frontend_proxy 1
               '';
+              hydraURL = "https://${serviceDomain}";
+              listenHost = "*";
+              minimumDiskFree = 20; # 20G
+              minimumDiskFreeEvaluator = 20; # 20G
+              notificationSender = "hydra@${globals.domains.main}";
+              port = servicePort;
+              smtpHost = globals.services.mailserver.domain;
+              useSubstitutes = true;
             };
-
+            # networking.firewall.allowedTCPPorts = [ servicePort ];
+            programs.ssh = {
+              extraConfig = ''
+                StrictHostKeyChecking no
+              '';
+            };
+            environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            ];
+            nix = {
+              buildMachines = [
+                {
+                  hostName = "localhost";
+                  maxJobs = 4;
+                  protocol = null;
+                  supportedFeatures = [
+                    "kvm"
+                    "nixos-test"
+                    "big-parallel"
+                    "benchmark"
+                  ];
+                  system = config.node.arch;
+                }
+              ];
+              distributedBuilds = true;
+              settings.builders-use-substitutes = true;
+            };
             systemd.services.hydra-user-setup = {
-              description = "Create admin user for Hydra";
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                User = "hydra";
-                EnvironmentFile = [
-                  config.sops.templates.hydra-env.path
-                ];
-              };
-              wantedBy = [ "multi-user.target" ];
-              requires = [ "hydra-init.service" ];
               after = [ "hydra-init.service" ];
+              description = "Create admin user for Hydra";
               environment = lib.mkForce config.systemd.services.hydra-init.environment;
+              requires = [ "hydra-init.service" ];
               script = ''
                   set -eu
                 if [ ! -e ~hydra/.user-setup-done ]; then
@@ -133,38 +146,16 @@
                   touch ~hydra/.user-setup-done
                 fi
               '';
+              serviceConfig = {
+                EnvironmentFile = [
+                  config.sops.templates.hydra-env.path
+                ];
+                RemainAfterExit = true;
+                Type = "oneshot";
+                User = "hydra";
+              };
+              wantedBy = [ "multi-user.target" ];
             };
-
-            environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-            ];
-
-            nix = {
-              settings.builders-use-substitutes = true;
-              distributedBuilds = true;
-              buildMachines = [
-                {
-                  hostName = "localhost";
-                  protocol = null;
-                  system = config.node.arch;
-                  supportedFeatures = [
-                    "kvm"
-                    "nixos-test"
-                    "big-parallel"
-                    "benchmark"
-                  ];
-                  maxJobs = 4;
-                }
-              ];
-            };
-
-            # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-            programs.ssh = {
-              extraConfig = ''
-                StrictHostKeyChecking no
-              '';
-            };
-
             nodes =
               let
                 extraConfigLoc = ''
@@ -175,11 +166,11 @@
                 {
                   ${webProxy}.services.nginx = confLib.genNginx {
                     inherit
+                      extraConfigLoc
                       serviceAddress
-                      servicePort
                       serviceDomain
                       serviceName
-                      extraConfigLoc
+                      servicePort
                       ;
                     maxBody = 0;
                   };
@@ -188,13 +179,13 @@
                   ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                     confLib.genNginx {
                       inherit
-                        servicePort
+                        extraConfigLoc
                         serviceDomain
                         serviceName
-                        extraConfigLoc
+                        servicePort
                         ;
-                      maxBody = 0;
                       extraConfig = nginxAccessRules;
+                      maxBody = 0;
                       serviceAddress = homeServiceAddress;
                     }
                   );

@@ -1,10 +1,10 @@
 {
   flake.modules.nixos.hardware =
     {
-      pkgs,
       config,
-      confLib,
       lib,
+      pkgs,
+      confLib,
       ...
     }:
     {
@@ -15,33 +15,16 @@
         trackpoint = {
           isAvailable = lib.mkEnableOption "trackpoint availability";
           trackpoint.device = lib.mkOption {
-            type = lib.types.str;
             default = "";
+            type = lib.types.str;
           };
         };
       };
       config = {
 
         users.persistentIds.plugdev = confLib.mkIds 953;
-
+        services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
         hardware = {
-          # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
-          graphics = {
-            enable = true;
-            enable32Bit = true;
-          };
-
-          trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
-            enable = true;
-            inherit (config.swarselsystems.trackpoint) device;
-          };
-
-          keyboard.qmk.enable = true;
-
-          enableAllFirmware = lib.mkDefault true;
-
-          usbStorage.manageShutdown = true;
-
           bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
             enable = true;
             package = pkgs.bluez;
@@ -52,9 +35,19 @@
               };
             };
           };
+          enableAllFirmware = lib.mkDefault true;
+          # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
+          graphics = {
+            enable = true;
+            enable32Bit = true;
+          };
+          keyboard.qmk.enable = true;
+          trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
+            inherit (config.swarselsystems.trackpoint) device;
+            enable = true;
+          };
+          usbStorage.manageShutdown = true;
         };
-
-        services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
       };
     };
 }

@@ -2,9 +2,9 @@
   self,
   config,
   lib,
-  minimal,
   confLib,
   globals,
+  minimal,
   ...
 }:
 {
@@ -22,40 +22,55 @@
     self.modules.nixos.profile-router
     self.modules.nixos.smartctl-exporter
   ];
-
+  swarselsystems = {
+    flakePath = "/root/.dotfiles";
+    info = "HUNSN RM02, 8GB RAM";
+    initrdVLAN = "home";
+    isBtrfs = true;
+    isCrypted = true;
+    isImpermanence = true;
+    isLinux = true;
+    isSecureBoot = true;
+    localVLANs = map (name: "${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+    networkKernelModules = [ "igb" ];
+    nodeRoles = [
+      "homeProxy"
+      "routerServer"
+    ];
+    rootDisk = "/dev/sda";
+    swapSize = "8G";
+    withMicroVMs = true;
+  };
   topology.self = {
     interfaces = {
       lan2.physicalConnections = [
         {
-          node = "summers";
           interface = "lan";
+          node = "summers";
         }
       ];
       lan3.physicalConnections = [
         {
-          node = "summers";
           interface = "bmc";
+          node = "summers";
         }
       ];
       lan4.physicalConnections = [
         {
-          node = "switch-bedroom";
           interface = "eth1";
+          node = "switch-bedroom";
         }
       ];
       lan5.physicalConnections = [
         {
-          node = "switch-livingroom";
           interface = "eth1";
+          node = "switch-livingroom";
         }
       ];
     };
   };
-
   globals = {
     wireguard.wgHome = {
-      server = config.node.name;
-      netConfigPrefix = "home";
       clients = [
         "hintbooth-adguardhome"
         "hintbooth-nginx"
@@ -82,27 +97,9 @@
         "summers-transmission"
         "winters"
       ];
+      netConfigPrefix = "home";
+      server = config.node.name;
     };
-  };
-
-  swarselsystems = {
-    nodeRoles = [
-      "homeProxy"
-      "routerServer"
-    ];
-    info = "HUNSN RM02, 8GB RAM";
-    flakePath = "/root/.dotfiles";
-    isImpermanence = true;
-    isSecureBoot = true;
-    isCrypted = true;
-    isBtrfs = true;
-    isLinux = true;
-    rootDisk = "/dev/sda";
-    swapSize = "8G";
-    networkKernelModules = [ "igb" ];
-    withMicroVMs = true;
-    localVLANs = map (name: "${name}") (builtins.attrNames globals.networks.home-lan.vlans);
-    initrdVLAN = "home";
   };
 
 }

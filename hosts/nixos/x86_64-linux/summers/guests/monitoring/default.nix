@@ -16,10 +16,10 @@
   ];
 
   swarselsystems = {
-    isMicroVM = true;
     isImpermanence = true;
-    proxyHost = "twothreetunnel";
+    isMicroVM = true;
     nodeRoles = [ "monitoringServer" ];
+    proxyHost = "twothreetunnel";
   };
 
 }

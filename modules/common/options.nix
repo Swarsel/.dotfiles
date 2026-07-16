@@ -8,123 +8,122 @@
     }:
     {
       options.swarselsystems = {
-        proxyHost = lib.mkOption {
-          type = lib.types.str;
-          default = config.node.name;
-        };
-        isBastionTarget = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-        };
-        isCloud = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-        };
-        isFullBuild = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-        };
-        isServer = lib.mkOption {
-          type = lib.types.bool;
-          default = config.swarselsystems.isCloud;
-        };
-        isClient = lib.mkOption {
-          type = lib.types.bool;
-          default = config.swarselsystems.isLaptop;
-        };
-        isMicroVM = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-        };
-        isSwap = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-        };
-        writeGlobalNetworks = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-        };
-        swapSize = lib.mkOption {
-          type = lib.types.str;
-          default = "8G";
-        };
-        rootDisk = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-        };
-        # @ future me: dont put this under server prefix
-        # home-manager would then try to import all swarselsystems.server.* options
-        localVLANs = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
+        enabledHomeModules = lib.mkOption {
           default = [ ];
+          description = "List of enabled home module names, populated automatically by each module when imported. Used for cross-module checks.";
+          type = lib.types.listOf lib.types.str;
+        };
+        enabledServerModules = lib.mkOption {
+          default = [ ];
+          description = "List of enabled server module names, populated automatically by each module when imported. Used for cross-module checks.";
+          type = lib.types.listOf lib.types.str;
+        };
+        flakePath = lib.mkOption {
+          default = "/home/swarsel/.dotfiles";
+          type = lib.types.str;
+        };
+        highResolution = lib.mkOption {
+          default = "";
+          type = lib.types.str;
+        };
+        homeDir = lib.mkOption {
+          default = "/home/swarsel";
+          type = lib.types.str;
         };
         # @ future me: dont put this under server prefix
         # home-manager would then try to import all swarselsystems.server.* options
         initrdVLAN = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
           default = null;
+          type = lib.types.nullOr lib.types.str;
         };
-        mainUser = lib.mkOption {
-          type = lib.types.str;
-          default = "swarsel";
+        isBastionTarget = lib.mkOption {
+          default = false;
+          type = lib.types.bool;
+        };
+        isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+        isClient = lib.mkOption {
+          default = config.swarselsystems.isLaptop;
+          type = lib.types.bool;
+        };
+        isCloud = lib.mkOption {
+          default = false;
+          type = lib.types.bool;
         };
         isCrypted = lib.mkEnableOption "uses full disk encryption";
-        withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";
-
-        isImpermanence = lib.mkEnableOption "use impermanence on this system";
-        isSecureBoot = lib.mkEnableOption "use secure boot on this system";
-        isLaptop = lib.mkEnableOption "laptop host";
-        isPublic = lib.mkEnableOption "is a public machine (no secrets)";
         isDarwin = lib.mkEnableOption "darwin host";
+        isFullBuild = lib.mkOption {
+          default = true;
+          type = lib.types.bool;
+        };
+        isImpermanence = lib.mkEnableOption "use impermanence on this system";
+        isLaptop = lib.mkEnableOption "laptop host";
         isLinux = lib.mkEnableOption "whether this is a linux machine";
-        isBtrfs = lib.mkEnableOption "use btrfs filesystem";
-        sopsFile = lib.mkOption {
-          type = lib.types.either lib.types.str lib.types.path;
-          # default = (if config.swarselsystems.isImpermanence then "/persist" else "") + config.node.secretsDir + "/secrets.yaml";
-          default = config.node.secretsDir + "/secrets.yaml";
+        isMicroVM = lib.mkOption {
+          default = false;
+          type = lib.types.bool;
         };
-        homeDir = lib.mkOption {
-          type = lib.types.str;
-          default = "/home/swarsel";
+        isPublic = lib.mkEnableOption "is a public machine (no secrets)";
+        isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+        isServer = lib.mkOption {
+          default = config.swarselsystems.isCloud;
+          type = lib.types.bool;
         };
-        xdgDir = lib.mkOption {
-          type = lib.types.str;
-          default = "/run/user/1000";
+        isSwap = lib.mkOption {
+          default = true;
+          type = lib.types.bool;
         };
-        flakePath = lib.mkOption {
-          type = lib.types.str;
-          default = "/home/swarsel/.dotfiles";
-        };
-        wallpaper = lib.mkOption {
-          type = lib.types.path;
-          default = "${self}/files/wallpaper/landscape/lenovowp.png";
-        };
-        sharescreen = lib.mkOption {
-          type = lib.types.str;
-          default = "";
+        # @ future me: dont put this under server prefix
+        # home-manager would then try to import all swarselsystems.server.* options
+        localVLANs = lib.mkOption {
+          default = [ ];
+          type = lib.types.listOf lib.types.str;
         };
         lowResolution = lib.mkOption {
-          type = lib.types.str;
           default = "";
+          type = lib.types.str;
         };
-        highResolution = lib.mkOption {
+        mainUser = lib.mkOption {
+          default = "swarsel";
           type = lib.types.str;
-          default = "";
         };
         nodeRoles = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
           default = [ ];
           description = "List of roles this server fulfills in the infrastructure. Will set `globals.general.<itemName>` to the nodeName for each item.";
-        };
-        enabledServerModules = lib.mkOption {
           type = lib.types.listOf lib.types.str;
-          default = [ ];
-          description = "List of enabled server module names, populated automatically by each module when imported. Used for cross-module checks.";
         };
-        enabledHomeModules = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
-          description = "List of enabled home module names, populated automatically by each module when imported. Used for cross-module checks.";
+        proxyHost = lib.mkOption {
+          default = config.node.name;
+          type = lib.types.str;
+        };
+        rootDisk = lib.mkOption {
+          default = "";
+          type = lib.types.str;
+        };
+        sharescreen = lib.mkOption {
+          default = "";
+          type = lib.types.str;
+        };
+        sopsFile = lib.mkOption {
+          # default = (if config.swarselsystems.isImpermanence then "/persist" else "") + config.node.secretsDir + "/secrets.yaml";
+          default = config.node.secretsDir + "/secrets.yaml";
+          type = lib.types.either lib.types.str lib.types.path;
+        };
+        swapSize = lib.mkOption {
+          default = "8G";
+          type = lib.types.str;
+        };
+        wallpaper = lib.mkOption {
+          default = "${self}/files/wallpaper/landscape/lenovowp.png";
+          type = lib.types.path;
+        };
+        withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";
+        writeGlobalNetworks = lib.mkOption {
+          default = true;
+          type = lib.types.bool;
+        };
+        xdgDir = lib.mkOption {
+          default = "/run/user/1000";
+          type = lib.types.str;
         };
       };
     };

@@ -2,32 +2,28 @@
   flake.modules.nixos.acme =
     {
       self,
-      pkgs,
-      lib,
       config,
-      globals,
+      lib,
+      pkgs,
       confLib,
+      globals,
       ...
     }:
     let
-      inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
+      inherit (config.repo.secrets.common) dnsBase dnsMail dnsProvider;
 
       sopsFile = self + "/secrets/nginx/acme.json";
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "acme" ];
-        environment.systemPackages = with pkgs; [
-          lego
-        ];
-
         sops = {
           secrets = {
             acme-creds = {
-              format = "json";
-              key = "";
-              group = "acme";
               inherit sopsFile;
+              format = "json";
+              group = "acme";
+              key = "";
               mode = "0660";
             };
           };
@@ -36,31 +32,33 @@
             ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
           '';
         };
-
         users = {
-          persistentIds.acme = confLib.mkIds 967;
           groups.acme.members = lib.mkIf (builtins.elem "nginx" config.swarselsystems.enabledServerModules) [
             "nginx"
           ];
+          persistentIds.acme = confLib.mkIds 967;
         };
-
+        environment = {
+          persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+            directories = [ { directory = "/var/lib/acme"; } ];
+          };
+          systemPackages = with pkgs; [
+            lego
+          ];
+        };
         security.acme = {
           acceptTerms = true;
-          defaults = {
-            inherit dnsProvider;
-            email = dnsMail;
-            environmentFile = "${config.sops.templates."certs.secret".path}";
-            reloadServices = [ "nginx" ];
-            dnsPropagationCheck = true;
-            keyType = "ec384";
-          };
           certs."${globals.domains.main}" = {
             domain = "*.${globals.domains.main}";
           };
-        };
-
-        environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-          directories = [ { directory = "/var/lib/acme"; } ];
+          defaults = {
+            inherit dnsProvider;
+            dnsPropagationCheck = true;
+            email = dnsMail;
+            environmentFile = "${config.sops.templates."certs.secret".path}";
+            keyType = "ec384";
+            reloadServices = [ "nginx" ];
+          };
         };
 
       };

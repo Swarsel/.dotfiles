@@ -1,8 +1,8 @@
 {
   self,
   lib,
-  minimal,
   globals,
+  minimal,
   ...
 }:
 {
@@ -17,29 +17,27 @@
     self.modules.nixos.profile-localserver
     self.modules.nixos.smartctl-exporter
   ];
+  swarselsystems = {
+    flakePath = "/root/.dotfiles";
+    info = "ASRock J4105-ITX, 32GB RAM";
+    isBtrfs = false;
+    isCrypted = false;
+    isImpermanence = false;
+    isLinux = true;
+    isSecureBoot = false;
+    proxyHost = "twothreetunnel";
 
-  topology.self.interfaces."eth1" = { };
-
-  boot = {
-    loader.systemd-boot.enable = true;
-    loader.efi.canTouchEfiVariables = true;
   };
-
+  topology.self.interfaces."eth1" = { };
+  boot = {
+    loader = {
+      efi.canTouchEfiVariables = true;
+      systemd-boot.enable = true;
+    };
+  };
   networking.hosts = {
     ${globals.networks.home-lan.hosts.hintbooth.ipv4} = [ "server.hintbooth.${globals.domains.main}" ];
     ${globals.networks.home-lan.hosts.hintbooth.ipv6} = [ "server.hintbooth.${globals.domains.main}" ];
-  };
-
-  swarselsystems = {
-    info = "ASRock J4105-ITX, 32GB RAM";
-    flakePath = "/root/.dotfiles";
-    isImpermanence = false;
-    isSecureBoot = false;
-    isCrypted = false;
-    isBtrfs = false;
-    isLinux = true;
-    proxyHost = "twothreetunnel";
-
   };
 
 }

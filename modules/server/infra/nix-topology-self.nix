@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.nix-topology-self =
     {
-      lib,
       config,
+      lib,
       globals,
       ...
     }:
@@ -19,27 +19,27 @@
       topology.self = {
         icon = lib.mkIf config.swarselsystems.isCloud "devices.cloud-server";
         interfaces = {
-          wan = lib.mkIf (
-            config.swarselsystems.isCloud && config.swarselsystems.server.localNetwork == "wan"
-          ) { };
           lan = lib.mkIf (
             config.swarselsystems.isCloud && config.swarselsystems.server.localNetwork == "lan"
           ) { };
-          wgProxy = lib.mkIf (isWgParticipant "wgProxy") {
-            addresses = [
-              globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
-            ];
-            renderer.hidePhysicalConnections = true;
-            virtual = true;
-            type = "wireguard";
-          };
+          wan = lib.mkIf (
+            config.swarselsystems.isCloud && config.swarselsystems.server.localNetwork == "wan"
+          ) { };
           wgHome = lib.mkIf (isWgParticipant "wgHome") {
             addresses = [
               globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4
             ];
             renderer.hidePhysicalConnections = true;
-            virtual = true;
             type = "wireguard";
+            virtual = true;
+          };
+          wgProxy = lib.mkIf (isWgParticipant "wgProxy") {
+            addresses = [
+              globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
+            ];
+            renderer.hidePhysicalConnections = true;
+            type = "wireguard";
+            virtual = true;
           };
         };
       };

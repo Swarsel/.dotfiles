@@ -2,8 +2,8 @@
   flake.modules.nixos.croc =
     {
       self,
-      lib,
       config,
+      lib,
       pkgs,
       confLib,
       ...
@@ -14,10 +14,10 @@
           name = "croc";
           proxy = config.node.name;
         })
-        serviceName
-        serviceDomain
         proxyAddress4
         proxyAddress6
+        serviceDomain
+        serviceName
         ;
       inherit (confLib.static) isHome;
       servicePorts = [
@@ -35,7 +35,18 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "croc" ];
-
+        topology.self.services.${serviceName} = {
+          icon = "${self}/files/topology-images/${serviceName}.png";
+          info = "https://${serviceDomain}";
+          name = serviceName;
+        };
+        globals = {
+          services.${serviceName} = {
+            inherit isHome proxyAddress4 proxyAddress6;
+            domain = serviceDomain;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+        };
         sops = {
           secrets = {
             croc-password = { inherit sopsFile; };
@@ -49,41 +60,24 @@
             };
           };
         };
-
-        topology.self.services.${serviceName} = {
-          name = serviceName;
-          info = "https://${serviceDomain}";
-          icon = "${self}/files/topology-images/${serviceName}.png";
-        };
-
-        globals = {
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-          services.${serviceName} = {
-            domain = serviceDomain;
-            inherit proxyAddress4 proxyAddress6 isHome;
-          };
-        };
-
         services.${serviceName} = {
           enable = true;
-          ports = servicePorts;
-          pass = config.sops.secrets.croc-password.path;
           openFirewall = true;
+          pass = config.sops.secrets.croc-password.path;
+          ports = servicePorts;
         };
-
         systemd.services = {
           ${serviceName} = {
             serviceConfig = {
-              ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
-                lib.concatMapStringsSep "," toString cfg.ports
-              }";
               EnvironmentFile = [
                 config.sops.templates.croc-env.path
               ];
+              ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
+                lib.concatMapStringsSep "," toString cfg.ports
+              }";
             };
           };
         };
-
         # ports are opened on the firewall for croc, no nginx config
 
       };

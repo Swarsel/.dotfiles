@@ -1,8 +1,8 @@
 {
   name,
   emacs-nox,
-  writers,
   writeShellApplication,
+  writers,
   ...
 }:
 

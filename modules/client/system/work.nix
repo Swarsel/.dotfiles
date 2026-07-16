@@ -4,74 +4,51 @@ let
 in
 {
   flake-file.inputs.vbc-nix = {
-    url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
     inputs = {
       nixpkgs.follows = "nixpkgs-stable26_05";
       nixpkgs-2411.follows = "nixpkgs-stable24_11";
       systems.follows = "systems";
     };
+    url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
   };
 
   flake.modules = {
+    homeManager.work = {
+      imports = [
+        fmods.homeManager.work-mail
+        fmods.homeManager.work-dev
+        fmods.homeManager.work-desktop
+      ];
+      config.swarselsystems.enabledHomeModules = [ "optional-work" ];
+    };
     nixos.work =
       {
         self,
+        inputs,
+        config,
         lib,
         pkgs,
-        config,
-        inputs,
         withHomeManager,
         ...
       }:
       let
-        inherit (config.swarselsystems) mainUser homeDir;
+        inherit (config.swarselsystems) homeDir mainUser;
         iwd = config.networking.networkmanager.wifi.backend == "iwd";
         owner = mainUser;
         sopsFile = self + /secrets/work/secrets.yaml;
       in
       {
         options.swarselsystems = {
-          hostName = lib.mkOption {
-            type = lib.types.str;
-            default = config.node.name;
-          };
           fqdn = lib.mkOption {
-            type = lib.types.str;
             default = "";
+            type = lib.types.str;
+          };
+          hostName = lib.mkOption {
+            default = config.node.name;
+            type = lib.types.str;
           };
         };
         config = {
-
-          repo.secretFiles.work = ../../../secrets/work/pii.nix.enc;
-
-          nixpkgs.overlays = [
-            (
-              final: prev:
-              lib.genAttrs [
-                "aap-mcp-server"
-                "aci-mcp-server"
-                "artifactory-mcp"
-                "crowdsec-mcp"
-                "defender-mcp"
-                "foreman-mcp-server"
-                "infoblox-mcp-server"
-                "intune-mcp"
-                "ise-mcp"
-                "jamf-mcp"
-                "jenkins-mcp-server"
-                "jfrog-mcp-server"
-                "koppla"
-                "netbox-mcp-server"
-                "ontap-mcp"
-                "openshift-mcp-server"
-                "openstack-mcp-server"
-                "palo-alto-mcp"
-                "rustdesk-vbc"
-                "snipeit-mcp"
-                "vcenter-mcp"
-              ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
-            )
-          ];
 
           sops =
             let
@@ -104,41 +81,94 @@ in
                 '';
               };
             };
-
-          boot.initrd = {
-            systemd.enable = lib.mkForce true; # make sure we are using initrd systemd even when not using Impermanence
-            luks = {
-              # disable "support" since we use systemd-cryptenroll
-              # make sure yubikeys are enrolled using
-              # sudo systemd-cryptenroll --fido2-device=auto --fido2-with-user-verification=no --fido2-with-user-presence=true --fido2-with-client-pin=no /dev/nvme0n1p2
-              yubikeySupport = false;
-              fido2Support = false;
+          services = {
+            openssh = {
+              enable = true;
+              extraConfig = "";
             };
-          };
+            spice-vdagentd.enable = true;
+            syncthing = {
+              settings = {
+                folders = {
+                  "Documents" = {
+                    devices = [ "moonside@oracle" ];
+                    id = "hgr3d-pfu3w";
+                    path = "${homeDir}/Documents";
+                  };
+                };
+                "moonside@oracle" = {
+                  id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
+                };
+                "winters" = {
+                  id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+                };
+              };
+            };
+            # udev.extraRules = ''
+            #   # lock screen when yubikey removed
+            #             ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
+            # '';
 
+          };
           programs = {
 
-            browserpass.enable = true;
             _1password.enable = true;
             _1password-gui = {
               enable = true;
               package = pkgs._1password-gui;
               polkitPolicyOwners = [ "${mainUser}" ];
             };
+            browserpass.enable = true;
           };
-
-          environment.etc."1password/custom_allowed_browsers" = {
-            text = ''
-              glide
-            '';
-            mode = "0755";
+          boot.initrd = {
+            luks = {
+              fido2Support = false;
+              # disable "support" since we use systemd-cryptenroll
+              # make sure yubikeys are enrolled using
+              # sudo systemd-cryptenroll --fido2-device=auto --fido2-with-user-verification=no --fido2-with-user-presence=true --fido2-with-client-pin=no /dev/nvme0n1p2
+              yubikeySupport = false;
+            };
+            systemd.enable = lib.mkForce true; # make sure we are using initrd systemd even when not using Impermanence
           };
+          environment = {
+            etc."1password/custom_allowed_browsers" = {
+              mode = "0755";
+              text = ''
+                glide
+              '';
+            };
+            systemPackages = with pkgs; [
+              remmina
+              python39
+              qemu
+              packer
+              gnumake
+              libisoburn
+              govc
+              terraform
+              opentofu
+              terragrunt
+              graphviz
+              azure-cli
 
+              # vm
+              virt-manager
+              virt-viewer
+              virtiofsd
+              spice
+              spice-gtk
+              spice-protocol
+              virtio-win
+              win-spice
+
+              powershell
+              gh
+            ];
+          };
           networking = {
-            inherit (config.swarselsystems) hostName fqdn;
+            inherit (config.swarselsystems) fqdn hostName;
 
             networkmanager = {
-              wifi.scanRandMacAddress = false;
               ensureProfiles = {
                 environmentFiles = [
                   "${config.sops.templates."network-manager-work.env".path}"
@@ -152,11 +182,11 @@ in
                       phase2-auth = "mschapv2";
                     };
                     connection = {
-                      id = "VBC";
-                      type = "wifi";
                       autoconnect-priority = "500";
-                      uuid = "3988f10e-6451-381f-9330-a12e66f45051";
+                      id = "VBC";
                       secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
+                      type = "wifi";
+                      uuid = "3988f10e-6451-381f-9330-a12e66f45051";
                     };
                     ipv4 = {
                       method = "auto";
@@ -168,11 +198,11 @@ in
                     };
                     proxy = { };
                     wifi = {
+                      band = "a";
                       cloned-mac-address = "permanent";
                       mac-address = "E8:65:38:52:63:FF";
                       mac-address-randomization = "1";
                       mode = "infrastructure";
-                      band = "a";
                       ssid = "VBC";
                     };
                     wifi-security = {
@@ -182,25 +212,27 @@ in
                   };
                 };
               };
+              wifi.scanRandMacAddress = false;
             };
 
             nftables = {
+              chains.postrouting.libvirt-masq = {
+                after = [ "dnat" ];
+                rules = [
+                  "iifname \"virbr*\" masquerade"
+                ];
+              };
               firewall = {
-                zones = {
-                  virbr = {
-                    interfaces = [ "virbr*" ];
-                  };
-                };
                 rules = {
                   virbr-dns-dhcp = {
-                    from = [ "virbr" ];
-                    to = [ "local" ];
                     allowedTCPPorts = [ 53 ];
                     allowedUDPPorts = [
                       53
                       67
                       547
                     ];
+                    from = [ "virbr" ];
+                    to = [ "local" ];
                   };
                   virbr-forward = {
                     from = [ "virbr" ];
@@ -208,19 +240,18 @@ in
                     verdict = "accept";
                   };
                   virbr-forward-return = {
-                    from = [ "untrusted" ];
-                    to = [ "virbr" ];
                     extraLines = [
                       "ct state { established, related } accept"
                     ];
+                    from = [ "untrusted" ];
+                    to = [ "virbr" ];
                   };
                 };
-              };
-              chains.postrouting.libvirt-masq = {
-                after = [ "dnat" ];
-                rules = [
-                  "iifname \"virbr*\" masquerade"
-                ];
+                zones = {
+                  virbr = {
+                    interfaces = [ "virbr*" ];
+                  };
+                };
               };
             };
 
@@ -230,28 +261,37 @@ in
               "imp.univie.ac.at"
             ];
           };
-
-          systemd.services = {
-            virtqemud.path = with pkgs; [
-              qemu_kvm
-              libvirt
-            ];
-
-            virtstoraged.path = with pkgs; [
-              qemu_kvm
-              libvirt
-            ];
-
-            virtnetworkd.path = with pkgs; [
-              dnsmasq
-              iproute2
-              nftables
-            ];
-          };
-
+          nixpkgs.overlays = [
+            (
+              final: prev:
+              lib.genAttrs [
+                "aap-mcp-server"
+                "aci-mcp-server"
+                "artifactory-mcp"
+                "crowdsec-mcp"
+                "defender-mcp"
+                "foreman-mcp-server"
+                "infoblox-mcp-server"
+                "intune-mcp"
+                "ise-mcp"
+                "jamf-mcp"
+                "jenkins-mcp-server"
+                "jfrog-mcp-server"
+                "koppla"
+                "netbox-mcp-server"
+                "ontap-mcp"
+                "openshift-mcp-server"
+                "openstack-mcp-server"
+                "palo-alto-mcp"
+                "rustdesk-vbc"
+                "snipeit-mcp"
+                "vcenter-mcp"
+              ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
+            )
+          ];
+          repo.secretFiles.work = ../../../secrets/work/pii.nix.enc;
           virtualisation = {
             docker.enable = lib.mkIf (!config.virtualisation.podman.dockerCompat) true;
-            spiceUSBRedirection.enable = true;
             libvirtd = {
               enable = true;
               qemu = {
@@ -261,68 +301,23 @@ in
                 vhostUserPackages = with pkgs; [ virtiofsd ];
               };
             };
+            spiceUSBRedirection.enable = true;
           };
-
-          environment.systemPackages = with pkgs; [
-            remmina
-            python39
-            qemu
-            packer
-            gnumake
-            libisoburn
-            govc
-            terraform
-            opentofu
-            terragrunt
-            graphviz
-            azure-cli
-
-            # vm
-            virt-manager
-            virt-viewer
-            virtiofsd
-            spice
-            spice-gtk
-            spice-protocol
-            virtio-win
-            win-spice
-
-            powershell
-            gh
-          ];
-
-          services = {
-            spice-vdagentd.enable = true;
-            openssh = {
-              enable = true;
-              extraConfig = "";
-            };
-
-            syncthing = {
-              settings = {
-                "winters" = {
-                  id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-                };
-                "moonside@oracle" = {
-                  id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
-                };
-                folders = {
-                  "Documents" = {
-                    path = "${homeDir}/Documents";
-                    devices = [ "moonside@oracle" ];
-                    id = "hgr3d-pfu3w";
-                  };
-                };
-              };
-            };
-
-            # udev.extraRules = ''
-            #   # lock screen when yubikey removed
-            #             ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
-            # '';
-
+          systemd.services = {
+            virtnetworkd.path = with pkgs; [
+              dnsmasq
+              iproute2
+              nftables
+            ];
+            virtqemud.path = with pkgs; [
+              qemu_kvm
+              libvirt
+            ];
+            virtstoraged.path = with pkgs; [
+              qemu_kvm
+              libvirt
+            ];
           };
-
           # cgroups v1 is required for centos7 dockers
           # specialisation = {
           #   cgroup_v1.configuration = {
@@ -343,15 +338,5 @@ in
         };
 
       };
-
-    homeManager.work = {
-      imports = [
-        fmods.homeManager.work-mail
-        fmods.homeManager.work-dev
-        fmods.homeManager.work-desktop
-      ];
-
-      config.swarselsystems.enabledHomeModules = [ "optional-work" ];
-    };
   };
 }

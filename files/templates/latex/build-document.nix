@@ -2,43 +2,34 @@
 # https://flyx.org/nix-flakes-latex/
 
 {
-  pkgs,
-  # Document source
-  src ? ./.,
-
   # Name of the final pdf file
   name ? "document.pdf",
-
-  # Use -shell-escape
-  shellEscape ? false,
-
-  # Use minted (requires shellEscape)
-  minted ? false,
-
-  # Additional flags for latexmk
-  extraFlags ? [ ],
-
+  pkgs,
+  # Date for the document in unix time. You can change it
+  # to "$(date -r . +%s)" , "$(date -d "2022/02/22" +%s)", toString
+  # self.lastModified
+  SOURCE_DATE_EPOCH ? "$(git log -1 --pretty=%ct)",
   # Do not use the default latexmk flags. Usefull if you have a .latexmkrc or you
   # don't want to use lualatex
   dontUseDefaultFlags ? false,
-
-  # texlive packages needed to build the document
-  # you can also include other packages as a list.
-  texlive ? pkgs.texlive.combined.scheme-full,
-
-  # Pygments package to use (needed for minted)
-  pygments ? pkgs.python39Packages.pygments,
-
+  # Additional flags for latexmk
+  extraFlags ? [ ],
   # Add system fonts
   # you can specify one font directly with: pkgs.fira-code
   # of join multiple fonts using symlinJoin:
   #   pkgs.symlinkJoin { name = "fonts"; paths = with pkgs; [ fira-code souce-code-pro ]; }
   fonts ? null,
-
-  # Date for the document in unix time. You can change it
-  # to "$(date -r . +%s)" , "$(date -d "2022/02/22" +%s)", toString
-  # self.lastModified
-  SOURCE_DATE_EPOCH ? "$(git log -1 --pretty=%ct)",
+  # Use minted (requires shellEscape)
+  minted ? false,
+  # Pygments package to use (needed for minted)
+  pygments ? pkgs.python39Packages.pygments,
+  # Use -shell-escape
+  shellEscape ? false,
+  # Document source
+  src ? ./.,
+  # texlive packages needed to build the document
+  # you can also include other packages as a list.
+  texlive ? pkgs.texlive.combined.scheme-full,
 }:
 
 let
@@ -60,8 +51,10 @@ in
 assert minted -> shellEscape;
 
 pkgs.stdenvNoCC.mkDerivation rec {
-  inherit src name;
-
+  inherit name src;
+  OSFONTDIR = lib.optionalString (fonts != null) "${fonts}/share/fonts";
+  TEXMFHOME = "./cache";
+  TEXMFVAR = "./cache/var";
   buildInputs = [
     texlive
     pkgs.git
@@ -70,12 +63,6 @@ pkgs.stdenvNoCC.mkDerivation rec {
     pkgs.which
     pygments
   ];
-
-  TEXMFHOME = "./cache";
-  TEXMFVAR = "./cache/var";
-
-  OSFONTDIR = lib.optionalString (fonts != null) "${fonts}/share/fonts";
-
   buildPhase = ''
     runHook preBuild
 
@@ -83,7 +70,6 @@ pkgs.stdenvNoCC.mkDerivation rec {
 
     runHook postBuild
   '';
-
   installPhase = ''
     runHook preInstall
 

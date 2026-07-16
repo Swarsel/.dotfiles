@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.btrfs =
-    { lib, config, ... }:
+    { config, lib, ... }:
     {
       config = {
         swarselsystems.enabledServerModules = [ "btrfs" ];

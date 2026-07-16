@@ -1,11 +1,11 @@
 {
   self,
   name,
-  stdenv,
-  git,
-  nix,
   chromium,
+  git,
   imagemagick,
+  nix,
+  stdenv,
   writeShellApplication,
   ...
 }:

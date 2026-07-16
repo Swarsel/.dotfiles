@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.smartctl-exporter =
     {
-      lib,
       config,
+      lib,
       confLib,
       ...
     }:
@@ -12,33 +12,28 @@
           name = "smartctl-exporter";
           port = 9633;
         })
-        servicePort
         serviceName
+        servicePort
         ;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
-        users.persistentIds.smartctl-exporter-access = confLib.mkIds 947;
-
+        topology.self.services.${serviceName} = {
+          icon = "services.prometheus";
+          name = serviceName;
+        };
         globals = {
           services.${serviceName}.extraConfig = {
             port = servicePort;
           };
         };
-
-        topology.self.services.${serviceName} = {
-          name = serviceName;
-          icon = "services.prometheus";
-        };
-
+        users.persistentIds.smartctl-exporter-access = confLib.mkIds 947;
         services.prometheus.exporters.smartctl = {
           enable = true;
           listenAddress = "127.0.0.1";
           port = servicePort;
         };
-
         environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
           lib.mkAfter ''
             prometheus.scrape "smartctl" {

@@ -1,7 +1,7 @@
 {
   name,
-  writeShellApplication,
   sway,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

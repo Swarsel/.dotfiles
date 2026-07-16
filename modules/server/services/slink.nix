@@ -2,36 +2,36 @@
   flake.modules.nixos.slink =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
       inherit
         (confLib.gen {
+          dir = "/var/lib/slink";
           name = "slink";
           port = 3000;
-          dir = "/var/lib/slink";
         })
-        servicePort
-        serviceName
-        serviceDomain
-        serviceDir
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceName
+        servicePort
         topologyContainerName
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
         scannerDropRules
+        webProxy
         ;
 
       containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
@@ -40,30 +40,46 @@
       imports = [
         self.modules.nixos.podman
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "slink" ];
-
         topology.nodes.${topologyContainerName}.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
           icon = "services.not-available";
+          info = "https://${serviceDomain}";
+          name = lib.swarselsystems.toCapitalized serviceName;
         };
-
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "OK";
+            hostHeader = serviceDomain;
+            path = "/api/health";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
+        # networking.firewall.allowedTCPPorts = [ servicePort ];
+        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+          { directory = serviceDir; }
+        ];
         virtualisation.oci-containers.containers.${serviceName} = {
-          image = "anirdev/slink@${containerRev}";
           environment = {
-            "ORIGIN" = "https://${serviceDomain}";
-            "TZ" = config.repo.secrets.common.location.timezone;
-            "STORAGE_PROVIDER" = "local";
             "IMAGE_MAX_SIZE" = "50M";
+            "ORIGIN" = "https://${serviceDomain}";
+            "STORAGE_PROVIDER" = "local";
+            "TZ" = config.repo.secrets.common.location.timezone;
             "USER_APPROVAL_REQUIRED" = "true";
           };
-          ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
-          volumes = [
-            "${serviceDir}/var/data:/app/var/data"
-            "${serviceDir}/images:/app/slink/images"
-          ];
           extraOptions = [
             "--health-cmd=wget -O - -q http://127.0.0.1:${builtins.toString servicePort}/api/health | grep -q OK"
             "--health-interval=30s"
@@ -72,8 +88,13 @@
             "--health-start-period=60s"
             "--health-on-failure=kill"
           ];
+          image = "anirdev/slink@${containerRev}";
+          ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
+          volumes = [
+            "${serviceDir}/var/data:/app/var/data"
+            "${serviceDir}/images:/app/slink/images"
+          ];
         };
-
         systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
           map
             (path: {
@@ -81,8 +102,8 @@
               value = {
                 d = {
                   group = "root";
-                  user = "root";
                   mode = "0750";
+                  user = "root";
                 };
               };
             })
@@ -91,35 +112,6 @@
               "images"
             ]
         );
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = serviceDir; }
-        ];
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/api/health";
-            expectedBodyRegex = "OK";
-            hostHeader = serviceDomain;
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
         nodes =
           let
             genNginx = toAddress: extraConfig: {
@@ -132,25 +124,24 @@
               };
               virtualHosts = {
                 "${serviceDomain}" = {
-                  useACMEHost = globals.domains.main;
-
-                  forceSSL = true;
-                  acmeRoot = null;
-                  oauth2 = {
-                    enable = true;
-                    allowedGroups = [ "slink_access" ];
-                  };
                   inherit extraConfig;
+                  acmeRoot = null;
+                  forceSSL = true;
                   locations = {
                     "/" = {
                       proxyPass = "http://${serviceName}";
                     };
                     "/image" = {
+                      bypassAuth = true;
                       proxyPass = "http://${serviceName}";
                       setOauth2Headers = false;
-                      bypassAuth = true;
                     };
                   };
+                  oauth2 = {
+                    enable = true;
+                    allowedGroups = [ "slink_access" ];
+                  };
+                  useACMEHost = globals.domains.main;
                 };
               };
             };

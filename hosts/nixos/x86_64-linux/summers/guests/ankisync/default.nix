@@ -13,8 +13,8 @@
   ];
 
   swarselsystems = {
-    isMicroVM = true;
     isImpermanence = true;
+    isMicroVM = true;
     proxyHost = "twothreetunnel";
   };
 

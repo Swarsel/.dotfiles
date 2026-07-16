@@ -1,9 +1,9 @@
 {
   name,
-  writeShellApplication,
   openssh,
   opentofu,
   ssh-to-age,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

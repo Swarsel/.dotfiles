@@ -61,6 +61,9 @@ writers.writePython3Bin name
         parser.add_argument("--dry-run", "-n", action="store_true", help="Show what would change without modifying the file")
         parser.add_argument("--org-file", default="SwarselSystems.org", help="Path to the org file (default: SwarselSystems.org)")
         parser.add_argument("--repo-root", default=None, help="Repository root (default: parent of org file)")
+        parser.add_argument("--show-updated", action="store_true", help="List every updated block with its org line")
+        parser.add_argument("--show-unchanged", action="store_true", help="List every unchanged block with its org line")
+        parser.add_argument("--show-skipped", action="store_true", help="List every skipped block with its org line and the skip reason (noweb, multi-block, missing)")
         args = parser.parse_args()
 
         org_path = Path(args.org_file).resolve()
@@ -85,11 +88,9 @@ writers.writePython3Bin name
 
         output_lines: list[str] = []
         i = 0
-        updated = 0
-        skipped_noweb = 0
-        skipped_multi = 0
-        skipped_missing = 0
-        unchanged = 0
+        updated_blocks: list[tuple[str, int]] = []
+        unchanged_blocks: list[tuple[str, int]] = []
+        skipped_blocks: list[tuple[str, int, str]] = []
 
         while i < len(lines):
             line = lines[i]
@@ -108,7 +109,7 @@ writers.writePython3Bin name
                 continue
 
             if has_noweb(line):
-                skipped_noweb += 1
+                skipped_blocks.append((tangle_path, i + 1, "noweb"))
                 while i < len(lines):
                     output_lines.append(lines[i])
                     if lines[i].strip().lower() == "#+end_src":
@@ -118,7 +119,7 @@ writers.writePython3Bin name
                 continue
 
             if tangle_path in multi_target_files:
-                skipped_multi += 1
+                skipped_blocks.append((tangle_path, i + 1, "multi-block"))
                 while i < len(lines):
                     output_lines.append(lines[i])
                     if lines[i].strip().lower() == "#+end_src":
@@ -129,9 +130,7 @@ writers.writePython3Bin name
 
             file_path = repo_root / tangle_path
             if not file_path.exists():
-                skipped_missing += 1
-                if args.dry_run:
-                    print(f"  MISSING: {tangle_path}")
+                skipped_blocks.append((tangle_path, i + 1, "missing"))
                 while i < len(lines):
                     output_lines.append(lines[i])
                     if lines[i].strip().lower() == "#+end_src":
@@ -164,7 +163,7 @@ writers.writePython3Bin name
                 old_body = old_body[:-1]
 
             if old_body == new_body:
-                unchanged += 1
+                unchanged_blocks.append((tangle_path, i + 1))
                 while i < len(lines):
                     output_lines.append(lines[i])
                     if lines[i].strip().lower() == "#+end_src":
@@ -173,9 +172,7 @@ writers.writePython3Bin name
                     i += 1
                 continue
 
-            updated += 1
-            if args.dry_run:
-                print(f"  UPDATED: {tangle_path} (line {i + 1})")
+            updated_blocks.append((tangle_path, i + 1))
             output_lines.append(line)
             output_lines.append(new_body + "\n")
             i += 1
@@ -185,14 +182,32 @@ writers.writePython3Bin name
                 output_lines.append(lines[i])
                 i += 1
 
-        total = updated + unchanged + skipped_noweb + skipped_multi + skipped_missing
+        updated = len(updated_blocks)
+        unchanged = len(unchanged_blocks)
+        skip_counts = Counter(reason for _, _, reason in skipped_blocks)
+        total = updated + unchanged + len(skipped_blocks)
         print(f"\nSync summary:")
         print(f"  Total tangled blocks: {total}")
         print(f"  Updated:              {updated}")
         print(f"  Unchanged:            {unchanged}")
-        print(f"  Skipped (noweb):      {skipped_noweb}")
-        print(f"  Skipped (multi-block):{skipped_multi}")
-        print(f"  Skipped (missing):    {skipped_missing}")
+        print(f"  Skipped (noweb):      {skip_counts['noweb']}")
+        print(f"  Skipped (multi-block):{skip_counts['multi-block']}")
+        print(f"  Skipped (missing):    {skip_counts['missing']}")
+
+        if args.show_updated and updated_blocks:
+            print(f"\nUpdated blocks:")
+            for path, line_no in updated_blocks:
+                print(f"  {path} (line {line_no})")
+
+        if args.show_unchanged and unchanged_blocks:
+            print(f"\nUnchanged blocks:")
+            for path, line_no in unchanged_blocks:
+                print(f"  {path} (line {line_no})")
+
+        if args.show_skipped and skipped_blocks:
+            print(f"\nSkipped blocks:")
+            for path, line_no, reason in skipped_blocks:
+                print(f"  {path} (line {line_no}, {reason})")
 
         if not args.dry_run and updated > 0:
             with open(org_path, "w") as f:

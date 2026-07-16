@@ -5,8 +5,8 @@
   ...
 }:
 writeShellApplication {
-  runtimeInputs = [ nix-output-monitor ];
   inherit name;
+  runtimeInputs = [ nix-output-monitor ];
   text = ''
     set -euo pipefail
     [[ "$#" -ge 1 ]] \

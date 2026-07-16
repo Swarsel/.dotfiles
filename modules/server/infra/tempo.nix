@@ -1,33 +1,33 @@
 {
   flake.modules.nixos.tempo =
     {
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
       inherit
         (confLib.gen {
+          dir = "/var/lib/private/tempo";
           name = "tempo";
           port = 14318;
-          dir = "/var/lib/private/tempo";
         })
-        servicePort
-        serviceName
-        serviceDir
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         wgProxyAccessRules
         ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort otlpHttpPort;
@@ -38,61 +38,44 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
         globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+            extra.extraConfig = {
+              host = config.node.name;
+              port = servicePort;
+            };
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName;
+            expectedBodyRegex = "ready";
+            path = "/ready";
+            servicePort = tempoHttpApiPort;
+          };
           networks = confLib.mkDualFirewallRules {
             tcpPorts = [
               servicePort
               tempoHttpApiPort
             ];
           };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-            extra.extraConfig = {
-              port = servicePort;
-              host = config.node.name;
-            };
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName;
-            servicePort = tempoHttpApiPort;
-            path = "/ready";
-            expectedBodyRegex = "ready";
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
-
-        networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = serviceDir;
-              mode = "0700";
-            }
-          ];
-        };
-
         services.${serviceName} = {
           enable = true;
           settings = {
-            server = {
-              http_listen_address = "0.0.0.0";
-              http_listen_port = tempoHttpApiPort;
-              grpc_listen_port = 9097;
-              log_level = "warn";
+            backend_scheduler = {
+              local_work_path = "${serviceDir}/scheduler";
+              provider.compaction.compaction.block_retention = "168h";
             };
-
             distributor.receivers.otlp.protocols = {
               grpc = {
                 endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
@@ -102,59 +85,62 @@
                 endpoint = "0.0.0.0:${toString servicePort}";
               };
             };
-
-            storage.trace = {
-              backend = "local";
-              local.path = "${serviceDir}/blocks";
-              wal.path = "${serviceDir}/wal";
-            };
-
-            backend_scheduler = {
-              local_work_path = "${serviceDir}/scheduler";
-              provider.compaction.compaction.block_retention = "168h";
-            };
-
             live_store = {
-              wal.path = "${serviceDir}/live-store/traces";
               shutdown_marker_dir = "${serviceDir}/live-store/shutdown-marker";
+              wal.path = "${serviceDir}/live-store/traces";
             };
-
             metrics_generator = {
               registry.external_labels.source = "tempo";
               storage = {
                 path = "${serviceDir}/generator/wal";
                 remote_write = [
                   {
-                    url = "https://${globals.services.mimir.domain}/api/v1/push";
                     send_exemplars = true;
+                    url = "https://${globals.services.mimir.domain}/api/v1/push";
                   }
                 ];
               };
             };
-
             overrides.defaults.metrics_generator = {
               processors = [
                 "service-graphs"
                 "span-metrics"
               ];
             };
-
+            server = {
+              grpc_listen_port = 9097;
+              http_listen_address = "0.0.0.0";
+              http_listen_port = tempoHttpApiPort;
+              log_level = "warn";
+            };
+            storage.trace = {
+              backend = "local";
+              local.path = "${serviceDir}/blocks";
+              wal.path = "${serviceDir}/wal";
+            };
             usage_report.reporting_enabled = false;
           };
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = serviceDir;
+              mode = "0700";
+            }
+          ];
+        };
+        networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services.tempo = {
-          serviceConfig.RestartSec = lib.mkForce "60";
           environment = {
-            OTEL_TRACES_EXPORTER = "otlp";
-            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
             OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString otlpGrpcPort}";
+            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
             OTEL_SERVICE_NAME = "tempo-${config.node.name}";
+            OTEL_TRACES_EXPORTER = "otlp";
             OTEL_TRACES_SAMPLER = "parentbased_traceidratio";
             OTEL_TRACES_SAMPLER_ARG = "0.01";
           };
+          serviceConfig.RestartSec = lib.mkForce "60";
         };
-
         nodes =
           let
             ingestUpstream = "${serviceName}-ingest";
@@ -165,24 +151,24 @@
                 ${queryUpstream}.servers."${addr}:${toString tempoHttpApiPort}" = { };
               };
               virtualHosts.${serviceDomain} = {
-                useACMEHost = globals.domains.main;
-                forceSSL = true;
+                inherit extraConfig;
                 acmeRoot = null;
+                forceSSL = true;
                 locations = {
-                  "/v1/" = {
-                    proxyPass = "http://${ingestUpstream}";
-                    extraConfig = ''
-                      client_max_body_size 0;
-                    '';
-                  };
                   "/" = {
-                    proxyPass = "http://${queryUpstream}";
                     extraConfig = ''
                       client_max_body_size 0;
                     '';
+                    proxyPass = "http://${queryUpstream}";
+                  };
+                  "/v1/" = {
+                    extraConfig = ''
+                      client_max_body_size 0;
+                    '';
+                    proxyPass = "http://${ingestUpstream}";
                   };
                 };
-                inherit extraConfig;
+                useACMEHost = globals.domains.main;
               };
             };
           in
@@ -195,27 +181,9 @@
             }
             {
               ${globals.general.monitoringServer}.services.grafana = {
-                settings = {
-                  "tracing.opentelemetry" = {
-                    custom_attributes = "service.name:grafana-${globals.general.monitoringServer}";
-                  };
-                  "tracing.opentelemetry.otlp" = {
-                    address = "127.0.0.1:${toString otlpGrpcPort}";
-                    propagation = "w3c";
-                  };
-                };
                 provision.datasources.settings.datasources = [
                   {
-                    name = "Tempo";
-                    uid = "tempo";
-                    type = "tempo";
                     access = "proxy";
-                    url = confLib.mkAlloyPushUrl {
-                      host = globals.general.monitoringServer;
-                      domain = serviceDomain;
-                      port = tempoHttpApiPort;
-                      path = "";
-                    };
                     jsonData = {
                       nodeGraph.enabled = true;
                       search.hide = false;
@@ -226,8 +194,8 @@
                         {
                           tracesToLogsV2 = {
                             datasourceUid = "loki";
-                            filterByTraceID = true;
                             filterBySpanID = false;
+                            filterByTraceID = true;
                           };
                         }
                     //
@@ -251,8 +219,26 @@
                             ];
                           };
                         };
+                    name = "Tempo";
+                    type = "tempo";
+                    uid = "tempo";
+                    url = confLib.mkAlloyPushUrl {
+                      domain = serviceDomain;
+                      host = globals.general.monitoringServer;
+                      path = "";
+                      port = tempoHttpApiPort;
+                    };
                   }
                 ];
+                settings = {
+                  "tracing.opentelemetry" = {
+                    custom_attributes = "service.name:grafana-${globals.general.monitoringServer}";
+                  };
+                  "tracing.opentelemetry.otlp" = {
+                    address = "127.0.0.1:${toString otlpGrpcPort}";
+                    propagation = "w3c";
+                  };
+                };
               };
             }
             (lib.genAttrs (lib.attrNames globals.services.alloy.extraConfig.clients) (alloyHost: {
@@ -273,10 +259,10 @@
                   client {
                     endpoint = "${
                       confLib.mkAlloyPushUrl {
-                        host = alloyHost;
                         domain = serviceDomain;
-                        port = servicePort;
+                        host = alloyHost;
                         path = "";
+                        port = servicePort;
                       }
                     }"
                   }

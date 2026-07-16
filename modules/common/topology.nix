@@ -2,14 +2,9 @@
   flake.modules.nixos.topology =
     { inputs, lib, ... }:
     {
-      options.swarselsystems.info = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-
       imports = lib.optionals (inputs ? nix-topology) [
         inputs.nix-topology.nixosModules.default
-        ({ lib, config, ... }: {
+        ({ config, lib, ... }: {
           topology = {
             id = config.node.name;
             self = {
@@ -19,5 +14,9 @@
           };
         })
       ];
+      options.swarselsystems.info = lib.mkOption {
+        default = "";
+        type = lib.types.str;
+      };
     };
 }

@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.virtualbox =
     {
-      lib,
       config,
+      lib,
       pkgs,
       ...
     }:
@@ -11,16 +11,16 @@
         # specialisation = {
         #   VBox.configuration = {
         virtualisation.virtualbox = {
-          host = {
-            enable = true;
-            enableKvm = true;
-            addNetworkInterface = lib.mkIf config.virtualisation.virtualbox.host.enableKvm false;
-            package = pkgs.virtualbox;
-            enableExtensionPack = true;
-          };
           # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
           guest = {
             enable = false;
+          };
+          host = {
+            enable = true;
+            package = pkgs.virtualbox;
+            addNetworkInterface = lib.mkIf config.virtualisation.virtualbox.host.enableKvm false;
+            enableExtensionPack = true;
+            enableKvm = true;
           };
         };
         # run an older kernel to provide compatibility with windows vm

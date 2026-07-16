@@ -12,8 +12,8 @@
   ];
 
   swarselsystems = {
-    isMicroVM = true;
     isImpermanence = true;
+    isMicroVM = true;
   };
 
 }

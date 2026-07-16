@@ -14,19 +14,19 @@
   ];
 
   boot = {
-    initrd.availableKernelModules = [
-      "ahci"
-      "xhci_pci"
-      "virtio_pci"
-      "sr_mod"
-      "virtio_blk"
-    ];
-    initrd.kernelModules = [ ];
-    kernelModules = lib.optionals (arch == "x86_64-linux") [ "kvm-amd" ];
     extraModulePackages = [ ];
+    initrd = {
+      availableKernelModules = [
+        "ahci"
+        "xhci_pci"
+        "virtio_pci"
+        "sr_mod"
+        "virtio_blk"
+      ];
+      kernelModules = [ ];
+    };
+    kernelModules = lib.optionals (arch == "x86_64-linux") [ "kvm-amd" ];
   };
-
-  swapDevices = [ ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
   # (the default) this is the recommended approach. When using systemd-networkd it's
@@ -34,6 +34,6 @@
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = lib.mkDefault true;
   # networking.interfaces.enp1s0.useDHCP = lib.mkDefault true;
-
   nixpkgs.hostPlatform = lib.mkDefault arch;
+  swapDevices = [ ];
 }

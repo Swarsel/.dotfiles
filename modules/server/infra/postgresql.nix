@@ -21,7 +21,6 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "postgresql" ];
-
         services = {
           ${serviceName} = {
             enable = true;
@@ -35,17 +34,17 @@
               [
                 {
                   directory = "/var/lib/postgresql";
-                  user = "postgres";
                   group = "postgres";
                   mode = "0750";
+                  user = "postgres";
                 }
               ];
           "/state".directories = lib.mkIf config.swarselsystems.isMicroVM [
             {
               directory = "/var/lib/postgresql";
-              user = "postgres";
               group = "postgres";
               mode = "0750";
+              user = "postgres";
             }
           ];
         };

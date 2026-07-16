@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.nginx =
-    { lib, config, ... }:
+    { config, lib, ... }:
     let
       serviceUser = "nginx";
       serviceGroup = serviceUser;
@@ -16,19 +16,17 @@
                   type = lib.types.attrsOf (
                     lib.types.submodule (submod: {
                       options = {
-                        recommendedSecurityHeaders = lib.mkOption {
-                          type = lib.types.bool;
-                          default = config.services.nginx.recommendedSecurityHeaders;
-                          description = "Whether to add additional security headers to this location.";
-                        };
-
                         X-Frame-Options = lib.mkOption {
-                          type = lib.types.str;
                           default = "DENY";
                           description = "The value to use for X-Frame-Options";
+                          type = lib.types.str;
+                        };
+                        recommendedSecurityHeaders = lib.mkOption {
+                          default = config.services.nginx.recommendedSecurityHeaders;
+                          description = "Whether to add additional security headers to this location.";
+                          type = lib.types.bool;
                         };
                       };
-
                       config = {
                         extraConfig = lib.mkIf submod.config.recommendedSecurityHeaders (
                           lib.mkBefore ''
@@ -60,42 +58,39 @@
       };
       config = {
         swarselsystems.enabledServerModules = [ "nginx" ];
-
-        networking.firewall.allowedTCPPorts = [
-          80
-          443
-        ];
-
+        services.nginx = {
+          enable = true;
+          group = serviceGroup;
+          recommendedBrotliSettings = true;
+          recommendedGzipSettings = true;
+          recommendedOptimisation = true;
+          recommendedProxySettings = true;
+          recommendedSecurityHeaders = true;
+          recommendedTlsSettings = true;
+          sslCiphers = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:!aNULL";
+          statusPage = true;
+          user = serviceUser;
+          virtualHosts.fallback = {
+            default = true;
+            locations."/".extraConfig = ''
+              deny all;
+            '';
+            rejectSSL = true;
+          };
+        };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
             {
               directory = "/var/cache/nginx";
-              user = "nginx";
               group = "nginx";
+              user = "nginx";
             }
           ];
         };
-
-        services.nginx = {
-          enable = true;
-          user = serviceUser;
-          group = serviceGroup;
-          statusPage = true;
-          recommendedProxySettings = true;
-          recommendedTlsSettings = true;
-          recommendedOptimisation = true;
-          recommendedGzipSettings = true;
-          recommendedBrotliSettings = true;
-          recommendedSecurityHeaders = true;
-          sslCiphers = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:!aNULL";
-          virtualHosts.fallback = {
-            default = true;
-            rejectSSL = true;
-            locations."/".extraConfig = ''
-              deny all;
-            '';
-          };
-        };
+        networking.firewall.allowedTCPPorts = [
+          80
+          443
+        ];
       };
     }
 

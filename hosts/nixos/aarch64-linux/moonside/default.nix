@@ -1,7 +1,7 @@
 {
   self,
-  lib,
   config,
+  lib,
   minimal,
   ...
 }:
@@ -10,8 +10,8 @@ let
     dev1
     dev2
     dev3
-    loc1
     devices
+    loc1
     ;
 in
 {
@@ -38,77 +38,74 @@ in
     self.modules.nixos.copyparty
     self.modules.nixos.shopservatory
   ];
-
-  system.stateVersion = "23.11";
-
   swarselsystems = {
-    nodeRoles = [ "webSyncthingServer" ];
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
-    isImpermanence = true;
-    isSecureBoot = false;
-    isCrypted = false;
-    isSwap = false;
-    rootDisk = "/dev/sda";
     isBtrfs = true;
-    isLinux = true;
     isCloud = true;
+    isCrypted = false;
+    isImpermanence = true;
+    isLinux = true;
+    isSecureBoot = false;
+    isSwap = false;
+    nodeRoles = [ "webSyncthingServer" ];
     proxyHost = "twothreetunnel";
+    rootDisk = "/dev/sda";
     server = {
       restic.targets = {
         SwarselMoonside = {
-          repository = config.repo.secrets.local.resticRepo;
           paths = [
             "/persist/opt/minecraft"
           ];
+          repository = config.repo.secrets.local.resticRepo;
         };
       };
     };
   };
-
   globals.services.syncthing-moonside.extraConfig = {
     dataDir = "/sync";
     extraDevices = devices;
     extraFolders = {
-      "Documents" = {
-        path = "/sync/Documents";
-        type = "receiveonly";
-        versioning = {
-          type = "simple";
-          params.keep = "2";
-        };
-        devices = [ "pyramid" ];
-        id = "hgr3d-pfu3w";
-      };
-      "runandbun" = {
-        path = "/sync/runandbun";
-        type = "receiveonly";
-        versioning = {
-          type = "simple";
-          params.keep = "5";
-        };
-        devices = [
-          "pyramid"
-          "magicant"
-        ];
-        id = "kwnql-ev64v";
-      };
       "${loc1}" = {
-        path = "/sync/${loc1}";
-        type = "sendreceive";
-        versioning = {
-          type = "simple";
-          params.keep = "3";
-        };
         devices = [
           dev1
           dev2
           dev3
         ];
         id = "5gsxv-rzzst";
+        path = "/sync/${loc1}";
+        type = "sendreceive";
+        versioning = {
+          params.keep = "3";
+          type = "simple";
+        };
+      };
+      "Documents" = {
+        devices = [ "pyramid" ];
+        id = "hgr3d-pfu3w";
+        path = "/sync/Documents";
+        type = "receiveonly";
+        versioning = {
+          params.keep = "2";
+          type = "simple";
+        };
+      };
+      "runandbun" = {
+        devices = [
+          "pyramid"
+          "magicant"
+        ];
+        id = "kwnql-ev64v";
+        path = "/sync/runandbun";
+        type = "receiveonly";
+        versioning = {
+          params.keep = "5";
+          type = "simple";
+        };
       };
     };
   };
+  system.stateVersion = "23.11";
 }
 // lib.optionalAttrs (!minimal) {
 

@@ -13,15 +13,8 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  # FIXME: remove when redeploying and instead increase swapSize
-  swapDevices = [
-    {
-      device = "/swapfile";
-      size = 20 * 1024;
-    }
-  ];
-
   boot = {
+    extraModulePackages = [ ];
     initrd = {
       availableKernelModules = [
         "xhci_pci"
@@ -32,9 +25,16 @@
       kernelModules = [ ];
     };
     kernelModules = [ ];
-    extraModulePackages = [ ];
   };
 
-  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+
+  # FIXME: remove when redeploying and instead increase swapSize
+  swapDevices = [
+    {
+      device = "/swapfile";
+      size = 20 * 1024;
+    }
+  ];
 }

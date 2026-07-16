@@ -1,10 +1,10 @@
 {
   flake-file.inputs.copyparty = {
-    url = "github:9001/copyparty/hovudstraum";
     inputs = {
-      nixpkgs.follows = "nixpkgs";
       flake-utils.follows = "flake-utils";
+      nixpkgs.follows = "nixpkgs";
     };
+    url = "github:9001/copyparty/hovudstraum";
   };
 
   flake.modules.nixos.copyparty =
@@ -15,10 +15,10 @@
         (
           {
             self,
-            lib,
             config,
-            globals,
+            lib,
             confLib,
+            globals,
             ...
           }:
           let
@@ -27,24 +27,24 @@
                 name = "copyparty";
                 port = 3923;
               })
-              servicePort
-              serviceName
-              serviceUser
-              serviceGroup
-              serviceDomain
-              serviceAddress
               proxyAddress4
               proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceGroup
+              serviceName
+              servicePort
+              serviceUser
               ;
             inherit (confLib.static)
-              isHome
-              webProxy
-              homeWebProxy
               homeServiceAddress
+              homeWebProxy
+              isHome
               nginxAccessRules
+              webProxy
               ;
 
-            inherit (config.swarselsystems) sopsFile mainUser;
+            inherit (config.swarselsystems) mainUser sopsFile;
 
             dataDir = "/sync/copyparty";
             cacheDir = "/var/cache/copyparty";
@@ -52,92 +52,85 @@
           in
           {
             swarselsystems.enabledServerModules = [ "copyparty" ];
-
-            users.persistentIds.${serviceName} = confLib.mkIds 945;
-
-            sops.secrets = {
-              copyparty-password = {
-                inherit sopsFile;
-                owner = serviceUser;
-                group = serviceGroup;
-                mode = "0400";
-              };
-              copyparty-guest-password = {
-                inherit sopsFile;
-                owner = serviceUser;
-                group = serviceGroup;
-                mode = "0400";
-              };
-            };
-
             topology.self.services.${serviceName} = {
-              name = lib.swarselsystems.toCapitalized serviceName;
-              info = "https://${serviceDomain}";
               icon = "${self}/files/topology-images/${serviceName}.png";
+              info = "https://${serviceDomain}";
+              name = lib.swarselsystems.toCapitalized serviceName;
             };
-
             globals = {
-              networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
               services = confLib.mkServiceGlobal {
                 inherit
-                  serviceName
-                  serviceDomain
+                  homeServiceAddress
+                  isHome
                   proxyAddress4
                   proxyAddress6
-                  isHome
                   serviceAddress
-                  homeServiceAddress
+                  serviceDomain
+                  serviceName
                   ;
               };
+              dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
               monitoring.http = confLib.mkHttpMonitoring {
                 inherit serviceName servicePort;
                 expectedBodyRegex = "copyparty";
               };
-              dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+              networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             };
-
+            sops.secrets = {
+              copyparty-guest-password = {
+                inherit sopsFile;
+                group = serviceGroup;
+                mode = "0400";
+                owner = serviceUser;
+              };
+              copyparty-password = {
+                inherit sopsFile;
+                group = serviceGroup;
+                mode = "0400";
+                owner = serviceUser;
+              };
+            };
+            users.persistentIds.${serviceName} = confLib.mkIds 945;
             services.${serviceName} = {
               enable = true;
-              user = serviceUser;
-              group = serviceGroup;
-              settings = {
-                i = "0.0.0.0";
-                p = servicePort;
-                no-reload = true;
-                hist = cacheDir;
-                rproxy = 1;
-                xff-src = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".cidrv4;
-              };
               accounts = {
                 ${mainUser}.passwordFile = config.sops.secrets.copyparty-password.path;
                 guest.passwordFile = config.sops.secrets.copyparty-guest-password.path;
               };
+              group = serviceGroup;
+              settings = {
+                hist = cacheDir;
+                i = "0.0.0.0";
+                no-reload = true;
+                p = servicePort;
+                rproxy = 1;
+                xff-src = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".cidrv4;
+              };
+              user = serviceUser;
               volumes = {
                 "/" = {
-                  path = dataDir;
                   access = {
-                    rwmda = mainUser;
                     rw = "guest";
+                    rwmda = mainUser;
                   };
+                  path = dataDir;
                 };
               };
             };
-
             environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
               {
                 directory = stateDir;
-                user = serviceUser;
                 group = serviceGroup;
                 mode = "0700";
+                user = serviceUser;
               }
               {
                 directory = cacheDir;
-                user = serviceUser;
                 group = serviceGroup;
                 mode = "0700";
+                user = serviceUser;
               }
             ];
-
             nodes =
               let
                 uploadProxyConfig = ''
@@ -152,24 +145,24 @@
                   ${webProxy}.services.nginx = confLib.genNginx {
                     inherit
                       serviceAddress
-                      servicePort
                       serviceDomain
                       serviceName
+                      servicePort
                       ;
+                    extraConfigLoc = uploadProxyConfig;
                     maxBody = 0;
                     proxyWebsockets = true;
-                    extraConfigLoc = uploadProxyConfig;
                   };
                 }
                 {
                   ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                     confLib.genNginx {
-                      inherit servicePort serviceDomain serviceName;
-                      serviceAddress = homeServiceAddress;
-                      maxBody = 0;
-                      proxyWebsockets = true;
+                      inherit serviceDomain serviceName servicePort;
                       extraConfig = nginxAccessRules;
                       extraConfigLoc = uploadProxyConfig;
+                      maxBody = 0;
+                      proxyWebsockets = true;
+                      serviceAddress = homeServiceAddress;
                     }
                   );
                 }

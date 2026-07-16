@@ -12,9 +12,9 @@
   ];
 
   swarselsystems = {
-    nodeRoles = [ "homeDnsServer" ];
-    isMicroVM = true;
     isImpermanence = true;
+    isMicroVM = true;
+    nodeRoles = [ "homeDnsServer" ];
     proxyHost = "twothreetunnel";
   };
 

@@ -1,32 +1,32 @@
 {
   flake-file.inputs.hunkle = {
-    url = "github:Swarsel/hunkle";
     inputs = {
-      nixpkgs.follows = "nixpkgs";
       flake-parts.follows = "flake-parts";
-      treefmt-nix.follows = "treefmt-nix";
       git-hooks-nix.follows = "pre-commit-hooks";
+      nixpkgs.follows = "nixpkgs";
+      treefmt-nix.follows = "treefmt-nix";
     };
+    url = "github:Swarsel/hunkle";
   };
 
-  flake.modules.homeManager.emacs-init = { pkgs, inputs, ... }: {
+  flake.modules.homeManager.emacs-init = { inputs, pkgs, ... }: {
     config.programs.emacs.init.usePackage.hunkle = {
+      config = "(hunkle-magit-setup)";
       enable = true;
       package =
         epkgs:
         epkgs.trivialBuild {
-          pname = "hunkle";
-          version = "0.1.0";
-          src = "${inputs.hunkle}/emacs";
           packageRequires = [ epkgs.magit ];
+          pname = "hunkle";
           postPatch = ''
             substituteInPlace hunkle.el \
               --replace-fail '(defcustom hunkle-executable "hunkle"' \
                 '(defcustom hunkle-executable "${pkgs.hunkle}/bin/hunkle"'
           '';
+          src = "${inputs.hunkle}/emacs";
+          version = "0.1.0";
         };
       after = [ "magit" ];
-      config = "(hunkle-magit-setup)";
     };
   };
 }

@@ -1,17 +1,75 @@
 {
   config,
-  pkgs,
   lib,
+  pkgs,
   ...
 }:
 {
   config = {
+    users.users.nixos = {
+      extraGroups = [ "wheel" ];
+      initialHashedPassword = "";
+      isNormalUser = true;
+    };
+    services = {
+      getty.autologinUser = "nixos";
+      pcscd.enable = true;
+      udev.packages = [ pkgs.yubikey-personalization ];
+    };
+    programs = {
+      gnupg = {
+        agent = {
+          enable = true;
+          enableSSHSupport = true;
+        };
+        dirmngr.enable = true;
+      };
+      ssh.startAgent = false;
+    };
+    boot = {
+      initrd.network.enable = false;
+      kernel.sysctl = {
+        "kernel.unprivileged_bpf_disabled" = 1;
+      };
+      tmp.cleanOnBoot = true;
+    };
+    environment = {
+      interactiveShellInit = ''
+        unset HISTFILE
+          export GNUPGHOME="/run/user/$(id -u)/gnupg"
+          if [ ! -d "$GNUPGHOME" ]; then
+            install -m=0700 --directory="$GNUPGHOME"
+          fi
+          [ ! -f "$GNUPGHOME/gpg.conf" ] && cp /home/nixos/gpg-hardened.conf "$GNUPGHOME/gpg.conf"
+          [ ! -f "$GNUPGHOME/gpg-agent.conf" ] && cp /home/nixos/gpg-agent.conf "$GNUPGHOME/gpg-agent.conf"
+      '';
+      systemPackages = with pkgs; [
+        paperkey
+        pgpdump
+        parted
+        cryptsetup
+        yubikey-manager
+        yubikey-personalization
+        pcsc-tools
+      ];
+    };
     home-manager.users.nixos = {
+      services.gpg-agent = {
+        enable = true;
+        defaultCacheTtl = 60;
+        enableBashIntegration = true;
+        enableSshSupport = true;
+        maxCacheTtl = 120;
+        pinentry = {
+          package = pkgs.pinentry-curses;
+          program = "pinentry-curses";
+        };
+      };
+      programs.gpg = {
+        enable = true;
+      };
       home = {
         inherit (config.system) stateVersion;
-        username = "nixos";
-        homeDirectory = "/home/nixos";
-        keyboard.layout = "us";
         file.".gnupg/gpg-hardened.conf" = {
           text = ''
             personal-cipher-preferences AES256 AES192 AES
@@ -37,44 +95,25 @@
             throw-keyids
           '';
         };
-      };
-
-      services.gpg-agent = {
-        enable = true;
-        enableBashIntegration = true;
-        enableSshSupport = true;
-        pinentry = {
-          package = pkgs.pinentry-curses;
-          program = "pinentry-curses";
-        };
-        defaultCacheTtl = 60;
-        maxCacheTtl = 120;
-      };
-
-      programs.gpg = {
-        enable = true;
+        homeDirectory = "/home/nixos";
+        keyboard.layout = "us";
+        username = "nixos";
       };
     };
-
-    programs = {
-      ssh.startAgent = false;
-      gnupg = {
-        dirmngr.enable = true;
-        agent = {
-          enable = true;
-          enableSSHSupport = true;
-        };
+    networking = {
+      dhcpcd = {
+        enable = false;
+        allowInterfaces = [ ];
       };
+      firewall.enable = true;
+      hostName = "policestation";
+      interfaces = { };
+      networkmanager.enable = lib.mkForce false;
+      resolvconf.enable = false;
+      useDHCP = false;
+      useNetworkd = false;
+      wireless.enable = false;
     };
-
-    swapDevices = [ ];
-
-    services = {
-      pcscd.enable = true;
-      udev.packages = [ pkgs.yubikey-personalization ];
-      getty.autologinUser = "nixos";
-    };
-
     nix = {
       channel.enable = false;
       settings.experimental-features = [
@@ -82,68 +121,19 @@
         "flakes"
       ];
     };
-
-    environment.interactiveShellInit = ''
-      unset HISTFILE
-        export GNUPGHOME="/run/user/$(id -u)/gnupg"
-        if [ ! -d "$GNUPGHOME" ]; then
-          install -m=0700 --directory="$GNUPGHOME"
-        fi
-        [ ! -f "$GNUPGHOME/gpg.conf" ] && cp /home/nixos/gpg-hardened.conf "$GNUPGHOME/gpg.conf"
-        [ ! -f "$GNUPGHOME/gpg-agent.conf" ] && cp /home/nixos/gpg-agent.conf "$GNUPGHOME/gpg-agent.conf"
-    '';
-
-    environment.systemPackages = with pkgs; [
-      paperkey
-      pgpdump
-      parted
-      cryptsetup
-      yubikey-manager
-      yubikey-personalization
-      pcsc-tools
-    ];
-
-    boot = {
-      initrd.network.enable = false;
-      tmp.cleanOnBoot = true;
-      kernel.sysctl = {
-        "kernel.unprivileged_bpf_disabled" = 1;
-      };
-    };
-
-    networking = {
-      hostName = "policestation";
-      resolvconf.enable = false;
-      dhcpcd.enable = false;
-      dhcpcd.allowInterfaces = [ ];
-      interfaces = { };
-      firewall.enable = true;
-      useDHCP = false;
-      useNetworkd = false;
-      wireless.enable = false;
-      networkmanager.enable = lib.mkForce false;
-    };
-
-    users.users.nixos = {
-      isNormalUser = true;
-      extraGroups = [ "wheel" ];
-      initialHashedPassword = "";
-    };
-
     security.sudo = {
       enable = true;
       wheelNeedsPassword = false;
     };
-
+    swapDevices = [ ];
+    system.stateVersion = lib.mkForce "23.05";
     systemd = {
       targets = {
-        sleep.enable = false;
-        suspend.enable = false;
         hibernate.enable = false;
         hybrid-sleep.enable = false;
+        sleep.enable = false;
+        suspend.enable = false;
       };
     };
-
-    system.stateVersion = lib.mkForce "23.05";
   };
 }

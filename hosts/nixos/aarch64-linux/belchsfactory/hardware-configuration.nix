@@ -7,6 +7,7 @@
       "x86_64-linux"
       "i686-linux"
     ];
+    extraModulePackages = [ ];
     initrd = {
       availableKernelModules = [
         "xhci_pci"
@@ -17,7 +18,6 @@
       kernelModules = [ ];
     };
     kernelModules = [ ];
-    extraModulePackages = [ ];
   };
 
   nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";

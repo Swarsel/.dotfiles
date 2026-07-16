@@ -1,119 +1,5 @@
 {
   flake.modules = {
-    nixos.packages =
-      {
-        lib,
-        pkgs,
-        config,
-        minimal,
-        ...
-      }:
-      {
-        config = {
-
-          environment.systemPackages =
-            with pkgs;
-            lib.optionals (!minimal) (
-              [
-                gnupg
-                yubikey-manager
-
-                # secure boot
-                sbctl
-
-                # better make for general tasks
-                just
-
-                # sops
-                ssh-to-age
-                sops
-
-                # theme related
-                adwaita-icon-theme
-
-                # bluetooth
-                bluez
-                wireguard-tools
-              ]
-              ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
-                # ledger packages
-                ledger-live-desktop
-
-                # keyboards
-                vial
-                via
-              ]
-              ++ lib.optionals config.swarselsystems.isFullBuild [
-                # yubikey packages
-                yubikey-personalization
-                yubico-pam
-                yubioath-flutter
-                yubikey-touch-detector
-                yubico-piv-tool
-                cfssl
-                pcsc-tools
-                pcscliteWithPolkit.out
-
-                # pinentry
-                dbus
-                # swaylock-effects
-                syncthingtray-minimal
-                swayosd
-
-                qt5.qtwayland
-
-                nixos-generators
-
-                # commit hooks
-                pre-commit
-
-                # proc info
-                acpi
-
-                # pci info
-                pciutils
-                usbutils
-
-                # keyboards
-                qmk
-
-                # kde-connect
-                xdg-desktop-portal
-                xdg-desktop-portal-gtk
-                xdg-desktop-portal-wlr
-
-                ghostscript_headless
-                nixd
-                zig
-                zls
-
-                elk-to-svg
-              ]
-            )
-            ++ lib.optionals minimal [
-              networkmanager
-              curl
-              git
-              gnupg
-              rsync
-              ssh-to-age
-              sops
-              vim
-              just
-              sbctl
-            ];
-
-          nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
-            "jitsi-meet-1.0.8043"
-            "electron-29.4.6"
-            "SDL_ttf-2.0.11"
-            # audacity?
-            "mbedtls-2.28.10"
-            # "qtwebengine-5.15.19"
-          ];
-        };
-      };
-
     homeManager.packages =
       {
         config,
@@ -302,18 +188,7 @@
               seahorse
 
               # latex and related packages
-              (texlive.combine {
-                inherit (pkgs.texlive)
-                  scheme-full
-                  dvisvgm
-                  dvipng # for preview and export as html
-                  wrapfig
-                  amsmath
-                  ulem
-                  hyperref
-                  capt-of
-                  ;
-              })
+              texliveFull
 
               # font stuff
               cantarell-fonts
@@ -323,6 +198,119 @@
               noto-fonts-color-emoji
               font-awesome_5
             ];
+        };
+      };
+    nixos.packages =
+      {
+        config,
+        lib,
+        pkgs,
+        minimal,
+        ...
+      }:
+      {
+        config = {
+
+          environment.systemPackages =
+            with pkgs;
+            lib.optionals (!minimal) (
+              [
+                gnupg
+                yubikey-manager
+
+                # secure boot
+                sbctl
+
+                # better make for general tasks
+                just
+
+                # sops
+                ssh-to-age
+                sops
+
+                # theme related
+                adwaita-icon-theme
+
+                # bluetooth
+                bluez
+                wireguard-tools
+              ]
+              ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
+                # ledger packages
+                ledger-live-desktop
+
+                # keyboards
+                vial
+                via
+              ]
+              ++ lib.optionals config.swarselsystems.isFullBuild [
+                # yubikey packages
+                yubikey-personalization
+                yubico-pam
+                yubioath-flutter
+                yubikey-touch-detector
+                yubico-piv-tool
+                cfssl
+                pcsc-tools
+                pcscliteWithPolkit.out
+
+                # pinentry
+                dbus
+                # swaylock-effects
+                syncthingtray-minimal
+                swayosd
+
+                qt5.qtwayland
+
+                nixos-generators
+
+                # commit hooks
+                pre-commit
+
+                # proc info
+                acpi
+
+                # pci info
+                pciutils
+                usbutils
+
+                # keyboards
+                qmk
+
+                # kde-connect
+                xdg-desktop-portal
+                xdg-desktop-portal-gtk
+                xdg-desktop-portal-wlr
+
+                ghostscript_headless
+                nixd
+                zig
+                zls
+
+                elk-to-svg
+              ]
+            )
+            ++ lib.optionals minimal [
+              networkmanager
+              curl
+              git
+              gnupg
+              rsync
+              ssh-to-age
+              sops
+              vim
+              just
+              sbctl
+            ];
+
+          nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
+            "jitsi-meet-1.0.8043"
+            "electron-29.4.6"
+            "SDL_ttf-2.0.11"
+            # audacity?
+            "mbedtls-2.28.10"
+            # "qtwebengine-5.15.19"
+          ];
         };
       };
   };

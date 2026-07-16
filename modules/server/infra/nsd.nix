@@ -2,11 +2,11 @@
   flake.modules.nixos.nsd =
     {
       self,
-      lib,
       config,
-      globals,
-      dns,
+      lib,
       confLib,
+      dns,
+      globals,
       ...
     }:
     let
@@ -15,38 +15,34 @@
           name = "nsd";
           port = 53;
         })
-        serviceName
-        servicePort
         proxyAddress4
         proxyAddress6
+        serviceName
+        servicePort
         ;
       inherit (config.swarselsystems) sopsFile;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "nsd" ];
-
+        topology.self.services.${serviceName} = {
+          icon = "${self}/files/topology-images/${serviceName}.png";
+          name = lib.toUpper serviceName;
+        };
         sops.secrets = {
           tsig-key = { inherit sopsFile; };
         };
-
-        # services.resolved.enable = false;
-        networking = {
-          # nameservers = [ "1.1.1.1" "8.8.8.8" ];
-          firewall = {
-            allowedUDPPorts = [ servicePort ];
-            allowedTCPPorts = [ servicePort ];
-          };
-        };
-
-        topology.self.services.${serviceName} = {
-          name = lib.toUpper serviceName;
-          icon = "${self}/files/topology-images/${serviceName}.png";
-        };
-
         services.nsd = {
           enable = true;
+          interfaces = [
+            "10.1.2.157"
+            "2603:c020:801f:a0cc::9d"
+          ];
           keys = {
+            "${globals.domains.main}" = {
+              algorithm = "hmac-sha256";
+              keyFile = config.sops.secrets.tsig-key.path;
+            };
             "${globals.domains.main}.${proxyAddress4}" = {
               algorithm = "hmac-sha256";
               keyFile = config.sops.secrets.tsig-key.path;
@@ -55,15 +51,7 @@
               algorithm = "hmac-sha256";
               keyFile = config.sops.secrets.tsig-key.path;
             };
-            "${globals.domains.main}" = {
-              algorithm = "hmac-sha256";
-              keyFile = config.sops.secrets.tsig-key.path;
-            };
           };
-          interfaces = [
-            "10.1.2.157"
-            "2603:c020:801f:a0cc::9d"
-          ];
           zones = {
             "${globals.domains.main}" =
               let
@@ -81,28 +69,35 @@
 
               in
               {
-                outgoingInterface = "2603:c020:801f:a0cc::9d";
-                notify = transferList ++ [
-                  "216.218.130.2 ${keyName}"
-                ];
-                provideXFR = transferList ++ [
-                  "216.218.133.2 ${keyName}"
-                  "2001:470:600::2 ${keyName}"
-                ];
-
                 # dnssec = true;
                 data = dns.lib.toString "${globals.domains.main}" (
                   import ./_nsd-site1.nix {
                     inherit
                       config
-                      globals
                       dns
+                      globals
                       proxyAddress4
                       proxyAddress6
                       ;
                   }
                 );
+                notify = transferList ++ [
+                  "216.218.130.2 ${keyName}"
+                ];
+                outgoingInterface = "2603:c020:801f:a0cc::9d";
+                provideXFR = transferList ++ [
+                  "216.218.133.2 ${keyName}"
+                  "2001:470:600::2 ${keyName}"
+                ];
               };
+          };
+        };
+        # services.resolved.enable = false;
+        networking = {
+          # nameservers = [ "1.1.1.1" "8.8.8.8" ];
+          firewall = {
+            allowedTCPPorts = [ servicePort ];
+            allowedUDPPorts = [ servicePort ];
           };
         };
 

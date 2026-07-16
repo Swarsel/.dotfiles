@@ -1,7 +1,7 @@
 {
   flake-file.inputs.invidious-companion = {
-    url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
     flake = false;
+    url = "https://github.com/iv-org/invidious-companion/releases/download/release-master/invidious_companion-x86_64-unknown-linux-gnu.tar.gz";
   };
 
   flake.modules.nixos.invidious-companion =
@@ -12,11 +12,11 @@
           {
             self,
             inputs,
+            config,
             lib,
             pkgs,
-            config,
-            globals,
             confLib,
+            globals,
             ...
           }:
           let
@@ -25,44 +25,68 @@
                 name = "invidious-companion";
                 port = 8282;
               })
-              servicePort
-              serviceName
-              serviceAddress
               proxyAddress4
               proxyAddress6
+              serviceAddress
+              serviceName
+              servicePort
               ;
             inherit (confLib.gen { name = "invidious"; }) serviceDomain;
             inherit (confLib.static)
-              isHome
-              webProxy
-              homeWebProxy
               homeServiceAddress
+              homeWebProxy
+              isHome
               nginxAccessRules
+              webProxy
               ;
 
             sopsFile = self + /secrets/general/invidious-companion.yaml;
             companion = pkgs.stdenv.mkDerivation {
-              name = "invidious-companion";
-              src = inputs.invidious-companion;
-              nativeBuildInputs = [ pkgs.autoPatchelfHook ];
               buildInputs = [
                 pkgs.stdenv.cc.cc.lib
                 pkgs.openssl
-              ];
-              phases = [
-                "unpackPhase"
-                "installPhase"
               ];
               installPhase = ''
                 mkdir -p $out/bin
                 cp invidious_companion $out/bin/invidious_companion
                 chmod +x $out/bin/invidious_companion
               '';
+              name = "invidious-companion";
+              nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+              phases = [
+                "unpackPhase"
+                "installPhase"
+              ];
+              src = inputs.invidious-companion;
             };
           in
           {
             swarselsystems.enabledServerModules = [ "invidious-companion" ];
-
+            topology.self.services.${serviceName} = {
+              icon = "services.invidious";
+              info = "https://${serviceDomain}/companion";
+              name = "invidious-companion";
+            };
+            globals = {
+              services = confLib.mkServiceGlobal {
+                inherit
+                  homeServiceAddress
+                  isHome
+                  proxyAddress4
+                  proxyAddress6
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  ;
+              };
+              dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+              monitoring.http = confLib.mkHttpMonitoring {
+                inherit serviceName servicePort;
+                expectedBodyRegex = "OK";
+                path = "/healthz";
+              };
+              networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+            };
             sops = {
               secrets = {
                 invidious-companion-key = {
@@ -81,48 +105,18 @@
                 };
               };
             };
-
-            topology.self.services.${serviceName} = {
-              name = "invidious-companion";
-              info = "https://${serviceDomain}/companion";
-              icon = "services.invidious";
-            };
-
-            systemd.services.invidious-companion = {
-              description = "Invidious companion service";
-              wantedBy = [ "multi-user.target" ];
-              after = [ "network.target" ];
-              serviceConfig = {
-                ExecStart = "${companion}/bin/invidious_companion";
-                EnvironmentFile = config.sops.templates."invidious-companion.env".path;
-                Restart = "on-failure";
-                DynamicUser = true;
-              };
-            };
-
             programs.nix-ld.enable = true; # invidious-companion runs as an unpatched deno app
-
-            globals = {
-              networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-              services = confLib.mkServiceGlobal {
-                inherit
-                  serviceName
-                  serviceDomain
-                  proxyAddress4
-                  proxyAddress6
-                  isHome
-                  serviceAddress
-                  homeServiceAddress
-                  ;
+            systemd.services.invidious-companion = {
+              after = [ "network.target" ];
+              description = "Invidious companion service";
+              serviceConfig = {
+                DynamicUser = true;
+                EnvironmentFile = config.sops.templates."invidious-companion.env".path;
+                ExecStart = "${companion}/bin/invidious_companion";
+                Restart = "on-failure";
               };
-              dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-              monitoring.http = confLib.mkHttpMonitoring {
-                inherit serviceName servicePort;
-                path = "/healthz";
-                expectedBodyRegex = "OK";
-              };
+              wantedBy = [ "multi-user.target" ];
             };
-
             nodes =
               let
                 genNginx = toAddress: extraConfig: {
@@ -135,26 +129,26 @@
                   };
                   virtualHosts = {
                     "${serviceDomain}" = {
-                      useACMEHost = globals.domains.main;
-                      forceSSL = true;
-                      acmeRoot = null;
                       inherit extraConfig;
+                      acmeRoot = null;
+                      forceSSL = true;
                       locations = {
                         "/companion" = {
-                          proxyPass = "http://${serviceName}";
                           bypassAuth = true;
+                          proxyPass = "http://${serviceName}";
                         };
                       };
+                      useACMEHost = globals.domains.main;
                     };
                   };
                 };
                 homeInvidiousFallback = lib.optionalAttrs (!globals.services.invidious.isHome) {
                   virtualHosts.${serviceDomain}.locations."/" = {
-                    proxyPass = "https://${globals.services.invidious.proxyAddress4}";
                     extraConfig = ''
                       proxy_ssl_server_name on;
                       proxy_ssl_name ${serviceDomain};
                     '';
+                    proxyPass = "https://${globals.services.invidious.proxyAddress4}";
                   };
                 };
               in

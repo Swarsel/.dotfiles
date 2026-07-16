@@ -1,60 +1,6 @@
 {
   flake.modules.homeManager.emacs-init = {
     config.programs.emacs.init.usePackage.general = {
-      enable = true;
-      init = ''
-        (defun swarsel/last-buffer () (interactive) (switch-to-buffer nil))
-
-        (defun crux-get-positions-of-line-or-region ()
-          "Return positions (beg . end) of the current line or region."
-          (let (beg end)
-            (if (and mark-active (> (point) (mark)))
-                (exchange-point-and-mark))
-            (setq beg (line-beginning-position))
-            (if mark-active
-                (exchange-point-and-mark))
-            (setq end (line-end-position))
-            (cons beg end)))
-
-        (defun crux-duplicate-current-line-or-region (arg)
-          "Duplicates the current line or region ARG times.
-          If there's no region, the current line will be duplicated.  However, if
-          there's a region, all lines that region covers will be duplicated."
-          (interactive "p")
-          (pcase-let* ((origin (point))
-                       (`(,beg . ,end) (crux-get-positions-of-line-or-region))
-                       (region (buffer-substring-no-properties beg end)))
-            (dotimes (_i arg)
-              (goto-char end)
-              (newline)
-              (insert region)
-              (setq end (point)))
-            (goto-char (+ origin (* (length region) arg) arg))))
-
-        (defun crux-duplicate-and-comment-current-line-or-region (arg)
-          "Duplicates and comments the current line or region ARG times.
-        If there's no region, the current line will be duplicated.  However, if
-        there's a region, all lines that region covers will be duplicated."
-          (interactive "p")
-          (pcase-let* ((origin (point))
-                       (`(,beg . ,end) (crux-get-positions-of-line-or-region))
-                       (region (buffer-substring-no-properties beg end)))
-            (comment-or-uncomment-region beg end)
-            (setq end (line-end-position))
-            (dotimes (_ arg)
-              (goto-char end)
-              (newline)
-              (insert region)
-              (setq end (point)))
-            (goto-char (+ origin (* (length region) arg) arg))))
-
-        (eval-and-compile
-          (require 'general)
-          (general-create-definer swarsel/leader-keys
-            :keymaps '(normal insert visual emacs)
-            :prefix "SPC"
-            :global-prefix "C-SPC"))
-      '';
       config = ''
         (swarsel/leader-keys
           "e"  '(:ignore e :which-key "evil")
@@ -115,6 +61,60 @@
          "<undo>" 'evil-undo
          "<redo>" 'evil-redo
          )
+      '';
+      enable = true;
+      init = ''
+        (defun swarsel/last-buffer () (interactive) (switch-to-buffer nil))
+
+        (defun crux-get-positions-of-line-or-region ()
+          "Return positions (beg . end) of the current line or region."
+          (let (beg end)
+            (if (and mark-active (> (point) (mark)))
+                (exchange-point-and-mark))
+            (setq beg (line-beginning-position))
+            (if mark-active
+                (exchange-point-and-mark))
+            (setq end (line-end-position))
+            (cons beg end)))
+
+        (defun crux-duplicate-current-line-or-region (arg)
+          "Duplicates the current line or region ARG times.
+          If there's no region, the current line will be duplicated.  However, if
+          there's a region, all lines that region covers will be duplicated."
+          (interactive "p")
+          (pcase-let* ((origin (point))
+                       (`(,beg . ,end) (crux-get-positions-of-line-or-region))
+                       (region (buffer-substring-no-properties beg end)))
+            (dotimes (_i arg)
+              (goto-char end)
+              (newline)
+              (insert region)
+              (setq end (point)))
+            (goto-char (+ origin (* (length region) arg) arg))))
+
+        (defun crux-duplicate-and-comment-current-line-or-region (arg)
+          "Duplicates and comments the current line or region ARG times.
+        If there's no region, the current line will be duplicated.  However, if
+        there's a region, all lines that region covers will be duplicated."
+          (interactive "p")
+          (pcase-let* ((origin (point))
+                       (`(,beg . ,end) (crux-get-positions-of-line-or-region))
+                       (region (buffer-substring-no-properties beg end)))
+            (comment-or-uncomment-region beg end)
+            (setq end (line-end-position))
+            (dotimes (_ arg)
+              (goto-char end)
+              (newline)
+              (insert region)
+              (setq end (point)))
+            (goto-char (+ origin (* (length region) arg) arg))))
+
+        (eval-and-compile
+          (require 'general)
+          (general-create-definer swarsel/leader-keys
+            :keymaps '(normal insert visual emacs)
+            :prefix "SPC"
+            :global-prefix "C-SPC"))
       '';
     };
   };

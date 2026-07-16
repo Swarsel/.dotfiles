@@ -1,11 +1,11 @@
 {
   flake.modules.nixos.blackbox =
     {
-      lib,
       config,
-      globals,
-      confLib,
+      lib,
       pkgs,
+      confLib,
+      globals,
       ...
     }:
     let
@@ -14,16 +14,14 @@
           name = "blackbox";
           port = 9115;
         })
-        servicePort
         serviceName
+        servicePort
         ;
 
       mkHttpModule = cfg: {
-        prober = "http";
-        timeout = "10s";
         http = {
-          method = "GET";
           follow_redirects = true;
+          method = "GET";
           preferred_ip_protocol = "ip4";
           tls_config.insecure_skip_verify = true;
           valid_status_codes = [ cfg.expectedStatus ];
@@ -37,15 +35,17 @@
         // lib.optionalAttrs (cfg.hostHeader != null) {
           headers.Host = cfg.hostHeader;
         };
+        prober = "http";
+        timeout = "10s";
       };
 
       blackboxConfig = pkgs.writeText "blackbox.yml" (
         builtins.toJSON {
           modules = {
             icmp = {
+              icmp.preferred_ip_protocol = "ip4";
               prober = "icmp";
               timeout = "5s";
-              icmp.preferred_ip_protocol = "ip4";
             };
           }
           // lib.mapAttrs' (
@@ -110,11 +110,11 @@
         lib.mapAttrsToList (
           name: cfg:
           {
+            inherit name;
+            inherit (cfg) network;
             __address__ = cfg.url;
             __param_module = "http_${name}";
-            inherit name;
             probe = "http";
-            inherit (cfg) network;
           }
           // lib.optionalAttrs (cfg.expectedBodyRegex != null) {
             expected_body_regex = cfg.expectedBodyRegex;
@@ -127,32 +127,28 @@
 
       pingTargets = targetsFor config.node.name (
         lib.mapAttrsToList (name: cfg: {
+          inherit name;
+          inherit (cfg) network;
           __address__ = cfg.host;
           __param_module = "icmp";
-          inherit name;
           probe = "ping";
-          inherit (cfg) network;
         }) globals.monitoring.ping
       );
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
-        globals.services.${serviceName}.extraConfig.port = servicePort;
-
         topology.self.services.${serviceName} = {
-          name = "blackbox-exporter";
           icon = "services.prometheus";
+          name = "blackbox-exporter";
         };
-
+        globals.services.${serviceName}.extraConfig.port = servicePort;
         services.prometheus.exporters.blackbox = {
           enable = true;
-          port = servicePort;
-          listenAddress = "127.0.0.1";
           configFile = blackboxConfig;
+          listenAddress = "127.0.0.1";
+          port = servicePort;
         };
-
         environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
           lib.mkAfter (
             lib.optionalString (httpTargets != [ ]) (mkBlackboxBlock {
@@ -165,7 +161,6 @@
             })
           )
         );
-
         nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
           let
             defaultProbeFor = "3m";
@@ -182,22 +177,22 @@
                 selector = ''probe="http",name=~"${lib.concatStringsSep "|" names}"'';
               in
               confLib.mkGrafanaAlertRule {
-                uid =
-                  if forDuration == defaultProbeFor then "http_probe_failed" else "http_probe_failed_${forDuration}";
+                inherit forDuration;
+                expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
+                summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
                 title = "HTTP probe failed${
                   lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"
                 }";
-                expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
-                inherit forDuration;
-                summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
+                uid =
+                  if forDuration == defaultProbeFor then "http_probe_failed" else "http_probe_failed_${forDuration}";
               };
           in
           [
             {
-              orgId = 1;
-              name = "blackbox";
               folder = "Infrastructure";
               interval = "1m";
+              name = "blackbox";
+              orgId = 1;
               rules = lib.mapAttrsToList mkProbeRule probesByFor;
             }
           ];

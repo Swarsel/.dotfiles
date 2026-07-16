@@ -2,9 +2,9 @@
   flake.modules.nixos.jellyfin =
     {
       self,
-      pkgs,
-      lib,
       config,
+      lib,
+      pkgs,
       confLib,
       ...
     }:
@@ -14,31 +14,56 @@
           name = "jellyfin";
           port = 8096;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
+        isHome
         nginxAccessRules
-        homeServiceAddress
+        webProxy
         ;
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "jellyfin" ];
-
+        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Healthy";
+            path = "/health";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
+        sops.secrets.kanidm-jellyfin = {
+          group = serviceGroup;
+          mode = "0440";
+          owner = serviceUser;
+          sopsFile = kanidmSopsFile;
+        };
         users = {
-          persistentIds.jellyfin = confLib.mkIds 994;
           users.${serviceUser} = {
             extraGroups = [
               "video"
@@ -46,18 +71,30 @@
               "users"
             ];
           };
+          persistentIds.jellyfin = confLib.mkIds 994;
         };
-
-        sops.secrets.kanidm-jellyfin = {
-          sopsFile = kanidmSopsFile;
-          owner = serviceUser;
-          group = serviceGroup;
-          mode = "0440";
+        services.${serviceName} = {
+          enable = true;
+          user = serviceUser;
+          # openFirewall = true; # this works only for the default ports
+        };
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+            {
+              directory = "/var/cache/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
         };
         # nixpkgs.config.packageOverrides = pkgs: {
         #   intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
         # };
-
         hardware.graphics = {
           enable = true;
           extraPackages = with pkgs; [
@@ -67,55 +104,10 @@
             libvdpau-va-gl
           ];
         };
-
-        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/health";
-            expectedBodyRegex = "Healthy";
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
-        services.${serviceName} = {
-          enable = true;
-          user = serviceUser;
-          # openFirewall = true; # this works only for the default ports
-        };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-            {
-              directory = "/var/cache/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
+              inherit kanidmSopsFile serviceDomain serviceName;
               originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
             };
           }
@@ -123,9 +115,9 @@
             ${webProxy}.services.nginx = lib.recursiveUpdate (confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
               maxBody = 0;
             }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; };
@@ -133,9 +125,9 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               lib.recursiveUpdate (confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
                 serviceAddress = homeServiceAddress;
               }) { virtualHosts.${serviceDomain}.locations."/".X-Frame-Options = "SAMEORIGIN"; }
             );

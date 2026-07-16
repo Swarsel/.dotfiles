@@ -5,15 +5,14 @@
     '';
 
     usePackage = {
+      treesit-fold = {
+        config = "(global-treesit-fold-mode 1)";
+        enable = true;
+      };
       treesit-grammars = {
         enable = true;
         package = epkgs: epkgs.treesit-grammars.with-all-grammars;
         enableUsePackage = false;
-      };
-
-      treesit-fold = {
-        enable = true;
-        config = "(global-treesit-fold-mode 1)";
       };
     };
   };

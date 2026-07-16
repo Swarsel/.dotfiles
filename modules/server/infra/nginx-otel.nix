@@ -1,7 +1,7 @@
 {
   flake-file.inputs.nginx-otel = {
-    url = "github:djvcom/nix-nginx-otel";
     inputs.nixpkgs.follows = "nixpkgs";
+    url = "github:djvcom/nix-nginx-otel";
   };
 
   flake.modules.nixos.nginx-otel =
@@ -12,8 +12,8 @@
         ({ config, globals, ... }: {
           services.nginx.otel = {
             enable = true;
-            serviceName = "nginx-${config.node.name}";
             endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+            serviceName = "nginx-${config.node.name}";
           };
         })
       ];

@@ -24,7 +24,35 @@
     inputs.self.modules.nixos.remotebuild
   ];
 
-  node.lockFromBootstrapping = lib.mkForce false;
+  swarselsystems = {
+    flakePath = "/root/.dotfiles";
+    info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
+    isBtrfs = true;
+    isCloud = true;
+    isCrypted = true;
+    isImpermanence = true;
+    isLinux = true;
+    isSecureBoot = false;
+    isSwap = false;
+    proxyHost = "twothreetunnel";
+    rootDisk = "/dev/sda";
+    server = {
+      garage = {
+        buckets = [
+          "attic"
+        ];
+        data_dir = {
+          capacity = "150G";
+          path = "/var/lib/garage/data";
+        };
+        keys = {
+          nixos = [
+            "attic"
+          ];
+        };
+      };
+    };
+  };
 
   topology.self = {
     icon = "devices.cloud-server";
@@ -36,33 +64,5 @@
     mode = "0400";
   };
 
-  swarselsystems = {
-    flakePath = "/root/.dotfiles";
-    info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
-    isImpermanence = true;
-    isSecureBoot = false;
-    isCrypted = true;
-    isSwap = false;
-    rootDisk = "/dev/sda";
-    isBtrfs = true;
-    isLinux = true;
-    isCloud = true;
-    proxyHost = "twothreetunnel";
-    server = {
-      garage = {
-        data_dir = {
-          capacity = "150G";
-          path = "/var/lib/garage/data";
-        };
-        keys = {
-          nixos = [
-            "attic"
-          ];
-        };
-        buckets = [
-          "attic"
-        ];
-      };
-    };
-  };
+  node.lockFromBootstrapping = lib.mkForce false;
 }

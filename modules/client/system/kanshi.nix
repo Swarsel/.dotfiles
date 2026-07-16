@@ -2,28 +2,26 @@
   flake.modules.homeManager.kanshi =
     {
       self,
-      pkgs,
       config,
+      pkgs,
       confLib,
       ...
     }:
     {
       config = {
-        swarselsystems.enabledHomeModules = [ "kanshi" ];
         swarselsystems = {
           monitors = {
             homedesktop = rec {
-              name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
               mode = "2560x1440";
-              scale = "1";
-              position = "0,0";
-              workspace = "11:M";
+              name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
               output = name;
+              position = "0,0";
+              scale = "1";
+              workspace = "11:M";
             };
           };
         };
-
-        systemd.user.services.kanshi = confLib.overrideTarget "sway-session.target";
+        swarselsystems.enabledHomeModules = [ "kanshi" ];
         services.kanshi = {
           enable = true;
           settings = [
@@ -39,21 +37,21 @@
               # home main screen
               output = {
                 criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-                scale = 1.0;
                 mode = "2560x1440";
+                scale = 1.0;
               };
             }
             {
               profile = {
-                name = "lidopen";
                 exec = [
                   "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
                 ];
+                name = "lidopen";
                 outputs = [
                   {
                     criteria = config.swarselsystems.sharescreen;
-                    status = "enable";
                     scale = 1.0;
+                    status = "enable";
                   }
                 ];
               };
@@ -64,23 +62,23 @@
                   monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
                 in
                 {
-                  name = "lidopen";
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
                     "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
                   ];
+                  name = "lidopen";
                   outputs = [
                     {
                       criteria = config.swarselsystems.sharescreen;
-                      status = "enable";
-                      scale = 1.7;
                       position = "2560,0";
+                      scale = 1.7;
+                      status = "enable";
                     }
                     {
                       criteria = monitor;
-                      scale = 1.0;
                       mode = "2560x1440";
                       position = "0,0";
+                      scale = 1.0;
                     }
                   ];
                 };
@@ -91,27 +89,28 @@
                   monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
                 in
                 {
-                  name = "lidclosed";
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
                   ];
+                  name = "lidclosed";
                   outputs = [
                     {
                       criteria = config.swarselsystems.sharescreen;
-                      status = "disable";
                       position = "2560,0";
+                      status = "disable";
                     }
                     {
                       criteria = monitor;
-                      scale = 1.0;
                       mode = "2560x1440";
                       position = "0,0";
+                      scale = 1.0;
                     }
                   ];
                 };
             }
           ];
         };
+        systemd.user.services.kanshi = confLib.overrideTarget "sway-session.target";
       };
     };
 }

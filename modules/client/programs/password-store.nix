@@ -1,9 +1,9 @@
 {
   flake.modules.homeManager.password-store =
     {
-      pkgs,
-      lib,
       config,
+      lib,
+      pkgs,
       ...
     }:
     {
@@ -11,10 +11,10 @@
         swarselsystems.enabledHomeModules = [ "passwordstore" ];
         programs.password-store = {
           enable = true;
+          package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
           settings = {
             PASSWORD_STORE_DIR = "${config.home.homeDirectory}/.local/share/password-store";
           };
-          package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
         };
         home.activation.setupPasswordStore = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           set -eu

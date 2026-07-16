@@ -3,8 +3,8 @@
   perSystem =
     {
       lib,
-      system,
       pkgs,
+      system,
       ...
     }:
     lib.optionalAttrs (system == "x86_64-linux") {

@@ -1,10 +1,10 @@
 {
   flake-file.inputs.spicetify-nix = {
-    url = "github:Gerg-l/spicetify-nix";
     inputs = {
       nixpkgs.follows = "nixpkgs";
       systems.follows = "systems";
     };
+    url = "github:Gerg-l/spicetify-nix";
   };
 
   flake.modules.homeManager.spicetify =
@@ -26,8 +26,6 @@
             swarselsystems.enabledHomeModules = [ "spicetify" ];
             programs.spicetify = {
               enable = true;
-              # spotifyPackage = pkgs.stable24_11.spotify;
-              spotifyPackage = pkgs.spotify;
               enabledExtensions = with spicePkgs.extensions; [
                 fullAppDisplay
                 shuffle
@@ -36,6 +34,8 @@
                 skipStats
                 history
               ];
+              # spotifyPackage = pkgs.stable24_11.spotify;
+              spotifyPackage = pkgs.spotify;
             };
           }
         )

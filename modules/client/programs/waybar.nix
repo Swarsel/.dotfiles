@@ -32,34 +32,34 @@
     {
       options.swarselsystems = {
         cpuCount = lib.mkOption {
-          type = lib.types.int;
           default = 8;
+          type = lib.types.int;
+        };
+        cpuString = lib.mkOption {
+          default = generateIcons config.swarselsystems.cpuCount;
+          description = "The generated icons string for use by Waybar.";
+          internal = true;
+          type = lib.types.str;
         };
         temperatureHwmon = {
+          input-filename = lib.mkOption {
+            default = "";
+            type = lib.types.str;
+          };
           isAbsolutePath = lib.mkEnableOption "absolute temperature path";
           path = lib.mkOption {
-            type = lib.types.str;
             default = "";
-          };
-          input-filename = lib.mkOption {
             type = lib.types.str;
-            default = "";
           };
         };
         waybarModules = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
           default =
             modulesLeft
             ++ [
               "custom/pseudobat"
             ]
             ++ modulesRight;
-        };
-        cpuString = lib.mkOption {
-          type = lib.types.str;
-          default = generateIcons config.swarselsystems.cpuCount;
-          description = "The generated icons string for use by Waybar.";
-          internal = true;
+          type = lib.types.listOf lib.types.str;
         };
       };
       config = {
@@ -76,88 +76,127 @@
             ++ modulesRight
           );
         };
-
         services.playerctld.enable = true;
-
         programs.waybar = {
           enable = true;
-          systemd = {
-            enable = false;
-            targets = [
-              "sway-session.target"
-            ];
-            # inherit (config.wayland.systemd) target;
-          };
           settings = {
             mainBar = {
-              ipc = true;
-              id = "bar-0";
-              # mode = "hide";
-              # mode = "overlay";
-              # passthrough = false;
-              # start_hidden = true;
-              layer = "top";
-              position = "top";
-              modules-left = [
-                "sway/workspaces"
-                "niri/workspaces"
-                "custom/outer-right-arrow-dark"
-                "niri/window"
-                "sway/window"
-              ];
-              modules-center = [
-                "sway/mode"
-                "privacy"
-                "custom/github"
-                "custom/configwarn"
-                "custom/nix-updates"
-              ];
-              "sway/mode" = {
-                format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+              "backlight/slider" = {
+                device = "intel_backlight";
+                max = 100;
+                min = 0;
+                orientation = "horizontal";
               };
-
-              "niri/window" = {
-                format = "<span style=\"italic\" font-weight=\"bold\">{title} ({app_id})</span>";
+              battery = {
+                format = "{icon} {capacity}%";
+                format-charging = "{capacity}% ";
+                format-icons = [
+                  ""
+                  ""
+                  ""
+                  ""
+                  ""
+                ];
+                format-plugged = "{capacity}% ";
+                interval = 5;
+                on-click-right = "wlogout -p layer-shell";
+                states = {
+                  "critical" = 15;
+                  "error" = 30;
+                  "warning" = 60;
+                };
               };
-
-              modules-right = config.swarselsystems.waybarModules;
-
-              "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
-                format = "";
-                on-click-right = "${pkgs.wlogout}/bin/wlogout -p layer-shell";
+              "clock#1" = {
+                format = "{:%H:%M:%S}";
+                interval = 1;
+                min-length = 8;
+                tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
               };
+              "clock#2" = {
+                format = "{:%d. %B %Y}";
+                tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+              };
+              cpu = {
+                format = config.swarselsystems.cpuString;
+                format-icons = [
+                  "▁"
+                  "▂"
+                  "▃"
+                  "▄"
+                  "▅"
+                  "▆"
+                  "▇"
+                  "█"
+                ];
+                interval = 5;
+                min-length = 6;
+                on-click-right = "${pkgs.kitty}/bin/kitty -o confirm_os_window_close=0 btm";
 
+              };
               "custom/configwarn" = {
                 exec = "${pkgs.waybarupdate}/bin/waybarupdate";
                 interval = 60;
               };
-
+              "custom/github" = {
+                exec = "${pkgs.github-notifications}/bin/github-notifications";
+                format = "{}  ";
+                interval = 60;
+                on-click = "${pkgs.xdg-utils}/bin/xdg-open https://github.com/notifications";
+                return-type = "json";
+              };
+              "custom/left-arrow-dark" = {
+                format = "";
+                tooltip = false;
+              };
+              "custom/left-arrow-light" = {
+                format = "";
+                tooltip = false;
+              };
+              "custom/outer-left-arrow-dark" = {
+                format = "";
+                tooltip = false;
+              };
+              "custom/outer-right-arrow-dark" = {
+                format = "";
+                tooltip = false;
+              };
+              "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
+                format = "";
+                on-click-right = "${pkgs.wlogout}/bin/wlogout -p layer-shell";
+              };
+              "custom/right-arrow-dark" = {
+                format = "";
+                tooltip = false;
+              };
+              "custom/right-arrow-light" = {
+                format = "";
+                tooltip = false;
+              };
               "custom/scratchpad-indicator" = {
-                interval = 3;
                 exec = "${pkgs.swayfx}/bin/swaymsg -t get_tree | ${pkgs.jq}/bin/jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
                 format = "{} ";
+                interval = 3;
                 on-click = "${pkgs.swayfx}/bin/swaymsg 'scratchpad show'";
                 on-click-right = "${pkgs.swayfx}/bin/swaymsg 'move scratchpad'";
               };
-
-              "custom/github" = {
-                format = "{}  ";
+              "custom/vpn" = {
+                exec = "echo '{\"class\": \"connected\"}'";
+                exec-if = "${pkgs.toybox}/bin/test -d /proc/sys/net/ipv4/conf/tun0";
+                format = "()";
+                interval = 5;
                 return-type = "json";
-                interval = 60;
-                exec = "${pkgs.github-notifications}/bin/github-notifications";
-                on-click = "${pkgs.xdg-utils}/bin/xdg-open https://github.com/notifications";
               };
-
-              idle_inhibitor = {
-                format = "{icon}";
-                format-icons = {
-                  activated = "";
-                  deactivated = "";
+              disk = {
+                format = "Disk {percentage_used:2}%";
+                interval = 30;
+                path = "/";
+                states = {
+                  "critical" = 90;
+                  "warning" = 80;
                 };
+                tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
               };
-
               "group/hardware" = {
-                orientation = "inherit";
                 drawer = {
                   "transition-left-to-right" = false;
                 };
@@ -178,42 +217,44 @@
                   "backlight/slider"
                   "idle_inhibitor"
                 ];
+                orientation = "inherit";
               };
-
-              "backlight/slider" = {
-                min = 0;
-                max = 100;
-                orientation = "horizontal";
-                device = "intel_backlight";
-              };
-
-              power-profiles-daemon = {
+              id = "bar-0";
+              idle_inhibitor = {
                 format = "{icon}";
-                tooltip-format = "Power profile: {profile}\nDriver: {driver}";
-                tooltip = true;
                 format-icons = {
-                  "default" = "";
-                  "performance" = "";
-                  "balanced" = "";
-                  "power-saver" = "";
+                  activated = "";
+                  deactivated = "";
                 };
               };
-
-              temperature = {
-                hwmon-path = lib.mkIf (
-                  !config.swarselsystems.temperatureHwmon.isAbsolutePath
-                ) config.swarselsystems.temperatureHwmon.path;
-                hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
-                input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
-                critical-threshold = 80;
-                format-critical = " {temperatureC}°C";
-                format = " {temperatureC}°C";
-
+              ipc = true;
+              layer = "top";
+              memory = {
+                format = " {}%";
+                interval = 5;
+                tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
               };
-
+              modules-center = [
+                "sway/mode"
+                "privacy"
+                "custom/github"
+                "custom/configwarn"
+                "custom/nix-updates"
+              ];
+              modules-left = [
+                "sway/workspaces"
+                "niri/workspaces"
+                "custom/outer-right-arrow-dark"
+                "niri/window"
+                "sway/window"
+              ];
+              modules-right = config.swarselsystems.waybarModules;
               mpris = {
+                album-len = 10;
+                artist-len = 20;
                 format = "{player_icon} {title} <small>[{position}/{length}]</small>";
                 format-paused = "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
+                interval = 1;
                 player-icons = {
                   "default" = "▶ ";
                   "mpv" = "🎵 ";
@@ -222,145 +263,78 @@
                 status-icons = {
                   "paused" = " ";
                 };
-                interval = 1;
                 title-len = 20;
-                artist-len = 20;
-                album-len = 10;
               };
-              "custom/left-arrow-dark" = {
-                format = "";
-                tooltip = false;
+              network = {
+                format-alt = "{ifname}: {ipaddr}/{cidr}";
+                format-disconnected = "Disconnected ⚠";
+                format-ethernet = "";
+                format-linked = "{ifname} (No IP) ";
+                format-wifi = "{signalStrength}% ";
+                interval = 5;
+                tooltip-format-ethernet = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+                tooltip-format-wifi = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
               };
-              "custom/outer-left-arrow-dark" = {
-                format = "";
-                tooltip = false;
+              "niri/window" = {
+                format = "<span style=\"italic\" font-weight=\"bold\">{title} ({app_id})</span>";
               };
-              "custom/left-arrow-light" = {
-                format = "";
-                tooltip = false;
+              position = "top";
+              power-profiles-daemon = {
+                format = "{icon}";
+                format-icons = {
+                  "balanced" = "";
+                  "default" = "";
+                  "performance" = "";
+                  "power-saver" = "";
+                };
+                tooltip = true;
+                tooltip-format = "Power profile: {profile}\nDriver: {driver}";
               };
-              "custom/right-arrow-dark" = {
-                format = "";
-                tooltip = false;
+              pulseaudio = {
+                format = "{icon} {volume:2}%";
+                format-bluetooth = "{icon} {volume}%";
+                format-icons = {
+                  default = [
+                    ""
+                    ""
+                  ];
+                  headphones = "";
+                };
+                format-muted = "MUTE";
+                on-click = "${pkgs.pamixer}/bin/pamixer -t";
+                on-click-right = "${pkgs.pavucontrol}/bin/pavucontrol";
+                scroll-step = 1;
               };
-              "custom/outer-right-arrow-dark" = {
-                format = "";
-                tooltip = false;
-              };
-              "custom/right-arrow-light" = {
-                format = "";
-                tooltip = false;
+              "sway/mode" = {
+                format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
               };
               "sway/workspaces" = {
                 disable-scroll = true;
                 format = "{name}";
               };
+              temperature = {
+                critical-threshold = 80;
+                format = " {temperatureC}°C";
+                format-critical = " {temperatureC}°C";
+                hwmon-path = lib.mkIf (
+                  !config.swarselsystems.temperatureHwmon.isAbsolutePath
+                ) config.swarselsystems.temperatureHwmon.path;
+                hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
+                input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
 
-              "clock#1" = {
-                min-length = 8;
-                interval = 1;
-                format = "{:%H:%M:%S}";
-                # on-click-right= "gnome-clocks";
-                tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-              };
-
-              "clock#2" = {
-                format = "{:%d. %B %Y}";
-                # on-click-right= "gnome-clocks";
-                tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-              };
-
-              pulseaudio = {
-                format = "{icon} {volume:2}%";
-                format-bluetooth = "{icon} {volume}%";
-                format-muted = "MUTE";
-                format-icons = {
-                  headphones = "";
-                  default = [
-                    ""
-                    ""
-                  ];
-                };
-                scroll-step = 1;
-                on-click = "${pkgs.pamixer}/bin/pamixer -t";
-                on-click-right = "${pkgs.pavucontrol}/bin/pavucontrol";
-              };
-
-              memory = {
-                interval = 5;
-                format = " {}%";
-                tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
-              };
-              cpu = {
-                format = config.swarselsystems.cpuString;
-                min-length = 6;
-                interval = 5;
-                format-icons = [
-                  "▁"
-                  "▂"
-                  "▃"
-                  "▄"
-                  "▅"
-                  "▆"
-                  "▇"
-                  "█"
-                ];
-                # on-click-right= "com.github.stsdc.monitor";
-                on-click-right = "${pkgs.kitty}/bin/kitty -o confirm_os_window_close=0 btm";
-
-              };
-              "custom/vpn" = {
-                format = "()";
-                exec = "echo '{\"class\": \"connected\"}'";
-                exec-if = "${pkgs.toybox}/bin/test -d /proc/sys/net/ipv4/conf/tun0";
-                return-type = "json";
-                interval = 5;
-              };
-              battery = {
-                states = {
-                  "warning" = 60;
-                  "error" = 30;
-                  "critical" = 15;
-                };
-                interval = 5;
-                format = "{icon} {capacity}%";
-                format-charging = "{capacity}% ";
-                format-plugged = "{capacity}% ";
-                format-icons = [
-                  ""
-                  ""
-                  ""
-                  ""
-                  ""
-                ];
-                on-click-right = "wlogout -p layer-shell";
-              };
-              disk = {
-                interval = 30;
-                format = "Disk {percentage_used:2}%";
-                path = "/";
-                states = {
-                  "warning" = 80;
-                  "critical" = 90;
-                };
-                tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
               };
               tray = {
                 icon-size = 20;
               };
-              network = {
-                interval = 5;
-                format-wifi = "{signalStrength}% ";
-                format-ethernet = "";
-                format-linked = "{ifname} (No IP) ";
-                format-disconnected = "Disconnected ⚠";
-                format-alt = "{ifname}: {ipaddr}/{cidr}";
-                tooltip-format-ethernet = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-                tooltip-format-wifi = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-              };
             };
           };
           style = builtins.readFile (self + /files/waybar/style.css);
+          systemd = {
+            enable = false;
+            targets = [
+              "sway-session.target"
+            ];
+          };
         };
       };
     };

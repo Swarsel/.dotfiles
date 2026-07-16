@@ -2,8 +2,8 @@
   flake.modules.homeManager.attic-client =
     {
       config,
-      globals,
       confLib,
+      globals,
       ...
     }:
     let
@@ -11,12 +11,12 @@
     in
     {
       config = {
-        swarselsystems.enabledHomeModules = [ "attic-client" ];
-
-        swarselsystems.homeSopsSecrets = {
-          attic-cache-key = { };
+        swarselsystems = {
+          enabledHomeModules = [ "attic-client" ];
+          homeSopsSecrets = {
+            attic-cache-key = { };
+          };
         };
-
         programs.attic-client = {
           enable = true;
           settings = {
@@ -28,7 +28,6 @@
           };
           watchStore = [ "${mainUser}:${mainUser}" ];
         };
-
         systemd.user.services.attic-config.Unit.After = [ "sops-nix.service" ];
       };
     };

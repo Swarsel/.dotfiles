@@ -1,39 +1,12 @@
 {
   flake.modules = {
-    nixos.sway =
-      {
-        lib,
-        config,
-        pkgs,
-        withHomeManager,
-        ...
-      }:
-      let
-        inherit (config.swarselsystems) mainUser;
-      in
-      {
-        config = {
-          programs.sway = {
-            enable = true;
-            package = pkgs.swayfx;
-            wrapperFeatures = {
-              base = true;
-              gtk = true;
-            };
-          };
-        }
-        // lib.optionalAttrs withHomeManager {
-          inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
-        };
-      };
-
     homeManager = {
       sway =
         {
           config,
           lib,
-          vars,
           confLib,
+          vars,
           nixosConfig ? null,
           ...
         }:
@@ -51,59 +24,69 @@
         in
         {
           config = {
-            swarselsystems.enabledHomeModules = [ "sway" ];
             swarselsystems = {
+              swayfxConfig = lib.mkIf (nixosConfig == null) " ";
               touchpad = lib.mkIf config.swarselsystems.isLaptop {
                 "type:touchpad" = {
-                  dwt = "enabled";
-                  tap = "enabled";
-                  natural_scroll = "enabled";
-                  middle_emulation = "enabled";
                   drag_lock = "disabled";
+                  dwt = "enabled";
+                  middle_emulation = "enabled";
+                  natural_scroll = "enabled";
+                  tap = "enabled";
                 };
               };
-              swayfxConfig = lib.mkIf (nixosConfig == null) " ";
             };
-
+            swarselsystems.enabledHomeModules = [ "sway" ];
             home.sessionVariables = {
               EDITOR = lib.mkDefault "e -w";
             };
-
             wayland.windowManager.sway = {
-              enable = true;
-              # checkConfig = false; # delete this line once SwayFX is fixed upstream
-              package = lib.mkIf (nixosConfig != null) null;
-              systemd = {
-                enable = true;
-                xdgAutostart = true;
-                variables = [
-                  "DISPLAY"
-                  "WAYLAND_DISPLAY"
-                  "SWAYSOCK"
-                  "XDG_CURRENT_DESKTOP"
-                  "XDG_SESSION_TYPE"
-                  "NIXOS_OZONE_WL"
-                  "XCURSOR_THEME"
-                  "XCURSOR_SIZE"
-                ];
-              };
-              wrapperFeatures = {
-                base = true;
-                gtk = true;
-              };
               config = rec {
-                modifier = "Mod4";
-                # terminal = "kitty";
-                menu = "fuzzel";
+                assigns = {
+                  "15:L" = [ { app_id = "teams-for-linux"; } ];
+                };
                 bars = [
                   {
                     command = "waybar";
-                    mode = "hide";
-                    hiddenState = "hide";
-                    position = "top";
                     extraConfig = "modifier Mod4";
+                    hiddenState = "hide";
+                    mode = "hide";
+                    position = "top";
                   }
                 ];
+                defaultWorkspace = "workspace 1:一";
+                floating = {
+                  border = 1;
+                  criteria = [
+                    { app_id = "qalculate-gtk"; }
+                    { app_id = "blueman"; }
+                    { app_id = "pavucontrol"; }
+                    { app_id = "syncthingtray"; }
+                    { app_id = "Element"; }
+                    { app_id = "1Password"; }
+                    { app_id = "com.nextcloud.desktopclient.nextcloud"; }
+                    { title = "(?:Open|Save) (?:File|Folder|As)"; }
+                    { title = "^Add$"; }
+                    { title = "^Picture-in-Picture$"; }
+                    { title = "Syncthing Tray"; }
+                    { title = "^Emacs Popup Frame$"; }
+                    { title = "^Emacs Popup Anchor$"; }
+                    { title = "^spotifytui$"; }
+                    { title = "^kittyterm$"; }
+                    { app_id = "vesktop"; }
+                    { window_role = "pop-up"; }
+                    { window_role = "bubble"; }
+                    { window_role = "dialog"; }
+                    { window_role = "task_dialog"; }
+                    { window_role = "menu"; }
+                    { window_role = "Preferences"; }
+                  ];
+                  titlebar = false;
+                };
+                gaps = {
+                  inner = 5;
+                };
+                input = config.swarselsystems.standardinputs;
                 keybindings =
                   let
                     inherit (config.wayland.windowManager.sway.config) modifier;
@@ -191,17 +174,19 @@
                       "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
                     "${modifier}+w" = "exec swarselcheck -e";
                     "${modifier}+x" = "exec swarselcheck -k";
+                    "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
+                    "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
                     # "${modifier}+Escape" = "mode $exit";
                     # "${modifier}+Return" = "exec kitty";
                     "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
-                    "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
-                    "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
-                    "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
-                    "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
                     "XF86Display" = "exec wl-mirror eDP-1";
+                    "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
+                    "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
                     # "--no-repeat Super_L" = "exec killall -SIGUSR1 .waybar-wrapped";
                     # "${modifier}+z" = "exec killall -SIGUSR1 .waybar-wrapped";
                   } config.swarselsystems.keybindings;
+                # terminal = "kitty";
+                menu = "fuzzel";
                 modes = {
                   resize = {
                     Down = "resize grow height 10 px or 10 ppt";
@@ -209,61 +194,23 @@
                     Left = "resize shrink width 10 px or 10 ppt";
                     Return = "mode default";
                     Right = "resize grow width 10 px or 10 ppt";
-                    Up = "resize shrink height 10 px or 10 ppt";
                     Tab = "move position center, resize set width 50 ppt height 50 ppt";
+                    Up = "resize shrink height 10 px or 10 ppt";
                   };
                 };
-                defaultWorkspace = "workspace 1:一";
-                input = config.swarselsystems.standardinputs;
-                workspaceOutputAssign =
-                  let
-                    workplaceSets = lib.mapAttrs' eachOutput config.swarselsystems.monitors;
-                    workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
-                  in
-                  workplaceOutputs;
-                startup = config.swarselsystems.startup ++ [
-                  { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
-                  { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
-                  { command = "mako"; }
-                ];
+                modifier = "Mod4";
                 seat = {
                   "*" = {
                     hide_cursor = "when-typing enable";
                   };
                 };
+                startup = config.swarselsystems.startup ++ [
+                  { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
+                  { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
+                  { command = "mako"; }
+                ];
                 window = {
                   border = 1;
-                  titlebar = false;
-                };
-                assigns = {
-                  "15:L" = [ { app_id = "teams-for-linux"; } ];
-                };
-                floating = {
-                  border = 1;
-                  criteria = [
-                    { app_id = "qalculate-gtk"; }
-                    { app_id = "blueman"; }
-                    { app_id = "pavucontrol"; }
-                    { app_id = "syncthingtray"; }
-                    { app_id = "Element"; }
-                    { app_id = "1Password"; }
-                    { app_id = "com.nextcloud.desktopclient.nextcloud"; }
-                    { title = "(?:Open|Save) (?:File|Folder|As)"; }
-                    { title = "^Add$"; }
-                    { title = "^Picture-in-Picture$"; }
-                    { title = "Syncthing Tray"; }
-                    { title = "^Emacs Popup Frame$"; }
-                    { title = "^Emacs Popup Anchor$"; }
-                    { title = "^spotifytui$"; }
-                    { title = "^kittyterm$"; }
-                    { app_id = "vesktop"; }
-                    { window_role = "pop-up"; }
-                    { window_role = "bubble"; }
-                    { window_role = "dialog"; }
-                    { window_role = "task_dialog"; }
-                    { window_role = "menu"; }
-                    { window_role = "Preferences"; }
-                  ];
                   titlebar = false;
                 };
                 window = {
@@ -362,17 +309,16 @@
                     # }
                   ];
                 };
-                gaps = {
-                  inner = 5;
-                };
+                workspaceOutputAssign =
+                  let
+                    workplaceSets = lib.mapAttrs' eachOutput config.swarselsystems.monitors;
+                    workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
+                  in
+                  workplaceOutputs;
               };
-              extraSessionCommands = ''
-                export XDG_CURRENT_DESKTOP=sway;
-                export XDG_SESSION_DESKTOP=sway;
-                export _JAVA_AWT_WM_NONREPARENTING=1;
-                export GITHUB_NOTIFICATION_TOKEN_PATH=${confLib.getConfig.sops.secrets.github-notifications-token.path};
-              ''
-              + vars.waylandExports;
+              enable = true;
+              # checkConfig = false; # delete this line once SwayFX is fixed upstream
+              package = lib.mkIf (nixosConfig != null) null;
               # extraConfigEarly = "
               # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
               # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
@@ -414,6 +360,31 @@
                                       swayfxSettings
                                     }
                     ";
+              extraSessionCommands = ''
+                export XDG_CURRENT_DESKTOP=sway;
+                export XDG_SESSION_DESKTOP=sway;
+                export _JAVA_AWT_WM_NONREPARENTING=1;
+                export GITHUB_NOTIFICATION_TOKEN_PATH=${confLib.getConfig.sops.secrets.github-notifications-token.path};
+              ''
+              + vars.waylandExports;
+              wrapperFeatures = {
+                base = true;
+                gtk = true;
+              };
+              systemd = {
+                enable = true;
+                variables = [
+                  "DISPLAY"
+                  "WAYLAND_DISPLAY"
+                  "SWAYSOCK"
+                  "XDG_CURRENT_DESKTOP"
+                  "XDG_SESSION_TYPE"
+                  "NIXOS_OZONE_WL"
+                  "XCURSOR_THEME"
+                  "XCURSOR_SIZE"
+                ];
+                xdgAutostart = true;
+              };
             };
           };
         };
@@ -430,16 +401,42 @@
               enable = true;
               package = pkgs.swaylock-effects;
               settings = {
-                screenshots = true;
                 clock = true;
                 effect-blur = "7x5";
                 effect-vignette = "0.5:0.5";
                 fade-in = "0.2";
+                screenshots = true;
               };
             };
           };
 
         };
     };
+    nixos.sway =
+      {
+        config,
+        lib,
+        pkgs,
+        withHomeManager,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems) mainUser;
+      in
+      {
+        config = {
+          programs.sway = {
+            enable = true;
+            package = pkgs.swayfx;
+            wrapperFeatures = {
+              base = true;
+              gtk = true;
+            };
+          };
+        }
+        // lib.optionalAttrs withHomeManager {
+          inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
+        };
+      };
   };
 }

@@ -1,7 +1,5 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.ligature = {
-    enable = true;
-    init = "(global-ligature-mode t)";
     config = ''
       (ligature-set-ligatures 'prog-mode
                               '("|||>" "<|||" "<==>" "<!--" "####" "~~>" "***" "||=" "||>"
@@ -18,5 +16,7 @@
                                 "?." "??" "/*" "/=" "/>" "//" "__" "~~" "(*" "*)" "\\\\"
                                 "://" ";;"))
     '';
+    enable = true;
+    init = "(global-ligature-mode t)";
   };
 }

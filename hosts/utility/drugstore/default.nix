@@ -1,8 +1,8 @@
 {
   self,
   config,
-  pkgs,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -30,80 +30,64 @@ in
 {
 
   config = {
-    home-manager.users = {
-      root.home = {
-        inherit stateVersion;
-        file = homeFiles;
-      };
-      swarsel.home = {
-        username = "swarsel";
-        homeDirectory = lib.mkDefault "/home/swarsel";
-        inherit stateVersion;
-        sessionVariables = {
-          FLAKE = "/home/swarsel/.dotfiles";
+    users = {
+      users = {
+        root = {
+          initialHashedPassword = lib.mkForce null;
+          openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
+          password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
         };
-        file = homeFiles;
+        swarsel = {
+          extraGroups = [ "wheel" ];
+          group = "swarsel";
+          isNormalUser = true;
+          name = "swarsel";
+          openssh.authorizedKeys.keys = map builtins.readFile pubKeys;
+          password = "setup"; # this is overwritten after install
+        };
       };
+      allowNoPasswordLogin = true;
+      groups.swarsel = { };
     };
-
-    console.keyMap = "us";
-
-    security = {
-      sudo.extraConfig = ''
-        Defaults env_keep+=SSH_AUTH_SOCK
-        Defaults lecture = never
-      '';
-      pam.sshAgentAuth.enable = true;
+    services = {
+      getty.autologinUser = lib.mkForce "root";
+      openssh = {
+        enable = true;
+        authorizedKeysFiles = lib.mkForce [
+          "/etc/ssh/authorized_keys.d/%u"
+        ];
+        settings.PermitRootLogin = "yes";
+      };
+      qemuGuest.enable = true;
+      xserver.xkb.layout = "us";
     };
-
-    nix = {
-      channel.enable = false;
-      package =
-        (import self.inputs.nixpkgs-stable26_05 { inherit (pkgs.stdenv.hostPlatform) system; })
-        .nixVersions.nix_2_28;
-      extraOptions = ''
-        plugin-files = ${
-          pkgs.nix-plugins.overrideAttrs (o: {
-            buildInputs = [
-              config.nix.package
-              pkgs.boost
-            ];
-            patches = o.patches or [ ];
-          })
-        }/lib/nix/plugins
-        extra-builtins-file = ${../../../files/nix/extra-builtins.nix}
-      '';
-
-      settings.experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
+    programs = {
+      bash.shellAliases = {
+        "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+        "swarsel-kernel-module" = "lspci -k -d";
+        "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\\|ethernet'";
+      };
+      git.enable = true;
     };
-
     boot = {
+      loader.systemd-boot = {
+        enable = true;
+      };
       supportedFilesystems = lib.mkForce [
         "btrfs"
         "vfat"
       ];
-      loader.systemd-boot = {
-        enable = true;
-      };
     };
-
-    services = {
-      qemuGuest.enable = true;
-      openssh = {
-        enable = true;
-        settings.PermitRootLogin = "yes";
-        authorizedKeysFiles = lib.mkForce [
-          "/etc/ssh/authorized_keys.d/%u"
-        ];
-      };
-      getty.autologinUser = lib.mkForce "root";
-      xserver.xkb.layout = "us";
-    };
-
+    console.keyMap = "us";
     environment = {
+      etc."issue".text = ''
+        [32m~SwarselSystems~[0m
+        IP of primary interface: [31m\4[0m
+        These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{eth4} \4{eth5} \4{wlan0}
+        The Password for all users & root is '[31msetup[0m'.
+        Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
+        Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
+      '';
       systemPackages = with pkgs; [
         curl
         gnupg
@@ -119,55 +103,58 @@ in
         cryptsetup
         btrfs-progs
       ];
-
-      etc."issue".text = ''
-        [32m~SwarselSystems~[0m
-        IP of primary interface: [31m\4[0m
-        These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{eth4} \4{eth5} \4{wlan0}
-        The Password for all users & root is '[31msetup[0m'.
-        Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
-        Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
-      '';
     };
-
     fileSystems."/boot".options = [ "umask=0077" ];
-
+    home-manager.users = {
+      root.home = {
+        inherit stateVersion;
+        file = homeFiles;
+      };
+      swarsel.home = {
+        inherit stateVersion;
+        file = homeFiles;
+        homeDirectory = lib.mkDefault "/home/swarsel";
+        sessionVariables = {
+          FLAKE = "/home/swarsel/.dotfiles";
+        };
+        username = "swarsel";
+      };
+    };
     networking = {
       hostName = "drugstore";
-      wireless.enable = lib.mkForce false;
       networkmanager.enable = true;
       usePredictableInterfaceNames = false;
+      wireless.enable = lib.mkForce false;
     };
-
-    users = {
-      allowNoPasswordLogin = true;
-      groups.swarsel = { };
-      users = {
-        swarsel = {
-          name = "swarsel";
-          group = "swarsel";
-          isNormalUser = true;
-          password = "setup"; # this is overwritten after install
-          openssh.authorizedKeys.keys = map builtins.readFile pubKeys;
-          extraGroups = [ "wheel" ];
-        };
-        root = {
-          initialHashedPassword = lib.mkForce null;
-          password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-          openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
-        };
-      };
+    nix = {
+      package =
+        (import self.inputs.nixpkgs-stable26_05 { inherit (pkgs.stdenv.hostPlatform) system; })
+        .nixVersions.nix_2_28;
+      channel.enable = false;
+      extraOptions = ''
+        plugin-files = ${
+          pkgs.nix-plugins.overrideAttrs (o: {
+            buildInputs = [
+              config.nix.package
+              pkgs.boost
+            ];
+            patches = o.patches or [ ];
+          })
+        }/lib/nix/plugins
+        extra-builtins-file = ${../../../files/nix/extra-builtins.nix}
+      '';
+      settings.experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
     };
-
-    programs = {
-      git.enable = true;
-      bash.shellAliases = {
-        "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-        "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\\|ethernet'";
-        "swarsel-kernel-module" = "lspci -k -d";
-      };
+    security = {
+      pam.sshAgentAuth.enable = true;
+      sudo.extraConfig = ''
+        Defaults env_keep+=SSH_AUTH_SOCK
+        Defaults lecture = never
+      '';
     };
-
     system = {
       activationScripts.cache.text = ''
         mkdir -p -m=0777 /home/swarsel/.local/state/nix/profiles
@@ -180,14 +167,13 @@ in
       '';
       stateVersion = lib.mkForce "23.05";
     };
-
     systemd = {
       services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
       targets = {
-        sleep.enable = false;
-        suspend.enable = false;
         hibernate.enable = false;
         hybrid-sleep.enable = false;
+        sleep.enable = false;
+        suspend.enable = false;
       };
     };
 

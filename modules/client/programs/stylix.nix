@@ -1,38 +1,15 @@
 {
   flake-file.inputs.stylix = {
-    url = "github:danth/stylix";
     inputs = {
-      nixpkgs.follows = "nixpkgs";
       flake-parts.follows = "flake-parts";
-      systems.follows = "systems";
+      nixpkgs.follows = "nixpkgs";
       nur.follows = "nur";
+      systems.follows = "systems";
     };
+    url = "github:danth/stylix";
   };
 
   flake.modules = {
-    nixos.stylix = { inputs, lib, ... }: {
-      imports = lib.optionals (inputs ? stylix) [
-        inputs.stylix.nixosModules.stylix
-        (
-          {
-            self,
-            lib,
-            config,
-            vars,
-            ...
-          }:
-          {
-            stylix = lib.recursiveUpdate {
-              enable = true;
-              base16Scheme = "${self}/files/stylix/swarsel.yaml";
-              targets.grub.enable = false; # the styling makes grub more ugly
-              image = config.swarselsystems.wallpaper;
-            } vars.stylix;
-          }
-        )
-      ];
-    };
-
     homeManager.stylix =
       {
         inputs,
@@ -48,8 +25,8 @@
             (
               {
                 self,
-                lib,
                 config,
+                lib,
                 vars,
                 nixosConfig ? null,
                 ...
@@ -57,6 +34,7 @@
               {
                 swarselsystems.enabledHomeModules = [ "stylix" ];
                 gtk.gtk4.theme = lib.mkForce config.gtk.theme;
+                home.pointerCursor.enable = lib.mkIf (config.stylix.enable && config.stylix.cursor != null) true;
                 stylix = {
                   targets = vars.stylixHomeTargets // {
                     spicetify.enable = if (arch == "aarch64-linux") then false else true;
@@ -73,5 +51,27 @@
           ]
         );
       };
+    nixos.stylix = { inputs, lib, ... }: {
+      imports = lib.optionals (inputs ? stylix) [
+        inputs.stylix.nixosModules.stylix
+        (
+          {
+            self,
+            config,
+            lib,
+            vars,
+            ...
+          }:
+          {
+            stylix = lib.recursiveUpdate {
+              enable = true;
+              base16Scheme = "${self}/files/stylix/swarsel.yaml";
+              image = config.swarselsystems.wallpaper;
+              targets.grub.enable = false; # the styling makes grub more ugly
+            } vars.stylix;
+          }
+        )
+      ];
+    };
   };
 }

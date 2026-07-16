@@ -2,11 +2,11 @@
   flake.modules.nixos.oauth2-proxy =
     {
       self,
-      lib,
       config,
+      lib,
       pkgs,
-      globals,
       confLib,
+      globals,
       ...
     }:
     let
@@ -15,24 +15,24 @@
           name = "oauth2-proxy";
           port = 3004;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeProxy
-        idmServer
-        oauthServer
-        nginxAccessRules
         homeServiceAddress
+        homeWebProxy
+        idmServer
+        isHome
+        nginxAccessRules
+        oauthServer
+        webProxy
         ;
 
       mainDomain = globals.domains.main;
@@ -59,63 +59,65 @@
             lib.types.submodule (
               { config, ... }:
               {
-                options.oauth2 = {
-                  enable = lib.mkEnableOption "access protection of this virtualHost using oauth2-proxy.";
-                  allowedGroups = lib.mkOption {
-                    type = lib.types.listOf lib.types.str;
-                    default = [ ];
-                    description = ''
-                      A list of kanidm groups that are allowed to access this resource, or the
-                        empty list to allow any authenticated client.
-                    '';
-                  };
-                  X-User = lib.mkOption {
-                    type = lib.types.str;
-                    default = "$upstream_http_x_auth_request_user";
-                    description = "The variable to set as X-User";
-                  };
-                  X-Email = lib.mkOption {
-                    type = lib.types.str;
-                    default = "$upstream_http_x_auth_request_email";
-                    description = "The variable to set as X-Email";
-                  };
-                  X-Access-Token = lib.mkOption {
-                    type = lib.types.str;
-                    default = "$upstream_http_x_auth_request_access_token";
-                    description = "The variable to set as X-Access-Token";
-                  };
-                };
-                options.locations = lib.mkOption {
-                  type = lib.types.attrsOf (
-                    lib.types.submodule (locationSubmodule: {
-                      options = {
-                        setOauth2Headers = lib.mkOption {
-                          type = lib.types.bool;
-                          default = true;
-                          description = "Whether to add oauth2 headers to this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                options = {
+                  locations = lib.mkOption {
+                    type = lib.types.attrsOf (
+                      lib.types.submodule (locationSubmodule: {
+                        options = {
+                          bypassAuth = lib.mkOption {
+                            default = false;
+                            description = "Whether to set auth_request off for this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                            type = lib.types.bool;
+                          };
+                          setOauth2Headers = lib.mkOption {
+                            default = true;
+                            description = "Whether to add oauth2 headers to this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                            type = lib.types.bool;
+                          };
                         };
-                        bypassAuth = lib.mkOption {
-                          type = lib.types.bool;
-                          default = false;
-                          description = "Whether to set auth_request off for this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                        config = lib.mkIf config.oauth2.enable {
+                          extraConfig =
+                            lib.optionalString locationSubmodule.config.setOauth2Headers ''
+                              proxy_set_header X-User         $user;
+                                proxy_set_header Remote-User    $user;
+                                proxy_set_header X-Remote-User  $user;
+                                proxy_set_header X-Email        $email;
+                                # proxy_set_header X-Access-Token $token;
+                                add_header Set-Cookie           $auth_cookie;
+                            ''
+                            + lib.optionalString locationSubmodule.config.bypassAuth ''
+                              auth_request off;
+                            '';
                         };
-                      };
-                      config = lib.mkIf config.oauth2.enable {
-                        extraConfig =
-                          lib.optionalString locationSubmodule.config.setOauth2Headers ''
-                            proxy_set_header X-User         $user;
-                              proxy_set_header Remote-User    $user;
-                              proxy_set_header X-Remote-User  $user;
-                              proxy_set_header X-Email        $email;
-                              # proxy_set_header X-Access-Token $token;
-                              add_header Set-Cookie           $auth_cookie;
-                          ''
-                          + lib.optionalString locationSubmodule.config.bypassAuth ''
-                            auth_request off;
-                          '';
-                      };
-                    })
-                  );
+                      })
+                    );
+                  };
+                  oauth2 = {
+                    enable = lib.mkEnableOption "access protection of this virtualHost using oauth2-proxy.";
+                    X-Access-Token = lib.mkOption {
+                      default = "$upstream_http_x_auth_request_access_token";
+                      description = "The variable to set as X-Access-Token";
+                      type = lib.types.str;
+                    };
+                    X-Email = lib.mkOption {
+                      default = "$upstream_http_x_auth_request_email";
+                      description = "The variable to set as X-Email";
+                      type = lib.types.str;
+                    };
+                    X-User = lib.mkOption {
+                      default = "$upstream_http_x_auth_request_user";
+                      description = "The variable to set as X-User";
+                      type = lib.types.str;
+                    };
+                    allowedGroups = lib.mkOption {
+                      default = [ ];
+                      description = ''
+                        A list of kanidm groups that are allowed to access this resource, or the
+                          empty list to allow any authenticated client.
+                      '';
+                      type = lib.types.listOf lib.types.str;
+                    };
+                  };
                 };
                 config = lib.mkIf config.oauth2.enable {
                   extraConfig = ''
@@ -134,21 +136,15 @@
                   '';
                   locations = {
                     "/oauth2/" = {
-                      proxyPass = "http://oauth2-proxy";
-                      setOauth2Headers = false;
                       bypassAuth = true;
                       extraConfig = ''
                         proxy_set_header X-Scheme                $scheme;
                           proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
                       '';
+                      proxyPass = "http://oauth2-proxy";
+                      setOauth2Headers = false;
                     };
                     "= /oauth2/auth" = {
-                      proxyPass =
-                        "http://oauth2-proxy/oauth2/auth"
-                        + lib.optionalString (
-                          config.oauth2.allowedGroups != [ ]
-                        ) "?allowed_groups=${lib.concatStringsSep "," config.oauth2.allowedGroups}";
-                      setOauth2Headers = false;
                       bypassAuth = true;
                       extraConfig = ''
                         internal;
@@ -158,6 +154,12 @@
                           proxy_set_header Content-Length "";
                           proxy_pass_request_body         off;
                       '';
+                      proxyPass =
+                        "http://oauth2-proxy/oauth2/auth"
+                        + lib.optionalString (
+                          config.oauth2.allowedGroups != [ ]
+                        ) "?allowed_groups=${lib.concatStringsSep "," config.oauth2.allowedGroups}";
+                      setOauth2Headers = false;
                     };
                   };
                 };
@@ -168,20 +170,39 @@
       };
       config = lib.mkIf (builtins.elem "oauthServer" config.swarselsystems.nodeRoles) {
         swarselsystems.enabledServerModules = [ "oauth2-proxy" ];
-
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "OK";
+            path = "/ready";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
         sops = {
           secrets = {
+            "kanidm-oauth2-proxy" = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = kanidmSopsFile;
+            };
             "oauth2-cookie-secret" = {
               inherit sopsFile;
-              owner = serviceUser;
               group = serviceGroup;
               mode = "0440";
-            };
-            "kanidm-oauth2-proxy" = {
-              sopsFile = kanidmSopsFile;
               owner = serviceUser;
-              group = serviceGroup;
-              mode = "0440";
             };
           };
 
@@ -191,95 +212,68 @@
                 OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy}"
                   OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
               '';
-              owner = serviceUser;
               group = serviceGroup;
               mode = "0440";
+              owner = serviceUser;
             };
           };
         };
-
         users = {
           persistentIds.oauth2-proxy = confLib.mkIds 966;
         };
-
-        # needed for homeWebProxy
-        networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/ready";
-            expectedBodyRegex = "OK";
-          };
-        };
-
         services = {
           ${serviceName} = {
             enable = true;
             package = pkgs.oauth2-proxy;
+            clientID = serviceName;
+            clientSecretFile = null;
             cookie = {
               domain = ".${mainDomain}";
-              secure = true;
               expire = "900m";
               secretFile = null;
+              secure = true;
             };
-            clientSecretFile = null;
-            reverseProxy = true;
-            trustedProxyIP = trustedProxyIPs;
+            email.domains = [ "*" ];
+            extraConfig = {
+              code-challenge-method = "S256";
+              oidc-issuer-url = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy";
+              pass-access-token = true;
+              provider-display-name = "Kanidm";
+              set-authorization-header = true;
+              skip-jwt-bearer-tokens = true;
+              whitelist-domain = ".${mainDomain}";
+            };
             httpAddress = "0.0.0.0:${builtins.toString servicePort}";
+            loginURL = "https://${kanidmDomain}/ui/oauth2";
+            provider = "oidc";
+            redeemURL = "https://${kanidmDomain}/oauth2/token";
             redirectURL = "https://${serviceDomain}/oauth2/callback";
+            reverseProxy = true;
+            scope = "openid email";
             setXauthrequest = true;
+            trustedProxyIP = trustedProxyIPs;
             upstream = [
               "static://202"
             ];
-
-            extraConfig = {
-              code-challenge-method = "S256";
-              whitelist-domain = ".${mainDomain}";
-              set-authorization-header = true;
-              pass-access-token = true;
-              skip-jwt-bearer-tokens = true;
-              oidc-issuer-url = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy";
-              provider-display-name = "Kanidm";
-            };
-            provider = "oidc";
-            scope = "openid email";
-            loginURL = "https://${kanidmDomain}/ui/oauth2";
-            redeemURL = "https://${kanidmDomain}/oauth2/token";
             validateURL = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy/userinfo";
-            clientID = serviceName;
-            email.domains = [ "*" ];
           };
         };
-
+        # needed for homeWebProxy
+        networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services = {
           ${serviceName} = {
             # after = [ "kanidm.service" ];
             serviceConfig = {
-              RuntimeDirectory = serviceName;
-              RuntimeDirectoryMode = "0750";
-              UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
-              RestartSec = "60"; # Retry every minute
               EnvironmentFile = [
                 config.sops.templates.kanidm-oauth2-proxy-client-env.path
               ];
+              RestartSec = "60"; # Retry every minute
+              RuntimeDirectory = serviceName;
+              RuntimeDirectoryMode = "0750";
+              UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
             };
           };
         };
-
         nodes =
           let
             extraConfig = ''
@@ -293,21 +287,21 @@
             {
               ${idmServer} = {
                 sops.secrets.kanidm-oauth2-proxy = {
-                  sopsFile = kanidmSopsFile;
-                  owner = "kanidm";
                   group = "kanidm";
                   mode = "0440";
+                  owner = "kanidm";
+                  sopsFile = kanidmSopsFile;
                 };
                 services.kanidm.provision = {
                   systems.oauth2.oauth2-proxy = {
-                    displayName = "Oauth2-Proxy";
-                    originUrl = "https://${serviceDomain}/oauth2/callback";
-                    originLanding = "https://${serviceDomain}/";
                     basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
-                    preferShortUsername = true;
                     claimMaps.groups = {
                       joinType = "array";
                     };
+                    displayName = "Oauth2-Proxy";
+                    originLanding = "https://${serviceDomain}/";
+                    originUrl = "https://${serviceDomain}/oauth2/callback";
+                    preferShortUsername = true;
                   };
                 };
               };
@@ -315,17 +309,17 @@
             {
               ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
-                  servicePort
+                  extraConfig
                   serviceAddress
                   serviceDomain
                   serviceName
-                  extraConfig
+                  servicePort
                   ;
               };
             }
             {
               ${homeWebProxy}.services.nginx = confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = extraConfig + nginxAccessRules;
                 serviceAddress = globals.hosts.${oauthServer}.wanAddress4;
               };

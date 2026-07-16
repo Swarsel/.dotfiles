@@ -22,26 +22,8 @@ let
           subnetMask = lib.concatStringsSep "." (map toString octets);
         in
         subnetMask;
-
-      mkIfElseList =
-        p: yes: no:
-        lib.mkMerge [
-          (lib.mkIf p yes)
-          (lib.mkIf (!p) no)
-        ];
-
-      mkIfElse =
-        p: yes: no:
-        if p then yes else no;
-
-      getSubDomain =
-        domain:
-        let
-          parts = builtins.split "\\." domain;
-          domainParts = builtins.filter (x: builtins.isString x && x != "") parts;
-        in
-        if builtins.length domainParts > 0 then builtins.head domainParts else "";
-
+      darwinSystems = builtins.filter (lib.hasSuffix "-darwin") (import systems);
+      forEachLinuxSystem = f: lib.genAttrs linuxSystems (system: f pkgsFor.${system});
       getBaseDomain =
         domain:
         let
@@ -52,20 +34,47 @@ let
           builtins.concatStringsSep "." (builtins.tail domainParts)
         else
           "";
-
+      getSubDomain =
+        domain:
+        let
+          parts = builtins.split "\\." domain;
+          domainParts = builtins.filter (x: builtins.isString x && x != "") parts;
+        in
+        if builtins.length domainParts > 0 then builtins.head domainParts else "";
+      linuxSystems = builtins.filter (lib.hasSuffix "-linux") (import systems);
+      mkIfElse =
+        p: yes: no:
+        if p then yes else no;
+      mkIfElseList =
+        p: yes: no:
+        lib.mkMerge [
+          (lib.mkIf p yes)
+          (lib.mkIf (!p) no)
+        ];
+      mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
+      mkStrong = lib.mkOverride 60;
+      mkTrueOption = lib.mkOption {
+        default = true;
+        type = lib.types.bool;
+      };
       pkgsFor = lib.genAttrs (import systems) (
         system:
         import inputs.nixpkgs {
           inherit system;
+          config.allowUnfree = true;
           overlays = [
             self.overlays.default
             self.overlays.stables
             self.overlays.modifications
           ];
-          config.allowUnfree = true;
         }
       );
-
+      readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+      readNix =
+        type:
+        lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
+          lib.attrNames (builtins.readDir "${self}/${type}")
+        );
       toCapitalized =
         str:
         if builtins.stringLength str == 0 then
@@ -78,39 +87,17 @@ let
             lower = lib.toLower rest;
           in
           upper + lower;
-
-      mkTrueOption = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-
-      mkStrong = lib.mkOverride 60;
-
-      linuxSystems = builtins.filter (lib.hasSuffix "-linux") (import systems);
-      darwinSystems = builtins.filter (lib.hasSuffix "-darwin") (import systems);
-
-      forEachLinuxSystem = f: lib.genAttrs linuxSystems (system: f pkgsFor.${system});
-
-      readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
-      readNix =
-        type:
-        lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
-          lib.attrNames (builtins.readDir "${self}/${type}")
-        );
-
-      mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
     };
 in
 {
   flake = {
+    homeLib = self.outputs.lib;
     lib = inputs.nixpkgs.lib.extend (
       _: _: {
         inherit (inputs.home-manager.lib) hm;
         inherit swarselsystems;
       }
     );
-
     swarselsystemsLib = swarselsystems;
-    homeLib = self.outputs.lib;
   };
 }

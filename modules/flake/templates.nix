@@ -9,8 +9,8 @@
             map (name: {
               inherit name;
               value = {
-                path = "${self}/files/templates/${name}";
                 description = "${name} project ";
+                path = "${self}/files/templates/${name}";
               };
             }) names
           );

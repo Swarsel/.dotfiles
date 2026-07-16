@@ -9,8 +9,8 @@
           map (name: {
             inherit name;
             value = {
-              type = "app";
               program = "${self.packages.${system}.${name}}/bin/${name}";
+              type = "app";
               meta = {
                 description = "Custom app ${name}.";
               };

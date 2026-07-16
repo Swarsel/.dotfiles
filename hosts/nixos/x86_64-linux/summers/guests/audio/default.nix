@@ -14,44 +14,42 @@
   ];
 
   swarselsystems = {
-    isMicroVM = true;
     isImpermanence = true;
+    isMicroVM = true;
     proxyHost = "twothreetunnel";
   };
 
 }
 // lib.optionalAttrs (!minimal) {
 
+  environment.persistence."/state".directories = [
+    {
+      directory = "/var/lib/alsa";
+      group = "root";
+      user = "root";
+    }
+  ];
   microvm = {
-    mem = 1024 * 4;
-    vcpu = 2;
-    qemu.machine = "q35";
     devices = [
       {
         bus = "pci";
         path = "0000:04:04.0";
       }
     ];
+    mem = 1024 * 4;
+    qemu.machine = "q35";
+    vcpu = 2;
   };
-
-  environment.persistence."/state".directories = [
-    {
-      directory = "/var/lib/alsa";
-      user = "root";
-      group = "root";
-    }
-  ];
-
   systemd.services.audio-mixer-init = {
-    wantedBy = [ "sound.target" ];
     after = [ "sound.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
     script = ''
       ${pkgs.alsa-utils}/bin/amixer -c 0 sset 'Analog Output' Multichannel
     '';
+    serviceConfig = {
+      RemainAfterExit = true;
+      Type = "oneshot";
+    };
+    wantedBy = [ "sound.target" ];
   };
 
 }

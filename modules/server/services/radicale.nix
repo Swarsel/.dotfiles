@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.radicale =
     {
-      lib,
       config,
+      lib,
       confLib,
       ...
     }:
@@ -12,22 +12,22 @@
           name = "radicale";
           port = 8000;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
+        webProxy
         ;
       inherit (config.swarselsystems) sopsFile;
 
@@ -36,13 +36,32 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "radicale" ];
-
+        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Radicale Web Interface";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
         sops = {
           secrets.radicale-user = {
             inherit sopsFile;
-            owner = serviceUser;
             group = serviceGroup;
             mode = "0440";
+            owner = serviceUser;
           };
 
           templates =
@@ -54,99 +73,71 @@
                 content = ''
                   ${user1}:${config.sops.placeholder.radicale-user}
                 '';
-                owner = serviceUser;
                 group = serviceGroup;
                 mode = "0440";
+                owner = serviceUser;
               };
             };
         };
-
         users.persistentIds = {
           radicale = confLib.mkIds 982;
         };
-
-        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            expectedBodyRegex = "Radicale Web Interface";
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
         services.${serviceName} = {
           enable = true;
+          rights = {
+            calendars = {
+              collection = "{user}/[^/]+";
+              permissions = "rw";
+              user = ".+";
+            };
+            principal = {
+              collection = "{user}";
+              permissions = "RW";
+              user = ".+";
+            };
+            # all: match authenticated users only
+            root = {
+              collection = "";
+              permissions = "R";
+              user = ".+";
+            };
+          };
           settings = {
+            auth = {
+              htpasswd_encryption = "autodetect";
+              htpasswd_filename = config.sops.templates.radicale-users.path;
+              type = "htpasswd";
+            };
             server = {
               hosts = [
                 "0.0.0.0:${builtins.toString servicePort}"
                 "[::]:${builtins.toString servicePort}"
               ];
             };
-            auth = {
-              type = "htpasswd";
-              htpasswd_filename = config.sops.templates.radicale-users.path;
-              htpasswd_encryption = "autodetect";
-            };
             storage = {
               filesystem_folder = "/var/lib/radicale/collections";
             };
           };
-          rights = {
-            # all: match authenticated users only
-            root = {
-              user = ".+";
-              collection = "";
-              permissions = "R";
-            };
-            principal = {
-              user = ".+";
-              collection = "{user}";
-              permissions = "RW";
-            };
-            calendars = {
-              user = ".+";
-              collection = "{user}/[^/]+";
-              permissions = "rw";
-            };
-          };
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
         systemd.tmpfiles.settings."10-radicale" = {
           "${cfg.settings.storage.filesystem_folder}" = {
             d = {
               group = serviceGroup;
-              user = serviceUser;
               mode = "0750";
+              user = serviceUser;
             };
           };
         };
-
         # networking.firewall.allowedTCPPorts = [ servicePort ];
-
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -155,9 +146,9 @@
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
               maxBody = 16;
               maxBodyUnit = "M";
@@ -166,10 +157,10 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+                inherit serviceDomain serviceName servicePort;
+                extraConfig = nginxAccessRules;
                 maxBody = 16;
                 maxBodyUnit = "M";
-                extraConfig = nginxAccessRules;
                 serviceAddress = homeServiceAddress;
               }
             );

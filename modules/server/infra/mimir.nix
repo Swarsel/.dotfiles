@@ -1,33 +1,33 @@
 {
   flake.modules.nixos.mimir =
     {
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
       inherit
         (confLib.gen {
+          dir = "/var/lib/private/mimir";
           name = "mimir";
           port = 9009;
-          dir = "/var/lib/private/mimir";
         })
-        servicePort
-        serviceName
-        serviceDir
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         wgProxyAccessRules
         ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
@@ -35,37 +35,74 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
             extra.extraConfig = {
-              port = servicePort;
               host = config.node.name;
+              port = servicePort;
             };
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
-            path = "/services";
             expectedBodyRegex = "Running";
             failIfBodyMatchesRegex = "(Starting|Stopping|Failed|Terminated|New|Stuck)";
+            path = "/services";
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
-        networking.firewall.allowedTCPPorts = [ servicePort ];
-
+        services.${serviceName} = {
+          enable = true;
+          configuration = {
+            blocks_storage = {
+              backend = "filesystem";
+              bucket_store.sync_dir = "${serviceDir}/tsdb-sync";
+              filesystem.dir = "${serviceDir}/blocks";
+              tsdb.dir = "${serviceDir}/tsdb";
+            };
+            common.storage = {
+              backend = "filesystem";
+              filesystem.dir = "${serviceDir}/data";
+            };
+            compactor = {
+              data_dir = "${serviceDir}/compactor";
+              sharding_ring.kvstore.store = "memberlist";
+            };
+            distributor.ring.instance_addr = "127.0.0.1";
+            ingester.ring = {
+              instance_addr = "127.0.0.1";
+              kvstore.store = "memberlist";
+              replication_factor = 1;
+            };
+            limits.max_global_series_per_user = 0;
+            multitenancy_enabled = false;
+            ruler.rule_path = "${serviceDir}/rules";
+            ruler_storage = {
+              backend = "filesystem";
+              filesystem.dir = "${serviceDir}/ruler";
+            };
+            server = {
+              grpc_listen_port = 9095;
+              http_listen_address = "0.0.0.0";
+              http_listen_port = servicePort;
+              log_level = "warn";
+            };
+            store_gateway.sharding_ring = {
+              instance_addr = "127.0.0.1";
+              replication_factor = 1;
+            };
+          };
+        };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
             {
@@ -74,140 +111,87 @@
             }
           ];
         };
-
-        services.${serviceName} = {
-          enable = true;
-          configuration = {
-            multitenancy_enabled = false;
-
-            server = {
-              http_listen_address = "0.0.0.0";
-              http_listen_port = servicePort;
-              grpc_listen_port = 9095;
-              log_level = "warn";
-            };
-
-            common.storage = {
-              backend = "filesystem";
-              filesystem.dir = "${serviceDir}/data";
-            };
-
-            blocks_storage = {
-              backend = "filesystem";
-              filesystem.dir = "${serviceDir}/blocks";
-              bucket_store.sync_dir = "${serviceDir}/tsdb-sync";
-              tsdb.dir = "${serviceDir}/tsdb";
-            };
-
-            compactor = {
-              data_dir = "${serviceDir}/compactor";
-              sharding_ring.kvstore.store = "memberlist";
-            };
-
-            distributor.ring.instance_addr = "127.0.0.1";
-
-            ingester.ring = {
-              instance_addr = "127.0.0.1";
-              kvstore.store = "memberlist";
-              replication_factor = 1;
-            };
-
-            ruler.rule_path = "${serviceDir}/rules";
-            ruler_storage = {
-              backend = "filesystem";
-              filesystem.dir = "${serviceDir}/ruler";
-            };
-
-            store_gateway.sharding_ring = {
-              instance_addr = "127.0.0.1";
-              replication_factor = 1;
-            };
-
-            limits.max_global_series_per_user = 0;
-          };
-        };
-
+        networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services.mimir = {
-          serviceConfig.RestartSec = lib.mkForce "60";
           environment = {
-            OTEL_TRACES_EXPORTER = "otlp";
-            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
             OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString otlpGrpcPort}";
+            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
             OTEL_SERVICE_NAME = "mimir-${config.node.name}";
+            OTEL_TRACES_EXPORTER = "otlp";
           };
+          serviceConfig.RestartSec = lib.mkForce "60";
         };
-
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
-              maxBody = 0;
               extraConfig = wgProxyAccessRules;
+              maxBody = 0;
             };
           }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                serviceAddress = homeServiceAddress;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
+                serviceAddress = homeServiceAddress;
               }
             );
           }
           {
             ${globals.general.monitoringServer}.services.grafana.provision = {
-              datasources.settings.datasources = [
-                {
-                  name = "Mimir";
-                  uid = "mimir";
-                  type = "prometheus";
-                  access = "proxy";
-                  url = confLib.mkAlloyPushUrl {
-                    host = globals.general.monitoringServer;
-                    domain = serviceDomain;
-                    port = servicePort;
-                    path = "/prometheus";
-                  };
-                  isDefault = true;
-                  jsonData = {
-                    httpMethod = "POST";
-                    manageAlerts = true;
-                    prometheusType = "Mimir";
-                    cacheLevel = "High";
-                    incrementalQueryOverlapWindow = "10m";
-                  };
-                }
-              ];
               alerting.rules.settings.groups = [
                 {
-                  orgId = 1;
-                  name = "mimir";
                   folder = "Infrastructure";
                   interval = "1m";
+                  name = "mimir";
+                  orgId = 1;
                   rules = [
                     (confLib.mkGrafanaAlertRule {
-                      uid = "host_down";
-                      title = "Host down";
                       expr = "max by (host) (up) or max by (host) (host_expected * 0)";
                       summary = "{{ $labels.host }} stopped reporting (no `up` series and `host_expected` fallback fired)";
+                      title = "Host down";
+                      uid = "host_down";
                     })
                     (confLib.mkGrafanaAlertRule {
-                      uid = "disk_filling";
-                      title = "Disk above 80% used";
                       expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
-                      op = "gt";
-                      threshold = 80;
                       forDuration = "10m";
+                      op = "gt";
                       severity = "warning";
                       summary = "{{ $labels.host }}:{{ $labels.mountpoint }} is more than 80% full";
+                      threshold = 80;
+                      title = "Disk above 80% used";
+                      uid = "disk_filling";
                     })
                   ];
+                }
+              ];
+              datasources.settings.datasources = [
+                {
+                  access = "proxy";
+                  isDefault = true;
+                  jsonData = {
+                    cacheLevel = "High";
+                    httpMethod = "POST";
+                    incrementalQueryOverlapWindow = "10m";
+                    manageAlerts = true;
+                    prometheusType = "Mimir";
+                  };
+                  name = "Mimir";
+                  type = "prometheus";
+                  uid = "mimir";
+                  url = confLib.mkAlloyPushUrl {
+                    domain = serviceDomain;
+                    host = globals.general.monitoringServer;
+                    path = "/prometheus";
+                    port = servicePort;
+                  };
                 }
               ];
             };
@@ -237,10 +221,10 @@
                     endpoint {
                       url = "${
                         confLib.mkAlloyPushUrl {
-                          host = alloyHost;
                           domain = serviceDomain;
-                          port = servicePort;
+                          host = alloyHost;
                           path = "/api/v1/push";
+                          port = servicePort;
                         }
                       }"
                     }

@@ -1,11 +1,6 @@
 {
   flake.modules.nixos.time = {
     config = {
-      time = {
-        timeZone = "Europe/Vienna";
-        # hardwareClockInLocalTime = true;
-      };
-
       i18n = {
         defaultLocale = "en_US.UTF-8";
         extraLocaleSettings = {
@@ -19,6 +14,10 @@
           LC_TELEPHONE = "de_AT.UTF-8";
           LC_TIME = "de_AT.UTF-8";
         };
+      };
+      time = {
+        timeZone = "Europe/Vienna";
+        # hardwareClockInLocalTime = true;
       };
     };
   };

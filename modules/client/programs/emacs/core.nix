@@ -1,8 +1,6 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init = {
     enable = true;
-    recommendedGcSettings = false;
-
     prelude = ''
       (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
@@ -140,5 +138,6 @@
 
       (advice-remove 'message #'who-called-me?)
     '';
+    recommendedGcSettings = false;
   };
 }

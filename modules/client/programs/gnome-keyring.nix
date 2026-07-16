@@ -1,15 +1,5 @@
 {
   flake.modules = {
-    nixos.gnome-keyring = {
-      config = {
-        services.gnome.gnome-keyring = {
-          enable = true;
-        };
-
-        programs.seahorse.enable = true;
-      };
-    };
-
     homeManager.gnome-keyring =
       {
         lib,
@@ -24,5 +14,13 @@
           };
         };
       };
+    nixos.gnome-keyring = {
+      config = {
+        services.gnome.gnome-keyring = {
+          enable = true;
+        };
+        programs.seahorse.enable = true;
+      };
+    };
   };
 }

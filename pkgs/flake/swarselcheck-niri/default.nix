@@ -1,12 +1,12 @@
 {
   self,
   name,
-  writeShellApplication,
-  kitty,
   element-desktop,
-  vesktop,
-  spotify-player,
   jq,
+  kitty,
+  spotify-player,
+  vesktop,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

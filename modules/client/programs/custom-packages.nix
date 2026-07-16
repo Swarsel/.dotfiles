@@ -1,8 +1,8 @@
 {
   flake.modules.homeManager.custom-packages =
     {
-      lib,
       config,
+      lib,
       pkgs,
       ...
     }:

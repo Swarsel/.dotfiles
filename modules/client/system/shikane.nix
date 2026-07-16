@@ -1,19 +1,14 @@
 {
   flake.modules.homeManager.shikane =
     {
-      lib,
       config,
+      lib,
       confLib,
       ...
     }:
     {
       config = {
         swarselsystems.enabledHomeModules = [ "shikane" ];
-
-        systemd.user.services.shikane = lib.mkIf (
-          builtins.elem "optional-noctalia" config.swarselsystems.enabledHomeModules
-          && config.swarselsystems.noctalia-systemd
-        ) (confLib.overrideTarget "noctalia-shell.target");
         services.shikane = {
           enable = true;
           settings =
@@ -29,12 +24,12 @@
               profile = [
 
                 {
-                  name = "internal-on";
                   inherit exec;
+                  name = "internal-on";
                   output = [
                     {
-                      match = config.swarselsystems.sharescreen;
                       enable = true;
+                      match = config.swarselsystems.sharescreen;
                       mode = "${config.swarselsystems.highResolution}@165.000";
                       scale = 1.0;
                     }
@@ -42,40 +37,40 @@
                 }
 
                 {
-                  name = "home-internal-on";
                   inherit exec;
+                  name = "home-internal-on";
                   output = [
                     {
-                      match = config.swarselsystems.sharescreen;
                       enable = true;
-                      scale = 1.7;
+                      match = config.swarselsystems.sharescreen;
                       position = "2560,0";
+                      scale = 1.7;
                     }
                     {
-                      match = homeMonitor;
                       enable = true;
-                      scale = 1.0;
+                      match = homeMonitor;
                       mode = "2560x1440";
                       position = "0,0";
+                      scale = 1.0;
                     }
                   ];
                 }
 
                 {
-                  name = "home-internal-off";
                   inherit exec;
+                  name = "home-internal-off";
                   output = [
                     {
-                      match = config.swarselsystems.sharescreen;
                       enable = false;
+                      match = config.swarselsystems.sharescreen;
                       position = "2560,0";
                     }
                     {
-                      match = homeMonitor;
-                      scale = 1.0;
                       enable = true;
+                      match = homeMonitor;
                       mode = "2560x1440";
                       position = "0,0";
+                      scale = 1.0;
                     }
                   ];
                 }
@@ -83,6 +78,10 @@
               ];
             };
         };
+        systemd.user.services.shikane = lib.mkIf (
+          builtins.elem "optional-noctalia" config.swarselsystems.enabledHomeModules
+          && config.swarselsystems.noctalia-systemd
+        ) (confLib.overrideTarget "noctalia-shell.target");
       };
     };
 }

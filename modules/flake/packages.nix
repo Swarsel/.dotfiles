@@ -1,17 +1,5 @@
 { self, inputs, ... }:
 {
-  imports = [
-    (
-      { lib, flake-parts-lib, ... }:
-      flake-parts-lib.mkTransposedPerSystemModule {
-        name = "pkgs";
-        file = ./packages.nix;
-        option = lib.mkOption {
-          type = lib.types.unspecified;
-        };
-      }
-    )
-  ];
   flake =
     let
       inherit (self.outputs) lib;
@@ -22,9 +10,23 @@
       );
     };
 
+  imports = [
+    (
+      { lib, flake-parts-lib, ... }:
+      flake-parts-lib.mkTransposedPerSystemModule {
+        file = ./packages.nix;
+        name = "pkgs";
+        option = lib.mkOption {
+          type = lib.types.unspecified;
+        };
+      }
+    )
+  ];
+
   perSystem =
     { pkgs, system, ... }:
     {
+      inherit pkgs;
       # see https://flake.parts/module-arguments.html?highlight=modulewith#persystem-module-parameters
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;
@@ -49,6 +51,5 @@
           self.overlays.modifications
         ];
       };
-      inherit pkgs;
     };
 }

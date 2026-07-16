@@ -1,10 +1,10 @@
 {
   flake.modules.nixos.zfs-exporter =
     {
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -13,31 +13,27 @@
           name = "zfs-exporter";
           port = 9134;
         })
-        servicePort
         serviceName
+        servicePort
         ;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
+        topology.self.services.${serviceName} = {
+          icon = "services.prometheus";
+          name = serviceName;
+        };
         globals = {
           services.${serviceName}.extraConfig = {
             port = servicePort;
           };
         };
-
-        topology.self.services.${serviceName} = {
-          name = serviceName;
-          icon = "services.prometheus";
-        };
-
         services.prometheus.exporters.zfs = {
           enable = true;
           listenAddress = "127.0.0.1";
           port = servicePort;
         };
-
         environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
           lib.mkAfter ''
             prometheus.scrape "zfs" {
@@ -47,23 +43,22 @@
             }
           ''
         );
-
         nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
           [
             {
-              orgId = 1;
-              name = "zfs";
               folder = "Infrastructure";
               interval = "1m";
+              name = "zfs";
+              orgId = 1;
               rules = [
                 (confLib.mkGrafanaAlertRule {
-                  uid = "zfs_pool_unhealthy";
-                  title = "ZFS pool not online";
                   expr = "max by (host, pool) (zfs_pool_health)";
-                  op = "gt";
-                  threshold = 0;
                   forDuration = "5m";
+                  op = "gt";
                   summary = "ZFS pool {{ $labels.host }}:{{ $labels.pool }} is not ONLINE";
+                  threshold = 0;
+                  title = "ZFS pool not online";
+                  uid = "zfs_pool_unhealthy";
                 })
               ];
             }

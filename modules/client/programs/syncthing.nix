@@ -1,80 +1,19 @@
 {
   flake.modules = {
-    nixos.syncthing =
-      {
-        lib,
-        config,
-        pkgs,
-        globals,
-        ...
-      }:
-      let
-        inherit (config.swarselsystems) mainUser homeDir;
-        inherit (globals.services."syncthing-${globals.general.homeSyncthingServer}".extraConfig) devices;
-        syncDevices = builtins.attrNames devices;
-        servicePort = 8384;
-      in
-      {
-        config = {
-          services.syncthing = {
-            enable = true;
-            systemService = true;
-            guiAddress = "127.0.0.1:${builtins.toString servicePort}";
-            package = pkgs.syncthing;
-            user = mainUser;
-            dataDir = homeDir;
-            configDir = "${homeDir}/.config/syncthing";
-            openDefaultPorts = true;
-            overrideDevices = true;
-            overrideFolders = true;
-            settings = {
-              options = {
-                urAccepted = -1;
-              };
-              inherit devices;
-              folders = {
-                "Default Folder" = lib.mkDefault {
-                  path = "${homeDir}/Sync";
-                  devices = syncDevices;
-                  id = "default";
-                };
-                "Obsidian" = {
-                  path = "${homeDir}/Obsidian";
-                  devices = syncDevices;
-                  id = "yjvni-9eaa7";
-                };
-                "Org" = {
-                  path = "${homeDir}/Org";
-                  devices = syncDevices;
-                  id = "a7xnl-zjj3d";
-                };
-                "Vpn" = {
-                  path = "${homeDir}/Vpn";
-                  devices = syncDevices;
-                  id = "hgp9s-fyq3p";
-                };
-              };
-            };
-          };
-        };
-      };
-
     homeManager.syncthing-tray =
       {
-        lib,
         config,
+        lib,
         pkgs,
         ...
       }:
       {
         config = {
           swarselsystems.enabledHomeModules = [ "syncthing-tray" ];
-
           home.activation.setupSyncthingIni =
             let
               syncthingApiEnvVarName = "SYNCTHING_API_KEY";
               syncthingIni = {
-                file = "${config.home.homeDirectory}/.config/syncthingtray.ini";
                 content = ''
                   [General]
                   v=2.0.2
@@ -167,6 +106,7 @@
                   mode=0
 
                 '';
+                file = "${config.home.homeDirectory}/.config/syncthingtray.ini";
               };
             in
             lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -182,6 +122,64 @@
               fi
             '';
 
+        };
+      };
+    nixos.syncthing =
+      {
+        config,
+        lib,
+        pkgs,
+        globals,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems) homeDir mainUser;
+        inherit (globals.services."syncthing-${globals.general.homeSyncthingServer}".extraConfig) devices;
+        syncDevices = builtins.attrNames devices;
+        servicePort = 8384;
+      in
+      {
+        config = {
+          services.syncthing = {
+            enable = true;
+            package = pkgs.syncthing;
+            configDir = "${homeDir}/.config/syncthing";
+            dataDir = homeDir;
+            guiAddress = "127.0.0.1:${builtins.toString servicePort}";
+            openDefaultPorts = true;
+            overrideDevices = true;
+            overrideFolders = true;
+            settings = {
+              inherit devices;
+              options = {
+                urAccepted = -1;
+              };
+              folders = {
+                "Default Folder" = lib.mkDefault {
+                  devices = syncDevices;
+                  id = "default";
+                  path = "${homeDir}/Sync";
+                };
+                "Obsidian" = {
+                  devices = syncDevices;
+                  id = "yjvni-9eaa7";
+                  path = "${homeDir}/Obsidian";
+                };
+                "Org" = {
+                  devices = syncDevices;
+                  id = "a7xnl-zjj3d";
+                  path = "${homeDir}/Org";
+                };
+                "Vpn" = {
+                  devices = syncDevices;
+                  id = "hgp9s-fyq3p";
+                  path = "${homeDir}/Vpn";
+                };
+              };
+            };
+            systemService = true;
+            user = mainUser;
+          };
         };
       };
   };

@@ -18,19 +18,16 @@
   #         ${pkgs.kmod}/bin/modprobe -r mt7921e mt792x_lib mt76
   #         echo 1 > /sys/bus/pci/devices/0000:04:00.0/remove
   #         ;;
-
   #       post/*)
   #         ${pkgs.kmod}/bin/modprobe mt7921e
   #         echo 1 > /sys/bus/pci/rescan
   #         ;;
   #     esac
   #   '';
-
   boot = {
-    # kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages;
-    kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages_latest;
     # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     binfmt.emulatedSystems = [ "aarch64-linux" ];
+    extraModulePackages = [ ];
     initrd = {
       availableKernelModules = [
         "nvme"
@@ -55,11 +52,12 @@
         # crypttabExtraOpts = ["fido2-device=auto"];
       };
     };
-
     kernelModules = [
       "amdgpu"
       "kvm-amd"
     ];
+    # kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages;
+    kernelPackages = lib.mkDefault pkgs.kernelpin.linuxPackages_latest;
     kernelParams = [
       # deep sleep is discontinued by amd
       # "mem_sleep_default=deep"
@@ -75,8 +73,11 @@
       # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
       "amdgpu.dcdebugmask=0x410"
     ];
+  };
 
-    extraModulePackages = [ ];
+  hardware = {
+    cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+    deviceTree.enable = false;
   };
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
@@ -86,8 +87,5 @@
   networking.useDHCP = lib.mkDefault true;
   # networking.interfaces.enp196s0f3u1c2.useDHCP = lib.mkDefault true;
   # networking.interfaces.wlp4s0.useDHCP = lib.mkDefault true;
-
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
-  hardware.deviceTree.enable = false;
 }

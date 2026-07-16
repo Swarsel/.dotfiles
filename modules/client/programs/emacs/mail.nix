@@ -6,48 +6,6 @@
     '';
 
     mu4e = {
-      enable = true;
-      package = "mu4e";
-      hook = [
-        "(mu4e-compose-mode . swarsel/mu4e-send-from-correct-address)"
-        "(mu4e-compose-post . swarsel/mu4e-restore-default)"
-      ];
-      init = ''
-        (defun swarsel/mu4e-switch-account ()
-          (interactive)
-          (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
-            (setq user-mail-address account)))
-
-        (defun swarsel/mu4e-rfs--matching-address ()
-          (cl-loop for to-data in (mu4e-message-field mu4e-compose-parent-message :to)
-                   for to-email = (pcase to-data
-                                    (`(_ . email) email)
-                                    (x (mu4e-contact-email x)))
-                   for to-name =  (pcase to-data
-                                    (`(_ . name) name)
-                                    (x (mu4e-contact-name x)))
-                   when (mu4e-user-mail-address-p to-email)
-                   return (list to-name to-email)))
-
-        (defun swarsel/mu4e-send-from-correct-address ()
-          (when mu4e-compose-parent-message
-            (save-excursion
-              (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
-                (cl-destructuring-bind (from-user from-addr) dest
-                  (setq user-mail-address from-addr)
-                  (when (and (boundp 'user-mail-address)
-                             (stringp user-mail-address)
-                             (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
-                    (mml-secure-message-sign-smime))
-                  (message-position-on-field "From")
-                  (message-beginning-of-line)
-                  (delete-region (point) (line-end-position))
-                  (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
-
-        (defun swarsel/mu4e-restore-default ()
-          (setq user-mail-address (getenv "SWARSEL_MAIL4")
-                user-full-name (getenv "SWARSEL_FULLNAME")))
-      '';
       config = ''
         (advice-add 'mu4e--server-filter :around #'suppress-messages)
 
@@ -119,10 +77,51 @@
                 (:name "Messages with images" :query "mime:image/*" :key 112))
               )
       '';
+      enable = true;
+      package = "mu4e";
+      hook = [
+        "(mu4e-compose-mode . swarsel/mu4e-send-from-correct-address)"
+        "(mu4e-compose-post . swarsel/mu4e-restore-default)"
+      ];
+      init = ''
+        (defun swarsel/mu4e-switch-account ()
+          (interactive)
+          (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
+            (setq user-mail-address account)))
+
+        (defun swarsel/mu4e-rfs--matching-address ()
+          (cl-loop for to-data in (mu4e-message-field mu4e-compose-parent-message :to)
+                   for to-email = (pcase to-data
+                                    (`(_ . email) email)
+                                    (x (mu4e-contact-email x)))
+                   for to-name =  (pcase to-data
+                                    (`(_ . name) name)
+                                    (x (mu4e-contact-name x)))
+                   when (mu4e-user-mail-address-p to-email)
+                   return (list to-name to-email)))
+
+        (defun swarsel/mu4e-send-from-correct-address ()
+          (when mu4e-compose-parent-message
+            (save-excursion
+              (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
+                (cl-destructuring-bind (from-user from-addr) dest
+                  (setq user-mail-address from-addr)
+                  (when (and (boundp 'user-mail-address)
+                             (stringp user-mail-address)
+                             (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+                    (mml-secure-message-sign-smime))
+                  (message-position-on-field "From")
+                  (message-beginning-of-line)
+                  (delete-region (point) (line-end-position))
+                  (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
+
+        (defun swarsel/mu4e-restore-default ()
+          (setq user-mail-address (getenv "SWARSEL_MAIL4")
+                user-full-name (getenv "SWARSEL_FULLNAME")))
+      '';
     };
 
     mu4e-alert = {
-      enable = true;
       config = ''
         (mu4e-alert-enable-notifications)
         (mu4e-alert-set-default-style 'libnotify)
@@ -137,6 +136,7 @@
 
         (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
       '';
+      enable = true;
     };
   };
 }

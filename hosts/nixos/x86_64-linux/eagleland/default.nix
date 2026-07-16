@@ -17,25 +17,23 @@
     self.modules.nixos.mailserver
     self.modules.nixos.wireguard
   ];
-
-  topology.self = {
-    icon = "devices.cloud-server";
-  };
-
   swarselsystems = {
     flakePath = "/root/.dotfiles";
     info = "2vCPU, 4GB Ram";
-    isImpermanence = true;
-    isSecureBoot = false;
-    isCrypted = true;
-    isCloud = true;
-    isSwap = true;
-    swapSize = "4G";
-    rootDisk = "/dev/sda";
     isBtrfs = true;
+    isCloud = true;
+    isCrypted = true;
+    isImpermanence = true;
     isLinux = true;
+    isSecureBoot = false;
+    isSwap = true;
     proxyHost = "twothreetunnel"; # mail shall not be proxied through twothreetunnel
+    rootDisk = "/dev/sda";
+    swapSize = "4G";
 
+  };
+  topology.self = {
+    icon = "devices.cloud-server";
   };
 }
 // lib.optionalAttrs (!minimal) {

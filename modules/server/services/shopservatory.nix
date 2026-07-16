@@ -1,47 +1,47 @@
 {
   flake-file.inputs.shopservatory = {
-    url = "github:Swarsel/shopservatory";
     inputs = {
-      nixpkgs.follows = "nixpkgs";
       flake-parts.follows = "flake-parts";
-      treefmt-nix.follows = "treefmt-nix";
       git-hooks-nix.follows = "pre-commit-hooks";
+      nixpkgs.follows = "nixpkgs";
+      treefmt-nix.follows = "treefmt-nix";
     };
+    url = "github:Swarsel/shopservatory";
   };
 
   flake.modules.nixos.shopservatory =
     {
       self,
-      lib,
-      config,
-      globals,
-      confLib,
       inputs,
+      config,
+      lib,
+      confLib,
+      globals,
       ...
     }:
     let
       inherit
         (confLib.gen {
+          dir = "/var/lib/shopservatory";
           name = "shopservatory";
           port = 8480;
-          dir = "/var/lib/shopservatory";
         })
-        servicePort
-        serviceName
-        serviceDomain
-        serviceDir
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
         scannerDropRules
+        webProxy
         ;
 
       inherit (config.swarselsystems) sopsFile;
@@ -53,49 +53,64 @@
       imports = [
         inputs.shopservatory.nixosModules.default
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "shopservatory" ];
-
-        users.persistentIds.${serviceName} = confLib.mkIds 987;
-
         topology.self.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
           icon = "services.not-available";
+          info = "https://${serviceDomain}";
+          name = lib.swarselsystems.toCapitalized serviceName;
         };
-
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "ok";
+            path = "/healthz";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
         sops = {
           secrets = {
-            shopservatory-telegram-token = {
-              inherit sopsFile;
-              owner = serviceName;
+            kanidm-shopservatory = {
               group = serviceName;
               mode = "0440";
+              owner = serviceName;
+              sopsFile = kanidmSopsFile;
             };
             shopservatory-ebay-client-id = {
               inherit sopsFile;
-              owner = serviceName;
               group = serviceName;
               mode = "0440";
+              owner = serviceName;
             };
             shopservatory-ebay-client-secret = {
               inherit sopsFile;
-              owner = serviceName;
               group = serviceName;
               mode = "0440";
+              owner = serviceName;
+            };
+            shopservatory-telegram-token = {
+              inherit sopsFile;
+              group = serviceName;
+              mode = "0440";
+              owner = serviceName;
             };
             shopservatory-user-admin-password = {
               inherit sopsFile;
-              owner = serviceName;
               group = serviceName;
               mode = "0440";
-            };
-            kanidm-shopservatory = {
-              sopsFile = kanidmSopsFile;
               owner = serviceName;
-              group = serviceName;
-              mode = "0440";
             };
           };
 
@@ -107,78 +122,55 @@
               SHOPSERVATORY_OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-shopservatory}
               SHOPSERVATORY_USER_ADMIN_PASSWORD=${config.sops.placeholder.shopservatory-user-admin-password}
             '';
-            owner = serviceName;
             group = serviceName;
             mode = "0440";
+            owner = serviceName;
           };
         };
-
+        users.persistentIds.${serviceName} = confLib.mkIds 987;
         services.shopservatory = {
           enable = true;
           browser.enable = true;
-          flaresolverr.enable = true;
           environmentFile = config.sops.templates."shopservatory-env".path;
+          flaresolverr.enable = true;
           settings = {
-            server = {
-              listen = "0.0.0.0:${builtins.toString servicePort}";
-              base_url = "https://${serviceDomain}";
-            };
+            users = [
+              {
+                admin = true;
+                email = "admin@${globals.domains.main}";
+                name = "admin";
+              }
+            ];
             currency.target = "EUR";
+            oidc = {
+              client_id = serviceName;
+              issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+              name = "kanidm";
+            };
             scrape = {
-              default_interval = "5m";
               browser_proxy = "socks5://${globals.services."socks-proxy".serviceAddress}:${
                 builtins.toString globals.services."socks-proxy".extraConfig.port
               }";
+              default_interval = "5m";
             };
-            users = [
-              {
-                name = "admin";
-                email = "admin@${globals.domains.main}";
-                admin = true;
-              }
-            ];
-            oidc = {
-              issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
-              client_id = serviceName;
-              name = "kanidm";
+            server = {
+              base_url = "https://${serviceDomain}";
+              listen = "0.0.0.0:${builtins.toString servicePort}";
             };
           };
         };
-
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           {
             directory = serviceDir;
-            user = serviceName;
             group = serviceName;
             mode = "0750";
+            user = serviceName;
           }
         ];
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/healthz";
-            expectedBodyRegex = "ok";
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit serviceName serviceDomain kanidmSopsFile;
+              inherit kanidmSopsFile serviceDomain serviceName;
               originUrl = "https://${serviceDomain}/auth/callback";
             };
           }
@@ -186,8 +178,8 @@
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                serviceName
                 serviceDomain
+                serviceName
                 servicePort
                 ;
               extraConfig = scannerDropRules;
@@ -196,9 +188,9 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit serviceName serviceDomain servicePort;
-                serviceAddress = homeServiceAddress;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = scannerDropRules + nginxAccessRules;
+                serviceAddress = homeServiceAddress;
               }
             );
           }

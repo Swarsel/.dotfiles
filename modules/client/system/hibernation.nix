@@ -1,30 +1,32 @@
 {
-  flake.modules.nixos.hibernation = { lib, config, ... }: {
+  flake.modules.nixos.hibernation = { config, lib, ... }: {
     options.swarselsystems = {
       hibernation = {
         offset = lib.mkOption {
-          type = lib.types.int;
           default = 0;
+          type = lib.types.int;
         };
         resumeDevice = lib.mkOption {
-          type = lib.types.str;
           default = "/dev/disk/by-label/nixos";
+          type = lib.types.str;
         };
       };
     };
     config = {
       boot = {
+        inherit (config.swarselsystems.hibernation) resumeDevice;
         kernelParams = [
           "resume_offset=${builtins.toString config.swarselsystems.hibernation.offset}"
           # "mem_sleep_default=deep"
         ];
-        inherit (config.swarselsystems.hibernation) resumeDevice;
       };
-      systemd.services."systemd-suspend-then-hibernate".aliases = [ "systemd-suspend.service" ];
       powerManagement.enable = true;
-      systemd.sleep.settings.Sleep = {
-        HibernateDelaySec = "120m";
-        SuspendState = "freeze";
+      systemd = {
+        services."systemd-suspend-then-hibernate".aliases = [ "systemd-suspend.service" ];
+        sleep.settings.Sleep = {
+          HibernateDelaySec = "120m";
+          SuspendState = "freeze";
+        };
       };
     };
   };

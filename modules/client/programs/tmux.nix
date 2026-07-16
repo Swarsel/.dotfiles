@@ -4,64 +4,20 @@
     let
       tmux-super-fingers = pkgs.tmuxPlugins.mkTmuxPlugin {
         pluginName = "tmux-super-fingers";
-        version = "unstable-2023-01-06";
         src = pkgs.fetchFromGitHub {
           owner = "artemave";
           repo = "tmux_super_fingers";
           rev = "2c12044984124e74e21a5a87d00f844083e4bdf7";
           sha256 = "sha256-cPZCV8xk9QpU49/7H8iGhQYK6JwWjviL29eWabuqruc=";
         };
+        version = "unstable-2023-01-06";
       };
     in
     {
       config = {
         swarselsystems.enabledHomeModules = [ "tmux" ];
-        home.packages = with pkgs; [
-          lsof
-          sesh
-        ];
-
         programs.tmux = {
           enable = true;
-          shell = "${pkgs.zsh}/bin/zsh";
-          terminal = "tmux-256color";
-          historyLimit = 100000;
-          plugins = with pkgs; [
-            tmuxPlugins.tmux-thumbs
-            {
-              plugin = tmux-super-fingers;
-              extraConfig = "set -g @super-fingers-key f";
-            }
-
-            tmuxPlugins.sensible
-            # must be before continuum edits right status bar
-            {
-              plugin = tmuxPlugins.catppuccin;
-              extraConfig = ''
-                set -g @catppuccin_flavour 'frappe'
-                set -g @catppuccin_window_tabs_enabled on
-                set -g @catppuccin_date_time "%H:%M"
-              '';
-            }
-            {
-              plugin = tmuxPlugins.resurrect;
-              extraConfig = ''
-                set -g @resurrect-strategy-vim 'session'
-                set -g @resurrect-strategy-nvim 'session'
-                set -g @resurrect-capture-pane-contents 'on'
-              '';
-            }
-            {
-              plugin = tmuxPlugins.continuum;
-              extraConfig = ''
-                set -g @continuum-restore 'on'
-                set -g @continuum-boot 'on'
-                set -g @continuum-save-interval '10'
-              '';
-            }
-            tmuxPlugins.better-mouse-mode
-            tmuxPlugins.yank
-          ];
           extraConfig = ''
             set -g default-terminal "tmux-256color"
             set -ag terminal-overrides ",xterm-256color:RGB"
@@ -94,7 +50,50 @@
             bind p paste-buffer
 
           '';
+          historyLimit = 100000;
+          plugins = with pkgs; [
+            tmuxPlugins.tmux-thumbs
+            {
+              extraConfig = "set -g @super-fingers-key f";
+              plugin = tmux-super-fingers;
+            }
+
+            tmuxPlugins.sensible
+            # must be before continuum edits right status bar
+            {
+              extraConfig = ''
+                set -g @catppuccin_flavour 'frappe'
+                set -g @catppuccin_window_tabs_enabled on
+                set -g @catppuccin_date_time "%H:%M"
+              '';
+              plugin = tmuxPlugins.catppuccin;
+            }
+            {
+              extraConfig = ''
+                set -g @resurrect-strategy-vim 'session'
+                set -g @resurrect-strategy-nvim 'session'
+                set -g @resurrect-capture-pane-contents 'on'
+              '';
+              plugin = tmuxPlugins.resurrect;
+            }
+            {
+              extraConfig = ''
+                set -g @continuum-restore 'on'
+                set -g @continuum-boot 'on'
+                set -g @continuum-save-interval '10'
+              '';
+              plugin = tmuxPlugins.continuum;
+            }
+            tmuxPlugins.better-mouse-mode
+            tmuxPlugins.yank
+          ];
+          shell = "${pkgs.zsh}/bin/zsh";
+          terminal = "tmux-256color";
         };
+        home.packages = with pkgs; [
+          lsof
+          sesh
+        ];
       };
     };
 }

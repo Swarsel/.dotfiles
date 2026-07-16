@@ -1,11 +1,11 @@
 {
   flake.modules.nixos.dns-hostrecord =
     {
-      lib,
       config,
-      globals,
-      dns,
+      lib,
       confLib,
+      dns,
+      globals,
       ...
     }:
     let
@@ -21,7 +21,6 @@
     {
       config = lib.mkIf config.swarselsystems.isCloud {
         swarselsystems.enabledServerModules = [ "dns-hostrecord" ];
-
         globals.dns.${globals.domains.main}.subdomainRecords = {
           "server.${config.node.name}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         };

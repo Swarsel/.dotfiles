@@ -10,32 +10,27 @@
   ];
 
   config = {
-    sandbox.tlsDomains = [ globals.services.homebox.domain ];
-
-    networking.firewall.allowedTCPPorts = [ 7745 ];
-
     sops.secrets.kanidm-homebox = {
-      owner = lib.mkForce "kanidm";
       group = lib.mkForce "kanidm";
       mode = lib.mkForce "0440";
+      owner = lib.mkForce "kanidm";
     };
-
     services.kanidm.provision.groups."homebox.access".members = [ "sandbox" ];
-
+    networking.firewall.allowedTCPPorts = [ 7745 ];
+    sandbox.tlsDomains = [ globals.services.homebox.domain ];
+    virtualisation.vmVariant.virtualisation.forwardPorts = [
+      {
+        from = "host";
+        guest.port = 7745;
+        host.port = 7745;
+      }
+    ];
     systemd.services.homebox = {
-      wants = [ "kanidm.service" ];
       after = [
         "kanidm.service"
         "nginx.service"
       ];
+      wants = [ "kanidm.service" ];
     };
-
-    virtualisation.vmVariant.virtualisation.forwardPorts = [
-      {
-        from = "host";
-        host.port = 7745;
-        guest.port = 7745;
-      }
-    ];
   };
 }

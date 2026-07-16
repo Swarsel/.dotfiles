@@ -10,19 +10,19 @@
       config = {
         boot = {
           initrd.systemd = {
+            users.root.shell = "${pkgs.bashInteractive}/bin/bash";
             enable = true;
             emergencyAccess = globals.root.hashedPassword;
-            users.root.shell = "${pkgs.bashInteractive}/bin/bash";
-            storePaths = [ "${pkgs.bashInteractive}/bin/bash" ];
             extraBin = {
+              cryptsetup = "${pkgs.cryptsetup}/bin/cryptsetup";
               ip = "${pkgs.iproute2}/bin/ip";
               ping = "${pkgs.iputils}/bin/ping";
-              cryptsetup = "${pkgs.cryptsetup}/bin/cryptsetup";
             };
+            storePaths = [ "${pkgs.bashInteractive}/bin/bash" ];
           };
           kernelParams = [ "log_buf_len=16M" ];
-          tmp.useTmpfs = true;
           loader.timeout = lib.mkDefault 2;
+          tmp.useTmpfs = true;
         };
 
         console.earlySetup = true;

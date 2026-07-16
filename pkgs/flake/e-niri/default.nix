@@ -1,10 +1,10 @@
 {
   self,
   name,
-  writeShellApplication,
   emacs30-pgtk,
-  kitty,
   jq,
+  kitty,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

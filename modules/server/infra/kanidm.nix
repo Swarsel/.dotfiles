@@ -2,11 +2,11 @@
   flake.modules.nixos.kanidm =
     {
       self,
+      config,
       lib,
       pkgs,
-      config,
-      globals,
       confLib,
+      globals,
       ...
     }:
     let
@@ -17,21 +17,21 @@
           name = "kanidm";
           port = 8300;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
 
@@ -48,74 +48,98 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "kanidm" ];
-
-        users = {
-          persistentIds = {
-            kanidm = confLib.mkIds 984;
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
           };
-          users.${serviceUser} = {
-            group = serviceGroup;
-            isSystemUser = true;
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          general.idmServer = config.node.name;
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "true";
+            path = "/status";
+            scheme = "https";
           };
-
-          groups.${serviceGroup} = { };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
         sops = {
           secrets = {
-            "kanidm-self-signed-crt" = {
-              sopsFile = certsSopsFile;
-              owner = serviceUser;
-              group = serviceGroup;
-              mode = "0440";
-            };
-            "kanidm-self-signed-key" = {
-              sopsFile = certsSopsFile;
-              owner = serviceUser;
-              group = serviceGroup;
-              mode = "0440";
-            };
             "kanidm-admin-pw" = {
               inherit sopsFile;
-              owner = serviceUser;
               group = serviceGroup;
               mode = "0440";
+              owner = serviceUser;
             };
             "kanidm-idm-admin-pw" = {
               inherit sopsFile;
-              owner = serviceUser;
               group = serviceGroup;
               mode = "0440";
+              owner = serviceUser;
+            };
+            "kanidm-self-signed-crt" = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = certsSopsFile;
+            };
+            "kanidm-self-signed-key" = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = certsSopsFile;
             };
             # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           };
         };
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        globals = {
-          general.idmServer = config.node.name;
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
+        users = {
+          users.${serviceUser} = {
+            group = serviceGroup;
+            isSystemUser = true;
           };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/status";
-            expectedBodyRegex = "true";
-            scheme = "https";
+          groups.${serviceGroup} = { };
+          persistentIds = {
+            kanidm = confLib.mkIds 984;
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
-
+        services = {
+          ${serviceName} = {
+            package = pkgs.kanidmWithSecretProvisioning_1_10;
+            client = {
+              enable = true;
+              settings = {
+                uri = config.services.kanidm.server.settings.origin;
+                verify_ca = true;
+                verify_hostnames = true;
+              };
+            };
+            provision = {
+              # oauth2 systems config is in the respective modules
+              inherit (config.repo.secrets.local) persons;
+              enable = true;
+              adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
+              idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
+            };
+            server = {
+              enable = true;
+              settings = {
+                bindaddress = "0.0.0.0:${toString servicePort}";
+                domain = serviceDomain;
+                origin = "https://${serviceDomain}";
+                otel_grpc_url = "http://127.0.0.1:${toString otlpGrpcPort}";
+                tls_chain = certPathBase;
+                tls_key = keyPathBase;
+              };
+            };
+          };
+        };
         environment.persistence = {
           "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
             files = [
@@ -128,13 +152,12 @@
             directories = [
               {
                 directory = "/var/lib/${serviceName}";
-                user = serviceUser;
                 group = serviceGroup;
+                user = serviceUser;
               }
             ];
           };
         };
-
         systemd.services = {
           "generateSSLCert-${serviceName}" =
             let
@@ -142,15 +165,10 @@
               renewBeforeDays = 365;
             in
             {
+              after = [ "local-fs.target" ];
               before = [ "${serviceName}.service" ];
               requiredBy = [ "${serviceName}.service" ];
-              after = [ "local-fs.target" ];
               requires = [ "local-fs.target" ];
-
-              serviceConfig = {
-                Type = "oneshot";
-              };
-
               script = ''
                       set -eu
 
@@ -197,6 +215,9 @@
                   chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
                 fi
               '';
+              serviceConfig = {
+                Type = "oneshot";
+              };
             };
           kanidm = {
             environment = {
@@ -206,44 +227,6 @@
             serviceConfig.RestartSec = "30";
           };
         };
-
-        services = {
-          ${serviceName} = {
-            package = pkgs.kanidmWithSecretProvisioning_1_10;
-            server = {
-              enable = true;
-              settings = {
-                domain = serviceDomain;
-                origin = "https://${serviceDomain}";
-                # tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
-                tls_chain = certPathBase;
-                # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
-                tls_key = keyPathBase;
-                bindaddress = "0.0.0.0:${toString servicePort}";
-                # trust_x_forward_for = true;
-                otel_grpc_url = "http://127.0.0.1:${toString otlpGrpcPort}";
-              };
-            };
-            client = {
-              enable = true;
-              settings = {
-                uri = config.services.kanidm.server.settings.origin;
-                verify_ca = true;
-                verify_hostnames = true;
-              };
-            };
-            provision = {
-              enable = true;
-              adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
-              idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
-
-              # oauth2 systems config is in the respective modules
-
-              inherit (config.repo.secrets.local) persons;
-            };
-          };
-        };
-
         nodes =
           let
             extraConfig = ''
@@ -256,20 +239,20 @@
               ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
                   serviceAddress
-                  servicePort
                   serviceDomain
                   serviceName
+                  servicePort
                   ;
-                protocol = "https";
                 noSslVerify = true;
+                protocol = "https";
               };
             }
             {
               ${homeWebProxy}.services.nginx = confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                protocol = "https";
-                noSslVerify = true;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = extraConfig + nginxAccessRules;
+                noSslVerify = true;
+                protocol = "https";
                 serviceAddress = homeServiceAddress;
               };
             }

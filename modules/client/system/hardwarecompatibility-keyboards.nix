@@ -1,15 +1,14 @@
 {
   flake.modules.nixos.hardwarecompatibility-keyboards =
     {
-      pkgs,
       lib,
+      pkgs,
       confLib,
       ...
     }:
     {
       config = {
         users.persistentIds.plugdev = confLib.mkIds 953;
-
         services.udev.packages =
           with pkgs;
           [

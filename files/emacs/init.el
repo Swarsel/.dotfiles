@@ -922,7 +922,7 @@ there's a region, all lines that region covers will be duplicated."
     "oc" '((lambda () (interactive) (org-store-link)) :which-key "copy (=store) link")
     "os" '(shfmt-region :which-key "format sh-block")
     "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-    "on" '(nixfmt-region :which-key "format nix-block")
+    "on" '(pedantix-format-region :which-key "format nix-block")
     "ot" '(swarsel/org-babel-tangle-config :which-key "tangle file")
     "oe" '(org-html-export-to-html :which-key "export to html")
     "c"  '(:ignore c :which-key "capture")
@@ -1311,7 +1311,7 @@ there's a region, all lines that region covers will be duplicated."
   (lsp-disabled-clients '((nix-mode . nix-nil)))
   :config
   (setq lsp-nix-nixd-server-path "nixd"
-    lsp-nix-nixd-formatting-command [ "nixfmt" ]
+    lsp-nix-nixd-formatting-command [ "pedantix" ]
     lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
     lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
     lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
@@ -1327,14 +1327,12 @@ there's a region, all lines that region covers will be duplicated."
   (lsp-disabled-clients '((nix-ts-mode . nix-nil)))
   :config
   (setq lsp-nix-nixd-server-path "nixd"
-    lsp-nix-nixd-formatting-command [ "nixfmt" ]
+    lsp-nix-nixd-formatting-command [ "pedantix" ]
     lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
     lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
     lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
     )
   )
-
-(use-package nixfmt)
 
 (use-package no-littering
   :config
@@ -1386,7 +1384,7 @@ there's a region, all lines that region covers will be duplicated."
   (defun swarsel/run-formatting ()
     (interactive)
     (let ((default-directory (expand-file-name "~/.dotfiles")))
-      (shell-command "find . -name '*.nix' -exec nixfmt {} + > /dev/null")))
+      (shell-command "find . -name '*.nix' -exec pedantix {} + > /dev/null")))
 
   (defun swarsel/org-babel-tangle-config ()
     (interactive)
@@ -1819,6 +1817,15 @@ create a new one."
   :config
   (add-hook 'org-present-after-navigate-functions #'swarsel/org-present-slide)
   (setq org-present-startup-folded t)
+  )
+
+(use-package pedantix
+  :hook (nix-mode . pedantix-format-on-save-mode)
+  :hook (nix-ts-mode . pedantix-format-on-save-mode)
+  :config
+  (with-eval-after-load 'apheleia
+    (setf (alist-get 'nix-mode apheleia-mode-alist) nil
+      (alist-get 'nix-ts-mode apheleia-mode-alist) nil))
   )
 
 (use-package pinentry

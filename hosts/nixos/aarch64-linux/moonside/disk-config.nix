@@ -1,7 +1,7 @@
 # NOTE: ... is needed because dikso passes diskoFile
 {
-  lib,
   config,
+  lib,
   ...
 }:
 let
@@ -12,45 +12,45 @@ let
     "-f"
   ]; # force overwrite
   subvolumes = {
-    "/root" = {
-      mountpoint = "/";
-      mountOptions = [
-        "subvol=root"
-        "compress=zstd"
-        "noatime"
-      ];
-    };
     "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-      mountpoint = "/home";
       mountOptions = [
         "subvol=home"
         "compress=zstd"
         "noatime"
       ];
-    };
-    "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-      mountpoint = "/persist";
-      mountOptions = [
-        "subvol=persist"
-        "compress=zstd"
-        "noatime"
-      ];
+      mountpoint = "/home";
     };
     "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-      mountpoint = "/var/log";
       mountOptions = [
         "subvol=log"
         "compress=zstd"
         "noatime"
       ];
+      mountpoint = "/var/log";
     };
     "/nix" = {
-      mountpoint = "/nix";
       mountOptions = [
         "subvol=nix"
         "compress=zstd"
         "noatime"
       ];
+      mountpoint = "/nix";
+    };
+    "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+      mountOptions = [
+        "subvol=persist"
+        "compress=zstd"
+        "noatime"
+      ];
+      mountpoint = "/persist";
+    };
+    "/root" = {
+      mountOptions = [
+        "subvol=root"
+        "compress=zstd"
+        "noatime"
+      ];
+      mountpoint = "/";
     };
     "/swap" = lib.mkIf config.swarselsystems.isSwap {
       mountpoint = "/.swapvol";
@@ -62,27 +62,23 @@ in
   disko.devices = {
     disk = {
       disk0 = {
-        type = "disk";
-        device = config.swarselsystems.rootDisk;
         content = {
-          type = "gpt";
           partitions = {
             ESP = {
-              priority = 1;
+              content = {
+                format = "vfat";
+                mountOptions = [ "defaults" ];
+                mountpoint = "/boot";
+                type = "filesystem";
+              };
               name = "ESP";
+              priority = 1;
               size = "512M";
               type = "EF00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = [ "defaults" ];
-              };
             };
             root = {
-              size = "100%";
               content = {
-                inherit type subvolumes extraArgs;
+                inherit extraArgs subvolumes type;
                 postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
                   MNTPOINT=$(mktemp -d)
                   mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
@@ -90,20 +86,19 @@ in
                   btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
                 '';
               };
+              size = "100%";
             };
           };
+          type = "gpt";
         };
+        device = config.swarselsystems.rootDisk;
+        type = "disk";
       };
       disk1 = {
-        type = "disk";
-        device = "/dev/sdb";
         content = {
-          type = "gpt";
           partitions = {
             sync = {
-              size = "100%";
               content = {
-                type = "btrfs";
                 extraArgs = [
                   "-L"
                   "sync"
@@ -111,22 +106,29 @@ in
                 ]; # force overwrite
                 subvolumes = {
                   "/sync" = {
-                    mountpoint = "/sync";
                     mountOptions = [
                       "subvol=root"
                       "compress=zstd"
                       "noatime"
                     ];
+                    mountpoint = "/sync";
                   };
                 };
+                type = "btrfs";
               };
+              size = "100%";
             };
           };
+          type = "gpt";
         };
+        device = "/dev/sdb";
+        type = "disk";
       };
     };
   };
 
-  fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-  fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  fileSystems = {
+    "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  };
 }

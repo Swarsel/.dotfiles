@@ -1,24 +1,41 @@
 { inputs, ... }:
 {
-  imports = [
-    inputs.flake-file.flakeModules.default
-  ];
-
   flake-file = {
     description = "SwarseFlake - Nix Flake for all SwarselSystems";
-    outputs = "inputs: import ./modules/flake/_outputs.nix inputs";
     inputs = {
       flake-file.url = "github:vic/flake-file";
 
       flake-parts = {
-        url = "github:hercules-ci/flake-parts";
         inputs.nixpkgs-lib.follows = "nixpkgs";
+        url = "github:hercules-ci/flake-parts";
       };
-      import-tree.url = "github:vic/import-tree";
-      systems.url = "github:nix-systems/default";
+
       flake-utils = {
-        url = "github:numtide/flake-utils";
         inputs.systems.follows = "systems";
+        url = "github:numtide/flake-utils";
+      };
+
+      home-manager = {
+        # url = "github:Swarsel/home-manager/main";
+        inputs.nixpkgs.follows = "nixpkgs";
+        url = "github:nix-community/home-manager";
+      };
+
+      import-tree.url = "github:vic/import-tree";
+
+      nixos-extra-modules = {
+        inputs = {
+          devshell.follows = "devshell";
+          flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
+          pre-commit-hooks.follows = "pre-commit-hooks";
+        };
+        url = "github:oddlama/nixos-extra-modules/main";
+      };
+
+      nixos-hardware = {
+        inputs.nixpkgs.follows = "nixpkgs";
+        url = "github:NixOS/nixos-hardware/master";
       };
 
       nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -29,34 +46,21 @@
       nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
       nixpkgs-stable26_05.url = "github:NixOS/nixpkgs/nixos-26.05";
 
-      home-manager = {
-        url = "github:nix-community/home-manager";
-        # url = "github:Swarsel/home-manager/main";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-
-      nixos-hardware = {
-        url = "github:NixOS/nixos-hardware/master";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
-      nixos-extra-modules = {
-        url = "github:oddlama/nixos-extra-modules/main";
-        inputs = {
-          nixpkgs.follows = "nixpkgs";
-          flake-parts.follows = "flake-parts";
-          devshell.follows = "devshell";
-          pre-commit-hooks.follows = "pre-commit-hooks";
-        };
-      };
-
       swarsel-nix = {
-        url = "github:Swarsel/swarsel-nix/main";
         inputs = {
-          nixpkgs.follows = "nixpkgs";
           flake-parts.follows = "flake-parts";
+          nixpkgs.follows = "nixpkgs";
           systems.follows = "systems";
         };
+        url = "github:Swarsel/swarsel-nix/main";
       };
+
+      systems.url = "github:nix-systems/default";
     };
+    outputs = "inputs: import ./modules/flake/_outputs.nix inputs";
   };
+
+  imports = [
+    inputs.flake-file.flakeModules.default
+  ];
 }

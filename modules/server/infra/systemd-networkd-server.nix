@@ -2,8 +2,8 @@
   flake.modules.nixos.systemd-networkd-server =
     {
       self,
-      lib,
       config,
+      lib,
       globals,
       ...
     }:
@@ -18,15 +18,12 @@
       imports = [
         self.modules.nixos.systemd-networkd-base
       ];
-
       boot.initrd.systemd.network = lib.mkIf (isCrypted && ((localVLANs == [ ]) || isRouter)) {
         enable = true;
         networks."10-${ifName}" = config.systemd.network.networks."10-${ifName}";
       };
-
       systemd = {
         network = {
-          wait-online.enable = false;
           networks =
             let
               netConfig = config.repo.secrets.local.networking;
@@ -38,6 +35,12 @@
                   "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv4}"
                   "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv6}"
                 ];
+                linkConfig.RequiredForOnline = "routable";
+                matchConfig.MACAddress = netConfig.networks.${config.swarselsystems.server.localNetwork}.mac;
+                networkConfig = {
+                  IPv6AcceptRA = false;
+                  IPv6PrivacyExtensions = true;
+                };
                 routes = [
                   {
                     Gateway = netConfig.defaultGateway6;
@@ -48,14 +51,9 @@
                     GatewayOnLink = true;
                   }
                 ];
-                networkConfig = {
-                  IPv6PrivacyExtensions = true;
-                  IPv6AcceptRA = false;
-                };
-                matchConfig.MACAddress = netConfig.networks.${config.swarselsystems.server.localNetwork}.mac;
-                linkConfig.RequiredForOnline = "routable";
               };
             };
+          wait-online.enable = false;
         };
       };
     }

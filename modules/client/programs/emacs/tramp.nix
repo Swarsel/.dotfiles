@@ -1,5 +1,11 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.tramp = {
+    config = ''
+      (customize-set-variable 'tramp-ssh-controlmaster-options
+                              (concat
+                               "-o ControlPath=/tmp/ssh-tramp-%%r@%%h:%%p "
+                               "-o ControlMaster=auto -o ControlPersist=yes"))
+    '';
     enable = true;
     init = ''
       (setq vc-ignore-dir-regexp
@@ -14,12 +20,6 @@
       (setq password-cache-expiry nil)
       (setq tramp-use-ssh-controlmaster-options nil)
       (setq remote-file-name-inhibit-cache nil)
-    '';
-    config = ''
-      (customize-set-variable 'tramp-ssh-controlmaster-options
-                              (concat
-                               "-o ControlPath=/tmp/ssh-tramp-%%r@%%h:%%p "
-                               "-o ControlMaster=auto -o ControlPersist=yes"))
     '';
   };
 }

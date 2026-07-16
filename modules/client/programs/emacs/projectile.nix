@@ -7,15 +7,15 @@
       '';
 
       projectile = {
-        enable = true;
-        diminish = [ "projectile-mode" ];
         config = "(projectile-mode)";
-        custom = {
-          projectile-completion-system = "'auto";
-        };
+        enable = true;
         bindKeyMap = {
           "C-c p" = "projectile-command-map";
         };
+        custom = {
+          projectile-completion-system = "'auto";
+        };
+        diminish = [ "projectile-mode" ];
         init =
           if builtins.elem "optional-work" config.swarselsystems.enabledHomeModules then
             ''

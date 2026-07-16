@@ -1,10 +1,10 @@
 {
   self,
-  config,
   inputs,
+  config,
   lib,
-  minimal,
   confLib,
+  minimal,
   ...
 }:
 {
@@ -27,74 +27,71 @@
     self.modules.nixos.smartctl-exporter
     self.modules.nixos.zfs-exporter
   ];
-
+  swarselsystems = {
+    flakePath = "/root/.dotfiles";
+    info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
+    initrdVLAN = "home";
+    isBtrfs = true;
+    isCrypted = true;
+    isImpermanence = true;
+    isLinux = true;
+    isSecureBoot = true;
+    isSwap = false;
+    localVLANs = [
+      "services"
+      "home"
+    ]; # devices is only provided on interface for bmc
+    networkKernelModules = [ "igb" ];
+    proxyHost = "twothreetunnel";
+    rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
+    server = {
+      restic.targets = {
+        SwarselState = {
+          # nextcloud stores all data in state dir and has no data that needs backup
+          paths = lib.map (guest: "/Vault/guests/${guest}/state") (
+            builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests)
+          );
+          repository = config.repo.secrets.local.resticRepoState;
+        };
+        SwarselStorage = {
+          paths = [
+            "/Vault/Eternor/Pictures"
+            "/Vault/Eternor/Documents/paperless"
+          ];
+          repository = config.repo.secrets.local.resticRepoStorage;
+        };
+      };
+    };
+    withMicroVMs = true;
+    writeGlobalNetworks = false;
+  };
   topology.self = {
     interfaces = {
-      "lan" = { };
       "bmc" = { };
+      "lan" = { };
     };
   };
-
   boot = {
-    loader.systemd-boot.enable = true;
-    loader.efi.canTouchEfiVariables = true;
-
-    kernelParams = [
-      "intel_iommu=on"
-      "iommu=pt"
-      "vfio-pci.ids=13f6:8788"
+    blacklistedKernelModules = [
+      "snd_virtuoso"
+      "snd_oxygen"
     ];
     initrd.kernelModules = [
       "vfio_pci"
       "vfio_iommu_type1"
       "vfio"
     ];
-    blacklistedKernelModules = [
-      "snd_virtuoso"
-      "snd_oxygen"
+    kernelParams = [
+      "intel_iommu=on"
+      "iommu=pt"
+      "vfio-pci.ids=13f6:8788"
     ];
-  };
-
-  hardware.enableRedistributableFirmware = true;
-
-  swarselsystems = {
-    info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
-    flakePath = "/root/.dotfiles";
-    isImpermanence = true;
-    isSecureBoot = true;
-    isCrypted = true;
-    isBtrfs = true;
-    isLinux = true;
-    isSwap = false;
-    proxyHost = "twothreetunnel";
-    writeGlobalNetworks = false;
-    networkKernelModules = [ "igb" ];
-    rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
-    withMicroVMs = true;
-    localVLANs = [
-      "services"
-      "home"
-    ]; # devices is only provided on interface for bmc
-    initrdVLAN = "home";
-    server = {
-      restic.targets = {
-        SwarselState = {
-          repository = config.repo.secrets.local.resticRepoState;
-          # nextcloud stores all data in state dir and has no data that needs backup
-          paths = lib.map (guest: "/Vault/guests/${guest}/state") (
-            builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests)
-          );
-        };
-        SwarselStorage = {
-          repository = config.repo.secrets.local.resticRepoStorage;
-          paths = [
-            "/Vault/Eternor/Pictures"
-            "/Vault/Eternor/Documents/paperless"
-          ];
-        };
-      };
+    loader = {
+      efi.canTouchEfiVariables = true;
+      systemd-boot.enable = true;
     };
   };
+  hardware.enableRedistributableFirmware = true;
 
 }
 // lib.optionalAttrs (!minimal) {
@@ -104,25 +101,25 @@
     // confLib.mkMicrovm "ankisync" { withZfs = true; }
     // confLib.mkMicrovm "atuin" { withZfs = true; }
     // confLib.mkMicrovm "audio" {
-      withZfs = true;
       eternorPaths = [ "Music" ];
+      withZfs = true;
     }
     // confLib.mkMicrovm "firefly" { withZfs = true; }
     // confLib.mkMicrovm "forgejo" { withZfs = true; }
     // confLib.mkMicrovm "freshrss" { withZfs = true; }
     // confLib.mkMicrovm "homebox" { withZfs = true; }
     // confLib.mkMicrovm "immich" {
-      withZfs = true;
       eternorPaths = [ "Pictures" ];
+      withZfs = true;
     }
     // confLib.mkMicrovm "jellyfin" {
-      withZfs = true;
       eternorPaths = [ "Videos" ];
+      withZfs = true;
     }
     // confLib.mkMicrovm "kanidm" { withZfs = true; }
     // confLib.mkMicrovm "kavita" {
-      withZfs = true;
       eternorPaths = [ "Books" ];
+      withZfs = true;
     }
     // confLib.mkMicrovm "koillection" { withZfs = true; }
     // confLib.mkMicrovm "matrix" { withZfs = true; }
@@ -130,12 +127,11 @@
     // confLib.mkMicrovm "monitoring" { withZfs = true; }
     // confLib.mkMicrovm "nextcloud" { withZfs = true; }
     // confLib.mkMicrovm "paperless" {
-      withZfs = true;
       eternorPaths = [ "Documents" ];
+      withZfs = true;
     }
     // confLib.mkMicrovm "radicale" { withZfs = true; }
     // confLib.mkMicrovm "storage" {
-      withZfs = true;
       eternorPaths = [
         "Books"
         "Videos"
@@ -144,15 +140,16 @@
         "Software"
         "Documents"
       ];
+      withZfs = true;
     }
     // confLib.mkMicrovm "transmission" {
-      withZfs = true;
       eternorPaths = [
         "Books"
         "Videos"
         "Music"
         "Software"
       ];
+      withZfs = true;
     }
   );
 

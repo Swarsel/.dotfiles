@@ -3,14 +3,14 @@
     darwin.home-manager =
       {
         self,
-        lib,
-        config,
         inputs,
-        outputs,
-        globals,
-        nodes,
-        minimal,
+        config,
+        lib,
         configName,
+        globals,
+        minimal,
+        nodes,
+        outputs,
         withHomeManager,
         ...
       }:
@@ -26,16 +26,16 @@
               inherit (inputs) self nixgl;
               inherit
                 inputs
-                outputs
-                globals
-                nodes
-                minimal
                 configName
+                globals
+                minimal
+                nodes
+                outputs
                 ;
               arch = config.node.arch;
-              type = "darwin";
               lib = outputs.homeLib;
               nixosConfig = config;
+              type = "darwin";
             };
           };
         };
@@ -47,18 +47,18 @@
         inputs,
         config,
         lib,
-        homeLib,
-        outputs,
-        globals,
-        nodes,
-        minimal,
-        configName,
         arch,
+        configName,
+        globals,
+        homeLib,
+        minimal,
+        nodes,
+        outputs,
         type,
         ...
       }:
       let
-        inherit (config.swarselsystems) isServer isMicroVM mainUser;
+        inherit (config.swarselsystems) isMicroVM isServer mainUser;
         homeSwarsel = config.home-manager.users.${mainUser}.swarselsystems or { };
       in
       {
@@ -67,13 +67,7 @@
             secrets = lib.mapAttrs (_: v: v // { owner = mainUser; }) (homeSwarsel.homeSopsSecrets or { });
             templates = lib.mapAttrs (_: v: v // { owner = mainUser; }) (homeSwarsel.homeSopsTemplates or { });
           };
-
           home-manager = lib.mkIf (!isServer && !isMicroVM) {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            verbose = true;
-            backupFileExtension = "hm-bak";
-            overwriteBackup = true;
             users.${config.swarselsystems.mainUser}.imports = [
               inputs.swarsel-nix.homeModules.default
               inputs.glide-nix.homeModules.default
@@ -87,20 +81,25 @@
                 home.stateVersion = lib.mkDefault config.system.stateVersion;
               }
             ];
+            backupFileExtension = "hm-bak";
             extraSpecialArgs = {
               inherit (inputs) self nixgl;
               inherit
                 inputs
-                outputs
-                globals
-                nodes
-                minimal
-                configName
                 arch
+                configName
+                globals
+                minimal
+                nodes
+                outputs
                 type
                 ;
               lib = homeLib;
             };
+            overwriteBackup = true;
+            useGlobalPkgs = true;
+            useUserPackages = true;
+            verbose = true;
           };
         };
       };

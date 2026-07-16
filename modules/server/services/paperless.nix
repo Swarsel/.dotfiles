@@ -2,11 +2,11 @@
   flake.modules.nixos.paperless =
     {
       self,
+      config,
       lib,
       pkgs,
-      config,
-      globals,
       confLib,
+      globals,
       ...
     }:
     let
@@ -16,22 +16,22 @@
           name = "paperless";
           port = 28981;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       tikaPort = 9998;
@@ -42,133 +42,124 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "paperless" ];
-
-        users = {
-          persistentIds = {
-            redis-paperless = confLib.mkIds 975;
+        # networking.firewall.allowedTCPPorts = [ servicePort ];
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
           };
-          users.${serviceUser} = {
-            extraGroups = [ "users" ];
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Paperless";
+            path = "/accounts/login/";
           };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
         sops.secrets = {
+          kanidm-paperless = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = kanidmSopsFile;
+          };
           paperless-admin-pw = {
             inherit sopsFile;
             owner = serviceUser;
           };
-          kanidm-paperless = {
-            sopsFile = kanidmSopsFile;
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
+        };
+        users = {
+          users.${serviceUser} = {
+            extraGroups = [ "users" ];
+          };
+          persistentIds = {
+            redis-paperless = confLib.mkIds 975;
           };
         };
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/accounts/login/";
-            expectedBodyRegex = "Paperless";
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-            {
-              directory = "/var/lib/redis-${serviceName}";
-              user = "redis-${serviceUser}";
-              group = "redis-${serviceGroup}";
-            }
-            { directory = "/var/lib/private/tika"; }
-            {
-              directory = "/var/cache/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-            { directory = "/var/cache/private/tika"; }
-          ];
-        };
-
         services = {
           ${serviceName} = {
             enable = true;
-            mediaDir = "/storage/Documents/${serviceName}";
-            dataDir = "/var/lib/${serviceName}";
-            user = serviceUser;
-            port = servicePort;
-            passwordFile = config.sops.secrets.paperless-admin-pw.path;
             address = "0.0.0.0";
+            dataDir = "/var/lib/${serviceName}";
+            mediaDir = "/storage/Documents/${serviceName}";
+            passwordFile = config.sops.secrets.paperless-admin-pw.path;
+            port = servicePort;
             settings = {
-              domain = serviceDomain;
+              PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
               PAPERLESS_OCR_LANGUAGE = "deu+eng";
-              PAPERLESS_URL = "https://${serviceDomain}";
               PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
-                optimize = 1;
                 invalidate_digital_signatures = true;
+                optimize = 1;
                 pdfa_image_compression = "lossless";
               };
-              PAPERLESS_TIKA_ENABLED = "true";
-              PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
-              PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
-              PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
               PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
                 openid_connect = {
-                  OAUTH_PKCE_ENABLED = "True";
                   APPS = [
                     rec {
-                      provider_id = "kanidm";
-                      name = "Kanidm";
                       client_id = "paperless";
+                      name = "Kanidm";
+                      provider_id = "kanidm";
                       # secret will be added by paperless-web.service (see below)
                       #secret = "";
                       settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
                     }
                   ];
+                  OAUTH_PKCE_ENABLED = "True";
                 };
               };
+              PAPERLESS_TIKA_ENABLED = "true";
+              PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
+              PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
+              PAPERLESS_URL = "https://${serviceDomain}";
+              domain = serviceDomain;
             };
+            user = serviceUser;
           };
-
-          tika = {
-            enable = true;
-            port = tikaPort;
-            openFirewall = false;
-            listenAddress = "127.0.0.1";
-            enableOcr = true;
-          };
-
           gotenberg = {
             enable = true;
             package = pkgs.gotenberg;
+            bindIP = "127.0.0.1";
+            chromium.package = pkgs.chromium;
             libreoffice.package = pkgs.libreoffice;
             port = gotenbergPort;
-            bindIP = "127.0.0.1";
             timeout = "600s";
-            chromium.package = pkgs.chromium;
+          };
+          tika = {
+            enable = true;
+            enableOcr = true;
+            listenAddress = "127.0.0.1";
+            openFirewall = false;
+            port = tikaPort;
           };
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+            {
+              directory = "/var/lib/redis-${serviceName}";
+              group = "redis-${serviceGroup}";
+              user = "redis-${serviceUser}";
+            }
+            { directory = "/var/lib/private/tika"; }
+            {
+              directory = "/var/cache/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+            { directory = "/var/cache/private/tika"; }
+          ];
+        };
         # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
         systemd.services.paperless-web.script = lib.mkBefore ''
             oidcSecret=$(< ${config.sops.secrets.kanidm-paperless.path})
@@ -178,7 +169,6 @@
               --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
                          )
         '';
-
         nodes =
           let
             extraConfigLoc = ''
@@ -191,18 +181,18 @@
           lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit serviceName serviceDomain kanidmSopsFile;
+                inherit kanidmSopsFile serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
               };
             }
             {
               ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
+                  extraConfigLoc
                   serviceAddress
-                  servicePort
                   serviceDomain
                   serviceName
-                  extraConfigLoc
+                  servicePort
                   ;
                 maxBody = 0;
               };
@@ -211,13 +201,13 @@
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
                   inherit
-                    servicePort
+                    extraConfigLoc
                     serviceDomain
                     serviceName
-                    extraConfigLoc
+                    servicePort
                     ;
-                  maxBody = 0;
                   extraConfig = nginxAccessRules;
+                  maxBody = 0;
                   serviceAddress = homeServiceAddress;
                 }
               );

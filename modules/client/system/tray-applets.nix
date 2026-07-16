@@ -1,9 +1,9 @@
 {
   flake.modules.homeManager.tray-applets =
     {
+      config,
       lib,
       pkgs,
-      config,
       confLib,
       ...
     }:
@@ -13,12 +13,12 @@
           description = "Anki applet";
           execStart = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/anki";
           extraService = {
-            Type = "simple";
             Environment = [ "QT_QPA_PLATFORM=xcb" ];
-            TimeoutStopSec = "2s";
             KillMode = "mixed";
             KillSignal = "SIGTERM";
             SendSIGKILL = "yes";
+            TimeoutStopSec = "2s";
+            Type = "simple";
           };
         };
         element = {
@@ -45,7 +45,6 @@
       options.swarselsystems.trayApplets = lib.mapAttrs (_: _: {
         enable = lib.swarselsystems.mkTrueOption;
       }) applets;
-
       config = {
         swarselsystems.enabledHomeModules = lib.mapAttrsToList (n: _: "${n}-tray") enabledApplets;
 

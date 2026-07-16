@@ -11,75 +11,71 @@ let
   ];
 
   sandboxPkgs = import inputs.nixpkgs-sandbox {
-    system = arch;
     inherit overlays;
     config.allowUnfree = true;
+    system = arch;
   };
 
   inherit (sandboxPkgs) lib;
 
   mkSpecialArgs = nodes: {
     inherit
-      inputs
       self
+      inputs
       lib
-      nodes
-      configName
       arch
+      configName
+      nodes
       ;
     inherit (self) outputs;
     inherit (self.outputs) homeLib;
     globals =
       (lib.evalModules {
-        prefix = [ "globals" ];
-        specialArgs = {
-          inherit lib inputs nodes;
-          inherit (inputs.topologyPrivate) topologyPrivate;
-        };
         modules = [
           self.modules.generic.globals
           "${hostDir}/secrets/globals.nix"
           { globals = lib.mkMerge nodes.${configName}.config._globalsDefs; }
         ];
+        prefix = [ "globals" ];
+        specialArgs = {
+          inherit inputs lib nodes;
+          inherit (inputs.topologyPrivate) topologyPrivate;
+        };
       }).config.globals;
+    extraModules = [ ];
     minimal = false;
     type = "nixos";
     withHomeManager = false;
-    extraModules = [ ];
   };
 
   nodeModule = {
+    swarselsystems.mainUser = "swarsel";
     networking.hostName = configName;
-
     nixpkgs = {
-      hostPlatform = arch;
       inherit overlays;
       config.allowUnfree = true;
+      hostPlatform = arch;
     };
-
     node = {
-      name = configName;
       inherit arch;
-      type = "nixos";
-      secretsDir = ../../hosts/utility/vacanthouse/secrets;
       configDir = ../../hosts/utility/vacanthouse;
       lockFromBootstrapping = true;
+      name = configName;
+      secretsDir = ../../hosts/utility/vacanthouse/secrets;
+      type = "nixos";
     };
-
-    swarselsystems.mainUser = "swarsel";
   };
 
   vacanthouse = inputs.nixpkgs-sandbox.lib.nixosSystem {
-    specialArgs = mkSpecialArgs { ${configName} = vacanthouse; };
     modules = [
       hostDir
       nodeModule
     ];
+    specialArgs = mkSpecialArgs { ${configName} = vacanthouse; };
   };
 in
 {
   flake-file.inputs.nixpkgs-sandbox.url = "github:tebriel/nixpkgs/homebox/0.26.2";
-
   flake.nixosConfigurations.${configName} = vacanthouse;
 
   perSystem =
@@ -89,23 +85,10 @@ in
         { nodes, ... }:
         {
           name = "sandbox-${configName}";
-
           node = {
-            specialArgs = mkSpecialArgs { ${configName}.config = nodes.${configName}; };
             pkgsReadOnly = false;
+            specialArgs = mkSpecialArgs { ${configName}.config = nodes.${configName}; };
           };
-
-          nodes.${configName} = {
-            imports = [
-              hostDir
-              nodeModule
-            ];
-            virtualisation = {
-              cores = 2;
-              memorySize = 4096;
-            };
-          };
-
           testScript = ''
             vacanthouse.start()
             vacanthouse.wait_for_unit("multi-user.target")
@@ -116,6 +99,16 @@ in
             vacanthouse.succeed("curl -sSf -o /dev/null https://oauth.swarsel.internal/oauth2/sign_in")
             vacanthouse.wait_until_succeeds("curl -sSf https://homebox.swarsel.internal/api/v1/status", timeout=600)
           '';
+          nodes.${configName} = {
+            imports = [
+              hostDir
+              nodeModule
+            ];
+            virtualisation = {
+              cores = 2;
+              memorySize = 4096;
+            };
+          };
         }
       );
     };

@@ -14,7 +14,22 @@
         '';
 
         magit = {
+          config = ''
+            (advice-add 'magit-auto-revert-mode--init-kludge :around #'suppress-messages)
+
+            (setq magit-repository-directories `((,swarsel-work-projects-directory  . 3)
+                                                ${lib.optionalString (builtins.elem "optional-work" config.swarselsystems.enabledHomeModules) "(,swarsel-private-projects-directory . 3)"}
+                                                ("~/.dotfiles/" . 0)))
+            ;; RET on a hunk/file always opens the editable worktree file at point,
+            ;; never a read-only staged blob.
+            (with-eval-after-load 'magit-diff
+              (define-key magit-hunk-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file)
+              (define-key magit-file-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file))
+          '';
           enable = true;
+          custom = {
+            magit-display-buffer-function = "#'magit-display-buffer-same-window-except-diff-v1";
+          };
           init = ''
             (declare-function consult--read "consult")
 
@@ -41,21 +56,6 @@
                   (when (and repo (> (length repo) 0))
                     (magit-status repo)))))
           '';
-          config = ''
-            (advice-add 'magit-auto-revert-mode--init-kludge :around #'suppress-messages)
-
-            (setq magit-repository-directories `((,swarsel-work-projects-directory  . 3)
-                                                ${lib.optionalString (builtins.elem "optional-work" config.swarselsystems.enabledHomeModules) "(,swarsel-private-projects-directory . 3)"}
-                                                ("~/.dotfiles/" . 0)))
-            ;; RET on a hunk/file always opens the editable worktree file at point,
-            ;; never a read-only staged blob.
-            (with-eval-after-load 'magit-diff
-              (define-key magit-hunk-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file)
-              (define-key magit-file-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file))
-          '';
-          custom = {
-            magit-display-buffer-function = "#'magit-display-buffer-same-window-except-diff-v1";
-          };
         };
       };
     };

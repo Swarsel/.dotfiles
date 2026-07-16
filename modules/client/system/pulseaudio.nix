@@ -2,8 +2,8 @@
   flake.modules.nixos.pulseaudio =
     {
       config,
-      pkgs,
       lib,
+      pkgs,
       ...
     }:
     {

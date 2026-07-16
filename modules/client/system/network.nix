@@ -1,11 +1,18 @@
 {
   flake.modules = {
+    homeManager.network-manager-applet = {
+      config = {
+        swarselsystems.enabledHomeModules = [ "nm-applet" ];
+        services.network-manager-applet.enable = true;
+        xsession.preferStatusNotifierItems = true; # needed for indicator icon to show
+      };
+    };
     nixos.network =
       {
         self,
+        config,
         lib,
         pkgs,
-        config,
         confLib,
         ...
       }:
@@ -14,12 +21,12 @@
         clientSopsFile = config.node.secretsDir + "/secrets.yaml";
 
         inherit (config.repo.secrets.common.network)
-          wlan1
-          mobile1
-          vpn1-location
-          vpn1-cipher
-          vpn1-address
           eduroam-anon
+          mobile1
+          vpn1-address
+          vpn1-cipher
+          vpn1-location
+          wlan1
           ;
 
         iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -30,30 +37,27 @@
         };
         config = {
 
-          users.persistentIds = {
-            nm-iodine = confLib.mkIds 957;
-          };
           sops = {
             secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-              wlan1-pw = { };
-              wlan2-pw = { };
-              laptop-hotspot-pw = { };
-              mobile-hotspot-pw = { };
-              eduroam-user = { };
               eduroam-pw = { };
-              pia-vpn-user = { };
-              pia-vpn-pw = { };
+              eduroam-user = { };
               home-wireguard-client-private-key = {
                 sopsFile = clientSopsFile;
               };
-              home-wireguard-server-public-key = { };
               home-wireguard-endpoint = { };
-              pia-vpn1-crl-pem = {
-                sopsFile = certsSopsFile;
-              };
+              home-wireguard-server-public-key = { };
+              laptop-hotspot-pw = { };
+              mobile-hotspot-pw = { };
+              pia-vpn-pw = { };
+              pia-vpn-user = { };
               pia-vpn1-ca-pem = {
                 sopsFile = certsSopsFile;
               };
+              pia-vpn1-crl-pem = {
+                sopsFile = certsSopsFile;
+              };
+              wlan1-pw = { };
+              wlan2-pw = { };
             };
             templates = lib.mkIf (!config.swarselsystems.isPublic) {
               "network-manager.env".content = ''
@@ -71,32 +75,14 @@
               '';
             };
           };
-
+          users.persistentIds = {
+            nm-iodine = confLib.mkIds 957;
+          };
           services.resolved.enable = true;
-
           networking = {
-            hostName = config.node.name;
-            hosts = { };
-            wireless.iwd = {
-              enable = true;
-              settings = {
-                IPv6 = {
-                  Enabled = true;
-                };
-                Settings = {
-                  AutoConnect = true;
-                };
-                # DriverQuirks = {
-                #   UseDefaultInterface = true;
-                # };
-              };
-            };
-            nftables.enable = lib.mkDefault true;
             enableIPv6 = lib.mkDefault true;
             firewall = {
               enable = lib.swarselsystems.mkStrong config.swarselsystems.firewall;
-              checkReversePath = lib.mkDefault false;
-              allowedUDPPorts = [ 51820 ]; # 51820: wireguard
               allowedTCPPortRanges = [
                 {
                   from = 1714;
@@ -109,18 +95,14 @@
                   to = 1764;
                 } # kde-connect
               ];
+              allowedUDPPorts = [ 51820 ]; # 51820: wireguard
+              checkReversePath = lib.mkDefault false;
             };
-
+            hostName = config.node.name;
+            hosts = { };
             networkmanager = {
               enable = true;
-              wifi.backend = "iwd";
               dns = "systemd-resolved";
-              plugins = [
-                # list of plugins: https://search.nixos.org/packages?query=networkmanager-
-                # docs https://networkmanager.dev/docs/vpn/
-                pkgs.networkmanager-openconnect
-                pkgs.networkmanager-openvpn
-              ];
               ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
                 environmentFiles = [
                   "${config.sops.templates."network-manager.env".path}"
@@ -130,12 +112,36 @@
                     inherit (config.repo.secrets.local.network) home-wireguard-address home-wireguard-allowed-ips;
                   in
                   {
+                    ${mobile1} = {
+                      connection = {
+                        autoconnect-priority = "500";
+                        id = mobile1;
+                        type = "wifi";
+                      };
+                      ipv4 = {
+                        method = "auto";
+                      };
+                      ipv6 = {
+                        addr-gen-mode = "default";
+                        method = "auto";
+                      };
+                      proxy = { };
+                      wifi = {
+                        mode = "infrastructure";
+                        ssid = mobile1;
+                      };
+                      wifi-security = {
+                        auth-alg = "open";
+                        key-mgmt = "wpa-psk";
+                        psk = "$MOBILE_HOTSPOT_PW";
+                      };
+                    };
                     ${wlan1} = {
                       connection = {
+                        autoconnect-priority = "999";
                         id = wlan1;
                         # permissions = "";
                         type = "wifi";
-                        autoconnect-priority = "999";
                       };
                       ipv4 = {
                         # dns-search = "";
@@ -158,7 +164,32 @@
                         psk = "$WLAN1_PW";
                       };
                     };
-
+                    Hotspot = {
+                      connection = {
+                        autoconnect = "false";
+                        id = "Hotspot";
+                        type = "wifi";
+                      };
+                      ipv4 = {
+                        method = "shared";
+                      };
+                      ipv6 = {
+                        addr-gen-mode = "default";
+                        method = "ignore";
+                      };
+                      proxy = { };
+                      wifi = {
+                        mode = "ap";
+                        ssid = "Hotspot-${config.swarselsystems.mainUser}";
+                      };
+                      wifi-security = {
+                        group = "ccmp;";
+                        key-mgmt = "wpa-psk";
+                        pairwise = "ccmp;";
+                        proto = "rsn;";
+                        psk = "$MOBILE_HOTSPOT_PW";
+                      };
+                    };
                     LAN-Party = {
                       connection = {
                         autoconnect = "false";
@@ -178,14 +209,13 @@
                       };
                       proxy = { };
                     };
-
                     eduroam = {
                       "802-1x" = {
+                        anonymous-identity = lib.mkIf iwd eduroam-anon;
                         eap = if (!iwd) then "ttls;" else "peap;";
                         identity = "$EDUROAM_USER";
                         password = "$EDUROAM_PW";
                         phase2-auth = "mschapv2";
-                        anonymous-identity = lib.mkIf iwd eduroam-anon;
                       };
                       connection = {
                         id = "eduroam";
@@ -208,7 +238,30 @@
                         key-mgmt = "wpa-eap";
                       };
                     };
-
+                    home-wireguard = {
+                      connection = {
+                        autoconnect = "false";
+                        id = "HomeVPN";
+                        interface-name = "wg1";
+                        type = "wireguard";
+                      };
+                      ipv4 = {
+                        address1 = home-wireguard-address;
+                        method = "ignore";
+                      };
+                      ipv6 = {
+                        addr-gen-mode = "stable-privacy";
+                        method = "ignore";
+                      };
+                      proxy = { };
+                      wireguard = {
+                        private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY";
+                      };
+                      "wireguard-peer.$HOME_WIREGURARD_SERVER_PUBLIC_KEY" = {
+                        allowed-ips = home-wireguard-allowed-ips;
+                        endpoint = "$HOME_WIREGUARD_ENDPOINT";
+                      };
+                    };
                     local = {
                       connection = {
                         autoconnect = "false";
@@ -226,57 +279,6 @@
                       };
                       proxy = { };
                     };
-
-                    ${mobile1} = {
-                      connection = {
-                        id = mobile1;
-                        type = "wifi";
-                        autoconnect-priority = "500";
-                      };
-                      ipv4 = {
-                        method = "auto";
-                      };
-                      ipv6 = {
-                        addr-gen-mode = "default";
-                        method = "auto";
-                      };
-                      proxy = { };
-                      wifi = {
-                        mode = "infrastructure";
-                        ssid = mobile1;
-                      };
-                      wifi-security = {
-                        auth-alg = "open";
-                        key-mgmt = "wpa-psk";
-                        psk = "$MOBILE_HOTSPOT_PW";
-                      };
-                    };
-
-                    home-wireguard = {
-                      connection = {
-                        id = "HomeVPN";
-                        type = "wireguard";
-                        autoconnect = "false";
-                        interface-name = "wg1";
-                      };
-                      wireguard = {
-                        private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY";
-                      };
-                      "wireguard-peer.$HOME_WIREGURARD_SERVER_PUBLIC_KEY" = {
-                        endpoint = "$HOME_WIREGUARD_ENDPOINT";
-                        allowed-ips = home-wireguard-allowed-ips;
-                      };
-                      ipv4 = {
-                        method = "ignore";
-                        address1 = home-wireguard-address;
-                      };
-                      ipv6 = {
-                        addr-gen-mode = "stable-privacy";
-                        method = "ignore";
-                      };
-                      proxy = { };
-                    };
-
                     pia-vpn1 = {
                       connection = {
                         autoconnect = "false";
@@ -312,48 +314,34 @@
                       };
                     };
 
-                    Hotspot = {
-                      connection = {
-                        autoconnect = "false";
-                        id = "Hotspot";
-                        type = "wifi";
-                      };
-                      ipv4 = {
-                        method = "shared";
-                      };
-                      ipv6 = {
-                        addr-gen-mode = "default";
-                        method = "ignore";
-                      };
-                      proxy = { };
-                      wifi = {
-                        mode = "ap";
-                        ssid = "Hotspot-${config.swarselsystems.mainUser}";
-                      };
-                      wifi-security = {
-                        group = "ccmp;";
-                        key-mgmt = "wpa-psk";
-                        pairwise = "ccmp;";
-                        proto = "rsn;";
-                        psk = "$MOBILE_HOTSPOT_PW";
-                      };
-                    };
-
                   };
+              };
+              plugins = [
+                # list of plugins: https://search.nixos.org/packages?query=networkmanager-
+                # docs https://networkmanager.dev/docs/vpn/
+                pkgs.networkmanager-openconnect
+                pkgs.networkmanager-openvpn
+              ];
+              wifi.backend = "iwd";
+            };
+            nftables.enable = lib.mkDefault true;
+            wireless.iwd = {
+              enable = true;
+              settings = {
+                IPv6 = {
+                  Enabled = true;
+                };
+                Settings = {
+                  AutoConnect = true;
+                };
+                # DriverQuirks = {
+                #   UseDefaultInterface = true;
+                # };
               };
             };
           };
-
           systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
         };
       };
-
-    homeManager.network-manager-applet = {
-      config = {
-        swarselsystems.enabledHomeModules = [ "nm-applet" ];
-        services.network-manager-applet.enable = true;
-        xsession.preferStatusNotifierItems = true; # needed for indicator icon to show
-      };
-    };
   };
 }

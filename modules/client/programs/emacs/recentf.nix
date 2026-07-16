@@ -1,25 +1,15 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init = {
+    prelude = "(context-menu-mode 1)";
     usePackage = {
 
       recentf = {
-        enable = true;
         config = ''
           (add-to-list 'recentf-exclude "\\Archive\\.org\\'")
           (add-to-list 'recentf-exclude "\\Tasks\\.org\\'")
         '';
-      };
-
-      savehist = {
         enable = true;
-        init = "(savehist-mode 1)";
       };
-
-      saveplace = {
-        enable = true;
-        init = "(save-place-mode 1)";
-      };
-
       repeat = {
         enable = true;
         custom = {
@@ -27,8 +17,14 @@
         };
         init = "(repeat-mode 1)";
       };
+      savehist = {
+        enable = true;
+        init = "(savehist-mode 1)";
+      };
+      saveplace = {
+        enable = true;
+        init = "(save-place-mode 1)";
+      };
     };
-
-    prelude = "(context-menu-mode 1)";
   };
 }

@@ -6,6 +6,7 @@
   ];
 
   boot = {
+    extraModulePackages = [ ];
     initrd = {
       availableKernelModules = [
         "ahci"
@@ -18,7 +19,7 @@
       kernelModules = [ ];
     };
     kernelModules = [ ];
-    extraModulePackages = [ ];
   };
+
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }

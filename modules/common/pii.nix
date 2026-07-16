@@ -2,12 +2,12 @@
 {
   flake.modules.generic.pii =
     {
-      config,
       inputs,
+      config,
       lib,
+      globals,
       homeLib,
       nodes,
-      globals,
       ...
     }:
     let
@@ -41,8 +41,6 @@
         repo = {
           secretFiles = lib.mkOption {
             default = { };
-            type = lib.types.attrsOf lib.types.path;
-            example = lib.literalExpression "{ local = ./pii.nix.enc; }";
             description = ''
               This file manages the origin for this machine's repository-secrets. Anything that is
               technically not a secret in the classical sense (i.e. that it has to be protected
@@ -62,26 +60,28 @@
               Each path given here must be an sops-encrypted .nix file. For each attribute `<name>`,
               the corresponding file will be decrypted, imported and exposed as {option}`repo.secrets.<name>`.
             '';
+            example = lib.literalExpression "{ local = ./pii.nix.enc; }";
+            type = lib.types.attrsOf lib.types.path;
           };
 
           secrets = lib.mkOption {
-            readOnly = true;
             default = lib.mapAttrs (
               _: x:
               importEncrypted x {
                 inherit
-                  lib
-                  homeLib
-                  nodes
-                  globals
                   inputs
                   config
+                  lib
+                  globals
+                  homeLib
+                  nodes
                   ;
                 inherit (inputs.topologyPrivate) topologyPrivate;
               }
             ) config.repo.secretFiles;
-            type = lib.types.unspecified;
             description = "Exposes the loaded repo secrets. This option is read-only.";
+            readOnly = true;
+            type = lib.types.unspecified;
           };
         };
       };

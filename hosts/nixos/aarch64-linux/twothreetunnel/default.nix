@@ -24,15 +24,27 @@
     self.modules.nixos.firezone
     self.modules.nixos.nginx-otel
   ];
-
+  swarselsystems = {
+    flakePath = "/root/.dotfiles";
+    info = "VM.Standard.A1.Flex, 2 vCPUs, 8GB RAM";
+    isBtrfs = true;
+    isCloud = true;
+    isCrypted = true;
+    isImpermanence = true;
+    isLinux = true;
+    isSecureBoot = false;
+    isSwap = false;
+    nodeRoles = [
+      "webProxy"
+      "oauthServer"
+    ];
+    rootDisk = "/dev/disk/by-id/scsi-3608deb9b0d4244de95c6620086ff740d";
+  };
   topology.self = {
     icon = "devices.cloud-server";
   };
-
   globals = {
     wireguard.wgProxy = {
-      server = config.node.name;
-      netConfigPrefix = config.node.name;
       clients = [
         "moonside"
         "winters"
@@ -60,34 +72,19 @@
         "eagleland"
         "hintbooth-adguardhome"
       ];
+      netConfigPrefix = config.node.name;
+      server = config.node.name;
     };
-  };
-
-  swarselsystems = {
-    nodeRoles = [
-      "webProxy"
-      "oauthServer"
-    ];
-    flakePath = "/root/.dotfiles";
-    info = "VM.Standard.A1.Flex, 2 vCPUs, 8GB RAM";
-    isImpermanence = true;
-    isSecureBoot = false;
-    isCrypted = true;
-    isSwap = false;
-    rootDisk = "/dev/disk/by-id/scsi-3608deb9b0d4244de95c6620086ff740d";
-    isBtrfs = true;
-    isLinux = true;
-    isCloud = true;
   };
 }
 // lib.optionalAttrs (!minimal) {
 
   networking.nftables = {
-    firewall.zones.untrusted.interfaces = [ "lan" ];
     chains.forward.dnat = {
       after = [ "conntrack" ];
       rules = [ "ct status dnat accept" ];
     };
+    firewall.zones.untrusted.interfaces = [ "lan" ];
   };
 
 }

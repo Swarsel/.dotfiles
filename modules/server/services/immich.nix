@@ -2,11 +2,11 @@
   flake.modules.nixos.immich =
     {
       self,
+      config,
       lib,
       pkgs,
-      config,
-      globals,
       confLib,
+      globals,
       ...
     }:
     let
@@ -15,22 +15,22 @@
           name = "immich";
           port = 3001;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
+        webProxy
         ;
       inherit (config.swarselsystems) sopsFile;
 
@@ -41,30 +41,45 @@
       imports = [
         self.modules.nixos.postgresql
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "immich" ];
-
-        sops.secrets = {
-          kanidm-immich = {
-            sopsFile = kanidmSopsFile;
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
+        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+        # networking.firewall.allowedTCPPorts = [ servicePort ];
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = ''"res":\s*"pong"'';
+            path = "/api/server/ping";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
+        sops.secrets = {
           immich-smtp-pw = {
             inherit sopsFile;
-            owner = serviceUser;
             group = serviceGroup;
             mode = "0440";
+            owner = serviceUser;
+          };
+          kanidm-immich = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = kanidmSopsFile;
           };
         };
-
         users = {
-          persistentIds = {
-            immich = confLib.mkIds 989;
-            redis-immich = confLib.mkIds 977;
-          };
           users.${serviceUser} = {
             extraGroups = [
               "video"
@@ -72,62 +87,21 @@
               "users"
             ];
           };
-        };
-
-        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
+          persistentIds = {
+            immich = confLib.mkIds 989;
+            redis-immich = confLib.mkIds 977;
           };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/api/server/ping";
-            expectedBodyRegex = ''"res":\s*"pong"'';
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
         };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-            {
-              directory = "/var/cache/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-            {
-              directory = "/var/lib/redis-${serviceName}";
-              user = "redis-${serviceUser}";
-              group = "redis-${serviceGroup}";
-            }
-          ];
-        };
-
         services.${serviceName} = {
           enable = true;
           package = pkgs.immich;
-          host = "0.0.0.0";
-          port = servicePort;
-          # openFirewall = true;
-          mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
           environment = {
             IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
           };
+          host = "0.0.0.0";
+          # openFirewall = true;
+          mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
+          port = servicePort;
           settings = {
             backup.database = {
               cronExpression = "0 02 * * *";
@@ -318,7 +292,25 @@
             user.deleteDelay = 7;
           };
         };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+            {
+              directory = "/var/cache/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+            {
+              directory = "/var/lib/redis-${serviceName}";
+              group = "redis-${serviceGroup}";
+              user = "redis-${serviceUser}";
+            }
+          ];
+        };
         nodes =
           let
             extraConfigLoc = ''
@@ -339,7 +331,7 @@
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit serviceName serviceDomain kanidmSopsFile;
+                    inherit kanidmSopsFile serviceDomain serviceName;
                     originUrl = [
                       "https://${serviceDomain}/auth/login"
                       "https://${serviceDomain}/user-settings"
@@ -354,11 +346,11 @@
             {
               ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
+                  extraConfigLoc
                   serviceAddress
-                  servicePort
                   serviceDomain
                   serviceName
-                  extraConfigLoc
+                  servicePort
                   ;
                 maxBody = 0;
               };
@@ -367,13 +359,13 @@
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
                   inherit
-                    servicePort
+                    extraConfigLoc
                     serviceDomain
                     serviceName
-                    extraConfigLoc
+                    servicePort
                     ;
-                  maxBody = 0;
                   extraConfig = nginxAccessRules;
+                  maxBody = 0;
                   serviceAddress = homeServiceAddress;
                 }
               );

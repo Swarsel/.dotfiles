@@ -1,9 +1,9 @@
 {
   name,
-  writeShellApplication,
+  findutils,
   git,
   gnugrep,
-  findutils,
+  writeShellApplication,
   ...
 }:
 

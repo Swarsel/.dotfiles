@@ -1,9 +1,9 @@
 {
   self,
+  homeConfig,
+  config,
   lib,
   pkgs,
-  config,
-  homeConfig,
   ...
 }:
 let

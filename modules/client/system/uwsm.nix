@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.uwsm =
     {
-      lib,
       config,
+      lib,
       pkgs,
       ...
     }:
@@ -11,27 +11,15 @@
     in
     {
       config = {
-        programs.uwsm = {
-          enable = true;
-          waylandCompositors = {
-            sway = {
-              prettyName = "Sway";
-              comment = "Sway compositor managed by UWSM";
-              binPath = "/run/current-system/sw/bin/sway";
-            };
-            niri = lib.mkIf (config.programs ? niri) {
-              prettyName = "Niri";
-              comment = "Niri compositor managed by UWSM";
-              binPath = "/run/current-system/sw/bin/niri-session";
-            };
-          };
-        };
-
         services.displayManager.sessionPackages =
           let
             mk_uwsm_desktop_entry =
               opts:
               (pkgs.writeTextFile {
+                derivationArgs = {
+                  passthru.providedSessions = [ "${opts.name}-uwsm" ];
+                };
+                destination = "/share/wayland-sessions/${opts.name}-uwsm.desktop";
                 name = "${opts.name}-uwsm";
                 text = ''
                   [Desktop Entry]
@@ -40,10 +28,6 @@
                   Exec=${lib.getExe cfg.package} start -F -- ${opts.binPath} ${lib.strings.escapeShellArgs opts.extraArgs}
                   Type=Application
                 '';
-                destination = "/share/wayland-sessions/${opts.name}-uwsm.desktop";
-                derivationArgs = {
-                  passthru.providedSessions = [ "${opts.name}-uwsm" ];
-                };
               });
           in
           lib.mkForce (
@@ -52,14 +36,29 @@
               mk_uwsm_desktop_entry {
                 inherit name;
                 inherit (value)
-                  prettyName
-                  comment
                   binPath
+                  comment
                   extraArgs
+                  prettyName
                   ;
               }
             ) cfg.waylandCompositors
           );
+        programs.uwsm = {
+          enable = true;
+          waylandCompositors = {
+            niri = lib.mkIf (config.programs ? niri) {
+              binPath = "/run/current-system/sw/bin/niri-session";
+              comment = "Niri compositor managed by UWSM";
+              prettyName = "Niri";
+            };
+            sway = {
+              binPath = "/run/current-system/sw/bin/sway";
+              comment = "Sway compositor managed by UWSM";
+              prettyName = "Sway";
+            };
+          };
+        };
       };
     };
 }

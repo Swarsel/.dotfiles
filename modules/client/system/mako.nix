@@ -7,30 +7,30 @@
         settings = {
           border-radius = 15;
           border-size = 1;
+          "category=mpd" = {
+            default-timeout = 2000;
+            group-by = "category";
+          };
           default-timeout = 5000;
-          ignore-timeout = false;
-          icons = 1;
-          layer = "overlay";
-          sort = "-time";
           height = 150;
-          width = 300;
+          icons = 1;
+          ignore-timeout = false;
+          layer = "overlay";
+          "mode=do-not-disturb" = {
+            invisible = true;
+          };
+          sort = "-time";
+          "urgency=high" = {
+            border-color = lib.mkForce "#bf616a";
+            default-timeout = 3000;
+          };
           "urgency=low" = {
             border-color = lib.mkForce "#cccccc";
           };
           "urgency=normal" = {
             border-color = lib.mkForce "#d08770";
           };
-          "urgency=high" = {
-            border-color = lib.mkForce "#bf616a";
-            default-timeout = 3000;
-          };
-          "category=mpd" = {
-            default-timeout = 2000;
-            group-by = "category";
-          };
-          "mode=do-not-disturb" = {
-            invisible = true;
-          };
+          width = 300;
         };
       };
     };

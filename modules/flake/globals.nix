@@ -3,35 +3,29 @@
 {
 
   flake-file.inputs = {
-    topologyPrivate.url = "./files/topology/public";
     repoSecrets.url = "./secrets/repo";
+    topologyPrivate.url = "./files/topology/public";
   };
 
   imports = [
     (
       { lib, flake-parts-lib, ... }:
       flake-parts-lib.mkTransposedPerSystemModule {
-        name = "globals";
         file = ./globals.nix;
+        name = "globals";
         option = lib.mkOption {
           type = lib.types.unspecified;
         };
       }
     )
   ];
+
   perSystem =
     { lib, pkgs, ... }:
     {
       globals =
         let
           globalsSystem = lib.evalModules {
-            prefix = [ "globals" ];
-            specialArgs = {
-              inherit (pkgs) lib;
-              inherit (self.outputs) nodes;
-              inherit inputs;
-              inherit (inputs.topologyPrivate) topologyPrivate;
-            };
             modules = [
               self.modules.generic.globals
               (
@@ -69,20 +63,27 @@
                 }
               )
             ];
+            prefix = [ "globals" ];
+            specialArgs = {
+              inherit (pkgs) lib;
+              inherit (self.outputs) nodes;
+              inherit inputs;
+              inherit (inputs.topologyPrivate) topologyPrivate;
+            };
           };
         in
         {
           inherit (globalsSystem.config.globals)
-            domains
-            services
-            networks
-            hosts
-            user
-            root
-            general
-            wireguard
             dns
+            domains
+            general
+            hosts
             monitoring
+            networks
+            root
+            services
+            user
+            wireguard
             ;
         };
     };

@@ -2,9 +2,9 @@
   flake.modules.nixos.disk-encrypt =
     {
       self,
-      pkgs,
-      lib,
       config,
+      lib,
+      pkgs,
       minimal,
       ...
     }:
@@ -24,37 +24,16 @@
     in
     {
       options.swarselsystems.networkKernelModules = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
         default = [ ];
+        type = lib.types.listOf lib.types.str;
       };
       config = lib.mkIf config.swarselsystems.isCrypted {
         swarselsystems.enabledServerModules = [ "diskEncryption" ];
-
-        # as soon as we hit a stable system, we will use a persisted key
-        # @future me: dont mkIf this to minimal, we need to create this as soon as possible
-        system.activationScripts.ensureInitrdHostkey = {
-          text = ''
-            [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
-          '';
-          deps = [
-            "users"
-          ]
-          ++ lib.optional config.swarselsystems.isImpermanence "createPersistentStorageDirs";
-        };
-
-        environment.persistence."/persist" =
-          lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselsystems.isServer || minimal))
-            {
-              files = [ hostKeyPathBase ];
-            };
-
         boot = lib.mkIf (!config.swarselsystems.isClient) {
           # kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == []) || isRouter)) [
           #   "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
           # ];
           initrd = {
-            secrets."/tmp${hostKeyPathBase}" =
-              if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
             availableKernelModules = config.swarselsystems.networkKernelModules;
             kernelModules = config.swarselsystems.networkKernelModules; # at least summers needs this to actually find the interfaces
             network = {
@@ -62,20 +41,38 @@
               flushBeforeStage2 = true;
               ssh = {
                 enable = true;
-                port = 2222; # avoid hostkey changed nag
                 authorizedKeys = [
                   ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/yubikey.pub"}''
                   ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/magicant.pub"}''
                 ];
                 hostKeys = [ "/tmp${hostKeyPathBase}" ]; # use a tmp file otherwise persist mount will be unhappy
+                port = 2222; # avoid hostkey changed nag
               };
             };
+            secrets."/tmp${hostKeyPathBase}" =
+              if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
             systemd = {
               initrdBin = with pkgs; [
                 cryptsetup
               ];
             };
           };
+        };
+        environment.persistence."/persist" =
+          lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselsystems.isServer || minimal))
+            {
+              files = [ hostKeyPathBase ];
+            };
+        # as soon as we hit a stable system, we will use a persisted key
+        # @future me: dont mkIf this to minimal, we need to create this as soon as possible
+        system.activationScripts.ensureInitrdHostkey = {
+          deps = [
+            "users"
+          ]
+          ++ lib.optional config.swarselsystems.isImpermanence "createPersistentStorageDirs";
+          text = ''
+            [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
+          '';
         };
       };
 

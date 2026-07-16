@@ -2,11 +2,11 @@
   flake.modules.nixos.navidrome =
     {
       self,
-      pkgs,
       config,
       lib,
-      globals,
+      pkgs,
       confLib,
+      globals,
       ...
     }:
     let
@@ -15,87 +15,128 @@
           name = "navidrome";
           port = 4040;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
+        isHome
         nginxAccessRules
-        homeServiceAddress
+        webProxy
         ;
     in
     {
       imports = [
         self.modules.nixos.server-pipewire
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "navidrome" ];
-
-        environment.systemPackages = with pkgs; [
-          pciutils
-          alsa-utils
-          mpv
-        ];
-
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
-        users = {
-          groups = {
-            ${serviceGroup} = {
-              gid = 61593;
-            };
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
           };
-
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = ''^\.$'';
+            path = "/ping";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
+        users = {
           users = {
             ${serviceUser} = {
-              isSystemUser = true;
-              uid = 61593;
-              group = serviceGroup;
               extraGroups = [
                 "audio"
                 "utmp"
                 "users"
                 "pipewire"
               ];
+              group = serviceGroup;
+              isSystemUser = true;
+              uid = 61593;
+            };
+          };
+          groups = {
+            ${serviceGroup} = {
+              gid = 61593;
             };
           };
         };
-
+        services.${serviceName} = {
+          enable = true;
+          settings = {
+            Address = "0.0.0.0";
+            AutoImportPlaylists = false;
+            EnableInsightsCollector = false;
+            EnableSharing = true;
+            EnableTranscodingConfig = true;
+            Jukebox = {
+              Default = "default";
+              Devices = [
+                # use mpv --audio-device=help to get these
+                [
+                  "default"
+                  "pipewire"
+                ]
+              ];
+              Enabled = true;
+            };
+            LastFM = {
+              inherit (config.repo.secrets.local.LastFM) ApiKey Secret;
+            };
+            LogLevel = "debug";
+            MPVPath = "${pkgs.mpv}/bin/mpv";
+            MusicFolder = "/storage/Music";
+            PlaylistsPath = "./Playlists";
+            Port = servicePort;
+            ReverseProxyUserHeader = "X-User";
+            ReverseProxyWhitelist = "0.0.0.0/0";
+            ScanSchedule = "@every 24h";
+            Scanner.GroupAlbumReleases = true;
+            Spotify = {
+              inherit (config.repo.secrets.local.Spotify) ID Secret;
+            };
+            UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
+            UIWelcomeMessage = "~SwarselSound~";
+          };
+        };
+        environment = {
+          persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+            directories = [
+              {
+                directory = "/var/lib/${serviceName}";
+                group = serviceGroup;
+                user = serviceUser;
+              }
+            ];
+          };
+          systemPackages = with pkgs; [
+            pciutils
+            alsa-utils
+            mpv
+          ];
+        };
         hardware = {
           enableAllFirmware = lib.mkForce true;
         };
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/ping";
-            expectedBodyRegex = ''^\.$'';
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
         # services.snapserver = {
         #   enable = true;
         #   settings = {
@@ -106,74 +147,23 @@
         #     };
         #   };
         # };
-
         systemd.services = {
           ${serviceName} = {
             after = [ "pipewire.service" ];
-            wants = [ "pipewire.service" ];
             environment = {
               PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
             };
             serviceConfig = {
               PrivateDevices = lib.mkForce false;
-              PrivateUsers = lib.mkForce false;
               PrivateTmp = lib.mkForce false;
+              PrivateUsers = lib.mkForce false;
               RestrictRealtime = lib.mkForce false;
-              SystemCallFilter = lib.mkForce null;
               RootDirectory = lib.mkForce null;
+              SystemCallFilter = lib.mkForce null;
             };
+            wants = [ "pipewire.service" ];
           };
         };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
-        services.${serviceName} = {
-          enable = true;
-          settings = {
-            LogLevel = "debug";
-            Address = "0.0.0.0";
-            Port = servicePort;
-            MusicFolder = "/storage/Music";
-            PlaylistsPath = "./Playlists";
-            AutoImportPlaylists = false;
-            EnableSharing = true;
-            EnableTranscodingConfig = true;
-            Scanner.GroupAlbumReleases = true;
-            ScanSchedule = "@every 24h";
-            MPVPath = "${pkgs.mpv}/bin/mpv";
-            ReverseProxyWhitelist = "0.0.0.0/0";
-            ReverseProxyUserHeader = "X-User";
-            Jukebox = {
-              Enabled = true;
-              Default = "default";
-              Devices = [
-                # use mpv --audio-device=help to get these
-                [
-                  "default"
-                  "pipewire"
-                ]
-              ];
-            };
-            LastFM = {
-              inherit (config.repo.secrets.local.LastFM) ApiKey Secret;
-            };
-            Spotify = {
-              inherit (config.repo.secrets.local.Spotify) ID Secret;
-            };
-            UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
-            UIWelcomeMessage = "~SwarselSound~";
-            EnableInsightsCollector = false;
-          };
-        };
-
         nodes =
           let
             genNginx = toAddress: extraConfigPre: {
@@ -186,14 +176,9 @@
               };
               virtualHosts = {
                 "${serviceDomain}" = {
-                  useACMEHost = globals.domains.main;
-                  forceSSL = true;
                   acmeRoot = null;
-                  oauth2 = {
-                    enable = true;
-                    allowedGroups = [ "navidrome_access" ];
-                  };
                   extraConfig = extraConfigPre;
+                  forceSSL = true;
                   locations =
                     let
                       extraConfig = ''
@@ -207,25 +192,30 @@
                     in
                     {
                       "/" = {
+                        inherit extraConfig;
                         proxyPass = "http://${serviceName}";
                         proxyWebsockets = true;
-                        inherit extraConfig;
-                      };
-                      "/share" = {
-                        proxyPass = "http://${serviceName}";
-                        proxyWebsockets = true;
-                        setOauth2Headers = false;
-                        bypassAuth = true;
-                        inherit extraConfig;
                       };
                       "/rest" = {
+                        inherit extraConfig;
+                        bypassAuth = true;
                         proxyPass = "http://${serviceName}";
                         proxyWebsockets = true;
                         setOauth2Headers = false;
-                        bypassAuth = true;
+                      };
+                      "/share" = {
                         inherit extraConfig;
+                        bypassAuth = true;
+                        proxyPass = "http://${serviceName}";
+                        proxyWebsockets = true;
+                        setOauth2Headers = false;
                       };
                     };
+                  oauth2 = {
+                    enable = true;
+                    allowedGroups = [ "navidrome_access" ];
+                  };
+                  useACMEHost = globals.domains.main;
                 };
               };
             };

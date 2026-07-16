@@ -1,8 +1,8 @@
 {
   flake.modules.homeManager.gammastep =
     {
-      lib,
       config,
+      lib,
       confLib,
       nixosConfig ? null,
       ...
@@ -13,12 +13,12 @@
     {
       config = {
         swarselsystems.enabledHomeModules = [ "gammastep" ];
-        systemd.user.services.gammastep = confLib.overrideTarget "sway-session.target";
         services.gammastep = lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic) {
+          inherit latitude longitude;
           enable = true;
           provider = "manual";
-          inherit longitude latitude;
         };
+        systemd.user.services.gammastep = confLib.overrideTarget "sway-session.target";
       };
     };
 }

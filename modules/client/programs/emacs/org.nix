@@ -1,5 +1,24 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
+    auctex = {
+      enable = true;
+      custom = {
+        LaTeX-electric-left-right-brace = true;
+        TeX-auto-save = true;
+        TeX-electric-sub-and-superscript = true;
+        TeX-engine = "'luatex";
+        TeX-master = false;
+        TeX-parse-self = true;
+        TeX-save-query = false;
+        font-latex-fontify-script = false;
+      };
+      hook = [
+        "(LaTeX-mode . visual-line-mode)"
+        "(LaTeX-mode . flyspell-mode)"
+        "(LaTeX-mode . LaTeX-math-mode)"
+        "(LaTeX-mode . reftex-mode)"
+      ];
+    };
     general.config = ''
       (swarsel/leader-keys
         "o"  '(:ignore o :which-key "org")
@@ -11,7 +30,7 @@
         "oc" '((lambda () (interactive) (org-store-link)) :which-key "copy (=store) link")
         "os" '(shfmt-region :which-key "format sh-block")
         "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-        "on" '(nixfmt-region :which-key "format nix-block")
+        "on" '(pedantix-format-region :which-key "format nix-block")
         "ot" '(swarsel/org-babel-tangle-config :which-key "tangle file")
         "oe" '(org-html-export-to-html :which-key "export to html")
         "c"  '(:ignore c :which-key "capture")
@@ -24,22 +43,94 @@
        "C-M-a" (lambda () (interactive) (org-capture nil "a"))
        "M-i" 'swarsel/org-insert-link-to-heading)
     '';
-
+    hide-mode-line.enable = true;
     org = {
+      config = ''
+        (advice-add 'org-unlogged-message :around #'suppress-messages)
+
+        (setq org-ellipsis " ⤵"
+              org-link-descriptive t
+              org-hide-emphasis-markers t)
+        (setq org-startup-folded t)
+        (setq org-support-shift-select t)
+
+        (setq org-agenda-start-with-log-mode t)
+        (setq org-fontify-quote-and-verse-blocks t)
+        (setq org-log-done 'time)
+        (setq org-log-into-drawer t)
+        (setq org-startup-with-inline-images t)
+        (setq org-export-headline-levels 6)
+        (setq org-image-actual-width nil)
+        (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
+
+        (setq org-agenda-files '("/home/swarsel/Org/Tasks.org"
+                                 "/home/swarsel/Org/Archive.org"
+                                 ))
+
+        (setq org-capture-templates
+              '(("t" "Todo" entry (file+headline "~/Org/Tasks.org" "Inbox")
+                 "* TODO %?\n  %i\n  %a")
+                ("j" "Journal" entry (file+olp+datetree "~/Org/Journal.org")
+                 "* %?\nEntered on %U\n  %i\n  %a")))
+
+        (setq org-refile-targets
+              '((swarsel-archive-org-file :maxlevel . 1)
+                (swarsel-tasks-org-file :maxlevel . 1)))
+
+        (org-babel-do-load-languages
+         'org-babel-load-languages
+         '((emacs-lisp . t)
+           (python . t)
+           (js . t)
+           (shell . t)))
+
+        (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch)
+        (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
+        (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+        (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+        (set-face-attribute 'org-quote nil :inherit '(shadow fixed-pitch))
+        (set-face-attribute 'org-verse nil :inherit '(shadow fixed-pitch))
+        (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+        (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+        (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+        (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+
+        (dolist (face '((org-level-1 . 1.2)
+                        (org-level-2 . 1.1)
+                        (org-level-3 . 1.0)
+                        (org-level-4 . 1.0)
+                        (org-level-5 . 1.0)
+                        (org-level-6 . 1.0)
+                        (org-level-7 . 1.0)
+                        (org-level-8 . 1.0)))
+          (set-face-attribute (car face) nil :font swarsel/variable-font :weight 'medium :height (cdr face)))
+
+        (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
+
+        (advice-add 'org-babel-tangle-single-block :around #'swarsel/org-babel-tangle-single-block-advice)
+        (advice-add 'org-babel-tangle :around #'swarsel/org-babel-tangle-timing-advice)
+
+        (require 'org-tempo)
+        (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+        (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+        (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
+        (add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
+        (add-to-list 'org-structure-template-alist '("ne" . "bash :exports both"))
+      '';
       enable = true;
-      hook = [ "(org-mode . swarsel/org-mode-setup)" ];
       bind = {
         "C-<tab>" = "org-fold-outer";
         "C-c s" = "org-store-link";
       };
       custom = {
-        org-html-htmlize-output-type = false;
-        org-fold-core-style = "'overlays";
-        org-src-preserve-indentation = false;
-        org-src-fontify-natively = true;
-        org-export-with-broken-links = "'mark";
         org-confirm-babel-evaluate = false;
+        org-export-with-broken-links = "'mark";
+        org-fold-core-style = "'overlays";
+        org-html-htmlize-output-type = false;
+        org-src-fontify-natively = true;
+        org-src-preserve-indentation = false;
       };
+      hook = [ "(org-mode . swarsel/org-mode-setup)" ];
       init = ''
         (defun swarsel/org-mode-setup ()
           (variable-pitch-mode 1)
@@ -54,7 +145,7 @@
         (defun swarsel/run-formatting ()
           (interactive)
           (let ((default-directory (expand-file-name "~/.dotfiles")))
-            (shell-command "find . -name '*.nix' -exec nixfmt {} + > /dev/null")))
+            (shell-command "find . -name '*.nix' -exec pedantix {} + > /dev/null")))
 
         (defun swarsel/org-babel-tangle-config ()
           (interactive)
@@ -172,80 +263,7 @@
           "Just return BODY unchanged, allowing noweb expansion."
           body)
       '';
-      config = ''
-        (advice-add 'org-unlogged-message :around #'suppress-messages)
-
-        (setq org-ellipsis " ⤵"
-              org-link-descriptive t
-              org-hide-emphasis-markers t)
-        (setq org-startup-folded t)
-        (setq org-support-shift-select t)
-
-        (setq org-agenda-start-with-log-mode t)
-        (setq org-fontify-quote-and-verse-blocks t)
-        (setq org-log-done 'time)
-        (setq org-log-into-drawer t)
-        (setq org-startup-with-inline-images t)
-        (setq org-export-headline-levels 6)
-        (setq org-image-actual-width nil)
-        (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
-
-        (setq org-agenda-files '("/home/swarsel/Org/Tasks.org"
-                                 "/home/swarsel/Org/Archive.org"
-                                 ))
-
-        (setq org-capture-templates
-              '(("t" "Todo" entry (file+headline "~/Org/Tasks.org" "Inbox")
-                 "* TODO %?\n  %i\n  %a")
-                ("j" "Journal" entry (file+olp+datetree "~/Org/Journal.org")
-                 "* %?\nEntered on %U\n  %i\n  %a")))
-
-        (setq org-refile-targets
-              '((swarsel-archive-org-file :maxlevel . 1)
-                (swarsel-tasks-org-file :maxlevel . 1)))
-
-        (org-babel-do-load-languages
-         'org-babel-load-languages
-         '((emacs-lisp . t)
-           (python . t)
-           (js . t)
-           (shell . t)))
-
-        (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch)
-        (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
-        (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-        (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-        (set-face-attribute 'org-quote nil :inherit '(shadow fixed-pitch))
-        (set-face-attribute 'org-verse nil :inherit '(shadow fixed-pitch))
-        (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-        (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-        (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-        (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-
-        (dolist (face '((org-level-1 . 1.2)
-                        (org-level-2 . 1.1)
-                        (org-level-3 . 1.0)
-                        (org-level-4 . 1.0)
-                        (org-level-5 . 1.0)
-                        (org-level-6 . 1.0)
-                        (org-level-7 . 1.0)
-                        (org-level-8 . 1.0)))
-          (set-face-attribute (car face) nil :font swarsel/variable-font :weight 'medium :height (cdr face)))
-
-        (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
-
-        (advice-add 'org-babel-tangle-single-block :around #'swarsel/org-babel-tangle-single-block-advice)
-        (advice-add 'org-babel-tangle :around #'swarsel/org-babel-tangle-timing-advice)
-
-        (require 'org-tempo)
-        (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-        (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-        (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
-        (add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
-        (add-to-list 'org-structure-template-alist '("ne" . "bash :exports both"))
-      '';
     };
-
     org-appear = {
       enable = true;
       hook = [ "(org-mode . org-appear-mode)" ];
@@ -256,32 +274,6 @@
         (setq org-appear-autosubmarkers t)
       '';
     };
-
-    visual-fill-column = {
-      enable = true;
-      hook = [ "(org-mode . swarsel/org-mode-visual-fill)" ];
-    };
-
-    auctex = {
-      enable = true;
-      hook = [
-        "(LaTeX-mode . visual-line-mode)"
-        "(LaTeX-mode . flyspell-mode)"
-        "(LaTeX-mode . LaTeX-math-mode)"
-        "(LaTeX-mode . reftex-mode)"
-      ];
-      custom = {
-        TeX-auto-save = true;
-        TeX-save-query = false;
-        TeX-parse-self = true;
-        TeX-engine = "'luatex";
-        TeX-master = false;
-        LaTeX-electric-left-right-brace = true;
-        font-latex-fontify-script = false;
-        TeX-electric-sub-and-superscript = true;
-      };
-    };
-
     org-fragtog = {
       enable = true;
       hook = [
@@ -289,25 +281,27 @@
         "(markdown-mode . org-fragtog-mode)"
       ];
     };
-
     org-modern = {
-      enable = true;
       config = ''
         (setq org-modern-block-name
               '((t . t)
                 ("src" "»" "∥")))
       '';
+      enable = true;
       hook = [ "(org-mode . org-modern-mode)" ];
     };
-
     org-present = {
+      config = ''
+        (add-hook 'org-present-after-navigate-functions #'swarsel/org-present-slide)
+        (setq org-present-startup-folded t)
+      '';
       enable = true;
       bindLocal.org-present-mode-keymap = {
-        "q" = "org-present-quit";
         "<left>" = "swarsel/org-present-prev";
-        "<​up>" = "'ignore";
-        "<​down>" = "'ignore";
         "<right>" = "swarsel/org-present-next";
+        "<​down>" = "'ignore";
+        "<​up>" = "'ignore";
+        "q" = "org-present-quit";
       };
       hook = [
         "(org-present-mode . swarsel/org-present-start)"
@@ -510,12 +504,10 @@
                     (recenter 0)))
               (org-present-next))))
       '';
-      config = ''
-        (add-hook 'org-present-after-navigate-functions #'swarsel/org-present-slide)
-        (setq org-present-startup-folded t)
-      '';
     };
-
-    hide-mode-line.enable = true;
+    visual-fill-column = {
+      enable = true;
+      hook = [ "(org-mode . swarsel/org-mode-visual-fill)" ];
+    };
   };
 }

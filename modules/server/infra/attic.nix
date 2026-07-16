@@ -2,10 +2,10 @@
   flake.modules.nixos.attic =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -14,22 +14,22 @@
           name = "attic";
           port = 8091;
         })
-        serviceName
-        serviceDir
-        servicePort
-        serviceAddress
-        serviceDomain
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         ;
-      inherit (config.swarselsystems) mainUser isPublic sopsFile;
+      inherit (config.swarselsystems) isPublic mainUser sopsFile;
       serviceDB = "atticd";
     in
     {
@@ -38,40 +38,36 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "attic" ];
-
         topology.self.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
           icon = "services.not-available";
-          # attic does not have a logo
+          info = "https://${serviceDomain}";
+          name = lib.swarselsystems.toCapitalized serviceName;
         };
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
             expectedBodyRegex = "Attic Binary Cache";
             hostHeader = serviceDomain;
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
         sops = lib.mkIf (!isPublic) {
           secrets = {
-            attic-server-token = { inherit sopsFile; };
             attic-garage-access-key = { inherit sopsFile; };
             attic-garage-secret-key = { inherit sopsFile; };
+            attic-server-token = { inherit sopsFile; };
           };
           templates = {
             "attic.env" = {
@@ -83,82 +79,74 @@
             };
           };
         };
-
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
-
-        services.atticd = {
-          enable = true;
-          environmentFile = config.sops.templates."attic.env".path;
-          settings = {
-            listen = "[::]:${builtins.toString servicePort}";
-            api-endpoint = "https://${serviceDomain}/";
-            allowed-hosts = [
-              serviceDomain
-            ];
-            require-proof-of-possession = false;
-            compression = {
-              type = "zstd";
-              level = 3;
-            };
-            database.url = "postgresql:///atticd?host=/run/postgresql";
-
-            storage =
-              if builtins.elem "garage" config.swarselsystems.enabledServerModules then
-                {
-                  type = "s3";
-                  region = mainUser;
-                  bucket = serviceName;
-                  # attic must be patched to never serve pre-signed s3 urls directly
-                  # otherwise it will redirect clients to this localhost endpoint
-                  # endpoint = "http://127.0.0.1:3900"; # garage port
-                  endpoint = "https://${globals.services."garage-${config.node.name}".domain}";
-                }
-              else
-                {
-                  type = "local";
-                  path = serviceDir;
-                };
-
-            garbage-collection = {
-              interval = "1 day";
-              default-retention-period = "3 months";
-            };
-
-            chunking = {
-              nar-size-threshold =
-                if builtins.elem "garage" config.swarselsystems.enabledServerModules then 0 else 64 * 1024; # garage using s3
-
-              min-size = 16 * 1024;
-              avg-size = 64 * 1024;
-              max-size = 256 * 1024;
+        services = {
+          # networking.firewall.allowedTCPPorts = [ servicePort ];
+          atticd = {
+            enable = true;
+            environmentFile = config.sops.templates."attic.env".path;
+            settings = {
+              allowed-hosts = [
+                serviceDomain
+              ];
+              api-endpoint = "https://${serviceDomain}/";
+              chunking = {
+                avg-size = 64 * 1024;
+                max-size = 256 * 1024;
+                min-size = 16 * 1024;
+                nar-size-threshold =
+                  if builtins.elem "garage" config.swarselsystems.enabledServerModules then 0 else 64 * 1024; # garage using s3
+              };
+              compression = {
+                level = 3;
+                type = "zstd";
+              };
+              database.url = "postgresql:///atticd?host=/run/postgresql";
+              garbage-collection = {
+                default-retention-period = "3 months";
+                interval = "1 day";
+              };
+              listen = "[::]:${builtins.toString servicePort}";
+              require-proof-of-possession = false;
+              storage =
+                if builtins.elem "garage" config.swarselsystems.enabledServerModules then
+                  {
+                    bucket = serviceName;
+                    # attic must be patched to never serve pre-signed s3 urls directly
+                    # otherwise it will redirect clients to this localhost endpoint
+                    # endpoint = "http://127.0.0.1:3900"; # garage port
+                    endpoint = "https://${globals.services."garage-${config.node.name}".domain}";
+                    region = mainUser;
+                    type = "s3";
+                  }
+                else
+                  {
+                    path = serviceDir;
+                    type = "local";
+                  };
             };
           };
+          # we use s3 storage and hence do not need to persist this
+          # environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+          #   { directory = "/var/lib/private/atticd"; }
+          # ];
+          postgresql = {
+            enable = true;
+            enableTCPIP = true;
+            ensureDatabases = [ serviceDB ];
+            ensureUsers = [
+              {
+                ensureDBOwnership = true;
+                name = serviceDB;
+              }
+            ];
+          };
         };
-
-        # we use s3 storage and hence do not need to persist this
-        # environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-        #   { directory = "/var/lib/private/atticd"; }
-        # ];
-
-        services.postgresql = {
-          enable = true;
-          enableTCPIP = true;
-          ensureDatabases = [ serviceDB ];
-          ensureUsers = [
-            {
-              name = serviceDB;
-              ensureDBOwnership = true;
-            }
-          ];
-        };
-
         systemd.services.atticd =
           lib.mkIf (builtins.elem "garage" config.swarselsystems.enabledServerModules)
             {
-              requires = [ "garage.service" ];
               after = [ "garage.service" ];
+              requires = [ "garage.service" ];
             };
-
         nodes =
           let
             extraConfigLoc = ''
@@ -173,11 +161,11 @@
             {
               ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
+                  extraConfigLoc
                   serviceAddress
-                  servicePort
                   serviceDomain
                   serviceName
-                  extraConfigLoc
+                  servicePort
                   ;
                 maxBody = 0;
               };
@@ -186,13 +174,13 @@
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
                   inherit
-                    servicePort
+                    extraConfigLoc
                     serviceDomain
                     serviceName
-                    extraConfigLoc
+                    servicePort
                     ;
-                  maxBody = 0;
                   extraConfig = nginxAccessRules;
+                  maxBody = 0;
                   serviceAddress = homeServiceAddress;
                 }
               );

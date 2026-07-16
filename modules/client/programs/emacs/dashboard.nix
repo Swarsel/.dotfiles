@@ -1,6 +1,5 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.dashboard = {
-    enable = true;
     config = ''
       (dashboard-setup-startup-hook)
 
@@ -64,5 +63,6 @@
                  )
                 )))
     '';
+    enable = true;
   };
 }

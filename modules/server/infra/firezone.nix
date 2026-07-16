@@ -3,43 +3,44 @@
   flake-file.inputs.nixpkgsFirezoneProvisioned = {
     url = "github:nixos/nixpkgs/a799d3e3886da994fa307f817a6bc705ae538eeb?narHash=sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY%3D";
   };
+
   flake.modules.nixos.firezone =
     {
       self,
-      lib,
       inputs,
-      pkgs,
       config,
-      globals,
+      lib,
+      pkgs,
       confLib,
+      globals,
       nodes,
       ...
     }:
     let
       inherit
         (confLib.gen {
-          name = "firezone";
           dir = "/var/lib/private/firezone";
+          name = "firezone";
         })
-        serviceName
-        serviceDir
-        serviceAddress
-        serviceDomain
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceName
         ;
       inherit (confLib.static)
+        homeProxy
+        homeProxyIf
+        homeServiceAddress
+        homeWebProxy
+        idmServer
         isHome
         isProxied
-        homeProxy
-        webProxy
-        homeWebProxy
-        homeProxyIf
-        webProxyIf
-        idmServer
-        homeServiceAddress
-        nginxAccessRules
         monitoringServer
+        nginxAccessRules
+        webProxy
+        webProxyIf
         ;
       inherit (config.swarselsystems) sopsFile;
 
@@ -65,19 +66,19 @@
           {
             name = "home.vlan-${vlan}.v4";
             value = {
-              type = "cidr";
-              name = "home.vlan-${vlan}.v4";
               address = globals.networks.home-lan.vlans.${vlan}.cidrv4;
               gatewayGroups = [ "home" ];
+              name = "home.vlan-${vlan}.v4";
+              type = "cidr";
             };
           }
           {
             name = "home.vlan-${vlan}.v6";
             value = {
-              type = "cidr";
-              name = "home.vlan-${vlan}.v6";
               address = globals.networks.home-lan.vlans.${vlan}.cidrv6;
               gatewayGroups = [ "home" ];
+              name = "home.vlan-${vlan}.v6";
+              type = "cidr";
             };
           }
         ]) firezoneTargetVLANs
@@ -101,70 +102,67 @@
       disabledFirezoneModule = name: "services/networking/firezone/${name}";
     in
     {
-      disabledModules = map disabledFirezoneModule disabledFirezoneModules;
-
       imports = map (
         name: "${inputs.nixpkgsFirezoneProvisioned}/nixos/modules/${disabledFirezoneModule name}"
       ) disabledFirezoneModules;
       config = {
         swarselsystems.enabledServerModules = [ "firezone" ];
-
+        topology.self.services.${serviceName} = {
+          icon = "${self}/files/topology-images/${serviceName}.png";
+          info = "https://${serviceDomain}";
+          name = lib.swarselsystems.toCapitalized serviceName;
+        };
         globals = {
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = lib.mkMerge [
             (confLib.mkHttpMonitoring {
+              expectedBodyRegex = ''"status":"ok"'';
+              path = "/healthz";
               serviceName = "firezone-server-domain";
               servicePort = config.services.firezone.server.domain.settings.HEALTHZ_PORT;
-              path = "/healthz";
-              expectedBodyRegex = ''"status":"ok"'';
             })
             (confLib.mkHttpMonitoring {
+              expectedBodyRegex = ''"status":"ok"'';
+              path = "/healthz";
               serviceName = "firezone-server-web";
               servicePort = config.services.firezone.server.web.settings.HEALTHZ_PORT;
-              path = "/healthz";
-              expectedBodyRegex = ''"status":"ok"'';
             })
             (confLib.mkHttpMonitoring {
+              expectedBodyRegex = ''"status":"ok"'';
+              path = "/healthz";
               serviceName = "firezone-server-api";
               servicePort = config.services.firezone.server.api.settings.HEALTHZ_PORT;
-              path = "/healthz";
-              expectedBodyRegex = ''"status":"ok"'';
             })
             (confLib.mkHttpMonitoring {
+              path = "/healthz";
               serviceName = "firezone-relay";
               servicePort = relayHealthPort;
-              path = "/healthz";
             })
             (confLib.mkHttpMonitoring {
+              expectedBodyRegex = ''"status":"ok"'';
+              path = "/healthz";
               serviceName = "firezone-relay-stun";
               servicePort = relayStunHealthPort;
-              path = "/healthz";
-              expectedBodyRegex = ''"status":"ok"'';
             })
             {
               firezone-gateway = {
-                url = "http://127.0.0.1:${toString webPort}/healthz";
                 network = "local-${homeProxy}";
+                url = "http://127.0.0.1:${toString webPort}/healthz";
               };
             }
           ];
           networks = {
-            ${webProxyIf}.hosts = lib.mkIf isProxied {
-              ${config.node.name}.firewallRuleForNode.${webProxy} = {
-                allowedTCPPorts = [
-                  apiPort
-                  webPort
-                  domainPort
-                ];
-                allowedUDPPorts = [ relayPort ];
-                allowedUDPPortRanges = [
-                  {
-                    from = config.services.firezone.relay.lowestPort;
-                    to = config.services.firezone.relay.highestPort;
-                  }
-                ];
-              };
-            };
             ${homeProxyIf}.hosts = lib.mkIf isHome {
               ${config.node.name}.firewallRuleForNode.${homeWebProxy} = {
                 allowedTCPPorts = [
@@ -172,40 +170,38 @@
                   webPort
                   domainPort
                 ];
-                allowedUDPPorts = [ relayPort ];
                 allowedUDPPortRanges = [
                   {
                     from = config.services.firezone.relay.lowestPort;
                     to = config.services.firezone.relay.highestPort;
                   }
                 ];
+                allowedUDPPorts = [ relayPort ];
+              };
+            };
+            ${webProxyIf}.hosts = lib.mkIf isProxied {
+              ${config.node.name}.firewallRuleForNode.${webProxy} = {
+                allowedTCPPorts = [
+                  apiPort
+                  webPort
+                  domainPort
+                ];
+                allowedUDPPortRanges = [
+                  {
+                    from = config.services.firezone.relay.lowestPort;
+                    to = config.services.firezone.relay.highestPort;
+                  }
+                ];
+                allowedUDPPorts = [ relayPort ];
               };
             };
           };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
         };
-
-        topology.self.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
-          icon = "${self}/files/topology-images/${serviceName}.png";
-        };
-
         sops = {
           secrets = {
-            kanidm-firezone = {
-              sopsFile = kanidmSopsFile;
-              mode = "0400";
+            firezone-adapter-config = {
+              inherit sopsFile;
+              mode = "0440";
             };
             firezone-relay-token = {
               inherit sopsFile;
@@ -215,112 +211,68 @@
               inherit sopsFile;
               mode = "0440";
             };
-            firezone-adapter-config = {
-              inherit sopsFile;
-              mode = "0440";
+            kanidm-firezone = {
+              mode = "0400";
+              sopsFile = kanidmSopsFile;
             };
           };
         };
-
-        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          {
-            directory = serviceDir;
-            mode = "0700";
-          }
-          {
-            directory = "${serviceDir}-relay";
-            mode = "0700";
-          }
-        ];
-
         services.firezone = {
+          relay = {
+            inherit (config.node) name;
+            enable = true;
+            package = pkgs.firezone-relay;
+            apiUrl = "wss://${serviceDomain}/api/";
+            openFirewall = lib.mkIf (!isProxied) true;
+            port = relayPort;
+            publicIpv4 = proxyAddress4;
+            publicIpv6 = proxyAddress6;
+            tokenFile = config.sops.secrets.firezone-relay-token.path;
+          };
           server = {
             enable = true;
-            enableLocalDB = true;
-
-            smtp = {
-              inherit (config.repo.secrets.local.firezone.mail) from username;
-              host = globals.services.mailserver.domain;
-              port = 465;
-              implicitTls = true;
-              passwordFile = config.sops.secrets.firezone-smtp-password.path;
+            api = {
+              package = pkgs.firezone-server-api;
+              address = "0.0.0.0";
+              externalUrl = "https://${serviceDomain}/api/";
+              port = apiPort;
             };
-
+            domain = {
+              package = pkgs.firezone-server-domain;
+              settings.ERLANG_DISTRIBUTION_PORT = domainPort;
+            };
+            enableLocalDB = true;
             provision = {
               enable = true;
               accounts.main = {
-                name = "Home";
-                relayGroups.relays.name = "Relays";
-                gatewayGroups.home.name = "Home";
                 actors.admin = {
-                  type = "account_admin_user";
-                  name = "Admin";
                   email = "admin@${globals.domains.main}";
+                  name = "Admin";
+                  type = "account_admin_user";
                 };
-                groups.anyone = {
-                  name = "anyone";
-                  members = [
-                    "admin"
-                  ];
-                };
-
                 auth.oidc =
                   let
                     client_id = "firezone";
                   in
                   {
-                    name = "Kanidm";
                     adapter = "openid_connect";
                     adapter_config = {
-                      scope = "openid email profile";
-                      response_type = "code";
                       inherit client_id;
-                      discovery_document_uri = "https://${globals.services.kanidm.domain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
                       clientSecretFile = config.sops.secrets.kanidm-firezone.path;
+                      discovery_document_uri = "https://${globals.services.kanidm.domain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                      response_type = "code";
+                      scope = "openid email profile";
                     };
+                    name = "Kanidm";
                   };
-
-                resources =
-                  lib.genAttrs homeDomains (domain: {
-                    type = "dns";
-                    name = domain;
-                    address = domain;
-                    gatewayGroups = [ "home" ];
-                    filters = [
-                      { protocol = "icmp"; }
-                      {
-                        protocol = "tcp";
-                        ports = [
-                          443
-                          80
-                        ];
-                      }
-                      {
-                        protocol = "udp";
-                        ports = [ 443 ];
-                      }
-                    ];
-                  })
-                  // vlanCidrResources
-                  // {
-                    ${smbDomain} = {
-                      type = "dns";
-                      name = smbDomain;
-                      address = smbDomain;
-                      gatewayGroups = [ "home" ];
-                      filters = [
-                        { protocol = "icmp"; }
-                        {
-                          protocol = "tcp";
-                          ports = [
-                            445
-                            139
-                          ];
-                        }
-                      ];
-                    };
-                  };
-
+                gatewayGroups.home.name = "Home";
+                groups.anyone = {
+                  members = [
+                    "admin"
+                  ];
+                  name = "anyone";
+                };
+                name = "Home";
                 policies =
                   { }
                   // lib.mergeAttrsList (
@@ -333,40 +285,74 @@
                   // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains)
                   // (allow "everyone" smbDomain)
                   // (allow "anyone" smbDomain);
+                relayGroups.relays.name = "Relays";
+                resources =
+                  lib.genAttrs homeDomains (domain: {
+                    address = domain;
+                    filters = [
+                      { protocol = "icmp"; }
+                      {
+                        ports = [
+                          443
+                          80
+                        ];
+                        protocol = "tcp";
+                      }
+                      {
+                        ports = [ 443 ];
+                        protocol = "udp";
+                      }
+                    ];
+                    gatewayGroups = [ "home" ];
+                    name = domain;
+                    type = "dns";
+                  })
+                  // vlanCidrResources
+                  // {
+                    ${smbDomain} = {
+                      address = smbDomain;
+                      filters = [
+                        { protocol = "icmp"; }
+                        {
+                          ports = [
+                            445
+                            139
+                          ];
+                          protocol = "tcp";
+                        }
+                      ];
+                      gatewayGroups = [ "home" ];
+                      name = smbDomain;
+                      type = "dns";
+                    };
+                  };
               };
             };
-
-            domain = {
-              settings.ERLANG_DISTRIBUTION_PORT = domainPort;
-              package = pkgs.firezone-server-domain;
-            };
-            api = {
-              externalUrl = "https://${serviceDomain}/api/";
-              address = "0.0.0.0";
-              port = apiPort;
-              package = pkgs.firezone-server-api;
+            smtp = {
+              inherit (config.repo.secrets.local.firezone.mail) from username;
+              host = globals.services.mailserver.domain;
+              implicitTls = true;
+              passwordFile = config.sops.secrets.firezone-smtp-password.path;
+              port = 465;
             };
             web = {
-              externalUrl = "https://${serviceDomain}/";
-              address = "0.0.0.0";
-              port = webPort;
               package = pkgs.firezone-server-web;
+              address = "0.0.0.0";
+              externalUrl = "https://${serviceDomain}/";
+              port = webPort;
             };
           };
-
-          relay = {
-            enable = true;
-            port = relayPort;
-            inherit (config.node) name;
-            apiUrl = "wss://${serviceDomain}/api/";
-            tokenFile = config.sops.secrets.firezone-relay-token.path;
-            publicIpv4 = proxyAddress4;
-            publicIpv6 = proxyAddress6;
-            openFirewall = lib.mkIf (!isProxied) true;
-            package = pkgs.firezone-relay;
-          };
         };
-
+        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+          {
+            directory = serviceDir;
+            mode = "0700";
+          }
+          {
+            directory = "${serviceDir}-relay";
+            mode = "0700";
+          }
+        ];
         systemd.services = lib.mkMerge [
           (lib.genAttrs
             [
@@ -375,21 +361,18 @@
               "firezone-server-domain"
             ]
             (_: {
-              startLimitIntervalSec = 600;
-              startLimitBurst = 10;
               serviceConfig.RestartSec = lib.mkForce 30;
+              startLimitBurst = 10;
+              startLimitIntervalSec = 600;
             })
           )
           {
             firezone-relay.environment.HEALTH_CHECK_ADDR = "0.0.0.0:${toString relayHealthPort}";
             firezone-relay-stun-healthcheck = {
-              description = "STUN responsiveness healthcheck for the Firezone relay";
               after = [ "firezone-relay.service" ];
-              wantedBy = [ "multi-user.target" ];
+              description = "STUN responsiveness healthcheck for the Firezone relay";
               serviceConfig = {
                 DynamicUser = true;
-                Restart = "always";
-                RestartSec = "5s";
                 ExecStart = "${lib.getExe pkgs.python3} ${pkgs.writeText "firezone-relay-stun-healthcheck.py" ''
                   import http.server
                   import os
@@ -425,11 +408,13 @@
                       ("127.0.0.1", ${toString relayStunHealthPort}), Handler
                   ).serve_forever()
                 ''}";
+                Restart = "always";
+                RestartSec = "5s";
               };
+              wantedBy = [ "multi-user.target" ];
             };
           }
         ];
-
         nodes = lib.mkMerge [
           (
             let
@@ -444,10 +429,9 @@
                 };
                 virtualHosts = {
                   ${serviceDomain} = {
-                    useACMEHost = globals.domains.main;
-                    forceSSL = true;
-                    acmeRoot = null;
                     inherit extraConfig;
+                    acmeRoot = null;
+                    forceSSL = true;
                     locations = {
                       "/" = {
                         # The trailing slash is important to strip the location prefix from the request
@@ -460,6 +444,7 @@
                         proxyWebsockets = true;
                       };
                     };
+                    useACMEHost = globals.domains.main;
                   };
                 };
               };
@@ -472,37 +457,33 @@
                     nodePkgs = nodes.${homeProxy}.pkgs;
                   in
                   {
+                    topology.self.services."${serviceName}-gateway" = {
+                      icon = "${self}/files/topology-images/${serviceName}.png";
+                      name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
+                    };
                     sops.secrets.firezone-gateway-token = {
                       inherit (nodeCfg.swarselsystems) sopsFile;
                       mode = "0400";
                     };
+                    services.firezone.gateway = {
+                      # logLevel = "trace";
+                      inherit (nodeCfg.node) name;
+                      enable = true;
+                      package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
+                      apiUrl = "wss://${globals.services.firezone.domain}/api/";
+                      tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
+                    };
+                    boot.kernel.sysctl = {
+                      "net.core.rmem_max" = 134217728;
+                      "net.core.wmem_max" = 16777216;
+                    };
+                    environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
+                      {
+                        directory = "${serviceDir}-gateway";
+                        mode = "0700";
+                      }
+                    ];
                     networking.nftables = {
-                      firewall = {
-                        zones.firezone.interfaces = [ "tun-firezone" ];
-                        rules = {
-                          # masquerade firezone traffic
-                          masquerade-firezone = {
-                            from = [ "firezone" ];
-                            to = firezoneTargetZones;
-                            # masquerade = true; NOTE: custom rule below for ip4 + ip6
-                            late = true; # Only accept after any rejects have been processed
-                            verdict = "accept";
-                          };
-                          # forward firezone traffic
-                          forward-incoming-firezone-traffic = {
-                            from = [ "firezone" ];
-                            to = firezoneTargetZones;
-                            verdict = "accept";
-                          };
-
-                          # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
-                          forward-outgoing-firezone-traffic = {
-                            from = firezoneTargetZones;
-                            to = [ "firezone" ];
-                            verdict = "accept";
-                          };
-                        };
-                      };
                       chains.postrouting = {
                         masquerade-firezone = {
                           after = [ "hook" ];
@@ -521,31 +502,31 @@
                           ) [ "firezone" ];
                         };
                       };
-                    };
-
-                    environment.persistence."/persist".directories = lib.mkIf nodeCfg.swarselsystems.isImpermanence [
-                      {
-                        directory = "${serviceDir}-gateway";
-                        mode = "0700";
-                      }
-                    ];
-
-                    boot.kernel.sysctl = {
-                      "net.core.wmem_max" = 16777216;
-                      "net.core.rmem_max" = 134217728;
-                    };
-                    services.firezone.gateway = {
-                      enable = true;
-                      # logLevel = "trace";
-                      inherit (nodeCfg.node) name;
-                      apiUrl = "wss://${globals.services.firezone.domain}/api/";
-                      tokenFile = nodeCfg.sops.secrets.firezone-gateway-token.path;
-                      package = nodePkgs.stable25_05.firezone-gateway; # newer versions of firezone-gateway are not compatible with server package
-                    };
-
-                    topology.self.services."${serviceName}-gateway" = {
-                      name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
-                      icon = "${self}/files/topology-images/${serviceName}.png";
+                      firewall = {
+                        rules = {
+                          # forward firezone traffic
+                          forward-incoming-firezone-traffic = {
+                            from = [ "firezone" ];
+                            to = firezoneTargetZones;
+                            verdict = "accept";
+                          };
+                          # FIXME: is this needed? conntrack should take care of it and we want to masquerade anyway
+                          forward-outgoing-firezone-traffic = {
+                            from = firezoneTargetZones;
+                            to = [ "firezone" ];
+                            verdict = "accept";
+                          };
+                          # masquerade firezone traffic
+                          masquerade-firezone = {
+                            from = [ "firezone" ];
+                            # masquerade = true; NOTE: custom rule below for ip4 + ip6
+                            late = true; # Only accept after any rejects have been processed
+                            to = firezoneTargetZones;
+                            verdict = "accept";
+                          };
+                        };
+                        zones.firezone.interfaces = [ "tun-firezone" ];
+                      };
                     };
                   };
               }
@@ -556,7 +537,7 @@
                     externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
                   in
                   confLib.mkKanidmOidcSystem {
-                    inherit serviceName serviceDomain kanidmSopsFile;
+                    inherit kanidmSopsFile serviceDomain serviceName;
                     displayName = "Firezone VPN";
                     # NOTE: state: both uuids are runtime values
                     originUrl = [
@@ -572,22 +553,22 @@
           {
             ${monitoringServer}.services.grafana.provision.alerting.rules.settings.groups = [
               {
-                orgId = 1;
-                name = "firezone";
                 folder = "Infrastructure";
                 interval = "1m";
+                name = "firezone";
+                orgId = 1;
                 rules = [
                   (confLib.mkGrafanaAlertRule {
-                    uid = "firezone_presence_match_spec_overflow";
-                    title = "Firezone presence tracker match-spec overflow";
-                    expr = ''sum(count_over_time({unit="firezone-server-api.service"} |= `not a valid match specification` [10m]))'';
-                    op = "gt";
-                    threshold = 0;
-                    forDuration = "5m";
-                    summary = "firezone-server-api relay selection is crashing (ETS match-spec overflow from accumulated presence replicas); VPN gateway and client connections will fail. Restart all three firezone-server-* units to rebuild tracker state.";
                     datasourceUid = "loki";
-                    queryType = "instant";
+                    expr = ''sum(count_over_time({unit="firezone-server-api.service"} |= `not a valid match specification` [10m]))'';
+                    forDuration = "5m";
                     noDataState = "OK";
+                    op = "gt";
+                    queryType = "instant";
+                    summary = "firezone-server-api relay selection is crashing (ETS match-spec overflow from accumulated presence replicas); VPN gateway and client connections will fail. Restart all three firezone-server-* units to rebuild tracker state.";
+                    threshold = 0;
+                    title = "Firezone presence tracker match-spec overflow";
+                    uid = "firezone_presence_match_spec_overflow";
                   })
                 ];
               }
@@ -596,6 +577,7 @@
         ];
 
       };
+      disabledModules = map disabledFirezoneModule disabledFirezoneModules;
     }
 
   ;

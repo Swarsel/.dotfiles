@@ -2,40 +2,37 @@
   flake.modules.nixos.bastion =
     {
       self,
-      lib,
       config,
-      withHomeManager,
+      lib,
       confLib,
+      withHomeManager,
       ...
     }:
     {
       config = {
         swarselsystems.enabledServerModules = [ "bastion" ];
-
         users = {
-          persistentIds.jump = confLib.mkIds 1001;
-          groups = {
-            jump = { };
-          };
           users = {
             jump = {
               autoSubUidGidRange = false;
-              isNormalUser = true;
-              useDefaultShell = true;
-              group = lib.mkForce "jump";
               createHome = lib.mkForce true;
+              group = lib.mkForce "jump";
+              isNormalUser = true;
               openssh.authorizedKeys.keyFiles = [
                 (self + /files/public/ssh/yubikey.pub)
                 (self + /files/public/ssh/magicant.pub)
                 (self + /files/public/ssh/builder.pub)
               ];
+              useDefaultShell = true;
             };
           };
+          groups = {
+            jump = { };
+          };
+          persistentIds.jump = confLib.mkIds 1001;
         };
-
         services.openssh = {
           enable = true;
-          startWhenNeeded = lib.mkForce false;
           authorizedKeysInHomedir = false;
           extraConfig = ''
             Match User jump
@@ -45,26 +42,26 @@
               GatewayPorts no
               AllowAgentForwarding no
           '';
-          settings = {
-            PasswordAuthentication = false;
-            KbdInteractiveAuthentication = false;
-            PermitRootLogin = lib.mkDefault "no";
-            AllowUsers = [
-              "jump"
-            ];
-          };
           hostKeys = lib.mkIf (!(builtins.elem "ssh" config.swarselsystems.enabledServerModules)) [
             {
               path = "/etc/ssh/ssh_host_ed25519_key";
               type = "ed25519";
             }
           ];
+          settings = {
+            AllowUsers = [
+              "jump"
+            ];
+            KbdInteractiveAuthentication = false;
+            PasswordAuthentication = false;
+            PermitRootLogin = lib.mkDefault "no";
+          };
+          startWhenNeeded = lib.mkForce false;
         };
       }
       // lib.optionalAttrs withHomeManager {
 
         home-manager.users.jump.config = {
-          home.stateVersion = lib.mkDefault "23.05";
           programs.ssh = {
             enable = true;
             enableDefaultConfig = false;
@@ -75,6 +72,7 @@
             }
             // config.repo.secrets.local.ssh.hosts;
           };
+          home.stateVersion = lib.mkDefault "23.05";
         };
       };
     }

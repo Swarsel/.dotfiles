@@ -2,33 +2,33 @@
   flake.modules.nixos.pyroscope =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
       inherit
         (confLib.gen {
+          dir = "/var/lib/private/pyroscope";
           name = "pyroscope";
           port = 4040;
-          dir = "/var/lib/private/pyroscope";
         })
-        servicePort
-        serviceName
-        serviceDir
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDir
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         wgProxyAccessRules
         ;
 
@@ -37,40 +37,55 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
         topology.self.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-          info = "https://${serviceDomain}";
           icon = "${self}/files/topology-images/${serviceName}.png";
+          info = "https://${serviceDomain}";
+          name = lib.swarselsystems.toCapitalized serviceName;
         };
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
             extra.extraConfig = {
-              port = servicePort;
               host = config.node.name;
+              port = servicePort;
             };
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
-            path = "/ready";
             expectedBodyRegex = "ready";
+            path = "/ready";
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
-        networking.firewall.allowedTCPPorts = [ servicePort ];
-
+        services.${serviceName} = {
+          enable = true;
+          settings = {
+            analytics.reporting_enabled = false;
+            memberlist.bind_port = memberlistPort;
+            multitenancy_enabled = false;
+            pyroscopedb.data_path = "${serviceDir}/pyroscope";
+            server = {
+              grpc_listen_port = 9098;
+              http_listen_address = "0.0.0.0";
+              http_listen_port = servicePort;
+              log_level = "warn";
+            };
+            storage = {
+              backend = "filesystem";
+              filesystem.dir = "${serviceDir}/data";
+            };
+            target = "all";
+          };
+        };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
             {
@@ -79,65 +94,43 @@
             }
           ];
         };
-
-        services.${serviceName} = {
-          enable = true;
-          settings = {
-            target = "all";
-            multitenancy_enabled = false;
-            analytics.reporting_enabled = false;
-            server = {
-              http_listen_address = "0.0.0.0";
-              http_listen_port = servicePort;
-              grpc_listen_port = 9098;
-              log_level = "warn";
-            };
-            storage = {
-              backend = "filesystem";
-              filesystem.dir = "${serviceDir}/data";
-            };
-            pyroscopedb.data_path = "${serviceDir}/pyroscope";
-            memberlist.bind_port = memberlistPort;
-          };
-        };
-
+        networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services.${serviceName}.serviceConfig.RestartSec = lib.mkForce "60";
-
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
-              maxBody = 0;
               extraConfig = wgProxyAccessRules;
+              maxBody = 0;
             };
           }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                serviceAddress = homeServiceAddress;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
+                serviceAddress = homeServiceAddress;
               }
             );
           }
           {
             ${globals.general.monitoringServer}.services.grafana.provision.datasources.settings.datasources = [
               {
-                name = "Pyroscope";
-                uid = "pyroscope";
-                type = "grafana-pyroscope-datasource";
                 access = "proxy";
+                name = "Pyroscope";
+                type = "grafana-pyroscope-datasource";
+                uid = "pyroscope";
                 url = confLib.mkAlloyPushUrl {
-                  host = globals.general.monitoringServer;
                   domain = serviceDomain;
-                  port = servicePort;
+                  host = globals.general.monitoringServer;
                   path = "";
+                  port = servicePort;
                 };
               }
             ];
@@ -181,10 +174,10 @@
                 endpoint {
                   url = "${
                     confLib.mkAlloyPushUrl {
-                      host = alloyHost;
                       domain = serviceDomain;
-                      port = servicePort;
+                      host = alloyHost;
                       path = "";
+                      port = servicePort;
                     }
                   }"
                 }

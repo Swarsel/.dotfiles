@@ -14,17 +14,6 @@
           toplevel = hotel.config.system.build.toplevel;
         in
         testsLib.mkDemoTest "demo-install-test" {
-          nodes = {
-            installer = testsLib.installerNode {
-              extraDependencies = [
-                toplevel
-                hotel.config.system.build.destroyFormatMount
-              ];
-            };
-
-            target = testsLib.targetNode { inherit toplevel; };
-          };
-
           testScript = ''
             installer.start()
             installer.wait_for_unit("multi-user.target")
@@ -44,6 +33,16 @@
 
             target.crash()
           '';
+          nodes = {
+            installer = testsLib.installerNode {
+              extraDependencies = [
+                toplevel
+                hotel.config.system.build.destroyFormatMount
+              ];
+            };
+
+            target = testsLib.targetNode { inherit toplevel; };
+          };
         };
     };
 }

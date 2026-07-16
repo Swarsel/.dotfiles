@@ -2,66 +2,16 @@
   flake.modules.homeManager.desktop = {
     config = {
       swarselsystems.enabledHomeModules = [ "desktop" ];
-      xdg.desktopEntries = {
-
-        cura = {
-          name = "Ultimaker Cura";
-          genericName = "Cura";
-          exec = "cura";
-          terminal = false;
-          categories = [ "Application" ];
-        };
-
-        teamsNoGpu = {
-          name = "Microsoft Teams (no GPU)";
-          genericName = "Teams (no GPU)";
-          exec = "teams-for-linux --disableGpu=true --trayIconEnabled=true";
-          terminal = false;
-          categories = [ "Application" ];
-        };
-
-        rustdesk-vbc = {
-          name = "Rustdesk VBC";
-          genericName = "rustdesk-vbc";
-          exec = "rustdesk-vbc";
-          terminal = false;
-          categories = [ "Application" ];
-        };
-
-        anki = {
-          name = "Anki Flashcards";
-          genericName = "Anki";
-          exec = "anki";
-          terminal = false;
-          categories = [ "Application" ];
-        };
-
-        element = {
-          name = "Element Matrix Client";
-          genericName = "Element";
-          exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-          terminal = false;
-          categories = [ "Application" ];
-        };
-
-        emacsclient-newframe = {
-          name = "Emacs (Client, New Frame)";
-          genericName = "Emacs (Client, New Frame)";
-          exec = "emacsclient -r %u";
-          icon = "emacs";
-          terminal = false;
-          categories = [
-            "Development"
-            "TextEditor"
-          ];
-        };
-
-      };
-
       xdg = {
         configFile."mimeapps.list".force = true;
         mimeApps = {
           enable = true;
+          associations = {
+            added = {
+              "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
+              "application/x-zerosize" = [ "emacsclient.desktop" ];
+            };
+          };
           defaultApplications = {
             "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
             "application/metalink+xml" = [ "emacsclient.desktop" ];
@@ -99,13 +49,57 @@
             "x-scheme-handler/http" = [ "glide.desktop" ];
             "x-scheme-handler/https" = [ "glide.desktop" ];
           };
-          associations = {
-            added = {
-              "application/x-zerosize" = [ "emacsclient.desktop" ];
-              "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
-            };
-          };
         };
+      };
+      xdg.desktopEntries = {
+
+        anki = {
+          categories = [ "Application" ];
+          exec = "anki";
+          genericName = "Anki";
+          name = "Anki Flashcards";
+          terminal = false;
+        };
+        cura = {
+          categories = [ "Application" ];
+          exec = "cura";
+          genericName = "Cura";
+          name = "Ultimaker Cura";
+          terminal = false;
+        };
+        element = {
+          categories = [ "Application" ];
+          exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+          genericName = "Element";
+          name = "Element Matrix Client";
+          terminal = false;
+        };
+        emacsclient-newframe = {
+          categories = [
+            "Development"
+            "TextEditor"
+          ];
+          exec = "emacsclient -r %u";
+          genericName = "Emacs (Client, New Frame)";
+          icon = "emacs";
+          name = "Emacs (Client, New Frame)";
+          terminal = false;
+        };
+        rustdesk-vbc = {
+          categories = [ "Application" ];
+          exec = "rustdesk-vbc";
+          genericName = "rustdesk-vbc";
+          name = "Rustdesk VBC";
+          terminal = false;
+        };
+        teamsNoGpu = {
+          categories = [ "Application" ];
+          exec = "teams-for-linux --disableGpu=true --trayIconEnabled=true";
+          genericName = "Teams (no GPU)";
+          name = "Microsoft Teams (no GPU)";
+          terminal = false;
+        };
+
       };
     };
   };

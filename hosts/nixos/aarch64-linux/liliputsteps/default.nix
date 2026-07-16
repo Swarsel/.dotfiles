@@ -17,11 +17,23 @@
     self.modules.nixos.profile-localserver
     self.modules.nixos.bastion
   ];
-
+  swarselsystems = {
+    flakePath = "/root/.dotfiles";
+    info = "VM.Standard.A1.Flex, 1 vCPUs, 8GB RAM";
+    isBtrfs = true;
+    isCloud = true;
+    isCrypted = true;
+    isImpermanence = true;
+    isLinux = true;
+    isSecureBoot = false;
+    isSwap = false;
+    mainUser = "jump";
+    nodeRoles = [ "jumphost" ];
+    rootDisk = "/dev/disk/by-id/scsi-360fb180663ec4f2793a763a087d46885";
+  };
   topology.self = {
     icon = "devices.cloud-server";
     interfaces.ProxyJump = {
-      virtual = true;
       physicalConnections = [
         (config.lib.topology.mkConnection "moonside" "lan")
         (config.lib.topology.mkConnection "twothreetunnel" "lan")
@@ -29,22 +41,8 @@
         (config.lib.topology.mkConnection "stoicclub" "lan")
         (config.lib.topology.mkConnection "eagleland" "wan")
       ];
+      virtual = true;
     };
-  };
-
-  swarselsystems = {
-    nodeRoles = [ "jumphost" ];
-    flakePath = "/root/.dotfiles";
-    info = "VM.Standard.A1.Flex, 1 vCPUs, 8GB RAM";
-    isImpermanence = true;
-    isSecureBoot = false;
-    isCrypted = true;
-    isSwap = false;
-    rootDisk = "/dev/disk/by-id/scsi-360fb180663ec4f2793a763a087d46885";
-    isBtrfs = true;
-    isLinux = true;
-    isCloud = true;
-    mainUser = "jump";
   };
 }
 // lib.optionalAttrs (!minimal) {

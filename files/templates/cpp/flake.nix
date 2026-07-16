@@ -21,7 +21,12 @@
       pname = "name";
     in
     {
-      formatter = forEachSystem (system: pkgsFor.${system}.nixpgks-fmt);
+      apps = forEachSystem (system: {
+        default = {
+          program = "${self.packages.${system}.default}/bin/${pname}";
+          type = "app";
+        };
+      });
 
       devShells = forEachSystem (system: {
         default = pkgsFor.${system}.mkShell {
@@ -38,25 +43,19 @@
         };
       });
 
+      formatter = forEachSystem (system: pkgsFor.${system}.nixpgks-fmt);
+
       packages = forEachSystem (system: {
         default = pkgsFor.${system}.stdenv.mkDerivation {
           inherit pname;
-          version = "0.1.0";
-          src = ./.;
-
-          nativeBuildInputs = with pkgsFor.${system}; [
-            cmake
-          ];
           buildInputs = with pkgsFor.${system}; [
             gtest
           ];
-        };
-      });
-
-      apps = forEachSystem (system: {
-        default = {
-          type = "app";
-          program = "${self.packages.${system}.default}/bin/${pname}";
+          nativeBuildInputs = with pkgsFor.${system}; [
+            cmake
+          ];
+          src = ./.;
+          version = "0.1.0";
         };
       });
     };

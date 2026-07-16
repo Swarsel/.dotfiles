@@ -21,7 +21,12 @@
       pname = "name";
     in
     {
-      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
+      apps = forEachSystem (system: {
+        default = {
+          program = "${self.packages.${system}.default}/bin/${pname}";
+          type = "app";
+        };
+      });
 
       devShells = forEachSystem (system: {
         default = pkgsFor.${system}.mkShell {
@@ -34,19 +39,14 @@
         };
       });
 
+      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
+
       packages = forEachSystem (system: {
         default = pkgsFor.${system}.buildGoModule {
           inherit pname;
-          version = "0.1.0";
           src = ./.;
           vendorHash = null;
-        };
-      });
-
-      apps = forEachSystem (system: {
-        default = {
-          type = "app";
-          program = "${self.packages.${system}.default}/bin/${pname}";
+          version = "0.1.0";
         };
       });
     };

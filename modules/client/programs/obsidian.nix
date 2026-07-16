@@ -1,8 +1,8 @@
 {
   flake.modules.homeManager.obsidian =
     {
-      lib,
       config,
+      lib,
       pkgs,
       confLib,
       ...
@@ -14,13 +14,6 @@
     {
       config = {
         swarselsystems.enabledHomeModules = [ "obsidian" ];
-
-        home.file = {
-          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/app.json".force = true;
-          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/appearance.json".force = true;
-          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/core-plugins.json".force = true;
-        };
-
         programs.obsidian =
           let
             pluginSource = pkgs.nur.repos.swarsel;
@@ -30,26 +23,24 @@
             package = pkgs.obsidian;
             defaultSettings = {
               app = {
-                attachmentFolderPath = "attachments";
-                alwaysUpdateLinks = true;
-                spellcheck = false;
                 inherit userIgnoreFilters;
-                vimMode = false;
+                alwaysUpdateLinks = true;
+                attachmentFolderPath = "attachments";
                 newFileLocation = "current";
+                spellcheck = false;
+                vimMode = false;
               };
-              hotkeys = {
-                "graph:open" = [ ];
-                "omnisearch:show-modal" = [
-                  {
-                    modifiers = [
-                      "Mod"
-                    ];
-                    key = "S";
-                  }
-                ];
-                "editor:save-file" = [ ];
-                "editor:delete-paragraph" = [ ];
-              };
+              # communityPlugins = with pkgs.swarsel-nix; [
+              communityPlugins = with pluginSource; [
+                advanced-tables
+                calendar
+                file-hider
+                linter
+                omnisearch
+                sort-and-permute-lines
+                tag-wrangler
+                tray
+              ];
               corePlugins = [
                 "backlink"
                 "bookmarks"
@@ -72,21 +63,22 @@
                 "templates"
                 "word-count"
               ];
-              # communityPlugins = with pkgs.swarsel-nix; [
-              communityPlugins = with pluginSource; [
-                advanced-tables
-                calendar
-                file-hider
-                linter
-                omnisearch
-                sort-and-permute-lines
-                tag-wrangler
-                tray
-              ];
+              hotkeys = {
+                "editor:delete-paragraph" = [ ];
+                "editor:save-file" = [ ];
+                "graph:open" = [ ];
+                "omnisearch:show-modal" = [
+                  {
+                    key = "S";
+                    modifiers = [
+                      "Mod"
+                    ];
+                  }
+                ];
+              };
             };
             vaults = {
               ${name} = {
-                target = "./Obsidian/${name}";
                 settings = {
                   appearance = {
                     baseFontSize = lib.mkForce 19;
@@ -94,35 +86,35 @@
                   # communityPlugins = with pkgs.swarsel-nix; [
                   communityPlugins = with pluginSource; [
                     {
+                      enable = true;
                       pkg = advanced-tables;
-                      enable = true;
                     }
                     {
+                      enable = true;
                       pkg = calendar;
-                      enable = true;
                     }
                     {
+                      enable = true;
                       pkg = sort-and-permute-lines;
-                      enable = true;
                     }
                     {
+                      enable = true;
                       pkg = tag-wrangler;
-                      enable = true;
                     }
                     {
-                      pkg = tray;
                       enable = true;
+                      pkg = tray;
                       settings = {
-                        launchOnStartup = false;
-                        hideOnLaunch = true;
-                        runInBackground = true;
-                        hideTaskbarIcon = false;
                         createTrayIcon = true;
+                        hideOnLaunch = true;
+                        hideTaskbarIcon = false;
+                        launchOnStartup = false;
+                        runInBackground = true;
                       };
                     }
                     {
-                      pkg = file-hider;
                       enable = true;
+                      pkg = file-hider;
                       settings = {
                         hidden = true;
                         hiddenList = [
@@ -134,8 +126,8 @@
                       };
                     }
                     {
-                      pkg = linter;
                       enable = true;
+                      pkg = linter;
                       settings = {
                         auto-correct-common-misspellings = {
                           skip-words-with-multiple-capitals = true;
@@ -146,17 +138,23 @@
                       };
                     }
                     {
-                      pkg = omnisearch;
                       enable = true;
+                      pkg = omnisearch;
                       settings = {
                         hideExcluded = true;
                       };
                     }
                   ];
                 };
+                target = "./Obsidian/${name}";
               };
             };
           };
+        home.file = {
+          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/app.json".force = true;
+          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/appearance.json".force = true;
+          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/core-plugins.json".force = true;
+        };
       };
     };
 }

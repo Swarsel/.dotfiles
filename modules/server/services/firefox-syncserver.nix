@@ -1,9 +1,9 @@
 {
   flake.modules.nixos.firefox-syncserver =
     {
+      config,
       lib,
       pkgs,
-      config,
       confLib,
       ...
     }:
@@ -13,21 +13,21 @@
           name = "firefox-syncserver";
           port = 5000;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       inherit (config.swarselsystems) sopsFile;
@@ -35,23 +35,33 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "firefox-syncserver" ];
-
-        users = {
-          persistentIds.firefox-syncserver = confLib.mkIds 949;
-          users.firefox-syncserver = {
-            group = "firefox-syncserver";
-            isSystemUser = true;
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
           };
-          groups.firefox-syncserver = { };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = ''"status":"Ok"'';
+            path = "/__heartbeat__";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
         sops = {
           secrets = {
             firefox-syncserver-secret = {
               inherit sopsFile;
-              owner = serviceUser;
               group = serviceGroup;
               mode = "0400";
+              owner = serviceUser;
             };
           };
 
@@ -60,78 +70,59 @@
               content = ''
                 SYNC_MASTER_SECRET=${config.sops.placeholder."firefox-syncserver-secret"}
               '';
-              owner = serviceUser;
               group = serviceGroup;
               mode = "0400";
+              owner = serviceUser;
             };
           };
         };
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
+        users = {
+          users.firefox-syncserver = {
+            group = "firefox-syncserver";
+            isSystemUser = true;
           };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            path = "/__heartbeat__";
-            expectedBodyRegex = ''"status":"Ok"'';
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          groups.firefox-syncserver = { };
+          persistentIds.firefox-syncserver = confLib.mkIds 949;
         };
-
         services = {
-          mysql.package = pkgs.mariadb;
           ${serviceName} = {
             enable = true;
             secrets = config.sops.templates."firefox-syncserver.env".path;
-
-            singleNode = {
-              enable = true;
-              url = "https://${serviceDomain}";
-              capacity = 1;
-              hostname = serviceDomain; # we handle it ourselves however
-              enableTLS = false; # we handle it ourselves
-              enableNginx = false; # we handle it ourselves
-            };
-
             settings = {
               host = "0.0.0.0";
               port = servicePort;
               tokenserver.enabled = true;
             };
+            singleNode = {
+              enable = true;
+              capacity = 1;
+              enableNginx = false; # we handle it ourselves
+              enableTLS = false; # we handle it ourselves
+              hostname = serviceDomain; # we handle it ourselves however
+              url = "https://${serviceDomain}";
+            };
           };
+          mysql.package = pkgs.mariadb;
         };
-
-        systemd.services.firefox-syncserver.serviceConfig.StateDirectory = "firefox-syncserver";
-
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           { directory = "/var/lib/private/firefox-syncserver"; }
         ];
-
+        systemd.services.firefox-syncserver.serviceConfig.StateDirectory = "firefox-syncserver";
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
             };
           }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
                 serviceAddress = homeServiceAddress;
               }

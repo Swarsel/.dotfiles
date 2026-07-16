@@ -1,10 +1,10 @@
 {
   flake.modules.nixos.adguardhome =
     {
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -13,21 +13,21 @@
           name = "adguardhome";
           port = 3000;
         })
-        serviceName
-        servicePort
-        serviceAddress
-        serviceDomain
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
-        idmServer
         homeDnsServer
         homeServiceAddress
+        homeWebProxy
+        idmServer
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
@@ -36,49 +36,36 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "adguardhome" ];
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
-            path = "/control/status";
             expectedBodyRegex = ''"running":true'';
+            path = "/control/status";
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
-        networking.firewall = {
-          allowedTCPPorts = [ 53 ];
-          allowedUDPPorts = [ 53 ];
-        };
-
         services.adguardhome = {
           enable = true;
-          mutableSettings = false;
           host = "0.0.0.0";
+          mutableSettings = false;
           port = servicePort;
           settings = {
             dns = {
               bind_hosts = [
                 globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv4
                 globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
-              ];
-              ratelimit = 300;
-              upstream_dns = [
-                "https://dns.cloudflare.com/dns-query"
-                "https://dns.google/dns-query"
-                "https://doh.mullvad.net/dns-query"
               ];
               bootstrap_dns = [
                 "1.1.1.1"
@@ -87,6 +74,12 @@
                 "2001:4860:4860::8844"
               ];
               dhcp.enabled = false;
+              ratelimit = 300;
+              upstream_dns = [
+                "https://dns.cloudflare.com/dns-query"
+                "https://dns.google/dns-query"
+                "https://doh.mullvad.net/dns-query"
+              ];
             };
             filtering.rewrites =
               (map (domain: {
@@ -98,39 +91,41 @@
               }) homeDomains)
               ++ [
                 {
-                  domain = "smb.${globals.domains.main}";
                   answer = globals.networks.home-lan.vlans.services.hosts.summers-storage.ipv4;
+                  domain = "smb.${globals.domains.main}";
                   enabled = true;
                 }
               ];
             filters = [
               {
+                enabled = true;
                 name = "AdGuard DNS filter";
                 url = "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt";
-                enabled = true;
               }
               {
+                enabled = true;
                 name = "AdAway Default Blocklist";
                 url = "https://adaway.org/hosts.txt";
-                enabled = true;
               }
               {
+                enabled = true;
                 name = "OISD (Big)";
                 url = "https://big.oisd.nl";
-                enabled = true;
               }
             ];
             user_rules = config.repo.secrets.local.adguardUserRules;
           };
         };
-
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           {
             directory = "/var/lib/private/AdGuardHome";
             mode = "0700";
           }
         ];
-
+        networking.firewall = {
+          allowedTCPPorts = [ 53 ];
+          allowedUDPPorts = [ 53 ];
+        };
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -139,23 +134,23 @@
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
-              proxyWebsockets = true;
               oauth2 = true;
               oauth2Groups = [ "adguardhome_access" ];
+              proxyWebsockets = true;
             };
           }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                proxyWebsockets = true;
+                inherit serviceDomain serviceName servicePort;
+                extraConfig = nginxAccessRules;
                 oauth2 = true;
                 oauth2Groups = [ "adguardhome_access" ];
-                extraConfig = nginxAccessRules;
+                proxyWebsockets = true;
                 serviceAddress = homeServiceAddress;
               }
             );

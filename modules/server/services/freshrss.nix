@@ -2,10 +2,10 @@
   flake.modules.nixos.freshrss =
     {
       self,
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -14,22 +14,22 @@
           name = "freshrss";
           port = 80;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
+        webProxy
         ;
 
       inherit (config.swarselsystems) sopsFile;
@@ -40,20 +40,31 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "freshrss" ];
+        # topology.self.services.${serviceName} = {
+        #   name = "FreshRSS";
+        #   info = "https://${serviceDomain}";
+        #   icon = "${self}/files/topology-images/${serviceName}.png";
+        # };
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "FreshRSS";
+            hostHeader = serviceDomain;
+          };
 
-        users = {
-          persistentIds = {
-            freshrss = confLib.mkIds 986;
-          };
-          users.${serviceUser} = {
-            extraGroups = [ "users" ];
-            group = serviceGroup;
-            isSystemUser = true;
-          };
         };
-
-        users.groups.${serviceGroup} = { };
-
         sops = {
           secrets = {
             freshrss-pw = {
@@ -83,44 +94,17 @@
           #     };
           #   };
         };
-
-        # topology.self.services.${serviceName} = {
-        #   name = "FreshRSS";
-        #   info = "https://${serviceDomain}";
-        #   icon = "${self}/files/topology-images/${serviceName}.png";
-        # };
-
-        globals = {
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
+        users = {
+          users.${serviceUser} = {
+            extraGroups = [ "users" ];
+            group = serviceGroup;
+            isSystemUser = true;
           };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            expectedBodyRegex = "FreshRSS";
-            hostHeader = serviceDomain;
+          persistentIds = {
+            freshrss = confLib.mkIds 986;
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-
         };
-
-        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-          directories = [
-            {
-              directory = "/var/lib/${serviceName}";
-              user = serviceUser;
-              group = serviceGroup;
-            }
-          ];
-        };
-
+        users.groups.${serviceGroup} = { };
         services.${serviceName} =
           let
             inherit (config.repo.secrets.local.freshrss) defaultUser;
@@ -128,17 +112,24 @@
           {
             inherit defaultUser;
             enable = true;
-            virtualHost = serviceDomain;
-            baseUrl = "https://${serviceDomain}";
             authType = "form";
+            baseUrl = "https://${serviceDomain}";
             dataDir = "/var/lib/freshrss";
             passwordFile = config.sops.secrets.freshrss-pw.path;
+            virtualHost = serviceDomain;
           };
-
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = "/var/lib/${serviceName}";
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
         # systemd.services.freshrss-config.serviceConfig.EnvironmentFile = [
         #   config.sops.templates.freshrss-env.path
         # ];
-
         nodes =
           let
             genNginx = toAddress: extraConfig: {
@@ -151,23 +142,24 @@
               };
               virtualHosts = {
                 "${serviceDomain}" = {
-                  useACMEHost = globals.domains.main;
-
-                  forceSSL = true;
-                  acmeRoot = null;
-                  oauth2.enable = true;
-                  oauth2.allowedGroups = [ "ttrss_access" ];
                   inherit extraConfig;
+                  acmeRoot = null;
+                  forceSSL = true;
                   locations = {
                     "/" = {
                       proxyPass = "http://${serviceName}";
                     };
                     "/api" = {
+                      bypassAuth = true;
                       proxyPass = "http://${serviceName}";
                       setOauth2Headers = false;
-                      bypassAuth = true;
                     };
                   };
+                  oauth2 = {
+                    enable = true;
+                    allowedGroups = [ "ttrss_access" ];
+                  };
+                  useACMEHost = globals.domains.main;
                 };
               };
             };

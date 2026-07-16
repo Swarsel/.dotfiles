@@ -12,9 +12,9 @@
   ];
 
   swarselsystems = {
-    nodeRoles = [ "homeSyncthingServer" ];
-    isMicroVM = true;
     isImpermanence = true;
+    isMicroVM = true;
+    nodeRoles = [ "homeSyncthingServer" ];
     proxyHost = "twothreetunnel";
   };
 

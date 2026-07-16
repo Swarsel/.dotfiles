@@ -1,9 +1,9 @@
 {
   name,
-  writeShellApplication,
   emacs30-pgtk,
-  sway,
   jq,
+  sway,
+  writeShellApplication,
   ...
 }:
 writeShellApplication {

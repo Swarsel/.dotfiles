@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.snipe-it =
     {
-      lib,
       config,
+      lib,
       confLib,
       ...
     }:
@@ -12,21 +12,21 @@
           name = "snipeit";
           port = 80;
         })
-        servicePort
-        serviceName
-        serviceUser
-        serviceGroup
-        serviceDomain
-        serviceAddress
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceGroup
+        serviceName
+        servicePort
+        serviceUser
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
-        homeWebProxy
         homeServiceAddress
+        homeWebProxy
+        isHome
         nginxAccessRules
+        webProxy
         ;
       # sopsFile = config.node.secretsDir + "/secrets2.yaml";
       inherit (config.swarselsystems) sopsFile;
@@ -38,65 +38,60 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "snipeit" ];
-
-        sops = {
-          secrets = {
-            snipe-it-appkey = {
-              inherit sopsFile;
-              owner = serviceUser;
-              group = serviceGroup;
-              mode = "0440";
-            };
-          };
-        };
-
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
         globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           services = confLib.mkServiceGlobal {
             inherit
-              serviceName
-              serviceDomain
+              homeServiceAddress
+              isHome
               proxyAddress4
               proxyAddress6
-              isHome
               serviceAddress
-              homeServiceAddress
+              serviceDomain
+              serviceName
               ;
           };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
             expectedBodyRegex = "Snipe-IT";
           };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-
+        sops = {
+          secrets = {
+            snipe-it-appkey = {
+              inherit sopsFile;
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            };
+          };
+        };
         services.snipe-it = {
           enable = true;
           appKeyFile = config.sops.secrets.snipe-it-appkey.path;
           appURL = "https://${serviceDomain}";
-          hostName = serviceDomain;
-          user = serviceUser;
-          group = serviceGroup;
           dataDir = "/var/lib/snipeit";
           database = {
-            user = serviceUser;
-            port = mysqlPort;
-            name = serviceDB;
-            host = "localhost";
             createLocally = true;
+            host = "localhost";
+            name = serviceDB;
+            port = mysqlPort;
+            user = serviceUser;
           };
+          group = serviceGroup;
+          hostName = serviceDomain;
+          user = serviceUser;
         };
-
         nodes = lib.mkMerge [
           {
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
               maxBody = 0;
             };
@@ -104,9 +99,9 @@
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                maxBody = 0;
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                maxBody = 0;
                 serviceAddress = homeServiceAddress;
               }
             );

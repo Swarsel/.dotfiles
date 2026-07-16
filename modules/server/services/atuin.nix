@@ -1,5 +1,25 @@
 {
   flake.modules = {
+    homeManager.atuin =
+      { globals, ... }:
+      let
+        atuinDomain = globals.services.atuin.domain;
+      in
+      {
+        config = {
+          swarselsystems.enabledHomeModules = [ "atuin" ];
+          programs.atuin = {
+            enable = true;
+            enableBashIntegration = true;
+            enableZshIntegration = true;
+            settings = {
+              auto_sync = true;
+              sync_address = "https://${atuinDomain}";
+              sync_frequency = "5m";
+            };
+          };
+        };
+      };
     nixos.atuin =
       {
         self,
@@ -13,67 +33,62 @@
             name = "atuin";
             port = 8888;
           })
-          servicePort
-          serviceName
-          serviceDomain
-          serviceAddress
           proxyAddress4
           proxyAddress6
+          serviceAddress
+          serviceDomain
+          serviceName
+          servicePort
           ;
         inherit (confLib.static)
-          isHome
-          webProxy
-          homeWebProxy
           homeServiceAddress
+          homeWebProxy
+          isHome
           nginxAccessRules
+          webProxy
           ;
       in
       {
         imports = [
           self.modules.nixos.postgresql
         ];
-
         config = {
           swarselsystems.enabledServerModules = [ "atuin" ];
-
           topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-
           globals = {
-            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             services = confLib.mkServiceGlobal {
               inherit
-                serviceName
-                serviceDomain
+                homeServiceAddress
+                isHome
                 proxyAddress4
                 proxyAddress6
-                isHome
                 serviceAddress
-                homeServiceAddress
+                serviceDomain
+                serviceName
                 ;
             };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
               inherit serviceName servicePort;
               expectedBodyRegex = ''"version":'';
             };
-            dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
-
           services.${serviceName} = {
             enable = true;
             host = "0.0.0.0";
-            port = servicePort;
             # openFirewall = true;
             openRegistration = false;
+            port = servicePort;
           };
-
           nodes = lib.mkMerge [
             {
               ${webProxy}.services.nginx = confLib.genNginx {
                 inherit
                   serviceAddress
-                  servicePort
                   serviceDomain
                   serviceName
+                  servicePort
                   ;
                 maxBody = 0;
               };
@@ -81,36 +96,15 @@
             {
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
-                  inherit servicePort serviceDomain serviceName;
-                  maxBody = 0;
+                  inherit serviceDomain serviceName servicePort;
                   extraConfig = nginxAccessRules;
+                  maxBody = 0;
                   serviceAddress = homeServiceAddress;
                 }
               );
             }
           ];
 
-        };
-      };
-
-    homeManager.atuin =
-      { globals, ... }:
-      let
-        atuinDomain = globals.services.atuin.domain;
-      in
-      {
-        config = {
-          swarselsystems.enabledHomeModules = [ "atuin" ];
-          programs.atuin = {
-            enable = true;
-            enableZshIntegration = true;
-            enableBashIntegration = true;
-            settings = {
-              auto_sync = true;
-              sync_frequency = "5m";
-              sync_address = "https://${atuinDomain}";
-            };
-          };
         };
       };
   };

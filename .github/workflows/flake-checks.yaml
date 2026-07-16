@@ -18,5 +18,5 @@ jobs:
         run: git ls-files '*.nix' | nix run nixpkgs#deadnix
       - name: Check for lints in .nix files
         run: nix run nixpkgs#statix -- check
-      - name: Check formatting in .nix files
-        run: git ls-files '*.nix' | xargs nix run nixpkgs#nixfmt -- --check
+      - name: Check formatting
+        run: nix build .#checks.x86_64-linux.treefmt

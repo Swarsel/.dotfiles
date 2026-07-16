@@ -1,79 +1,30 @@
 {
   flake.modules.nixos.remotebuild =
     {
-      lib,
       config,
+      lib,
       globals,
       ...
     }:
     let
-      inherit (config.swarselsystems) homeDir mainUser isClient;
+      inherit (config.swarselsystems) homeDir isClient mainUser;
     in
     {
       config = {
 
         sops.secrets = {
           builder-key = lib.mkIf isClient {
+            mode = "0600";
             owner = mainUser;
             path = "${homeDir}/.ssh/builder";
-            mode = "0600";
           };
           nixbuild-net-key = {
+            mode = "0600";
             owner = mainUser;
             path = "${homeDir}/.ssh/nixbuild-net";
-            mode = "0600";
           };
         };
-
-        nix = {
-          settings.builders-use-substitutes = true;
-          distributedBuilds = true;
-          buildMachines = [
-            (lib.mkIf isClient {
-              hostName = config.repo.secrets.common.builder1-ip;
-              system = "aarch64-linux";
-              maxJobs = 20;
-              speedFactor = 10;
-            })
-            (lib.mkIf isClient {
-              hostName = globals.hosts.belchsfactory.wanAddress4;
-              system = "aarch64-linux";
-              maxJobs = 4;
-              speedFactor = 2;
-              protocol = "ssh-ng";
-            })
-            (lib.mkIf isClient {
-              hostName = "eu.nixbuild.net";
-              system = "x86_64-linux";
-              maxJobs = 100;
-              speedFactor = 2;
-              supportedFeatures = [
-                "benchmark"
-                "big-parallel"
-              ];
-            })
-          ];
-        };
-
         programs.ssh = {
-          knownHosts = {
-            nixbuild = {
-              hostNames = [ "eu.nixbuild.net" ];
-              publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPIQCZc54poJ8vqawd8TraNryQeJnvH1eLpIDgbiqymM";
-            };
-            builder1 = lib.mkIf isClient {
-              hostNames = [ config.repo.secrets.common.builder1-ip ];
-              publicKey = config.repo.secrets.common.builder1-pubHostKey;
-            };
-            jump = lib.mkIf isClient {
-              hostNames = [ globals.hosts.liliputsteps.wanAddress4 ];
-              publicKey = config.repo.secrets.common.jump-pubHostKey;
-            };
-            builder2 = lib.mkIf isClient {
-              hostNames = [ globals.hosts.belchsfactory.wanAddress4 ];
-              publicKey = config.repo.secrets.common.builder2-pubHostKey;
-            };
-          };
           extraConfig = ''
             Host eu.nixbuild.net
               ConnectTimeout 1
@@ -99,6 +50,53 @@
               User jump
               IdentityFile ${config.sops.secrets.builder-key.path}
           '';
+          knownHosts = {
+            builder1 = lib.mkIf isClient {
+              hostNames = [ config.repo.secrets.common.builder1-ip ];
+              publicKey = config.repo.secrets.common.builder1-pubHostKey;
+            };
+            builder2 = lib.mkIf isClient {
+              hostNames = [ globals.hosts.belchsfactory.wanAddress4 ];
+              publicKey = config.repo.secrets.common.builder2-pubHostKey;
+            };
+            jump = lib.mkIf isClient {
+              hostNames = [ globals.hosts.liliputsteps.wanAddress4 ];
+              publicKey = config.repo.secrets.common.jump-pubHostKey;
+            };
+            nixbuild = {
+              hostNames = [ "eu.nixbuild.net" ];
+              publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPIQCZc54poJ8vqawd8TraNryQeJnvH1eLpIDgbiqymM";
+            };
+          };
+        };
+        nix = {
+          buildMachines = [
+            (lib.mkIf isClient {
+              hostName = config.repo.secrets.common.builder1-ip;
+              maxJobs = 20;
+              speedFactor = 10;
+              system = "aarch64-linux";
+            })
+            (lib.mkIf isClient {
+              hostName = globals.hosts.belchsfactory.wanAddress4;
+              maxJobs = 4;
+              protocol = "ssh-ng";
+              speedFactor = 2;
+              system = "aarch64-linux";
+            })
+            (lib.mkIf isClient {
+              hostName = "eu.nixbuild.net";
+              maxJobs = 100;
+              speedFactor = 2;
+              supportedFeatures = [
+                "benchmark"
+                "big-parallel"
+              ];
+              system = "x86_64-linux";
+            })
+          ];
+          distributedBuilds = true;
+          settings.builders-use-substitutes = true;
         };
       };
     };

@@ -1,8 +1,8 @@
 {
   flake.modules.nixos.microvm-guest-shares =
     {
-      lib,
       config,
+      lib,
       microVMParent,
       nodes,
       ...
@@ -12,12 +12,12 @@
         microvm = {
           shares = [
             {
-              tag = "persist";
+              mountPoint = "/persist";
+              proto = "virtiofs";
               source = "${
                 lib.optionalString nodes.${microVMParent}.config.swarselsystems.isImpermanence "/persist"
               }/microvms/${config.networking.hostName}";
-              mountPoint = "/persist";
-              proto = "virtiofs";
+              tag = "persist";
             }
           ];
         };

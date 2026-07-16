@@ -1,10 +1,10 @@
 {
   flake.modules.nixos.alloy =
     {
-      lib,
       config,
-      globals,
+      lib,
       confLib,
+      globals,
       ...
     }:
     let
@@ -13,15 +13,15 @@
           name = "alloy";
           port = 12345;
         })
-        servicePort
         serviceName
+        servicePort
         ;
       inherit (confLib.static)
+        homeWebProxy
+        inWgHome
+        inWgProxy
         isHome
         webProxy
-        homeWebProxy
-        inWgProxy
-        inWgHome
         ;
 
       otlpGrpcPort = 4317;
@@ -45,12 +45,11 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-
         globals = {
           services.${serviceName}.extraConfig = {
-            httpPort = servicePort;
             inherit otlpGrpcPort otlpHttpPort;
             clients.${config.node.name} = true;
+            httpPort = servicePort;
           };
           monitoring.hostNetworks.${config.node.name} = [
             "local-${config.node.name}"
@@ -68,7 +67,21 @@
             )
           );
         };
-
+        services.${serviceName} = {
+          enable = true;
+          extraFlags = [ "--server.http.listen-addr=127.0.0.1:${toString servicePort}" ];
+        };
+        environment = {
+          etc."alloy/config.alloy".text = config-alloy;
+          persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+            directories = [
+              {
+                directory = "/var/lib/private/alloy";
+                mode = "0700";
+              }
+            ];
+          };
+        };
         networking.hosts =
           let
             proxyIp =
@@ -87,26 +100,7 @@
               pyroscopeDomain
             ];
           };
-
-        environment = {
-          etc."alloy/config.alloy".text = config-alloy;
-          persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-            directories = [
-              {
-                directory = "/var/lib/private/alloy";
-                mode = "0700";
-              }
-            ];
-          };
-        };
-
-        services.${serviceName} = {
-          enable = true;
-          extraFlags = [ "--server.http.listen-addr=127.0.0.1:${toString servicePort}" ];
-        };
-
         systemd.services.alloy.serviceConfig = {
-          RestartSec = lib.mkForce "60";
           AmbientCapabilities = [
             "CAP_BPF"
             "CAP_SYS_PTRACE"
@@ -127,6 +121,7 @@
             "CAP_SYS_RESOURCE"
             "CAP_SYSLOG"
           ];
+          RestartSec = lib.mkForce "60";
         };
 
       };

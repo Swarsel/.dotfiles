@@ -3,6 +3,7 @@
   imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 
   boot = {
+    extraModulePackages = [ ];
     initrd = {
       availableKernelModules = [
         "xhci_pci"
@@ -13,7 +14,6 @@
       kernelModules = [ ];
     };
     kernelModules = [ ];
-    extraModulePackages = [ ];
   };
 
   nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";

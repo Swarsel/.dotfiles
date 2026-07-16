@@ -1,7 +1,7 @@
 {
   self,
-  lib,
   config,
+  lib,
   pkgs,
   globals,
   ...
@@ -28,16 +28,11 @@
   ];
 
   options.sandbox.tlsDomains = lib.mkOption {
-    type = lib.types.listOf lib.types.str;
     default = [ ];
+    type = lib.types.listOf lib.types.str;
   };
 
   config = {
-    sandbox.tlsDomains = [
-      globals.services.kanidm.domain
-      globals.services.oauth2-proxy.domain
-    ];
-
     swarselsystems = {
       isLinux = true;
       isPublic = true;
@@ -46,30 +41,23 @@
         "oauthServer"
       ];
     };
-
-    repo.secretFiles = {
-      common = lib.mkForce ./secrets/pii.nix;
-      local = ./secrets/pii-local.nix;
-    };
-
     sops = {
       age = {
-        sshKeyPaths = lib.mkForce [ ];
         keyFile = "/var/lib/sops-nix/key.txt";
+        sshKeyPaths = lib.mkForce [ ];
       };
 
       secrets = {
-        kanidm-self-signed-crt.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
-        kanidm-self-signed-key.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
         kanidm-oauth2-proxy = {
-          owner = lib.mkForce "kanidm";
           group = lib.mkForce "kanidm";
           mode = lib.mkForce "0440";
+          owner = lib.mkForce "kanidm";
         };
+        kanidm-self-signed-crt.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
+        kanidm-self-signed-key.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
       };
 
       templates.motd = {
-        mode = "0444";
         content = ''
 
           vacanthouse sandbox
@@ -81,44 +69,78 @@
             kanidm person credential create-reset-token sandbox
 
         '';
+        mode = "0444";
       };
     };
-
-    system.activationScripts = {
-      sandboxAgeKey.text = ''
-        install -d -m 700 /var/lib/sops-nix
-        install -m 600 ${../../../files/public/age/vacanthouse.key} /var/lib/sops-nix/key.txt
-      '';
-      setupSecrets.deps = [ "sandboxAgeKey" ];
-    };
-
-    networking = {
-      hosts."127.0.0.1" = config.sandbox.tlsDomains;
-      firewall.allowedTCPPorts = [ 8300 ];
-    };
-
-    services.nginx.virtualHosts = lib.genAttrs config.sandbox.tlsDomains (_: {
-      useACMEHost = lib.mkForce null;
-      sslCertificate = "${../../../files/public/certs/wildcard.crt}";
-      sslCertificateKey = "${../../../files/public/certs/wildcard.key}";
-    });
-
-    security.pki.certificateFiles = [ ../../../files/public/certs/ca.crt ];
-
     users.motdFile = config.sops.templates.motd.path;
-
-    services.kanidm.provision = {
-      groups."sandbox.access".members = [ "sandbox" ];
-      systems.oauth2.oauth2-proxy = {
-        scopeMaps."sandbox.access" = [
-          "openid"
-          "email"
-          "profile"
-        ];
-        claimMaps.groups.valuesByGroup."sandbox.access" = [ "sandbox_access" ];
+    services = {
+      kanidm.provision = {
+        groups."sandbox.access".members = [ "sandbox" ];
+        systems.oauth2.oauth2-proxy = {
+          claimMaps.groups.valuesByGroup."sandbox.access" = [ "sandbox_access" ];
+          scopeMaps."sandbox.access" = [
+            "openid"
+            "email"
+            "profile"
+          ];
+        };
       };
+      nginx.virtualHosts = lib.genAttrs config.sandbox.tlsDomains (_: {
+        sslCertificate = "${../../../files/public/certs/wildcard.crt}";
+        sslCertificateKey = "${../../../files/public/certs/wildcard.key}";
+        useACMEHost = lib.mkForce null;
+      });
     };
-
+    boot.loader.grub.enable = false;
+    fileSystems."/" = {
+      device = "/dev/disk/by-label/nixos";
+      fsType = "ext4";
+    };
+    networking = {
+      firewall.allowedTCPPorts = [ 8300 ];
+      hosts."127.0.0.1" = config.sandbox.tlsDomains;
+    };
+    repo.secretFiles = {
+      common = lib.mkForce ./secrets/pii.nix;
+      local = ./secrets/pii-local.nix;
+    };
+    sandbox.tlsDomains = [
+      globals.services.kanidm.domain
+      globals.services.oauth2-proxy.domain
+    ];
+    security.pki.certificateFiles = [ ../../../files/public/certs/ca.crt ];
+    system = {
+      activationScripts = {
+        sandboxAgeKey.text = ''
+          install -d -m 700 /var/lib/sops-nix
+          install -m 600 ${../../../files/public/age/vacanthouse.key} /var/lib/sops-nix/key.txt
+        '';
+        setupSecrets.deps = [ "sandboxAgeKey" ];
+      };
+      stateVersion = "24.11";
+    };
+    virtualisation.vmVariant.virtualisation = {
+      cores = 2;
+      forwardPorts = [
+        {
+          from = "host";
+          guest.port = 80;
+          host.port = 80;
+        }
+        {
+          from = "host";
+          guest.port = 443;
+          host.port = 443;
+        }
+        {
+          from = "host";
+          guest.port = 8300;
+          host.port = 8300;
+        }
+      ];
+      graphics = false;
+      memorySize = 4096;
+    };
     systemd.tmpfiles.rules = [
       "d /etc/ssl/private 0755 root root -"
       "C+ /etc/ssl/certs/kanidm.crt 0644 kanidm kanidm - ${../../../files/public/certs/wildcard.crt}"
@@ -129,37 +151,5 @@
         kanidm person credential create-reset-token sandbox
       ''}"
     ];
-
-    fileSystems."/" = {
-      device = "/dev/disk/by-label/nixos";
-      fsType = "ext4";
-    };
-
-    boot.loader.grub.enable = false;
-
-    system.stateVersion = "24.11";
-
-    virtualisation.vmVariant.virtualisation = {
-      cores = 2;
-      memorySize = 4096;
-      graphics = false;
-      forwardPorts = [
-        {
-          from = "host";
-          host.port = 80;
-          guest.port = 80;
-        }
-        {
-          from = "host";
-          host.port = 443;
-          guest.port = 443;
-        }
-        {
-          from = "host";
-          host.port = 8300;
-          guest.port = 8300;
-        }
-      ];
-    };
   };
 }

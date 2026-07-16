@@ -2,8 +2,8 @@
   flake.modules.nixos.buildbot =
     {
       self,
-      lib,
       config,
+      lib,
       pkgs,
       confLib,
       ...
@@ -14,20 +14,20 @@
           name = "buildbot";
           port = 8010;
         })
-        serviceName
-        servicePort
-        serviceAddress
-        serviceDomain
         proxyAddress4
         proxyAddress6
+        serviceAddress
+        serviceDomain
+        serviceName
+        servicePort
         ;
       inherit (confLib.static)
-        isHome
-        webProxy
+        homeServiceAddress
         homeWebProxy
         idmServer
-        homeServiceAddress
+        isHome
         nginxAccessRules
+        webProxy
         ;
       inherit (config.swarselsystems) mainUser sopsFile;
 
@@ -393,112 +393,73 @@
       imports = [
         self.modules.nixos.attic-setup
       ];
-
       config = {
         swarselsystems.enabledServerModules = [ "buildbot" ];
-
         topology.self.services.${serviceName} = {
-          name = "Buildbot";
-          info = "https://${serviceDomain}";
           icon = "${self}/files/topology-images/${serviceName}.png";
+          info = "https://${serviceDomain}";
+          name = "Buildbot";
         };
-
-        systemd.tmpfiles.settings."10-buildbot" = builtins.listToAttrs (
-          map
-            (path: {
-              name = "/home/buildbot/${path}";
-              value = {
-                d = {
-                  group = "buildbot";
-                  user = "buildbot";
-                  mode = "0750";
-                };
-              };
-            })
-            [
-              "/flake"
-              "/master"
-            ]
-        );
-
+        globals = {
+          services = confLib.mkServiceGlobal {
+            inherit
+              homeServiceAddress
+              isHome
+              proxyAddress4
+              proxyAddress6
+              serviceAddress
+              serviceDomain
+              serviceName
+              ;
+          };
+          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.http = confLib.mkHttpMonitoring {
+            inherit serviceName servicePort;
+            expectedBodyRegex = "Buildbot Web UI";
+          };
+          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+        };
+        sops.secrets = {
+          buildbot-age-key = {
+            inherit sopsFile;
+            group = "buildbot";
+            mode = "0400";
+            owner = "buildbot";
+          };
+          buildbot-github-key = {
+            inherit sopsFile;
+            group = "buildbot";
+            mode = "0400";
+            owner = "buildbot";
+          };
+          buildbot-github-token = {
+            inherit sopsFile;
+            group = "buildbot";
+            mode = "0400";
+            owner = "buildbot";
+          };
+        };
         users = {
-          persistentIds.${serviceName} = confLib.mkIds 1002; # must be a normal user
           users.${serviceName} = {
             extraGroups = [ "builder" ];
-            subUidRanges = [
-              {
-                count = 65534;
-                startUid = 100001;
-              }
-            ];
             subGidRanges = [
               {
                 count = 999;
                 startGid = 1001;
               }
             ];
+            subUidRanges = [
+              {
+                count = 65534;
+                startUid = 100001;
+              }
+            ];
           };
+          persistentIds.${serviceName} = confLib.mkIds 1002; # must be a normal user
         };
-
-        globals = {
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
-          services = confLib.mkServiceGlobal {
-            inherit
-              serviceName
-              serviceDomain
-              proxyAddress4
-              proxyAddress6
-              isHome
-              serviceAddress
-              homeServiceAddress
-              ;
-          };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            expectedBodyRegex = "Buildbot Web UI";
-          };
-          dns = confLib.mkDnsRecord { inherit serviceName proxyAddress4 proxyAddress6; };
-        };
-
-        nix.gc = {
-          automatic = true;
-          dates = lib.mkForce "20:00";
-          options = lib.mkForce "--delete-older-than 5d";
-        };
-
-        sops.secrets = {
-          buildbot-github-key = {
-            inherit sopsFile;
-            owner = "buildbot";
-            group = "buildbot";
-            mode = "0400";
-          };
-          buildbot-age-key = {
-            inherit sopsFile;
-            owner = "buildbot";
-            group = "buildbot";
-            mode = "0400";
-          };
-          buildbot-github-token = {
-            inherit sopsFile;
-            owner = "buildbot";
-            group = "buildbot";
-            mode = "0400";
-          };
-        };
-
-        programs.ssh.extraConfig = lib.mkAfter ''
-          Host github.com
-              IdentityFile ${config.sops.secrets.buildbot-github-key.path}
-              IdentitiesOnly yes
-              StrictHostKeyChecking accept-new
-        '';
-
-        nix.settings.trusted-users = [ "buildbot" ];
-
         services.buildbot-master = {
-          enable = true;
           inherit masterCfg;
+          enable = true;
           home = "/home/buildbot";
           packages = with pkgs; [
             config.nix.package
@@ -517,24 +478,54 @@
             pkgs.buildbot-worker
           ];
         };
-
-        systemd.services.buildbot-master = {
-          environment.SOPS_AGE_KEY_FILE = config.sops.secrets.buildbot-age-key.path;
-          serviceConfig = {
-            MemoryMax = "20G";
-            Restart = "always";
-          };
-        };
-
+        programs.ssh.extraConfig = lib.mkAfter ''
+          Host github.com
+              IdentityFile ${config.sops.secrets.buildbot-github-key.path}
+              IdentitiesOnly yes
+              StrictHostKeyChecking accept-new
+        '';
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           {
             directory = "/home/buildbot";
-            user = "buildbot";
             group = "buildbot";
             mode = "0750";
+            user = "buildbot";
           }
         ];
-
+        nix = {
+          gc = {
+            options = lib.mkForce "--delete-older-than 5d";
+            automatic = true;
+            dates = lib.mkForce "20:00";
+          };
+          settings.trusted-users = [ "buildbot" ];
+        };
+        systemd = {
+          services.buildbot-master = {
+            environment.SOPS_AGE_KEY_FILE = config.sops.secrets.buildbot-age-key.path;
+            serviceConfig = {
+              MemoryMax = "20G";
+              Restart = "always";
+            };
+          };
+          tmpfiles.settings."10-buildbot" = builtins.listToAttrs (
+            map
+              (path: {
+                name = "/home/buildbot/${path}";
+                value = {
+                  d = {
+                    group = "buildbot";
+                    mode = "0750";
+                    user = "buildbot";
+                  };
+                };
+              })
+              [
+                "/flake"
+                "/master"
+              ]
+          );
+        };
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -543,22 +534,22 @@
             ${webProxy}.services.nginx = confLib.genNginx {
               inherit
                 serviceAddress
-                servicePort
                 serviceDomain
                 serviceName
+                servicePort
                 ;
-              proxyWebsockets = true;
               oauth2 = true;
               oauth2Groups = [ "buildbot_access" ];
+              proxyWebsockets = true;
             };
           }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {
-                inherit servicePort serviceDomain serviceName;
-                proxyWebsockets = true;
-                oauth2Groups = [ "buildbot_access" ];
+                inherit serviceDomain serviceName servicePort;
                 extraConfig = nginxAccessRules;
+                oauth2Groups = [ "buildbot_access" ];
+                proxyWebsockets = true;
                 serviceAddress = homeServiceAddress;
               }
             );

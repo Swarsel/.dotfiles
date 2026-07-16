@@ -1,10 +1,10 @@
 {
   flake-file.inputs.dns = {
-    url = "github:kirelagin/dns.nix";
     inputs = {
-      nixpkgs.follows = "nixpkgs";
       flake-utils.follows = "flake-utils";
+      nixpkgs.follows = "nixpkgs";
     };
+    url = "github:kirelagin/dns.nix";
   };
 
   flake.modules.nixos.dns =
