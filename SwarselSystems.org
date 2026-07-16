@@ -3902,6 +3902,9 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   swarselsystems = self.outputs.swarselsystemsLib;
                   hm = self.outputs.homeLib;
                 };
+                mautrix-telegram = prev.mautrix-telegram.override {
+                  python3 = prev.python313;
+                };
                 mgba = final.swarsel-mgba;
                 retroarch = prev.retroarch.withCores (
                   cores: with cores; [
@@ -5009,7 +5012,8 @@ In order to keep track of these changes, I gather them here in a similar style t
 #+RESULTS:
 #+begin_export html
 Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
-
+- <2026-07-16 Do>
+  - mautrix-telegram's python version is pinned to 3.13
 - <2026-04-28 Di>:
   - element sets appid as "electron"
     - > match window-rule in niri to "title"

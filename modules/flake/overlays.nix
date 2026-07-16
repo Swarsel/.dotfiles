@@ -161,6 +161,9 @@ in
                 swarselsystems = self.outputs.swarselsystemsLib;
                 hm = self.outputs.homeLib;
               };
+              mautrix-telegram = prev.mautrix-telegram.override {
+                python3 = prev.python313;
+              };
               mgba = final.swarsel-mgba;
               retroarch = prev.retroarch.withCores (
                 cores: with cores; [
