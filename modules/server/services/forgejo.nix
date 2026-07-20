@@ -35,6 +35,8 @@
 
       kanidmDomain = globals.services.kanidm.domain;
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
+      sshProxyPort = 2222;
+      sshListenPort = 2222;
     in
     {
       config = {
@@ -58,7 +60,12 @@
             failIfBodyMatchesRegex = ''"status":\s*"(fail|warn|inactive|unknown)"'';
             path = "/api/healthz";
           };
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          networks = confLib.mkDualFirewallRules {
+            tcpPorts = [
+              servicePort
+              sshListenPort
+            ];
+          };
         };
         sops.secrets = {
           kanidm-forgejo = {
@@ -112,6 +119,11 @@
               HTTP_PORT = servicePort;
               PROTOCOL = "http";
               ROOT_URL = "https://${serviceDomain}";
+              SSH_DOMAIN = serviceDomain;
+              SSH_PORT = sshProxyPort;
+              SSH_LISTEN_HOST = "0.0.0.0";
+              SSH_LISTEN_PORT = sshListenPort;
+              START_SSH_SERVER = true;
             };
             service = {
               ALLOW_ONLY_EXTERNAL_REGISTRATION = true;
@@ -210,14 +222,30 @@
                 };
           }
           {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                serviceDomain
-                serviceName
-                servicePort
-                ;
-              maxBody = 0;
+            ${webProxy} = {
+              services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  servicePort
+                  ;
+                maxBody = 0;
+              }
+              // {
+                streamConfig = ''
+                  server {
+                    listen ${toString sshProxyPort};
+                    listen [::]:${toString sshProxyPort};
+                    proxy_pass ${serviceAddress}:${toString sshListenPort};
+                  }
+                '';
+              };
+              networking.nftables.firewall.rules.forgejo-ssh-to-local = {
+                allowedTCPPorts = [ sshProxyPort ];
+                from = [ "untrusted" ];
+                to = [ "local" ];
+              };
             };
           }
           {

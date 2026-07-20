@@ -57,6 +57,7 @@
       ++ expandOptions (splitPath "services.nginx") [
         "upstreams"
         "virtualHosts"
+        "streamConfig"
       ]
       ++ expandOptions (splitPath "services.grafana") [
         "settings"
