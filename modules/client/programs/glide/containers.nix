@@ -25,9 +25,10 @@
       }
 
       const reopening = new Set<number>();
+      const placed = new Map<number, string>();
       async function ensure_container(tab_id: number, url: string) {
         const rule = match_rule(url);
-        if (!rule || reopening.has(tab_id)) {
+        if (!rule || reopening.has(tab_id) || placed.get(tab_id) === rule.container) {
           return;
         }
         reopening.add(tab_id);
@@ -41,20 +42,28 @@
           }
           const tab = await browser.tabs.get(tab_id).catch(() => null);
           if (tab == null || tab.cookieStoreId === target) {
+            if (tab != null) {
+              placed.set(tab_id, rule.container);
+            }
             return;
           }
-          await browser.tabs.create({
+          const created = await browser.tabs.create({
             cookieStoreId: target,
             url,
             active: tab.active,
             windowId: tab.windowId,
             index: tab.index + 1,
           });
+          if (created.id != null) {
+            placed.set(created.id, rule.container);
+          }
           await browser.tabs.remove(tab_id);
         } catch {} finally {
           reopening.delete(tab_id);
         }
       }
+
+      browser.tabs.onRemoved.addListener((tab_id) => placed.delete(tab_id));
 
       async function container_catchup() {
         try {

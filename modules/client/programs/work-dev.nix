@@ -88,6 +88,10 @@
               user3
               user3Long
               ;
+            containerSites = lib.zipAttrsWith (_: lib.concatLists) [
+              confLib.getConfig.repo.secrets.common.browser.containerSites
+              browser.containerSites
+            ];
           in
           {
             awscli = {
@@ -144,7 +148,7 @@
                       lib.mapAttrsToList (
                         container:
                         map (prefix: "{ prefix: ${builtins.toJSON prefix}, container: ${builtins.toJSON container} },")
-                      ) browser.containerSites
+                      ) containerSites
                     )
                   )}
                 );
