@@ -197,11 +197,9 @@
                 default = { };
                 type = types.attrsOf (
                   types.submodule {
-                    options = {
-                      subdomainRecords = mkOption {
-                        default = { };
-                        type = types.attrsOf dns.lib.types.subzone;
-                      };
+                    options.subdomainRecords = mkOption {
+                      default = { };
+                      type = types.attrsOf dns.lib.types.subzone;
                     };
                   }
                 );
@@ -349,10 +347,8 @@
                   })
                 );
               };
-              root = {
-                hashedPassword = mkOption {
-                  type = types.str;
-                };
+              root.hashedPassword = mkOption {
+                type = types.str;
               };
               user = {
                 name = mkOption {

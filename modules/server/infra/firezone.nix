@@ -1,8 +1,6 @@
 {
   # this one still supports provision, name is not nixpgks-[...] on purpose to avoid adding to the overlay
-  flake-file.inputs.nixpkgsFirezoneProvisioned = {
-    url = "github:nixos/nixpkgs/a799d3e3886da994fa307f817a6bc705ae538eeb?narHash=sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY%3D";
-  };
+  flake-file.inputs.nixpkgsFirezoneProvisioned.url = "github:nixos/nixpkgs/a799d3e3886da994fa307f817a6bc705ae538eeb?narHash=sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY%3D";
 
   flake.modules.nixos.firezone =
     {
@@ -197,24 +195,22 @@
             };
           };
         };
-        sops = {
-          secrets = {
-            firezone-adapter-config = {
-              inherit sopsFile;
-              mode = "0440";
-            };
-            firezone-relay-token = {
-              inherit sopsFile;
-              mode = "0400";
-            };
-            firezone-smtp-password = {
-              inherit sopsFile;
-              mode = "0440";
-            };
-            kanidm-firezone = {
-              mode = "0400";
-              sopsFile = kanidmSopsFile;
-            };
+        sops.secrets = {
+          firezone-adapter-config = {
+            inherit sopsFile;
+            mode = "0440";
+          };
+          firezone-relay-token = {
+            inherit sopsFile;
+            mode = "0400";
+          };
+          firezone-smtp-password = {
+            inherit sopsFile;
+            mode = "0440";
+          };
+          kanidm-firezone = {
+            mode = "0400";
+            sopsFile = kanidmSopsFile;
           };
         };
         services.firezone = {
@@ -484,23 +480,21 @@
                       }
                     ];
                     networking.nftables = {
-                      chains.postrouting = {
-                        masquerade-firezone = {
-                          after = [ "hook" ];
-                          late = true;
-                          rules = lib.concatMap (
-                            sourceZone:
-                            lib.forEach firezoneTargetZones (
-                              targetZone:
-                              lib.concatStringsSep " " [
-                                "meta protocol { ip, ip6 }"
-                                (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
-                                (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
-                                "masquerade random"
-                              ]
-                            )
-                          ) [ "firezone" ];
-                        };
+                      chains.postrouting.masquerade-firezone = {
+                        after = [ "hook" ];
+                        late = true;
+                        rules = lib.concatMap (
+                          sourceZone:
+                          lib.forEach firezoneTargetZones (
+                            targetZone:
+                            lib.concatStringsSep " " [
+                              "meta protocol { ip, ip6 }"
+                              (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
+                              (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
+                              "masquerade random"
+                            ]
+                          )
+                        ) [ "firezone" ];
                       };
                       firewall = {
                         rules = {

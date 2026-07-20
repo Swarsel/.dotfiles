@@ -233,13 +233,11 @@
                     "email"
                     "profile"
                   ];
-                  user_mapping_provider = {
-                    config = {
-                      display_name_template = "{{ user.name }}";
-                      email_template = "{{ user.email }}";
-                      localpart_template = "{{ user.preferred_username }}";
-                      subject_claim = "sub";
-                    };
+                  user_mapping_provider.config = {
+                    display_name_template = "{{ user.name }}";
+                    email_template = "{{ user.email }}";
+                    localpart_template = "{{ user.preferred_username }}";
+                    subject_claim = "sub";
                   };
                   user_profile_method = "userinfo_endpoint";
                 }
@@ -258,11 +256,9 @@
                 hostname = "0.0.0.0";
                 port = signalPort;
               };
-              bridge = {
-                permissions = {
-                  "*" = "relay";
-                  "@swarsel:${serviceDomain}" = "admin";
-                };
+              bridge.permissions = {
+                "*" = "relay";
+                "@swarsel:${serviceDomain}" = "admin";
               };
               database = {
                 type = "postgres";
@@ -293,9 +289,7 @@
                 port = telegramPort;
                 provisioning.enabled = true;
                 # ephemeral_events = true; # not needed due to double puppeting
-                public = {
-                  enabled = false;
-                };
+                public.enabled = false;
               };
               bridge = {
                 allow_avatar_remove = true;
@@ -344,11 +338,9 @@
                 port = whatsappPort;
               };
               backfill.enabled = true;
-              bridge = {
-                permissions = {
-                  "*" = "relay";
-                  "@swarsel:${serviceDomain}" = "admin";
-                };
+              bridge.permissions = {
+                "*" = "relay";
+                "@swarsel:${serviceDomain}" = "admin";
               };
               database = {
                 type = "postgres";
@@ -476,10 +468,8 @@
           let
             genNginx = toAddress: extraConfig: {
               upstreams = {
-                ${serviceName} = {
-                  servers = {
-                    "${toAddress}:${builtins.toString servicePort}" = { };
-                  };
+                ${serviceName}.servers = {
+                  "${toAddress}:${builtins.toString servicePort}" = { };
                 };
               };
               virtualHosts = {

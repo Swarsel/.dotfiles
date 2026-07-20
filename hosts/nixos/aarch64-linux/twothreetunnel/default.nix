@@ -40,41 +40,37 @@
     ];
     rootDisk = "/dev/disk/by-id/scsi-3608deb9b0d4244de95c6620086ff740d";
   };
-  topology.self = {
-    icon = "devices.cloud-server";
-  };
-  globals = {
-    wireguard.wgProxy = {
-      clients = [
-        "moonside"
-        "winters"
-        "summers"
-        "summers-ankisync"
-        "summers-atuin"
-        "summers-audio"
-        "summers-firefly"
-        "summers-forgejo"
-        "summers-freshrss"
-        "summers-homebox"
-        "summers-immich"
-        "summers-jellyfin"
-        "summers-kanidm"
-        "summers-kavita"
-        "summers-koillection"
-        "summers-matrix"
-        "summers-mealie"
-        "summers-monitoring"
-        "summers-nextcloud"
-        "summers-paperless"
-        "summers-radicale"
-        "summers-storage"
-        "belchsfactory"
-        "eagleland"
-        "hintbooth-adguardhome"
-      ];
-      netConfigPrefix = config.node.name;
-      server = config.node.name;
-    };
+  topology.self.icon = "devices.cloud-server";
+  globals.wireguard.wgProxy = {
+    clients = [
+      "moonside"
+      "winters"
+      "summers"
+      "summers-ankisync"
+      "summers-atuin"
+      "summers-audio"
+      "summers-firefly"
+      "summers-forgejo"
+      "summers-freshrss"
+      "summers-homebox"
+      "summers-immich"
+      "summers-jellyfin"
+      "summers-kanidm"
+      "summers-kavita"
+      "summers-koillection"
+      "summers-matrix"
+      "summers-mealie"
+      "summers-monitoring"
+      "summers-nextcloud"
+      "summers-paperless"
+      "summers-radicale"
+      "summers-storage"
+      "belchsfactory"
+      "eagleland"
+      "hintbooth-adguardhome"
+    ];
+    netConfigPrefix = config.node.name;
+    server = config.node.name;
   };
 }
 // lib.optionalAttrs (!minimal) {

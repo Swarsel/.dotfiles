@@ -5,42 +5,38 @@ let
 in
 {
   flake.modules.homeManager = {
-    profile-dgxspark = {
-      imports = pickH [
-        "atuin"
-        "bash"
-        "blueman-applet"
-        "direnv"
-        "eza"
-        "firefox"
-        "glide"
-        "fuzzel"
-        "settings"
-        "git"
-        "gpg-agent"
-        "kitty"
-        "nix-index"
-        "nixgl"
-        "nix-your-shell"
-        "network-manager-applet"
-        "sops"
-        "starship"
-        "stylix"
-        "tmux"
-        "zellij"
-        "zellij-keybinds"
-        "zsh"
-      ];
-    };
-    profile-minimal = {
-      imports = pickH [
-        "settings"
-        "sops"
-        "kitty"
-        "zsh"
-        "git"
-      ];
-    };
+    profile-dgxspark.imports = pickH [
+      "atuin"
+      "bash"
+      "blueman-applet"
+      "direnv"
+      "eza"
+      "firefox"
+      "glide"
+      "fuzzel"
+      "settings"
+      "git"
+      "gpg-agent"
+      "kitty"
+      "nix-index"
+      "nixgl"
+      "nix-your-shell"
+      "network-manager-applet"
+      "sops"
+      "starship"
+      "stylix"
+      "tmux"
+      "zellij"
+      "zellij-keybinds"
+      "zsh"
+    ];
+    profile-minimal.imports = pickH [
+      "settings"
+      "sops"
+      "kitty"
+      "zsh"
+      "git"
+    ];
     profile-personal = { lib, ... }: {
       imports = pickH [
         "emacs"

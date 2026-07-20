@@ -17,9 +17,7 @@
           config = lspNixdConfig;
           enable = true;
           after = [ "lsp-mode" ];
-          custom = {
-            lsp-disabled-clients = "'((nix-mode . nix-nil))";
-          };
+          custom.lsp-disabled-clients = "'((nix-mode . nix-nil))";
           hook = [ "(nix-mode . lsp-deferred)" ];
           mode = lib.mkForce [ ];
         };
@@ -28,9 +26,7 @@
           config = lspNixdConfig;
           enable = true;
           after = [ "lsp-mode" ];
-          custom = {
-            lsp-disabled-clients = "'((nix-ts-mode . nix-nil))";
-          };
+          custom.lsp-disabled-clients = "'((nix-ts-mode . nix-nil))";
           hook = [ "(nix-ts-mode . lsp-deferred)" ];
           mode = [
             ''"\\.nix\\'"''

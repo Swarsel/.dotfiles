@@ -9,9 +9,7 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "podman" ];
-        users.persistentIds = {
-          podman = confLib.mkIds 969;
-        };
+        users.persistentIds.podman = confLib.mkIds 969;
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
             { directory = "/var/lib/containers"; }
@@ -37,9 +35,7 @@
               to = [ "local" ];
             };
           };
-          zones.podman = {
-            interfaces = [ "podman0" ];
-          };
+          zones.podman.interfaces = [ "podman0" ];
         };
         virtualisation = {
           oci-containers.backend = "podman";

@@ -19,11 +19,9 @@
         crocDomain = globals.services.croc.domain;
       in
       {
-        options.swarselsystems = {
-          shellAliases = lib.mkOption {
-            default = { };
-            type = lib.types.attrsOf lib.types.str;
-          };
+        options.swarselsystems.shellAliases = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf lib.types.str;
         };
         config = {
           swarselsystems = {

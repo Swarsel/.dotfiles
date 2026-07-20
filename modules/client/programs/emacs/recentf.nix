@@ -12,9 +12,7 @@
       };
       repeat = {
         enable = true;
-        custom = {
-          repeat-exit-timeout = 3;
-        };
+        custom.repeat-exit-timeout = 3;
         init = "(repeat-mode 1)";
       };
       savehist = {

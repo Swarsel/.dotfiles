@@ -28,9 +28,7 @@
     };
     boot = {
       initrd.network.enable = false;
-      kernel.sysctl = {
-        "kernel.unprivileged_bpf_disabled" = 1;
-      };
+      kernel.sysctl."kernel.unprivileged_bpf_disabled" = 1;
       tmp.cleanOnBoot = true;
     };
     environment = {
@@ -65,36 +63,32 @@
           program = "pinentry-curses";
         };
       };
-      programs.gpg = {
-        enable = true;
-      };
+      programs.gpg.enable = true;
       home = {
         inherit (config.system) stateVersion;
-        file.".gnupg/gpg-hardened.conf" = {
-          text = ''
-            personal-cipher-preferences AES256 AES192 AES
-            personal-digest-preferences SHA512 SHA384 SHA256
-            personal-compress-preferences ZLIB BZIP2 ZIP Uncompressed
-            default-preference-list SHA512 SHA384 SHA256 AES256 AES192 AES ZLIB BZIP2 ZIP Uncompressed
-            cert-digest-algo SHA512
-            s2k-digest-algo SHA512
-            s2k-cipher-algo AES256
-            charset utf-8
-            no-comments
-            no-emit-version
-            no-greeting
-            keyid-format 0xlong
-            list-options show-uid-validity
-            verify-options show-uid-validity
-            with-fingerprint
-            require-cross-certification
-            require-secmem
-            no-symkey-cache
-            armor
-            use-agent
-            throw-keyids
-          '';
-        };
+        file.".gnupg/gpg-hardened.conf".text = ''
+          personal-cipher-preferences AES256 AES192 AES
+          personal-digest-preferences SHA512 SHA384 SHA256
+          personal-compress-preferences ZLIB BZIP2 ZIP Uncompressed
+          default-preference-list SHA512 SHA384 SHA256 AES256 AES192 AES ZLIB BZIP2 ZIP Uncompressed
+          cert-digest-algo SHA512
+          s2k-digest-algo SHA512
+          s2k-cipher-algo AES256
+          charset utf-8
+          no-comments
+          no-emit-version
+          no-greeting
+          keyid-format 0xlong
+          list-options show-uid-validity
+          verify-options show-uid-validity
+          with-fingerprint
+          require-cross-certification
+          require-secmem
+          no-symkey-cache
+          armor
+          use-agent
+          throw-keyids
+        '';
         homeDirectory = "/home/nixos";
         keyboard.layout = "us";
         username = "nixos";
@@ -127,13 +121,11 @@
     };
     swapDevices = [ ];
     system.stateVersion = lib.mkForce "23.05";
-    systemd = {
-      targets = {
-        hibernate.enable = false;
-        hybrid-sleep.enable = false;
-        sleep.enable = false;
-        suspend.enable = false;
-      };
+    systemd.targets = {
+      hibernate.enable = false;
+      hybrid-sleep.enable = false;
+      sleep.enable = false;
+      suspend.enable = false;
     };
   };
 }

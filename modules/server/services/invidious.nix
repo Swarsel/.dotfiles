@@ -39,9 +39,7 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "invidious" ];
-        topology.self.services.${serviceName} = {
-          info = "https://${serviceDomain}";
-        };
+        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
@@ -63,20 +61,16 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets = {
-            invidious-companion-key = {
-              inherit sopsFile;
-              mode = "0444";
-            };
+          secrets.invidious-companion-key = {
+            inherit sopsFile;
+            mode = "0444";
           };
 
-          templates = {
-            "invidiousExtraSettings" = {
-              content = ''
-                {"invidious_companion_key": "${config.sops.placeholder.invidious-companion-key}"}
-              '';
-              mode = "0444";
-            };
+          templates."invidiousExtraSettings" = {
+            content = ''
+              {"invidious_companion_key": "${config.sops.placeholder.invidious-companion-key}"}
+            '';
+            mode = "0444";
           };
         };
         services = {
@@ -128,10 +122,8 @@
           let
             genNginx = toAddress: extraConfig: {
               upstreams = {
-                ${serviceName} = {
-                  servers = {
-                    "${toAddress}:${builtins.toString 80}" = { };
-                  };
+                ${serviceName}.servers = {
+                  "${toAddress}:${builtins.toString 80}" = { };
                 };
               };
               virtualHosts = {
@@ -139,11 +131,7 @@
                   inherit extraConfig;
                   acmeRoot = null;
                   forceSSL = true;
-                  locations = {
-                    "/" = {
-                      proxyPass = "http://${serviceName}";
-                    };
-                  };
+                  locations."/".proxyPass = "http://${serviceName}";
                   oauth2 = {
                     enable = true;
                     allowedGroups = [ "invidious_access" ];

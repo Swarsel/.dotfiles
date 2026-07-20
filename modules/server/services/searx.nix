@@ -36,9 +36,7 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "searx" ];
-        topology.self.services.searxng = {
-          info = "https://${serviceDomain}";
-        };
+        topology.self.services.searxng.info = "https://${serviceDomain}";
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
@@ -60,29 +58,23 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets = {
-            searx-secret = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
+          secrets.searx-secret = {
+            inherit sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
 
-          templates = {
-            "searx-env" = {
-              content = ''
-                SEARXNG_SECRET="${config.sops.placeholder.searx-secret}"
-              '';
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
+          templates."searx-env" = {
+            content = ''
+              SEARXNG_SECRET="${config.sops.placeholder.searx-secret}"
+            '';
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
         };
-        users.persistentIds = {
-          searx = confLib.mkIds 950;
-        };
+        users.persistentIds.searx = confLib.mkIds 950;
         services.${serviceName} = {
           enable = true;
           environmentFile = config.sops.templates.searx-env.path;
@@ -125,21 +117,17 @@
               "startpage images".disabled = true;
               "unsplash".disabled = true;
             };
-            faviconsSettings = {
-              favicons = {
-                cache = {
-                  BLOB_MAX_BYTES = 40960;
-                  HOLD_TIME = 5184000;
-                  LIMIT_TOTAL_BYTES = 2147483648;
-                  MAINTENANCE_MODE = "auto";
-                  MAINTENANCE_PERIOD = 600;
-                  db_url = "/run/searx/faviconcache.db";
-                };
-                cfg_schema = 1;
-                proxy = {
-                  max_age = 5184000;
-                };
+            faviconsSettings.favicons = {
+              cache = {
+                BLOB_MAX_BYTES = 40960;
+                HOLD_TIME = 5184000;
+                LIMIT_TOTAL_BYTES = 2147483648;
+                MAINTENANCE_MODE = "auto";
+                MAINTENANCE_PERIOD = 600;
+                db_url = "/run/searx/faviconcache.db";
               };
+              cfg_schema = 1;
+              proxy.max_age = 5184000;
             };
             general = {
               contact_url = false;

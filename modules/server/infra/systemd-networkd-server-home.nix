@@ -69,9 +69,7 @@
                 ];
                 linkConfig.RequiredForOnline = "routable";
                 matchConfig.Name = "vlan-${initrdVLAN}";
-                networkConfig = {
-                  IPv6PrivacyExtensions = "yes";
-                };
+                networkConfig.IPv6PrivacyExtensions = "yes";
               };
             };
           };

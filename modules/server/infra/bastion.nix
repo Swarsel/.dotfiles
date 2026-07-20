@@ -12,23 +12,19 @@
       config = {
         swarselsystems.enabledServerModules = [ "bastion" ];
         users = {
-          users = {
-            jump = {
-              autoSubUidGidRange = false;
-              createHome = lib.mkForce true;
-              group = lib.mkForce "jump";
-              isNormalUser = true;
-              openssh.authorizedKeys.keyFiles = [
-                (self + /files/public/ssh/yubikey.pub)
-                (self + /files/public/ssh/magicant.pub)
-                (self + /files/public/ssh/builder.pub)
-              ];
-              useDefaultShell = true;
-            };
+          users.jump = {
+            autoSubUidGidRange = false;
+            createHome = lib.mkForce true;
+            group = lib.mkForce "jump";
+            isNormalUser = true;
+            openssh.authorizedKeys.keyFiles = [
+              (self + /files/public/ssh/yubikey.pub)
+              (self + /files/public/ssh/magicant.pub)
+              (self + /files/public/ssh/builder.pub)
+            ];
+            useDefaultShell = true;
           };
-          groups = {
-            jump = { };
-          };
+          groups.jump = { };
           persistentIds.jump = confLib.mkIds 1001;
         };
         services.openssh = {
@@ -66,9 +62,7 @@
             enable = true;
             enableDefaultConfig = false;
             settings = {
-              "*" = {
-                forwardAgent = false;
-              };
+              "*".forwardAgent = false;
             }
             // config.repo.secrets.local.ssh.hosts;
           };

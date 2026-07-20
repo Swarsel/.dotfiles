@@ -1,15 +1,13 @@
 {
   flake.modules.nixos.hibernation = { config, lib, ... }: {
-    options.swarselsystems = {
-      hibernation = {
-        offset = lib.mkOption {
-          default = 0;
-          type = lib.types.int;
-        };
-        resumeDevice = lib.mkOption {
-          default = "/dev/disk/by-label/nixos";
-          type = lib.types.str;
-        };
+    options.swarselsystems.hibernation = {
+      offset = lib.mkOption {
+        default = 0;
+        type = lib.types.int;
+      };
+      resumeDevice = lib.mkOption {
+        default = "/dev/disk/by-label/nixos";
+        type = lib.types.str;
       };
     };
     config = {

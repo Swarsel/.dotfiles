@@ -1,31 +1,28 @@
 {
   flake.modules.nixos.polkit = { lib, minimal, ... }: {
-    config = {
-
-      security = {
-        # pki.certificateFiles = [
-        #   config.sops.secrets.harica-root-ca.path
-        # ];
-        pam.services = lib.mkIf (!minimal) {
-          login.u2fAuth = true;
-          sshd.u2fAuth = false;
-          sudo.u2fAuth = true;
-          swaylock = {
-            fprintAuth = false;
-            u2fAuth = true;
-          };
+    config.security = {
+      # pki.certificateFiles = [
+      #   config.sops.secrets.harica-root-ca.path
+      # ];
+      pam.services = lib.mkIf (!minimal) {
+        login.u2fAuth = true;
+        sshd.u2fAuth = false;
+        sudo.u2fAuth = true;
+        swaylock = {
+          fprintAuth = false;
+          u2fAuth = true;
         };
-        polkit.enable = lib.mkIf (!minimal) true;
-
-        sudo.extraConfig = ''
-          Defaults insults
-          Defaults    env_keep+=SSH_AUTH_SOCK
-        ''
-        + lib.optionalString (!minimal) ''
-          Defaults    env_keep+=XDG_RUNTIME_DIR
-          Defaults    env_keep+=WAYLAND_DISPLAY
-        '';
       };
+      polkit.enable = lib.mkIf (!minimal) true;
+
+      sudo.extraConfig = ''
+        Defaults insults
+        Defaults    env_keep+=SSH_AUTH_SOCK
+      ''
+      + lib.optionalString (!minimal) ''
+        Defaults    env_keep+=XDG_RUNTIME_DIR
+        Defaults    env_keep+=WAYLAND_DISPLAY
+      '';
     };
   };
 }

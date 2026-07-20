@@ -16,9 +16,7 @@
             mk_uwsm_desktop_entry =
               opts:
               (pkgs.writeTextFile {
-                derivationArgs = {
-                  passthru.providedSessions = [ "${opts.name}-uwsm" ];
-                };
+                derivationArgs.passthru.providedSessions = [ "${opts.name}-uwsm" ];
                 destination = "/share/wayland-sessions/${opts.name}-uwsm.desktop";
                 name = "${opts.name}-uwsm";
                 text = ''

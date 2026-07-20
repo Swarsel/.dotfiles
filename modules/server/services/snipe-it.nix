@@ -58,15 +58,11 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        sops = {
-          secrets = {
-            snipe-it-appkey = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
-          };
+        sops.secrets.snipe-it-appkey = {
+          inherit sopsFile;
+          group = serviceGroup;
+          mode = "0440";
+          owner = serviceUser;
         };
         services.snipe-it = {
           enable = true;

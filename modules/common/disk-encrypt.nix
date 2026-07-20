@@ -51,11 +51,9 @@
             };
             secrets."/tmp${hostKeyPathBase}" =
               if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
-            systemd = {
-              initrdBin = with pkgs; [
-                cryptsetup
-              ];
-            };
+            systemd.initrdBin = with pkgs; [
+              cryptsetup
+            ];
           };
         };
         environment.persistence."/persist" =

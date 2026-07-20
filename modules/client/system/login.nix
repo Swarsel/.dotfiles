@@ -15,9 +15,7 @@
       imports = [ inputs.noctalia-greeter.nixosModules.default ];
       config = {
 
-        users.persistentIds = {
-          greeter = confLib.mkIds 958;
-        };
+        users.persistentIds.greeter = confLib.mkIds 958;
         services.greetd = {
           enable = true;
           settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";

@@ -26,9 +26,7 @@
           '';
           enable = true;
           package = calfw;
-          bind = {
-            "C-c A" = "swarsel/open-calendar";
-          };
+          bind."C-c A" = "swarsel/open-calendar";
           init = ''
             (defun swarsel/open-calendar ()
               (interactive)

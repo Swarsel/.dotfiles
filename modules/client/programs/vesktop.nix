@@ -31,43 +31,21 @@
               frameless = false;
               notifyAboutUpdates = false;
               plugins = {
-                ChatInputButtonAPI = {
-                  enabled = false;
-                };
-                CommandsAPI = {
-                  enabled = true;
-                };
-                FakeNitro = {
-                  enabled = true;
-                };
-                MemberListDecoratorsAPI = {
-                  enabled = false;
-                };
-                MessageAccessoriesAPI = {
-                  enabled = true;
-                };
-                MessageDecorationsAPI = {
-                  enabled = false;
-                };
-                MessageEventsAPI = {
-                  enabled = false;
-                };
+                ChatInputButtonAPI.enabled = false;
+                CommandsAPI.enabled = true;
+                FakeNitro.enabled = true;
+                MemberListDecoratorsAPI.enabled = false;
+                MessageAccessoriesAPI.enabled = true;
+                MessageDecorationsAPI.enabled = false;
+                MessageEventsAPI.enabled = false;
                 MessageLogger = {
                   enabled = true;
                   ignoreSelf = true;
                 };
-                MessagePopoverAPI = {
-                  enabled = false;
-                };
-                MessageUpdaterAPI = {
-                  enabled = false;
-                };
-                ServerListAPI = {
-                  enabled = false;
-                };
-                UserSettingsAPI = {
-                  enabled = true;
-                };
+                MessagePopoverAPI.enabled = false;
+                MessageUpdaterAPI.enabled = false;
+                ServerListAPI.enabled = false;
+                UserSettingsAPI.enabled = true;
               };
               transparent = false;
               useQuickCss = true;

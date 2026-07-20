@@ -10,18 +10,16 @@
     {
       config = {
         swarselsystems = {
-          monitors = {
-            homedesktop = rec {
-              mode = "2560x1440";
-              name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-              output = name;
-              position = "0,0";
-              scale = "1";
-              workspace = "11:M";
-            };
+          enabledHomeModules = [ "kanshi" ];
+          monitors.homedesktop = rec {
+            mode = "2560x1440";
+            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            output = name;
+            position = "0,0";
+            scale = "1";
+            workspace = "11:M";
           };
         };
-        swarselsystems.enabledHomeModules = [ "kanshi" ];
         services.kanshi = {
           enable = true;
           settings = [

@@ -139,47 +139,43 @@
         servicePort = 8384;
       in
       {
-        config = {
-          services.syncthing = {
-            enable = true;
-            package = pkgs.syncthing;
-            configDir = "${homeDir}/.config/syncthing";
-            dataDir = homeDir;
-            guiAddress = "127.0.0.1:${builtins.toString servicePort}";
-            openDefaultPorts = true;
-            overrideDevices = true;
-            overrideFolders = true;
-            settings = {
-              inherit devices;
-              options = {
-                urAccepted = -1;
+        config.services.syncthing = {
+          enable = true;
+          package = pkgs.syncthing;
+          configDir = "${homeDir}/.config/syncthing";
+          dataDir = homeDir;
+          guiAddress = "127.0.0.1:${builtins.toString servicePort}";
+          openDefaultPorts = true;
+          overrideDevices = true;
+          overrideFolders = true;
+          settings = {
+            inherit devices;
+            options.urAccepted = -1;
+            folders = {
+              "Default Folder" = lib.mkDefault {
+                devices = syncDevices;
+                id = "default";
+                path = "${homeDir}/Sync";
               };
-              folders = {
-                "Default Folder" = lib.mkDefault {
-                  devices = syncDevices;
-                  id = "default";
-                  path = "${homeDir}/Sync";
-                };
-                "Obsidian" = {
-                  devices = syncDevices;
-                  id = "yjvni-9eaa7";
-                  path = "${homeDir}/Obsidian";
-                };
-                "Org" = {
-                  devices = syncDevices;
-                  id = "a7xnl-zjj3d";
-                  path = "${homeDir}/Org";
-                };
-                "Vpn" = {
-                  devices = syncDevices;
-                  id = "hgp9s-fyq3p";
-                  path = "${homeDir}/Vpn";
-                };
+              "Obsidian" = {
+                devices = syncDevices;
+                id = "yjvni-9eaa7";
+                path = "${homeDir}/Obsidian";
+              };
+              "Org" = {
+                devices = syncDevices;
+                id = "a7xnl-zjj3d";
+                path = "${homeDir}/Org";
+              };
+              "Vpn" = {
+                devices = syncDevices;
+                id = "hgp9s-fyq3p";
+                path = "${homeDir}/Vpn";
               };
             };
-            systemService = true;
-            user = mainUser;
           };
+          systemService = true;
+          user = mainUser;
         };
       };
   };

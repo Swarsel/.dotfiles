@@ -8,15 +8,11 @@
         "C-h k" = "helpful-key";
         "C-h v" = "helpful-variable";
       };
-      custom = {
-        help-window-select = false;
-      };
+      custom.help-window-select = false;
     };
     which-key = {
       enable = true;
-      custom = {
-        which-key-idle-delay = 0.3;
-      };
+      custom.which-key-idle-delay = 0.3;
       diminish = [ "which-key-mode" ];
       init = "(which-key-mode)";
     };

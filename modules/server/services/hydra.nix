@@ -75,19 +75,15 @@
                   mode = "0440";
                   owner = serviceUser;
                 };
-                nixbuild-net-key = {
-                  mode = "0600";
-                };
+                nixbuild-net-key.mode = "0600";
               };
-              templates = {
-                "hydra-env" = {
-                  content = ''
-                    HYDRA_PW="${config.sops.placeholder.hydra-pw}"
-                  '';
-                  group = serviceGroup;
-                  mode = "0440";
-                  owner = serviceUser;
-                };
+              templates."hydra-env" = {
+                content = ''
+                  HYDRA_PW="${config.sops.placeholder.hydra-pw}"
+                '';
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
               };
             };
             services.hydra = {
@@ -109,11 +105,9 @@
               useSubstitutes = true;
             };
             # networking.firewall.allowedTCPPorts = [ servicePort ];
-            programs.ssh = {
-              extraConfig = ''
-                StrictHostKeyChecking no
-              '';
-            };
+            programs.ssh.extraConfig = ''
+              StrictHostKeyChecking no
+            '';
             environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
             ];
             nix = {

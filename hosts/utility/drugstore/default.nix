@@ -9,11 +9,9 @@ let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/files/public/ssh";
   stateVersion = lib.mkDefault "23.05";
   homeFiles = {
-    ".bash_history" = {
-      text = ''
-        swarsel-install -n hotel
-      '';
-    };
+    ".bash_history".text = ''
+      swarsel-install -n hotel
+    '';
   };
   trustedSettings = builtins.toJSON {
     extra-substituters = {
@@ -70,9 +68,7 @@ in
       git.enable = true;
     };
     boot = {
-      loader.systemd-boot = {
-        enable = true;
-      };
+      loader.systemd-boot.enable = true;
       supportedFilesystems = lib.mkForce [
         "btrfs"
         "vfat"
@@ -114,9 +110,7 @@ in
         inherit stateVersion;
         file = homeFiles;
         homeDirectory = lib.mkDefault "/home/swarsel";
-        sessionVariables = {
-          FLAKE = "/home/swarsel/.dotfiles";
-        };
+        sessionVariables.FLAKE = "/home/swarsel/.dotfiles";
         username = "swarsel";
       };
     };

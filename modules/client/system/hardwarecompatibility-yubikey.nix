@@ -28,9 +28,7 @@
           }
           // lib.optionalAttrs (type != "nixos") {
             sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-              u2f-keys = {
-                path = "${homeDir}/.config/Yubico/u2f_keys";
-              };
+              u2f-keys.path = "${homeDir}/.config/Yubico/u2f_keys";
             };
           };
         };
@@ -38,34 +36,28 @@
       yubikey-touch-detector = { pkgs, ... }: {
         config = {
           swarselsystems.enabledHomeModules = [ "yubikeytouch" ];
-          systemd = {
-            user = {
-              services.yubikey-touch-detector = {
-                Install = {
-                  Also = [ "yubikey-touch-detector.socket" ];
-                  WantedBy = [ "default.target" ];
-                };
-                Service = {
-                  EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
-                  ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector --libnotify";
-                };
-                Unit = {
-                  Description = "Detects when your YubiKey is waiting for a touch";
-                  Requires = [ "yubikey-touch-detector.socket" ];
-                };
+          systemd.user = {
+            services.yubikey-touch-detector = {
+              Install = {
+                Also = [ "yubikey-touch-detector.socket" ];
+                WantedBy = [ "default.target" ];
               };
-              sockets.yubikey-touch-detector = {
-                Install = {
-                  WantedBy = [ "sockets.target" ];
-                };
-                Socket = {
-                  ListenStream = "%t/yubikey-touch-detector.socket";
-                  RemoveOnStop = true;
-                };
-                Unit = {
-                  Description = "Unix socket activation for YubiKey touch detector service";
-                };
+              Service = {
+                EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
+                ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector --libnotify";
               };
+              Unit = {
+                Description = "Detects when your YubiKey is waiting for a touch";
+                Requires = [ "yubikey-touch-detector.socket" ];
+              };
+            };
+            sockets.yubikey-touch-detector = {
+              Install.WantedBy = [ "sockets.target" ];
+              Socket = {
+                ListenStream = "%t/yubikey-touch-detector.socket";
+                RemoveOnStop = true;
+              };
+              Unit.Description = "Unix socket activation for YubiKey touch detector service";
             };
           };
         };
@@ -86,9 +78,7 @@
       {
         config = {
 
-          users.persistentIds = {
-            pcscd = confLib.mkIds 956;
-          };
+          users.persistentIds.pcscd = confLib.mkIds 956;
           services = {
             gnome.gcr-ssh-agent.enable = false;
             pcscd.enable = true;

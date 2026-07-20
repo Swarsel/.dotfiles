@@ -76,12 +76,8 @@
           };
         };
         users = {
-          users.${serviceUser} = {
-            extraGroups = [ "users" ];
-          };
-          persistentIds = {
-            redis-paperless = confLib.mkIds 975;
-          };
+          users.${serviceUser}.extraGroups = [ "users" ];
+          persistentIds.redis-paperless = confLib.mkIds 975;
         };
         services = {
           ${serviceName} = {

@@ -512,12 +512,10 @@
             map
               (path: {
                 name = "/home/buildbot/${path}";
-                value = {
-                  d = {
-                    group = "buildbot";
-                    mode = "0750";
-                    user = "buildbot";
-                  };
+                value.d = {
+                  group = "buildbot";
+                  mode = "0750";
+                  user = "buildbot";
                 };
               })
               [

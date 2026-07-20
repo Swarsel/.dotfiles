@@ -206,21 +206,17 @@
             };
           };
 
-          templates = {
-            "kanidm-oauth2-proxy-client-env" = {
-              content = ''
-                OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy}"
-                  OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
-              '';
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
+          templates."kanidm-oauth2-proxy-client-env" = {
+            content = ''
+              OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy}"
+                OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
+            '';
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
         };
-        users = {
-          persistentIds.oauth2-proxy = confLib.mkIds 966;
-        };
+        users.persistentIds.oauth2-proxy = confLib.mkIds 966;
         services = {
           ${serviceName} = {
             enable = true;
@@ -292,17 +288,13 @@
                   owner = "kanidm";
                   sopsFile = kanidmSopsFile;
                 };
-                services.kanidm.provision = {
-                  systems.oauth2.oauth2-proxy = {
-                    basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
-                    claimMaps.groups = {
-                      joinType = "array";
-                    };
-                    displayName = "Oauth2-Proxy";
-                    originLanding = "https://${serviceDomain}/";
-                    originUrl = "https://${serviceDomain}/oauth2/callback";
-                    preferShortUsername = true;
-                  };
+                services.kanidm.provision.systems.oauth2.oauth2-proxy = {
+                  basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
+                  claimMaps.groups.joinType = "array";
+                  displayName = "Oauth2-Proxy";
+                  originLanding = "https://${serviceDomain}/";
+                  originUrl = "https://${serviceDomain}/oauth2/callback";
+                  preferShortUsername = true;
                 };
               };
             }

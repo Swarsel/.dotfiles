@@ -6,22 +6,20 @@
       netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
     in
     {
-      options = {
-        swarselsystems.server = {
-          localNetwork = lib.mkOption {
-            default = "";
-            type = lib.types.str;
-          };
-          netConfigName = lib.mkOption {
-            default = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
-            readOnly = true;
-            type = lib.types.str;
-          };
-          netConfigPrefix = lib.mkOption {
-            default = netPrefix;
-            readOnly = true;
-            type = lib.types.str;
-          };
+      options.swarselsystems.server = {
+        localNetwork = lib.mkOption {
+          default = "";
+          type = lib.types.str;
+        };
+        netConfigName = lib.mkOption {
+          default = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
+          readOnly = true;
+          type = lib.types.str;
+        };
+        netConfigPrefix = lib.mkOption {
+          default = netPrefix;
+          readOnly = true;
+          type = lib.types.str;
         };
       };
       config = {
@@ -52,9 +50,7 @@
         networking = {
           inherit (netConfig) hostId;
           enableIPv6 = lib.mkDefault true;
-          firewall = {
-            enable = lib.mkDefault true;
-          };
+          firewall.enable = lib.mkDefault true;
           hostName = config.node.name;
           nftables.enable = lib.mkDefault false;
         };

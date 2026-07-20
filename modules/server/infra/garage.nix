@@ -129,11 +129,9 @@
             ];
           };
         };
-        sops = {
-          secrets = {
-            garage-admin-token = { inherit sopsFile; };
-            garage-rpc-secret = { inherit sopsFile; };
-          };
+        sops.secrets = {
+          garage-admin-token = { inherit sopsFile; };
+          garage-rpc-secret = { inherit sopsFile; };
         };
         services.${serviceName} = {
           enable = true;
@@ -149,9 +147,7 @@
             data_dir = [ config.swarselsystems.server.${serviceName}.data_dir ];
             db_engine = "lmdb";
             disable_scrub = true;
-            k2v_api = {
-              api_bind_addr = "[::]:${builtins.toString garageK2VPort}";
-            };
+            k2v_api.api_bind_addr = "[::]:${builtins.toString garageK2VPort}";
             replication_factor = 1;
             rpc_bind_addr = "[::]:${builtins.toString garageRpcPort}";
             # we are not joining our nodes, just use the private ipv4
@@ -372,20 +368,14 @@
           let
             genNginx = toAddress: extraConfig: {
               upstreams = {
-                ${serviceName} = {
-                  servers = {
-                    "${toAddress}:${builtins.toString servicePort}" = { };
-                  };
+                ${serviceName}.servers = {
+                  "${toAddress}:${builtins.toString servicePort}" = { };
                 };
-                "${serviceName}Admin" = {
-                  servers = {
-                    "${toAddress}:${builtins.toString garageAdminPort}" = { };
-                  };
+                "${serviceName}Admin".servers = {
+                  "${toAddress}:${builtins.toString garageAdminPort}" = { };
                 };
-                "${serviceName}Web" = {
-                  servers = {
-                    "${toAddress}:${builtins.toString garageWebPort}" = { };
-                  };
+                "${serviceName}Web".servers = {
+                  "${toAddress}:${builtins.toString garageWebPort}" = { };
                 };
               };
               virtualHosts = {
@@ -393,11 +383,7 @@
                   inherit extraConfig;
                   acmeRoot = null;
                   forceSSL = true;
-                  locations = {
-                    "/" = {
-                      proxyPass = "http://${serviceName}Admin";
-                    };
-                  };
+                  locations."/".proxyPass = "http://${serviceName}Admin";
                   oauth2.enable = false;
                   useACMEHost = globals.domains.main;
                 };
@@ -405,18 +391,16 @@
                   inherit extraConfig;
                   acmeRoot = null;
                   forceSSL = true;
-                  locations = {
-                    "/" = {
-                      extraConfig = ''
-                        client_max_body_size 0;
-                        client_body_timeout        600s;
-                        proxy_connect_timeout      600s;
-                        proxy_send_timeout         600s;
-                        proxy_read_timeout         600s;
-                        proxy_request_buffering    off;
-                      '';
-                      proxyPass = "http://${serviceName}";
-                    };
+                  locations."/" = {
+                    extraConfig = ''
+                      client_max_body_size 0;
+                      client_body_timeout        600s;
+                      proxy_connect_timeout      600s;
+                      proxy_send_timeout         600s;
+                      proxy_read_timeout         600s;
+                      proxy_request_buffering    off;
+                    '';
+                    proxyPass = "http://${serviceName}";
                   };
                   oauth2.enable = false;
                   serverAliases = [ "*.${serviceDomain}" ];
@@ -426,11 +410,7 @@
                   inherit extraConfig;
                   acmeRoot = null;
                   forceSSL = true;
-                  locations = {
-                    "/" = {
-                      proxyPass = "http://${serviceName}Web";
-                    };
-                  };
+                  locations."/".proxyPass = "http://${serviceName}Web";
                   oauth2.enable = false;
                   useACMEHost = globals.domains.main;
                 };

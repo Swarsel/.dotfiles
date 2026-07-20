@@ -135,9 +135,7 @@
             "${radarrGroup}" = { };
             "${readarrGroup}" = { };
             "${sonarrGroup}" = { };
-            dockeruser = {
-              gid = 1155;
-            };
+            dockeruser.gid = 1155;
           };
           persistentIds = {
             prowlarr = confLib.mkIds 971;
@@ -415,35 +413,23 @@
         nodes = {
           ${homeWebProxy}.services.nginx = {
             upstreams = {
-              lidarr = {
-                servers = {
-                  "${homeServiceAddress}:${builtins.toString lidarrPort}" = { };
-                };
+              lidarr.servers = {
+                "${homeServiceAddress}:${builtins.toString lidarrPort}" = { };
               };
-              prowlarr = {
-                servers = {
-                  "${homeServiceAddress}:${builtins.toString prowlarrPort}" = { };
-                };
+              prowlarr.servers = {
+                "${homeServiceAddress}:${builtins.toString prowlarrPort}" = { };
               };
-              radarr = {
-                servers = {
-                  "${homeServiceAddress}:${builtins.toString radarrPort}" = { };
-                };
+              radarr.servers = {
+                "${homeServiceAddress}:${builtins.toString radarrPort}" = { };
               };
-              readarr = {
-                servers = {
-                  "${homeServiceAddress}:${builtins.toString readarrPort}" = { };
-                };
+              readarr.servers = {
+                "${homeServiceAddress}:${builtins.toString readarrPort}" = { };
               };
-              sonarr = {
-                servers = {
-                  "${homeServiceAddress}:${builtins.toString sonarrPort}" = { };
-                };
+              sonarr.servers = {
+                "${homeServiceAddress}:${builtins.toString sonarrPort}" = { };
               };
-              transmission = {
-                servers = {
-                  "${homeServiceAddress}:${builtins.toString servicePort}" = { };
-                };
+              transmission.servers = {
+                "${homeServiceAddress}:${builtins.toString servicePort}" = { };
               };
             };
             virtualHosts = {

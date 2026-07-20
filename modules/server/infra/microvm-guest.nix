@@ -41,9 +41,7 @@
             #   IPv6PrivacyExtensions = "no";
             #   IPv6AcceptRA = false;
             # };
-            ipv6AcceptRAConfig = {
-              DHCPv6Client = "always";
-            };
+            ipv6AcceptRAConfig.DHCPv6Client = "always";
           };
         };
         # microvm = {

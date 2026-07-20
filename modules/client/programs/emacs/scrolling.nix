@@ -17,9 +17,7 @@
     usePackage.ultra-scroll = {
       config = "(ultra-scroll-mode 1)";
       enable = true;
-      custom = {
-        ultra-scroll-hide-functions = "'(global-hl-line-mode diff-hl-mode indent-bars-mode global-highlight-parentheses-mode rainbow-delimiters-mode)";
-      };
+      custom.ultra-scroll-hide-functions = "'(global-hl-line-mode diff-hl-mode indent-bars-mode global-highlight-parentheses-mode rainbow-delimiters-mode)";
       init = ''
         (setq scroll-conservatively 101
               scroll-margin 0)

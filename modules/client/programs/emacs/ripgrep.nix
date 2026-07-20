@@ -3,9 +3,7 @@
     rg.enable = true;
     wgrep = {
       enable = true;
-      custom = {
-        wgrep-auto-save-buffer = true;
-      };
+      custom.wgrep-auto-save-buffer = true;
     };
   };
 }

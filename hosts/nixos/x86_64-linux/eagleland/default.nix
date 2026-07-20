@@ -32,9 +32,7 @@
     swapSize = "4G";
 
   };
-  topology.self = {
-    icon = "devices.cloud-server";
-  };
+  topology.self.icon = "devices.cloud-server";
 }
 // lib.optionalAttrs (!minimal) {
 

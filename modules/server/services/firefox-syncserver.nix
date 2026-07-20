@@ -56,24 +56,20 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets = {
-            firefox-syncserver-secret = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0400";
-              owner = serviceUser;
-            };
+          secrets.firefox-syncserver-secret = {
+            inherit sopsFile;
+            group = serviceGroup;
+            mode = "0400";
+            owner = serviceUser;
           };
 
-          templates = {
-            "firefox-syncserver.env" = {
-              content = ''
-                SYNC_MASTER_SECRET=${config.sops.placeholder."firefox-syncserver-secret"}
-              '';
-              group = serviceGroup;
-              mode = "0400";
-              owner = serviceUser;
-            };
+          templates."firefox-syncserver.env" = {
+            content = ''
+              SYNC_MASTER_SECRET=${config.sops.placeholder."firefox-syncserver-secret"}
+            '';
+            group = serviceGroup;
+            mode = "0400";
+            owner = serviceUser;
           };
         };
         users = {

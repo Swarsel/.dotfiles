@@ -25,9 +25,7 @@
           name = serviceName;
         };
         globals = {
-          services.${serviceName}.extraConfig = {
-            port = servicePort;
-          };
+          services.${serviceName}.extraConfig.port = servicePort;
         };
         services.prometheus.exporters.zfs = {
           enable = true;

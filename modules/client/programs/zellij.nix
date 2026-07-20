@@ -54,11 +54,11 @@
         home.packages = with pkgs; [
           zjstatus
         ];
-        xdg.configFile = {
-          "zellij/layouts/swarsel.kdl".text = import "${self}/files/zellij/layouts/swarsel.kdl.nix" {
-            inherit config pkgs;
-          };
-        };
+        xdg.configFile."zellij/layouts/swarsel.kdl".text =
+          import "${self}/files/zellij/layouts/swarsel.kdl.nix"
+            {
+              inherit config pkgs;
+            };
       };
     };
 }

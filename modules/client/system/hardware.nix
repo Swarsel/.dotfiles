@@ -29,11 +29,7 @@
             enable = true;
             package = pkgs.bluez;
             powerOnBoot = true;
-            settings = {
-              General = {
-                Enable = "Source,Sink,Media,Socket";
-              };
-            };
+            settings.General.Enable = "Source,Sink,Media,Socket";
           };
           enableAllFirmware = lib.mkDefault true;
           # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant

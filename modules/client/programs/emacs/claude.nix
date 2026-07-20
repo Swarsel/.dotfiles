@@ -42,9 +42,7 @@
         '';
         enable = true;
         package = claude-code-ide;
-        bind = {
-          "C-c c" = "claude-code-ide-menu";
-        };
+        bind."C-c c" = "claude-code-ide-menu";
       };
     };
 }

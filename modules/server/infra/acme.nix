@@ -18,14 +18,12 @@
       config = {
         swarselsystems.enabledServerModules = [ "acme" ];
         sops = {
-          secrets = {
-            acme-creds = {
-              inherit sopsFile;
-              format = "json";
-              group = "acme";
-              key = "";
-              mode = "0660";
-            };
+          secrets.acme-creds = {
+            inherit sopsFile;
+            format = "json";
+            group = "acme";
+            key = "";
+            mode = "0660";
           };
           templates."certs.secret".content = ''
             ACME_DNS_API_BASE = ${dnsBase}
@@ -48,9 +46,7 @@
         };
         security.acme = {
           acceptTerms = true;
-          certs."${globals.domains.main}" = {
-            domain = "*.${globals.domains.main}";
-          };
+          certs."${globals.domains.main}".domain = "*.${globals.domains.main}";
           defaults = {
             inherit dnsProvider;
             dnsPropagationCheck = true;

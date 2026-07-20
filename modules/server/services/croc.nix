@@ -48,17 +48,11 @@
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
         };
         sops = {
-          secrets = {
-            croc-password = { inherit sopsFile; };
-          };
+          secrets.croc-password = { inherit sopsFile; };
 
-          templates = {
-            "croc-env" = {
-              content = ''
-                CROC_PASS="${config.sops.placeholder.croc-password}"
-              '';
-            };
-          };
+          templates."croc-env".content = ''
+            CROC_PASS="${config.sops.placeholder.croc-password}"
+          '';
         };
         services.${serviceName} = {
           enable = true;
@@ -67,15 +61,13 @@
           ports = servicePorts;
         };
         systemd.services = {
-          ${serviceName} = {
-            serviceConfig = {
-              EnvironmentFile = [
-                config.sops.templates.croc-env.path
-              ];
-              ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
-                lib.concatMapStringsSep "," toString cfg.ports
-              }";
-            };
+          ${serviceName}.serviceConfig = {
+            EnvironmentFile = [
+              config.sops.templates.croc-env.path
+            ];
+            ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
+              lib.concatMapStringsSep "," toString cfg.ports
+            }";
           };
         };
         # ports are opened on the firewall for croc, no nginx config

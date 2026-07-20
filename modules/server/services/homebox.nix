@@ -81,9 +81,7 @@
             owner = serviceUser;
           };
         };
-        users.persistentIds = {
-          homebox = confLib.mkIds 981;
-        };
+        users.persistentIds.homebox = confLib.mkIds 981;
         services.${serviceName} = {
           enable = true;
           package = pkgs.homebox;

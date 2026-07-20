@@ -37,14 +37,10 @@
               };
             };
             swarselsystems.enabledHomeModules = [ "sway" ];
-            home.sessionVariables = {
-              EDITOR = lib.mkDefault "e -w";
-            };
+            home.sessionVariables.EDITOR = lib.mkDefault "e -w";
             wayland.windowManager.sway = {
               config = rec {
-                assigns = {
-                  "15:L" = [ { app_id = "teams-for-linux"; } ];
-                };
+                assigns."15:L" = [ { app_id = "teams-for-linux"; } ];
                 bars = [
                   {
                     command = "waybar";
@@ -83,9 +79,7 @@
                   ];
                   titlebar = false;
                 };
-                gaps = {
-                  inner = 5;
-                };
+                gaps.inner = 5;
                 input = config.swarselsystems.standardinputs;
                 keybindings =
                   let
@@ -187,23 +181,17 @@
                   } config.swarselsystems.keybindings;
                 # terminal = "kitty";
                 menu = "fuzzel";
-                modes = {
-                  resize = {
-                    Down = "resize grow height 10 px or 10 ppt";
-                    Escape = "mode default";
-                    Left = "resize shrink width 10 px or 10 ppt";
-                    Return = "mode default";
-                    Right = "resize grow width 10 px or 10 ppt";
-                    Tab = "move position center, resize set width 50 ppt height 50 ppt";
-                    Up = "resize shrink height 10 px or 10 ppt";
-                  };
+                modes.resize = {
+                  Down = "resize grow height 10 px or 10 ppt";
+                  Escape = "mode default";
+                  Left = "resize shrink width 10 px or 10 ppt";
+                  Return = "mode default";
+                  Right = "resize grow width 10 px or 10 ppt";
+                  Tab = "move position center, resize set width 50 ppt height 50 ppt";
+                  Up = "resize shrink height 10 px or 10 ppt";
                 };
                 modifier = "Mod4";
-                seat = {
-                  "*" = {
-                    hide_cursor = "when-typing enable";
-                  };
-                };
+                seat."*".hide_cursor = "when-typing enable";
                 startup = config.swarselsystems.startup ++ [
                   { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
                   { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
@@ -213,102 +201,72 @@
                   border = 1;
                   titlebar = false;
                 };
-                window = {
-                  commands = [
-                    {
-                      command = "opacity 0.95";
-                      criteria = {
-                        class = ".*";
-                      };
-                    }
-                    {
-                      command = "opacity 1";
-                      criteria = {
-                        app_id = "at.yrlf.wl_mirror";
-                      };
-                    }
-                    {
-                      command = "opacity 1";
-                      criteria = {
-                        app_id = "Gimp-2.10";
-                      };
-                    }
-                    {
-                      command = "opacity 0.99";
-                      criteria = {
-                        app_id = "firefox";
-                      };
-                    }
-                    {
-                      command = "opacity 0.99";
-                      criteria = {
-                        app_id = "glide";
-                      };
-                    }
-                    {
-                      command = "opacity 0.99";
-                      criteria = {
-                        app_id = "chromium-browser";
-                      };
-                    }
-                    {
-                      command = "sticky enable, shadows enable";
-                      criteria = {
-                        title = "^Picture-in-Picture$";
-                      };
-                    }
-                    {
-                      command = "resize set width 60 ppt height 60 ppt, opacity 0.99, sticky enable";
-                      criteria = {
-                        title = "^Emacs Popup Frame$";
-                      };
-                    }
-                    {
-                      command = "move container to scratchpad";
-                      criteria = {
-                        title = "^Emacs Popup Anchor$";
-                      };
-                    }
-                    {
-                      command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
-                      criteria = {
-                        title = "^kittyterm$";
-                      };
-                    }
-                    {
-                      command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
-                      criteria = {
-                        title = "^spotifytui$";
-                      };
-                    }
-                    {
+                window.commands = [
+                  {
+                    command = "opacity 0.95";
+                    criteria.class = ".*";
+                  }
+                  {
+                    command = "opacity 1";
+                    criteria.app_id = "at.yrlf.wl_mirror";
+                  }
+                  {
+                    command = "opacity 1";
+                    criteria.app_id = "Gimp-2.10";
+                  }
+                  {
+                    command = "opacity 0.99";
+                    criteria.app_id = "firefox";
+                  }
+                  {
+                    command = "opacity 0.99";
+                    criteria.app_id = "glide";
+                  }
+                  {
+                    command = "opacity 0.99";
+                    criteria.app_id = "chromium-browser";
+                  }
+                  {
+                    command = "sticky enable, shadows enable";
+                    criteria.title = "^Picture-in-Picture$";
+                  }
+                  {
+                    command = "resize set width 60 ppt height 60 ppt, opacity 0.99, sticky enable";
+                    criteria.title = "^Emacs Popup Frame$";
+                  }
+                  {
+                    command = "move container to scratchpad";
+                    criteria.title = "^Emacs Popup Anchor$";
+                  }
+                  {
+                    command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
+                    criteria.title = "^kittyterm$";
+                  }
+                  {
+                    command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
+                    criteria.title = "^spotifytui$";
+                  }
+                  {
 
-                      command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-                      criteria = {
-                        class = "Spotify";
-                      };
-                    }
-                    {
-                      command = "resize set width 60 ppt height 60 ppt, sticky enable";
-                      criteria = {
-                        app_id = "vesktop";
-                      };
-                    }
-                    {
-                      command = "resize set width 60 ppt height 60 ppt, sticky enable";
-                      criteria = {
-                        class = "Element";
-                      };
-                    }
-                    # {
-                    #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-                    #   criteria = {
-                    #     app_id="^$";
-                    #     class="^$";
-                    # };
-                    # }
-                  ];
-                };
+                    command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+                    criteria.class = "Spotify";
+                  }
+                  {
+                    command = "resize set width 60 ppt height 60 ppt, sticky enable";
+                    criteria.app_id = "vesktop";
+                  }
+                  {
+                    command = "resize set width 60 ppt height 60 ppt, sticky enable";
+                    criteria.class = "Element";
+                  }
+                  # {
+                  #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+                  #   criteria = {
+                  #     app_id="^$";
+                  #     class="^$";
+                  # };
+                  # }
+                ];
                 workspaceOutputAssign =
                   let
                     workplaceSets = lib.mapAttrs' eachOutput config.swarselsystems.monitors;

@@ -92,9 +92,7 @@ in
                   "Mod+Shift+m".action = sh "exec emacsclient -ce '(mu4e)'";
                   "Mod+Shift+o".action = spawn "pass-fuzzel" "--otp" "--type";
                   "Mod+Shift+p".action = spawn "pass-fuzzel" "--type";
-                  "Mod+Shift+s".action.screenshot-window = {
-                    write-to-disk = true;
-                  };
+                  "Mod+Shift+s".action.screenshot-window.write-to-disk = true;
                   "Mod+Shift+t".action = toggle-window-rule-opacity;
                   "Mod+Space".action = sh "exec noctalia msg panel-toggle launcher";
                   "Mod+Up".action = focus-window-or-workspace-up;
@@ -109,9 +107,7 @@ in
                   "Mod+o".action = spawn "pass-fuzzel" "--otp";
                   "Mod+p".action = spawn "pass-fuzzel";
                   "Mod+q".action = sh "niri msg action close-window";
-                  "Mod+s".action.screenshot = {
-                    show-pointer = false;
-                  };
+                  "Mod+s".action.screenshot.show-pointer = false;
                   "Mod+t".action = sh "exec emacsclient -ce '(org-agenda)'";
                   "Mod+w".action = spawn "swarselcheck-niri" "-e";
                   "Mod+x".action = spawn "swarselcheck-niri" "-k";
@@ -130,9 +126,7 @@ in
                 hide-after-inactive-ms = 2000;
                 hide-when-typing = true;
               };
-              debug = {
-                honor-xdg-activation-with-invalid-serial = [ ];
-              };
+              debug.honor-xdg-activation-with-invalid-serial = [ ];
               environment = vars.waylandSessionVariables // {
                 DISPLAY = ":0";
                 EDITOR = "emacsclient -c";
@@ -141,16 +135,12 @@ in
               gestures.hot-corners.enable = false;
               hotkey-overlay.skip-at-startup = true;
               input = {
-                keyboard = {
-                  xkb = {
-                    layout = "us";
-                    variant = "altgr-intl";
-                  };
+                keyboard.xkb = {
+                  layout = "us";
+                  variant = "altgr-intl";
                 };
                 mod-key = "Super";
-                mouse = {
-                  natural-scroll = false;
-                };
+                mouse.natural-scroll = false;
                 touchpad = {
                   enable = true;
                   click-method = "clickfinger";
@@ -185,9 +175,7 @@ in
                   enable = true;
                   width = 1;
                 };
-                focus-ring = {
-                  enable = false;
-                };
+                focus-ring.enable = false;
                 gaps = 5;
               };
               prefer-no-csd = true;
@@ -205,9 +193,7 @@ in
               window-rules = [
                 {
                   clip-to-geometry = true;
-                  default-column-width = {
-                    proportion = 0.5;
-                  };
+                  default-column-width.proportion = 0.5;
                   geometry-corner-radius = {
                     bottom-left = 5.0;
                     bottom-right = 5.0;
@@ -237,9 +223,7 @@ in
                   opacity = 0.95;
                 }
                 {
-                  default-column-width = {
-                    proportion = 0.9;
-                  };
+                  default-column-width.proportion = 0.9;
                   matches = [ { app-id = "^special.*"; } ];
                   open-on-workspace = "Scratchpad";
                 }
@@ -265,25 +249,19 @@ in
                 }
                 {
                   block-out-from = "screen-capture";
-                  default-column-width = {
-                    proportion = 0.5;
-                  };
+                  default-column-width.proportion = 0.5;
                   matches = [ { app-id = "^Element$"; } ];
                   open-floating = true;
                 }
                 {
                   block-out-from = "screen-capture";
-                  default-column-width = {
-                    proportion = 0.5;
-                  };
+                  default-column-width.proportion = 0.5;
                   matches = [ { title = "^Element"; } ];
                   open-floating = true;
                 }
                 {
                   block-out-from = "screen-capture";
-                  default-column-width = {
-                    proportion = 0.5;
-                  };
+                  default-column-width.proportion = 0.5;
                   matches = [ { app-id = "^vesktop$"; } ];
                   open-floating = true;
                 }
@@ -327,16 +305,12 @@ in
                   open-floating = true;
                 }
                 {
-                  default-column-width = {
-                    proportion = 0.5;
-                  };
+                  default-column-width.proportion = 0.5;
                   matches = [ { app-id = "^spotifytui$"; } ];
                   open-floating = true;
                 }
                 {
-                  default-column-width = {
-                    proportion = 0.5;
-                  };
+                  default-column-width.proportion = 0.5;
                   matches = [ { app-id = "^kittyterm$"; } ];
                   open-floating = true;
                 }
@@ -351,9 +325,7 @@ in
             packages = [
               pkgs.nirius
             ];
-            sessionVariables = {
-              EDITOR = lib.mkDefault "e-niri -w";
-            };
+            sessionVariables.EDITOR = lib.mkDefault "e-niri -w";
           };
           xdg.portal = {
             config.niri = {
@@ -388,11 +360,9 @@ in
             enable = true;
             resizeColumns = true;
           };
-          programs = {
-            niri = {
-              enable = true;
-              package = pkgs.niri-stable;
-            };
+          programs.niri = {
+            enable = true;
+            package = pkgs.niri-stable;
           };
           environment.systemPackages = with pkgs; [
             wl-clipboard

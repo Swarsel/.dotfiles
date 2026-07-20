@@ -70,9 +70,7 @@
                 # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
               ];
             };
-            persistentIds = {
-              sshd = confLib.mkIds 979;
-            };
+            persistentIds.sshd = confLib.mkIds 979;
           };
           services.openssh = {
             enable = true;

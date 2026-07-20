@@ -54,9 +54,7 @@
         self.modules.nixos.blackbox
       ];
 
-      config.swarselsystems = {
-        isLinux = true;
-      };
+      config.swarselsystems.isLinux = true;
     };
 
     profile-router = { self, ... }: {

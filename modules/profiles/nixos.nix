@@ -5,27 +5,25 @@ let
 in
 {
   flake.modules.nixos = {
-    profile-minimal = {
-      imports =
-        pickN [
-          "settings"
-          "home-manager"
-          "xserver"
-          "lanzaboote"
-          "time"
-          "users"
-          "impermanence"
-          "sops"
-          "boot"
-          "autologin"
-          "btrfs"
-          "ssh"
-          "disk-encrypt"
-        ]
-        ++ [
-          fmods.generic.pii
-        ];
-    };
+    profile-minimal.imports =
+      pickN [
+        "settings"
+        "home-manager"
+        "xserver"
+        "lanzaboote"
+        "time"
+        "users"
+        "impermanence"
+        "sops"
+        "boot"
+        "autologin"
+        "btrfs"
+        "ssh"
+        "disk-encrypt"
+      ]
+      ++ [
+        fmods.generic.pii
+      ];
     profile-personal = { config, ... }: {
       imports = [
         fmods.nixos.profile-public

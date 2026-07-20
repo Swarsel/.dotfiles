@@ -24,9 +24,7 @@
           name = serviceName;
         };
         globals = {
-          services.${serviceName}.extraConfig = {
-            port = servicePort;
-          };
+          services.${serviceName}.extraConfig.port = servicePort;
         };
         services = {
           nginx.statusPage = true;

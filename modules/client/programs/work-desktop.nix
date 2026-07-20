@@ -113,106 +113,136 @@
         };
         services = {
 
-          kanshi = {
-            settings = [
-              {
-                # seminary room
-                output = {
-                  criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                  mode = "1280x720";
-                  scale = 1.0;
-                };
-              }
-              {
-                # work side screen
-                output = {
-                  criteria = "HP Inc. HP 732pk CNC4080YL5";
-                  mode = "3840x2160";
-                  scale = 1.0;
-                  transform = "270";
-                };
-              }
-              # {
-              #   # work side screen
-              #   output = {
-              #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
-              #     scale = 1.0;
-              #     mode = "1920x1200";
-              #     transform = "270";
-              #   };
-              # }
-              {
-                # work main screen
-                output = {
-                  criteria = "HP Inc. HP Z32 CN41212T55";
-                  mode = "3840x2160";
-                  scale = 1.0;
-                };
-              }
-              {
-                profile = {
+          kanshi.settings = [
+            {
+              # seminary room
+              output = {
+                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                mode = "1280x720";
+                scale = 1.0;
+              };
+            }
+            {
+              # work side screen
+              output = {
+                criteria = "HP Inc. HP 732pk CNC4080YL5";
+                mode = "3840x2160";
+                scale = 1.0;
+                transform = "270";
+              };
+            }
+            # {
+            #   # work side screen
+            #   output = {
+            #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
+            #     scale = 1.0;
+            #     mode = "1920x1200";
+            #     transform = "270";
+            #   };
+            # }
+            {
+              # work main screen
+              output = {
+                criteria = "HP Inc. HP Z32 CN41212T55";
+                mode = "3840x2160";
+                scale = 1.0;
+              };
+            }
+            {
+              profile = {
+                exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                ];
+                name = "lidopen";
+                outputs = [
+                  {
+                    criteria = config.swarselsystems.sharescreen;
+                    position = "2560,0";
+                    scale = 1.5;
+                    status = "enable";
+                  }
+                  {
+                    criteria = "HP Inc. HP 732pk CNC4080YL5";
+                    mode = "3840x2160";
+                    position = "-3440,-1050";
+                    scale = 1.0;
+                    transform = "270";
+                  }
+                  {
+                    criteria = "HP Inc. HP Z32 CN41212T55";
+                    mode = "3840x2160";
+                    position = "-1280,0";
+                    scale = 1.0;
+                  }
+                ];
+              };
+            }
+            {
+              profile =
+                let
+                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                in
+                {
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
                   ];
                   name = "lidopen";
                   outputs = [
                     {
                       criteria = config.swarselsystems.sharescreen;
                       position = "2560,0";
-                      scale = 1.5;
+                      scale = 1.7;
                       status = "enable";
                     }
                     {
-                      criteria = "HP Inc. HP 732pk CNC4080YL5";
-                      mode = "3840x2160";
-                      position = "-3440,-1050";
-                      scale = 1.0;
-                      transform = "270";
-                    }
-                    {
-                      criteria = "HP Inc. HP Z32 CN41212T55";
-                      mode = "3840x2160";
-                      position = "-1280,0";
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      mode = "1280x720";
+                      position = "10000,10000";
                       scale = 1.0;
                     }
                   ];
                 };
-              }
-              {
-                profile =
-                  let
-                    monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                  in
+            }
+            {
+              profile = {
+                exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                ];
+                name = "lidclosed";
+                outputs = [
                   {
-                    exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
-                    ];
-                    name = "lidopen";
-                    outputs = [
-                      {
-                        criteria = config.swarselsystems.sharescreen;
-                        position = "2560,0";
-                        scale = 1.7;
-                        status = "enable";
-                      }
-                      {
-                        criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                        mode = "1280x720";
-                        position = "10000,10000";
-                        scale = 1.0;
-                      }
-                    ];
-                  };
-              }
-              {
-                profile = {
+                    criteria = config.swarselsystems.sharescreen;
+                    status = "disable";
+                  }
+                  {
+                    criteria = "HP Inc. HP 732pk CNC4080YL5";
+                    mode = "3840x2160";
+                    position = "-3440,-1050";
+                    scale = 1.0;
+                    transform = "270";
+                  }
+                  {
+                    criteria = "HP Inc. HP Z32 CN41212T55";
+                    mode = "3840x2160";
+                    position = "-1280,0";
+                    scale = 1.0;
+                  }
+                ];
+              };
+            }
+            {
+              profile =
+                let
+                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                in
+                {
                   exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidclosed";
                   outputs = [
@@ -221,135 +251,99 @@
                       status = "disable";
                     }
                     {
-                      criteria = "HP Inc. HP 732pk CNC4080YL5";
-                      mode = "3840x2160";
-                      position = "-3440,-1050";
-                      scale = 1.0;
-                      transform = "270";
-                    }
-                    {
-                      criteria = "HP Inc. HP Z32 CN41212T55";
-                      mode = "3840x2160";
-                      position = "-1280,0";
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      mode = "1280x720";
+                      position = "10000,10000";
                       scale = 1.0;
                     }
                   ];
                 };
-              }
-              {
-                profile =
-                  let
-                    monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                  in
-                  {
-                    exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                    ];
-                    name = "lidclosed";
-                    outputs = [
-                      {
-                        criteria = config.swarselsystems.sharescreen;
-                        status = "disable";
-                      }
-                      {
-                        criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                        mode = "1280x720";
-                        position = "10000,10000";
-                        scale = 1.0;
-                      }
-                    ];
-                  };
-              }
-            ];
-          };
-          shikane = {
-            settings =
-              let
-                workRight = [
-                  "m=HP Z32"
-                  "s=CN41212T55"
-                  "v=HP Inc."
-                ];
-                workLeft = [
-                  "m=HP 732pk"
-                  "s=CNC4080YL5"
-                  "v=HP Inc."
-                ];
-                exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
-              in
-              {
-                profile = [
-
-                  {
-                    inherit exec;
-                    name = "work-internal-on";
-                    output = [
-                      {
-                        enable = true;
-                        match = config.swarselsystems.sharescreen;
-                        position = "2560,0";
-                        scale = 1.7;
-                      }
-                      {
-                        enable = true;
-                        match = workRight;
-                        mode = "3840x2160@60Hz";
-                        position = "-1280,0";
-                        scale = 1.0;
-                      }
-                      {
-                        enable = true;
-                        match = workLeft;
-                        mode = "3840x2160@60Hz";
-                        position = "-3440,-1050";
-                        scale = 1.0;
-                        transform = "270";
-                      }
-                    ];
-                  }
-                  {
-                    inherit exec;
-                    name = "work-internal-off";
-                    output = [
-                      {
-                        enable = false;
-                        match = config.swarselsystems.sharescreen;
-                        position = "2560,0";
-                        scale = 1.7;
-                      }
-                      {
-                        enable = true;
-                        match = workRight;
-                        mode = "3840x2160@60Hz";
-                        position = "-1280,0";
-                        scale = 1.0;
-                      }
-                      {
-                        enable = true;
-                        match = workLeft;
-                        mode = "3840x2160@60Hz";
-                        position = "-3440,-1050";
-                        scale = 1.0;
-                        transform = "270";
-                      }
-                    ];
-                  }
-
-                ];
-              };
-          };
-        };
-        stylix = {
-          targets.firefox.profileNames =
+            }
+          ];
+          shikane.settings =
             let
-              inherit (confLib.getConfig.repo.secrets.work) user1 user2 user3;
+              workRight = [
+                "m=HP Z32"
+                "s=CN41212T55"
+                "v=HP Inc."
+              ];
+              workLeft = [
+                "m=HP 732pk"
+                "s=CNC4080YL5"
+                "v=HP Inc."
+              ];
+              exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
             in
-            lib.mkIf (!config.programs.glide-browser.enable) [
-              "${user1}"
-              "${user2}"
-              "${user3}"
-            ];
+            {
+              profile = [
+
+                {
+                  inherit exec;
+                  name = "work-internal-on";
+                  output = [
+                    {
+                      enable = true;
+                      match = config.swarselsystems.sharescreen;
+                      position = "2560,0";
+                      scale = 1.7;
+                    }
+                    {
+                      enable = true;
+                      match = workRight;
+                      mode = "3840x2160@60Hz";
+                      position = "-1280,0";
+                      scale = 1.0;
+                    }
+                    {
+                      enable = true;
+                      match = workLeft;
+                      mode = "3840x2160@60Hz";
+                      position = "-3440,-1050";
+                      scale = 1.0;
+                      transform = "270";
+                    }
+                  ];
+                }
+                {
+                  inherit exec;
+                  name = "work-internal-off";
+                  output = [
+                    {
+                      enable = false;
+                      match = config.swarselsystems.sharescreen;
+                      position = "2560,0";
+                      scale = 1.7;
+                    }
+                    {
+                      enable = true;
+                      match = workRight;
+                      mode = "3840x2160@60Hz";
+                      position = "-1280,0";
+                      scale = 1.0;
+                    }
+                    {
+                      enable = true;
+                      match = workLeft;
+                      mode = "3840x2160@60Hz";
+                      position = "-3440,-1050";
+                      scale = 1.0;
+                      transform = "270";
+                    }
+                  ];
+                }
+
+              ];
+            };
         };
+        stylix.targets.firefox.profileNames =
+          let
+            inherit (confLib.getConfig.repo.secrets.work) user1 user2 user3;
+          in
+          lib.mkIf (!config.programs.glide-browser.enable) [
+            "${user1}"
+            "${user2}"
+            "${user3}"
+          ];
         wayland.windowManager.sway =
           let
             inherit (confLib.getConfig.repo.secrets.work)
@@ -360,17 +354,15 @@
               ;
           in
           {
-            config = {
-              keybindings =
-                let
-                  inherit (config.wayland.windowManager.sway.config) modifier;
-                in
-                {
-                  "${modifier}+Shift+d" =
-                    "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
-                  "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
-                };
-            };
+            config.keybindings =
+              let
+                inherit (config.wayland.windowManager.sway.config) modifier;
+              in
+              {
+                "${modifier}+Shift+d" =
+                  "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
+                "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
+              };
           };
       };
     };

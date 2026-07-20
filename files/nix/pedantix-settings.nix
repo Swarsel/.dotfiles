@@ -34,6 +34,7 @@
       "enable"
       "package"
     ];
+    flatten = true;
     last = [
       "systemd"
       "nodes"

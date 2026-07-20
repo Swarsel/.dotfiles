@@ -52,9 +52,7 @@
             "${self}/hosts/nixos/${arch}/${configName}"
             self.modules.nixos.profile-base
             {
-              swarselsystems = {
-                mainUser = lib.swarselsystems.mkStrong "swarsel";
-              };
+              swarselsystems.mainUser = lib.swarselsystems.mkStrong "swarsel";
               microvm.guest.enable = lib.mkDefault false;
               networking.hostName = lib.swarselsystems.mkStrong configName;
               node = {

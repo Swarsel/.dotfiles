@@ -79,26 +79,23 @@
         ...
       }:
       {
-        config = {
-
-          environment = {
-            sessionVariables = {
-              GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (
-                with pkgs.gst_all_1;
-                [
-                  gst-plugins-good
-                  gst-plugins-bad
-                  gst-plugins-ugly
-                  gst-libav
-                ]
-              );
-              NIXOS_OZONE_WL = "1";
-              SWARSEL_HI_RES = config.swarselsystems.highResolution;
-              SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-            }
-            // (lib.optionalAttrs (!config.swarselsystems.isPublic) { });
-            wordlist.enable = true;
-          };
+        config.environment = {
+          sessionVariables = {
+            GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (
+              with pkgs.gst_all_1;
+              [
+                gst-plugins-good
+                gst-plugins-bad
+                gst-plugins-ugly
+                gst-libav
+              ]
+            );
+            NIXOS_OZONE_WL = "1";
+            SWARSEL_HI_RES = config.swarselsystems.highResolution;
+            SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+          }
+          // (lib.optionalAttrs (!config.swarselsystems.isPublic) { });
+          wordlist.enable = true;
         };
       };
   };

@@ -69,15 +69,11 @@
             attic-garage-secret-key = { inherit sopsFile; };
             attic-server-token = { inherit sopsFile; };
           };
-          templates = {
-            "attic.env" = {
-              content = ''
-                ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=${config.sops.placeholder.attic-server-token}
-                AWS_ACCESS_KEY_ID=${config.sops.placeholder.attic-garage-access-key}
-                AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.attic-garage-secret-key}
-              '';
-            };
-          };
+          templates."attic.env".content = ''
+            ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=${config.sops.placeholder.attic-server-token}
+            AWS_ACCESS_KEY_ID=${config.sops.placeholder.attic-garage-access-key}
+            AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.attic-garage-secret-key}
+          '';
         };
         services = {
           # networking.firewall.allowedTCPPorts = [ servicePort ];

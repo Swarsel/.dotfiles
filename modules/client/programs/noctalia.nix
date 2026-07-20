@@ -39,9 +39,7 @@ in
         imports = [
           inputs.noctalia.homeModules.default
         ];
-        options = {
-          swarselsystems.noctalia-systemd = lib.swarselsystems.mkTrueOption;
-        };
+        options.swarselsystems.noctalia-systemd = lib.swarselsystems.mkTrueOption;
         config = {
           swarselsystems.enabledHomeModules = [ "optional-noctalia" ];
           programs = {
@@ -424,9 +422,7 @@ in
                 };
                 noctalia-init = {
 
-                  Install = {
-                    WantedBy = [ "tray.target" ];
-                  };
+                  Install.WantedBy = [ "tray.target" ];
                   Service = {
                     ExecStart = "${pkgs.coreutils}/bin/sleep 3";
                     RemainAfterExit = true;
@@ -439,9 +435,7 @@ in
                 };
               };
               targets = {
-                noctalia-shell.Unit = {
-                  After = [ "graphical-session.target" ];
-                };
+                noctalia-shell.Unit.After = [ "graphical-session.target" ];
                 tray = {
                   Install.WantedBy = [ "noctalia-shell.target" ];
                   Unit = {

@@ -99,12 +99,10 @@
           map
             (path: {
               name = "${serviceDir}/${path}";
-              value = {
-                d = {
-                  group = "root";
-                  mode = "0750";
-                  user = "root";
-                };
+              value.d = {
+                group = "root";
+                mode = "0750";
+                user = "root";
               };
             })
             [
@@ -116,10 +114,8 @@
           let
             genNginx = toAddress: extraConfig: {
               upstreams = {
-                ${serviceName} = {
-                  servers = {
-                    "${toAddress}:${builtins.toString servicePort}" = { };
-                  };
+                ${serviceName}.servers = {
+                  "${toAddress}:${builtins.toString servicePort}" = { };
                 };
               };
               virtualHosts = {
@@ -128,9 +124,7 @@
                   acmeRoot = null;
                   forceSSL = true;
                   locations = {
-                    "/" = {
-                      proxyPass = "http://${serviceName}";
-                    };
+                    "/".proxyPass = "http://${serviceName}";
                     "/image" = {
                       bypassAuth = true;
                       proxyPass = "http://${serviceName}";

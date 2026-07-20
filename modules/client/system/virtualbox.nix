@@ -12,9 +12,7 @@
         #   VBox.configuration = {
         virtualisation.virtualbox = {
           # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-          guest = {
-            enable = false;
-          };
+          guest.enable = false;
           host = {
             enable = true;
             package = pkgs.virtualbox;

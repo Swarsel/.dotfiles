@@ -53,9 +53,7 @@
               network = lib.mkForce vlanName;
             }
           ) globals.networks.home-lan.vlans);
-        users.persistentIds = {
-          avahi = confLib.mkIds 978;
-        };
+        users.persistentIds.avahi = confLib.mkIds 978;
         services = {
           avahi = {
             enable = true;
@@ -81,20 +79,18 @@
             globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
           ];
           nftables = {
-            chains.postrouting = {
-              masquerade-internet = {
-                after = [ "hook" ];
-                late = true;
-                rules = lib.forEach (map (name: "vlan-${name}") globals.general.internetVLANs) (
-                  zone:
-                  lib.concatStringsSep " " [
-                    "meta protocol { ip, ip6 }"
-                    (lib.head config.networking.nftables.firewall.zones.${zone}.ingressExpression)
-                    (lib.head config.networking.nftables.firewall.zones.untrusted.egressExpression)
-                    "masquerade random"
-                  ]
-                );
-              };
+            chains.postrouting.masquerade-internet = {
+              after = [ "hook" ];
+              late = true;
+              rules = lib.forEach (map (name: "vlan-${name}") globals.general.internetVLANs) (
+                zone:
+                lib.concatStringsSep " " [
+                  "meta protocol { ip, ip6 }"
+                  (lib.head config.networking.nftables.firewall.zones.${zone}.ingressExpression)
+                  (lib.head config.networking.nftables.firewall.zones.untrusted.egressExpression)
+                  "masquerade random"
+                ]
+              );
             };
             firewall = {
               rules = {
@@ -171,14 +167,10 @@
                 Kind = "veth";
                 Name = "veth-br";
               };
-              peerConfig = {
-                Name = "veth-int";
-              };
+              peerConfig.Name = "veth-int";
             };
             "20-br" = {
-              bridgeConfig = {
-                VLANFiltering = true;
-              };
+              bridgeConfig.VLANFiltering = true;
               netdevConfig = {
                 Kind = "bridge";
                 Name = "br";
@@ -188,13 +180,9 @@
           networks = {
             "15-veth-br" = {
               inherit bridgeVLANs;
-              linkConfig = {
-                RequiredForOnline = "no";
-              };
+              linkConfig.RequiredForOnline = "no";
               matchConfig.Name = "veth-br";
-              networkConfig = {
-                Bridge = "br";
-              };
+              networkConfig.Bridge = "br";
             };
             "15-veth-int" = {
               linkConfig = {

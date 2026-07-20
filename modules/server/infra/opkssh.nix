@@ -58,9 +58,7 @@
       {
         config = {
           swarselsystems.enabledServerModules = [ "opkssh" ];
-          users.persistentIds = {
-            opksshuser = confLib.mkIds 980;
-          };
+          users.persistentIds.opksshuser = confLib.mkIds 980;
           services.${serviceName} = {
             enable = true;
             authorizations = [
@@ -71,38 +69,32 @@
               }
             ];
             group = serviceGroup;
-            providers = {
-              kanidm = {
-                clientId = serviceName;
-                issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
-                lifetime = "oidc";
-              };
+            providers.kanidm = {
+              clientId = serviceName;
+              issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+              lifetime = "oidc";
             };
             user = serviceUser;
           };
           nodes = {
-            ${idmServer} = {
-              services.kanidm.provision = {
-                groups = {
-                  "opkssh.access" = { };
-                };
-                systems.oauth2.opkssh = {
-                  displayName = "OPKSSH";
-                  enableLocalhostRedirects = true;
-                  originLanding = "http://localhost:3000";
-                  originUrl = [
-                    "http://localhost:3000"
-                    "http://localhost:3000/login-callback"
-                    "http://localhost:10001/login-callback"
-                    "http://localhost:11110/login-callback"
-                  ];
-                  public = true;
-                  scopeMaps."opkssh.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
+            ${idmServer}.services.kanidm.provision = {
+              groups."opkssh.access" = { };
+              systems.oauth2.opkssh = {
+                displayName = "OPKSSH";
+                enableLocalhostRedirects = true;
+                originLanding = "http://localhost:3000";
+                originUrl = [
+                  "http://localhost:3000"
+                  "http://localhost:3000/login-callback"
+                  "http://localhost:10001/login-callback"
+                  "http://localhost:11110/login-callback"
+                ];
+                public = true;
+                scopeMaps."opkssh.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
               };
             };
           };

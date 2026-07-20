@@ -5,11 +5,9 @@
       inherit (config.swarselsystems) mainUser;
     in
     {
-      config = {
-        services = {
-          getty.autologinUser = mainUser;
-          greetd.settings.initial_session.user = mainUser;
-        };
+      config.services = {
+        getty.autologinUser = mainUser;
+        greetd.settings.initial_session.user = mainUser;
       };
     };
 }

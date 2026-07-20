@@ -60,20 +60,18 @@
           (lib.mkIf withYubikeyAgent config.services.yubikey-agent.package)
         ];
         systemd.user = {
-          services = {
-            yubikey-agent = lib.mkIf withYubikeyAgent {
-              Service = {
-                ExecStart = "${config.services.yubikey-agent.package}/bin/yubikey-agent -l %t/yubikey-agent/yubikey-agent.sock";
-                ReadWritePaths = [ "%t" ];
-                Type = "simple";
-              };
-              Unit = {
-                After = "yubikey-agent.socket";
-                Description = "Seamless ssh-agent for YubiKeys";
-                Documentation = "https://github.com/FiloSottile/yubikey-agent";
-                RefuseManualStart = true;
-                Requires = "yubikey-agent.socket";
-              };
+          services.yubikey-agent = lib.mkIf withYubikeyAgent {
+            Service = {
+              ExecStart = "${config.services.yubikey-agent.package}/bin/yubikey-agent -l %t/yubikey-agent/yubikey-agent.sock";
+              ReadWritePaths = [ "%t" ];
+              Type = "simple";
+            };
+            Unit = {
+              After = "yubikey-agent.socket";
+              Description = "Seamless ssh-agent for YubiKeys";
+              Documentation = "https://github.com/FiloSottile/yubikey-agent";
+              RefuseManualStart = true;
+              Requires = "yubikey-agent.socket";
             };
           };
 
@@ -146,9 +144,7 @@
                   "%t/gnupg/${subdir}";
               in
               {
-                Install = {
-                  WantedBy = [ "sockets.target" ];
-                };
+                Install.WantedBy = [ "sockets.target" ];
                 Socket = {
                   DirectoryMode = "0700";
                   FileDescriptorName = "ssh";
@@ -162,9 +158,7 @@
                 };
               };
             yubikey-agent = lib.mkIf withYubikeyAgent {
-              Install = {
-                WantedBy = [ "sockets.target" ];
-              };
+              Install.WantedBy = [ "sockets.target" ];
               Socket = {
                 DirectoryMode = "0700";
                 ListenStream = "%t/yubikey-agent/yubikey-agent.sock";

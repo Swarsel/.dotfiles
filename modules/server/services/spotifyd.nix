@@ -33,22 +33,18 @@
             isSystemUser = true;
             uid = 65136;
           };
-          groups.${serviceGroup} = {
-            gid = 65136;
-          };
+          groups.${serviceGroup}.gid = 65136;
         };
         services = {
           pipewire.systemWide = true;
           spotifyd = {
             enable = true;
-            settings = {
-              global = {
-                backend = "pulseaudio";
-                dbus_type = "session";
-                device_name = "SwarselSpot";
-                use_mpris = false;
-                zeroconf_port = servicePort;
-              };
+            settings.global = {
+              backend = "pulseaudio";
+              dbus_type = "session";
+              device_name = "SwarselSpot";
+              use_mpris = false;
+              zeroconf_port = servicePort;
             };
           };
         };

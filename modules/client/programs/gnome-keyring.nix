@@ -14,13 +14,9 @@
           };
         };
       };
-    nixos.gnome-keyring = {
-      config = {
-        services.gnome.gnome-keyring = {
-          enable = true;
-        };
-        programs.seahorse.enable = true;
-      };
+    nixos.gnome-keyring.config = {
+      services.gnome.gnome-keyring.enable = true;
+      programs.seahorse.enable = true;
     };
   };
 }

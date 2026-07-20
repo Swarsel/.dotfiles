@@ -62,10 +62,7 @@ in
     };
   };
 
-  environment.variables = {
-    WLR_RENDERER_ALLOW_SOFTWARE = 1;
-  };
-
+  environment.variables.WLR_RENDERER_ALLOW_SOFTWARE = 1;
   hardware.graphics.enable32Bit = lib.mkIf (arch != "x86_64-linux") (lib.mkForce false);
 
   networking = {

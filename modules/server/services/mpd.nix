@@ -28,13 +28,11 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "mpd" ];
-        sops = {
-          secrets.mpd-pw = {
-            inherit sopsFile;
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-          };
+        sops.secrets.mpd-pw = {
+          inherit sopsFile;
+          group = serviceGroup;
+          mode = "0440";
+          owner = serviceUser;
         };
         users = {
           users = {
@@ -49,9 +47,7 @@
               isSystemUser = true;
             };
           };
-          groups = {
-            mpd = { };
-          };
+          groups.mpd = { };
         };
         services.${serviceName} = {
           enable = true;

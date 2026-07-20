@@ -100,9 +100,7 @@
             group = serviceGroup;
             isSystemUser = true;
           };
-          persistentIds = {
-            freshrss = confLib.mkIds 986;
-          };
+          persistentIds.freshrss = confLib.mkIds 986;
         };
         users.groups.${serviceGroup} = { };
         services.${serviceName} =
@@ -134,10 +132,8 @@
           let
             genNginx = toAddress: extraConfig: {
               upstreams = {
-                ${serviceName} = {
-                  servers = {
-                    "${toAddress}:${builtins.toString servicePort}" = { };
-                  };
+                ${serviceName}.servers = {
+                  "${toAddress}:${builtins.toString servicePort}" = { };
                 };
               };
               virtualHosts = {
@@ -146,9 +142,7 @@
                   acmeRoot = null;
                   forceSSL = true;
                   locations = {
-                    "/" = {
-                      proxyPass = "http://${serviceName}";
-                    };
+                    "/".proxyPass = "http://${serviceName}";
                     "/api" = {
                       bypassAuth = true;
                       proxyPass = "http://${serviceName}";

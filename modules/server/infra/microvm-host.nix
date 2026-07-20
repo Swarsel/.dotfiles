@@ -18,12 +18,10 @@
           tmpfiles.settings."15-microvms" = builtins.listToAttrs (
             map (path: {
               name = "${lib.optionalString config.swarselsystems.isImpermanence "/persist"}/microvms/${path}";
-              value = {
-                d = {
-                  group = "kvm";
-                  mode = "0750";
-                  user = "microvm";
-                };
+              value.d = {
+                group = "kvm";
+                mode = "0750";
+                user = "microvm";
               };
             }) (builtins.attrNames config.guests)
           );

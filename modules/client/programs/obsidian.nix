@@ -80,9 +80,7 @@
             vaults = {
               ${name} = {
                 settings = {
-                  appearance = {
-                    baseFontSize = lib.mkForce 19;
-                  };
+                  appearance.baseFontSize = lib.mkForce 19;
                   # communityPlugins = with pkgs.swarsel-nix; [
                   communityPlugins = with pluginSource; [
                     {
@@ -129,20 +127,14 @@
                       enable = true;
                       pkg = linter;
                       settings = {
-                        auto-correct-common-misspellings = {
-                          skip-words-with-multiple-capitals = true;
-                        };
-                        convert-bullet-list-markers = {
-                          enabled = true;
-                        };
+                        auto-correct-common-misspellings.skip-words-with-multiple-capitals = true;
+                        convert-bullet-list-markers.enabled = true;
                       };
                     }
                     {
                       enable = true;
                       pkg = omnisearch;
-                      settings = {
-                        hideExcluded = true;
-                      };
+                      settings.hideExcluded = true;
                     }
                   ];
                 };

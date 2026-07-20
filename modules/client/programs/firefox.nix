@@ -19,22 +19,16 @@
             profiles = {
               checker = lib.recursiveUpdate {
                 id = 5;
-                settings = {
-                  "browser.startup.homepage" = confLib.getConfig.repo.secrets.common.checkerURLs;
-                };
+                settings."browser.startup.homepage" = confLib.getConfig.repo.secrets.common.checkerURLs;
               } vars.firefox;
               default = lib.recursiveUpdate {
                 id = 0;
                 isDefault = true;
-                settings = {
-                  "browser.startup.homepage" = "https://lobste.rs";
-                };
+                settings."browser.startup.homepage" = "https://lobste.rs";
               } vars.firefox;
             };
           };
-          zsh.sessionVariables = {
-            MOZ_DISABLE_RDD_SANDBOX = "1";
-          };
+          zsh.sessionVariables.MOZ_DISABLE_RDD_SANDBOX = "1";
         };
         xdg.desktopEntries.firefox_checker = {
           categories = [ "Application" ];

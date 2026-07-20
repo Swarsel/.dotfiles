@@ -36,9 +36,7 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
-        topology.self.services.${serviceName} = {
-          info = "https://${serviceDomain}";
-        };
+        topology.self.services.${serviceName}.info = "https://${serviceDomain}";
         globals = {
           services = confLib.mkServiceGlobal {
             inherit

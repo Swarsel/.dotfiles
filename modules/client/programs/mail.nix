@@ -30,19 +30,11 @@
             address4-token = { };
           };
         };
-        services.mbsync = {
-          enable = true;
-        };
+        services.mbsync.enable = true;
         programs = {
-          mbsync = {
-            enable = true;
-          };
-          msmtp = {
-            enable = true;
-          };
-          mu = {
-            enable = true;
-          };
+          mbsync.enable = true;
+          msmtp.enable = true;
+          mu.enable = true;
         };
         programs.thunderbird = {
           enable = true;
@@ -107,9 +99,7 @@
                       PipelineDepth = 1;
                       Timeout = 120;
                     };
-                    channel = {
-                      Sync = "All";
-                    };
+                    channel.Sync = "All";
                   };
                   patterns = [
                     "*"
@@ -119,9 +109,7 @@
                     "[Gmail]/All Mail"
                   ];
                 };
-                msmtp = {
-                  enable = true;
-                };
+                msmtp.enable = true;
                 mu.enable = true;
                 smtp = {
                   host = "smtp.gmail.com";
@@ -178,15 +166,11 @@
                         PipelineDepth = 1;
                         Timeout = 120;
                       };
-                      channel = {
-                        Sync = "All";
-                      };
+                      channel.Sync = "All";
                     };
                     patterns = [ "*" ];
                   };
-                  msmtp = {
-                    enable = true;
-                  };
+                  msmtp.enable = true;
                   mu.enable = true;
                   passwordCommand = "cat ${confLib.getConfig.sops.secrets.address4-token.path}";
                   realName = fullName;

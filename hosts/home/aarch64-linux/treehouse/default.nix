@@ -23,9 +23,7 @@
 
   services.xcape = {
     enable = true;
-    mapExpression = {
-      Control_L = "Escape";
-    };
+    mapExpression.Control_L = "Escape";
   };
 
   home.packages = with pkgs; [

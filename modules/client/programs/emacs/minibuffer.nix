@@ -36,16 +36,12 @@
           "C-j" = "next-line";
           "C-k" = "previous-line";
         };
-        custom = {
-          consult-fontify-max-size = 1024;
-        };
+        custom.consult-fontify-max-size = 1024;
       };
       consult-dir = {
         enable = true;
         after = [ "consult" ];
-        bind = {
-          "C-x C-d" = "consult-dir";
-        };
+        bind."C-x C-d" = "consult-dir";
         bindLocal.minibuffer-local-map = {
           "C-x C-d" = "consult-dir";
           "C-x C-j" = "consult-dir-jump-file";
@@ -57,9 +53,7 @@
           "consult"
           "eglot"
         ];
-        bind = {
-          "C-c s" = "consult-eglot-symbols";
-        };
+        bind."C-c s" = "consult-eglot-symbols";
       };
       embark = {
         config = ''
@@ -92,9 +86,7 @@
       marginalia = {
         enable = true;
         after = [ "vertico" ];
-        bindLocal.minibuffer-local-map = {
-          "M-A" = "marginalia-cycle";
-        };
+        bindLocal.minibuffer-local-map."M-A" = "marginalia-cycle";
         init = "(marginalia-mode)";
       };
       nerd-icons-completion = {

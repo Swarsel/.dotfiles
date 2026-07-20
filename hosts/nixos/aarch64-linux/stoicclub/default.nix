@@ -30,9 +30,7 @@
     nodeRoles = [ "dnsServer" ];
     rootDisk = "/dev/disk/by-id/scsi-360e1a5236f034316a10a97cc703ce9e3";
   };
-  topology.self = {
-    icon = "devices.cloud-server";
-  };
+  topology.self.icon = "devices.cloud-server";
 
 }
 // lib.optionalAttrs (!minimal) {

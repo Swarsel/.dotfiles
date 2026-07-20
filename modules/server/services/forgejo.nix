@@ -67,13 +67,11 @@
             ];
           };
         };
-        sops.secrets = {
-          kanidm-forgejo = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            sopsFile = kanidmSopsFile;
-          };
+        sops.secrets.kanidm-forgejo = {
+          group = serviceGroup;
+          mode = "0440";
+          owner = serviceUser;
+          sopsFile = kanidmSopsFile;
         };
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         users = {
@@ -81,9 +79,7 @@
             group = serviceGroup;
             isSystemUser = true;
           };
-          persistentIds = {
-            forgejo = confLib.mkIds 985;
-          };
+          persistentIds.forgejo = confLib.mkIds 985;
         };
         users.groups.${serviceGroup} = { };
         services.${serviceName} = {
@@ -91,9 +87,7 @@
           group = serviceGroup;
           lfs.enable = lib.mkDefault true;
           settings = {
-            DEFAULT = {
-              APP_NAME = "~SwaGit~";
-            };
+            DEFAULT.APP_NAME = "~SwaGit~";
             federation = {
               ENABLED = true;
               SHARE_USER_STATISTICS = false;
@@ -120,9 +114,9 @@
               PROTOCOL = "http";
               ROOT_URL = "https://${serviceDomain}";
               SSH_DOMAIN = serviceDomain;
-              SSH_PORT = sshProxyPort;
               SSH_LISTEN_HOST = "0.0.0.0";
               SSH_LISTEN_PORT = sshListenPort;
+              SSH_PORT = sshProxyPort;
               START_SSH_SERVER = true;
             };
             service = {
@@ -223,24 +217,25 @@
           }
           {
             ${webProxy} = {
-              services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  serviceDomain
-                  serviceName
-                  servicePort
-                  ;
-                maxBody = 0;
-              }
-              // {
-                streamConfig = ''
-                  server {
-                    listen ${toString sshProxyPort};
-                    listen [::]:${toString sshProxyPort};
-                    proxy_pass ${serviceAddress}:${toString sshListenPort};
-                  }
-                '';
-              };
+              services.nginx =
+                confLib.genNginx {
+                  inherit
+                    serviceAddress
+                    serviceDomain
+                    serviceName
+                    servicePort
+                    ;
+                  maxBody = 0;
+                }
+                // {
+                  streamConfig = ''
+                    server {
+                      listen ${toString sshProxyPort};
+                      listen [::]:${toString sshProxyPort};
+                      proxy_pass ${serviceAddress}:${toString sshListenPort};
+                    }
+                  '';
+                };
               networking.nftables.firewall.rules.forgejo-ssh-to-local = {
                 allowedTCPPorts = [ sshProxyPort ];
                 from = [ "untrusted" ];

@@ -75,11 +75,9 @@
             renderer = "elk";
             nodes = {
               ender3 = mkDevice "Ender 3" {
-                services = {
-                  octoprint = {
-                    icon = "${self}/files/topology-images/octoprint.png";
-                    name = "OctoPrint";
-                  };
+                services.octoprint = {
+                  icon = "${self}/files/topology-images/octoprint.png";
+                  name = "OctoPrint";
                 };
                 deviceIcon = "${self}/files/topology-images/ender3.png";
                 icon = "${self}/files/topology-images/raspi.png";
@@ -172,11 +170,9 @@
                 interfaces.eth1 = { };
               };
               pc = mkDevice "Chaostheater" {
-                services = {
-                  sunshine = {
-                    icon = "${self}/files/topology-images/sunshine.png";
-                    name = "Sunshine";
-                  };
+                services.sunshine = {
+                  icon = "${self}/files/topology-images/sunshine.png";
+                  name = "Sunshine";
                 };
                 deviceIcon = "${self}/files/topology-images/atlasos.png";
                 icon = "${self}/files/topology-images/windows.png";
@@ -216,12 +212,8 @@
                   ]
                 ];
                 interfaces = {
-                  eth2 = {
-                    network = lib.mkForce "devices";
-                  };
-                  eth3 = {
-                    network = lib.mkForce "guests";
-                  };
+                  eth2.network = lib.mkForce "devices";
+                  eth3.network = lib.mkForce "guests";
                 };
               };
               switch-livingroom = mkSwitch "Switch Livingroom" {
@@ -256,24 +248,12 @@
                   ]
                 ];
                 interfaces = {
-                  eth2 = {
-                    network = lib.mkForce "devices";
-                  };
-                  eth3 = {
-                    network = lib.mkForce "home";
-                  };
-                  eth5 = {
-                    network = lib.mkForce "devices";
-                  };
-                  eth6 = {
-                    network = lib.mkForce "devices";
-                  };
-                  eth7 = {
-                    network = lib.mkForce "guests";
-                  };
-                  eth8 = {
-                    network = lib.mkForce "home";
-                  };
+                  eth2.network = lib.mkForce "devices";
+                  eth3.network = lib.mkForce "home";
+                  eth5.network = lib.mkForce "devices";
+                  eth6.network = lib.mkForce "devices";
+                  eth7.network = lib.mkForce "guests";
+                  eth8.network = lib.mkForce "home";
                 };
               };
               treehouse = mkDevice "treehouse" {

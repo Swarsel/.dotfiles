@@ -64,9 +64,7 @@
     };
     evil-nerd-commenter = {
       enable = true;
-      bind = {
-        "M-/" = "evilnc-comment-or-uncomment-lines";
-      };
+      bind."M-/" = "evilnc-comment-or-uncomment-lines";
     };
     evil-numbers.enable = true;
     evil-snipe = {

@@ -39,13 +39,9 @@
           groups.builder = { };
           persistentIds.builder = confLib.mkIds 965;
         };
-        services.openssh = {
-          settings = {
-            AllowUsers = [
-              "builder"
-            ];
-          };
-        };
+        services.openssh.settings.AllowUsers = [
+          "builder"
+        ];
 
       };
     }

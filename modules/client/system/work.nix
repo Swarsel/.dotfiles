@@ -74,12 +74,10 @@ in
                   value = { inherit owner sopsFile; };
                 }) secretNames
               );
-              templates = {
-                "network-manager-work.env".content = ''
-                  BASEUSER=${config.sops.placeholder.baseuser}
-                  BASEPASS=${config.sops.placeholder.basepw}
-                '';
-              };
+              templates."network-manager-work.env".content = ''
+                BASEUSER=${config.sops.placeholder.baseuser}
+                BASEPASS=${config.sops.placeholder.basepw}
+              '';
             };
           services = {
             openssh = {
@@ -87,22 +85,14 @@ in
               extraConfig = "";
             };
             spice-vdagentd.enable = true;
-            syncthing = {
-              settings = {
-                folders = {
-                  "Documents" = {
-                    devices = [ "moonside@oracle" ];
-                    id = "hgr3d-pfu3w";
-                    path = "${homeDir}/Documents";
-                  };
-                };
-                "moonside@oracle" = {
-                  id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
-                };
-                "winters" = {
-                  id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-                };
+            syncthing.settings = {
+              folders."Documents" = {
+                devices = [ "moonside@oracle" ];
+                id = "hgr3d-pfu3w";
+                path = "${homeDir}/Documents";
               };
+              "moonside@oracle".id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
+              "winters".id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
             # udev.extraRules = ''
             #   # lock screen when yubikey removed
@@ -173,42 +163,38 @@ in
                 environmentFiles = [
                   "${config.sops.templates."network-manager-work.env".path}"
                 ];
-                profiles = {
-                  VBC = {
-                    "802-1x" = {
-                      eap = if (!iwd) then "ttls;" else "peap;";
-                      identity = "$BASEUSER";
-                      password = "$BASEPASS";
-                      phase2-auth = "mschapv2";
-                    };
-                    connection = {
-                      autoconnect-priority = "500";
-                      id = "VBC";
-                      secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
-                      type = "wifi";
-                      uuid = "3988f10e-6451-381f-9330-a12e66f45051";
-                    };
-                    ipv4 = {
-                      method = "auto";
-                    };
-                    ipv6 = {
-                      # addr-gen-mode = "default";
-                      addr-gen-mode = "stable-privacy";
-                      method = "auto";
-                    };
-                    proxy = { };
-                    wifi = {
-                      band = "a";
-                      cloned-mac-address = "permanent";
-                      mac-address = "E8:65:38:52:63:FF";
-                      mac-address-randomization = "1";
-                      mode = "infrastructure";
-                      ssid = "VBC";
-                    };
-                    wifi-security = {
-                      # auth-alg = "open";
-                      key-mgmt = "wpa-eap";
-                    };
+                profiles.VBC = {
+                  "802-1x" = {
+                    eap = if (!iwd) then "ttls;" else "peap;";
+                    identity = "$BASEUSER";
+                    password = "$BASEPASS";
+                    phase2-auth = "mschapv2";
+                  };
+                  connection = {
+                    autoconnect-priority = "500";
+                    id = "VBC";
+                    secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
+                    type = "wifi";
+                    uuid = "3988f10e-6451-381f-9330-a12e66f45051";
+                  };
+                  ipv4.method = "auto";
+                  ipv6 = {
+                    # addr-gen-mode = "default";
+                    addr-gen-mode = "stable-privacy";
+                    method = "auto";
+                  };
+                  proxy = { };
+                  wifi = {
+                    band = "a";
+                    cloned-mac-address = "permanent";
+                    mac-address = "E8:65:38:52:63:FF";
+                    mac-address-randomization = "1";
+                    mode = "infrastructure";
+                    ssid = "VBC";
+                  };
+                  wifi-security = {
+                    # auth-alg = "open";
+                    key-mgmt = "wpa-eap";
                   };
                 };
               };
@@ -247,11 +233,7 @@ in
                     to = [ "virbr" ];
                   };
                 };
-                zones = {
-                  virbr = {
-                    interfaces = [ "virbr*" ];
-                  };
-                };
+                zones.virbr.interfaces = [ "virbr*" ];
               };
             };
 
@@ -330,11 +312,9 @@ in
         }
         // lib.optionalAttrs withHomeManager {
 
-          home-manager.users."${config.swarselsystems.mainUser}" = {
-            imports = [
-              fmods.homeManager.work
-            ];
-          };
+          home-manager.users."${config.swarselsystems.mainUser}".imports = [
+            fmods.homeManager.work
+          ];
         };
 
       };

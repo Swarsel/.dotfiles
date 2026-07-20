@@ -19,9 +19,7 @@
           inherit sopsFile;
           mode = "0400";
         };
-        users.persistentIds = {
-          avahi = confLib.mkIds 978;
-        };
+        users.persistentIds.avahi = confLib.mkIds 978;
         services = {
           avahi = {
             enable = true;

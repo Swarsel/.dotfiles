@@ -47,9 +47,7 @@
       devShells = forEachSystem (system: {
         default = pkgsFor.${system}.mkShell {
           RUST_SRC_PATH = "${rust-toolchain.${system}.rust-src}/lib/rustlib/src/rust/library";
-          env = {
-            RUST_BACKTRACE = "full";
-          };
+          env.RUST_BACKTRACE = "full";
           packages = with rust-toolchain.${system}; [
             cargo
             rustc

@@ -79,9 +79,7 @@
               };
             };
         };
-        users.persistentIds = {
-          radicale = confLib.mkIds 982;
-        };
+        users.persistentIds.radicale = confLib.mkIds 982;
         services.${serviceName} = {
           enable = true;
           rights = {
@@ -108,15 +106,11 @@
               htpasswd_filename = config.sops.templates.radicale-users.path;
               type = "htpasswd";
             };
-            server = {
-              hosts = [
-                "0.0.0.0:${builtins.toString servicePort}"
-                "[::]:${builtins.toString servicePort}"
-              ];
-            };
-            storage = {
-              filesystem_folder = "/var/lib/radicale/collections";
-            };
+            server.hosts = [
+              "0.0.0.0:${builtins.toString servicePort}"
+              "[::]:${builtins.toString servicePort}"
+            ];
+            storage.filesystem_folder = "/var/lib/radicale/collections";
           };
         };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -129,12 +123,10 @@
           ];
         };
         systemd.tmpfiles.settings."10-radicale" = {
-          "${cfg.settings.storage.filesystem_folder}" = {
-            d = {
-              group = serviceGroup;
-              mode = "0750";
-              user = serviceUser;
-            };
+          "${cfg.settings.storage.filesystem_folder}".d = {
+            group = serviceGroup;
+            mode = "0750";
+            user = serviceUser;
           };
         };
         # networking.firewall.allowedTCPPorts = [ servicePort ];

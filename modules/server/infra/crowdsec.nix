@@ -37,9 +37,7 @@
       options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
       config = {
         swarselsystems.enabledServerModules = [ "crowdsec" ];
-        topology.self.services.${serviceName} = {
-          name = lib.swarselsystems.toCapitalized serviceName;
-        };
+        topology.self.services.${serviceName}.name = lib.swarselsystems.toCapitalized serviceName;
         globals.monitoring.http = confLib.mkHttpMonitoring {
           expectedStatus = 403;
           path = "/v1/decisions";

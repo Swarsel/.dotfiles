@@ -81,9 +81,7 @@
                 endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
                 max_recv_msg_size_mib = 20;
               };
-              http = {
-                endpoint = "0.0.0.0:${toString servicePort}";
-              };
+              http.endpoint = "0.0.0.0:${toString servicePort}";
             };
             live_store = {
               shutdown_marker_dir = "${serviceDir}/live-store/shutdown-marker";
@@ -101,12 +99,10 @@
                 ];
               };
             };
-            overrides.defaults.metrics_generator = {
-              processors = [
-                "service-graphs"
-                "span-metrics"
-              ];
-            };
+            overrides.defaults.metrics_generator.processors = [
+              "service-graphs"
+              "span-metrics"
+            ];
             server = {
               grpc_listen_port = 9097;
               http_listen_address = "0.0.0.0";
@@ -231,9 +227,8 @@
                   }
                 ];
                 settings = {
-                  "tracing.opentelemetry" = {
-                    custom_attributes = "service.name:grafana-${globals.general.monitoringServer}";
-                  };
+                  "tracing.opentelemetry".custom_attributes =
+                    "service.name:grafana-${globals.general.monitoringServer}";
                   "tracing.opentelemetry.otlp" = {
                     address = "127.0.0.1:${toString otlpGrpcPort}";
                     propagation = "w3c";

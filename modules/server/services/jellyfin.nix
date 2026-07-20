@@ -64,13 +64,11 @@
           sopsFile = kanidmSopsFile;
         };
         users = {
-          users.${serviceUser} = {
-            extraGroups = [
-              "video"
-              "render"
-              "users"
-            ];
-          };
+          users.${serviceUser}.extraGroups = [
+            "video"
+            "render"
+            "users"
+          ];
           persistentIds.jellyfin = confLib.mkIds 994;
         };
         services.${serviceName} = {

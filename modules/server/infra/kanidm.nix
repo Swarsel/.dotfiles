@@ -70,34 +70,32 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        sops = {
-          secrets = {
-            "kanidm-admin-pw" = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
-            "kanidm-idm-admin-pw" = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
-            "kanidm-self-signed-crt" = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = certsSopsFile;
-            };
-            "kanidm-self-signed-key" = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = certsSopsFile;
-            };
-            # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        sops.secrets = {
+          "kanidm-admin-pw" = {
+            inherit sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
+          "kanidm-idm-admin-pw" = {
+            inherit sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+          };
+          "kanidm-self-signed-crt" = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = certsSopsFile;
+          };
+          "kanidm-self-signed-key" = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = certsSopsFile;
+          };
+          # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
         users = {
           users.${serviceUser} = {
@@ -105,9 +103,7 @@
             isSystemUser = true;
           };
           groups.${serviceGroup} = { };
-          persistentIds = {
-            kanidm = confLib.mkIds 984;
-          };
+          persistentIds.kanidm = confLib.mkIds 984;
         };
         services = {
           ${serviceName} = {
@@ -215,9 +211,7 @@
                   chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
                 fi
               '';
-              serviceConfig = {
-                Type = "oneshot";
-              };
+              serviceConfig.Type = "oneshot";
             };
           kanidm = {
             environment = {

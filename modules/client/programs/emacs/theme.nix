@@ -13,9 +13,7 @@
     };
     solaire-mode = {
       enable = true;
-      custom = {
-        solaire-global-mode = "+1";
-      };
+      custom.solaire-global-mode = "+1";
     };
   };
 }

@@ -51,15 +51,11 @@ in
     nodeRoles = [ "webSyncthingServer" ];
     proxyHost = "twothreetunnel";
     rootDisk = "/dev/sda";
-    server = {
-      restic.targets = {
-        SwarselMoonside = {
-          paths = [
-            "/persist/opt/minecraft"
-          ];
-          repository = config.repo.secrets.local.resticRepo;
-        };
-      };
+    server.restic.targets.SwarselMoonside = {
+      paths = [
+        "/persist/opt/minecraft"
+      ];
+      repository = config.repo.secrets.local.resticRepo;
     };
   };
   globals.services.syncthing-moonside.extraConfig = {

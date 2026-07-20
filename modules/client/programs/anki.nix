@@ -35,9 +35,7 @@
             in
             [
               (minimize-to-tray.withConfig {
-                config = {
-                  hide_on_startup = "true";
-                };
+                config.hide_on_startup = "true";
               })
             ];
           hideBottomBar = true;

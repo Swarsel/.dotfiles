@@ -11,9 +11,7 @@
             value = {
               program = "${self.packages.${system}.${name}}/bin/${name}";
               type = "app";
-              meta = {
-                description = "Custom app ${name}.";
-              };
+              meta.description = "Custom app ${name}.";
             };
           }) names
         );

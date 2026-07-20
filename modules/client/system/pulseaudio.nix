@@ -7,11 +7,9 @@
       ...
     }:
     {
-      config = {
-        services.pulseaudio = {
-          enable = lib.mkIf (!config.services.pipewire.enable) true;
-          package = pkgs.pulseaudioFull;
-        };
+      config.services.pulseaudio = {
+        enable = lib.mkIf (!config.services.pipewire.enable) true;
+        package = pkgs.pulseaudioFull;
       };
     };
 }

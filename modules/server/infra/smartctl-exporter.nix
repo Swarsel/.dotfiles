@@ -24,9 +24,7 @@
           name = serviceName;
         };
         globals = {
-          services.${serviceName}.extraConfig = {
-            port = servicePort;
-          };
+          services.${serviceName}.extraConfig.port = servicePort;
         };
         users.persistentIds.smartctl-exporter-access = confLib.mkIds 947;
         services.prometheus.exporters.smartctl = {

@@ -160,9 +160,7 @@ in
                 '';
               })
             ];
-            sessionVariables = {
-              FLAKE = "/home/${mainUser}/.dotfiles";
-            };
+            sessionVariables.FLAKE = "/home/${mainUser}/.dotfiles";
             stateVersion = lib.mkDefault "23.05";
             username = lib.mkDefault mainUser;
           };
@@ -196,9 +194,7 @@ in
             };
           };
           nixpkgs = lib.mkIf isStandaloneLinux {
-            config = {
-              allowUnfree = true;
-            };
+            config.allowUnfree = true;
             overlays = baseOverlays outputs ++ [
               (mkAdditionsOverlay {
                 inherit self config lib;
@@ -212,18 +208,12 @@ in
           sops = lib.mkIf (!config.swarselsystems.isPublic) {
             secrets = {
               attic-cache-key = { };
-              github-api-token = {
-                mode = "0440";
-              };
+              github-api-token.mode = "0440";
             };
-            templates = {
-              netrc = {
-                content = ''
-                      machine ${globals.services.attic.domain}
-                  password ${config.sops.placeholder.attic-cache-key}
-                '';
-              };
-            };
+            templates.netrc.content = ''
+                  machine ${globals.services.attic.domain}
+              password ${config.sops.placeholder.attic-cache-key}
+            '';
           };
         };
       };
@@ -284,9 +274,7 @@ in
                     use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
                   };
                 };
-              systemd.services.nix-daemon = {
-                environment.TMPDIR = "/var/tmp";
-              };
+              systemd.services.nix-daemon.environment.TMPDIR = "/var/tmp";
 
             };
       in
@@ -294,24 +282,20 @@ in
         config = lib.recursiveUpdate {
           sops = lib.mkIf (!minimal) {
             secrets = {
-              attic-cache-key = {
-                owner = mainUser;
-              };
+              attic-cache-key.owner = mainUser;
               github-api-token = {
                 group = "builder";
                 mode = "0440";
                 owner = mainUser;
               };
             };
-            templates = {
-              netrc = {
-                content = ''
-                  machine ${globals.services.attic.domain}
-                  password ${config.sops.placeholder.attic-cache-key}
-                '';
-                group = "builder";
-                owner = mainUser;
-              };
+            templates.netrc = {
+              content = ''
+                machine ${globals.services.attic.domain}
+                password ${config.sops.placeholder.attic-cache-key}
+              '';
+              group = "builder";
+              owner = mainUser;
             };
           };
           users = {

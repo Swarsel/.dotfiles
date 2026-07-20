@@ -12,9 +12,7 @@
       mkForwardedOption =
         path:
         lib.mkOption {
-          default = {
-            _type = "__distributed_config_empty";
-          };
+          default._type = "__distributed_config_empty";
           description = ''
             Anything specified here will be forwarded to `${lib.concatStringsSep "." path}`
             on the given node. Forwarding happens as-is to the raw values,

@@ -68,17 +68,11 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets = {
-            shlink-api = { inherit sopsFile; };
-          };
+          secrets.shlink-api = { inherit sopsFile; };
 
-          templates = {
-            "shlink-env" = {
-              content = ''
-                INITIAL_API_KEY=${config.sops.placeholder.shlink-api}
-              '';
-            };
-          };
+          templates."shlink-env".content = ''
+            INITIAL_API_KEY=${config.sops.placeholder.shlink-api}
+          '';
         };
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
@@ -115,12 +109,10 @@
           map
             (path: {
               name = "${serviceDir}/${path}";
-              value = {
-                d = {
-                  group = "root";
-                  mode = "0750";
-                  user = "1001";
-                };
+              value.d = {
+                group = "root";
+                mode = "0750";
+                user = "1001";
               };
             })
             [

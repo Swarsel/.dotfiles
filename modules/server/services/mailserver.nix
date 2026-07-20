@@ -136,30 +136,26 @@
                 owner = serviceUser;
               };
             };
-            users = {
-              persistentIds = {
-                knot-resolver = confLib.mkIds 963;
-                postfix-tlspol = confLib.mkIds 962;
-                redis-rspamd = confLib.mkIds 960;
-                roundcube = confLib.mkIds 961;
-              };
+            users.persistentIds = {
+              knot-resolver = confLib.mkIds 963;
+              postfix-tlspol = confLib.mkIds 962;
+              redis-rspamd = confLib.mkIds 960;
+              roundcube = confLib.mkIds 961;
             };
             services = {
-              nginx = {
-                virtualHosts = {
-                  "${roundcubeDomain}" = {
-                    acmeRoot = null;
-                    enableACME = false;
-                    forceSSL = true;
-                    locations = {
-                      "/".recommendedSecurityHeaders = false;
-                      "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders =
-                        false;
-                      "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
-                      "~* \\.php(/|$)".recommendedSecurityHeaders = false;
-                    };
-                    useACMEHost = globals.domains.main;
+              nginx.virtualHosts = {
+                "${roundcubeDomain}" = {
+                  acmeRoot = null;
+                  enableACME = false;
+                  forceSSL = true;
+                  locations = {
+                    "/".recommendedSecurityHeaders = false;
+                    "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders =
+                      false;
+                    "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
+                    "~* \\.php(/|$)".recommendedSecurityHeaders = false;
                   };
+                  useACMEHost = globals.domains.main;
                 };
               };
               roundcube = {

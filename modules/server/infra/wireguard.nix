@@ -62,14 +62,12 @@
       ifaceList = builtins.attrValues interfaces;
     in
     {
-      options = {
-        swarselsystems.server.wireguard.interfaces = lib.mkOption {
-          default = interfaces;
-          description = "Derived from globals.wireguard. Do not set directly.";
-          internal = true;
-          readOnly = true;
-          type = lib.types.unspecified;
-        };
+      options.swarselsystems.server.wireguard.interfaces = lib.mkOption {
+        default = interfaces;
+        description = "Derived from globals.wireguard. Do not set directly.";
+        internal = true;
+        readOnly = true;
+        type = lib.types.unspecified;
       };
       config = {
         swarselsystems.enabledServerModules = [ "wireguard" ];
@@ -290,9 +288,7 @@
                     globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv4
                     globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv6
                   ];
-                  linkConfig = {
-                    MTUBytes = 1500 - 4 - 8 - 40 - 8 - 32;
-                  };
+                  linkConfig.MTUBytes = 1500 - 4 - 8 - 40 - 8 - 32;
                   matchConfig.Name = ifName;
                 };
               }

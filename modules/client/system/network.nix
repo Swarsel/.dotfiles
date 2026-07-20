@@ -1,11 +1,9 @@
 {
   flake.modules = {
-    homeManager.network-manager-applet = {
-      config = {
-        swarselsystems.enabledHomeModules = [ "nm-applet" ];
-        services.network-manager-applet.enable = true;
-        xsession.preferStatusNotifierItems = true; # needed for indicator icon to show
-      };
+    homeManager.network-manager-applet.config = {
+      swarselsystems.enabledHomeModules = [ "nm-applet" ];
+      services.network-manager-applet.enable = true;
+      xsession.preferStatusNotifierItems = true; # needed for indicator icon to show
     };
     nixos.network =
       {
@@ -32,30 +30,22 @@
         iwd = config.networking.networkmanager.wifi.backend == "iwd";
       in
       {
-        options.swarselsystems = {
-          firewall = lib.swarselsystems.mkTrueOption;
-        };
+        options.swarselsystems.firewall = lib.swarselsystems.mkTrueOption;
         config = {
 
           sops = {
             secrets = lib.mkIf (!config.swarselsystems.isPublic) {
               eduroam-pw = { };
               eduroam-user = { };
-              home-wireguard-client-private-key = {
-                sopsFile = clientSopsFile;
-              };
+              home-wireguard-client-private-key.sopsFile = clientSopsFile;
               home-wireguard-endpoint = { };
               home-wireguard-server-public-key = { };
               laptop-hotspot-pw = { };
               mobile-hotspot-pw = { };
               pia-vpn-pw = { };
               pia-vpn-user = { };
-              pia-vpn1-ca-pem = {
-                sopsFile = certsSopsFile;
-              };
-              pia-vpn1-crl-pem = {
-                sopsFile = certsSopsFile;
-              };
+              pia-vpn1-ca-pem.sopsFile = certsSopsFile;
+              pia-vpn1-crl-pem.sopsFile = certsSopsFile;
               wlan1-pw = { };
               wlan2-pw = { };
             };
@@ -75,9 +65,7 @@
               '';
             };
           };
-          users.persistentIds = {
-            nm-iodine = confLib.mkIds 957;
-          };
+          users.persistentIds.nm-iodine = confLib.mkIds 957;
           services.resolved.enable = true;
           networking = {
             enableIPv6 = lib.mkDefault true;
@@ -118,9 +106,7 @@
                         id = mobile1;
                         type = "wifi";
                       };
-                      ipv4 = {
-                        method = "auto";
-                      };
+                      ipv4.method = "auto";
                       ipv6 = {
                         addr-gen-mode = "default";
                         method = "auto";
@@ -170,9 +156,7 @@
                         id = "Hotspot";
                         type = "wifi";
                       };
-                      ipv4 = {
-                        method = "shared";
-                      };
+                      ipv4.method = "shared";
                       ipv6 = {
                         addr-gen-mode = "default";
                         method = "ignore";
@@ -200,9 +184,7 @@
                         auto-negotiate = "true";
                         cloned-mac-address = "preserve";
                       };
-                      ipv4 = {
-                        method = "shared";
-                      };
+                      ipv4.method = "shared";
                       ipv6 = {
                         addr-gen-mode = "stable-privacy";
                         method = "auto";
@@ -221,9 +203,7 @@
                         id = "eduroam";
                         type = "wifi";
                       };
-                      ipv4 = {
-                        method = "auto";
-                      };
+                      ipv4.method = "auto";
                       ipv6 = {
                         addr-gen-mode = "default";
                         method = "auto";
@@ -254,9 +234,7 @@
                         method = "ignore";
                       };
                       proxy = { };
-                      wireguard = {
-                        private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY";
-                      };
+                      wireguard.private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY";
                       "wireguard-peer.$HOME_WIREGURARD_SERVER_PUBLIC_KEY" = {
                         allowed-ips = home-wireguard-allowed-ips;
                         endpoint = "$HOME_WIREGUARD_ENDPOINT";
@@ -285,9 +263,7 @@
                         id = "PIA ${vpn1-location}";
                         type = "vpn";
                       };
-                      ipv4 = {
-                        method = "auto";
-                      };
+                      ipv4.method = "auto";
                       ipv6 = {
                         addr-gen-mode = "stable-privacy";
                         method = "auto";
@@ -309,9 +285,7 @@
                         service-type = "org.freedesktop.NetworkManager.openvpn";
                         username = "$PIA_VPN_USER";
                       };
-                      vpn-secrets = {
-                        password = "$PIA_VPN_PW";
-                      };
+                      vpn-secrets.password = "$PIA_VPN_PW";
                     };
 
                   };
@@ -328,12 +302,8 @@
             wireless.iwd = {
               enable = true;
               settings = {
-                IPv6 = {
-                  Enabled = true;
-                };
-                Settings = {
-                  AutoConnect = true;
-                };
+                IPv6.Enabled = true;
+                Settings.AutoConnect = true;
                 # DriverQuirks = {
                 #   UseDefaultInterface = true;
                 # };

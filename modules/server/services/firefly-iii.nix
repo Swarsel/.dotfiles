@@ -68,15 +68,11 @@
             path = "/health";
           };
         };
-        sops = {
-          secrets = {
-            "firefly-iii-app-key" = {
-              inherit sopsFile;
-              group = if cfg.enableNginx then nginxGroup else serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
-          };
+        sops.secrets."firefly-iii-app-key" = {
+          inherit sopsFile;
+          group = if cfg.enableNginx then nginxGroup else serviceGroup;
+          mode = "0440";
+          owner = serviceUser;
         };
         users = {
           users.${serviceUser} = {
@@ -85,9 +81,7 @@
             isSystemUser = true;
           };
           groups.${serviceGroup} = { };
-          persistentIds = {
-            firefly-iii = confLib.mkIds 983;
-          };
+          persistentIds.firefly-iii = confLib.mkIds 983;
         };
         services = {
           ${serviceName} = {
@@ -111,20 +105,14 @@
             virtualHost = serviceDomain;
           };
 
-          nginx = {
-            virtualHosts = {
-              "${serviceDomain}" = {
-                locations = {
-                  "/api" = {
-                    # setOauth2Headers = false;
-                    extraConfig = ''
-                      index index.php;
-                      try_files $uri $uri/ /index.php?$query_string;
-                      add_header Access-Control-Allow-Methods 'GET, POST, HEAD, OPTIONS';
-                    '';
-                  };
-                };
-              };
+          nginx.virtualHosts = {
+            "${serviceDomain}".locations."/api" = {
+              # setOauth2Headers = false;
+              extraConfig = ''
+                index index.php;
+                try_files $uri $uri/ /index.php?$query_string;
+                add_header Access-Control-Allow-Methods 'GET, POST, HEAD, OPTIONS';
+              '';
             };
           };
         };
@@ -141,10 +129,8 @@
           let
             genNginx = toAddress: extraConfig: {
               upstreams = {
-                ${serviceName} = {
-                  servers = {
-                    "${toAddress}:${builtins.toString servicePort}" = { };
-                  };
+                ${serviceName}.servers = {
+                  "${toAddress}:${builtins.toString servicePort}" = { };
                 };
               };
               virtualHosts = {
@@ -153,9 +139,7 @@
                   acmeRoot = null;
                   forceSSL = true;
                   locations = {
-                    "/" = {
-                      proxyPass = "http://${serviceName}";
-                    };
+                    "/".proxyPass = "http://${serviceName}";
                     "/api" = {
                       bypassAuth = true;
                       proxyPass = "http://${serviceName}";

@@ -28,12 +28,8 @@
             includes = [
               {
                 contents = {
-                  commit = {
-                    template = "~/.gitmessage";
-                  };
-                  github = {
-                    user = gitUser;
-                  };
+                  commit.template = "~/.gitmessage";
+                  github.user = gitUser;
                 };
               }
             ];

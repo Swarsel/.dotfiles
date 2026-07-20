@@ -80,13 +80,11 @@
           };
         };
         users = {
-          users.${serviceUser} = {
-            extraGroups = [
-              "video"
-              "render"
-              "users"
-            ];
-          };
+          users.${serviceUser}.extraGroups = [
+            "video"
+            "render"
+            "users"
+          ];
           persistentIds = {
             immich = confLib.mkIds 989;
             redis-immich = confLib.mkIds 977;
@@ -95,9 +93,7 @@
         services.${serviceName} = {
           enable = true;
           package = pkgs.immich;
-          environment = {
-            IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
-          };
+          environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
           host = "0.0.0.0";
           # openFirewall = true;
           mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir

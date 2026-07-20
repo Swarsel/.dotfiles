@@ -29,9 +29,7 @@
           icon = "${self}/files/topology-images/${serviceName}.png";
           name = lib.toUpper serviceName;
         };
-        sops.secrets = {
-          tsig-key = { inherit sopsFile; };
-        };
+        sops.secrets.tsig-key = { inherit sopsFile; };
         services.nsd = {
           enable = true;
           interfaces = [

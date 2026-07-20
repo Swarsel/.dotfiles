@@ -56,17 +56,13 @@ in
   };
   home-manager.users."${primaryUser}" = {
     # home.stateVersion = lib.mkForce "23.05";
-    swarselsystems = {
-      monitors = {
-        main = {
-          mode = "1920x1080"; # TEMPLATE
-          name = "LG Display 0x04EF Unknown";
-          output = "eDP-1";
-          position = "1920,0";
-          scale = "1";
-          workspace = "15:L";
-        };
-      };
+    swarselsystems.monitors.main = {
+      mode = "1920x1080"; # TEMPLATE
+      name = "LG Display 0x04EF Unknown";
+      output = "eDP-1";
+      position = "1920,0";
+      scale = "1";
+      workspace = "15:L";
     };
   };
 }

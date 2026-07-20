@@ -75,9 +75,7 @@
           };
         };
         users = {
-          users.${serviceUser} = {
-            extraGroups = [ "users" ];
-          };
+          users.${serviceUser}.extraGroups = [ "users" ];
           persistentIds.kavita = confLib.mkIds 995;
         };
         services.${serviceName} = {

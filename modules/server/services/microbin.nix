@@ -83,17 +83,15 @@
             };
           };
 
-          templates = {
-            "microbin-env" = {
-              content = ''
-                MICROBIN_ADMIN_USERNAME="${config.sops.placeholder.microbin-admin-username}"
-                MICROBIN_ADMIN_PASSWORD="${config.sops.placeholder.microbin-admin-password}"
-                MICROBIN_UPLOADER_PASSWORD="${config.sops.placeholder.microbin-uploader-password}"
-              '';
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
+          templates."microbin-env" = {
+            content = ''
+              MICROBIN_ADMIN_USERNAME="${config.sops.placeholder.microbin-admin-username}"
+              MICROBIN_ADMIN_PASSWORD="${config.sops.placeholder.microbin-admin-password}"
+              MICROBIN_UPLOADER_PASSWORD="${config.sops.placeholder.microbin-uploader-password}"
+            '';
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
         };
         users = {
@@ -147,12 +145,10 @@
           }
         ];
         systemd.services = {
-          ${serviceName} = {
-            serviceConfig = {
-              DynamicUser = lib.mkForce false;
-              Group = serviceGroup;
-              User = serviceUser;
-            };
+          ${serviceName}.serviceConfig = {
+            DynamicUser = lib.mkForce false;
+            Group = serviceGroup;
+            User = serviceUser;
           };
         };
         nodes = lib.mkMerge [

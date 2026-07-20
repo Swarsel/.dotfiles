@@ -107,14 +107,12 @@
                 xff-src = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".cidrv4;
               };
               user = serviceUser;
-              volumes = {
-                "/" = {
-                  access = {
-                    rw = "guest";
-                    rwmda = mainUser;
-                  };
-                  path = dataDir;
+              volumes."/" = {
+                access = {
+                  rw = "guest";
+                  rwmda = mainUser;
                 };
+                path = dataDir;
               };
             };
             environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [

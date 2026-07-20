@@ -6,9 +6,7 @@
     {
       config = {
         swarselsystems.enabledHomeModules = [ "obs-studio" ];
-        programs.${moduleName} = {
-          enable = true;
-        };
+        programs.${moduleName}.enable = true;
       };
     };
 }

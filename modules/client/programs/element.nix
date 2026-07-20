@@ -14,11 +14,7 @@
             voip = false;
             widgets = false;
           };
-          default_server_config = {
-            "m.homeserver" = {
-              base_url = "https://${globals.services.matrix.domain}/";
-            };
-          };
+          default_server_config."m.homeserver".base_url = "https://${globals.services.matrix.domain}/";
         };
       };
     };

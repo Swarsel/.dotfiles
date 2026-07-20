@@ -84,57 +84,53 @@
           };
           koillection-env-file = { inherit sopsFile; };
         };
-        services = {
-          postgresql = {
-            enable = true;
-            authentication = ''
-              host ${serviceDB} ${serviceDB} 10.88.0.0/16 scram-sha-256
-            '';
-            enableTCPIP = true;
-            ensureDatabases = [ serviceDB ];
-            ensureUsers = [
-              {
-                ensureDBOwnership = true;
-                name = serviceDB;
-              }
-            ];
-          };
+        services.postgresql = {
+          enable = true;
+          authentication = ''
+            host ${serviceDB} ${serviceDB} 10.88.0.0/16 scram-sha-256
+          '';
+          enableTCPIP = true;
+          ensureDatabases = [ serviceDB ];
+          ensureUsers = [
+            {
+              ensureDBOwnership = true;
+              name = serviceDB;
+            }
+          ];
         };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [ { directory = "/var/lib/${serviceName}"; } ];
         };
-        virtualisation.oci-containers.containers = {
-          koillection = {
-            environment = {
-              APP_DEBUG = "0";
-              APP_ENV = "prod";
-              CORS_ALLOW_ORIGIN = "https?://(localhost|swag\\.swarsel\\.win)(:[0-9]+)?$";
-              DB_DRIVER = "pdo_pgsql";
-              DB_HOST = "host.docker.internal";
-              DB_NAME = serviceDB;
-              # DB_PASSWORD set in koillection-env-file
-              DB_PORT = "${toString postgresPort}";
-              DB_USER = serviceUser;
-              DB_VERSION = "16";
-              HTTPS_ENABLED = "1";
-              PHP_MEMORY_LIMIT = "512M";
-              PHP_TZ = config.repo.secrets.common.location.timezone;
-              UPLOAD_MAX_FILESIZE = "512M";
-            };
-            environmentFiles = [
-              config.sops.secrets.koillection-env-file.path
-            ];
-            extraOptions = [
-              "--add-host=host.docker.internal:host-gateway" # podman
-            ];
-            image = "koillection/koillection@${containerRev}";
-            ports = [
-              "${toString servicePort}:80"
-            ];
-            volumes = [
-              "${serviceDir}/uploads:/uploads"
-            ];
+        virtualisation.oci-containers.containers.koillection = {
+          environment = {
+            APP_DEBUG = "0";
+            APP_ENV = "prod";
+            CORS_ALLOW_ORIGIN = "https?://(localhost|swag\\.swarsel\\.win)(:[0-9]+)?$";
+            DB_DRIVER = "pdo_pgsql";
+            DB_HOST = "host.docker.internal";
+            DB_NAME = serviceDB;
+            # DB_PASSWORD set in koillection-env-file
+            DB_PORT = "${toString postgresPort}";
+            DB_USER = serviceUser;
+            DB_VERSION = "16";
+            HTTPS_ENABLED = "1";
+            PHP_MEMORY_LIMIT = "512M";
+            PHP_TZ = config.repo.secrets.common.location.timezone;
+            UPLOAD_MAX_FILESIZE = "512M";
           };
+          environmentFiles = [
+            config.sops.secrets.koillection-env-file.path
+          ];
+          extraOptions = [
+            "--add-host=host.docker.internal:host-gateway" # podman
+          ];
+          image = "koillection/koillection@${containerRev}";
+          ports = [
+            "${toString servicePort}:80"
+          ];
+          volumes = [
+            "${serviceDir}/uploads:/uploads"
+          ];
         };
         # networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
         systemd.services.postgresql.postStart =

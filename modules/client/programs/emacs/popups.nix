@@ -7,9 +7,7 @@
 
     popper = {
       enable = true;
-      bind = {
-        "M-[" = "popper-toggle";
-      };
+      bind."M-[" = "popper-toggle";
       init = ''
         (setq popper-reference-buffers
               '("\\*Messages\\*"

@@ -13,9 +13,7 @@
       config = {
         swarselsystems = {
           enabledHomeModules = [ "attic-client" ];
-          homeSopsSecrets = {
-            attic-cache-key = { };
-          };
+          homeSopsSecrets.attic-cache-key = { };
         };
         programs.attic-client = {
           enable = true;

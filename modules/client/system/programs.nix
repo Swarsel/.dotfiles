@@ -87,19 +87,13 @@
             enableZshIntegration = true;
           };
         };
-        home.sessionVariables = {
-          _ZO_EXCLUDE_DIRS = "$HOME:$HOME/.ansible/*:$HOME/test/*:/persist";
-        };
+        home.sessionVariables._ZO_EXCLUDE_DIRS = "$HOME:$HOME/.ansible/*:$HOME/test/*:/persist";
       };
     };
-    nixos.programs = {
-      config = {
-        programs = {
-          dconf.enable = true;
-          evince.enable = true;
-          kdeconnect.enable = true;
-        };
-      };
+    nixos.programs.config.programs = {
+      dconf.enable = true;
+      evince.enable = true;
+      kdeconnect.enable = true;
     };
   };
 }

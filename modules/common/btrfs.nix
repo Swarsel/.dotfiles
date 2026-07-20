@@ -4,9 +4,7 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "btrfs" ];
-        boot = {
-          supportedFilesystems = lib.mkIf config.swarselsystems.isBtrfs [ "btrfs" ];
-        };
+        boot.supportedFilesystems = lib.mkIf config.swarselsystems.isBtrfs [ "btrfs" ];
       };
     };
 }

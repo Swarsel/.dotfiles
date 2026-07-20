@@ -11,32 +11,30 @@
       inherit (config.swarselsystems.server.restic) targets;
     in
     {
-      options.swarselsystems.server.restic = {
-        targets = lib.mkOption {
-          default = { };
-          type = lib.types.attrsOf (
-            lib.types.submodule (
-              { name, ... }: {
-                options = {
-                  bucketName = lib.mkOption {
-                    default = name;
-                    type = lib.types.str;
-                  };
-                  paths = lib.mkOption {
-                    type = lib.types.listOf lib.types.str;
-                  };
-                  repository = lib.mkOption {
-                    type = lib.types.str;
-                  };
-                  withPostgres = lib.mkOption {
-                    default = false;
-                    type = lib.types.bool;
-                  };
+      options.swarselsystems.server.restic.targets = lib.mkOption {
+        default = { };
+        type = lib.types.attrsOf (
+          lib.types.submodule (
+            { name, ... }: {
+              options = {
+                bucketName = lib.mkOption {
+                  default = name;
+                  type = lib.types.str;
                 };
-              }
-            )
-          );
-        };
+                paths = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                };
+                repository = lib.mkOption {
+                  type = lib.types.str;
+                };
+                withPostgres = lib.mkOption {
+                  default = false;
+                  type = lib.types.bool;
+                };
+              };
+            }
+          )
+        );
       };
       config = {
         swarselsystems.enabledServerModules = [ "restic" ];
@@ -86,9 +84,7 @@
               "--keep-monthly 3"
               "--keep-yearly 100"
             ];
-            timerConfig = {
-              OnCalendar = "03:00";
-            };
+            timerConfig.OnCalendar = "03:00";
           }
         ) targets;
       };

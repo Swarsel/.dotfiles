@@ -44,32 +44,28 @@
     networkKernelModules = [ "igb" ];
     proxyHost = "twothreetunnel";
     rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
-    server = {
-      restic.targets = {
-        SwarselState = {
-          # nextcloud stores all data in state dir and has no data that needs backup
-          paths = lib.map (guest: "/Vault/guests/${guest}/state") (
-            builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests)
-          );
-          repository = config.repo.secrets.local.resticRepoState;
-        };
-        SwarselStorage = {
-          paths = [
-            "/Vault/Eternor/Pictures"
-            "/Vault/Eternor/Documents/paperless"
-          ];
-          repository = config.repo.secrets.local.resticRepoStorage;
-        };
+    server.restic.targets = {
+      SwarselState = {
+        # nextcloud stores all data in state dir and has no data that needs backup
+        paths = lib.map (guest: "/Vault/guests/${guest}/state") (
+          builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests)
+        );
+        repository = config.repo.secrets.local.resticRepoState;
+      };
+      SwarselStorage = {
+        paths = [
+          "/Vault/Eternor/Pictures"
+          "/Vault/Eternor/Documents/paperless"
+        ];
+        repository = config.repo.secrets.local.resticRepoStorage;
       };
     };
     withMicroVMs = true;
     writeGlobalNetworks = false;
   };
-  topology.self = {
-    interfaces = {
-      "bmc" = { };
-      "lan" = { };
-    };
+  topology.self.interfaces = {
+    "bmc" = { };
+    "lan" = { };
   };
   boot = {
     blacklistedKernelModules = [

@@ -43,14 +43,10 @@
               enable = true;
               envFile = confLib.getConfig.sops.secrets."claude-mcp-env".path;
               extraEnvFiles = [ confLib.getConfig.sops.secrets."context7-mcp-env".path ];
-              extraServers = {
-                context7 = {
-                  headers = {
-                    Authorization = "Bearer \${CONTEXT7_API_KEY}";
-                  };
-                  type = "http";
-                  url = "https://mcp.context7.com/mcp";
-                };
+              extraServers.context7 = {
+                headers.Authorization = "Bearer \${CONTEXT7_API_KEY}";
+                type = "http";
+                url = "https://mcp.context7.com/mcp";
               };
             };
           };
@@ -62,18 +58,10 @@
             path = "${homeDir}/.aws/certs/harica-root.pem";
             sopsFile = certsSopsFile;
           };
-          ucKey = {
-            sopsFile = workSopsFile;
-          };
-          yubikey-1 = {
-            sopsFile = workSopsFile;
-          };
-          yubikey-2 = {
-            sopsFile = workSopsFile;
-          };
-          yubikey-3 = {
-            sopsFile = workSopsFile;
-          };
+          ucKey.sopsFile = workSopsFile;
+          yubikey-1.sopsFile = workSopsFile;
+          yubikey-2.sopsFile = workSopsFile;
+          yubikey-3.sopsFile = workSopsFile;
         };
         programs =
           let
@@ -123,16 +111,12 @@
                   "${user1}" = lib.recursiveUpdate {
                     inherit isDefault;
                     id = 1;
-                    settings = {
-                      "browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user1};
-                    };
+                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user1};
                   } vars.firefox;
                   "${user2}" = lib.recursiveUpdate {
                     inherit isDefault;
                     id = 2;
-                    settings = {
-                      "browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user2};
-                    };
+                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user2};
                   } vars.firefox;
                   "${user3}" = lib.recursiveUpdate {
                     inherit isDefault;
@@ -285,9 +269,7 @@
             ontap-mcp
             rustdesk-vbc
           ];
-          sessionVariables = {
-            AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
-          };
+          sessionVariables.AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
         };
         xdg =
           let
@@ -314,58 +296,42 @@
                   user3
                 ]
               );
-            mimeApps = {
-              defaultApplications = {
-                "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+            mimeApps.defaultApplications."x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+          };
+        systemd.user = {
+          services = {
+            onepassword-applet = {
+              Install.WantedBy = [ "tray.target" ];
+              Service.ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
+              Unit = {
+                After = [
+                  "graphical-session.target"
+                  "tray.target"
+                ];
+                Description = "1password applet";
+                PartOf = [
+                  "tray.target"
+                ];
+                Requires = [ "graphical-session.target" ];
+              };
+            };
+            teams-applet = {
+              Install.WantedBy = [ "tray.target" ];
+              Service.ExecStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+              Unit = {
+                After = [
+                  "graphical-session.target"
+                  "tray.target"
+                ];
+                Description = "teams applet";
+                PartOf = [
+                  "tray.target"
+                ];
+                Requires = [ "graphical-session.target" ];
               };
             };
           };
-        systemd = {
-          user = {
-            services = {
-              onepassword-applet = {
-                Install = {
-                  WantedBy = [ "tray.target" ];
-                };
-                Service = {
-                  ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
-                };
-                Unit = {
-                  After = [
-                    "graphical-session.target"
-                    "tray.target"
-                  ];
-                  Description = "1password applet";
-                  PartOf = [
-                    "tray.target"
-                  ];
-                  Requires = [ "graphical-session.target" ];
-                };
-              };
-              teams-applet = {
-                Install = {
-                  WantedBy = [ "tray.target" ];
-                };
-                Service = {
-                  ExecStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
-                };
-                Unit = {
-                  After = [
-                    "graphical-session.target"
-                    "tray.target"
-                  ];
-                  Description = "teams applet";
-                  PartOf = [
-                    "tray.target"
-                  ];
-                  Requires = [ "graphical-session.target" ];
-                };
-              };
-            };
-            sessionVariables = {
-              DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
-            };
-          };
+          sessionVariables.DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
         };
       };
     };

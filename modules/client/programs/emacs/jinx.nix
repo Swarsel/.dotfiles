@@ -7,9 +7,7 @@
           "C-M-$" = "jinx-languages";
           "M-$" = "jinx-correct";
         };
-        custom = {
-          jinx-languages = ''"en_US"'';
-        };
+        custom.jinx-languages = ''"en_US"'';
         hook = [
           "(text-mode . jinx-mode)"
           "(prog-mode . jinx-mode)"

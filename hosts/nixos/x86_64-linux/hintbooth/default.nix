@@ -41,65 +41,61 @@
     swapSize = "8G";
     withMicroVMs = true;
   };
-  topology.self = {
-    interfaces = {
-      lan2.physicalConnections = [
-        {
-          interface = "lan";
-          node = "summers";
-        }
-      ];
-      lan3.physicalConnections = [
-        {
-          interface = "bmc";
-          node = "summers";
-        }
-      ];
-      lan4.physicalConnections = [
-        {
-          interface = "eth1";
-          node = "switch-bedroom";
-        }
-      ];
-      lan5.physicalConnections = [
-        {
-          interface = "eth1";
-          node = "switch-livingroom";
-        }
-      ];
-    };
+  topology.self.interfaces = {
+    lan2.physicalConnections = [
+      {
+        interface = "lan";
+        node = "summers";
+      }
+    ];
+    lan3.physicalConnections = [
+      {
+        interface = "bmc";
+        node = "summers";
+      }
+    ];
+    lan4.physicalConnections = [
+      {
+        interface = "eth1";
+        node = "switch-bedroom";
+      }
+    ];
+    lan5.physicalConnections = [
+      {
+        interface = "eth1";
+        node = "switch-livingroom";
+      }
+    ];
   };
-  globals = {
-    wireguard.wgHome = {
-      clients = [
-        "hintbooth-adguardhome"
-        "hintbooth-nginx"
-        "summers"
-        "summers-ankisync"
-        "summers-atuin"
-        "summers-audio"
-        "summers-firefly"
-        "summers-forgejo"
-        "summers-freshrss"
-        "summers-homebox"
-        "summers-immich"
-        "summers-jellyfin"
-        "summers-kanidm"
-        "summers-kavita"
-        "summers-koillection"
-        "summers-matrix"
-        "summers-mealie"
-        "summers-monitoring"
-        "summers-nextcloud"
-        "summers-paperless"
-        "summers-radicale"
-        "summers-storage"
-        "summers-transmission"
-        "winters"
-      ];
-      netConfigPrefix = "home";
-      server = config.node.name;
-    };
+  globals.wireguard.wgHome = {
+    clients = [
+      "hintbooth-adguardhome"
+      "hintbooth-nginx"
+      "summers"
+      "summers-ankisync"
+      "summers-atuin"
+      "summers-audio"
+      "summers-firefly"
+      "summers-forgejo"
+      "summers-freshrss"
+      "summers-homebox"
+      "summers-immich"
+      "summers-jellyfin"
+      "summers-kanidm"
+      "summers-kavita"
+      "summers-koillection"
+      "summers-matrix"
+      "summers-mealie"
+      "summers-monitoring"
+      "summers-nextcloud"
+      "summers-paperless"
+      "summers-radicale"
+      "summers-storage"
+      "summers-transmission"
+      "winters"
+    ];
+    netConfigPrefix = "home";
+    server = config.node.name;
   };
 
 }

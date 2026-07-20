@@ -75,9 +75,7 @@
             };
           };
           groups = {
-            ${serviceGroup} = {
-              gid = 61593;
-            };
+            ${serviceGroup}.gid = 61593;
           };
         };
         services.${serviceName} = {
@@ -134,9 +132,7 @@
             mpv
           ];
         };
-        hardware = {
-          enableAllFirmware = lib.mkForce true;
-        };
+        hardware.enableAllFirmware = lib.mkForce true;
         # services.snapserver = {
         #   enable = true;
         #   settings = {
@@ -150,9 +146,7 @@
         systemd.services = {
           ${serviceName} = {
             after = [ "pipewire.service" ];
-            environment = {
-              PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
-            };
+            environment.PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
             serviceConfig = {
               PrivateDevices = lib.mkForce false;
               PrivateTmp = lib.mkForce false;
@@ -168,10 +162,8 @@
           let
             genNginx = toAddress: extraConfigPre: {
               upstreams = {
-                ${serviceName} = {
-                  servers = {
-                    "${toAddress}:${builtins.toString servicePort}" = { };
-                  };
+                ${serviceName}.servers = {
+                  "${toAddress}:${builtins.toString servicePort}" = { };
                 };
               };
               virtualHosts = {

@@ -88,21 +88,17 @@
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             };
             sops = {
-              secrets = {
-                invidious-companion-key = {
-                  inherit sopsFile;
-                  mode = "0444";
-                };
+              secrets.invidious-companion-key = {
+                inherit sopsFile;
+                mode = "0444";
               };
 
-              templates = {
-                "invidious-companion.env" = {
-                  content = ''
-                    SERVER_SECRET_KEY=${config.sops.placeholder.invidious-companion-key}
-                    HOST=0.0.0.0
-                  '';
-                  mode = "0444";
-                };
+              templates."invidious-companion.env" = {
+                content = ''
+                  SERVER_SECRET_KEY=${config.sops.placeholder.invidious-companion-key}
+                  HOST=0.0.0.0
+                '';
+                mode = "0444";
               };
             };
             programs.nix-ld.enable = true; # invidious-companion runs as an unpatched deno app
@@ -121,10 +117,8 @@
               let
                 genNginx = toAddress: extraConfig: {
                   upstreams = {
-                    "${serviceName}" = {
-                      servers = {
-                        "${toAddress}:${builtins.toString servicePort}" = { };
-                      };
+                    "${serviceName}".servers = {
+                      "${toAddress}:${builtins.toString servicePort}" = { };
                     };
                   };
                   virtualHosts = {
@@ -132,11 +126,9 @@
                       inherit extraConfig;
                       acmeRoot = null;
                       forceSSL = true;
-                      locations = {
-                        "/companion" = {
-                          bypassAuth = true;
-                          proxyPass = "http://${serviceName}";
-                        };
+                      locations."/companion" = {
+                        bypassAuth = true;
+                        proxyPass = "http://${serviceName}";
                       };
                       useACMEHost = globals.domains.main;
                     };

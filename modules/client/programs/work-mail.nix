@@ -15,19 +15,17 @@
       config = {
         services.pizauth = {
           enable = true;
-          accounts = {
-            work = {
-              authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-              clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-              clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-              loginHint = mailAddress;
-              scopes = [
-                "https://outlook.office365.com/IMAP.AccessAsUser.All"
-                "https://outlook.office365.com/SMTP.Send"
-                "offline_access"
-              ];
-              tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-            };
+          accounts.work = {
+            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+            loginHint = mailAddress;
+            scopes = [
+              "https://outlook.office365.com/IMAP.AccessAsUser.All"
+              "https://outlook.office365.com/SMTP.Send"
+              "offline_access"
+            ];
+            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
           };
           extraConfig = ''
               auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
@@ -49,11 +47,7 @@
             mbsync = {
               enable = true;
               expunge = "both";
-              extraConfig = {
-                account = {
-                  AuthMechs = "XOAUTH2";
-                };
-              };
+              extraConfig.account.AuthMechs = "XOAUTH2";
               patterns = [ "INBOX" ];
             };
             msmtp = {
@@ -92,16 +86,14 @@
             };
             userName = mailAddress;
           };
-        systemd = {
-          user = {
-            services.pizauth.Service.ExecStartPost = [
-              "${pkgs.toybox}/bin/sleep 1"
-              "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
-            ];
-            sessionVariables = lib.optionalAttrs (!config.swarselsystems.isPublic) {
-              SWARSEL_MAIL_ALL = lib.mkForce "${confLib.getConfig.repo.secrets.common.mail.allMailAddresses},${mailAddress}";
-              SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
-            };
+        systemd.user = {
+          services.pizauth.Service.ExecStartPost = [
+            "${pkgs.toybox}/bin/sleep 1"
+            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
+          ];
+          sessionVariables = lib.optionalAttrs (!config.swarselsystems.isPublic) {
+            SWARSEL_MAIL_ALL = lib.mkForce "${confLib.getConfig.repo.secrets.common.mail.allMailAddresses},${mailAddress}";
+            SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
           };
         };
       };

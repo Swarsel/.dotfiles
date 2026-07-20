@@ -36,27 +36,21 @@
     isSwap = false;
     proxyHost = "twothreetunnel";
     rootDisk = "/dev/sda";
-    server = {
-      garage = {
-        buckets = [
-          "attic"
-        ];
-        data_dir = {
-          capacity = "150G";
-          path = "/var/lib/garage/data";
-        };
-        keys = {
-          nixos = [
-            "attic"
-          ];
-        };
+    server.garage = {
+      buckets = [
+        "attic"
+      ];
+      data_dir = {
+        capacity = "150G";
+        path = "/var/lib/garage/data";
       };
+      keys.nixos = [
+        "attic"
+      ];
     };
   };
 
-  topology.self = {
-    icon = "devices.cloud-server";
-  };
+  topology.self.icon = "devices.cloud-server";
 
   # use SSH key with own limits for nixbuild.net instead of the general one in remotebuild.nix
   sops.secrets.nixbuild-net-key = lib.mkForce {

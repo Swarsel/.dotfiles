@@ -30,9 +30,7 @@
 
           homeSopsSecrets = {
             emacs-radicale-pw = { };
-            fever-pw = {
-              path = "${homeDir}/.emacs.d/.fever";
-            };
+            fever-pw.path = "${homeDir}/.emacs.d/.fever";
             github-forge-token = { };
           };
 
