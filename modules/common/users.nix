@@ -43,8 +43,8 @@
               password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
               subGidRanges = [
                 {
-                  count = 999;
-                  startGid = 1001;
+                  count = 65534;
+                  startGid = 100001;
                 }
               ];
               subUidRanges = [
