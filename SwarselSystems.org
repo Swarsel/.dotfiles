@@ -18547,15 +18547,17 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
   {
     flake.modules.homeManager.glide.programs.glide-browser.config = ''
       let url_entries: { star: boolean; title: string; url: string }[] = [];
+      let url_entry_set = new Set<string>();
+      const live_history = new Map<string, { star: boolean; title: string; url: string }>();
       let url_entries_timer: ReturnType<typeof setTimeout> | null = null;
 
       async function refresh_url_entries() {
         const [bookmarks, history] = await Promise.all([
           browser.bookmarks.search({}),
-          browser.history.search({ text: "", startTime: 0, maxResults: 300 }),
+          browser.history.search({ text: "", startTime: 0, maxResults: 1000 }),
         ]);
         history.sort((a, b) => (b.lastVisitTime ?? 0) - (a.lastVisitTime ?? 0));
-        const seen = new Set();
+        const seen = new Set<string>();
         const entries: typeof url_entries = [];
         for (const item of [...history.map((h) => ({ ...h, star: false })), ...bookmarks.map((b) => ({ ...b, star: true }))]) {
           if (!item.url || seen.has(item.url)) continue;
@@ -18563,6 +18565,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           entries.push({ star: item.star, title: item.title ?? "", url: item.url });
         }
         url_entries = entries;
+        url_entry_set = seen;
       }
 
       function schedule_url_entries_refresh() {
@@ -18668,6 +18671,26 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         const slot_titles: HTMLElement[] = [];
         const slot_urls: HTMLElement[] = [];
         let slot_query: string | null = null;
+        let live_query: string | null = null;
+
+        async function fetch_live(q: string) {
+          if (live_query === q) {
+            return;
+          }
+          live_query = q;
+          const results = await browser.history.search({ text: q, startTime: 0, maxResults: 100 });
+          let added = false;
+          for (const item of results) {
+            if (!item.url || url_entry_set.has(item.url) || live_history.has(item.url)) continue;
+            live_history.set(item.url, { star: false, title: item.title ?? "", url: item.url });
+            added = true;
+          }
+          if (added && slot_query != null && slot_query.trim().toLowerCase() === q) {
+            const current = slot_query;
+            slot_query = null;
+            recompute_slots(current);
+          }
+        }
 
         function recompute_slots(input: string) {
           if (input === slot_query) {
@@ -18681,6 +18704,15 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
             if (q === "" || entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q)) {
               slot_items.push(entry);
             }
+          }
+          if (q !== "") {
+            for (const entry of live_history.values()) {
+              if (slot_items.length >= SLOTS) break;
+              if (!url_entry_set.has(entry.url) && (entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q))) {
+                slot_items.push(entry);
+              }
+            }
+            void fetch_live(q);
           }
           for (let i = 0; i < slot_items.length; i++) {
             slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
