@@ -146,7 +146,10 @@
         systemd.services = {
           ${serviceName} = {
             after = [ "pipewire.service" ];
-            environment.PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
+            environment = {
+              PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
+              SQLITE_TMPDIR = "/dev/shm";
+            };
             serviceConfig = {
               PrivateDevices = lib.mkForce false;
               PrivateTmp = lib.mkForce false;
