@@ -71,6 +71,7 @@
           settings = {
             analytics.reporting_enabled = false;
             memberlist.bind_port = memberlistPort;
+            metastore.address = "localhost:9098";
             multitenancy_enabled = false;
             pyroscopedb.data_path = "${serviceDir}/pyroscope";
             server = {
