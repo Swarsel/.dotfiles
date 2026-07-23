@@ -3911,7 +3911,23 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 vesktop = prev.vesktop.override {
                   withSystemVencord = true;
                 };
-
+                zellij-unwrapped = prev.zellij-unwrapped.overrideAttrs (old: {
+                  postPatch =
+                    (old.postPatch or "")
+                    +
+                      lib.concatMapStrings
+                        (name: ''
+                          substituteInPlace zellij-utils/src/input/layout.rs \
+                            --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
+                        '')
+                        [
+                          "default"
+                          "strider"
+                          "disable-status-bar"
+                          "compact"
+                          "classic"
+                        ];
+                });
               };
             in
             modifications final prev;
@@ -15207,6 +15223,7 @@ Currently I only use it as before with =initExtra= though.
       {
         self,
         config,
+        lib,
         pkgs,
         ...
       }:
@@ -15255,14 +15272,22 @@ Currently I only use it as before with =initExtra= though.
               };
             };
           };
-          home.packages = with pkgs; [
-            zjstatus
-          ];
-          xdg.configFile."zellij/layouts/swarsel.kdl".text =
-            import "${self}/files/zellij/layouts/swarsel.kdl.nix"
-              {
-                inherit config pkgs;
-              };
+          home.activation.zellijPluginPermissions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            cache="${config.xdg.cacheHome}/zellij/permissions.kdl"
+            plugin="${config.xdg.dataHome}/zellij/plugins/zjstatus.wasm"
+            if ! grep -qsF "\"$plugin\"" "$cache"; then
+              run mkdir -p "$(dirname "$cache")"
+              run sh -c 'printf "\"%s\" {\n    RunCommands\n    ReadApplicationState\n    ChangeApplicationState\n}\n" "$1" >> "$2"' _ "$plugin" "$cache"
+            fi
+          '';
+          xdg = {
+            configFile."zellij/layouts/swarsel.kdl".text =
+              import "${self}/files/zellij/layouts/swarsel.kdl.nix"
+                {
+                  inherit config;
+                };
+            dataFile."zellij/plugins/zjstatus.wasm".source = "${pkgs.zjstatus}/bin/zjstatus.wasm";
+          };
         };
       };
   }
@@ -49585,7 +49610,7 @@ This file defines a few workflows that I often need to run when working on my co
 :END:
 
 #+begin_src shell :tangle files/zellij/layouts/swarsel.kdl.nix
-  { config, pkgs }:
+  { config }:
   let
     inherit (config.lib.stylix) colors;
   in
@@ -49685,7 +49710,7 @@ This file defines a few workflows that I often need to run when working on my co
            default_tab_template {
                children
                pane size=1 borderless=true {
-                   plugin location="file://${pkgs.zjstatus}/bin/zjstatus.wasm" {
+                   plugin location="file://${config.xdg.dataHome}/zellij/plugins/zjstatus.wasm" {
                        format_left   "{mode}#[bg=#${colors.base00}] {tabs}"
                        format_center ""
                        format_right  "#[bg=#${colors.base00},fg=#${colors.base02}]#[bg=#${colors.base02},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base01},bold] {session} #[bg=#${colors.base02},fg=#${colors.base01},bold]"

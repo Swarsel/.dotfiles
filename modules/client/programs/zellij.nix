@@ -3,6 +3,7 @@
     {
       self,
       config,
+      lib,
       pkgs,
       ...
     }:
@@ -51,14 +52,22 @@
             };
           };
         };
-        home.packages = with pkgs; [
-          zjstatus
-        ];
-        xdg.configFile."zellij/layouts/swarsel.kdl".text =
-          import "${self}/files/zellij/layouts/swarsel.kdl.nix"
-            {
-              inherit config pkgs;
-            };
+        home.activation.zellijPluginPermissions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          cache="${config.xdg.cacheHome}/zellij/permissions.kdl"
+          plugin="${config.xdg.dataHome}/zellij/plugins/zjstatus.wasm"
+          if ! grep -qsF "\"$plugin\"" "$cache"; then
+            run mkdir -p "$(dirname "$cache")"
+            run sh -c 'printf "\"%s\" {\n    RunCommands\n    ReadApplicationState\n    ChangeApplicationState\n}\n" "$1" >> "$2"' _ "$plugin" "$cache"
+          fi
+        '';
+        xdg = {
+          configFile."zellij/layouts/swarsel.kdl".text =
+            import "${self}/files/zellij/layouts/swarsel.kdl.nix"
+              {
+                inherit config;
+              };
+          dataFile."zellij/plugins/zjstatus.wasm".source = "${pkgs.zjstatus}/bin/zjstatus.wasm";
+        };
       };
     };
 }

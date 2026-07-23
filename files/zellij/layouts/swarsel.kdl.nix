@@ -1,4 +1,4 @@
-{ config, pkgs }:
+{ config }:
 let
   inherit (config.lib.stylix) colors;
 in
@@ -98,7 +98,7 @@ in
          default_tab_template {
              children
              pane size=1 borderless=true {
-                 plugin location="file://${pkgs.zjstatus}/bin/zjstatus.wasm" {
+                 plugin location="file://${config.xdg.dataHome}/zellij/plugins/zjstatus.wasm" {
                      format_left   "{mode}#[bg=#${colors.base00}] {tabs}"
                      format_center ""
                      format_right  "#[bg=#${colors.base00},fg=#${colors.base02}]#[bg=#${colors.base02},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base01},bold] {session} #[bg=#${colors.base02},fg=#${colors.base01},bold]"

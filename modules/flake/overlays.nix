@@ -196,7 +196,23 @@ in
               vesktop = prev.vesktop.override {
                 withSystemVencord = true;
               };
-
+              zellij-unwrapped = prev.zellij-unwrapped.overrideAttrs (old: {
+                postPatch =
+                  (old.postPatch or "")
+                  +
+                    lib.concatMapStrings
+                      (name: ''
+                        substituteInPlace zellij-utils/src/input/layout.rs \
+                          --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
+                      '')
+                      [
+                        "default"
+                        "strider"
+                        "disable-status-bar"
+                        "compact"
+                        "classic"
+                      ];
+              });
             };
           in
           modifications final prev;
