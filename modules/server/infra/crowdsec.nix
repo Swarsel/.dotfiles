@@ -29,6 +29,8 @@
       allowlistIps = config.repo.secrets.local.crowdsec.allowlistIps or [ ];
       allowlistCidrs = config.repo.secrets.local.crowdsec.allowlistCidrs or [ ];
       allowlistAs = config.repo.secrets.local.crowdsec.allowlistAs or [ ];
+      allowlistCountries = config.repo.secrets.local.crowdsec.allowlistCountries or [ ];
+      allowlistCountryScenarios = config.repo.secrets.local.crowdsec.allowlistCountryScenarios or { };
       lapiPort = lib.toInt (
         lib.last (lib.splitString ":" config.services.crowdsec.settings.general.api.server.listen_uri)
       );
@@ -121,14 +123,13 @@
                   };
                 }
               ]
-              ++ lib.optional (allowlistIps != [ ] || allowlistCidrs != [ ] || allowlistAs != [ ]) {
+              ++ lib.optional (allowlistIps != [ ] || allowlistCidrs != [ ]) {
                 description = "Don't ban trusted addresses";
                 name = "swarsel/allowlist";
                 whitelist = {
                   cidr = allowlistCidrs;
-                  expression = map (asn: "evt.Enriched.ASNumber == '${toString asn}'") allowlistAs;
                   ip = allowlistIps;
-                  reason = "Personal home addresses and trusted work AS";
+                  reason = "Personal home addresses";
                 };
               };
 
@@ -141,7 +142,33 @@
                     reason = "Trusted host WAN addresses";
                   };
                 }
-              ];
+              ]
+              ++ lib.optional (allowlistAs != [ ] || allowlistCountries != [ ]) {
+                description = "Don't ban trusted networks";
+                name = "swarsel/allowlist-as";
+                whitelist = {
+                  expression =
+                    map (asn: "evt.Overflow.Alert.Source.AsNumber == '${toString asn}'") allowlistAs
+                    ++ map (c: "evt.Overflow.Alert.Source.Cn == '${c}'") allowlistCountries;
+                  reason = "Trusted carrier, work AS, and home country";
+                };
+              }
+              ++ lib.optional (allowlistCountryScenarios != { }) {
+                description = "Don't ban trusted countries for noisy scenarios";
+                name = "swarsel/allowlist-country-scenarios";
+                whitelist = {
+                  expression = lib.concatLists (
+                    lib.mapAttrsToList (
+                      country:
+                      map (
+                        scenario:
+                        "evt.Overflow.Alert.Source.Cn == '${country}' && evt.Overflow.Alert.GetScenario() contains '${scenario}'"
+                      )
+                    ) allowlistCountryScenarios
+                  );
+                  reason = "Noisy scenarios exempted for home country";
+                };
+              };
             };
             settings = {
               capi.credentialsFile =
