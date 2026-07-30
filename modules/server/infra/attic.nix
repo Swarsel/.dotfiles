@@ -96,7 +96,7 @@
                 level = 3;
                 type = "zstd";
               };
-              database.url = "postgresql:///atticd?host=/run/postgresql";
+              database.url = "postgresql://${serviceDB}@localhost/${serviceDB}?host=/run/postgresql";
               garbage-collection = {
                 default-retention-period = "3 months";
                 interval = "1 day";
