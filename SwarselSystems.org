@@ -2423,13 +2423,6 @@ More information on the actual packages build can be found in [[#h:64a5cc16-6b16
             permittedInsecurePackages = [
               # matrix
               "olm-3.2.16"
-              # sonarr
-              "aspnetcore-runtime-wrapped-6.0.36"
-              "aspnetcore-runtime-6.0.36"
-              "dotnet-sdk-wrapped-6.0.428"
-              "dotnet-sdk-6.0.428"
-              #
-              "SDL_ttf-2.0.11"
             ];
           };
           overlays = [
@@ -20750,109 +20743,97 @@ Mostly used to install some compilers and lsp's that I want to have available wh
           ...
         }:
         {
-          config = {
-
-            environment.systemPackages =
-              with pkgs;
-              lib.optionals (!minimal) (
-                [
-                  gnupg
-                  yubikey-manager
-
-                  # secure boot
-                  sbctl
-
-                  # better make for general tasks
-                  just
-
-                  # sops
-                  ssh-to-age
-                  sops
-
-                  # theme related
-                  adwaita-icon-theme
-
-                  # bluetooth
-                  bluez
-                  wireguard-tools
-                ]
-                ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
-                  # ledger packages
-                  ledger-live-desktop
-
-                  # keyboards
-                  vial
-                  via
-                ]
-                ++ lib.optionals config.swarselsystems.isFullBuild [
-                  # yubikey packages
-                  yubikey-personalization
-                  yubico-pam
-                  yubioath-flutter
-                  yubikey-touch-detector
-                  yubico-piv-tool
-                  cfssl
-                  pcsc-tools
-                  pcscliteWithPolkit.out
-
-                  # pinentry
-                  dbus
-                  # swaylock-effects
-                  syncthingtray-minimal
-                  swayosd
-
-                  qt5.qtwayland
-
-                  nixos-generators
-
-                  # commit hooks
-                  pre-commit
-
-                  # proc info
-                  acpi
-
-                  # pci info
-                  pciutils
-                  usbutils
-
-                  # keyboards
-                  qmk
-
-                  # kde-connect
-                  xdg-desktop-portal
-                  xdg-desktop-portal-gtk
-                  xdg-desktop-portal-wlr
-
-                  ghostscript_headless
-                  nixd
-                  zig
-                  zls
-
-                  elk-to-svg
-                ]
-              )
-              ++ lib.optionals minimal [
-                networkmanager
-                curl
-                git
+          config.environment.systemPackages =
+            with pkgs;
+            lib.optionals (!minimal) (
+              [
                 gnupg
-                rsync
+                yubikey-manager
+
+                # secure boot
+                sbctl
+
+                # better make for general tasks
+                just
+
+                # sops
                 ssh-to-age
                 sops
-                vim
-                just
-                sbctl
-              ];
 
-            nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
-              "jitsi-meet-1.0.8043"
-              "electron-29.4.6"
-              "SDL_ttf-2.0.11"
-              # audacity?
-              "mbedtls-2.28.10"
-              # "qtwebengine-5.15.19"
+                # theme related
+                adwaita-icon-theme
+
+                # bluetooth
+                bluez
+                wireguard-tools
+              ]
+              ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
+                # ledger packages
+                ledger-live-desktop
+
+                # keyboards
+                vial
+                via
+              ]
+              ++ lib.optionals config.swarselsystems.isFullBuild [
+                # yubikey packages
+                yubikey-personalization
+                yubico-pam
+                yubioath-flutter
+                yubikey-touch-detector
+                yubico-piv-tool
+                cfssl
+                pcsc-tools
+                pcscliteWithPolkit.out
+
+                # pinentry
+                dbus
+                # swaylock-effects
+                syncthingtray-minimal
+                swayosd
+
+                qt5.qtwayland
+
+                nixos-generators
+
+                # commit hooks
+                pre-commit
+
+                # proc info
+                acpi
+
+                # pci info
+                pciutils
+                usbutils
+
+                # keyboards
+                qmk
+
+                # kde-connect
+                xdg-desktop-portal
+                xdg-desktop-portal-gtk
+                xdg-desktop-portal-wlr
+
+                ghostscript_headless
+                nixd
+                zig
+                zls
+
+                elk-to-svg
+              ]
+            )
+            ++ lib.optionals minimal [
+              networkmanager
+              curl
+              git
+              gnupg
+              rsync
+              ssh-to-age
+              sops
+              vim
+              just
+              sbctl
             ];
-          };
         };
     };
   }
@@ -25253,13 +25234,6 @@ Here we just define some aliases for rebuilding the system, and we allow some in
             permittedInsecurePackages = [
               # matrix
               "olm-3.2.16"
-              # sonarr
-              "aspnetcore-runtime-wrapped-6.0.36"
-              "aspnetcore-runtime-6.0.36"
-              "dotnet-sdk-wrapped-6.0.428"
-              "dotnet-sdk-6.0.428"
-              #
-              "SDL_ttf-2.0.11"
             ];
           };
         };
@@ -38198,7 +38172,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           in
           if builtins.pathExists dir then builtins.attrNames (builtins.readDir dir) else [ ];
 
-        allNixosHosts = nixosHostsForArch "aarch64-linux" ++ nixosHostsForArch "x86_64-linux";
+        allNixosHosts = lib.unique (nixosHostsForArch "aarch64-linux" ++ nixosHostsForArch "x86_64-linux");
 
         excludedHosts = [ ];
         buildbotHosts = builtins.filter (h: !builtins.elem h excludedHosts) allNixosHosts;
@@ -38427,6 +38401,112 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           echo "No un-pin candidates; all checked pins are still needed."
         '';
 
+        checkInsecurePermits = pkgs.writeShellScript "buildbot-check-insecure-permits" ''
+          set -uo pipefail
+          export NIXPKGS_ALLOW_INSECURE=
+          ${syncFlake} || exit 2
+          wt=${buildbotHome}/.insecure-check
+          git -C ${flakeDir} worktree remove --force "$wt" >/dev/null 2>&1 || true
+          git -C ${flakeDir} worktree prune
+          trap 'git -C ${flakeDir} worktree remove --force "$wt" >/dev/null 2>&1; git -C ${flakeDir} worktree prune' EXIT
+          git -C ${flakeDir} worktree add --detach "$wt" HEAD || exit 2
+
+          files=$(cd "$wt" && grep -rl --include='*.nix' 'permittedInsecurePackages *=' modules hosts 2>/dev/null)
+
+          for f in $files; do
+            awk '
+              /permittedInsecurePackages/ { in_block = 1 }
+              in_block {
+                line = $0
+                sub(/#.*/, "", line)
+                while (match(line, /"[^"]+"/)) {
+                  print substr(line, RSTART + 1, RLENGTH - 2)
+                  line = substr(line, RSTART + RLENGTH)
+                }
+                if (line ~ /\];/) in_block = 0
+              }
+            ' "$wt/$f"
+          done | sort -u > "$wt/.union"
+          if [ ! -s "$wt/.union" ]; then
+            echo "No permittedInsecurePackages entries found."
+            exit 0
+          fi
+
+          rewrite_lists() {
+            for f in $files; do
+              awk -v entries="$1" '
+                !done && /permittedInsecurePackages/ {
+                  prefix = $0
+                  sub(/\[.*/, "", prefix)
+                  print prefix "[ " entries "];"
+                  if ($0 !~ /\];/) skip = 1
+                  done = 1
+                  next
+                }
+                skip { if (/\];/) skip = 0; next }
+                { print }
+              ' "$wt/$f" > "$wt/$f.tmp" && mv "$wt/$f.tmp" "$wt/$f"
+            done
+          }
+
+          nix eval --json "$wt#nixosConfigurations" --apply builtins.attrNames --accept-flake-config \
+            | jq -r '.[] | "nixosConfigurations.\(.).config.system.build.toplevel.drvPath"' > "$wt/.round" || exit 2
+          nix eval --json "$wt#devShells" --apply "builtins.mapAttrs (_: builtins.attrNames)" --accept-flake-config \
+            | jq -r 'to_entries[] | select(.key | endswith("-linux")) | .key as $s | .value[] | "devShells.\($s).\(.).drvPath"' >> "$wt/.round" || exit 2
+
+          check() {
+            out=$(nix eval --raw "$wt#$1" --accept-flake-config 2>&1 >/dev/null) && return 0
+            needs=$(grep -aoE "Refusing to evaluate package '[^']+'" <<< "$out" | tr -d "'" | sed 's/.*package //' | sort -u)
+            if [ -n "$needs" ]; then
+              while IFS= read -r n; do echo "NEED|$n|$1" >> "$wt/.need-log"; done <<< "$needs"
+              echo "$1" >> "$wt/.retry"
+            else
+              { echo "=== $1 ==="; grep -av "error (ignored)" <<< "$out" | tail -n 15; } >> "$wt/.errlog"
+            fi
+          }
+
+          : > "$wt/.allowed"
+          : > "$wt/.need-log"
+          : > "$wt/.errlog"
+          for round in $(seq 1 10); do
+            echo "=== Round $round: $(wc -l < "$wt/.round") targets, permits: [ $(paste -sd ' ' "$wt/.allowed") ] ==="
+            rewrite_lists "$(sed 's/.*/"&" /' "$wt/.allowed" | tr -d '\n')"
+            : > "$wt/.retry"
+            while IFS= read -r t; do check "$t"; done < "$wt/.round"
+            cut -d'|' -f2 "$wt/.need-log" | sort -u | comm -23 - "$wt/.allowed" > "$wt/.fresh"
+            [ -s "$wt/.fresh" ] || break
+            sort -u -o "$wt/.allowed" "$wt/.allowed" "$wt/.fresh"
+            sort -u "$wt/.retry" > "$wt/.round"
+          done
+
+          echo "=== Checked all nixosConfigurations (including their microvm guests) and Linux devShells against emptied permittedInsecurePackages lists ==="
+          if [ -s "$wt/.fresh" ]; then
+            echo "Did not converge within 10 rounds, results incomplete."
+            exit 2
+          fi
+          if [ -s "$wt/.errlog" ]; then
+            echo "Evaluation failed for unrelated reasons, results inconclusive:"
+            cat "$wt/.errlog"
+            exit 2
+          fi
+          if [ -s "$wt/.allowed" ]; then
+            echo "Still required, keep:"
+            while IFS= read -r e; do
+              echo "  - $e (needed by: $(grep -F "NEED|$e|" "$wt/.need-log" | cut -d'|' -f3 | sed 's/\.config\.system\.build\.toplevel\.drvPath$//; s/\.drvPath$//' | sort -u | paste -sd ',' - | sed 's|,|, |g'))"
+            done < "$wt/.allowed"
+          fi
+          comm -23 "$wt/.union" "$wt/.allowed" > "$wt/.droppable"
+          if [ ! -s "$wt/.droppable" ]; then
+            echo "No droppable entries; all permits are still required."
+            exit 0
+          fi
+          echo "No evaluated output needs these, remove:"
+          while IFS= read -r e; do
+            echo "  - $e (listed in: $(cd ${flakeDir} && grep -lF "\"$e\"" $files | paste -sd ',' - | sed 's|,|, |g'))"
+          done < "$wt/.droppable"
+          exit 1
+        '';
+
         masterCfg = pkgs.writeText "master.cfg" ''
           from buildbot.plugins import *
           from buildbot.process.results import SUCCESS, WARNINGS
@@ -38512,7 +38592,20 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
               factory=pin_check_factory,
           ))
 
-          all_builder_names = build_builder_names + ['flake-update', 'check-stable-pins']
+          insecure_check_factory = util.BuildFactory()
+          insecure_check_factory.addStep(steps.ShellCommand(
+              name='check-insecure-permits',
+              command=['${checkInsecurePermits}'],
+              decodeRC={0: SUCCESS, 1: WARNINGS},
+              timeout=14400,
+          ))
+          builders.append(util.BuilderConfig(
+              name='check-insecure-permits',
+              workernames=['local-worker'],
+              factory=insecure_check_factory,
+          ))
+
+          all_builder_names = build_builder_names + ['flake-update', 'check-stable-pins', 'check-insecure-permits']
 
           c['builders'] = builders
 
@@ -38531,6 +38624,11 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
               schedulers.Periodic(
                   name='weekly-pin-check',
                   builderNames=['check-stable-pins'],
+                  periodicBuildTimer=604800,
+              ),
+              schedulers.Periodic(
+                  name='weekly-insecure-check',
+                  builderNames=['check-insecure-permits'],
                   periodicBuildTimer=604800,
               ),
               schedulers.ForceScheduler(
@@ -38633,6 +38731,9 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
               sops
               curl
               jq
+              gawk
+              gnugrep
+              gnused
             ];
             pythonPackages = _p: [
               pkgs.buildbot-worker
