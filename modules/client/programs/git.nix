@@ -34,6 +34,7 @@
               }
             ];
             lfs.enable = true;
+            maintenance.enable = true;
             settings = {
               alias = {
                 a = "add";
@@ -48,6 +49,7 @@
                 r = "restore";
                 s = "status";
               };
+              maintenance.prefetch.enabled = false;
               user = {
                 email = lib.mkIf ((nixosConfig != null) && !config.swarselsystems.isPublic) (
                   lib.mkDefault address1
