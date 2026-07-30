@@ -71,25 +71,25 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops.secrets = {
-          "kanidm-admin-pw" = {
+          kanidm-admin-pw = {
             inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
           };
-          "kanidm-idm-admin-pw" = {
+          kanidm-idm-admin-pw = {
             inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
           };
-          "kanidm-self-signed-crt" = {
+          kanidm-self-signed-crt = {
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
             sopsFile = certsSopsFile;
           };
-          "kanidm-self-signed-key" = {
+          kanidm-self-signed-key = {
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;

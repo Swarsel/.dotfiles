@@ -68,7 +68,7 @@
             path = "/health";
           };
         };
-        sops.secrets."firefly-iii-app-key" = {
+        sops.secrets.firefly-iii-app-key = {
           inherit sopsFile;
           group = if cfg.enableNginx then nginxGroup else serviceGroup;
           mode = "0440";

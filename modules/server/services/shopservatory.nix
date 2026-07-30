@@ -114,7 +114,7 @@
             };
           };
 
-          templates."shopservatory-env" = {
+          templates.shopservatory-env = {
             content = ''
               SHOPSERVATORY_TELEGRAM_TOKEN=${config.sops.placeholder.shopservatory-telegram-token}
               SHOPSERVATORY_EBAY_CLIENT_ID=${config.sops.placeholder.shopservatory-ebay-client-id}

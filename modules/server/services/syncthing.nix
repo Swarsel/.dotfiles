@@ -128,7 +128,7 @@
                 path = "${cfg.dataDir}/Sync";
                 type = "receiveonly";
               };
-              "Obsidian" = {
+              Obsidian = {
                 devices = syncDevices;
                 id = "yjvni-9eaa7";
                 path = "${cfg.dataDir}/Obsidian";
@@ -138,7 +138,7 @@
                   type = "simple";
                 };
               };
-              "Org" = {
+              Org = {
                 devices = syncDevices;
                 id = "a7xnl-zjj3d";
                 path = "${cfg.dataDir}/Org";
@@ -148,7 +148,7 @@
                   type = "simple";
                 };
               };
-              "Vpn" = {
+              Vpn = {
                 devices = syncDevices;
                 id = "hgp9s-fyq3p";
                 path = "${cfg.dataDir}/Vpn";

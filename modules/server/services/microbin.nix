@@ -83,7 +83,7 @@
             };
           };
 
-          templates."microbin-env" = {
+          templates.microbin-env = {
             content = ''
               MICROBIN_ADMIN_USERNAME="${config.sops.placeholder.microbin-admin-username}"
               MICROBIN_ADMIN_PASSWORD="${config.sops.placeholder.microbin-admin-password}"

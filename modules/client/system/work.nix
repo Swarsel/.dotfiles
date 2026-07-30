@@ -86,13 +86,13 @@ in
             };
             spice-vdagentd.enable = true;
             syncthing.settings = {
-              folders."Documents" = {
+              folders.Documents = {
                 devices = [ "moonside@oracle" ];
                 id = "hgr3d-pfu3w";
                 path = "${homeDir}/Documents";
               };
               "moonside@oracle".id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
-              "winters".id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+              winters.id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
             # udev.extraRules = ''
             #   # lock screen when yubikey removed

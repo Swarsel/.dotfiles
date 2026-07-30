@@ -9,11 +9,11 @@
             bindWithModifier = lib.mapAttrs' (key: lib.nameValuePair ("ctrl+shift" + key));
           in
           bindWithModifier {
-            "down" = "scroll_page_down";
-            "page_down" = "scroll_page_down";
-            "page_up" = "scroll_page_up";
-            "up" = "scroll_page_up";
-            "w" = "no_op";
+            down = "scroll_page_down";
+            page_down = "scroll_page_down";
+            page_up = "scroll_page_up";
+            up = "scroll_page_up";
+            w = "no_op";
           };
         settings = {
           cursor_blink_interval = 0;

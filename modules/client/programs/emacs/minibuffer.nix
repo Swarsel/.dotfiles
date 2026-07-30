@@ -22,10 +22,10 @@
       consult = {
         enable = true;
         bind = {
-          "C-M-j" = "consult-buffer";
+          C-M-j = "consult-buffer";
           "C-c <C-m>" = "consult-global-mark";
           "C-c C-a" = "consult-org-agenda";
-          "C-s" = "consult-line";
+          C-s = "consult-line";
           "C-x O" = "consult-org-heading";
           "C-x b" = "consult-buffer";
           "M-g M-g" = "consult-goto-line";
@@ -33,8 +33,8 @@
           "M-s M-s" = "consult-line-multi";
         };
         bindLocal.minibuffer-local-map = {
-          "C-j" = "next-line";
-          "C-k" = "previous-line";
+          C-j = "next-line";
+          C-k = "previous-line";
         };
         custom.consult-fontify-max-size = 1024;
       };
@@ -86,7 +86,7 @@
       marginalia = {
         enable = true;
         after = [ "vertico" ];
-        bindLocal.minibuffer-local-map."M-A" = "marginalia-cycle";
+        bindLocal.minibuffer-local-map.M-A = "marginalia-cycle";
         init = "(marginalia-mode)";
       };
       nerd-icons-completion = {
@@ -133,9 +133,9 @@
         enable = true;
         after = [ "vertico" ];
         bindLocal.vertico-map = {
-          "C-DEL" = "vertico-directory-delete-word";
-          "DEL" = "vertico-directory-delete-char";
-          "RET" = "vertico-directory-enter";
+          C-DEL = "vertico-directory-delete-word";
+          DEL = "vertico-directory-delete-char";
+          RET = "vertico-directory-enter";
         };
         hook = [ "(rfn-eshadow-update-overlay . vertico-directory-tidy)" ];
       };

@@ -321,7 +321,7 @@
                   }
                 ];
               };
-              "Kagi" = {
+              Kagi = {
                 definedAliases = [ "@k" ];
                 icon = "https://kagi.com/favicon.ico";
                 updateInterval = 24 * 60 * 60 * 1000; # every day
@@ -381,7 +381,7 @@
                   }
                 ];
               };
-              "SearXNG" = {
+              SearXNG = {
                 definedAliases = [ "@sx" ];
                 icon = "https://search.swarsel.win/favicon.ico";
                 updateInterval = 24 * 60 * 60 * 1000; # every day
@@ -397,9 +397,9 @@
                   }
                 ];
               };
-              "bing".metaData.hidden = true;
-              "ddg".metaData.hidden = true;
-              "ecosia".metaData.hidden = true;
+              bing.metaData.hidden = true;
+              ddg.metaData.hidden = true;
+              ecosia.metaData.hidden = true;
               github = {
                 definedAliases = [ "@gh" ];
                 icon = "https://github.com/favicon.ico";
@@ -417,7 +417,7 @@
                   }
                 ];
               };
-              "google" = {
+              google = {
                 definedAliases = [ "@g" ];
                 icon = "https://www.google.com/favicon.ico";
                 name = "Google";
@@ -433,8 +433,8 @@
                   }
                 ];
               };
-              "perplexity".metaData.hidden = true;
-              "wikipedia".metaData.hidden = true;
+              perplexity.metaData.hidden = true;
+              wikipedia.metaData.hidden = true;
               youtube = {
                 definedAliases = [ "@yt" ];
                 icon = "https://www.youtube.com/favicon.ico";

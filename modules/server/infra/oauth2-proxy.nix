@@ -192,13 +192,13 @@
         };
         sops = {
           secrets = {
-            "kanidm-oauth2-proxy" = {
+            kanidm-oauth2-proxy = {
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
               sopsFile = kanidmSopsFile;
             };
-            "oauth2-cookie-secret" = {
+            oauth2-cookie-secret = {
               inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
@@ -206,7 +206,7 @@
             };
           };
 
-          templates."kanidm-oauth2-proxy-client-env" = {
+          templates.kanidm-oauth2-proxy-client-env = {
             content = ''
               OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy}"
                 OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}

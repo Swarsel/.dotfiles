@@ -66,7 +66,7 @@
             mode = "0444";
           };
 
-          templates."invidiousExtraSettings" = {
+          templates.invidiousExtraSettings = {
             content = ''
               {"invidious_companion_key": "${config.sops.placeholder.invidious-companion-key}"}
             '';

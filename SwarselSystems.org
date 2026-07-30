@@ -5429,7 +5429,7 @@ This system is built with support for arm emulation, so it can build configurati
         ];
         # allow to remote build on arm (needed for moonside)
         kernelModules = [ "sg" ];
-        luks.devices."cryptroot" = {
+        luks.devices.cryptroot = {
           # improve performance on ssds
           bypassWorkqueues = true;
           preLVM = true;
@@ -5896,7 +5896,7 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
       proxyHost = "twothreetunnel";
 
     };
-    topology.self.interfaces."eth1" = { };
+    topology.self.interfaces.eth1 = { };
     boot.loader = {
       efi.canTouchEfiVariables = true;
       systemd-boot.enable = true;
@@ -6052,8 +6052,8 @@ This is my current main server at home; all services except filesystem backups r
       writeGlobalNetworks = false;
     };
     topology.self.interfaces = {
-      "bmc" = { };
-      "lan" = { };
+      bmc = { };
+      lan = { };
     };
     boot = {
       blacklistedKernelModules = [
@@ -7711,7 +7711,7 @@ This machine used to be my proxy server, a functionality that is now provided by
             type = "simple";
           };
         };
-        "Documents" = {
+        Documents = {
           devices = [ "pyramid" ];
           id = "hgr3d-pfu3w";
           path = "/sync/Documents";
@@ -7721,7 +7721,7 @@ This machine used to be my proxy server, a functionality that is now provided by
             type = "simple";
           };
         };
-        "runandbun" = {
+        runandbun = {
           devices = [
             "pyramid"
             "magicant"
@@ -9129,7 +9129,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
       wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
     };
 
-    topology.self.interfaces."bootstrapper" = { };
+    topology.self.interfaces.bootstrapper = { };
     sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
 
     networking = {
@@ -9403,9 +9403,9 @@ Steps to recover using live ISO:
       };
       programs = {
         bash.shellAliases = {
-          "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-          "swarsel-kernel-module" = "lspci -k -d";
-          "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\\|ethernet'";
+          swarsel-install = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+          swarsel-kernel-module = "lspci -k -d";
+          swarsel-net-manufacturer = "lspci -nn | grep -i 'network\\|ethernet'";
         };
         git.enable = true;
       };
@@ -9418,7 +9418,7 @@ Steps to recover using live ISO:
       };
       console.keyMap = "us";
       environment = {
-        etc."issue".text = ''
+        etc.issue.text = ''
           [32m~SwarselSystems~[0m
           IP of primary interface: [31m\4[0m
           These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{eth4} \4{eth5} \4{wlan0}
@@ -11984,7 +11984,7 @@ In short, the options defined here are passed to the modules systems using =_mod
                     }
                   ];
                 };
-                "Kagi" = {
+                Kagi = {
                   definedAliases = [ "@k" ];
                   icon = "https://kagi.com/favicon.ico";
                   updateInterval = 24 * 60 * 60 * 1000; # every day
@@ -12044,7 +12044,7 @@ In short, the options defined here are passed to the modules systems using =_mod
                     }
                   ];
                 };
-                "SearXNG" = {
+                SearXNG = {
                   definedAliases = [ "@sx" ];
                   icon = "https://search.swarsel.win/favicon.ico";
                   updateInterval = 24 * 60 * 60 * 1000; # every day
@@ -12060,9 +12060,9 @@ In short, the options defined here are passed to the modules systems using =_mod
                     }
                   ];
                 };
-                "bing".metaData.hidden = true;
-                "ddg".metaData.hidden = true;
-                "ecosia".metaData.hidden = true;
+                bing.metaData.hidden = true;
+                ddg.metaData.hidden = true;
+                ecosia.metaData.hidden = true;
                 github = {
                   definedAliases = [ "@gh" ];
                   icon = "https://github.com/favicon.ico";
@@ -12080,7 +12080,7 @@ In short, the options defined here are passed to the modules systems using =_mod
                     }
                   ];
                 };
-                "google" = {
+                google = {
                   definedAliases = [ "@g" ];
                   icon = "https://www.google.com/favicon.ico";
                   name = "Google";
@@ -12096,8 +12096,8 @@ In short, the options defined here are passed to the modules systems using =_mod
                     }
                   ];
                 };
-                "perplexity".metaData.hidden = true;
-                "wikipedia".metaData.hidden = true;
+                perplexity.metaData.hidden = true;
+                wikipedia.metaData.hidden = true;
                 youtube = {
                   definedAliases = [ "@yt" ];
                   icon = "https://www.youtube.com/favicon.ico";
@@ -14821,10 +14821,10 @@ Starship makes my =zsh= look cooler! I have symbols for most programming languag
           directory = {
             read_only = " 󰌾";
             substitutions = {
-              "Documents" = "󰈙 ";
-              "Downloads" = " ";
-              "Music" = " ";
-              "Pictures" = " ";
+              Documents = "󰈙 ";
+              Downloads = " ";
+              Music = " ";
+              Pictures = " ";
             };
           };
           docker_context.symbol = " ";
@@ -14940,11 +14940,11 @@ The theme is handled by stylix.
               bindWithModifier = lib.mapAttrs' (key: lib.nameValuePair ("ctrl+shift" + key));
             in
             bindWithModifier {
-              "down" = "scroll_page_down";
-              "page_down" = "scroll_page_down";
-              "page_up" = "scroll_page_up";
-              "up" = "scroll_page_up";
-              "w" = "no_op";
+              down = "scroll_page_down";
+              page_down = "scroll_page_down";
+              page_up = "scroll_page_up";
+              up = "scroll_page_up";
+              w = "no_op";
             };
           settings = {
             cursor_blink_interval = 0;
@@ -16909,9 +16909,9 @@ The rest of the related configuration is found here:
                 interval = 5;
                 on-click-right = "wlogout -p layer-shell";
                 states = {
-                  "critical" = 15;
-                  "error" = 30;
-                  "warning" = 60;
+                  critical = 15;
+                  error = 30;
+                  warning = 60;
                 };
               };
               "clock#1" = {
@@ -16999,13 +16999,13 @@ The rest of the related configuration is found here:
                 interval = 30;
                 path = "/";
                 states = {
-                  "critical" = 90;
-                  "warning" = 80;
+                  critical = 90;
+                  warning = 80;
                 };
                 tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
               };
               "group/hardware" = {
-                drawer."transition-left-to-right" = false;
+                drawer.transition-left-to-right = false;
                 modules = [
                   "tray"
                   "temperature"
@@ -17062,11 +17062,11 @@ The rest of the related configuration is found here:
                 format-paused = "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
                 interval = 1;
                 player-icons = {
-                  "default" = "▶ ";
-                  "mpv" = "🎵 ";
-                  "spotify" = " ";
+                  default = "▶ ";
+                  mpv = "🎵 ";
+                  spotify = " ";
                 };
-                status-icons."paused" = " ";
+                status-icons.paused = " ";
                 title-len = 20;
               };
               network = {
@@ -17084,10 +17084,10 @@ The rest of the related configuration is found here:
               power-profiles-daemon = {
                 format = "{icon}";
                 format-icons = {
-                  "balanced" = "";
-                  "default" = "";
-                  "performance" = "";
-                  "power-saver" = "";
+                  balanced = "";
+                  default = "";
+                  performance = "";
+                  power-saver = "";
                 };
                 tooltip = true;
                 tooltip-format = "Power profile: {profile}\nDriver: {driver}";
@@ -19304,14 +19304,14 @@ Nowadays, all of the Sway stack is kept as a reference.
                         "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
                       "${modifier}+w" = "exec swarselcheck -e";
                       "${modifier}+x" = "exec swarselcheck -k";
-                      "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
-                      "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
+                      XF86AudioLowerVolume = "exec swayosd-client --output-volume lower";
+                      XF86AudioMute = "exec swayosd-client --output-volume mute-toggle";
                       # "${modifier}+Escape" = "mode $exit";
                       # "${modifier}+Return" = "exec kitty";
-                      "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
-                      "XF86Display" = "exec wl-mirror eDP-1";
-                      "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
-                      "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
+                      XF86AudioRaiseVolume = "exec swayosd-client --output-volume raise";
+                      XF86Display = "exec wl-mirror eDP-1";
+                      XF86MonBrightnessDown = "exec swayosd-client --brightness lower";
+                      XF86MonBrightnessUp = "exec swayosd-client --brightness raise";
                       # "--no-repeat Super_L" = "exec killall -SIGUSR1 .waybar-wrapped";
                       # "${modifier}+z" = "exec killall -SIGUSR1 .waybar-wrapped";
                     } config.swarselsystems.keybindings;
@@ -21762,17 +21762,17 @@ This is the syncthing client configuration. Contrary to the [[#h:ad2787a2-7b1c-4
                   id = "default";
                   path = "${homeDir}/Sync";
                 };
-                "Obsidian" = {
+                Obsidian = {
                   devices = syncDevices;
                   id = "yjvni-9eaa7";
                   path = "${homeDir}/Obsidian";
                 };
-                "Org" = {
+                Org = {
                   devices = syncDevices;
                   id = "a7xnl-zjj3d";
                   path = "${homeDir}/Org";
                 };
-                "Vpn" = {
+                Vpn = {
                   devices = syncDevices;
                   id = "hgp9s-fyq3p";
                   path = "${homeDir}/Vpn";
@@ -22540,7 +22540,7 @@ Nowadays, I have replaced this with [[#h:96e05275-38df-401b-8809-d45d8f59e43c][N
   {
     flake.modules.nixos.lowbattery = { lib, pkgs, ... }: {
       config.systemd.user = {
-        services."battery-low" =
+        services.battery-low =
           let
             target = "sway-session.target";
           in
@@ -22558,7 +22558,7 @@ Nowadays, I have replaced this with [[#h:96e05275-38df-401b-8809-d45d8f59e43c][N
             };
             wantedBy = [ target ];
           };
-        timers."battery-low" = {
+        timers.battery-low = {
           timerConfig = {
             # Every Minute
             OnCalendar = "*-*-* *:*:00";
@@ -22816,15 +22816,15 @@ Auto login for the initial session.
                     "Mod+w".action = spawn "swarselcheck-niri" "-e";
                     "Mod+x".action = spawn "swarselcheck-niri" "-k";
                     "Mod+z".action = spawn "noctalia" "msg" "bar-toggle";
-                    "XF86AudioLowerVolume".action = spawn "noctalia" "msg" "volume-down";
-                    "XF86AudioMute".action = spawn "noctalia" "msg" "volume-mute";
-                    "XF86AudioNext".action = spawn "noctalia" "msg" "media" "next";
-                    "XF86AudioPlay".action = spawn "noctalia" "msg" "media" "toggle";
-                    "XF86AudioPrev".action = spawn "noctalia" "msg" "media" "previous";
-                    "XF86AudioRaiseVolume".action = spawn "noctalia" "msg" "volume-up";
-                    "XF86Display".action = spawn "wl-mirror" "eDP-1";
-                    "XF86MonBrightnessDown".action = spawn "noctalia" "msg" "brightness-down";
-                    "XF86MonBrightnessUp".action = spawn "noctalia" "msg" "brightness-up";
+                    XF86AudioLowerVolume.action = spawn "noctalia" "msg" "volume-down";
+                    XF86AudioMute.action = spawn "noctalia" "msg" "volume-mute";
+                    XF86AudioNext.action = spawn "noctalia" "msg" "media" "next";
+                    XF86AudioPlay.action = spawn "noctalia" "msg" "media" "toggle";
+                    XF86AudioPrev.action = spawn "noctalia" "msg" "media" "previous";
+                    XF86AudioRaiseVolume.action = spawn "noctalia" "msg" "volume-up";
+                    XF86Display.action = spawn "wl-mirror" "eDP-1";
+                    XF86MonBrightnessDown.action = spawn "noctalia" "msg" "brightness-down";
+                    XF86MonBrightnessUp.action = spawn "noctalia" "msg" "brightness-up";
                   };
                 cursor = {
                   hide-after-inactive-ms = 2000;
@@ -23476,7 +23476,7 @@ Auto login for the initial session.
                       format = "{:%a %d. %b %H:%M:%S}";
                       tooltip_format = "{:%a %d. %b %H:%M:%S}";
                     };
-                    "control-center" = {
+                    control-center = {
                       custom_image = "${self}/files/icons/swarsel.png";
                       custom_image_colorize = true;
                       glyph = "noctalia";
@@ -23854,13 +23854,13 @@ When setting up a new machine:
               };
               spice-vdagentd.enable = true;
               syncthing.settings = {
-                folders."Documents" = {
+                folders.Documents = {
                   devices = [ "moonside@oracle" ];
                   id = "hgr3d-pfu3w";
                   path = "${homeDir}/Documents";
                 };
                 "moonside@oracle".id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
-                "winters".id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+                winters.id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
               };
               # udev.extraRules = ''
               #   # lock screen when yubikey removed
@@ -25050,7 +25050,7 @@ This holds configuration that is specific to framework laptops.
         };
         powerManagement.enable = true;
         systemd = {
-          services."systemd-suspend-then-hibernate".aliases = [ "systemd-suspend.service" ];
+          services.systemd-suspend-then-hibernate.aliases = [ "systemd-suspend.service" ];
           sleep.settings.Sleep = {
             HibernateDelaySec = "120m";
             SuspendState = "freeze";
@@ -25385,7 +25385,7 @@ Some standard options that should be set for every MicroVM guest. We set the def
             "flakes"
           ];
           systemd = {
-            services."systemd-networkd".environment.SYSTEMD_LOG_LEVEL = "debug";
+            services.systemd-networkd.environment.SYSTEMD_LOG_LEVEL = "debug";
             network.networks."10-vlan-services" = {
               dhcpV6Config = {
                 # duid-en is nice in principle, but I already have MAC info anyways for reservations
@@ -26345,7 +26345,7 @@ By default, attic only provides a CLI client to authenticate to caches. I want a
           swarselsystems.enabledServerModules = [ "attic-setup" ];
           sops = {
             secrets.attic-cache-key = { };
-            templates."attic-env".content = ''
+            templates.attic-env.content = ''
               DOMAIN=https://${globals.services.attic.domain}
               TOKEN=${config.sops.placeholder.attic-cache-key}
             '';
@@ -28519,7 +28519,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 lottieconverter # for animated stickers conversion, unfree package
                 ffmpeg # if converting animated stickers to webm (very slow!)
               ];
-              "restart-bridges" = {
+              restart-bridges = {
                 script = ''
                   systemctl restart mautrix-whatsapp.service
                   systemctl restart mautrix-signal.service
@@ -28531,7 +28531,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 };
               };
             };
-            timers."restart-bridges" = {
+            timers.restart-bridges = {
               timerConfig = {
                 OnBootSec = "1d";
                 OnUnitActiveSec = "1d";
@@ -30382,7 +30382,7 @@ This is the server syncthings config, which makes sure that the servers never ov
                   path = "${cfg.dataDir}/Sync";
                   type = "receiveonly";
                 };
-                "Obsidian" = {
+                Obsidian = {
                   devices = syncDevices;
                   id = "yjvni-9eaa7";
                   path = "${cfg.dataDir}/Obsidian";
@@ -30392,7 +30392,7 @@ This is the server syncthings config, which makes sure that the servers never ov
                     type = "simple";
                   };
                 };
-                "Org" = {
+                Org = {
                   devices = syncDevices;
                   id = "a7xnl-zjj3d";
                   path = "${cfg.dataDir}/Org";
@@ -30402,7 +30402,7 @@ This is the server syncthings config, which makes sure that the servers never ov
                     type = "simple";
                   };
                 };
-                "Vpn" = {
+                Vpn = {
                   devices = syncDevices;
                   id = "hgp9s-fyq3p";
                   path = "${cfg.dataDir}/Vpn";
@@ -33347,25 +33347,25 @@ kanidm person credential create-reset-token <user>
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops.secrets = {
-            "kanidm-admin-pw" = {
+            kanidm-admin-pw = {
               inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
-            "kanidm-idm-admin-pw" = {
+            kanidm-idm-admin-pw = {
               inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
-            "kanidm-self-signed-crt" = {
+            kanidm-self-signed-crt = {
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
               sopsFile = certsSopsFile;
             };
-            "kanidm-self-signed-key" = {
+            kanidm-self-signed-key = {
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
@@ -33739,13 +33739,13 @@ This can be used to add OIDC in a way to services that do not support it nativel
           };
           sops = {
             secrets = {
-              "kanidm-oauth2-proxy" = {
+              kanidm-oauth2-proxy = {
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
                 sopsFile = kanidmSopsFile;
               };
-              "oauth2-cookie-secret" = {
+              oauth2-cookie-secret = {
                 inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
@@ -33753,7 +33753,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
               };
             };
 
-            templates."kanidm-oauth2-proxy-client-env" = {
+            templates.kanidm-oauth2-proxy-client-env = {
               content = ''
                 OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy}"
                   OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
@@ -33949,7 +33949,7 @@ My expenses tracker.
               path = "/health";
             };
           };
-          sops.secrets."firefly-iii-app-key" = {
+          sops.secrets.firefly-iii-app-key = {
             inherit sopsFile;
             group = if cfg.enableNginx then nginxGroup else serviceGroup;
             mode = "0440";
@@ -34456,7 +34456,7 @@ Self-hosted calendar and contacts.
                 inherit (config.repo.secrets.local.radicale) user1;
               in
               {
-                "radicale-users" = {
+                radicale-users = {
                   content = ''
                     ${user1}:${config.sops.placeholder.radicale-user}
                   '';
@@ -34613,7 +34613,7 @@ P2P file-sharing similar to what you might know from wormhole(/-rs), but fully s
           sops = {
             secrets.croc-password = { inherit sopsFile; };
 
-            templates."croc-env".content = ''
+            templates.croc-env.content = ''
               CROC_PASS="${config.sops.placeholder.croc-password}"
             '';
           };
@@ -34736,7 +34736,7 @@ Basically a self-hosted Pastebin that also offers syntax highlighting.
               };
             };
 
-            templates."microbin-env" = {
+            templates.microbin-env = {
               content = ''
                 MICROBIN_ADMIN_USERNAME="${config.sops.placeholder.microbin-admin-username}"
                 MICROBIN_ADMIN_PASSWORD="${config.sops.placeholder.microbin-admin-password}"
@@ -34918,7 +34918,7 @@ Self-hosted link shortener.
           sops = {
             secrets.shlink-api = { inherit sopsFile; };
 
-            templates."shlink-env".content = ''
+            templates.shlink-env.content = ''
               INITIAL_API_KEY=${config.sops.placeholder.shlink-api}
             '';
           };
@@ -34929,12 +34929,12 @@ Self-hosted link shortener.
           ];
           virtualisation.oci-containers.containers.${serviceName} = {
             environment = {
-              "DEFAULT_DOMAIN" = serviceDomain;
-              "DEFAULT_SHORT_CODES_LENGTH" = "4";
-              "PORT" = "${builtins.toString servicePort}";
-              "TASK_WORKER_NUM" = "1";
-              "USE_HTTPS" = "false";
-              "WEB_WORKER_NUM" = "1";
+              DEFAULT_DOMAIN = serviceDomain;
+              DEFAULT_SHORT_CODES_LENGTH = "4";
+              PORT = "${builtins.toString servicePort}";
+              TASK_WORKER_NUM = "1";
+              USE_HTTPS = "false";
+              WEB_WORKER_NUM = "1";
             };
             environmentFiles = [
               config.sops.templates.shlink-env.path
@@ -35092,11 +35092,11 @@ Deployment notes:
           ];
           virtualisation.oci-containers.containers.${serviceName} = {
             environment = {
-              "IMAGE_MAX_SIZE" = "50M";
-              "ORIGIN" = "https://${serviceDomain}";
-              "STORAGE_PROVIDER" = "local";
-              "TZ" = config.repo.secrets.common.location.timezone;
-              "USER_APPROVAL_REQUIRED" = "true";
+              IMAGE_MAX_SIZE = "50M";
+              ORIGIN = "https://${serviceDomain}";
+              STORAGE_PROVIDER = "local";
+              TZ = config.repo.secrets.common.location.timezone;
+              USER_APPROVAL_REQUIRED = "true";
             };
             extraOptions = [
               "--health-cmd=wget -O - -q http://127.0.0.1:${builtins.toString servicePort}/api/health | grep -q OK"
@@ -36362,10 +36362,10 @@ The options for A/AAAA records themselves should usually be defined in the respe
     ];
 
     subdomains = globals.dns.${globals.domains.main}.subdomainRecords // {
-      "_acme-challenge".CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
-      "soa" = host proxyAddress4 proxyAddress6;
-      "srv" = host proxyAddress4 proxyAddress6;
-      "www".CNAME = [ "${globals.domains.main}." ];
+      _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
+      soa = host proxyAddress4 proxyAddress6;
+      srv = host proxyAddress4 proxyAddress6;
+      www.CNAME = [ "${globals.domains.main}." ];
     };
 
     useOrigin = false;
@@ -37093,7 +37093,7 @@ I used this for the short time-frame before I started using nix-plugins for [[#h
                   };
                   nixbuild-net-key.mode = "0600";
                 };
-                templates."hydra-env" = {
+                templates.hydra-env = {
                   content = ''
                     HYDRA_PW="${config.sops.placeholder.hydra-pw}"
                   '';
@@ -38909,7 +38909,7 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
               owner = serviceUser;
             };
 
-            templates."searx-env" = {
+            templates.searx-env = {
               content = ''
                 SEARXNG_SECRET="${config.sops.placeholder.searx-secret}"
               '';
@@ -38947,19 +38947,19 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
               ];
               engines = lib.mapAttrsToList (name: value: { inherit name; } // value) {
                 "aol images".disabled = true;
-                "brave".disabled = true;
+                brave.disabled = true;
                 "brave.images".disabled = true;
-                "deviantart".disabled = true;
+                deviantart.disabled = true;
                 "duckduckgo images".disabled = true;
                 "google images".disabled = true;
-                "karmasearch".disabled = true;
+                karmasearch.disabled = true;
                 "karmasearch images".disabled = true;
                 "karmasearch videos".disabled = true;
-                "pexels".disabled = true;
+                pexels.disabled = true;
                 "qwant images".disabled = true;
-                "startpage".disabled = true;
+                startpage.disabled = true;
                 "startpage images".disabled = true;
-                "unsplash".disabled = true;
+                unsplash.disabled = true;
               };
               faviconsSettings.favicons = {
                 cache = {
@@ -39247,7 +39247,7 @@ For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
               mode = "0444";
             };
 
-            templates."invidiousExtraSettings" = {
+            templates.invidiousExtraSettings = {
               content = ''
                 {"invidious_companion_key": "${config.sops.placeholder.invidious-companion-key}"}
               '';
@@ -40392,7 +40392,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               };
             };
 
-            templates."shopservatory-env" = {
+            templates.shopservatory-env = {
               content = ''
                 SHOPSERVATORY_TELEGRAM_TOKEN=${config.sops.placeholder.shopservatory-telegram-token}
                 SHOPSERVATORY_EBAY_CLIENT_ID=${config.sops.placeholder.shopservatory-ebay-client-id}
@@ -44550,10 +44550,10 @@ I set the annotation-mode of marginalia to =heavy=. This gives even more informa
         consult = {
           enable = true;
           bind = {
-            "C-M-j" = "consult-buffer";
+            C-M-j = "consult-buffer";
             "C-c <C-m>" = "consult-global-mark";
             "C-c C-a" = "consult-org-agenda";
-            "C-s" = "consult-line";
+            C-s = "consult-line";
             "C-x O" = "consult-org-heading";
             "C-x b" = "consult-buffer";
             "M-g M-g" = "consult-goto-line";
@@ -44561,8 +44561,8 @@ I set the annotation-mode of marginalia to =heavy=. This gives even more informa
             "M-s M-s" = "consult-line-multi";
           };
           bindLocal.minibuffer-local-map = {
-            "C-j" = "next-line";
-            "C-k" = "previous-line";
+            C-j = "next-line";
+            C-k = "previous-line";
           };
           custom.consult-fontify-max-size = 1024;
         };
@@ -44614,7 +44614,7 @@ I set the annotation-mode of marginalia to =heavy=. This gives even more informa
         marginalia = {
           enable = true;
           after = [ "vertico" ];
-          bindLocal.minibuffer-local-map."M-A" = "marginalia-cycle";
+          bindLocal.minibuffer-local-map.M-A = "marginalia-cycle";
           init = "(marginalia-mode)";
         };
         nerd-icons-completion = {
@@ -44661,9 +44661,9 @@ I set the annotation-mode of marginalia to =heavy=. This gives even more informa
           enable = true;
           after = [ "vertico" ];
           bindLocal.vertico-map = {
-            "C-DEL" = "vertico-directory-delete-word";
-            "DEL" = "vertico-directory-delete-char";
-            "RET" = "vertico-directory-enter";
+            C-DEL = "vertico-directory-delete-word";
+            DEL = "vertico-directory-delete-char";
+            RET = "vertico-directory-enter";
           };
           hook = [ "(rfn-eshadow-update-overlay . vertico-directory-tidy)" ];
         };
@@ -45107,7 +45107,7 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
           "<right>" = "swarsel/org-present-next";
           "<​down>" = "'ignore";
           "<​up>" = "'ignore";
-          "q" = "org-present-quit";
+          q = "org-present-quit";
         };
         hook = [
           "(org-present-mode . swarsel/org-present-start)"
@@ -45676,7 +45676,7 @@ In Emacs, there are two packages for managing dev environments - Emacs-direnv (d
   {
     flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.avy = {
       enable = true;
-      bind."M-o" = "avy-goto-char-timer";
+      bind.M-o = "avy-goto-char-timer";
       custom.avy-all-windows = "'all-frames";
     };
   }
@@ -45961,7 +45961,7 @@ Navigation functions defined here: [[#h:5653d693-ecca-4c95-9633-66b9e3241070][co
           "<return>" = "swarsel/corfu-normal-return";
           "C-<down>" = "corfu-next";
           "C-<up>" = "corfu-previous";
-          "M-SPC" = "corfu-insert-separator";
+          M-SPC = "corfu-insert-separator";
           "S-<down>" = "corfu-popupinfo-scroll-up";
           "S-<up>" = "corfu-popupinfo-scroll-down";
         };
@@ -46296,24 +46296,24 @@ Dirvish is an improvement upon the dired-framework and has more features like fi
           "/" = "dirvish-narrow";
           "<left>" = "dired-up-directory";
           "<right>" = "dired-find-file";
-          "J" = "dirvish-history-jump";
-          "M-b" = "dirvish-history-go-backward";
-          "M-e" = "dirvish-emerge-menu";
-          "M-f" = "dirvish-history-go-forward";
-          "M-j" = "dirvish-fd-jump";
-          "M-l" = "dirvish-ls-switches-menu";
-          "M-m" = "dirvish-mark-menu";
-          "M-s" = "dirvish-setup-menu";
-          "M-t" = "dirvish-layout-toggle";
-          "TAB" = "dirvish-subtree-toggle";
-          "a" = "dirvish-quick-access";
-          "f" = "dirvish-file-info-menu";
-          "h" = "dired-up-directory";
-          "j" = "evil-next-visual-line";
-          "k" = "evil-previous-visual-line";
-          "l" = "dired-find-file";
-          "y" = "dirvish-yank-menu";
-          "z" = "dirvish-history-last";
+          J = "dirvish-history-jump";
+          M-b = "dirvish-history-go-backward";
+          M-e = "dirvish-emerge-menu";
+          M-f = "dirvish-history-go-forward";
+          M-j = "dirvish-fd-jump";
+          M-l = "dirvish-ls-switches-menu";
+          M-m = "dirvish-mark-menu";
+          M-s = "dirvish-setup-menu";
+          M-t = "dirvish-layout-toggle";
+          TAB = "dirvish-subtree-toggle";
+          a = "dirvish-quick-access";
+          f = "dirvish-file-info-menu";
+          h = "dired-up-directory";
+          j = "evil-next-visual-line";
+          k = "evil-previous-visual-line";
+          l = "dired-find-file";
+          y = "dirvish-yank-menu";
+          z = "dirvish-history-last";
         };
         custom = {
           delete-by-moving-to-trash = true;
@@ -46365,10 +46365,10 @@ While we are at it, we are also setting up a persistent undo-file for every file
       '';
       enable = true;
       bindLocal.undo-tree-visualizer-mode-map = {
-        "h" = "undo-tree-visualize-switch-branch-left";
-        "j" = "undo-tree-visualize-redo";
-        "k" = "undo-tree-visualize-undo";
-        "l" = "undo-tree-visualize-switch-branch-left";
+        h = "undo-tree-visualize-switch-branch-left";
+        j = "undo-tree-visualize-redo";
+        k = "undo-tree-visualize-undo";
+        l = "undo-tree-visualize-switch-branch-left";
       };
       init = "(global-undo-tree-mode)";
     };
@@ -53529,6 +53529,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
         "meta"
       ];
       merge = true;
+      name-style = "identifier";
     };
 
     inherits = {
@@ -53543,6 +53544,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
         "options"
         "modulesPath"
       ];
+      name-style = "identifier";
       sort = true;
     };
 

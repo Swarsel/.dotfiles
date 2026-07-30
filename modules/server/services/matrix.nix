@@ -443,7 +443,7 @@
               lottieconverter # for animated stickers conversion, unfree package
               ffmpeg # if converting animated stickers to webm (very slow!)
             ];
-            "restart-bridges" = {
+            restart-bridges = {
               script = ''
                 systemctl restart mautrix-whatsapp.service
                 systemctl restart mautrix-signal.service
@@ -455,7 +455,7 @@
               };
             };
           };
-          timers."restart-bridges" = {
+          timers.restart-bridges = {
             timerConfig = {
               OnBootSec = "1d";
               OnUnitActiveSec = "1d";

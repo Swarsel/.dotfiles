@@ -30,7 +30,7 @@
     wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
   };
 
-  topology.self.interfaces."bootstrapper" = { };
+  topology.self.interfaces.bootstrapper = { };
   sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
 
   networking = {

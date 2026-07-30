@@ -157,17 +157,17 @@
                 id = "default";
                 path = "${homeDir}/Sync";
               };
-              "Obsidian" = {
+              Obsidian = {
                 devices = syncDevices;
                 id = "yjvni-9eaa7";
                 path = "${homeDir}/Obsidian";
               };
-              "Org" = {
+              Org = {
                 devices = syncDevices;
                 id = "a7xnl-zjj3d";
                 path = "${homeDir}/Org";
               };
-              "Vpn" = {
+              Vpn = {
                 devices = syncDevices;
                 id = "hgp9s-fyq3p";
                 path = "${homeDir}/Vpn";

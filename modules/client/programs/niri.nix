@@ -112,15 +112,15 @@ in
                   "Mod+w".action = spawn "swarselcheck-niri" "-e";
                   "Mod+x".action = spawn "swarselcheck-niri" "-k";
                   "Mod+z".action = spawn "noctalia" "msg" "bar-toggle";
-                  "XF86AudioLowerVolume".action = spawn "noctalia" "msg" "volume-down";
-                  "XF86AudioMute".action = spawn "noctalia" "msg" "volume-mute";
-                  "XF86AudioNext".action = spawn "noctalia" "msg" "media" "next";
-                  "XF86AudioPlay".action = spawn "noctalia" "msg" "media" "toggle";
-                  "XF86AudioPrev".action = spawn "noctalia" "msg" "media" "previous";
-                  "XF86AudioRaiseVolume".action = spawn "noctalia" "msg" "volume-up";
-                  "XF86Display".action = spawn "wl-mirror" "eDP-1";
-                  "XF86MonBrightnessDown".action = spawn "noctalia" "msg" "brightness-down";
-                  "XF86MonBrightnessUp".action = spawn "noctalia" "msg" "brightness-up";
+                  XF86AudioLowerVolume.action = spawn "noctalia" "msg" "volume-down";
+                  XF86AudioMute.action = spawn "noctalia" "msg" "volume-mute";
+                  XF86AudioNext.action = spawn "noctalia" "msg" "media" "next";
+                  XF86AudioPlay.action = spawn "noctalia" "msg" "media" "toggle";
+                  XF86AudioPrev.action = spawn "noctalia" "msg" "media" "previous";
+                  XF86AudioRaiseVolume.action = spawn "noctalia" "msg" "volume-up";
+                  XF86Display.action = spawn "wl-mirror" "eDP-1";
+                  XF86MonBrightnessDown.action = spawn "noctalia" "msg" "brightness-down";
+                  XF86MonBrightnessUp.action = spawn "noctalia" "msg" "brightness-up";
                 };
               cursor = {
                 hide-after-inactive-ms = 2000;

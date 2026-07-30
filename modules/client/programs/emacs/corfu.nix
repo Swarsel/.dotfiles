@@ -8,7 +8,7 @@
         "<return>" = "swarsel/corfu-normal-return";
         "C-<down>" = "corfu-next";
         "C-<up>" = "corfu-previous";
-        "M-SPC" = "corfu-insert-separator";
+        M-SPC = "corfu-insert-separator";
         "S-<down>" = "corfu-popupinfo-scroll-up";
         "S-<up>" = "corfu-popupinfo-scroll-down";
       };

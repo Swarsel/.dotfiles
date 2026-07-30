@@ -41,6 +41,7 @@
       "meta"
     ];
     merge = true;
+    name-style = "identifier";
   };
 
   inherits = {
@@ -55,6 +56,7 @@
       "options"
       "modulesPath"
     ];
+    name-style = "identifier";
     sort = true;
   };
 

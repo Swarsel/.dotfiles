@@ -381,7 +381,7 @@ in
                     format = "{:%a %d. %b %H:%M:%S}";
                     tooltip_format = "{:%a %d. %b %H:%M:%S}";
                   };
-                  "control-center" = {
+                  control-center = {
                     custom_image = "${self}/files/icons/swarsel.png";
                     custom_image_colorize = true;
                     glyph = "noctalia";

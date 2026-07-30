@@ -13,7 +13,7 @@
         swarselsystems.enabledServerModules = [ "attic-setup" ];
         sops = {
           secrets.attic-cache-key = { };
-          templates."attic-env".content = ''
+          templates.attic-env.content = ''
             DOMAIN=https://${globals.services.attic.domain}
             TOKEN=${config.sops.placeholder.attic-cache-key}
           '';

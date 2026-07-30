@@ -98,9 +98,9 @@
               interval = 5;
               on-click-right = "wlogout -p layer-shell";
               states = {
-                "critical" = 15;
-                "error" = 30;
-                "warning" = 60;
+                critical = 15;
+                error = 30;
+                warning = 60;
               };
             };
             "clock#1" = {
@@ -188,13 +188,13 @@
               interval = 30;
               path = "/";
               states = {
-                "critical" = 90;
-                "warning" = 80;
+                critical = 90;
+                warning = 80;
               };
               tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
             };
             "group/hardware" = {
-              drawer."transition-left-to-right" = false;
+              drawer.transition-left-to-right = false;
               modules = [
                 "tray"
                 "temperature"
@@ -251,11 +251,11 @@
               format-paused = "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
               interval = 1;
               player-icons = {
-                "default" = "▶ ";
-                "mpv" = "🎵 ";
-                "spotify" = " ";
+                default = "▶ ";
+                mpv = "🎵 ";
+                spotify = " ";
               };
-              status-icons."paused" = " ";
+              status-icons.paused = " ";
               title-len = 20;
             };
             network = {
@@ -273,10 +273,10 @@
             power-profiles-daemon = {
               format = "{icon}";
               format-icons = {
-                "balanced" = "";
-                "default" = "";
-                "performance" = "";
-                "power-saver" = "";
+                balanced = "";
+                default = "";
+                performance = "";
+                power-saver = "";
               };
               tooltip = true;
               tooltip-format = "Power profile: {profile}\nDriver: {driver}";

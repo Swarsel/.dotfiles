@@ -74,11 +74,11 @@
         ];
         virtualisation.oci-containers.containers.${serviceName} = {
           environment = {
-            "IMAGE_MAX_SIZE" = "50M";
-            "ORIGIN" = "https://${serviceDomain}";
-            "STORAGE_PROVIDER" = "local";
-            "TZ" = config.repo.secrets.common.location.timezone;
-            "USER_APPROVAL_REQUIRED" = "true";
+            IMAGE_MAX_SIZE = "50M";
+            ORIGIN = "https://${serviceDomain}";
+            STORAGE_PROVIDER = "local";
+            TZ = config.repo.secrets.common.location.timezone;
+            USER_APPROVAL_REQUIRED = "true";
           };
           extraOptions = [
             "--health-cmd=wget -O - -q http://127.0.0.1:${builtins.toString servicePort}/api/health | grep -q OK"

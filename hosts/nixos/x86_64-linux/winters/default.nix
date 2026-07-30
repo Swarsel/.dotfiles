@@ -28,7 +28,7 @@
     proxyHost = "twothreetunnel";
 
   };
-  topology.self.interfaces."eth1" = { };
+  topology.self.interfaces.eth1 = { };
   boot.loader = {
     efi.canTouchEfiVariables = true;
     systemd-boot.enable = true;

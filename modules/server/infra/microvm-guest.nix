@@ -30,7 +30,7 @@
           "flakes"
         ];
         systemd = {
-          services."systemd-networkd".environment.SYSTEMD_LOG_LEVEL = "debug";
+          services.systemd-networkd.environment.SYSTEMD_LOG_LEVEL = "debug";
           network.networks."10-vlan-services" = {
             dhcpV6Config = {
               # duid-en is nice in principle, but I already have MAC info anyways for reservations

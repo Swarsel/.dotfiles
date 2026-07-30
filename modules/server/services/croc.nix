@@ -50,7 +50,7 @@
         sops = {
           secrets.croc-password = { inherit sopsFile; };
 
-          templates."croc-env".content = ''
+          templates.croc-env.content = ''
             CROC_PASS="${config.sops.placeholder.croc-password}"
           '';
         };

@@ -116,10 +116,10 @@ with dns.lib.combinators;
   ];
 
   subdomains = globals.dns.${globals.domains.main}.subdomainRecords // {
-    "_acme-challenge".CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
-    "soa" = host proxyAddress4 proxyAddress6;
-    "srv" = host proxyAddress4 proxyAddress6;
-    "www".CNAME = [ "${globals.domains.main}." ];
+    _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
+    soa = host proxyAddress4 proxyAddress6;
+    srv = host proxyAddress4 proxyAddress6;
+    www.CNAME = [ "${globals.domains.main}." ];
   };
 
   useOrigin = false;

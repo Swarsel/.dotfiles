@@ -61,9 +61,9 @@ in
     };
     programs = {
       bash.shellAliases = {
-        "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-        "swarsel-kernel-module" = "lspci -k -d";
-        "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\\|ethernet'";
+        swarsel-install = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+        swarsel-kernel-module = "lspci -k -d";
+        swarsel-net-manufacturer = "lspci -nn | grep -i 'network\\|ethernet'";
       };
       git.enable = true;
     };
@@ -76,7 +76,7 @@ in
     };
     console.keyMap = "us";
     environment = {
-      etc."issue".text = ''
+      etc.issue.text = ''
         [32m~SwarselSystems~[0m
         IP of primary interface: [31m\4[0m
         These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{eth4} \4{eth5} \4{wlan0}

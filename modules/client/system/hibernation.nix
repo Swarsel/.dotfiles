@@ -20,7 +20,7 @@
       };
       powerManagement.enable = true;
       systemd = {
-        services."systemd-suspend-then-hibernate".aliases = [ "systemd-suspend.service" ];
+        services.systemd-suspend-then-hibernate.aliases = [ "systemd-suspend.service" ];
         sleep.settings.Sleep = {
           HibernateDelaySec = "120m";
           SuspendState = "freeze";

@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.lowbattery = { lib, pkgs, ... }: {
     config.systemd.user = {
-      services."battery-low" =
+      services.battery-low =
         let
           target = "sway-session.target";
         in
@@ -19,7 +19,7 @@
           };
           wantedBy = [ target ];
         };
-      timers."battery-low" = {
+      timers.battery-low = {
         timerConfig = {
           # Every Minute
           OnCalendar = "*-*-* *:*:00";

@@ -20,10 +20,10 @@
         directory = {
           read_only = " 󰌾";
           substitutions = {
-            "Documents" = "󰈙 ";
-            "Downloads" = " ";
-            "Music" = " ";
-            "Pictures" = " ";
+            Documents = "󰈙 ";
+            Downloads = " ";
+            Music = " ";
+            Pictures = " ";
           };
         };
         docker_context.symbol = " ";

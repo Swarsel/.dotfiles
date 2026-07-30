@@ -45,7 +45,7 @@
       ];
       # allow to remote build on arm (needed for moonside)
       kernelModules = [ "sg" ];
-      luks.devices."cryptroot" = {
+      luks.devices.cryptroot = {
         # improve performance on ssds
         bypassWorkqueues = true;
         preLVM = true;

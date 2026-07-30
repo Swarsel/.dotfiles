@@ -76,7 +76,7 @@ in
           type = "simple";
         };
       };
-      "Documents" = {
+      Documents = {
         devices = [ "pyramid" ];
         id = "hgr3d-pfu3w";
         path = "/sync/Documents";
@@ -86,7 +86,7 @@ in
           type = "simple";
         };
       };
-      "runandbun" = {
+      runandbun = {
         devices = [
           "pyramid"
           "magicant"

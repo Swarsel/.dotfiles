@@ -64,8 +64,8 @@
     writeGlobalNetworks = false;
   };
   topology.self.interfaces = {
-    "bmc" = { };
-    "lan" = { };
+    bmc = { };
+    lan = { };
   };
   boot = {
     blacklistedKernelModules = [

@@ -301,7 +301,7 @@
         "<right>" = "swarsel/org-present-next";
         "<​down>" = "'ignore";
         "<​up>" = "'ignore";
-        "q" = "org-present-quit";
+        q = "org-present-quit";
       };
       hook = [
         "(org-present-mode . swarsel/org-present-start)"

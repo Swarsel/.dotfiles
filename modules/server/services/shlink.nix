@@ -70,7 +70,7 @@
         sops = {
           secrets.shlink-api = { inherit sopsFile; };
 
-          templates."shlink-env".content = ''
+          templates.shlink-env.content = ''
             INITIAL_API_KEY=${config.sops.placeholder.shlink-api}
           '';
         };
@@ -81,12 +81,12 @@
         ];
         virtualisation.oci-containers.containers.${serviceName} = {
           environment = {
-            "DEFAULT_DOMAIN" = serviceDomain;
-            "DEFAULT_SHORT_CODES_LENGTH" = "4";
-            "PORT" = "${builtins.toString servicePort}";
-            "TASK_WORKER_NUM" = "1";
-            "USE_HTTPS" = "false";
-            "WEB_WORKER_NUM" = "1";
+            DEFAULT_DOMAIN = serviceDomain;
+            DEFAULT_SHORT_CODES_LENGTH = "4";
+            PORT = "${builtins.toString servicePort}";
+            TASK_WORKER_NUM = "1";
+            USE_HTTPS = "false";
+            WEB_WORKER_NUM = "1";
           };
           environmentFiles = [
             config.sops.templates.shlink-env.path

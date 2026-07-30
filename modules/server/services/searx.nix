@@ -65,7 +65,7 @@
             owner = serviceUser;
           };
 
-          templates."searx-env" = {
+          templates.searx-env = {
             content = ''
               SEARXNG_SECRET="${config.sops.placeholder.searx-secret}"
             '';
@@ -103,19 +103,19 @@
             ];
             engines = lib.mapAttrsToList (name: value: { inherit name; } // value) {
               "aol images".disabled = true;
-              "brave".disabled = true;
+              brave.disabled = true;
               "brave.images".disabled = true;
-              "deviantart".disabled = true;
+              deviantart.disabled = true;
               "duckduckgo images".disabled = true;
               "google images".disabled = true;
-              "karmasearch".disabled = true;
+              karmasearch.disabled = true;
               "karmasearch images".disabled = true;
               "karmasearch videos".disabled = true;
-              "pexels".disabled = true;
+              pexels.disabled = true;
               "qwant images".disabled = true;
-              "startpage".disabled = true;
+              startpage.disabled = true;
               "startpage images".disabled = true;
-              "unsplash".disabled = true;
+              unsplash.disabled = true;
             };
             faviconsSettings.favicons = {
               cache = {

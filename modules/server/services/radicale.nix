@@ -69,7 +69,7 @@
               inherit (config.repo.secrets.local.radicale) user1;
             in
             {
-              "radicale-users" = {
+              radicale-users = {
                 content = ''
                   ${user1}:${config.sops.placeholder.radicale-user}
                 '';

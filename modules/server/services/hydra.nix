@@ -77,7 +77,7 @@
                 };
                 nixbuild-net-key.mode = "0600";
               };
-              templates."hydra-env" = {
+              templates.hydra-env = {
                 content = ''
                   HYDRA_PW="${config.sops.placeholder.hydra-pw}"
                 '';
