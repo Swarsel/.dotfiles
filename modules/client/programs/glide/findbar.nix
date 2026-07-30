@@ -34,8 +34,16 @@
       const existing = tabs.find((t) => t.url != null && t.url.includes(query));
       if (existing?.id != null) {
         await browser.tabs.update(existing.id, { active: true });
-      } else {
-        await browser.tabs.create({ url, cookieStoreId: "firefox-default" });
+        return;
+      }
+      const rule = match_rule(url);
+      if (rule != null && container_stores[rule.container] == null) {
+        await refresh_container_stores();
+      }
+      const target = rule != null ? container_stores[rule.container] : undefined;
+      const created = await browser.tabs.create({ url, cookieStoreId: target ?? "firefox-default" });
+      if (rule != null && target != null && created.id != null) {
+        placed.set(created.id, rule.container);
       }
     }
   '';
