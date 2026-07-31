@@ -8,6 +8,9 @@
       confLib,
       ...
     }:
+    let
+      inherit (config.swarselsystems) monitors;
+    in
     {
       config = {
         swarselsystems = {
@@ -28,27 +31,38 @@
           monitors = {
             work_middle_middle_main = rec {
               mode = "3840x2160";
-              name = "HP Inc. HP Z32 CN41212T55";
+              model = "HP Z32";
+              name = "${vendor} ${model} ${serial}";
               output = name;
               position = "-1280,0";
+              refresh = "60";
               scale = "1";
+              serial = "CN41212T55";
+              vendor = "HP Inc.";
               workspace = "1:一";
             };
             work_middle_middle_side = rec {
               mode = "3840x2160";
-              name = "HP Inc. HP 732pk CNC4080YL5";
+              model = "HP 732pk";
+              name = "${vendor} ${model} ${serial}";
               output = name;
               position = "-3440,-1050";
+              refresh = "60";
               scale = "1";
+              serial = "CNC4080YL5";
               transform = "270";
+              vendor = "HP Inc.";
               workspace = "12:S";
             };
             work_seminary = rec {
               mode = "1280x720";
-              name = "Applied Creative Technology Transmitter QUATTRO201811";
+              model = "Transmitter";
+              name = "${vendor} ${model} ${serial}";
               output = name;
               position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
               scale = "1";
+              serial = "QUATTRO201811";
+              vendor = "Applied Creative Technology";
               workspace = "14:T";
             };
           };
@@ -58,35 +72,22 @@
           kanshi.settings = [
             {
               # seminary room
-              output = {
-                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                mode = "1280x720";
-                scale = 1.0;
-              };
+              output = confLib.mkKanshiOutput monitors.work_seminary { };
             }
             {
               # work side screen
-              output = {
-                criteria = "HP Inc. HP 732pk CNC4080YL5";
-                mode = "3840x2160";
-                scale = 1.0;
-                transform = "270";
-              };
+              output = confLib.mkKanshiOutput monitors.work_middle_middle_side { };
             }
             {
               # work main screen
-              output = {
-                criteria = "HP Inc. HP Z32 CN41212T55";
-                mode = "3840x2160";
-                scale = 1.0;
-              };
+              output = confLib.mkKanshiOutput monitors.work_middle_middle_main { };
             }
             {
               profile = {
                 exec = [
                   "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
                 ];
                 name = "lidopen";
                 outputs = [
@@ -96,32 +97,21 @@
                     scale = 1.5;
                     status = "enable";
                   }
-                  {
-                    criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    mode = "3840x2160";
-                    position = "-3440,-1050";
-                    scale = 1.0;
-                    transform = "270";
-                  }
-                  {
-                    criteria = "HP Inc. HP Z32 CN41212T55";
-                    mode = "3840x2160";
-                    position = "-1280,0";
-                    scale = 1.0;
-                  }
+                  (confLib.mkKanshiOutput monitors.work_middle_middle_side { })
+                  (confLib.mkKanshiOutput monitors.work_middle_middle_main { })
                 ];
               };
             }
             {
               profile =
                 let
-                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                  monitor = monitors.work_seminary;
                 in
                 {
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor.name}'"
                   ];
                   name = "lidopen";
                   outputs = [
@@ -131,20 +121,15 @@
                       scale = 1.7;
                       status = "enable";
                     }
-                    {
-                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                      mode = "1280x720";
-                      position = "10000,10000";
-                      scale = 1.0;
-                    }
+                    (confLib.mkKanshiOutput monitor { })
                   ];
                 };
             }
             {
               profile = {
                 exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
                 ];
                 name = "lidclosed";
                 outputs = [
@@ -152,30 +137,19 @@
                     criteria = config.swarselsystems.sharescreen;
                     status = "disable";
                   }
-                  {
-                    criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    mode = "3840x2160";
-                    position = "-3440,-1050";
-                    scale = 1.0;
-                    transform = "270";
-                  }
-                  {
-                    criteria = "HP Inc. HP Z32 CN41212T55";
-                    mode = "3840x2160";
-                    position = "-1280,0";
-                    scale = 1.0;
-                  }
+                  (confLib.mkKanshiOutput monitors.work_middle_middle_side { })
+                  (confLib.mkKanshiOutput monitors.work_middle_middle_main { })
                 ];
               };
             }
             {
               profile =
                 let
-                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                  monitor = monitors.work_seminary;
                 in
                 {
                   exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidclosed";
                   outputs = [
@@ -183,28 +157,15 @@
                       criteria = config.swarselsystems.sharescreen;
                       status = "disable";
                     }
-                    {
-                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                      mode = "1280x720";
-                      position = "10000,10000";
-                      scale = 1.0;
-                    }
+                    (confLib.mkKanshiOutput monitor { })
                   ];
                 };
             }
           ];
           shikane.settings =
             let
-              workRight = [
-                "m=HP Z32"
-                "s=CN41212T55"
-                "v=HP Inc."
-              ];
-              workLeft = [
-                "m=HP 732pk"
-                "s=CNC4080YL5"
-                "v=HP Inc."
-              ];
+              workRight = confLib.mkShikaneOutput monitors.work_middle_middle_main { };
+              workLeft = confLib.mkShikaneOutput monitors.work_middle_middle_side { };
               exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
             in
             {
@@ -220,21 +181,8 @@
                       position = "2560,0";
                       scale = 1.7;
                     }
-                    {
-                      enable = true;
-                      match = workRight;
-                      mode = "3840x2160@60Hz";
-                      position = "-1280,0";
-                      scale = 1.0;
-                    }
-                    {
-                      enable = true;
-                      match = workLeft;
-                      mode = "3840x2160@60Hz";
-                      position = "-3440,-1050";
-                      scale = 1.0;
-                      transform = "270";
-                    }
+                    workRight
+                    workLeft
                   ];
                 }
                 {
@@ -247,21 +195,8 @@
                       position = "2560,0";
                       scale = 1.7;
                     }
-                    {
-                      enable = true;
-                      match = workRight;
-                      mode = "3840x2160@60Hz";
-                      position = "-1280,0";
-                      scale = 1.0;
-                    }
-                    {
-                      enable = true;
-                      match = workLeft;
-                      mode = "3840x2160@60Hz";
-                      position = "-3440,-1050";
-                      scale = 1.0;
-                      transform = "270";
-                    }
+                    workRight
+                    workLeft
                   ];
                 }
 

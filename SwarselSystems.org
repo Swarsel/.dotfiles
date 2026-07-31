@@ -13250,6 +13250,16 @@ I also take some precautions in how I get networking information during stage 1.
                 };
               };
             };
+          mkKanshiOutput =
+            monitor: overrides:
+            {
+              inherit (monitor) position;
+              criteria = monitor.output;
+              mode = monitor.mode + lib.optionalString (monitor ? refresh) "@${monitor.refresh}Hz";
+              scale = builtins.fromJSON monitor.scale * 1.0;
+            }
+            // lib.optionalAttrs (monitor ? transform) { inherit (monitor) transform; }
+            // overrides;
           mkMicrovm =
             if config.swarselsystems.withMicroVMs then
               (
@@ -13360,6 +13370,25 @@ I also take some precautions in how I get networking information during stage 1.
               }
               // extra;
             };
+          mkShikaneOutput =
+            monitor: overrides:
+            {
+              inherit (monitor) position;
+              enable = true;
+              match =
+                if monitor ? vendor then
+                  [
+                    "m=${monitor.model}"
+                    "s=${monitor.serial}"
+                    "v=${monitor.vendor}"
+                  ]
+                else
+                  monitor.output;
+              mode = monitor.mode + lib.optionalString (monitor ? refresh) "@${monitor.refresh}Hz";
+              scale = builtins.fromJSON monitor.scale * 1.0;
+            }
+            // lib.optionalAttrs (monitor ? transform) { inherit (monitor) transform; }
+            // overrides;
           mkTrayApplet =
             {
               description,
@@ -19558,10 +19587,13 @@ Nowadays, all of the Sway stack is kept as a reference.
             enabledHomeModules = [ "kanshi" ];
             monitors.homedesktop = rec {
               mode = "2560x1440";
-              name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+              model = "PHL BDM3270";
+              name = "${vendor} ${model} ${serial}";
               output = name;
               position = "0,0";
               scale = "1";
+              serial = "AU11806002320";
+              vendor = "Philips Consumer Electronics Company";
               workspace = "11:M";
             };
           };
@@ -19578,11 +19610,7 @@ Nowadays, all of the Sway stack is kept as a reference.
               }
               {
                 # home main screen
-                output = {
-                  criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-                  mode = "2560x1440";
-                  scale = 1.0;
-                };
+                output = confLib.mkKanshiOutput config.swarselsystems.monitors.homedesktop { };
               }
               {
                 profile = {
@@ -19602,12 +19630,12 @@ Nowadays, all of the Sway stack is kept as a reference.
               {
                 profile =
                   let
-                    monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+                    monitor = config.swarselsystems.monitors.homedesktop;
                   in
                   {
                     exec = [
                       "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
                     ];
                     name = "lidopen";
                     outputs = [
@@ -19617,23 +19645,18 @@ Nowadays, all of the Sway stack is kept as a reference.
                         scale = 1.7;
                         status = "enable";
                       }
-                      {
-                        criteria = monitor;
-                        mode = "2560x1440";
-                        position = "0,0";
-                        scale = 1.0;
-                      }
+                      (confLib.mkKanshiOutput monitor { })
                     ];
                   };
               }
               {
                 profile =
                   let
-                    monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+                    monitor = config.swarselsystems.monitors.homedesktop;
                   in
                   {
                     exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
                     ];
                     name = "lidclosed";
                     outputs = [
@@ -19642,12 +19665,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                         position = "2560,0";
                         status = "disable";
                       }
-                      {
-                        criteria = monitor;
-                        mode = "2560x1440";
-                        position = "0,0";
-                        scale = 1.0;
-                      }
+                      (confLib.mkKanshiOutput monitor { })
                     ];
                   };
               }
@@ -19679,10 +19697,13 @@ Nowadays, all of the Sway stack is kept as a reference.
             enabledHomeModules = [ "shikane" ];
             monitors.homedesktop = rec {
               mode = "2560x1440";
-              name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+              model = "PHL BDM3270";
+              name = "${vendor} ${model} ${serial}";
               output = name;
               position = "0,0";
               scale = "1";
+              serial = "AU11806002320";
+              vendor = "Philips Consumer Electronics Company";
               workspace = "11:M";
             };
           };
@@ -19690,11 +19711,7 @@ Nowadays, all of the Sway stack is kept as a reference.
             enable = true;
             settings =
               let
-                homeMonitor = [
-                  "m=PHL BDM3270"
-                  "s=AU11806002320"
-                  "v=Philips Consumer Electronics Company"
-                ];
+                homeMonitor = confLib.mkShikaneOutput config.swarselsystems.monitors.homedesktop { };
                 exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
               in
               {
@@ -19723,13 +19740,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                         position = "2560,0";
                         scale = 1.7;
                       }
-                      {
-                        enable = true;
-                        match = homeMonitor;
-                        mode = "2560x1440";
-                        position = "0,0";
-                        scale = 1.0;
-                      }
+                      homeMonitor
                     ];
                   }
 
@@ -19742,13 +19753,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                         match = config.swarselsystems.sharescreen;
                         position = "2560,0";
                       }
-                      {
-                        enable = true;
-                        match = homeMonitor;
-                        mode = "2560x1440";
-                        position = "0,0";
-                        scale = 1.0;
-                      }
+                      homeMonitor
                     ];
                   }
 
@@ -24605,6 +24610,9 @@ When setting up a new machine:
         confLib,
         ...
       }:
+      let
+        inherit (config.swarselsystems) monitors;
+      in
       {
         config = {
           swarselsystems = {
@@ -24625,27 +24633,38 @@ When setting up a new machine:
             monitors = {
               work_middle_middle_main = rec {
                 mode = "3840x2160";
-                name = "HP Inc. HP Z32 CN41212T55";
+                model = "HP Z32";
+                name = "${vendor} ${model} ${serial}";
                 output = name;
                 position = "-1280,0";
+                refresh = "60";
                 scale = "1";
+                serial = "CN41212T55";
+                vendor = "HP Inc.";
                 workspace = "1:一";
               };
               work_middle_middle_side = rec {
                 mode = "3840x2160";
-                name = "HP Inc. HP 732pk CNC4080YL5";
+                model = "HP 732pk";
+                name = "${vendor} ${model} ${serial}";
                 output = name;
                 position = "-3440,-1050";
+                refresh = "60";
                 scale = "1";
+                serial = "CNC4080YL5";
                 transform = "270";
+                vendor = "HP Inc.";
                 workspace = "12:S";
               };
               work_seminary = rec {
                 mode = "1280x720";
-                name = "Applied Creative Technology Transmitter QUATTRO201811";
+                model = "Transmitter";
+                name = "${vendor} ${model} ${serial}";
                 output = name;
                 position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
                 scale = "1";
+                serial = "QUATTRO201811";
+                vendor = "Applied Creative Technology";
                 workspace = "14:T";
               };
             };
@@ -24655,35 +24674,22 @@ When setting up a new machine:
             kanshi.settings = [
               {
                 # seminary room
-                output = {
-                  criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                  mode = "1280x720";
-                  scale = 1.0;
-                };
+                output = confLib.mkKanshiOutput monitors.work_seminary { };
               }
               {
                 # work side screen
-                output = {
-                  criteria = "HP Inc. HP 732pk CNC4080YL5";
-                  mode = "3840x2160";
-                  scale = 1.0;
-                  transform = "270";
-                };
+                output = confLib.mkKanshiOutput monitors.work_middle_middle_side { };
               }
               {
                 # work main screen
-                output = {
-                  criteria = "HP Inc. HP Z32 CN41212T55";
-                  mode = "3840x2160";
-                  scale = 1.0;
-                };
+                output = confLib.mkKanshiOutput monitors.work_middle_middle_main { };
               }
               {
                 profile = {
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidopen";
                   outputs = [
@@ -24693,32 +24699,21 @@ When setting up a new machine:
                       scale = 1.5;
                       status = "enable";
                     }
-                    {
-                      criteria = "HP Inc. HP 732pk CNC4080YL5";
-                      mode = "3840x2160";
-                      position = "-3440,-1050";
-                      scale = 1.0;
-                      transform = "270";
-                    }
-                    {
-                      criteria = "HP Inc. HP Z32 CN41212T55";
-                      mode = "3840x2160";
-                      position = "-1280,0";
-                      scale = 1.0;
-                    }
+                    (confLib.mkKanshiOutput monitors.work_middle_middle_side { })
+                    (confLib.mkKanshiOutput monitors.work_middle_middle_main { })
                   ];
                 };
               }
               {
                 profile =
                   let
-                    monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                    monitor = monitors.work_seminary;
                   in
                   {
                     exec = [
                       "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor.name}'"
                     ];
                     name = "lidopen";
                     outputs = [
@@ -24728,20 +24723,15 @@ When setting up a new machine:
                         scale = 1.7;
                         status = "enable";
                       }
-                      {
-                        criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                        mode = "1280x720";
-                        position = "10000,10000";
-                        scale = 1.0;
-                      }
+                      (confLib.mkKanshiOutput monitor { })
                     ];
                   };
               }
               {
                 profile = {
                   exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidclosed";
                   outputs = [
@@ -24749,30 +24739,19 @@ When setting up a new machine:
                       criteria = config.swarselsystems.sharescreen;
                       status = "disable";
                     }
-                    {
-                      criteria = "HP Inc. HP 732pk CNC4080YL5";
-                      mode = "3840x2160";
-                      position = "-3440,-1050";
-                      scale = 1.0;
-                      transform = "270";
-                    }
-                    {
-                      criteria = "HP Inc. HP Z32 CN41212T55";
-                      mode = "3840x2160";
-                      position = "-1280,0";
-                      scale = 1.0;
-                    }
+                    (confLib.mkKanshiOutput monitors.work_middle_middle_side { })
+                    (confLib.mkKanshiOutput monitors.work_middle_middle_main { })
                   ];
                 };
               }
               {
                 profile =
                   let
-                    monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                    monitor = monitors.work_seminary;
                   in
                   {
                     exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
                     ];
                     name = "lidclosed";
                     outputs = [
@@ -24780,28 +24759,15 @@ When setting up a new machine:
                         criteria = config.swarselsystems.sharescreen;
                         status = "disable";
                       }
-                      {
-                        criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                        mode = "1280x720";
-                        position = "10000,10000";
-                        scale = 1.0;
-                      }
+                      (confLib.mkKanshiOutput monitor { })
                     ];
                   };
               }
             ];
             shikane.settings =
               let
-                workRight = [
-                  "m=HP Z32"
-                  "s=CN41212T55"
-                  "v=HP Inc."
-                ];
-                workLeft = [
-                  "m=HP 732pk"
-                  "s=CNC4080YL5"
-                  "v=HP Inc."
-                ];
+                workRight = confLib.mkShikaneOutput monitors.work_middle_middle_main { };
+                workLeft = confLib.mkShikaneOutput monitors.work_middle_middle_side { };
                 exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
               in
               {
@@ -24817,21 +24783,8 @@ When setting up a new machine:
                         position = "2560,0";
                         scale = 1.7;
                       }
-                      {
-                        enable = true;
-                        match = workRight;
-                        mode = "3840x2160@60Hz";
-                        position = "-1280,0";
-                        scale = 1.0;
-                      }
-                      {
-                        enable = true;
-                        match = workLeft;
-                        mode = "3840x2160@60Hz";
-                        position = "-3440,-1050";
-                        scale = 1.0;
-                        transform = "270";
-                      }
+                      workRight
+                      workLeft
                     ];
                   }
                   {
@@ -24844,21 +24797,8 @@ When setting up a new machine:
                         position = "2560,0";
                         scale = 1.7;
                       }
-                      {
-                        enable = true;
-                        match = workRight;
-                        mode = "3840x2160@60Hz";
-                        position = "-1280,0";
-                        scale = 1.0;
-                      }
-                      {
-                        enable = true;
-                        match = workLeft;
-                        mode = "3840x2160@60Hz";
-                        position = "-3440,-1050";
-                        scale = 1.0;
-                        transform = "270";
-                      }
+                      workRight
+                      workLeft
                     ];
                   }
 

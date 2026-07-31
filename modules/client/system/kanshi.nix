@@ -13,10 +13,13 @@
           enabledHomeModules = [ "kanshi" ];
           monitors.homedesktop = rec {
             mode = "2560x1440";
-            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            model = "PHL BDM3270";
+            name = "${vendor} ${model} ${serial}";
             output = name;
             position = "0,0";
             scale = "1";
+            serial = "AU11806002320";
+            vendor = "Philips Consumer Electronics Company";
             workspace = "11:M";
           };
         };
@@ -33,11 +36,7 @@
             }
             {
               # home main screen
-              output = {
-                criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-                mode = "2560x1440";
-                scale = 1.0;
-              };
+              output = confLib.mkKanshiOutput config.swarselsystems.monitors.homedesktop { };
             }
             {
               profile = {
@@ -57,12 +56,12 @@
             {
               profile =
                 let
-                  monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+                  monitor = config.swarselsystems.monitors.homedesktop;
                 in
                 {
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidopen";
                   outputs = [
@@ -72,23 +71,18 @@
                       scale = 1.7;
                       status = "enable";
                     }
-                    {
-                      criteria = monitor;
-                      mode = "2560x1440";
-                      position = "0,0";
-                      scale = 1.0;
-                    }
+                    (confLib.mkKanshiOutput monitor { })
                   ];
                 };
             }
             {
               profile =
                 let
-                  monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+                  monitor = config.swarselsystems.monitors.homedesktop;
                 in
                 {
                   exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidclosed";
                   outputs = [
@@ -97,12 +91,7 @@
                       position = "2560,0";
                       status = "disable";
                     }
-                    {
-                      criteria = monitor;
-                      mode = "2560x1440";
-                      position = "0,0";
-                      scale = 1.0;
-                    }
+                    (confLib.mkKanshiOutput monitor { })
                   ];
                 };
             }

@@ -12,10 +12,13 @@
           enabledHomeModules = [ "shikane" ];
           monitors.homedesktop = rec {
             mode = "2560x1440";
-            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            model = "PHL BDM3270";
+            name = "${vendor} ${model} ${serial}";
             output = name;
             position = "0,0";
             scale = "1";
+            serial = "AU11806002320";
+            vendor = "Philips Consumer Electronics Company";
             workspace = "11:M";
           };
         };
@@ -23,11 +26,7 @@
           enable = true;
           settings =
             let
-              homeMonitor = [
-                "m=PHL BDM3270"
-                "s=AU11806002320"
-                "v=Philips Consumer Electronics Company"
-              ];
+              homeMonitor = confLib.mkShikaneOutput config.swarselsystems.monitors.homedesktop { };
               exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
             in
             {
@@ -56,13 +55,7 @@
                       position = "2560,0";
                       scale = 1.7;
                     }
-                    {
-                      enable = true;
-                      match = homeMonitor;
-                      mode = "2560x1440";
-                      position = "0,0";
-                      scale = 1.0;
-                    }
+                    homeMonitor
                   ];
                 }
 
@@ -75,13 +68,7 @@
                       match = config.swarselsystems.sharescreen;
                       position = "2560,0";
                     }
-                    {
-                      enable = true;
-                      match = homeMonitor;
-                      mode = "2560x1440";
-                      position = "0,0";
-                      scale = 1.0;
-                    }
+                    homeMonitor
                   ];
                 }
 

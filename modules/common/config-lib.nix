@@ -322,6 +322,16 @@
               };
             };
           };
+        mkKanshiOutput =
+          monitor: overrides:
+          {
+            inherit (monitor) position;
+            criteria = monitor.output;
+            mode = monitor.mode + lib.optionalString (monitor ? refresh) "@${monitor.refresh}Hz";
+            scale = builtins.fromJSON monitor.scale * 1.0;
+          }
+          // lib.optionalAttrs (monitor ? transform) { inherit (monitor) transform; }
+          // overrides;
         mkMicrovm =
           if config.swarselsystems.withMicroVMs then
             (
@@ -432,6 +442,25 @@
             }
             // extra;
           };
+        mkShikaneOutput =
+          monitor: overrides:
+          {
+            inherit (monitor) position;
+            enable = true;
+            match =
+              if monitor ? vendor then
+                [
+                  "m=${monitor.model}"
+                  "s=${monitor.serial}"
+                  "v=${monitor.vendor}"
+                ]
+              else
+                monitor.output;
+            mode = monitor.mode + lib.optionalString (monitor ? refresh) "@${monitor.refresh}Hz";
+            scale = builtins.fromJSON monitor.scale * 1.0;
+          }
+          // lib.optionalAttrs (monitor ? transform) { inherit (monitor) transform; }
+          // overrides;
         mkTrayApplet =
           {
             description,
