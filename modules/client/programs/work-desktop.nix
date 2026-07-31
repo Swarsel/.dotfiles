@@ -199,6 +199,34 @@
                     workLeft
                   ];
                 }
+                {
+                  exec = exec ++ [
+                    "${pkgs.nirishare}/bin/nirishare ${config.swarselsystems.sharescreen} '${monitors.work_seminary.name}'"
+                  ];
+                  name = "seminar-internal-on";
+                  output = [
+                    {
+                      enable = true;
+                      match = config.swarselsystems.sharescreen;
+                      position = "2560,0";
+                      scale = 1.7;
+                    }
+                    (confLib.mkShikaneOutput monitors.work_seminary { })
+                  ];
+                }
+                {
+                  inherit exec;
+                  name = "seminar-internal-off";
+                  output = [
+                    {
+                      enable = false;
+                      match = config.swarselsystems.sharescreen;
+                      position = "2560,0";
+                      scale = 1.7;
+                    }
+                    (confLib.mkShikaneOutput monitors.work_seminary { })
+                  ];
+                }
 
               ];
             };

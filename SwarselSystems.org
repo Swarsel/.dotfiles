@@ -24801,6 +24801,34 @@ When setting up a new machine:
                       workLeft
                     ];
                   }
+                  {
+                    exec = exec ++ [
+                      "${pkgs.nirishare}/bin/nirishare ${config.swarselsystems.sharescreen} '${monitors.work_seminary.name}'"
+                    ];
+                    name = "seminar-internal-on";
+                    output = [
+                      {
+                        enable = true;
+                        match = config.swarselsystems.sharescreen;
+                        position = "2560,0";
+                        scale = 1.7;
+                      }
+                      (confLib.mkShikaneOutput monitors.work_seminary { })
+                    ];
+                  }
+                  {
+                    inherit exec;
+                    name = "seminar-internal-off";
+                    output = [
+                      {
+                        enable = false;
+                        match = config.swarselsystems.sharescreen;
+                        position = "2560,0";
+                        scale = 1.7;
+                      }
+                      (confLib.mkShikaneOutput monitors.work_seminary { })
+                    ];
+                  }
 
                 ];
               };
@@ -41158,6 +41186,47 @@ This is a small helper for mirroring my screen onto another output (for example 
       makoctl mode -a do-not-disturb
       wlr-randr | grep "$2" | cut -d" " -f1 | xargs -I{} wl-present mirror "$1" --fullscreen-output {}
       makoctl mode -r do-not-disturb
+    '';
+  }
+#+end_src
+
+***** nirishare
+:PROPERTIES:
+:CUSTOM_ID: h:a0972a57-6c3e-41d8-a08e-1c19e4c319dd
+:END:
+
+The analogue to [[#h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5][kanshare]], just for Niri.
+
+
+#+begin_src nix-ts :tangle pkgs/flake/nirishare/default.nix
+  {
+    name,
+    busybox,
+    noctalia,
+    wl-mirror,
+    wlr-randr,
+    writeShellApplication,
+    ...
+  }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [
+      busybox
+      noctalia
+      wl-mirror
+      wlr-randr
+    ];
+    text = ''
+      if pgrep wl-mirror >/dev/null; then
+        exit 0
+      fi
+      target=$(wlr-randr | grep "$2" | cut -d" " -f1)
+      setsid sh -c "
+        noctalia msg notification-dnd-set on
+        wl-present mirror '$1' --fullscreen-output '$target'
+        noctalia msg notification-dnd-set off
+      " >/dev/null 2>&1 &
     '';
   }
 #+end_src
