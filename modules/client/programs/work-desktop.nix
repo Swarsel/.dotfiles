@@ -20,69 +20,23 @@
               xkb_layout = "us";
               xkb_variant = "altgr-intl";
             };
-            # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-            #   dwt = "enabled";
-            #   tap = "enabled";
-            #   natural_scroll = "enabled";
-            #   middle_emulation = "enabled";
-            #   drag_lock = "disabled";
-            # };
             "1133:50504:Logitech_USB_Receiver" = {
               xkb_layout = "us";
               xkb_variant = "altgr-intl";
             };
           };
           monitors = {
-            work_back_middle = rec {
-              mode = "2560x1440";
-              name = "LG Electronics LG Ultra HD 0x000305A6";
-              # output = "DP-10";
-              output = name;
-              position = "5120,0";
-              scale = "1";
-              workspace = "1:一";
-            };
-            work_front_left = rec {
-              mode = "3840x2160";
-              name = "LG Electronics LG Ultra HD 0x0007AB45";
-              # output = "DP-7";
-              output = name;
-              position = "5120,0";
-              scale = "1";
-              workspace = "1:一";
-            };
             work_middle_middle_main = rec {
               mode = "3840x2160";
               name = "HP Inc. HP Z32 CN41212T55";
-              # output = "DP-3";
               output = name;
               position = "-1280,0";
               scale = "1";
               workspace = "1:一";
             };
-            work_middle_middle_old = rec {
-              mode = "1920x1200";
-              name = "Hewlett Packard HP Z24i CN44250RDT";
-              # output = "DP-9";
-              output = name;
-              position = "-2480,0";
-              scale = "1";
-              transform = "270";
-              workspace = "12:S";
-            };
-            # work_middle_middle_main = rec {
-            #   name = "HP Inc. HP 732pk CNC4080YL5";
-            #   mode = "3840x2160";
-            #   scale = "1";
-            #   position = "-1280,0";
-            #   workspace = "11:M";
-            #   # output = "DP-8";
-            #   output = name;
-            # };
             work_middle_middle_side = rec {
               mode = "3840x2160";
               name = "HP Inc. HP 732pk CNC4080YL5";
-              # output = "DP-8";
               output = name;
               position = "-3440,-1050";
               scale = "1";
@@ -92,24 +46,12 @@
             work_seminary = rec {
               mode = "1280x720";
               name = "Applied Creative Technology Transmitter QUATTRO201811";
-              # output = "DP-4";
               output = name;
               position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
               scale = "1";
               workspace = "14:T";
             };
           };
-          startup = [
-            # { command = "nextcloud --background"; }
-            # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-            # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-            # { command = "anki"; }
-            # { command = "obsidian"; }
-            # { command = "nm-applet"; }
-            # { command = "feishin"; }
-            # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-            # { command = "1password"; }
-          ];
         };
         services = {
 
@@ -131,15 +73,6 @@
                 transform = "270";
               };
             }
-            # {
-            #   # work side screen
-            #   output = {
-            #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
-            #     scale = 1.0;
-            #     mode = "1920x1200";
-            #     transform = "270";
-            #   };
-            # }
             {
               # work main screen
               output = {

@@ -178,6 +178,27 @@ in
                 focus-ring.enable = false;
                 gaps = 5;
               };
+              outputs = lib.mapAttrs' (
+                _: monitor:
+                lib.nameValuePair monitor.output (
+                  let
+                    mode = lib.splitString "x" monitor.mode;
+                    position = lib.splitString "," monitor.position;
+                  in
+                  {
+                    mode = {
+                      height = lib.toInt (builtins.elemAt mode 1);
+                      width = lib.toInt (builtins.elemAt mode 0);
+                    };
+                    position = {
+                      x = lib.toInt (builtins.elemAt position 0);
+                      y = lib.toInt (builtins.elemAt position 1);
+                    };
+                    scale = builtins.fromJSON monitor.scale;
+                    transform.rotation = lib.toInt (monitor.transform or "0");
+                  }
+                )
+              ) config.swarselsystems.monitors;
               prefer-no-csd = true;
               screenshot-path = "~/Pictures/Screenshots/screenshot_%Y-%m-%d-%H%M%S.png";
               spawn-at-startup = [

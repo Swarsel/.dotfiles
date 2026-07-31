@@ -8,7 +8,17 @@
     }:
     {
       config = {
-        swarselsystems.enabledHomeModules = [ "shikane" ];
+        swarselsystems = {
+          enabledHomeModules = [ "shikane" ];
+          monitors.homedesktop = rec {
+            mode = "2560x1440";
+            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            output = name;
+            position = "0,0";
+            scale = "1";
+            workspace = "11:M";
+          };
+        };
         services.shikane = {
           enable = true;
           settings =
