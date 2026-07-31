@@ -111,6 +111,9 @@ in
             browserpass.enable = true;
           };
           boot.initrd = {
+            services.udev.rules = ''
+              ACTION=="add", SUBSYSTEM=="thunderbolt", ATTR{authorized}=="0", ATTR{authorized}="1"
+            '';
             luks = {
               fido2Support = false;
               # disable "support" since we use systemd-cryptenroll
