@@ -16403,7 +16403,7 @@ Currently I only use it as before with =initExtra= though.
 #+begin_src nix-ts :tangle modules/client/programs/tmux.nix
   {
     flake.modules.homeManager.tmux =
-      { pkgs, ... }:
+      { config, pkgs, ... }:
       let
         tmux-super-fingers = pkgs.tmuxPlugins.mkTmuxPlugin {
           pluginName = "tmux-super-fingers";
@@ -16497,6 +16497,23 @@ Currently I only use it as before with =initExtra= though.
             lsof
             sesh
           ];
+          systemd.user.services.tmux = {
+            Install.WantedBy = [ "default.target" ];
+            Service = {
+              Environment = [ "DISPLAY=:0" ];
+              ExecStart = "${config.programs.tmux.package}/bin/tmux new-session -d";
+              ExecStop = [
+                "${pkgs.tmuxPlugins.resurrect}/share/tmux-plugins/resurrect/scripts/save.sh"
+                "${config.programs.tmux.package}/bin/tmux kill-server"
+              ];
+              RemainAfterExit = true;
+              Type = "oneshot";
+            };
+            Unit = {
+              Description = "tmux default session (detached)";
+              Documentation = "man:tmux(1)";
+            };
+          };
         };
       };
   }

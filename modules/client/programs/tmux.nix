@@ -1,6 +1,6 @@
 {
   flake.modules.homeManager.tmux =
-    { pkgs, ... }:
+    { config, pkgs, ... }:
     let
       tmux-super-fingers = pkgs.tmuxPlugins.mkTmuxPlugin {
         pluginName = "tmux-super-fingers";
@@ -94,6 +94,23 @@
           lsof
           sesh
         ];
+        systemd.user.services.tmux = {
+          Install.WantedBy = [ "default.target" ];
+          Service = {
+            Environment = [ "DISPLAY=:0" ];
+            ExecStart = "${config.programs.tmux.package}/bin/tmux new-session -d";
+            ExecStop = [
+              "${pkgs.tmuxPlugins.resurrect}/share/tmux-plugins/resurrect/scripts/save.sh"
+              "${config.programs.tmux.package}/bin/tmux kill-server"
+            ];
+            RemainAfterExit = true;
+            Type = "oneshot";
+          };
+          Unit = {
+            Description = "tmux default session (detached)";
+            Documentation = "man:tmux(1)";
+          };
+        };
       };
     };
 }
