@@ -40245,6 +40245,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
         inputs,
         config,
         lib,
+        pkgs,
         confLib,
         globals,
         ...
@@ -40278,10 +40279,17 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
 
         kanidmDomain = globals.services.kanidm.domain;
         kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
+
+        piaNamespace = "pia";
+        piaNetnsPath = "/var/run/netns/${piaNamespace}";
+        jpProxyPort = 1081;
+        jpProxyAddress = "127.0.0.1:${builtins.toString jpProxyPort}";
+        jpNetnsPort = 1080;
       in
       {
         imports = [
           inputs.shopservatory.nixosModules.default
+          self.modules.nixos.pia-netns
         ];
         config = {
           swarselsystems.enabledServerModules = [ "shopservatory" ];
@@ -40318,6 +40326,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                 owner = serviceName;
                 sopsFile = kanidmSopsFile;
               };
+              pia = { inherit sopsFile; };
               shopservatory-ebay-client-id = {
                 inherit sopsFile;
                 group = serviceName;
@@ -40357,35 +40366,53 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               owner = serviceName;
             };
           };
-          users.persistentIds.${serviceName} = confLib.mkIds 987;
-          services.shopservatory = {
-            enable = true;
-            browser.enable = true;
-            environmentFile = config.sops.templates."shopservatory-env".path;
-            flaresolverr.enable = true;
-            settings = {
-              users = [
-                {
-                  admin = true;
-                  email = "admin@${globals.domains.main}";
-                  name = "admin";
-                }
-              ];
-              currency.target = "EUR";
-              oidc = {
-                client_id = serviceName;
-                issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
-                name = "kanidm";
-              };
-              scrape = {
-                browser_proxy = "socks5://${globals.services."socks-proxy".serviceAddress}:${
-                  builtins.toString globals.services."socks-proxy".extraConfig.port
-                }";
-                default_interval = "5m";
-              };
-              server = {
-                base_url = "https://${serviceDomain}";
-                listen = "0.0.0.0:${builtins.toString servicePort}";
+          users.persistentIds = {
+            ${serviceName} = confLib.mkIds 987;
+            microsocks = confLib.mkIds 988;
+          };
+          services = {
+            microsocks = {
+              enable = true;
+              ip = "127.0.0.1";
+              port = jpNetnsPort;
+            };
+            pia-netns = {
+              enable = true;
+              credentialsFile = config.sops.secrets.pia.path;
+              dns = true;
+              namespace = piaNamespace;
+              region = "japan";
+            };
+            shopservatory = {
+              enable = true;
+              browser.enable = true;
+              environmentFile = config.sops.templates."shopservatory-env".path;
+              flaresolverr.enable = true;
+              settings = {
+                users = [
+                  {
+                    admin = true;
+                    email = "admin@${globals.domains.main}";
+                    name = "admin";
+                  }
+                ];
+                currency.target = "EUR";
+                oidc = {
+                  client_id = serviceName;
+                  issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+                  name = "kanidm";
+                };
+                scrape = {
+                  browser_proxy = "socks5://${globals.services."socks-proxy".serviceAddress}:${
+                    builtins.toString globals.services."socks-proxy".extraConfig.port
+                  }";
+                  default_interval = "5m";
+                  jp_proxy_url = "socks5://${jpProxyAddress}";
+                };
+                server = {
+                  base_url = "https://${serviceDomain}";
+                  listen = "0.0.0.0:${builtins.toString servicePort}";
+                };
               };
             };
           };
@@ -40397,6 +40424,39 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               user = serviceName;
             }
           ];
+          systemd.services = {
+            microsocks = {
+              after = [ "pia-netns.service" ];
+              bindsTo = [ "pia-netns.service" ];
+              partOf = [ "pia-netns.service" ];
+              requires = [ "pia-netns.service" ];
+              serviceConfig = {
+                BindReadOnlyPaths = [
+                  "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf"
+                ];
+                NetworkNamespacePath = piaNetnsPath;
+                PrivateNetwork = lib.mkForce false;
+              };
+              wantedBy = lib.mkForce [ "pia-netns.service" ];
+            };
+            shopservatory-jp-proxy = {
+              after = [ "microsocks.service" ];
+              bindsTo = [ "microsocks.service" ];
+              description = "Forward host ${jpProxyAddress} into the PIA Japan netns";
+              partOf = [ "microsocks.service" ];
+              serviceConfig = {
+                ExecStart = pkgs.writeShellScript "shopservatory-jp-proxy" ''
+                  exec ${pkgs.socat}/bin/socat \
+                    TCP-LISTEN:${builtins.toString jpProxyPort},bind=127.0.0.1,reuseaddr,fork \
+                    EXEC:'${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} ${pkgs.socat}/bin/socat - TCP\:127.0.0.1\:${builtins.toString jpNetnsPort}'
+                '';
+                Restart = "on-failure";
+                RestartSec = "10s";
+                Type = "simple";
+              };
+              wantedBy = [ "multi-user.target" ];
+            };
+          };
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
