@@ -17,7 +17,7 @@
         (setq mu4e-search-skip-duplicates nil)
 
         (setq mu4e-update-interval 60)
-        (setq mu4e-get-mail-command "mbsync -a")
+        (setq mu4e-get-mail-command "systemctl --user start mbsync.service")
         (setq mu4e-maildir "~/Mail")
 
         (setq mu4e-view-show-images t)
