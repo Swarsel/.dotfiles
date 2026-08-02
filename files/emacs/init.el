@@ -574,8 +574,7 @@ Also see `prot-window-delete-popup-frame'." command)
   (load-theme 'doom-city-lights t)
   (doom-themes-treemacs-config)
   (doom-themes-org-config)
-  (with-eval-after-load 'gnus
-    (put 'gnus-group-news-low 'face-defface-spec '((t (:weight bold)))))
+  (custom-set-faces '(gnus-group-news-low-empty ((t (:inherit gnus-group-mail-1-empty)))))
   )
 
 (use-package eglot
