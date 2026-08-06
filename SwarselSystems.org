@@ -17527,11 +17527,6 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 #+begin_src nix-ts :tangle modules/client/programs/glide/findbar.nix
   {
     flake.modules.homeManager.glide.programs.glide-browser.config = ''
-      glide.keymaps.set("normal", "/", () => glide.findbar.open({ query: "" }));
-      glide.keymaps.set("normal", "?", () => glide.findbar.open({ query: "" }));
-      glide.keymaps.set("normal", "n", () => glide.findbar.next_match());
-      glide.keymaps.set("normal", "N", () => glide.findbar.previous_match());
-
       function enforce_input_mode() {
         if (glide.ctx.mode !== "normal") {
           return;
@@ -17544,13 +17539,51 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
       }
 
       glide.autocmds.create("ModeChanged", "*:normal", enforce_input_mode);
-      setInterval(enforce_input_mode, 100);
+      glide.autocmds.create("CommandLineExit", enforce_input_mode);
+      glide.autocmds.create("ModeChanged", "*:command", () => start_enforce_polling());
 
-      glide.keymaps.set(["insert", "normal"], "<Esc>", () => {
-        if (glide.findbar.is_open()) {
-          void glide.findbar.close();
+      let enforce_timer: ReturnType<typeof setInterval> | null = null;
+      function stop_enforce_polling() {
+        if (enforce_timer != null) {
+          clearInterval(enforce_timer);
+          enforce_timer = null;
         }
-        void glide.excmds.execute("mode_change normal");
+      }
+      function start_enforce_polling() {
+        if (enforce_timer != null) {
+          return;
+        }
+        enforce_timer = setInterval(() => {
+          if (!glide.findbar.is_open() && !glide.commandline.is_active()) {
+            stop_enforce_polling();
+            return;
+          }
+          enforce_input_mode();
+        }, 100);
+      }
+
+      async function open_findbar() {
+        await glide.findbar.open({ query: "" });
+        start_enforce_polling();
+      }
+
+      glide.keymaps.set("normal", "/", open_findbar);
+      glide.keymaps.set("normal", "?", open_findbar);
+      glide.keymaps.set("normal", "n", async () => {
+        await glide.findbar.next_match();
+        start_enforce_polling();
+      });
+      glide.keymaps.set("normal", "N", async () => {
+        await glide.findbar.previous_match();
+        start_enforce_polling();
+      });
+
+      glide.keymaps.set(["insert", "normal", "visual", "op-pending"], "<Esc>", async () => {
+        if (glide.findbar.is_open()) {
+          await glide.findbar.close();
+        }
+        await glide.excmds.execute("blur");
+        await glide.excmds.execute("mode_change normal");
       });
 
       glide.keymaps.set("command", "<Esc>", () => void glide.commandline.close());
@@ -17687,14 +17720,27 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         } else {
           hint_active = ((hint_active % hint_visible.length) + hint_visible.length) % hint_visible.length;
         }
+        const positions = new Map<number, number>();
+        for (let pos = 0; pos < hint_visible.length; pos++) {
+          const idx = hint_visible[pos];
+          if (idx != null) {
+            positions.set(idx, pos);
+          }
+        }
         for (let i = 0; i < container.children.length; i++) {
           const marker = container.children[i] as HTMLElement;
-          const pos = hint_visible.indexOf(i);
-          marker.style.display = pos === -1 ? "none" : "";
-          const active = pos === hint_active && pos !== -1;
-          marker.style.background = active ? "var(--base0B)" : "";
-          marker.style.color = active ? "var(--base00)" : "";
-          marker.style.opacity = active ? "1" : "";
+          const pos = positions.get(i);
+          const display = pos == null ? "none" : "";
+          if (marker.style.display !== display) {
+            marker.style.display = display;
+          }
+          const active = pos != null && pos === hint_active ? "1" : "";
+          if (marker.dataset["glideActive"] !== active) {
+            marker.dataset["glideActive"] = active;
+            marker.style.background = active ? "var(--base0B)" : "";
+            marker.style.color = active ? "var(--base00)" : "";
+            marker.style.opacity = active ? "1" : "";
+          }
         }
         update_find_display(hint_filter.length > 0 && hint_visible.length === 0);
         if (hint_session && hint_filter.length > 0 && hint_visible.length === 1) {
@@ -18090,9 +18136,8 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
             }),
           );
         }
-        update_tab_count();
-        void refresh_active_container();
-        void refresh_active_root();
+        void update_tab_count(9);
+        void refresh_active_indicators();
       }
 
       glide.autocmds.create("WindowLoaded", ensure_statusline);
@@ -18203,8 +18248,8 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         }
       });
 
-      async function update_tab_count() {
-        for (let attempt = 0; attempt < 10; attempt++) {
+      async function update_tab_count(retries = 0) {
+        for (let attempt = 0; attempt <= retries; attempt++) {
           try {
             const tabs = await browser.tabs.query({ currentWindow: true });
             const tabs_el = document.getElementById("glide-statusline-tabs");
@@ -18213,7 +18258,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
             }
             return;
           } catch {
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            if (attempt < retries) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            }
           }
         }
       }
@@ -18222,17 +18269,30 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         if (!container_el) {
           return;
         }
-        container_el.textContent =
-          store_id != null && store_id !== "firefox-default" ? (container_names[store_id] ?? "") : "";
+        const text = store_id != null && store_id !== "firefox-default" ? (container_names[store_id] ?? "") : "";
+        if (container_el.textContent !== text) {
+          container_el.textContent = text;
+        }
       }
-      async function refresh_active_container() {
+      async function refresh_active_indicators() {
         try {
           const win = await browser.windows.getLastFocused({ populate: true });
           const active = win.tabs?.find((t) => t.active);
-          await update_container_indicator(active?.cookieStoreId);
+          update_container_indicator(active?.cookieStoreId);
+          update_root_indicator(active?.id);
         } catch {}
       }
-      async function update_root_indicator(tab_id?: number) {
+      let root_indicator_timer: ReturnType<typeof setTimeout> | null = null;
+      function update_root_indicator(tab_id?: number) {
+        if (root_indicator_timer != null) {
+          clearTimeout(root_indicator_timer);
+        }
+        root_indicator_timer = setTimeout(() => {
+          root_indicator_timer = null;
+          void update_root_indicator_now(tab_id);
+        }, 100);
+      }
+      async function update_root_indicator_now(tab_id?: number, retried = false) {
         const root_el = document.getElementById("glide-statusline-root");
         if (!root_el) {
           return;
@@ -18241,23 +18301,28 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           root_el.textContent = "";
           return;
         }
-        const at_root = await glide.content
-          .execute(() => {
+        try {
+          const at_root = await glide.content.execute(() => {
             const nav = (window as unknown as { navigation?: { currentEntry?: { index: number } } }).navigation;
             if (nav?.currentEntry != null) {
               return nav.currentEntry.index <= 0;
             }
             return history.length <= 1;
-          }, { tab_id })
-          .catch(() => false);
-        root_el.textContent = at_root ? "/" : "";
-      }
-      async function refresh_active_root() {
-        try {
-          const win = await browser.windows.getLastFocused({ populate: true });
-          const active = win.tabs?.find((t) => t.active);
-          await update_root_indicator(active?.id);
-        } catch {}
+          }, { tab_id });
+          root_el.textContent = at_root ? "/" : "";
+        } catch {
+          if (retried) {
+            root_el.textContent = "";
+            return;
+          }
+          if (root_indicator_timer != null) {
+            clearTimeout(root_indicator_timer);
+          }
+          root_indicator_timer = setTimeout(() => {
+            root_indicator_timer = null;
+            void update_root_indicator_now(tab_id, true);
+          }, 600);
+        }
       }
       const tab_containers: Record<number, string> = {};
       function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
@@ -18266,14 +18331,14 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         }
       }
       glide.autocmds.create("ConfigLoaded", () => {
-        browser.tabs.onCreated.addListener(update_tab_count);
-        browser.tabs.onRemoved.addListener(update_tab_count);
+        browser.tabs.onCreated.addListener(() => void update_tab_count());
+        browser.tabs.onRemoved.addListener(() => void update_tab_count());
         browser.tabs.onCreated.addListener(cache_tab);
         browser.tabs.onRemoved.addListener((tab_id) => {
           delete tab_containers[tab_id];
         });
         browser.tabs.onActivated.addListener(async (info) => {
-          void update_root_indicator(info.tabId);
+          update_root_indicator(info.tabId);
           const cached = tab_containers[info.tabId];
           if (cached != null) {
             update_container_indicator(cached);
@@ -18288,13 +18353,12 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           if (tab.active) {
             update_container_indicator(tab.cookieStoreId);
             if (change.url != null || change.status === "complete") {
-              void update_root_indicator(tab_id);
+              update_root_indicator(tab_id);
             }
           }
         });
         browser.windows.onFocusChanged.addListener(() => {
-          void refresh_active_container();
-          void refresh_active_root();
+          void refresh_active_indicators();
         });
         const on_navigation = async (details: { tabId: number; frameId: number }) => {
           if (details.frameId !== 0) {
@@ -18302,16 +18366,12 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           }
           const tab = await browser.tabs.get(details.tabId).catch(() => null);
           if (tab?.active) {
-            void update_root_indicator(details.tabId);
+            update_root_indicator(details.tabId);
           }
         };
         browser.webNavigation.onCommitted.addListener(on_navigation);
         browser.webNavigation.onHistoryStateUpdated.addListener(on_navigation);
       });
-      setInterval(() => {
-        void refresh_active_container();
-        void refresh_active_root();
-      }, 1500);
     '';
   }
 #+end_src
@@ -18382,11 +18442,18 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
       }, { description: "Duplicate the current tab into a new window" });
 
       glide.keymaps.set("normal", "d", async () => {
-        const current = await glide.tabs.active();
-        await glide.excmds.execute("tab_prev");
-        if (current.id != null) {
-          await browser.tabs.remove(current.id);
+        const tabs = await browser.tabs.query({ currentWindow: true });
+        const current = tabs.find((t) => t.active);
+        if (current?.id == null) {
+          return;
         }
+        const ordered = tabs.filter((t) => t.id != null).sort((a, b) => a.index - b.index);
+        const pos = ordered.findIndex((t) => t.id === current.id);
+        const target = ordered[(pos - 1 + ordered.length) % ordered.length];
+        if (target?.id != null && target.id !== current.id) {
+          await browser.tabs.update(target.id, { active: true });
+        }
+        await browser.tabs.remove(current.id);
       }, { description: "Close the current tab and focus the previous one" });
 
       glide.keymaps.set("normal", "D", "tab_close");
@@ -18687,14 +18754,80 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         }
       }
 
+      function upsert_history_entry(item: { url?: string; title?: string }) {
+        if (!item.url) {
+          return;
+        }
+        if (url_entry_set.has(item.url)) {
+          const idx = url_entries.findIndex((e) => e.url === item.url);
+          if (idx !== -1) {
+            const entry = url_entries[idx];
+            if (entry != null) {
+              url_entries.splice(idx, 1);
+              if (item.title) {
+                entry.title = item.title;
+              }
+              url_entries.unshift(entry);
+            }
+          }
+        } else {
+          url_entries.unshift({ star: false, title: item.title ?? "", url: item.url });
+          url_entry_set.add(item.url);
+        }
+      }
+
       glide.autocmds.create("ConfigLoaded", () => {
         browser.bookmarks.onCreated.addListener(schedule_url_entries_refresh);
         browser.bookmarks.onRemoved.addListener(schedule_url_entries_refresh);
         browser.bookmarks.onChanged.addListener(schedule_url_entries_refresh);
         browser.bookmarks.onMoved.addListener(schedule_url_entries_refresh);
-        browser.history.onVisited.addListener(schedule_url_entries_refresh);
+        browser.history.onVisited.addListener(upsert_history_entry);
+        browser.history.onTitleChanged.addListener(upsert_history_entry);
         void refresh_url_entries();
       });
+
+      let active_fill_focused: ((focused_text: string) => string | null) | null = null;
+      let active_reshow: ((url: string) => void) | null = null;
+      let cmdline_input = "";
+
+      function normalize_query(input: string): string {
+        return input.trim().toLowerCase().split(/\s+/).filter(Boolean).join(" ");
+      }
+
+      function score_token(haystack: string, token: string): number {
+        const at = haystack.indexOf(token);
+        if (at === -1) {
+          return 0;
+        }
+        const before = at === 0 ? "" : haystack[at - 1];
+        const boundary = at === 0 || before === "." || before === "/" || before === "-" || before === "_" || before === " ";
+        return 10 + (boundary ? 6 : 0) + Math.max(0, 4 - Math.floor(at / 16));
+      }
+
+      function score_entry(
+        entry: { star: boolean; title: string; url: string },
+        tokens: string[],
+        rank: number,
+      ): number {
+        const title = entry.title.toLowerCase();
+        let url = entry.url.toLowerCase();
+        const scheme = url.indexOf("://");
+        if (scheme !== -1) {
+          url = url.slice(scheme + 3);
+        }
+        let total = 0;
+        for (const token of tokens) {
+          const best = Math.max(score_token(url, token), score_token(title, token));
+          if (best === 0) {
+            return 0;
+          }
+          total += best;
+        }
+        if (entry.star) {
+          total += 8;
+        }
+        return total + Math.max(0, 20 - rank / 40);
+      }
 
       async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
         if (url_entries.length === 0) {
@@ -18716,11 +18849,17 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           return search.engine ? "Search " + search.engine + ": " + search.query : "Search: " + search.query;
         }
 
+        cmdline_input = opts.prefill ?? "";
+        active_reshow = (url) => {
+          void glide.commandline.close().then(() => url_commandline(target, { ...opts, prefill: url }));
+        };
+
         const action_text = DOM.create_element("span", { children: describe_action(opts.prefill ?? "") });
         const options: glide.CommandLineCustomOption[] = [{
           label: "search",
           render: () => DOM.create_element("td", { attributes: { colspan: "2" }, children: [action_text] }),
           matches: ({ input }) => {
+            cmdline_input = input;
             action_text.textContent = describe_action(input);
             return true;
           },
@@ -18778,6 +18917,26 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         let slot_query: string | null = null;
         let live_query: string | null = null;
 
+        active_fill_focused = (focused_text) => {
+          for (const item of slot_items) {
+            if (item != null && focused_text.includes(item.url)) {
+              return item.url;
+            }
+          }
+          return null;
+        };
+
+        let live_fetch_timer: ReturnType<typeof setTimeout> | null = null;
+        function schedule_fetch_live(q: string) {
+          if (live_fetch_timer != null) {
+            clearTimeout(live_fetch_timer);
+          }
+          live_fetch_timer = setTimeout(() => {
+            live_fetch_timer = null;
+            void fetch_live(q);
+          }, 200);
+        }
+
         async function fetch_live(q: string) {
           if (live_query === q) {
             return;
@@ -18790,7 +18949,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
             live_history.set(item.url, { star: false, title: item.title ?? "", url: item.url });
             added = true;
           }
-          if (added && slot_query != null && slot_query.trim().toLowerCase() === q) {
+          if (added && slot_query != null && normalize_query(slot_query) === q) {
             const current = slot_query;
             slot_query = null;
             recompute_slots(current);
@@ -18802,22 +18961,35 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
             return;
           }
           slot_query = input;
-          const q = input.trim().toLowerCase();
+          const tokens = input.trim().toLowerCase().split(/\s+/).filter(Boolean);
           slot_items.length = 0;
-          for (const entry of url_entries) {
-            if (slot_items.length >= SLOTS) break;
-            if (q === "" || entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q)) {
+          if (tokens.length === 0) {
+            for (const entry of url_entries) {
+              if (slot_items.length >= SLOTS) break;
               slot_items.push(entry);
             }
-          }
-          if (q !== "") {
-            for (const entry of live_history.values()) {
-              if (slot_items.length >= SLOTS) break;
-              if (!url_entry_set.has(entry.url) && (entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q))) {
-                slot_items.push(entry);
+          } else {
+            const scored: { entry: (typeof url_entries)[number]; score: number }[] = [];
+            let rank = 0;
+            for (const entry of url_entries) {
+              const score = score_entry(entry, tokens, rank++);
+              if (score > 0) {
+                scored.push({ entry, score });
               }
             }
-            void fetch_live(q);
+            for (const entry of live_history.values()) {
+              if (url_entry_set.has(entry.url)) continue;
+              const score = score_entry(entry, tokens, rank++);
+              if (score > 0) {
+                scored.push({ entry, score });
+              }
+            }
+            scored.sort((a, b) => b.score - a.score);
+            for (const item of scored) {
+              if (slot_items.length >= SLOTS) break;
+              slot_items.push(item.entry);
+            }
+            schedule_fetch_live(tokens.join(" "));
           }
           for (let i = 0; i < slot_items.length; i++) {
             slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
@@ -18857,6 +19029,21 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         recompute_slots(opts.prefill ?? "");
         await glide.commandline.show({ input: opts.prefill ?? "", title: "History and bookmarks", options });
       }
+
+      glide.autocmds.create("CommandLineExit", () => {
+        active_fill_focused = null;
+        active_reshow = null;
+      });
+
+      glide.keymaps.set("command", "<Right>", () => {
+        const focused = document.querySelector("glide-commandline .gcl-option.focused");
+        const url = focused != null ? active_fill_focused?.(focused.textContent ?? "") : null;
+        if (url != null && url !== cmdline_input && active_reshow != null) {
+          active_reshow(url);
+        } else {
+          void glide.keys.send("<Right>", { skip_mappings: true });
+        }
+      }, { description: "Fill the focused history entry into the commandline for editing" });
 
       glide.keymaps.set("normal", "o", () => url_commandline("current"), {
         description: "Open a URL or search",

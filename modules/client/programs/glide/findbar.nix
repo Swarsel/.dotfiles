@@ -1,10 +1,5 @@
 {
   flake.modules.homeManager.glide.programs.glide-browser.config = ''
-    glide.keymaps.set("normal", "/", () => glide.findbar.open({ query: "" }));
-    glide.keymaps.set("normal", "?", () => glide.findbar.open({ query: "" }));
-    glide.keymaps.set("normal", "n", () => glide.findbar.next_match());
-    glide.keymaps.set("normal", "N", () => glide.findbar.previous_match());
-
     function enforce_input_mode() {
       if (glide.ctx.mode !== "normal") {
         return;
@@ -17,13 +12,51 @@
     }
 
     glide.autocmds.create("ModeChanged", "*:normal", enforce_input_mode);
-    setInterval(enforce_input_mode, 100);
+    glide.autocmds.create("CommandLineExit", enforce_input_mode);
+    glide.autocmds.create("ModeChanged", "*:command", () => start_enforce_polling());
 
-    glide.keymaps.set(["insert", "normal"], "<Esc>", () => {
-      if (glide.findbar.is_open()) {
-        void glide.findbar.close();
+    let enforce_timer: ReturnType<typeof setInterval> | null = null;
+    function stop_enforce_polling() {
+      if (enforce_timer != null) {
+        clearInterval(enforce_timer);
+        enforce_timer = null;
       }
-      void glide.excmds.execute("mode_change normal");
+    }
+    function start_enforce_polling() {
+      if (enforce_timer != null) {
+        return;
+      }
+      enforce_timer = setInterval(() => {
+        if (!glide.findbar.is_open() && !glide.commandline.is_active()) {
+          stop_enforce_polling();
+          return;
+        }
+        enforce_input_mode();
+      }, 100);
+    }
+
+    async function open_findbar() {
+      await glide.findbar.open({ query: "" });
+      start_enforce_polling();
+    }
+
+    glide.keymaps.set("normal", "/", open_findbar);
+    glide.keymaps.set("normal", "?", open_findbar);
+    glide.keymaps.set("normal", "n", async () => {
+      await glide.findbar.next_match();
+      start_enforce_polling();
+    });
+    glide.keymaps.set("normal", "N", async () => {
+      await glide.findbar.previous_match();
+      start_enforce_polling();
+    });
+
+    glide.keymaps.set(["insert", "normal", "visual", "op-pending"], "<Esc>", async () => {
+      if (glide.findbar.is_open()) {
+        await glide.findbar.close();
+      }
+      await glide.excmds.execute("blur");
+      await glide.excmds.execute("mode_change normal");
     });
 
     glide.keymaps.set("command", "<Esc>", () => void glide.commandline.close());

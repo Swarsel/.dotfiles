@@ -25,9 +25,8 @@
           }),
         );
       }
-      update_tab_count();
-      void refresh_active_container();
-      void refresh_active_root();
+      void update_tab_count(9);
+      void refresh_active_indicators();
     }
 
     glide.autocmds.create("WindowLoaded", ensure_statusline);
@@ -138,8 +137,8 @@
       }
     });
 
-    async function update_tab_count() {
-      for (let attempt = 0; attempt < 10; attempt++) {
+    async function update_tab_count(retries = 0) {
+      for (let attempt = 0; attempt <= retries; attempt++) {
         try {
           const tabs = await browser.tabs.query({ currentWindow: true });
           const tabs_el = document.getElementById("glide-statusline-tabs");
@@ -148,7 +147,9 @@
           }
           return;
         } catch {
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          if (attempt < retries) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
         }
       }
     }
@@ -157,17 +158,30 @@
       if (!container_el) {
         return;
       }
-      container_el.textContent =
-        store_id != null && store_id !== "firefox-default" ? (container_names[store_id] ?? "") : "";
+      const text = store_id != null && store_id !== "firefox-default" ? (container_names[store_id] ?? "") : "";
+      if (container_el.textContent !== text) {
+        container_el.textContent = text;
+      }
     }
-    async function refresh_active_container() {
+    async function refresh_active_indicators() {
       try {
         const win = await browser.windows.getLastFocused({ populate: true });
         const active = win.tabs?.find((t) => t.active);
-        await update_container_indicator(active?.cookieStoreId);
+        update_container_indicator(active?.cookieStoreId);
+        update_root_indicator(active?.id);
       } catch {}
     }
-    async function update_root_indicator(tab_id?: number) {
+    let root_indicator_timer: ReturnType<typeof setTimeout> | null = null;
+    function update_root_indicator(tab_id?: number) {
+      if (root_indicator_timer != null) {
+        clearTimeout(root_indicator_timer);
+      }
+      root_indicator_timer = setTimeout(() => {
+        root_indicator_timer = null;
+        void update_root_indicator_now(tab_id);
+      }, 100);
+    }
+    async function update_root_indicator_now(tab_id?: number, retried = false) {
       const root_el = document.getElementById("glide-statusline-root");
       if (!root_el) {
         return;
@@ -176,23 +190,28 @@
         root_el.textContent = "";
         return;
       }
-      const at_root = await glide.content
-        .execute(() => {
+      try {
+        const at_root = await glide.content.execute(() => {
           const nav = (window as unknown as { navigation?: { currentEntry?: { index: number } } }).navigation;
           if (nav?.currentEntry != null) {
             return nav.currentEntry.index <= 0;
           }
           return history.length <= 1;
-        }, { tab_id })
-        .catch(() => false);
-      root_el.textContent = at_root ? "/" : "";
-    }
-    async function refresh_active_root() {
-      try {
-        const win = await browser.windows.getLastFocused({ populate: true });
-        const active = win.tabs?.find((t) => t.active);
-        await update_root_indicator(active?.id);
-      } catch {}
+        }, { tab_id });
+        root_el.textContent = at_root ? "/" : "";
+      } catch {
+        if (retried) {
+          root_el.textContent = "";
+          return;
+        }
+        if (root_indicator_timer != null) {
+          clearTimeout(root_indicator_timer);
+        }
+        root_indicator_timer = setTimeout(() => {
+          root_indicator_timer = null;
+          void update_root_indicator_now(tab_id, true);
+        }, 600);
+      }
     }
     const tab_containers: Record<number, string> = {};
     function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
@@ -201,14 +220,14 @@
       }
     }
     glide.autocmds.create("ConfigLoaded", () => {
-      browser.tabs.onCreated.addListener(update_tab_count);
-      browser.tabs.onRemoved.addListener(update_tab_count);
+      browser.tabs.onCreated.addListener(() => void update_tab_count());
+      browser.tabs.onRemoved.addListener(() => void update_tab_count());
       browser.tabs.onCreated.addListener(cache_tab);
       browser.tabs.onRemoved.addListener((tab_id) => {
         delete tab_containers[tab_id];
       });
       browser.tabs.onActivated.addListener(async (info) => {
-        void update_root_indicator(info.tabId);
+        update_root_indicator(info.tabId);
         const cached = tab_containers[info.tabId];
         if (cached != null) {
           update_container_indicator(cached);
@@ -223,13 +242,12 @@
         if (tab.active) {
           update_container_indicator(tab.cookieStoreId);
           if (change.url != null || change.status === "complete") {
-            void update_root_indicator(tab_id);
+            update_root_indicator(tab_id);
           }
         }
       });
       browser.windows.onFocusChanged.addListener(() => {
-        void refresh_active_container();
-        void refresh_active_root();
+        void refresh_active_indicators();
       });
       const on_navigation = async (details: { tabId: number; frameId: number }) => {
         if (details.frameId !== 0) {
@@ -237,15 +255,11 @@
         }
         const tab = await browser.tabs.get(details.tabId).catch(() => null);
         if (tab?.active) {
-          void update_root_indicator(details.tabId);
+          update_root_indicator(details.tabId);
         }
       };
       browser.webNavigation.onCommitted.addListener(on_navigation);
       browser.webNavigation.onHistoryStateUpdated.addListener(on_navigation);
     });
-    setInterval(() => {
-      void refresh_active_container();
-      void refresh_active_root();
-    }, 1500);
   '';
 }

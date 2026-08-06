@@ -71,14 +71,27 @@
       } else {
         hint_active = ((hint_active % hint_visible.length) + hint_visible.length) % hint_visible.length;
       }
+      const positions = new Map<number, number>();
+      for (let pos = 0; pos < hint_visible.length; pos++) {
+        const idx = hint_visible[pos];
+        if (idx != null) {
+          positions.set(idx, pos);
+        }
+      }
       for (let i = 0; i < container.children.length; i++) {
         const marker = container.children[i] as HTMLElement;
-        const pos = hint_visible.indexOf(i);
-        marker.style.display = pos === -1 ? "none" : "";
-        const active = pos === hint_active && pos !== -1;
-        marker.style.background = active ? "var(--base0B)" : "";
-        marker.style.color = active ? "var(--base00)" : "";
-        marker.style.opacity = active ? "1" : "";
+        const pos = positions.get(i);
+        const display = pos == null ? "none" : "";
+        if (marker.style.display !== display) {
+          marker.style.display = display;
+        }
+        const active = pos != null && pos === hint_active ? "1" : "";
+        if (marker.dataset["glideActive"] !== active) {
+          marker.dataset["glideActive"] = active;
+          marker.style.background = active ? "var(--base0B)" : "";
+          marker.style.color = active ? "var(--base00)" : "";
+          marker.style.opacity = active ? "1" : "";
+        }
       }
       update_find_display(hint_filter.length > 0 && hint_visible.length === 0);
       if (hint_session && hint_filter.length > 0 && hint_visible.length === 1) {

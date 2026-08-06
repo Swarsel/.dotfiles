@@ -59,11 +59,18 @@
     }, { description: "Duplicate the current tab into a new window" });
 
     glide.keymaps.set("normal", "d", async () => {
-      const current = await glide.tabs.active();
-      await glide.excmds.execute("tab_prev");
-      if (current.id != null) {
-        await browser.tabs.remove(current.id);
+      const tabs = await browser.tabs.query({ currentWindow: true });
+      const current = tabs.find((t) => t.active);
+      if (current?.id == null) {
+        return;
       }
+      const ordered = tabs.filter((t) => t.id != null).sort((a, b) => a.index - b.index);
+      const pos = ordered.findIndex((t) => t.id === current.id);
+      const target = ordered[(pos - 1 + ordered.length) % ordered.length];
+      if (target?.id != null && target.id !== current.id) {
+        await browser.tabs.update(target.id, { active: true });
+      }
+      await browser.tabs.remove(current.id);
     }, { description: "Close the current tab and focus the previous one" });
 
     glide.keymaps.set("normal", "D", "tab_close");

@@ -36,14 +36,80 @@
       }
     }
 
+    function upsert_history_entry(item: { url?: string; title?: string }) {
+      if (!item.url) {
+        return;
+      }
+      if (url_entry_set.has(item.url)) {
+        const idx = url_entries.findIndex((e) => e.url === item.url);
+        if (idx !== -1) {
+          const entry = url_entries[idx];
+          if (entry != null) {
+            url_entries.splice(idx, 1);
+            if (item.title) {
+              entry.title = item.title;
+            }
+            url_entries.unshift(entry);
+          }
+        }
+      } else {
+        url_entries.unshift({ star: false, title: item.title ?? "", url: item.url });
+        url_entry_set.add(item.url);
+      }
+    }
+
     glide.autocmds.create("ConfigLoaded", () => {
       browser.bookmarks.onCreated.addListener(schedule_url_entries_refresh);
       browser.bookmarks.onRemoved.addListener(schedule_url_entries_refresh);
       browser.bookmarks.onChanged.addListener(schedule_url_entries_refresh);
       browser.bookmarks.onMoved.addListener(schedule_url_entries_refresh);
-      browser.history.onVisited.addListener(schedule_url_entries_refresh);
+      browser.history.onVisited.addListener(upsert_history_entry);
+      browser.history.onTitleChanged.addListener(upsert_history_entry);
       void refresh_url_entries();
     });
+
+    let active_fill_focused: ((focused_text: string) => string | null) | null = null;
+    let active_reshow: ((url: string) => void) | null = null;
+    let cmdline_input = "";
+
+    function normalize_query(input: string): string {
+      return input.trim().toLowerCase().split(/\s+/).filter(Boolean).join(" ");
+    }
+
+    function score_token(haystack: string, token: string): number {
+      const at = haystack.indexOf(token);
+      if (at === -1) {
+        return 0;
+      }
+      const before = at === 0 ? "" : haystack[at - 1];
+      const boundary = at === 0 || before === "." || before === "/" || before === "-" || before === "_" || before === " ";
+      return 10 + (boundary ? 6 : 0) + Math.max(0, 4 - Math.floor(at / 16));
+    }
+
+    function score_entry(
+      entry: { star: boolean; title: string; url: string },
+      tokens: string[],
+      rank: number,
+    ): number {
+      const title = entry.title.toLowerCase();
+      let url = entry.url.toLowerCase();
+      const scheme = url.indexOf("://");
+      if (scheme !== -1) {
+        url = url.slice(scheme + 3);
+      }
+      let total = 0;
+      for (const token of tokens) {
+        const best = Math.max(score_token(url, token), score_token(title, token));
+        if (best === 0) {
+          return 0;
+        }
+        total += best;
+      }
+      if (entry.star) {
+        total += 8;
+      }
+      return total + Math.max(0, 20 - rank / 40);
+    }
 
     async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
       if (url_entries.length === 0) {
@@ -65,11 +131,17 @@
         return search.engine ? "Search " + search.engine + ": " + search.query : "Search: " + search.query;
       }
 
+      cmdline_input = opts.prefill ?? "";
+      active_reshow = (url) => {
+        void glide.commandline.close().then(() => url_commandline(target, { ...opts, prefill: url }));
+      };
+
       const action_text = DOM.create_element("span", { children: describe_action(opts.prefill ?? "") });
       const options: glide.CommandLineCustomOption[] = [{
         label: "search",
         render: () => DOM.create_element("td", { attributes: { colspan: "2" }, children: [action_text] }),
         matches: ({ input }) => {
+          cmdline_input = input;
           action_text.textContent = describe_action(input);
           return true;
         },
@@ -127,6 +199,26 @@
       let slot_query: string | null = null;
       let live_query: string | null = null;
 
+      active_fill_focused = (focused_text) => {
+        for (const item of slot_items) {
+          if (item != null && focused_text.includes(item.url)) {
+            return item.url;
+          }
+        }
+        return null;
+      };
+
+      let live_fetch_timer: ReturnType<typeof setTimeout> | null = null;
+      function schedule_fetch_live(q: string) {
+        if (live_fetch_timer != null) {
+          clearTimeout(live_fetch_timer);
+        }
+        live_fetch_timer = setTimeout(() => {
+          live_fetch_timer = null;
+          void fetch_live(q);
+        }, 200);
+      }
+
       async function fetch_live(q: string) {
         if (live_query === q) {
           return;
@@ -139,7 +231,7 @@
           live_history.set(item.url, { star: false, title: item.title ?? "", url: item.url });
           added = true;
         }
-        if (added && slot_query != null && slot_query.trim().toLowerCase() === q) {
+        if (added && slot_query != null && normalize_query(slot_query) === q) {
           const current = slot_query;
           slot_query = null;
           recompute_slots(current);
@@ -151,22 +243,35 @@
           return;
         }
         slot_query = input;
-        const q = input.trim().toLowerCase();
+        const tokens = input.trim().toLowerCase().split(/\s+/).filter(Boolean);
         slot_items.length = 0;
-        for (const entry of url_entries) {
-          if (slot_items.length >= SLOTS) break;
-          if (q === "" || entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q)) {
+        if (tokens.length === 0) {
+          for (const entry of url_entries) {
+            if (slot_items.length >= SLOTS) break;
             slot_items.push(entry);
           }
-        }
-        if (q !== "") {
-          for (const entry of live_history.values()) {
-            if (slot_items.length >= SLOTS) break;
-            if (!url_entry_set.has(entry.url) && (entry.title.toLowerCase().includes(q) || entry.url.toLowerCase().includes(q))) {
-              slot_items.push(entry);
+        } else {
+          const scored: { entry: (typeof url_entries)[number]; score: number }[] = [];
+          let rank = 0;
+          for (const entry of url_entries) {
+            const score = score_entry(entry, tokens, rank++);
+            if (score > 0) {
+              scored.push({ entry, score });
             }
           }
-          void fetch_live(q);
+          for (const entry of live_history.values()) {
+            if (url_entry_set.has(entry.url)) continue;
+            const score = score_entry(entry, tokens, rank++);
+            if (score > 0) {
+              scored.push({ entry, score });
+            }
+          }
+          scored.sort((a, b) => b.score - a.score);
+          for (const item of scored) {
+            if (slot_items.length >= SLOTS) break;
+            slot_items.push(item.entry);
+          }
+          schedule_fetch_live(tokens.join(" "));
         }
         for (let i = 0; i < slot_items.length; i++) {
           slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
@@ -206,6 +311,21 @@
       recompute_slots(opts.prefill ?? "");
       await glide.commandline.show({ input: opts.prefill ?? "", title: "History and bookmarks", options });
     }
+
+    glide.autocmds.create("CommandLineExit", () => {
+      active_fill_focused = null;
+      active_reshow = null;
+    });
+
+    glide.keymaps.set("command", "<Right>", () => {
+      const focused = document.querySelector("glide-commandline .gcl-option.focused");
+      const url = focused != null ? active_fill_focused?.(focused.textContent ?? "") : null;
+      if (url != null && url !== cmdline_input && active_reshow != null) {
+        active_reshow(url);
+      } else {
+        void glide.keys.send("<Right>", { skip_mappings: true });
+      }
+    }, { description: "Fill the focused history entry into the commandline for editing" });
 
     glide.keymaps.set("normal", "o", () => url_commandline("current"), {
       description: "Open a URL or search",
