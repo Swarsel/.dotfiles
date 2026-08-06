@@ -365,6 +365,7 @@ in
               "org.freedesktop.impl.portal.Access" = [ "gtk" ];
               "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
               "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
+              "org.freedesktop.impl.portal.RemoteDesktop" = [ "luminous" ];
               "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
               "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
               "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
@@ -374,6 +375,7 @@ in
               pkgs.gnome-keyring
               pkgs.xdg-desktop-portal-gtk
               pkgs.xdg-desktop-portal-gnome
+              pkgs.xdg-desktop-portal-luminous
             ];
             xdgOpenUsePortal = true;
           };
@@ -393,6 +395,7 @@ in
             enable = true;
             package = pkgs.niri-stable;
           };
+          xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-luminous ];
           environment.systemPackages = with pkgs; [
             wl-clipboard
             wayland-utils
