@@ -165,6 +165,9 @@ in
                 python3 = prev.python313;
               };
               mgba = final.swarsel-mgba;
+              niri-stable = prev.niri-stable.override {
+                patches = [ "${self}/files/patches/niri-workspace-under-mouse-binds.patch" ];
+              };
               retroarch = prev.retroarch.withCores (
                 cores: with cores; [
                   snes9x # snes

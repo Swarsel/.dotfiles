@@ -96,6 +96,14 @@ in
                   "Mod+Shift+t".action = toggle-window-rule-opacity;
                   "Mod+Space".action = sh "exec noctalia msg panel-toggle launcher";
                   "Mod+Up".action = focus-window-or-workspace-up;
+                  "Mod+WheelScrollDown" = {
+                    action.focus-workspace-down-under-mouse = [ ];
+                    cooldown-ms = 150;
+                  };
+                  "Mod+WheelScrollUp" = {
+                    action.focus-workspace-up-under-mouse = [ ];
+                    cooldown-ms = 150;
+                  };
                   "Mod+a".action = spawn "swarselcheck-niri" "-s";
                   "Mod+c".action = sh "exec emacsclient -ce '(org-capture)'";
                   "Mod+d".action = spawn "swarselcheck-niri" "-d";
