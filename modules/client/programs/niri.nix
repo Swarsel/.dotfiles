@@ -100,6 +100,14 @@ in
                     action.focus-workspace-down-under-mouse = [ ];
                     cooldown-ms = 150;
                   };
+                  "Mod+WheelScrollLeft" = {
+                    action = focus-column-or-monitor-left;
+                    cooldown-ms = 150;
+                  };
+                  "Mod+WheelScrollRight" = {
+                    action = focus-column-or-monitor-right;
+                    cooldown-ms = 150;
+                  };
                   "Mod+WheelScrollUp" = {
                     action.focus-workspace-up-under-mouse = [ ];
                     cooldown-ms = 150;
@@ -395,7 +403,6 @@ in
             enable = true;
             package = pkgs.niri-stable;
           };
-          xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-luminous ];
           environment.systemPackages = with pkgs; [
             wl-clipboard
             wayland-utils
@@ -408,6 +415,7 @@ in
             fmods.homeManager.niri
           ];
           niri-flake.cache.enable = true;
+          xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-luminous ];
         })
       ];
     };
