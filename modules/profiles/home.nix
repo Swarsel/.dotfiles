@@ -28,7 +28,6 @@ in
       "tmux"
       "zellij"
       "zellij-keybinds"
-      "zsh"
     ];
     profile-minimal.imports = pickH [
       "settings"

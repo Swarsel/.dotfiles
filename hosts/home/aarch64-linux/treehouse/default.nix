@@ -1,6 +1,7 @@
 {
   self,
   inputs,
+  lib,
   pkgs,
   ...
 }:
@@ -11,11 +12,6 @@
     inputs.self.modules.homeManager.profile-dgxspark
   ];
 
-  # programs.zsh.initContent = "
-  #   export GPG_TTY=\"$(tty)\"
-  # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-  # gpgconf --launch gpg-agent
-  #       ";
   swarselsystems = {
     isLaptop = false;
     wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
@@ -24,6 +20,11 @@
   services.xcape = {
     enable = true;
     mapExpression.Control_L = "Escape";
+  };
+
+  programs = {
+    tmux.shell = lib.mkForce (lib.getExe pkgs.bash);
+    zellij.settings.default_shell = lib.mkForce "bash";
   };
 
   home.packages = with pkgs; [

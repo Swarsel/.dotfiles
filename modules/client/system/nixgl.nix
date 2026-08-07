@@ -17,7 +17,7 @@
       };
       config = {
         swarselsystems.enabledHomeModules = [ "nixgl" ];
-        nixGL = lib.mkIf (nixosConfig == null) (
+        targets.genericLinux.nixGL = lib.mkIf (nixosConfig == null) (
           {
             inherit (inputs.nixgl) packages;
             defaultWrapper = "mesa";

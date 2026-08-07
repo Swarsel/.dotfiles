@@ -166,15 +166,9 @@ in
           };
           nix = lib.mkIf isStandaloneLinux {
             package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
-            extraOptions = mkExtraOptions {
-              inherit
-                self
-                config
-                lib
-                pkgs
-                minimal
-                ;
-            };
+            extraOptions = lib.optionalString (!minimal) ''
+              !include ${config.sops.secrets.github-api-token.path}
+            '';
             settings = commonScalarSettings // {
               bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
               bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";

@@ -154,7 +154,11 @@
         in
         if (type == "home") then
           inputs.home-manager.lib.homeManagerConfiguration {
-            inherit pkgs extraSpecialArgs;
+            inherit extraSpecialArgs;
+            pkgs = import inputs.nixpkgs {
+              system = arch;
+              config.allowUnfree = true;
+            };
             modules = homeModules ++ [ "${self}/hosts/${type}/${arch}/${configName}" ];
           }
         else

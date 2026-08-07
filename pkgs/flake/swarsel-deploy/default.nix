@@ -22,12 +22,12 @@ writeShellApplication {
       }
       function show_help() {
           echo 'Usage: deploy [OPTIONS] [--] <host,...> [ACTION]'
-          echo "Builds, pushes and activates nixosConfigurations on target systems."
+          echo "Builds, pushes and activates configurations on target systems."
           echo ""
           echo 'ACTION:'
           echo '  switch          [default] Switch immediately to the new configuration and make it the boot default'
-          echo '  boot            Make the configuration the new boot default'
-          echo "  test            Activate the configuration but don't make it the boot default"
+          echo '  boot            Make the configuration the new boot default (nixos only)'
+          echo "  test            Activate the configuration but don't make it the boot default (nixos only)"
           echo "  dry-activate    Don't activate, just show what would be done"
           echo ""
           echo 'OPTIONS: [passed to nix build]'
@@ -99,9 +99,22 @@ writeShellApplication {
       tr , '\n' <<< "''${POSITIONAL_ARGS[0]}" | sort -u | readarray -t HOSTS
       ACTION="''${POSITIONAL_ARGS[1]-switch}"
 
+      nix eval --raw .#homeConfigurations --apply 'c: builtins.concatStringsSep "\n" (builtins.attrNames c)' 2>/dev/null | readarray -t HM_HOSTS || true
+
+      declare -A IS_HOME
+      for h in "''${HM_HOSTS[@]}"; do
+          IS_HOME["$h"]=1
+      done
+
       declare -A TOPLEVEL_FLAKE_PATHS
       for host in "''${HOSTS[@]}"; do
-          TOPLEVEL_FLAKE_PATHS["$host"]=".#nixosConfigurations.$host.config.system.build.toplevel"
+          if [[ -n "''${IS_HOME[$host]:-}" ]]; then
+              [[ "$ACTION" == "switch" || "$ACTION" == "dry-activate" ]] ||
+                  die "Action '$ACTION' is not supported for home-manager host '$host'"
+              TOPLEVEL_FLAKE_PATHS["$host"]=".#homeConfigurations.$host.activationPackage"
+          else
+              TOPLEVEL_FLAKE_PATHS["$host"]=".#nixosConfigurations.$host.config.system.build.toplevel"
+          fi
       done
 
       current_host=$(hostname)
@@ -129,7 +142,8 @@ writeShellApplication {
       for host in "''${HOSTS[@]}"; do
           toplevel="''${TOPLEVEL_FLAKE_PATHS["$host"]}"
           # Make sudo call to get prompt out of the way
-          sudo echo "[1;36m    Building [m📦 [34m$host[m"
+          [[ -n "''${IS_HOME[$host]:-}" ]] || sudo -v
+          echo "[1;36m    Building [m📦 [34m$host[m"
           build_log=$(mktemp)
           store_path_file=$(mktemp)
           set +e
@@ -160,7 +174,11 @@ writeShellApplication {
 
           if [ "$host" = "$current_host" ]; then
               echo -e "\033[1;36m    Running locally for $host... \033[m"
-              ssh_prefix="sudo"
+              if [[ -n "''${IS_HOME[$host]:-}" ]]; then
+                  ssh_prefix=""
+              else
+                  ssh_prefix="sudo"
+              fi
           else
               echo -e "\033[1;36m     Copying \033[m➡️  \033[34m$host\033[m"
               NIX_SSHOPTS="''${ssh_mux_opts[*]}" nix copy --to "ssh://$host" "$store_path"
@@ -170,17 +188,28 @@ writeShellApplication {
           fi
 
           echo -e "\033[1;36m    Applying \033[m⚙️  \033[34m$host\033[m"
-          prev_system=$($ssh_prefix readlink -e /nix/var/nix/profiles/system)
-          if [[ "$ACTION" == "switch" || "$ACTION" == "boot" ]]; then
-              $ssh_prefix /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" ||
-                  die "Failed to set system profile"
+          if [[ -n "''${IS_HOME[$host]:-}" ]]; then
+              prev_system=$($ssh_prefix readlink -e ~/.local/state/nix/profiles/home-manager || true)
+              if [[ "$ACTION" == "dry-activate" ]]; then
+                  $ssh_prefix env DRY_RUN=1 "$store_path/activate" ||
+                      echo "Error while activating new home configuration" >&2
+              else
+                  $ssh_prefix "$store_path/activate" ||
+                      echo "Error while activating new home configuration" >&2
+              fi
           else
-              echo -e "\033[1;36m    $ACTION: Not setting system profile \033[m"
+              prev_system=$($ssh_prefix readlink -e /nix/var/nix/profiles/system)
+              if [[ "$ACTION" == "switch" || "$ACTION" == "boot" ]]; then
+                  $ssh_prefix /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" ||
+                      die "Failed to set system profile"
+              else
+                  echo -e "\033[1;36m    $ACTION: Not setting system profile \033[m"
 
 
+              fi
+              $ssh_prefix "$store_path"/bin/switch-to-configuration "$ACTION" ||
+                  echo "Error while activating new system" >&2
           fi
-          $ssh_prefix "$store_path"/bin/switch-to-configuration "$ACTION" ||
-              echo "Error while activating new system" >&2
 
           if [[ -n $prev_system ]]; then
               $ssh_prefix nvd --color always diff "$prev_system" "$store_path" || true
