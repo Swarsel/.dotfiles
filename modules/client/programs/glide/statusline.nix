@@ -173,6 +173,9 @@
     }
     let root_indicator_timer: ReturnType<typeof setTimeout> | null = null;
     function update_root_indicator(tab_id?: number) {
+      if (window.closed) {
+        return;
+      }
       if (root_indicator_timer != null) {
         clearTimeout(root_indicator_timer);
       }
@@ -182,6 +185,9 @@
       }, 100);
     }
     async function update_root_indicator_now(tab_id?: number, retried = false) {
+      if (window.closed) {
+        return;
+      }
       const root_el = document.getElementById("glide-statusline-root");
       if (!root_el) {
         return;
@@ -200,7 +206,7 @@
         }, { tab_id });
         root_el.textContent = at_root ? "/" : "";
       } catch {
-        if (retried) {
+        if (retried || window.closed) {
           root_el.textContent = "";
           return;
         }
