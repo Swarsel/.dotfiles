@@ -16,7 +16,7 @@
           }) names
         );
 
-      appNames = [
+      appNames = builtins.filter (name: self.packages.${system} ? ${name}) [
         "swarsel-bootstrap"
         "swarsel-install"
         "swarsel-rebuild"

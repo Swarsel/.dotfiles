@@ -5,8 +5,8 @@
       inherit (self.outputs) lib;
     in
     {
-      packages = lib.swarselsystems.forEachLinuxSystem (
-        pkgs: import "${self}/pkgs/flake" { inherit self lib pkgs; }
+      packages = lib.swarselsystems.forAllSystems (
+        system: pkgs: import "${self}/pkgs/flake" { inherit self lib pkgs system; }
       );
     };
 

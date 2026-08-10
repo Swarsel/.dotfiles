@@ -110,6 +110,7 @@ in
               import "${self}/pkgs/flake" {
                 inherit self lib;
                 pkgs = final;
+                system = prev.stdenv.hostPlatform.system;
               }
               // lib.optionalAttrs (inputs ? swarsel-nix) {
                 swarsel-nix = import inputs.swarsel-nix {

@@ -1,7 +1,6 @@
 {
   self,
   config,
-  lib,
   ...
 }:
 let
@@ -12,19 +11,22 @@ in
     self.modules.darwin.profile-darwin
   ];
 
-  users.users.${workUser}.home = "/home/${workUser}";
-  services.karabiner-elements.enable = true;
+  networking.hostName = "machpizza";
+
+  users.users.${workUser}.home = "/Users/${workUser}";
+  services.karabiner-elements.enable = false;
+
+  ids.gids.nixbld = 350;
 
   home-manager.users.${workUser} = {
     swarselsystems = {
-      flakePath = "/home/${workUser}/.dotfiles";
-      homeDir = "/home/${workUser}";
+      flakePath = "/Users/${workUser}/.dotfiles";
+      homeDir = "/Users/${workUser}";
       isBtrfs = false;
       isDarwin = true;
       isLaptop = true;
       mainUser = workUser;
     };
-    home.username = lib.mkForce workUser;
   };
 
   system.primaryUser = workUser;

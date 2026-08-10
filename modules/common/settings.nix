@@ -103,12 +103,12 @@ in
 {
   flake.modules = {
     darwin.settings =
-      { outputs, ... }:
+      { outputs, config, ... }:
       {
         nix.settings.experimental-features = "nix-command flakes";
         nixpkgs = {
           config.allowUnfree = true;
-          hostPlatform = "x86_64-darwin";
+          hostPlatform = config.node.arch;
           overlays = baseOverlays outputs;
         };
         system.stateVersion = 4;
@@ -127,8 +127,9 @@ in
         ...
       }:
       let
-        inherit (config.swarselsystems) flakePath isLinux mainUser;
+        inherit (config.swarselsystems) flakePath isLinux isDarwin mainUser;
         isStandaloneLinux = type == "home";
+        userHome = if isDarwin then "/Users/${mainUser}" else "/home/${mainUser}";
         inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
       in
       {
@@ -147,7 +148,7 @@ in
               "info"
               "devdoc"
             ];
-            homeDirectory = lib.mkDefault "/home/${mainUser}";
+            homeDirectory = lib.mkDefault userHome;
             keyboard.layout = "us";
             packages = lib.mkIf isStandaloneLinux [
               (pkgs.symlinkJoin {
@@ -160,7 +161,7 @@ in
                 '';
               })
             ];
-            sessionVariables.FLAKE = "/home/${mainUser}/.dotfiles";
+            sessionVariables.FLAKE = "${userHome}/.dotfiles";
             stateVersion = lib.mkDefault "23.05";
             username = lib.mkDefault mainUser;
           };

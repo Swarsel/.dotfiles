@@ -9,7 +9,7 @@ hosts = {
   eagleland      = "age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8"
   hintbooth      = "age1wmx8y2hs83j2u5srdnfxljrzxm8jtxl6fr0mq7xf2ldxyglpzf2qq89rpx"
   liliputsteps   = "age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx"
-  machpizza      = "placeholder"
+  machpizza      = "age1rums02gkyt0zae8s3x3uxzsdajjwgshy2stsj8z8htggq92a2g0segmrs0"
   moonside       = "age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh"
   pyramid        = "age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m"
   stoicclub      = "age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm"
@@ -165,9 +165,9 @@ host_configs = {
   }
   machpizza = {
     type        = "darwin"
-    arch        = "x86_64-darwin"
+    arch        = "aarch64-darwin"
     guests      = []
-    has_age_key = false
+    has_age_key = true
   }
   vacanthouse = {
     type        = "utility"

@@ -2045,7 +2045,7 @@ A short overview over each notable input and what it does:
         url = "gitlab:simple-nixos-mailserver/nixos-mailserver/main";
       };
 
-      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
+      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D";
 
       sops = {
         inputs.nixpkgs.follows = "nixpkgs";
@@ -2290,7 +2290,7 @@ Concerning the =flake = [...]= part:
           in
           subnetMask;
         darwinSystems = builtins.filter (lib.hasSuffix "-darwin") (import systems);
-        forEachLinuxSystem = f: lib.genAttrs linuxSystems (system: f pkgsFor.${system});
+        forAllSystems = f: lib.genAttrs (import systems) (system: f system pkgsFor.${system});
         getBaseDomain =
           domain:
           let
@@ -2392,8 +2392,8 @@ More information on the actual packages build can be found in [[#h:64a5cc16-6b16
         inherit (self.outputs) lib;
       in
       {
-        packages = lib.swarselsystems.forEachLinuxSystem (
-          pkgs: import "${self}/pkgs/flake" { inherit self lib pkgs; }
+        packages = lib.swarselsystems.forAllSystems (
+          system: pkgs: import "${self}/pkgs/flake" { inherit self lib pkgs system; }
         );
       };
 
@@ -3658,7 +3658,7 @@ This defines some apps; they differ from normal packages in that they can be cal
             }) names
           );
 
-        appNames = [
+        appNames = builtins.filter (name: self.packages.${system} ? ${name}) [
           "swarsel-bootstrap"
           "swarsel-install"
           "swarsel-rebuild"
@@ -3822,6 +3822,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 import "${self}/pkgs/flake" {
                   inherit self lib;
                   pkgs = final;
+                  system = prev.stdenv.hostPlatform.system;
                 }
                 // lib.optionalAttrs (inputs ? swarsel-nix) {
                   swarsel-nix = import inputs.swarsel-nix {
@@ -4081,7 +4082,7 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
       };
 
       nixos-images.url = "github:Swarsel/nixos-images/main";
-      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
+      smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D";
     };
 
     perSystem =
@@ -11205,12 +11206,12 @@ A breakdown of the flags being set:
   {
     flake.modules = {
       darwin.settings =
-        { outputs, ... }:
+        { outputs, config, ... }:
         {
           nix.settings.experimental-features = "nix-command flakes";
           nixpkgs = {
             config.allowUnfree = true;
-            hostPlatform = "x86_64-darwin";
+            hostPlatform = config.node.arch;
             overlays = baseOverlays outputs;
           };
           system.stateVersion = 4;
@@ -11229,8 +11230,9 @@ A breakdown of the flags being set:
           ...
         }:
         let
-          inherit (config.swarselsystems) flakePath isLinux mainUser;
+          inherit (config.swarselsystems) flakePath isLinux isDarwin mainUser;
           isStandaloneLinux = type == "home";
+          userHome = if isDarwin then "/Users/${mainUser}" else "/home/${mainUser}";
           inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
         in
         {
@@ -11249,7 +11251,7 @@ A breakdown of the flags being set:
                 "info"
                 "devdoc"
               ];
-              homeDirectory = lib.mkDefault "/home/${mainUser}";
+              homeDirectory = lib.mkDefault userHome;
               keyboard.layout = "us";
               packages = lib.mkIf isStandaloneLinux [
                 (pkgs.symlinkJoin {
@@ -11262,7 +11264,7 @@ A breakdown of the flags being set:
                   '';
                 })
               ];
-              sessionVariables.FLAKE = "/home/${mainUser}/.dotfiles";
+              sessionVariables.FLAKE = "${userHome}/.dotfiles";
               stateVersion = lib.mkDefault "23.05";
               username = lib.mkDefault mainUser;
             };
@@ -40987,16 +40989,41 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
     self,
     lib,
     pkgs,
+    system,
     ...
   }:
   let
+    packagePlatforms = {
+      build-topology-images = lib.platforms.linux;
+      cura5 = lib.platforms.linux;
+      e = lib.platforms.linux;
+      e-niri = lib.platforms.linux;
+      fs-diff = lib.platforms.linux;
+      kanshare = lib.platforms.linux;
+      nirishare = lib.platforms.linux;
+      opacitytoggle = lib.platforms.linux;
+      pass-fuzzel = lib.platforms.linux;
+      swarsel-displaypower = lib.platforms.linux;
+      swarsel-install = lib.platforms.linux;
+      swarsel-mgba = lib.platforms.linux;
+      swarsel-postinstall = lib.platforms.linux;
+      swarsel-rebuild = lib.platforms.linux;
+      swarselcheck = lib.platforms.linux;
+      swarselcheck-niri = lib.platforms.linux;
+      t2ts = lib.platforms.linux;
+      waybarupdate = lib.platforms.linux;
+    };
+
+    supportedOn =
+      name: !(packagePlatforms ? ${name}) || builtins.elem system packagePlatforms.${name};
+
     mkPackages =
       names: pkgs:
       builtins.listToAttrs (
         map (name: {
           inherit name;
           value = pkgs.callPackage "${self}/pkgs/flake/${name}" { inherit self name; };
-        }) names
+        }) (builtins.filter supportedOn names)
       );
     packageNames = lib.swarselsystems.readNix "pkgs/flake";
   in
@@ -42775,7 +42802,7 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
         }
         function show_help() {
             echo 'Usage: deploy [OPTIONS] [--] <host,...> [ACTION]'
-            echo "Builds, pushes and activates configurations on target systems."
+            echo "Builds, pushes and activates nixos/darwin/home configurations on target systems."
             echo ""
             echo 'ACTION:'
             echo '  switch          [default] Switch immediately to the new configuration and make it the boot default'
@@ -42860,12 +42887,18 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
         done
 
         declare -A TOPLEVEL_FLAKE_PATHS
+        declare -A HOST_TYPES
         for host in "''${HOSTS[@]}"; do
             if [[ -n "''${IS_HOME[$host]:-}" ]]; then
                 [[ "$ACTION" == "switch" || "$ACTION" == "dry-activate" ]] ||
                     die "Action '$ACTION' is not supported for home-manager host '$host'"
+                HOST_TYPES["$host"]="home"
                 TOPLEVEL_FLAKE_PATHS["$host"]=".#homeConfigurations.$host.activationPackage"
+            elif [[ "$(nix eval ".#darwinConfigurations" --apply "c: c ? \"$host\"" 2>/dev/null)" == "true" ]]; then
+                HOST_TYPES["$host"]="darwin"
+                TOPLEVEL_FLAKE_PATHS["$host"]=".#darwinConfigurations.$host.system"
             else
+                HOST_TYPES["$host"]="nixos"
                 TOPLEVEL_FLAKE_PATHS["$host"]=".#nixosConfigurations.$host.config.system.build.toplevel"
             fi
         done
@@ -42950,6 +42983,18 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
                     $ssh_prefix "$store_path/activate" ||
                         echo "Error while activating new home configuration" >&2
                 fi
+            elif [[ "''${HOST_TYPES[$host]:-}" == "darwin" ]]; then
+                prev_system=$($ssh_prefix readlink -e /nix/var/nix/profiles/system || true)
+                if [[ "$ACTION" == "dry-activate" ]]; then
+                    echo -e "\033[1;36m    dry-activate (darwin): showing diff only, not activating \033[m"
+                else
+                    if [[ "$ACTION" == "switch" || "$ACTION" == "boot" ]]; then
+                        $ssh_prefix /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" ||
+                            die "Failed to set system profile"
+                    fi
+                    $ssh_prefix "$store_path"/activate ||
+                        echo "Error while activating new system" >&2
+                fi
             else
                 prev_system=$($ssh_prefix readlink -e /nix/var/nix/profiles/system)
                 if [[ "$ACTION" == "switch" || "$ACTION" == "boot" ]]; then
@@ -42957,8 +43002,6 @@ Remote deployment helper that builds one or more hosts, copies closures, activat
                         die "Failed to set system profile"
                 else
                     echo -e "\033[1;36m    $ACTION: Not setting system profile \033[m"
-
-
                 fi
                 $ssh_prefix "$store_path"/bin/switch-to-configuration "$ACTION" ||
                     echo "Error while activating new system" >&2
@@ -47686,7 +47729,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     eagleland      = "age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8"
     hintbooth      = "age1wmx8y2hs83j2u5srdnfxljrzxm8jtxl6fr0mq7xf2ldxyglpzf2qq89rpx"
     liliputsteps   = "age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx"
-    machpizza      = "placeholder"
+    machpizza      = "age1rums02gkyt0zae8s3x3uxzsdajjwgshy2stsj8z8htggq92a2g0segmrs0"
     moonside       = "age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh"
     pyramid        = "age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m"
     stoicclub      = "age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm"
@@ -47842,9 +47885,9 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     }
     machpizza = {
       type        = "darwin"
-      arch        = "x86_64-darwin"
+      arch        = "aarch64-darwin"
       guests      = []
-      has_age_key = false
+      has_age_key = true
     }
     vacanthouse = {
       type        = "utility"

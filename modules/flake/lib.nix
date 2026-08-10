@@ -23,7 +23,7 @@ let
         in
         subnetMask;
       darwinSystems = builtins.filter (lib.hasSuffix "-darwin") (import systems);
-      forEachLinuxSystem = f: lib.genAttrs linuxSystems (system: f pkgsFor.${system});
+      forAllSystems = f: lib.genAttrs (import systems) (system: f system pkgsFor.${system});
       getBaseDomain =
         domain:
         let

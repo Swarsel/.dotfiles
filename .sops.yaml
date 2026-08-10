@@ -9,6 +9,7 @@ keys:
     - &eagleland age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8
     - &hintbooth age1wmx8y2hs83j2u5srdnfxljrzxm8jtxl6fr0mq7xf2ldxyglpzf2qq89rpx
     - &liliputsteps age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx
+    - &machpizza age1rums02gkyt0zae8s3x3uxzsdajjwgshy2stsj8z8htggq92a2g0segmrs0
     - &moonside age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh
     - &pyramid age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m
     - &stoicclub age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm
@@ -52,6 +53,7 @@ creation_rules:
       - *eagleland
       - *hintbooth
       - *liliputsteps
+      - *machpizza
       - *moonside
       - *pyramid
       - *stoicclub
@@ -92,6 +94,7 @@ creation_rules:
       - *eagleland
       - *hintbooth
       - *liliputsteps
+      - *machpizza
       - *moonside
       - *pyramid
       - *stoicclub
@@ -313,15 +316,18 @@ creation_rules:
       age:
       - *liliputsteps
       - *buildbot
-  - path_regex: hosts/darwin/x86_64-darwin/machpizza/secrets/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *swarsel
-  - path_regex: hosts/darwin/x86_64-darwin/machpizza/secrets/[^/]+\.enc$
+  - path_regex: hosts/darwin/aarch64-darwin/machpizza/secrets/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
       - *swarsel
       age:
+      - *machpizza
+  - path_regex: hosts/darwin/aarch64-darwin/machpizza/secrets/[^/]+\.enc$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *machpizza
       - *buildbot
   - path_regex: hosts/nixos/aarch64-linux/moonside/secrets/[^/]+\.(yaml|json|env|ini)$
     key_groups:
