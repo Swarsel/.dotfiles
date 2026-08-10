@@ -216,9 +216,9 @@
             partOf = [ "microsocks.service" ];
             serviceConfig = {
               ExecStart = pkgs.writeShellScript "shopservatory-jp-proxy" ''
-                exec ${pkgs.socat}/bin/socat \
+                exec ${pkgs.socat}/bin/socat -T120 \
                   TCP-LISTEN:${builtins.toString jpProxyPort},bind=127.0.0.1,reuseaddr,fork \
-                  EXEC:'${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} ${pkgs.socat}/bin/socat - TCP\:127.0.0.1\:${builtins.toString jpNetnsPort}'
+                  EXEC:'${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} ${pkgs.socat}/bin/socat -T120 - TCP\:127.0.0.1\:${builtins.toString jpNetnsPort}'
               '';
               Restart = "on-failure";
               RestartSec = "10s";

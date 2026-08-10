@@ -30493,8 +30493,24 @@ I use this configuration for sailing.
 
             ${lib.optionalString (!cfg.portForwarding.enable) ''
               systemd-notify --ready --status="PIA tunnel up (no port forwarding)"
-              # No port forwarding requested; keep the unit alive so the netns stays up
-              while true; do sleep 86400; done
+
+              stale_handshake() {
+                local last now age
+                last=$(ip netns exec "$NETNS" wg show "$WG_IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | head -n1)
+                [ -n "$last" ] || return 0
+                [ "$last" = "0" ] && return 0
+                now=$(date +%s)
+                age=$(( now - last ))
+                [ "$age" -gt "${toString cfg.handshakeMaxAge}" ]
+              }
+
+              while true; do
+                sleep 60
+                if stale_handshake; then
+                  echo "wireguard handshake is stale (older than ${toString cfg.handshakeMaxAge}s); exiting so systemd rebuilds the tunnel" >&2
+                  exit 1
+                fi
+              done
             ''}
           '';
         };
@@ -30528,6 +30544,10 @@ I use this configuration for sailing.
             default = true;
             type = lib.types.bool;
           };
+          handshakeMaxAge = lib.mkOption {
+            default = 300;
+            type = lib.types.int;
+          };
           namespace = lib.mkOption {
             default = "pia";
             type = lib.types.str;
@@ -30537,7 +30557,6 @@ I use this configuration for sailing.
 
             portFile = lib.mkOption {
               default = "/run/pia/forwarded-port";
-              description = "Where the forwarded port number is written (mode 0644).";
               type = lib.types.path;
             };
           };
@@ -40824,9 +40843,9 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               partOf = [ "microsocks.service" ];
               serviceConfig = {
                 ExecStart = pkgs.writeShellScript "shopservatory-jp-proxy" ''
-                  exec ${pkgs.socat}/bin/socat \
+                  exec ${pkgs.socat}/bin/socat -T120 \
                     TCP-LISTEN:${builtins.toString jpProxyPort},bind=127.0.0.1,reuseaddr,fork \
-                    EXEC:'${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} ${pkgs.socat}/bin/socat - TCP\:127.0.0.1\:${builtins.toString jpNetnsPort}'
+                    EXEC:'${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} ${pkgs.socat}/bin/socat -T120 - TCP\:127.0.0.1\:${builtins.toString jpNetnsPort}'
                 '';
                 Restart = "on-failure";
                 RestartSec = "10s";

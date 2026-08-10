@@ -197,8 +197,24 @@
 
           ${lib.optionalString (!cfg.portForwarding.enable) ''
             systemd-notify --ready --status="PIA tunnel up (no port forwarding)"
-            # No port forwarding requested; keep the unit alive so the netns stays up
-            while true; do sleep 86400; done
+
+            stale_handshake() {
+              local last now age
+              last=$(ip netns exec "$NETNS" wg show "$WG_IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | head -n1)
+              [ -n "$last" ] || return 0
+              [ "$last" = "0" ] && return 0
+              now=$(date +%s)
+              age=$(( now - last ))
+              [ "$age" -gt "${toString cfg.handshakeMaxAge}" ]
+            }
+
+            while true; do
+              sleep 60
+              if stale_handshake; then
+                echo "wireguard handshake is stale (older than ${toString cfg.handshakeMaxAge}s); exiting so systemd rebuilds the tunnel" >&2
+                exit 1
+              fi
+            done
           ''}
         '';
       };
@@ -232,6 +248,10 @@
           default = true;
           type = lib.types.bool;
         };
+        handshakeMaxAge = lib.mkOption {
+          default = 300;
+          type = lib.types.int;
+        };
         namespace = lib.mkOption {
           default = "pia";
           type = lib.types.str;
@@ -241,7 +261,6 @@
 
           portFile = lib.mkOption {
             default = "/run/pia/forwarded-port";
-            description = "Where the forwarded port number is written (mode 0644).";
             type = lib.types.path;
           };
         };
