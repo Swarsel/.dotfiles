@@ -155,11 +155,11 @@
         if (type == "home") then
           inputs.home-manager.lib.homeManagerConfiguration {
             inherit extraSpecialArgs;
-            pkgs = import inputs.nixpkgs {
-              system = arch;
-              config.allowUnfree = true;
-            };
             modules = homeModules ++ [ "${self}/hosts/${type}/${arch}/${configName}" ];
+            pkgs = import inputs.nixpkgs {
+              config.allowUnfree = true;
+              system = arch;
+            };
           }
         else
           inputs.nix-on-droid.lib.nixOnDroidConfiguration {

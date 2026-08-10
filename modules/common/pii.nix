@@ -5,6 +5,7 @@
       inputs,
       config,
       lib,
+      dns,
       globals,
       homeLib,
       nodes,
@@ -71,6 +72,7 @@
                 inputs
                 config
                 lib
+                dns
                 globals
                 homeLib
                 nodes

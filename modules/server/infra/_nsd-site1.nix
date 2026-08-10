@@ -60,7 +60,7 @@ with dns.lib.combinators;
   SOA = {
     adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
     nameServer = "soa";
-    serial = 2026062601; # update this on changes for secondary dns
+    serial = 2026080801; # update this on changes for secondary dns
   };
 
   SRV = [
@@ -115,12 +115,15 @@ with dns.lib.combinators;
     "google-site-verification=${config.repo.secrets.local.dns.google-site-verification}"
   ];
 
-  subdomains = globals.dns.${globals.domains.main}.subdomainRecords // {
-    _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
-    soa = host proxyAddress4 proxyAddress6;
-    srv = host proxyAddress4 proxyAddress6;
-    www.CNAME = [ "${globals.domains.main}." ];
-  };
+  subdomains =
+    globals.dns.${globals.domains.main}.subdomainRecords
+    // {
+      _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
+      soa = host proxyAddress4 proxyAddress6;
+      srv = host proxyAddress4 proxyAddress6;
+      www.CNAME = [ "${globals.domains.main}." ];
+    }
+    // config.repo.secrets.local.dns.extra-records;
 
   useOrigin = false;
 }
