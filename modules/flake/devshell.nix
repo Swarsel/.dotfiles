@@ -2,6 +2,7 @@
   self,
   inputs,
   lib,
+  root,
   ...
 }:
 {
@@ -145,7 +146,7 @@
                         pkgs.stable25_05.nixVersions."nix_${nix-version}"
                         pkgs.stable25_05.boost
                       ];
-                      patches = (o.patches or [ ]) ++ [ (self + /files/patches/nix-plugins.patch) ];
+                      patches = (o.patches or [ ]) ++ [ (root "files/patches/nix-plugins.patch") ];
                     })
                   }/lib/nix/plugins
                   extra-builtins-file = ${self + /files/nix/extra-builtins.nix}

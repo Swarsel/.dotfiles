@@ -1,4 +1,9 @@
-{ self, inputs, ... }:
+{
+  self,
+  inputs,
+  root,
+  ...
+}:
 let
   inherit (self) outputs;
   inherit (outputs) lib;
@@ -166,7 +171,7 @@ in
               };
               mgba = final.swarsel-mgba;
               niri-stable = prev.niri-stable.override {
-                patches = [ "${self}/files/patches/niri-workspace-under-mouse-binds.patch" ];
+                patches = [ (root "files/patches/niri-workspace-under-mouse-binds.patch") ];
               };
               retroarch = prev.retroarch.withCores (
                 cores: with cores; [

@@ -2337,6 +2337,12 @@ Concerning the =flake = [...]= part:
           }
         );
         readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+        root =
+          subpath:
+          builtins.path {
+            name = builtins.baseNameOf subpath;
+            path = "${self}/${subpath}";
+          };
         readNix =
           type:
           lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
@@ -2357,6 +2363,7 @@ Concerning the =flake = [...]= part:
       };
   in
   {
+    _module.args.root = swarselsystems.root;
     flake = {
       homeLib = self.outputs.lib;
       lib = inputs.nixpkgs.lib.extend (
@@ -2657,6 +2664,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
                 ;
               inherit (config.pkgs.${arch}) lib;
               inherit (config) nodes topologyPrivate;
+              inherit (outputs.swarselsystemsLib) root;
               globals = config.globals.${arch};
               extraModules = [ ];
               type = "nixos";
@@ -2690,6 +2698,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
                 outputs
                 ;
               inherit (config) nodes topologyPrivate;
+              inherit (outputs.swarselsystemsLib) root;
               globals = config.globals.${arch};
               withHomeManager = true;
             };
@@ -2710,6 +2719,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
                 type
                 ;
               inherit (config) nodes topologyPrivate;
+              inherit (outputs.swarselsystemsLib) root;
               globals = config.globals.${arch};
               minimal = false;
             };
@@ -3315,6 +3325,7 @@ Aside from the =default= devShell which is the one that should usually be called
     self,
     inputs,
     lib,
+    root,
     ...
   }:
   {
@@ -3458,7 +3469,7 @@ Aside from the =default= devShell which is the one that should usually be called
                           pkgs.stable25_05.nixVersions."nix_${nix-version}"
                           pkgs.stable25_05.boost
                         ];
-                        patches = (o.patches or [ ]) ++ [ (self + /files/patches/nix-plugins.patch) ];
+                        patches = (o.patches or [ ]) ++ [ (root "files/patches/nix-plugins.patch") ];
                       })
                     }/lib/nix/plugins
                     extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
@@ -3710,7 +3721,12 @@ On the structure of overlays: as you notice, all of the attributes within overla
 - The =_= argument is used like in a number of other programming languages and signals that the argument is never actually used in the function.
 
 #+begin_src nix-ts :tangle modules/flake/overlays.nix
-  { self, inputs, ... }:
+  {
+    self,
+    inputs,
+    root,
+    ...
+  }:
   let
     inherit (self) outputs;
     inherit (outputs) lib;
@@ -3878,7 +3894,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 };
                 mgba = final.swarsel-mgba;
                 niri-stable = prev.niri-stable.override {
-                  patches = [ "${self}/files/patches/niri-workspace-under-mouse-binds.patch" ];
+                  patches = [ (root "files/patches/niri-workspace-under-mouse-binds.patch") ];
                 };
                 retroarch = prev.retroarch.withCores (
                   cores: with cores; [
@@ -4114,7 +4130,10 @@ This is an improvement to what I did earlier, where I did not use =nixos-generat
               inputs.home-manager.nixosModules.home-manager
               "${self}/hosts/utility/drugstore"
             ];
-            specialArgs = { inherit self; };
+            specialArgs = {
+              inherit self;
+              inherit (self.swarselsystemsLib) root;
+            };
           };
           # nix build --print-out-paths --no-link .#pnap-kexec --system <system>
           swarsel-kexec =
@@ -4302,7 +4321,10 @@ This library file defines a few commonly used functions for the tests.
                   globalTimeout = 4 * 3600;
                   node = {
                     pkgsReadOnly = false;
-                    specialArgs = { inherit self; };
+                    specialArgs = {
+                      inherit self;
+                      inherit (self.swarselsystemsLib) root;
+                    };
                   };
                 } testArgs
               );
@@ -11491,6 +11513,7 @@ We enable the use of =home-manager= as a NixOS module. A nice trick here is the 
                   nodes
                   outputs
                   ;
+                inherit (outputs.swarselsystemsLib) root;
                 arch = config.node.arch;
                 lib = outputs.homeLib;
                 nixosConfig = config;
@@ -11553,6 +11576,7 @@ We enable the use of =home-manager= as a NixOS module. A nice trick here is the 
                   outputs
                   type
                   ;
+                inherit (outputs.swarselsystemsLib) root;
                 lib = homeLib;
               };
               overwriteBackup = true;

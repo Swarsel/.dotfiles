@@ -40,7 +40,10 @@
             inputs.home-manager.nixosModules.home-manager
             "${self}/hosts/utility/drugstore"
           ];
-          specialArgs = { inherit self; };
+          specialArgs = {
+            inherit self;
+            inherit (self.swarselsystemsLib) root;
+          };
         };
         # nix build --print-out-paths --no-link .#pnap-kexec --system <system>
         swarsel-kexec =

@@ -32,6 +32,7 @@
                 nodes
                 outputs
                 ;
+              inherit (outputs.swarselsystemsLib) root;
               arch = config.node.arch;
               lib = outputs.homeLib;
               nixosConfig = config;
@@ -94,6 +95,7 @@
                 outputs
                 type
                 ;
+              inherit (outputs.swarselsystemsLib) root;
               lib = homeLib;
             };
             overwriteBackup = true;

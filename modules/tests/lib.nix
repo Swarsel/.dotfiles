@@ -159,7 +159,10 @@
                 globalTimeout = 4 * 3600;
                 node = {
                   pkgsReadOnly = false;
-                  specialArgs = { inherit self; };
+                  specialArgs = {
+                    inherit self;
+                    inherit (self.swarselsystemsLib) root;
+                  };
                 };
               } testArgs
             );

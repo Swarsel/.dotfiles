@@ -80,6 +80,7 @@
               ;
             inherit (config.pkgs.${arch}) lib;
             inherit (config) nodes topologyPrivate;
+            inherit (outputs.swarselsystemsLib) root;
             globals = config.globals.${arch};
             extraModules = [ ];
             type = "nixos";
@@ -113,6 +114,7 @@
               outputs
               ;
             inherit (config) nodes topologyPrivate;
+            inherit (outputs.swarselsystemsLib) root;
             globals = config.globals.${arch};
             withHomeManager = true;
           };
@@ -133,6 +135,7 @@
               type
               ;
             inherit (config) nodes topologyPrivate;
+            inherit (outputs.swarselsystemsLib) root;
             globals = config.globals.${arch};
             minimal = false;
           };

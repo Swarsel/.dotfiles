@@ -70,6 +70,12 @@ let
         }
       );
       readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+      root =
+        subpath:
+        builtins.path {
+          name = builtins.baseNameOf subpath;
+          path = "${self}/${subpath}";
+        };
       readNix =
         type:
         lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
@@ -90,6 +96,7 @@ let
     };
 in
 {
+  _module.args.root = swarselsystems.root;
   flake = {
     homeLib = self.outputs.lib;
     lib = inputs.nixpkgs.lib.extend (
