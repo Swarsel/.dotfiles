@@ -398,6 +398,9 @@ in
           services.niritiling = {
             enable = true;
             resizeColumns = true;
+            columnTargets = lib.mapAttrs' (
+              _: monitor: lib.nameValuePair monitor.name (lib.toInt monitor.columns)
+            ) (lib.filterAttrs (_: monitor: monitor ? columns) config.home-manager.users.${config.swarselsystems.mainUser}.swarselsystems.monitors);
           };
           programs.niri = {
             enable = true;

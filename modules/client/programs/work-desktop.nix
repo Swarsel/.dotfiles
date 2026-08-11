@@ -30,23 +30,24 @@
           };
           monitors = {
             work_middle_middle_main = rec {
-              mode = "3840x2160";
-              model = "HP Z32";
+              columns = "3";
+              mode = "5120x2160";
+              model = "LG ULTRAFINE";
               name = "${vendor} ${model} ${serial}";
               output = name;
-              position = "-1280,0";
-              refresh = "60";
+              position = "-2560,0";
               scale = "1";
-              serial = "CN41212T55";
-              vendor = "HP Inc.";
+              serial = "510NTEPPU036";
+              vendor = "LG Electronics";
               workspace = "1:一";
             };
             work_middle_middle_side = rec {
+              columns = "1";
               mode = "3840x2160";
               model = "HP 732pk";
               name = "${vendor} ${model} ${serial}";
               output = name;
-              position = "-3440,-1050";
+              position = "-4720,-1050";
               refresh = "60";
               scale = "1";
               serial = "CNC4080YL5";
