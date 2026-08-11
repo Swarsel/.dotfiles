@@ -173,16 +173,15 @@
     }
     let root_indicator_timer: ReturnType<typeof setTimeout> | null = null;
     function update_root_indicator(tab_id?: number) {
-      if (window.closed) {
-        return;
-      }
-      if (root_indicator_timer != null) {
-        clearTimeout(root_indicator_timer);
-      }
-      root_indicator_timer = setTimeout(() => {
-        root_indicator_timer = null;
-        void update_root_indicator_now(tab_id);
-      }, 100);
+      try {
+        if (root_indicator_timer != null) {
+          clearTimeout(root_indicator_timer);
+        }
+        root_indicator_timer = setTimeout(() => {
+          root_indicator_timer = null;
+          void update_root_indicator_now(tab_id);
+        }, 100);
+      } catch {}
     }
     async function update_root_indicator_now(tab_id?: number, retried = false) {
       if (window.closed) {
@@ -210,13 +209,15 @@
           root_el.textContent = "";
           return;
         }
-        if (root_indicator_timer != null) {
-          clearTimeout(root_indicator_timer);
-        }
-        root_indicator_timer = setTimeout(() => {
-          root_indicator_timer = null;
-          void update_root_indicator_now(tab_id, true);
-        }, 600);
+        try {
+          if (root_indicator_timer != null) {
+            clearTimeout(root_indicator_timer);
+          }
+          root_indicator_timer = setTimeout(() => {
+            root_indicator_timer = null;
+            void update_root_indicator_now(tab_id, true);
+          }, 600);
+        } catch {}
       }
     }
     const tab_containers: Record<number, string> = {};
