@@ -222,9 +222,10 @@
               '';
               Restart = "on-failure";
               RestartSec = "10s";
+              SuccessExitStatus = "143";
               Type = "simple";
             };
-            wantedBy = [ "multi-user.target" ];
+            wantedBy = [ "microsocks.service" ];
           };
         };
         nodes = lib.mkMerge [

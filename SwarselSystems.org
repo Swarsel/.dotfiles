@@ -40900,9 +40900,10 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                 '';
                 Restart = "on-failure";
                 RestartSec = "10s";
+                SuccessExitStatus = "143";
                 Type = "simple";
               };
-              wantedBy = [ "multi-user.target" ];
+              wantedBy = [ "microsocks.service" ];
             };
           };
           nodes = lib.mkMerge [
