@@ -2,6 +2,7 @@
   flake.modules.nixos.homebox =
     {
       self,
+      root,
       config,
       lib,
       pkgs,
@@ -43,7 +44,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "homebox" ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = "Homebox";
         };

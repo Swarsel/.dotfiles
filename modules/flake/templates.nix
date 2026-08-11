@@ -1,4 +1,4 @@
-{ self, ... }:
+{ root, ... }:
 {
   flake.templates =
     let
@@ -9,7 +9,7 @@
             inherit name;
             value = {
               description = "${name} project ";
-              path = "${self}/files/templates/${name}";
+              path = root "files/templates/${name}";
             };
           }) names
         );

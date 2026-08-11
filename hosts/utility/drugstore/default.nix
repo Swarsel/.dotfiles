@@ -1,12 +1,13 @@
 {
   self,
+  root,
   config,
   lib,
   pkgs,
   ...
 }:
 let
-  pubKeys = lib.filesystem.listFilesRecursive "${self}/files/public/ssh";
+  pubKeys = lib.filesystem.listFilesRecursive (root "files/public/ssh");
   stateVersion = lib.mkDefault "23.05";
   homeFiles = {
     ".bash_history".text = ''

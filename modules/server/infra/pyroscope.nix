@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.pyroscope =
     {
-      self,
+      root,
       config,
       lib,
       confLib,
@@ -38,7 +38,7 @@
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = lib.swarselsystems.toCapitalized serviceName;
         };

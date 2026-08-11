@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.kea =
     {
-      self,
+      root,
       config,
       lib,
       confLib,
@@ -103,7 +103,7 @@
         topology = {
           extractors.kea.enable = false;
           self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
         };

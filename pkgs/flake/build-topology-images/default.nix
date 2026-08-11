@@ -1,5 +1,5 @@
 {
-  self,
+  root,
   name,
   chromium,
   git,
@@ -27,7 +27,7 @@ writeShellApplication {
     mkdir -p "$out"
 
     result="$(nix build --no-link --print-out-paths --builders "" \
-      --override-input topologyPrivate "${self}/files/topology/private" \
+      --override-input topologyPrivate "${root "files/topology/private"}" \
       "$flake#topology.${stdenv.hostPlatform.system}.config.output")"
 
     svg="$result/main.svg"

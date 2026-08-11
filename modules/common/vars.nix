@@ -1,7 +1,7 @@
 {
   flake.modules.generic.vars =
     {
-      self,
+      root,
       config,
       lib,
       pkgs,
@@ -16,7 +16,7 @@
           # CaptivePortal = false;
           Certificates = {
             ImportEnterpriseRoots = true;
-            Install = [ "${self}/files/public/certs/ca.crt" ];
+            Install = [ (root "files/public/certs/ca.crt") ];
           };
           DisableBuiltinPDFViewer = true;
           DisableFirefoxAccounts = false;
@@ -566,7 +566,7 @@
           // lib.mapAttrs' (
             id: _: lib.nameValuePair "extensions.webextensions.ExtensionStorageIDB.migrated.${id}" false
           ) extensions.settings;
-          userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
+          userChrome = builtins.readFile (root "files/firefox/chrome/userChrome.css");
         };
         glide = {
           inherit (firefox) search settings;

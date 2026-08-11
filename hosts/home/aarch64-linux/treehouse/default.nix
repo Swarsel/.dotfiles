@@ -1,5 +1,5 @@
 {
-  self,
+  root,
   inputs,
   lib,
   pkgs,
@@ -14,7 +14,7 @@
 
   swarselsystems = {
     isLaptop = false;
-    wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
+    wallpaper = root "files/wallpaper/landscape/surfacewp.png";
   };
 
   services.xcape = {

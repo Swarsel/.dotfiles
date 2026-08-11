@@ -1,7 +1,7 @@
 {
   flake.modules.generic.options =
     {
-      self,
+      root,
       config,
       lib,
       ...
@@ -113,7 +113,7 @@
           type = lib.types.str;
         };
         wallpaper = lib.mkOption {
-          default = "${self}/files/wallpaper/landscape/lenovowp.png";
+          default = root "files/wallpaper/landscape/lenovowp.png";
           type = lib.types.path;
         };
         withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";

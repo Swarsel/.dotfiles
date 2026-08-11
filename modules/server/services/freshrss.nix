@@ -43,7 +43,7 @@
         # topology.self.services.${serviceName} = {
         #   name = "FreshRSS";
         #   info = "https://${serviceDomain}";
-        #   icon = "${self}/files/topology-images/${serviceName}.png";
+        #   icon = (root "files/topology-images/${serviceName}.png");
         # };
         globals = {
           services = confLib.mkServiceGlobal {

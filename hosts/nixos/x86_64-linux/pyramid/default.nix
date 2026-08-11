@@ -1,5 +1,5 @@
 {
-  self,
+  root,
   inputs,
   config,
   lib,
@@ -52,7 +52,7 @@ in
     isSecureBoot = true;
     lowResolution = "1280x800";
     sharescreen = "eDP-2";
-    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+    wallpaper = root "files/wallpaper/landscape/lenovowp.png";
   };
   topology.self.interfaces = {
     eth1.network = lib.mkForce "home";

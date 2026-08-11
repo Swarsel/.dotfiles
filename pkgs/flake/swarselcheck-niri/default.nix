@@ -1,5 +1,5 @@
 {
-  self,
+  root,
   name,
   element-desktop,
   jq,
@@ -22,7 +22,7 @@ writeShellApplication {
     while :; do
         case ''${1:-} in
         -k | --kitty)
-            cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${self}/files/zellij/config-kittyterm.kdl attach --create kittyterm' '&')
+            cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${root "files/zellij/config-kittyterm.kdl"} attach --create kittyterm' '&')
             searchapp="kittyterm"
             searchelement="app_id"
             ;;

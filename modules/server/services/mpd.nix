@@ -80,7 +80,7 @@
         environment = {
           # topology.self.services.${serviceName} = {
           #   info = "http://localhost:${builtins.toString servicePort}";
-          #   icon = lib.mkForce "${self}/files/topology-images/mpd.png";
+          #   icon = lib.mkForce (root "files/topology-images/mpd.png");
           # };
           persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
             directories = [

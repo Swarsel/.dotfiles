@@ -23,7 +23,7 @@ in
   flake.modules = {
     homeManager.noctalia =
       {
-        self,
+        root,
         inputs,
         config,
         lib,
@@ -190,7 +190,7 @@ in
                       rotation = 0.0;
                       settings = {
                         background = false;
-                        image_path = "${self}/files/icons/swarsel.png";
+                        image_path = root "files/icons/swarsel.png";
                         opacity = 1.0;
                       };
                       type = "sticker";
@@ -247,7 +247,7 @@ in
                     enabled = true;
                     speed = 4.0;
                   };
-                  avatar_path = "${self}/files/icons/swarsel.png";
+                  avatar_path = root "files/icons/swarsel.png";
                   clipboard_auto_paste = "off";
                   clipboard_enabled = true;
                   external_ip_enabled = true;
@@ -342,7 +342,7 @@ in
                     order = "random";
                     recursive = true;
                   };
-                  directory = "${self}/files/wallpaper/landscape";
+                  directory = root "files/wallpaper/landscape";
                   edge_smoothness = 0.05;
                   enabled = true;
                   fill_mode = "crop";
@@ -382,7 +382,7 @@ in
                     tooltip_format = "{:%a %d. %b %H:%M:%S}";
                   };
                   control-center = {
-                    custom_image = "${self}/files/icons/swarsel.png";
+                    custom_image = root "files/icons/swarsel.png";
                     custom_image_colorize = true;
                     glyph = "noctalia";
                   };

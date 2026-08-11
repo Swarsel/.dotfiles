@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.bastion =
     {
-      self,
+      root,
       config,
       lib,
       confLib,
@@ -18,9 +18,9 @@
             group = lib.mkForce "jump";
             isNormalUser = true;
             openssh.authorizedKeys.keyFiles = [
-              (self + /files/public/ssh/yubikey.pub)
-              (self + /files/public/ssh/magicant.pub)
-              (self + /files/public/ssh/builder.pub)
+              (root "files/public/ssh/yubikey.pub")
+              (root "files/public/ssh/magicant.pub")
+              (root "files/public/ssh/builder.pub")
             ];
             useDefaultShell = true;
           };

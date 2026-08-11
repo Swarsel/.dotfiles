@@ -22,7 +22,7 @@
         inputs.simple-nixos-mailserver.nixosModules.default
         (
           {
-            self,
+            root,
             config,
             lib,
             confLib,
@@ -83,7 +83,7 @@
                 (
                   service:
                   lib.nameValuePair "${service}" {
-                    icon = "${self}/files/topology-images/${service}.png";
+                    icon = root "files/topology-images/${service}.png";
                     info = lib.mkIf (service == "postfix" || service == "roundcube") (
                       if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}"
                     );

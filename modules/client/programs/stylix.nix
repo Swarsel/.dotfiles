@@ -24,7 +24,7 @@
           ++ [
             (
               {
-                self,
+                root,
                 config,
                 lib,
                 vars,
@@ -43,7 +43,7 @@
                 // lib.optionalAttrs (nixosConfig == null) (
                   lib.recursiveUpdate {
                     enable = true;
-                    base16Scheme = "${self}/files/stylix/swarsel.yaml";
+                    base16Scheme = root "files/stylix/swarsel.yaml";
                   } vars.stylix
                 );
               }
@@ -56,7 +56,7 @@
         inputs.stylix.nixosModules.stylix
         (
           {
-            self,
+            root,
             config,
             lib,
             vars,
@@ -65,7 +65,7 @@
           {
             stylix = lib.recursiveUpdate {
               enable = true;
-              base16Scheme = "${self}/files/stylix/swarsel.yaml";
+              base16Scheme = root "files/stylix/swarsel.yaml";
               image = config.swarselsystems.wallpaper;
               targets.grub.enable = false; # the styling makes grub more ugly
             } vars.stylix;

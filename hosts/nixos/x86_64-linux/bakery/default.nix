@@ -1,5 +1,5 @@
 {
-  self,
+  root,
   inputs,
   config,
   lib,
@@ -48,7 +48,7 @@ in
     rootDisk = "/dev/nvme0n1";
     sharescreen = "eDP-1";
     swapSize = "4G";
-    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+    wallpaper = root "files/wallpaper/landscape/lenovowp.png";
   };
   topology.self.interfaces = {
     eth1.network = lib.mkForce "home";

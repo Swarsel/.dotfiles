@@ -2,6 +2,7 @@
   flake.modules.nixos.buildbot =
     {
       self,
+      root,
       config,
       lib,
       pkgs,
@@ -520,7 +521,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "buildbot" ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = "Buildbot";
         };

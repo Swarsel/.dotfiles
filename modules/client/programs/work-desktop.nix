@@ -1,7 +1,7 @@
 {
   flake.modules.homeManager.work-desktop =
     {
-      self,
+      root,
       config,
       lib,
       pkgs,
@@ -87,8 +87,8 @@
               profile = {
                 exec = [
                   "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${root "files/wallpaper/landscape/botanicswp.png"} --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${root "files/wallpaper/portrait/op6wp.png"} --mode ${config.stylix.imageScalingMode}"
                 ];
                 name = "lidopen";
                 outputs = [
@@ -111,7 +111,7 @@
                 {
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/services/navidrome.png"} --mode ${config.stylix.imageScalingMode}"
                     "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor.name}'"
                   ];
                   name = "lidopen";
@@ -129,8 +129,8 @@
             {
               profile = {
                 exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${root "files/wallpaper/landscape/botanicswp.png"} --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${root "files/wallpaper/portrait/op6wp.png"} --mode ${config.stylix.imageScalingMode}"
                 ];
                 name = "lidclosed";
                 outputs = [
@@ -150,7 +150,7 @@
                 in
                 {
                   exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/services/navidrome.png"} --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidclosed";
                   outputs = [

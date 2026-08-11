@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.minecraft =
     {
-      self,
+      root,
       config,
       lib,
       pkgs,
@@ -33,7 +33,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "minecraft" ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = "Minecraft";
         };

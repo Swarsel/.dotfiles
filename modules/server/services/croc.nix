@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.croc =
     {
-      self,
+      root,
       config,
       lib,
       pkgs,
@@ -36,7 +36,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "croc" ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = serviceName;
         };

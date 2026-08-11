@@ -5,6 +5,7 @@
   flake.modules.nixos.firezone =
     {
       self,
+      root,
       inputs,
       config,
       lib,
@@ -106,7 +107,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "firezone" ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = lib.swarselsystems.toCapitalized serviceName;
         };
@@ -454,7 +455,7 @@
                   in
                   {
                     topology.self.services."${serviceName}-gateway" = {
-                      icon = "${self}/files/topology-images/${serviceName}.png";
+                      icon = root "files/topology-images/${serviceName}.png";
                       name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
                     };
                     sops.secrets.firezone-gateway-token = {

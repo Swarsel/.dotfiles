@@ -1,5 +1,5 @@
 {
-  self,
+  root,
   name,
   emacs30-pgtk,
   jq,
@@ -32,7 +32,7 @@ writeShellApplication {
     if [ -n "$ID" ]; then
         niri msg action close-window --id "$ID"
         emacsclient -c -a "" "$@"
-        niri msg action spawn -- sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${self}/files/zellij/config-kittyterm.kdl attach --create kittyterm' '&'
+        niri msg action spawn -- sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${root "files/zellij/config-kittyterm.kdl"} attach --create kittyterm' '&'
     else
         if [[ $wait -eq 0 ]]; then
             emacsclient -n -c -a "" "$@"

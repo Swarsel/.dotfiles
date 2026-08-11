@@ -2,6 +2,7 @@
   flake.modules.nixos.transmission =
     {
       self,
+      root,
       config,
       lib,
       pkgs,
@@ -57,7 +58,7 @@
           prowlarr.info = "https://${serviceDomain}/prowlarr";
           radarr.info = "https://${serviceDomain}/radarr";
           readarr = {
-            icon = "${self}/files/topology-images/readarr.png";
+            icon = root "files/topology-images/readarr.png";
             info = "https://${serviceDomain}/readarr";
             name = "Readarr";
           };

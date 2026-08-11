@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.nsd =
     {
-      self,
+      root,
       config,
       lib,
       confLib,
@@ -26,7 +26,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "nsd" ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           name = lib.toUpper serviceName;
         };
         sops.secrets.tsig-key = { inherit sopsFile; };

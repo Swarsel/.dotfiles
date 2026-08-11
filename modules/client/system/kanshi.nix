@@ -1,7 +1,7 @@
 {
   flake.modules.homeManager.kanshi =
     {
-      self,
+      root,
       config,
       pkgs,
       confLib,
@@ -61,7 +61,7 @@
                 {
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/landscape/standwp.png"} --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidopen";
                   outputs = [
@@ -82,7 +82,7 @@
                 in
                 {
                   exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/landscape/standwp.png"} --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidclosed";
                   outputs = [

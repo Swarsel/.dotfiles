@@ -2,6 +2,7 @@
   args = {
     first = [
       "self"
+      "root"
       "name"
       "homeConfig"
       "inputs"

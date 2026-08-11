@@ -70,17 +70,17 @@ let
         }
       );
       readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+      readNix =
+        type:
+        lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
+          lib.attrNames (builtins.readDir "${self}/${type}")
+        );
       root =
         subpath:
         builtins.path {
           name = builtins.baseNameOf subpath;
           path = "${self}/${subpath}";
         };
-      readNix =
-        type:
-        lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
-          lib.attrNames (builtins.readDir "${self}/${type}")
-        );
       toCapitalized =
         str:
         if builtins.stringLength str == 0 then
@@ -96,7 +96,6 @@ let
     };
 in
 {
-  _module.args.root = swarselsystems.root;
   flake = {
     homeLib = self.outputs.lib;
     lib = inputs.nixpkgs.lib.extend (
@@ -107,4 +106,6 @@ in
     );
     swarselsystemsLib = swarselsystems;
   };
+
+  _module.args.root = swarselsystems.root;
 }

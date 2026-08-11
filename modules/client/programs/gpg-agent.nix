@@ -1,7 +1,7 @@
 {
   flake.modules.homeManager.gpg-agent =
     {
-      self,
+      root,
       config,
       lib,
       pkgs,
@@ -47,7 +47,7 @@
           enable = true;
           publicKeys = [
             {
-              source = "${self}/files/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+              source = root "files/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
               trust = 5;
             }
           ];

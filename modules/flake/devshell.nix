@@ -1,8 +1,8 @@
 {
   self,
+  root,
   inputs,
   lib,
-  root,
   ...
 }:
 {

@@ -2,7 +2,7 @@
   flake.modules = {
     homeManager.zsh =
       {
-        self,
+        root,
         config,
         lib,
         pkgs,
@@ -118,8 +118,8 @@
               config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
               boot-diff = "nix store diff-closures /run/*-system";
               build-iso = "nix build --print-out-paths .#live-iso";
-              build-topology = "nix build --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
-              build-topology-dev = "nix build --show-trace --override-input nix-topology ${homeDir}/Documents/Private/nix-topology --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
+              build-topology = "nix build --override-input topologyPrivate ${root "files/topology/private"} ${flakePath}#topology.${arch}.config.output";
+              build-topology-dev = "nix build --show-trace --override-input nix-topology ${homeDir}/Documents/Private/nix-topology --override-input topologyPrivate ${root "files/topology/private"} ${flakePath}#topology.${arch}.config.output";
               c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
               cat-orig = "cat";
               cc = "wl-copy";

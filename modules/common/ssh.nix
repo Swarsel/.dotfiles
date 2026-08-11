@@ -47,7 +47,7 @@
       };
     nixos.ssh =
       {
-        self,
+        root,
         config,
         lib,
         confLib,
@@ -60,14 +60,14 @@
           users = {
             users = {
               "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
-                (self + /files/public/ssh/yubikey.pub)
-                (self + /files/public/ssh/magicant.pub)
-                # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
+                (root "files/public/ssh/yubikey.pub")
+                (root "files/public/ssh/magicant.pub")
+                # (lib.mkIf config.swarselsystems.isBastionTarget (root "files/public/ssh/jump.pub"))
               ];
               root.openssh.authorizedKeys.keyFiles = [
-                (self + /files/public/ssh/yubikey.pub)
-                (self + /files/public/ssh/magicant.pub)
-                # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
+                (root "files/public/ssh/yubikey.pub")
+                (root "files/public/ssh/magicant.pub")
+                # (lib.mkIf config.swarselsystems.isBastionTarget (root "files/public/ssh/jump.pub"))
               ];
             };
             persistentIds.sshd = confLib.mkIds 979;

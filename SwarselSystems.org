@@ -2258,6 +2258,7 @@ A breakdown for the functions that have a non-obvious purpose:
 - =toCapitalized=: returns the capitalized version of a string (="about"= -> ="About"=)
   - uses [[#h:a22ddf24-fd22-4842-af4a-58bfda110998][nixpkgs.lib.stringLength]] to prevent working on an empty string
   - [[#h:6f73291f-812c-4310-9e17-253e22a6fd74][nixpkgs.lib.subString]] as well as =nixpkgs.lib.toUpper= and =nixpkgs.lib.toLower= to build the respective capitalized string
+- =root=: for a long time, I just resorted to =self= whenever I wanted to refer to the root of the flake. However, for files that were used in derivations, this incurred the cost of rebuilding the derivation whenever the flake changed /in any way/. I only noticed this once I added a custom patch to [[#h:58162d08-3ded-441d-861e-2ebf30e32538][Niri]]. This function simply replaces this with a call to =builtins.path=, and I then import the =root= function as =specialArgs= everywhere.
 
 
 Concerning the =flake = [...]= part:
@@ -2337,17 +2338,17 @@ Concerning the =flake = [...]= part:
           }
         );
         readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+        readNix =
+          type:
+          lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
+            lib.attrNames (builtins.readDir "${self}/${type}")
+          );
         root =
           subpath:
           builtins.path {
             name = builtins.baseNameOf subpath;
             path = "${self}/${subpath}";
           };
-        readNix =
-          type:
-          lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
-            lib.attrNames (builtins.readDir "${self}/${type}")
-          );
         toCapitalized =
           str:
           if builtins.stringLength str == 0 then
@@ -2363,7 +2364,6 @@ Concerning the =flake = [...]= part:
       };
   in
   {
-    _module.args.root = swarselsystems.root;
     flake = {
       homeLib = self.outputs.lib;
       lib = inputs.nixpkgs.lib.extend (
@@ -2374,6 +2374,8 @@ Concerning the =flake = [...]= part:
       );
       swarselsystemsLib = swarselsystems;
     };
+
+    _module.args.root = swarselsystems.root;
   }
 #+end_src
 ** Packages (pkgs)
@@ -2912,6 +2914,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
 #+begin_src nix-ts :tangle modules/flake/topology.nix
   {
     self,
+    root,
     inputs,
     lib,
     ...
@@ -2988,11 +2991,11 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
               nodes = {
                 ender3 = mkDevice "Ender 3" {
                   services.octoprint = {
-                    icon = "${self}/files/topology-images/octoprint.png";
+                    icon = root "files/topology-images/octoprint.png";
                     name = "OctoPrint";
                   };
-                  deviceIcon = "${self}/files/topology-images/ender3.png";
-                  icon = "${self}/files/topology-images/raspi.png";
+                  deviceIcon = root "files/topology-images/ender3.png";
+                  icon = root "files/topology-images/raspi.png";
                   info = "SKR V1.3, TMC2209 (Dual), TFT35";
                   interfaces.eth1 = { };
                 };
@@ -3001,7 +3004,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     eth-wan = mkConnection "hintbooth" "lan";
                     eth1 = mkConnection "winters" "eth1";
                   };
-                  image = "${self}/files/topology-images/Fritz!Box_7682.png";
+                  image = root "files/topology-images/FritzBox_7682.png";
                   info = "FRITZ!Box 7682";
                   interfaceGroups = [
                     [
@@ -3059,7 +3062,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                   ];
                 };
                 machpizza = mkDevice "machpizza" {
-                  deviceIcon = "${self}/files/topology-images/mac.png";
+                  deviceIcon = root "files/topology-images/mac.png";
                   icon = "devices.laptop";
                   info = "MacBook Pro 2016";
                   interfaces = {
@@ -3068,8 +3071,8 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                   };
                 };
                 magicant = mkDevice "magicant" {
-                  icon = "${self}/files/topology-images/phone.png";
-                  image = "${self}/files/topology-images/zflip6.png";
+                  icon = root "files/topology-images/phone.png";
+                  image = root "files/topology-images/zflip6.png";
                   info = "Samsung Z Flip 6";
                   interfaces = {
                     fritz-wg.network = "fritz-wg";
@@ -3077,27 +3080,27 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                   };
                 };
                 nswitch = mkDevice "Nintendo Switch" {
-                  image = "${self}/files/topology-images/nintendo-switch.png";
+                  image = root "files/topology-images/nintendo-switch.png";
                   info = "Atmosphère 1.3.2 @ FW 19.0.1";
                   interfaces.eth1 = { };
                 };
                 pc = mkDevice "Chaostheater" {
                   services.sunshine = {
-                    icon = "${self}/files/topology-images/sunshine.png";
+                    icon = root "files/topology-images/sunshine.png";
                     name = "Sunshine";
                   };
-                  deviceIcon = "${self}/files/topology-images/atlasos.png";
-                  icon = "${self}/files/topology-images/windows.png";
+                  deviceIcon = root "files/topology-images/atlasos.png";
+                  icon = root "files/topology-images/windows.png";
                   info = "ASUS Z97-A, i7-4790k, GTX970, 32GB RAM";
                   interfaces.eth1.network = "guests";
                 };
                 printer = mkDevice "Printer" {
-                  image = "${self}/files/topology-images/DELL-C2665dnf.png";
+                  image = root "files/topology-images/DELL-C2665dnf.png";
                   info = "DELL C2665dnf";
                   interfaces.eth1 = { };
                 };
                 ps4 = mkDevice "PlayStation 4" {
-                  image = "${self}/files/topology-images/ps4.png";
+                  image = root "files/topology-images/ps4.png";
                   info = "GoldHEN @ FW 5.05";
                   interfaces.eth1 = { };
                 };
@@ -3106,8 +3109,8 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     eth2 = mkConnection "printer" "eth1";
                     eth3 = mkConnection "machpizza" "eth1";
                   };
-                  image = "${self}/files/topology-images/Cisco_SG_200-08.png";
-                  info = "Cisco SG 200-08";
+                  image = root "files/topology-images/TL-SG108E.png";
+                  info = "TL-SG108E";
                   interfaceGroups = [
                     # trunk
                     [ "eth1" ]
@@ -3137,7 +3140,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     eth7 = mkConnection "pc" "eth1";
                     eth8 = mkConnection "pyramid" "eth1";
                   };
-                  image = "${self}/files/topology-images/TL-SG108E.png";
+                  image = root "files/topology-images/TL-SG108E.png";
                   info = "TL-SG108E";
                   interfaceGroups = [
                     # trunk
@@ -3171,7 +3174,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                 treehouse = mkDevice "treehouse" {
                   services = {
                     comfyui = {
-                      icon = "${self}/files/topology-images/comfyui.png";
+                      icon = root "files/topology-images/comfyui.png";
                       name = "Comfy UI";
                     };
                     ollama = {
@@ -3183,8 +3186,8 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                       name = "Open WebUI";
                     };
                   };
-                  deviceIcon = "${self}/files/topology-images/dgxos.png";
-                  icon = "${self}/files/topology-images/home-manager.png";
+                  deviceIcon = root "files/topology-images/dgxos.png";
+                  icon = root "files/topology-images/home-manager.png";
                   info = "NVIDIA DGX Spark";
                   interfaces = {
                     eth1 = { };
@@ -3323,9 +3326,9 @@ Aside from the =default= devShell which is the one that should usually be called
 #+begin_src nix-ts :tangle modules/flake/devshell.nix
   {
     self,
+    root,
     inputs,
     lib,
-    root,
     ...
   }:
   {
@@ -3507,7 +3510,7 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
 - uses [[#h:c63cd469-7724-4a05-b932-8843722a00f0][builtins.listToAttrs]]
 
 #+begin_src nix-ts :tangle modules/flake/templates.nix
-  { self, ... }:
+  { root, ... }:
   {
     flake.templates =
       let
@@ -3518,7 +3521,7 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
               inherit name;
               value = {
                 description = "${name} project ";
-                path = "${self}/files/templates/${name}";
+                path = root "files/templates/${name}";
               };
             }) names
           );
@@ -3723,8 +3726,8 @@ On the structure of overlays: as you notice, all of the attributes within overla
 #+begin_src nix-ts :tangle modules/flake/overlays.nix
   {
     self,
-    inputs,
     root,
+    inputs,
     ...
   }:
   let
@@ -4796,6 +4799,7 @@ This library file defines a few commonly used functions for the tests.
         ;
       inherit (self) outputs;
       inherit (self.outputs) homeLib;
+      inherit (self.outputs.swarselsystemsLib) root;
       globals =
         (lib.evalModules {
           modules = [
@@ -5310,7 +5314,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/pyramid/default.nix
   {
-    self,
+    root,
     inputs,
     config,
     lib,
@@ -5363,7 +5367,7 @@ My work machine. Built for more security, this is the gold standard of my config
       isSecureBoot = true;
       lowResolution = "1280x800";
       sharescreen = "eDP-2";
-      wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+      wallpaper = root "files/wallpaper/landscape/lenovowp.png";
     };
     topology.self.interfaces = {
       eth1.network = lib.mkForce "home";
@@ -5630,7 +5634,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/bakery/default.nix
   {
-    self,
+    root,
     inputs,
     config,
     lib,
@@ -5679,7 +5683,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
       rootDisk = "/dev/nvme0n1";
       sharescreen = "eDP-1";
       swapSize = "4G";
-      wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+      wallpaper = root "files/wallpaper/landscape/lenovowp.png";
     };
     topology.self.interfaces = {
       eth1.network = lib.mkForce "home";
@@ -7606,7 +7610,7 @@ This is my workstation located at my workplace - I use it as a remote builder an
 
 #+begin_src nix-ts :tangle hosts/home/aarch64-linux/treehouse/default.nix
   {
-    self,
+    root,
     inputs,
     lib,
     pkgs,
@@ -7621,7 +7625,7 @@ This is my workstation located at my workplace - I use it as a remote builder an
 
     swarselsystems = {
       isLaptop = false;
-      wallpaper = self + /files/wallpaper/landscape/surfacewp.png;
+      wallpaper = root "files/wallpaper/landscape/surfacewp.png";
     };
 
     services.xcape = {
@@ -9128,7 +9132,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :END:
 #+begin_src nix-ts :tangle hosts/utility/toto/default.nix
   {
-    self,
+    root,
     inputs,
     config,
     lib,
@@ -9156,7 +9160,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
       isSwap = true;
       rootDisk = "/dev/vda";
       swapSize = "2G";
-      wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+      wallpaper = root "files/wallpaper/landscape/lenovowp.png";
     };
 
     topology.self.interfaces.bootstrapper = { };
@@ -9372,13 +9376,14 @@ Steps to recover using live ISO:
 #+begin_src nix-ts :tangle hosts/utility/drugstore/default.nix
   {
     self,
+    root,
     config,
     lib,
     pkgs,
     ...
   }:
   let
-    pubKeys = lib.filesystem.listFilesRecursive "${self}/files/public/ssh";
+    pubKeys = lib.filesystem.listFilesRecursive (root "files/public/ssh");
     stateVersion = lib.mkDefault "23.05";
     homeFiles = {
       ".bash_history".text = ''
@@ -9805,7 +9810,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 #+begin_src nix-ts :tangle hosts/utility/hotel/default.nix
   {
-    self,
+    root,
     inputs,
     config,
     lib,
@@ -9850,7 +9855,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       isSwap = true;
       rootDisk = "/dev/vda";
       swapSize = "4G";
-      wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+      wallpaper = root "files/wallpaper/landscape/lenovowp.png";
     };
 
     topology.self.interfaces."demo host" = { };
@@ -10950,7 +10955,7 @@ These are my own configuration options that are used in multiple places througho
   {
     flake.modules.generic.options =
       {
-        self,
+        root,
         config,
         lib,
         ...
@@ -11062,7 +11067,7 @@ These are my own configuration options that are used in multiple places througho
             type = lib.types.str;
           };
           wallpaper = lib.mkOption {
-            default = "${self}/files/wallpaper/landscape/lenovowp.png";
+            default = root "files/wallpaper/landscape/lenovowp.png";
             type = lib.types.path;
           };
           withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";
@@ -11712,7 +11717,7 @@ In short, the options defined here are passed to the modules systems using =_mod
   {
     flake.modules.generic.vars =
       {
-        self,
+        root,
         config,
         lib,
         pkgs,
@@ -11727,7 +11732,7 @@ In short, the options defined here are passed to the modules systems using =_mod
             # CaptivePortal = false;
             Certificates = {
               ImportEnterpriseRoots = true;
-              Install = [ "${self}/files/public/certs/ca.crt" ];
+              Install = [ (root "files/public/certs/ca.crt") ];
             };
             DisableBuiltinPDFViewer = true;
             DisableFirefoxAccounts = false;
@@ -12277,7 +12282,7 @@ In short, the options defined here are passed to the modules systems using =_mod
             // lib.mapAttrs' (
               id: _: lib.nameValuePair "extensions.webextensions.ExtensionStorageIDB.migrated.${id}" false
             ) extensions.settings;
-            userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
+            userChrome = builtins.readFile (root "files/firefox/chrome/userChrome.css");
           };
           glide = {
             inherit (firefox) search settings;
@@ -13326,6 +13331,7 @@ I also take some precautions in how I get networking information during stage 1.
                     extraSpecialArgs = {
                       inherit (inputs.self) nodes;
                       inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                      inherit (inputs.self.swarselsystemsLib) root;
                       inherit inputs minimal outputs;
                       inherit (inputs) self;
                       globals = inputs.self.globals.${config.node.arch};
@@ -13664,7 +13670,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       nixos.ssh =
         {
-          self,
+          root,
           config,
           lib,
           confLib,
@@ -13677,14 +13683,14 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             users = {
               users = {
                 "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
-                  (self + /files/public/ssh/yubikey.pub)
-                  (self + /files/public/ssh/magicant.pub)
-                  # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
+                  (root "files/public/ssh/yubikey.pub")
+                  (root "files/public/ssh/magicant.pub")
+                  # (lib.mkIf config.swarselsystems.isBastionTarget (root "files/public/ssh/jump.pub"))
                 ];
                 root.openssh.authorizedKeys.keyFiles = [
-                  (self + /files/public/ssh/yubikey.pub)
-                  (self + /files/public/ssh/magicant.pub)
-                  # (lib.mkIf config.swarselsystems.isBastionTarget (self + /files/public/ssh/jump.pub))
+                  (root "files/public/ssh/yubikey.pub")
+                  (root "files/public/ssh/magicant.pub")
+                  # (lib.mkIf config.swarselsystems.isBastionTarget (root "files/public/ssh/jump.pub"))
                 ];
               };
               persistentIds.sshd = confLib.mkIds 979;
@@ -14370,7 +14376,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
             ++ [
               (
                 {
-                  self,
+                  root,
                   config,
                   lib,
                   vars,
@@ -14389,7 +14395,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
                   // lib.optionalAttrs (nixosConfig == null) (
                     lib.recursiveUpdate {
                       enable = true;
-                      base16Scheme = "${self}/files/stylix/swarsel.yaml";
+                      base16Scheme = root "files/stylix/swarsel.yaml";
                     } vars.stylix
                   );
                 }
@@ -14402,7 +14408,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
           inputs.stylix.nixosModules.stylix
           (
             {
-              self,
+              root,
               config,
               lib,
               vars,
@@ -14411,7 +14417,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
             {
               stylix = lib.recursiveUpdate {
                 enable = true;
-                base16Scheme = "${self}/files/stylix/swarsel.yaml";
+                base16Scheme = root "files/stylix/swarsel.yaml";
                 image = config.swarselsystems.wallpaper;
                 targets.grub.enable = false; # the styling makes grub more ugly
               } vars.stylix;
@@ -14549,25 +14555,23 @@ Also in Firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 
 #+begin_src nix-ts :tangle modules/client/system/symlink.nix
   {
-    flake.modules.homeManager.symlink = { self, ... }: {
+    flake.modules.homeManager.symlink = { root, ... }: {
       config = {
         swarselsystems.enabledHomeModules = [ "symlink" ];
         home.file = {
           # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
           ".aspell.conf" = {
-            source = self + /files/config/.aspell.conf;
+            source = root "files/config/.aspell.conf";
             target = ".aspell.conf";
           };
           ".gitmessage" = {
-            source = self + /files/git/.gitmessage;
+            source = root "files/git/.gitmessage";
             target = ".gitmessage";
           };
         };
         xdg.configFile = {
-          "tridactyl/themes/base16-codeschool.css".source =
-            self + /files/firefox/tridactyl/themes/base16-codeschool.css;
-          "tridactyl/themes/swarsel.css".source = self + /files/firefox/tridactyl/themes/swarsel.css;
-          "tridactyl/tridactylrc".source = self + /files/firefox/tridactyl/tridactylrc;
+          "tridactyl/themes/swarsel.css".source = root "files/firefox/tridactyl/themes/swarsel.css";
+          "tridactyl/tridactylrc".source = root "files/firefox/tridactyl/tridactylrc";
         };
       };
     };
@@ -15076,7 +15080,7 @@ Currently I only use it as before with =initExtra= though.
     flake.modules = {
       homeManager.zsh =
         {
-          self,
+          root,
           config,
           lib,
           pkgs,
@@ -15192,8 +15196,8 @@ Currently I only use it as before with =initExtra= though.
                 config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
                 boot-diff = "nix store diff-closures /run/*-system";
                 build-iso = "nix build --print-out-paths .#live-iso";
-                build-topology = "nix build --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
-                build-topology-dev = "nix build --show-trace --override-input nix-topology ${homeDir}/Documents/Private/nix-topology --override-input topologyPrivate ${self}/files/topology/private ${flakePath}#topology.${arch}.config.output";
+                build-topology = "nix build --override-input topologyPrivate ${root "files/topology/private"} ${flakePath}#topology.${arch}.config.output";
+                build-topology-dev = "nix build --show-trace --override-input nix-topology ${homeDir}/Documents/Private/nix-topology --override-input topologyPrivate ${root "files/topology/private"} ${flakePath}#topology.${arch}.config.output";
                 c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
                 cat-orig = "cat";
                 cc = "wl-copy";
@@ -19836,7 +19840,7 @@ Nowadays, all of the Sway stack is kept as a reference.
   {
     flake.modules.homeManager.kanshi =
       {
-        self,
+        root,
         config,
         pkgs,
         confLib,
@@ -19896,7 +19900,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                   {
                     exec = [
                       "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/landscape/standwp.png"} --mode ${config.stylix.imageScalingMode}"
                     ];
                     name = "lidopen";
                     outputs = [
@@ -19917,7 +19921,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                   in
                   {
                     exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/landscape/standwp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/landscape/standwp.png"} --mode ${config.stylix.imageScalingMode}"
                     ];
                     name = "lidclosed";
                     outputs = [
@@ -20054,7 +20058,7 @@ When setting up a new machine:
   {
     flake.modules.homeManager.gpg-agent =
       {
-        self,
+        root,
         config,
         lib,
         pkgs,
@@ -20100,7 +20104,7 @@ When setting up a new machine:
             enable = true;
             publicKeys = [
               {
-                source = "${self}/files/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+                source = root "files/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
                 trust = 5;
               }
             ];
@@ -23536,10 +23540,14 @@ Auto login for the initial session.
           ({ config, pkgs, ... }: {
             services.niritiling = {
               enable = true;
+              columnTargets =
+                lib.mapAttrs' (_: monitor: lib.nameValuePair monitor.name (lib.toInt monitor.columns))
+                  (
+                    lib.filterAttrs (
+                      _: monitor: monitor ? columns
+                    ) config.home-manager.users.${config.swarselsystems.mainUser}.swarselsystems.monitors
+                  );
               resizeColumns = true;
-              columnTargets = lib.mapAttrs' (
-                _: monitor: lib.nameValuePair monitor.name (lib.toInt monitor.columns)
-              ) (lib.filterAttrs (_: monitor: monitor ? columns) config.home-manager.users.${config.swarselsystems.mainUser}.swarselsystems.monitors);
             };
             programs.niri = {
               enable = true;
@@ -23596,7 +23604,7 @@ Auto login for the initial session.
     flake.modules = {
       homeManager.noctalia =
         {
-          self,
+          root,
           inputs,
           config,
           lib,
@@ -23763,7 +23771,7 @@ Auto login for the initial session.
                         rotation = 0.0;
                         settings = {
                           background = false;
-                          image_path = "${self}/files/icons/swarsel.png";
+                          image_path = root "files/icons/swarsel.png";
                           opacity = 1.0;
                         };
                         type = "sticker";
@@ -23820,7 +23828,7 @@ Auto login for the initial session.
                       enabled = true;
                       speed = 4.0;
                     };
-                    avatar_path = "${self}/files/icons/swarsel.png";
+                    avatar_path = root "files/icons/swarsel.png";
                     clipboard_auto_paste = "off";
                     clipboard_enabled = true;
                     external_ip_enabled = true;
@@ -23915,7 +23923,7 @@ Auto login for the initial session.
                       order = "random";
                       recursive = true;
                     };
-                    directory = "${self}/files/wallpaper/landscape";
+                    directory = root "files/wallpaper/landscape";
                     edge_smoothness = 0.05;
                     enabled = true;
                     fill_mode = "crop";
@@ -23955,7 +23963,7 @@ Auto login for the initial session.
                       tooltip_format = "{:%a %d. %b %H:%M:%S}";
                     };
                     control-center = {
-                      custom_image = "${self}/files/icons/swarsel.png";
+                      custom_image = root "files/icons/swarsel.png";
                       custom_image_colorize = true;
                       glyph = "noctalia";
                     };
@@ -25045,7 +25053,7 @@ When setting up a new machine:
   {
     flake.modules.homeManager.work-desktop =
       {
-        self,
+        root,
         config,
         lib,
         pkgs,
@@ -25131,8 +25139,8 @@ When setting up a new machine:
                 profile = {
                   exec = [
                     "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${root "files/wallpaper/landscape/botanicswp.png"} --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${root "files/wallpaper/portrait/op6wp.png"} --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidopen";
                   outputs = [
@@ -25155,7 +25163,7 @@ When setting up a new machine:
                   {
                     exec = [
                       "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/services/navidrome.png"} --mode ${config.stylix.imageScalingMode}"
                       "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor.name}'"
                     ];
                     name = "lidopen";
@@ -25173,8 +25181,8 @@ When setting up a new machine:
               {
                 profile = {
                   exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${self}/files/wallpaper/landscape/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${self}/files/wallpaper/portrait/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_main.name}' --image ${root "files/wallpaper/landscape/botanicswp.png"} --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitors.work_middle_middle_side.name}' --image ${root "files/wallpaper/portrait/op6wp.png"} --mode ${config.stylix.imageScalingMode}"
                   ];
                   name = "lidclosed";
                   outputs = [
@@ -25194,7 +25202,7 @@ When setting up a new machine:
                   in
                   {
                     exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${self}/files/wallpaper/services/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output '${monitor.name}' --image ${root "files/wallpaper/services/navidrome.png"} --mode ${config.stylix.imageScalingMode}"
                     ];
                     name = "lidclosed";
                     outputs = [
@@ -25543,13 +25551,13 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 #+begin_src nix-ts :tangle modules/client/system/sandbox-access.nix
   {
     flake.modules.nixos.sandbox-access =
-      { self, ... }:
+      { self, root, ... }:
       {
         networking.hosts."127.0.0.1" =
           builtins.attrValues (import "${self}/hosts/utility/vacanthouse/secrets/pii.nix").services.domains;
 
         security.pki.certificateFiles = [
-          "${self}/files/public/certs/ca.crt"
+          (root "files/public/certs/ca.crt")
         ];
       };
   }
@@ -26492,7 +26500,7 @@ Some extra config to harden the config on my ssh bastion host. It makes it so th
   {
     flake.modules.nixos.bastion =
       {
-        self,
+        root,
         config,
         lib,
         confLib,
@@ -26509,9 +26517,9 @@ Some extra config to harden the config on my ssh bastion host. It makes it so th
               group = lib.mkForce "jump";
               isNormalUser = true;
               openssh.authorizedKeys.keyFiles = [
-                (self + /files/public/ssh/yubikey.pub)
-                (self + /files/public/ssh/magicant.pub)
-                (self + /files/public/ssh/builder.pub)
+                (root "files/public/ssh/yubikey.pub")
+                (root "files/public/ssh/magicant.pub")
+                (root "files/public/ssh/builder.pub")
               ];
               useDefaultShell = true;
             };
@@ -28235,7 +28243,7 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
           environment = {
             # topology.self.services.${serviceName} = {
             #   info = "http://localhost:${builtins.toString servicePort}";
-            #   icon = lib.mkForce "${self}/files/topology-images/mpd.png";
+            #   icon = lib.mkForce (root "files/topology-images/mpd.png");
             # };
             persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
               directories = [
@@ -29854,6 +29862,7 @@ I use this configuration for sailing.
     flake.modules.nixos.transmission =
       {
         self,
+        root,
         config,
         lib,
         pkgs,
@@ -29909,7 +29918,7 @@ I use this configuration for sailing.
             prowlarr.info = "https://${serviceDomain}/prowlarr";
             radarr.info = "https://${serviceDomain}/radarr";
             readarr = {
-              icon = "${self}/files/topology-images/readarr.png";
+              icon = root "files/topology-images/readarr.png";
               info = "https://${serviceDomain}/readarr";
               name = "Readarr";
             };
@@ -31536,6 +31545,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
     flake.modules.nixos.gotify =
       {
         self,
+        root,
         config,
         lib,
         confLib,
@@ -31571,7 +31581,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         config = {
           swarselsystems.enabledServerModules = [ serviceName ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -31672,7 +31682,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
   {
     flake.modules.nixos.pyroscope =
       {
-        self,
+        root,
         config,
         lib,
         confLib,
@@ -31709,7 +31719,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         config = {
           swarselsystems.enabledServerModules = [ serviceName ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -33029,12 +33039,12 @@ This was an approach of hosting an RSS server from within Emacs. That would have
   {
     flake.modules = {
       homeManager.server-emacs =
-        { self, lib, ... }:
+        { root, lib, ... }:
         {
           config = {
             swarselsystems.enabledHomeModules = [ "server-dotfiles" ];
             home.file."init.el" = lib.mkForce {
-              source = self + /files/emacs/server.el;
+              source = root "files/emacs/server.el";
               target = ".emacs.d/init.el";
             };
           };
@@ -33125,7 +33135,7 @@ FreshRSS claims to support HTTP header Auth, but at least it does not work with 
           # topology.self.services.${serviceName} = {
           #   name = "FreshRSS";
           #   info = "https://${serviceDomain}";
-          #   icon = "${self}/files/topology-images/${serviceName}.png";
+          #   icon = (root "files/topology-images/${serviceName}.png");
           # };
           globals = {
             services = confLib.mkServiceGlobal {
@@ -33543,7 +33553,7 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
   {
     flake.modules.nixos.ankisync =
       {
-        self,
+        root,
         config,
         lib,
         confLib,
@@ -33578,7 +33588,7 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
         config = {
           swarselsystems.enabledServerModules = [ "ankisync" ];
           topology.self.services.anki = {
-            icon = lib.mkForce "${self}/files/topology-images/${serviceName}.png";
+            icon = lib.mkForce (root "files/topology-images/${serviceName}.png");
             info = "https://${serviceDomain}";
             name = lib.mkForce "Anki Sync Server";
           };
@@ -34324,7 +34334,7 @@ My expenses tracker.
           # topology.self.services.${serviceName} = {
           #   name = "Firefly-III";
           #   info = "https://${serviceDomain}";
-          #   icon = "${self}/files/topology-images/${serviceName}.png";
+          #   icon = (root "files/topology-images/${serviceName}.png");
           # };
           globals = {
             services = confLib.mkServiceGlobal {
@@ -34463,6 +34473,7 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
     flake.modules.nixos.koillection =
       {
         self,
+        root,
         config,
         lib,
         confLib,
@@ -34508,7 +34519,7 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
         config = {
           swarselsystems.enabledServerModules = [ "koillection" ];
           topology.nodes.${topologyContainerName}.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -34961,7 +34972,7 @@ P2P file-sharing similar to what you might know from wormhole(/-rs), but fully s
   {
     flake.modules.nixos.croc =
       {
-        self,
+        root,
         config,
         lib,
         pkgs,
@@ -34996,7 +35007,7 @@ P2P file-sharing similar to what you might know from wormhole(/-rs), but fully s
         config = {
           swarselsystems.enabledServerModules = [ "croc" ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = serviceName;
           };
@@ -35051,7 +35062,7 @@ Basically a self-hosted Pastebin that also offers syntax highlighting.
   {
     flake.modules.nixos.microbin =
       {
-        self,
+        root,
         config,
         lib,
         confLib,
@@ -35088,7 +35099,7 @@ Basically a self-hosted Pastebin that also offers syntax highlighting.
         config = {
           swarselsystems.enabledServerModules = [ "microbin" ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -35247,6 +35258,7 @@ Self-hosted link shortener.
     flake.modules.nixos.shlink =
       {
         self,
+        root,
         config,
         lib,
         confLib,
@@ -35288,7 +35300,7 @@ Self-hosted link shortener.
         config = {
           swarselsystems.enabledServerModules = [ "shlink" ];
           topology.nodes.${topologyContainerName}.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -35704,6 +35716,7 @@ My asset manager. I use it to track tools, cables and board games mostly.
     flake.modules.nixos.homebox =
       {
         self,
+        root,
         config,
         lib,
         pkgs,
@@ -35745,7 +35758,7 @@ My asset manager. I use it to track tools, cables and board games mostly.
         config = {
           swarselsystems.enabledServerModules = [ "homebox" ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = "Homebox";
           };
@@ -35987,7 +36000,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     flake.modules.nixos.garage =
       # inspired by https://github.com/atropos112/nixos/blob/7fef652006a1c939f4caf9c8a0cb0892d9cdfe21/modules/garage.nix
       {
-        self,
+        root,
         config,
         lib,
         pkgs,
@@ -36075,7 +36088,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
           swarselsystems.enabledServerModules = [ "garage" ];
           # networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -36527,7 +36540,7 @@ This is the setup of my authoritative dns server. This here is the general confi
   {
     flake.modules.nixos.nsd =
       {
-        self,
+        root,
         config,
         lib,
         confLib,
@@ -36552,7 +36565,7 @@ This is the setup of my authoritative dns server. This here is the general confi
         config = {
           swarselsystems.enabledServerModules = [ "nsd" ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             name = lib.toUpper serviceName;
           };
           sops.secrets.tsig-key = { inherit sopsFile; };
@@ -36782,7 +36795,7 @@ Handles my Minecraft server. It runs forge, so the full server is not NixOS mana
   {
     flake.modules.nixos.minecraft =
       {
-        self,
+        root,
         config,
         lib,
         pkgs,
@@ -36814,7 +36827,7 @@ Handles my Minecraft server. It runs forge, so the full server is not NixOS mana
         config = {
           swarselsystems.enabledServerModules = [ "minecraft" ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = "Minecraft";
           };
@@ -36891,7 +36904,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
           inputs.simple-nixos-mailserver.nixosModules.default
           (
             {
-              self,
+              root,
               config,
               lib,
               confLib,
@@ -36952,7 +36965,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                   (
                     service:
                     lib.nameValuePair "${service}" {
-                      icon = "${self}/files/topology-images/${service}.png";
+                      icon = root "files/topology-images/${service}.png";
                       info = lib.mkIf (service == "postfix" || service == "roundcube") (
                         if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}"
                       );
@@ -37622,7 +37635,7 @@ Apart from that, the only interesting bit here is the advertised dns-server whic
   {
     flake.modules.nixos.kea =
       {
-        self,
+        root,
         config,
         lib,
         confLib,
@@ -37724,7 +37737,7 @@ Apart from that, the only interesting bit here is the advertised dns-server whic
           topology = {
             extractors.kea.enable = false;
             self.services.${serviceName} = {
-              icon = "${self}/files/topology-images/${serviceName}.png";
+              icon = root "files/topology-images/${serviceName}.png";
               name = lib.swarselsystems.toCapitalized serviceName;
             };
           };
@@ -37785,6 +37798,7 @@ Sometimes the GUI login fails:
     flake.modules.nixos.firezone =
       {
         self,
+        root,
         inputs,
         config,
         lib,
@@ -37886,7 +37900,7 @@ Sometimes the GUI login fails:
         config = {
           swarselsystems.enabledServerModules = [ "firezone" ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -38234,7 +38248,7 @@ Sometimes the GUI login fails:
                     in
                     {
                       topology.self.services."${serviceName}-gateway" = {
-                        icon = "${self}/files/topology-images/${serviceName}.png";
+                        icon = root "files/topology-images/${serviceName}.png";
                         name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
                       };
                       sops.secrets.firezone-gateway-token = {
@@ -38547,6 +38561,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
     flake.modules.nixos.buildbot =
       {
         self,
+        root,
         config,
         lib,
         pkgs,
@@ -39065,7 +39080,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
         config = {
           swarselsystems.enabledServerModules = [ "buildbot" ];
           topology.self.services.${serviceName} = {
-            icon = "${self}/files/topology-images/${serviceName}.png";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = "Buildbot";
           };
@@ -40362,7 +40377,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           inputs.copyparty.nixosModules.default
           (
             {
-              self,
+              root,
               config,
               lib,
               confLib,
@@ -40401,7 +40416,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             {
               swarselsystems.enabledServerModules = [ "copyparty" ];
               topology.self.services.${serviceName} = {
-                icon = "${self}/files/topology-images/${serviceName}.png";
+                icon = root "files/topology-images/${serviceName}.png";
                 info = "https://${serviceDomain}";
                 name = lib.swarselsystems.toCapitalized serviceName;
               };
@@ -41047,7 +41062,10 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       builtins.listToAttrs (
         map (name: {
           inherit name;
-          value = pkgs.callPackage "${self}/pkgs/flake/${name}" { inherit self name; };
+          value = pkgs.callPackage "${self}/pkgs/flake/${name}" {
+            inherit self name;
+            root = self.swarselsystemsLib.root;
+          };
         }) names
       );
     packageNames = lib.swarselsystems.readNix "pkgs/flake";
@@ -41306,7 +41324,7 @@ A version of =e= for usage with Niri
 
 #+begin_src nix-ts :tangle pkgs/flake/e-niri/default.nix
   {
-    self,
+    root,
     name,
     emacs30-pgtk,
     jq,
@@ -41339,7 +41357,7 @@ A version of =e= for usage with Niri
       if [ -n "$ID" ]; then
           niri msg action close-window --id "$ID"
           emacsclient -c -a "" "$@"
-          niri msg action spawn -- sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${self}/files/zellij/config-kittyterm.kdl attach --create kittyterm' '&'
+          niri msg action spawn -- sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${root "files/zellij/config-kittyterm.kdl"} attach --create kittyterm' '&'
       else
           if [[ $wait -eq 0 ]]; then
               emacsclient -n -c -a "" "$@"
@@ -41454,7 +41472,7 @@ This is the Niri-native variant of my scratchpad toggler: it inspects running wi
 
 #+begin_src nix-ts :tangle pkgs/flake/swarselcheck-niri/default.nix
   {
-    self,
+    root,
     name,
     element-desktop,
     jq,
@@ -41477,7 +41495,7 @@ This is the Niri-native variant of my scratchpad toggler: it inspects running wi
       while :; do
           case ''${1:-} in
           -k | --kitty)
-              cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${self}/files/zellij/config-kittyterm.kdl attach --create kittyterm' '&')
+              cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij --config ${root "files/zellij/config-kittyterm.kdl"} attach --create kittyterm' '&')
               searchapp="kittyterm"
               searchelement="app_id"
               ;;
@@ -43697,7 +43715,7 @@ Recreates the topology diagram + thumbnail.
 
 #+begin_src nix-ts :tangle pkgs/flake/build-topology-images/default.nix
   {
-    self,
+    root,
     name,
     chromium,
     git,
@@ -43725,7 +43743,7 @@ Recreates the topology diagram + thumbnail.
       mkdir -p "$out"
 
       result="$(nix build --no-link --print-out-paths --builders "" \
-        --override-input topologyPrivate "${self}/files/topology/private" \
+        --override-input topologyPrivate "${root "files/topology/private"}" \
         "$flake#topology.${stdenv.hostPlatform.system}.config.output")"
 
       svg="$result/main.svg"
@@ -54029,6 +54047,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
     args = {
       first = [
         "self"
+        "root"
         "name"
         "homeConfig"
         "inputs"

@@ -348,6 +348,7 @@
                   extraSpecialArgs = {
                     inherit (inputs.self) nodes;
                     inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                    inherit (inputs.self.swarselsystemsLib) root;
                     inherit inputs minimal outputs;
                     inherit (inputs) self;
                     globals = inputs.self.globals.${config.node.arch};

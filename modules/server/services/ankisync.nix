@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.ankisync =
     {
-      self,
+      root,
       config,
       lib,
       confLib,
@@ -36,7 +36,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "ankisync" ];
         topology.self.services.anki = {
-          icon = lib.mkForce "${self}/files/topology-images/${serviceName}.png";
+          icon = lib.mkForce (root "files/topology-images/${serviceName}.png");
           info = "https://${serviceDomain}";
           name = lib.mkForce "Anki Sync Server";
         };

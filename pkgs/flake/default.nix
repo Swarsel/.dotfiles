@@ -10,7 +10,10 @@ let
     builtins.listToAttrs (
       map (name: {
         inherit name;
-        value = pkgs.callPackage "${self}/pkgs/flake/${name}" { inherit self name; };
+        value = pkgs.callPackage "${self}/pkgs/flake/${name}" {
+          inherit self name;
+          root = self.swarselsystemsLib.root;
+        };
       }) names
     );
   packageNames = lib.swarselsystems.readNix "pkgs/flake";

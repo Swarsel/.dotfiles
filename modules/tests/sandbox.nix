@@ -29,6 +29,7 @@ let
       ;
     inherit (self) outputs;
     inherit (self.outputs) homeLib;
+    inherit (self.outputs.swarselsystemsLib) root;
     globals =
       (lib.evalModules {
         modules = [

@@ -2,7 +2,7 @@
   flake.modules.nixos.garage =
     # inspired by https://github.com/atropos112/nixos/blob/7fef652006a1c939f4caf9c8a0cb0892d9cdfe21/modules/garage.nix
     {
-      self,
+      root,
       config,
       lib,
       pkgs,
@@ -90,7 +90,7 @@
         swarselsystems.enabledServerModules = [ "garage" ];
         # networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
         topology.self.services.${serviceName} = {
-          icon = "${self}/files/topology-images/${serviceName}.png";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = lib.swarselsystems.toCapitalized serviceName;
         };

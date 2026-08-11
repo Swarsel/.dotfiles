@@ -1,5 +1,5 @@
 {
-  self,
+  root,
   inputs,
   config,
   lib,
@@ -27,7 +27,7 @@
     isSwap = true;
     rootDisk = "/dev/vda";
     swapSize = "2G";
-    wallpaper = self + /files/wallpaper/landscape/lenovowp.png;
+    wallpaper = root "files/wallpaper/landscape/lenovowp.png";
   };
 
   topology.self.interfaces.bootstrapper = { };
