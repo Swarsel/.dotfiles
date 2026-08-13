@@ -3,6 +3,7 @@
     {
       config,
       lib,
+      pkgs,
       confLib,
       ...
     }:
@@ -60,7 +61,33 @@
         };
         # hacky way to enable multi-session
         # when another user connects, the service will crash and the new user will login
-        systemd.services.spotifyd.serviceConfig.RestartSec = lib.mkForce 1;
+        systemd = {
+          services = {
+            spotifyd.serviceConfig.RestartSec = lib.mkForce 1;
+            spotifyd-watchdog = {
+              path = with pkgs; [
+                gnugrep
+                iproute2
+                systemd
+              ];
+              script = ''
+                pid=$(systemctl show --property MainPID --value spotifyd.service)
+                if [ "$pid" -eq 0 ]; then exit 0; fi
+                if ! ss -Htnp state established '( dport = :443 or dport = :4070 or dport = :80 )' | grep -q "pid=$pid,"; then
+                  systemctl restart spotifyd.service
+                fi
+              '';
+              serviceConfig.Type = "oneshot";
+            };
+          };
+          timers.spotifyd-watchdog = {
+            timerConfig = {
+              OnBootSec = "10m";
+              OnUnitActiveSec = "10m";
+            };
+            wantedBy = [ "timers.target" ];
+          };
+        };
         nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
           extraLines = [
             "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
