@@ -22,7 +22,8 @@
                 {
                   ids = [
                     confLib.getConfig.repo.secrets.common.yubikeys.dev1
-                    confLib.getConfig.secrets.common.yubikeys.dev2
+                    confLib.getConfig.repo.secrets.common.yubikeys.dev2
+                    confLib.getConfig.repo.secrets.common.yubikeys.dev3
                   ];
                 };
           }
@@ -182,10 +183,7 @@
                     EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
                     ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector";
                   };
-                  Unit = {
-                    Description = "Detects when your YubiKey is waiting for a touch";
-                    Requires = [ "yubikey-touch-detector.socket" ];
-                  };
+                  Unit.Requires = [ "yubikey-touch-detector.socket" ];
                 };
                 yubikey-touch-notifier = {
                   Install.WantedBy = [ "graphical-session.target" ];
@@ -199,7 +197,6 @@
                       "graphical-session.target"
                       "yubikey-touch-detector.socket"
                     ];
-                    Description = "Shows which process is waiting for a YubiKey touch";
                     PartOf = [ "graphical-session.target" ];
                     Requires = [ "yubikey-touch-detector.socket" ];
                   };
@@ -211,7 +208,6 @@
                   ListenStream = "%t/yubikey-touch-detector.socket";
                   RemoveOnStop = true;
                 };
-                Unit.Description = "Unix socket activation for YubiKey touch detector service";
               };
             };
           };
@@ -227,7 +223,7 @@
       }:
       let
         inherit (config.swarselsystems) mainUser;
-        inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
+        inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2 cfg3;
       in
       {
         config = {
@@ -259,6 +255,7 @@
                   mainUser
                   cfg1
                   cfg2
+                  cfg3
                 ]
               );
               cue = true; # prints a message that a touch is requrired

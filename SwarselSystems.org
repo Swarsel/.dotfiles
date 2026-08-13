@@ -22343,7 +22343,8 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
                   {
                     ids = [
                       confLib.getConfig.repo.secrets.common.yubikeys.dev1
-                      confLib.getConfig.secrets.common.yubikeys.dev2
+                      confLib.getConfig.repo.secrets.common.yubikeys.dev2
+                      confLib.getConfig.repo.secrets.common.yubikeys.dev3
                     ];
                   };
             }
@@ -22503,10 +22504,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
                       EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
                       ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector";
                     };
-                    Unit = {
-                      Description = "Detects when your YubiKey is waiting for a touch";
-                      Requires = [ "yubikey-touch-detector.socket" ];
-                    };
+                    Unit.Requires = [ "yubikey-touch-detector.socket" ];
                   };
                   yubikey-touch-notifier = {
                     Install.WantedBy = [ "graphical-session.target" ];
@@ -22520,7 +22518,6 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
                         "graphical-session.target"
                         "yubikey-touch-detector.socket"
                       ];
-                      Description = "Shows which process is waiting for a YubiKey touch";
                       PartOf = [ "graphical-session.target" ];
                       Requires = [ "yubikey-touch-detector.socket" ];
                     };
@@ -22532,7 +22529,6 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
                     ListenStream = "%t/yubikey-touch-detector.socket";
                     RemoveOnStop = true;
                   };
-                  Unit.Description = "Unix socket activation for YubiKey touch detector service";
                 };
               };
             };
@@ -22548,7 +22544,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
         }:
         let
           inherit (config.swarselsystems) mainUser;
-          inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
+          inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2 cfg3;
         in
         {
           config = {
@@ -22580,6 +22576,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
                     mainUser
                     cfg1
                     cfg2
+                    cfg3
                   ]
                 );
                 cue = true; # prints a message that a touch is requrired
