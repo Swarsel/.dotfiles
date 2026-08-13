@@ -84,6 +84,7 @@ in
   networking.nftables.firewall.zones.untrusted.interfaces = [
     "wlan*"
     "enp*"
+    "eth*"
   ];
   # networking.nftables = {
   #   enable = lib.mkForce false;

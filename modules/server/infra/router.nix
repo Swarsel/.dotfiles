@@ -138,6 +138,32 @@
                   from = [ "vlan-services" ];
                   to = [ "local" ];
                 };
+                # Allow kde connect from wifi into home
+                untrusted-to-kdeconnect = {
+                  allowedTCPPortRanges = [
+                    {
+                      from = 1714;
+                      to = 1764;
+                    }
+                  ];
+                  allowedUDPPortRanges = [
+                    {
+                      from = 1714;
+                      to = 1764;
+                    }
+                  ];
+                  from = [ "untrusted" ];
+                  to = [ "vlan-home" ];
+                };
+                # Allow printing/scanning from wifi
+                untrusted-to-printer = {
+                  allowedTCPPorts = [
+                    80
+                    631
+                  ];
+                  from = [ "untrusted" ];
+                  to = [ "printer" ];
+                };
 
               };
               zones = {
@@ -149,6 +175,9 @@
                     globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
                   ];
                 };
+                printer.ipv4Addresses = [
+                  globals.networks.home-lan.vlans.devices.hosts.dell-C2665dnf-F49D60.ipv4
+                ];
                 untrusted.interfaces = [ "lan" ];
                 wgHome.interfaces = [ "wgHome" ];
               }
