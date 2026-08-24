@@ -40,7 +40,7 @@
           return;
         }
         const tab = await browser.tabs.get(tab_id).catch(() => null);
-        if (tab == null || tab.cookieStoreId === target) {
+        if (tab == null || tab.incognito || tab.cookieStoreId === target) {
           if (tab != null) {
             placed.set(tab_id, rule.container);
           }
@@ -102,6 +102,10 @@
           return;
         }
         const [current] = await browser.tabs.query({ active: true, currentWindow: true });
+        if (current?.incognito) {
+          flash_message("containers unavailable in private windows");
+          return;
+        }
         const url = current?.url != null && current.url.startsWith("http") ? current.url : undefined;
         await glide.commandline.show({
           title: "Open in container",

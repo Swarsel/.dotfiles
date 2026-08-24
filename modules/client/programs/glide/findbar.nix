@@ -69,12 +69,13 @@
         await browser.tabs.update(existing.id, { active: true });
         return;
       }
-      const rule = match_rule(url);
+      const { store } = await active_tab_info();
+      const rule = store == null ? null : match_rule(url);
       if (rule != null && container_stores[rule.container] == null) {
         await refresh_container_stores();
       }
       const target = rule != null ? container_stores[rule.container] : undefined;
-      const created = await browser.tabs.create({ url, cookieStoreId: target ?? "firefox-default" });
+      const created = await browser.tabs.create({ url, cookieStoreId: target ?? store });
       if (rule != null && target != null && created.id != null) {
         placed.set(created.id, rule.container);
       }
