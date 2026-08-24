@@ -17,7 +17,12 @@ let
       # "_1password-gui"
       # "_1password-gui-beta"
     ];
-    stable = [ ];
+    stable = [
+      # "moonlight-qt"
+      # "wf-recorder"
+      "dwarfs"
+      "wayprompt"
+    ];
     stable24_11 = [
       "python39"
       "vieb"
@@ -25,6 +30,10 @@ let
     stable25_05 = [
       "steam-fhsenv-without-steam"
       "transmission_3"
+    ];
+    stable26_05 = [
+      "libdisplay-info_0_2"
+      "hexchat"
     ];
   };
 in

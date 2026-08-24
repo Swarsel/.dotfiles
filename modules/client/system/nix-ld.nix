@@ -33,25 +33,21 @@
           gdk-pixbuf
           glew_1_10
           glib
-          gnome2.GConf
           pango
           gtk2
           gtk3
           icu
           libGL
-          libappindicator-gtk2
           libappindicator-gtk3
           libcaca
           libcanberra
           libcap
-          libdbusmenu-gtk2
           libdrm
           libelf
           libgbm
           libgcrypt
           libglvnd
           libidn
-          libindicator-gtk2
           libjpeg
           libmikmod
           libnotify
