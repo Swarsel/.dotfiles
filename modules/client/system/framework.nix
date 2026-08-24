@@ -13,7 +13,6 @@ in
       {
         config,
         lib,
-        pkgs,
         confLib,
         withHomeManager,
         ...
@@ -21,26 +20,6 @@ in
       {
         config = {
           users.persistentIds.fwupd-refresh = confLib.mkIds 959;
-          boot.extraModprobeConfig = ''
-            options snd-hda-intel patch=alc295-framework-jack.fw,alc295-framework-jack.fw,alc295-framework-jack.fw
-          '';
-          hardware.firmware = [
-            (pkgs.writeTextFile {
-              name = "alc295-framework-jack";
-              destination = "/lib/firmware/alc295-framework-jack.fw";
-              text = ''
-                [codec]
-                0x10ec0295 0xf1110005 0
-
-                [model]
-                headset-mode-no-hp-mic
-
-                [pincfg]
-                0x19 0x02a1112c
-                0x21 0x02211020
-              '';
-            })
-          ];
           services = {
             fwupd = {
               enable = true;
