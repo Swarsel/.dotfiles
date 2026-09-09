@@ -83,6 +83,7 @@
         services = {
           ${serviceName} = {
             enable = true;
+            database.type = "mysql";
             secrets = config.sops.templates."firefox-syncserver.env".path;
             settings = {
               host = "0.0.0.0";
