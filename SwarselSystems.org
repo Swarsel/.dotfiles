@@ -29717,17 +29717,32 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
-          sops.secrets = {
-            kanidm-paperless = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+          sops = {
+            secrets = {
+              kanidm-paperless.sopsFile = kanidmSopsFile;
+              paperless-admin-pw = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
             };
-            paperless-admin-pw = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
+            templates."paperless-oidc.env".content = ''
+              PAPERLESS_SOCIALACCOUNT_PROVIDERS='${
+                builtins.toJSON {
+                  openid_connect = {
+                    APPS = [
+                      rec {
+                        client_id = "paperless";
+                        name = "Kanidm";
+                        provider_id = "kanidm";
+                        secret = config.sops.placeholder.kanidm-paperless;
+                        settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                      }
+                    ];
+                    OAUTH_PKCE_ENABLED = "True";
+                  };
+                }
+              }'
+            '';
           };
           users = {
             users.${serviceUser}.extraGroups = [ "users" ];
@@ -29748,21 +29763,6 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                   invalidate_digital_signatures = true;
                   optimize = 1;
                   pdfa_image_compression = "lossless";
-                };
-                PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
-                  openid_connect = {
-                    APPS = [
-                      rec {
-                        client_id = "paperless";
-                        name = "Kanidm";
-                        provider_id = "kanidm";
-                        # secret will be added by paperless-web.service (see below)
-                        #secret = "";
-                        settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
-                      }
-                    ];
-                    OAUTH_PKCE_ENABLED = "True";
-                  };
                 };
                 PAPERLESS_TIKA_ENABLED = "true";
                 PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
@@ -29810,15 +29810,9 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               { directory = "/var/cache/private/tika"; }
             ];
           };
-          # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
-          systemd.services.paperless-web.script = lib.mkBefore ''
-              oidcSecret=$(< ${config.sops.secrets.kanidm-paperless.path})
-            export PAPERLESS_SOCIALACCOUNT_PROVIDERS=$(
-              ${pkgs.jq}/bin/jq <<< "$PAPERLESS_SOCIALACCOUNT_PROVIDERS" \
-                --compact-output \
-                --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
-                           )
-          '';
+          systemd.services.paperless-web.serviceConfig.EnvironmentFile = [
+            config.sops.templates."paperless-oidc.env".path
+          ];
           nodes =
             let
               extraConfigLoc = ''
