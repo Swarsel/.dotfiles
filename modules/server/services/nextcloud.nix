@@ -34,7 +34,7 @@
         webProxy
         ;
 
-      nextcloudVersion = "33";
+      nextcloudVersion = "34";
 
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
