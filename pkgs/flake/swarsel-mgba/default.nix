@@ -6,7 +6,7 @@ let
     hash = "sha256-rDihDfuA8DqxvCe6UeavCzpjeU+fSqUbFnyTNC2dc1I=";
     url = "https://github.com/mgba-emu/mgba/releases/download/${version}/mGBA-${version}-appimage-x64.appimage";
   };
-  appimageContents = appimageTools.extractType2 { inherit pname src version; };
+  appimageContents = appimageTools.extract { inherit pname src version; };
 in
 appimageTools.wrapType2 {
   inherit pname src version;
