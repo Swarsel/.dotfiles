@@ -2553,6 +2553,73 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
   }
 #+end_src
 
+** PII evaluation
+:PROPERTIES:
+:CUSTOM_ID: h:0b0e0458-ad7c-4837-87a8-9606ed4c4500
+:END:
+
+This provides a way to quickly see all [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII]] values evaluated, either by full eval or by using the cached values.
+
+#+begin_src nix-ts :tangle modules/flake/pii.nix
+  { self, lib, ... }:
+  {
+    flake.pii =
+      let
+        sanitize =
+          v:
+          let
+            t = builtins.tryEval v;
+          in
+          if !t.success then
+            "<eval error>"
+          else if builtins.isFunction t.value then
+            "<function>"
+          else if builtins.isAttrs t.value then
+            builtins.mapAttrs (_: sanitize) t.value
+          else if builtins.isList t.value then
+            map sanitize t.value
+          else
+            t.value;
+
+        load =
+          path:
+          let
+            v = builtins.extraBuiltins.sopsImportEncrypted path;
+          in
+          sanitize (
+            if builtins.isFunction v then
+              v (builtins.mapAttrs (_: _: throw "arg") (builtins.functionArgs v))
+            else
+              v
+          );
+
+        root = ../..;
+
+        attrPath =
+          path:
+          lib.splitString "/" (
+            lib.removeSuffix ".nix.enc" (lib.removePrefix "${toString root}/" (toString path))
+          );
+
+        hostSecrets = lib.mapAttrs (_: cfg: sanitize cfg.config.repo.secrets) (
+          self.nixosConfigurations // self.darwinConfigurations
+        );
+      in
+      {
+        evaluated = {
+          globals = sanitize (builtins.head (builtins.attrValues self.globals));
+          common = (builtins.head (builtins.attrValues hostSecrets)).common or null;
+          hosts = lib.mapAttrs (_: lib.flip builtins.removeAttrs [ "common" ]) hostSecrets;
+        };
+        files = lib.foldl' lib.recursiveUpdate { } (
+          map (path: lib.setAttrByPath (attrPath path) (load path)) (
+            lib.filter (path: lib.hasSuffix ".nix.enc" (toString path)) (lib.filesystem.listFilesRecursive root)
+          )
+        );
+      };
+  }
+#+end_src
+
 ** Hosts
 :PROPERTIES:
 :CUSTOM_ID: h:5c5bf78a-9a66-436f-bd85-85871d9d402b
@@ -50315,66 +50382,8 @@ This file defines a few workflows that I often need to run when working on my co
   home HOST USER="swarsel":
     nix build --no-link --print-out-paths .#nixosConfigurations.{{HOST}}.config.home-manager.users.{{USER}}.home.activationPackage
 
-  pii MODE="quick":
-    #!/usr/bin/env python3
-    import json, os, pathlib, subprocess, sys
-    def run(expr_or_attr, flake):
-        cmd = ["nix", "eval", "--json"] + (
-            [f".#{expr_or_attr[0]}", "--apply", expr_or_attr[1]] if flake else ["--impure", "--expr", expr_or_attr]
-        )
-        r = subprocess.run(cmd, capture_output=True, text=True)
-        if r.returncode != 0:
-            sys.stderr.write(r.stderr)
-            return None
-        return json.loads(r.stdout)
-    SAN = (
-        'let sanitize = v: if builtins.isFunction v then "<function>"'
-        " else if builtins.isAttrs v then builtins.mapAttrs (_: sanitize) v"
-        " else if builtins.isList v then map sanitize v else v; in sanitize"
-    )
-    if "{{MODE}}" == "full":
-        out = {"globals": run(("globals.x86_64-linux", SAN), True), "common": None, "hosts": {}}
-        for kind in ("nixosConfigurations", "darwinConfigurations"):
-            for host in run((kind, "builtins.attrNames"), True) or []:
-                sec = run((f"{kind}.{host}.config.repo.secrets", SAN), True)
-                if sec is None:
-                    out["hosts"][host] = "<eval failed>"
-                    continue
-                common = sec.pop("common", None)
-                if out["common"] is None:
-                    out["common"] = common
-                out["hosts"][host] = sec
-        print(json.dumps(out, indent=2))
-        sys.exit(0)
-    d = pathlib.Path(f"/var/tmp/nix-import-encrypted/{os.getuid()}")
-    if not d.is_dir():
-        sys.exit(f"{d} does not exist, run `just decrypt` first")
-    best = {}
-    for f in d.iterdir():
-        if not f.name.endswith(".nix") or "-" not in f.name:
-            continue
-        rel = f.name.split("-", 1)[1].removeprefix("source%")
-        mtime = f.stat().st_mtime
-        if rel not in best or mtime > best[rel][0]:
-            best[rel] = (mtime, f)
-    entries = [
-        ".".join(json.dumps(seg) for seg in rel.removesuffix(".nix").split("%")) + f' = load "{f}";'
-        for rel, (_, f) in sorted(best.items())
-    ]
-    prelude = (
-        'let sanitize = v: let t = builtins.tryEval v; in'
-        ' if !t.success then "<eval error>"'
-        ' else if builtins.isFunction t.value then "<function>"'
-        " else if builtins.isAttrs t.value then builtins.mapAttrs (_: sanitize) t.value"
-        " else if builtins.isList t.value then map sanitize t.value"
-        " else t.value;"
-        " load = p: let v = import p; in sanitize ("
-        ' if builtins.isFunction v then v (builtins.mapAttrs (_: _: throw "arg") (builtins.functionArgs v)) else v); in '
-    )
-    result = run(prelude + "{ " + " ".join(entries) + " }", False)
-    if result is None:
-        sys.exit(1)
-    print(json.dumps(result, indent=2))
+  pii MODE="files":
+    nix eval --json .#pii.{{MODE}}
 #+end_src
 ** aspell.conf
 :PROPERTIES:
