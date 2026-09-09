@@ -248,6 +248,9 @@
                     ++ map (n: ''
                       probe_expected{name="${n}",probe="ping"} 1
                     '') (lib.attrNames globals.monitoring.ping)
+                    ++ map (n: ''
+                      probe_expected{name="${n}",probe="tls"} 1
+                    '') (lib.attrNames globals.monitoring.tls)
                   );
                 };
               };

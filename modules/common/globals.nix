@@ -320,6 +320,27 @@
                         }
                       );
                     };
+                    tls = mkOption {
+                      default = { };
+                      type = types.attrsOf (
+                        types.submodule {
+                          options = {
+                            address = mkOption {
+                              description = "host:port of a TLS endpoint whose certificate expiry is tracked.";
+                              type = types.str;
+                            };
+                            network = mkOption {
+                              description = "Logical network tag; see monitoring.http.<name>.network.";
+                              type = types.str;
+                            };
+                            serverName = mkOption {
+                              description = "SNI name sent during the handshake; selects the vhost whose certificate is inspected.";
+                              type = types.str;
+                            };
+                          };
+                        }
+                      );
+                    };
                   };
                 };
               };

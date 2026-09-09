@@ -50,7 +50,22 @@
           }
           // lib.mapAttrs' (
             name: cfg: lib.nameValuePair "http_${name}" (mkHttpModule cfg)
-          ) globals.monitoring.http;
+          ) globals.monitoring.http
+          // lib.mapAttrs' (
+            name: cfg:
+            lib.nameValuePair "tls_${name}" {
+              prober = "tcp";
+              tcp = {
+                preferred_ip_protocol = "ip4";
+                tls = true;
+                tls_config = {
+                  insecure_skip_verify = true;
+                  server_name = cfg.serverName;
+                };
+              };
+              timeout = "10s";
+            }
+          ) globals.monitoring.tls;
         }
       );
 
@@ -134,6 +149,16 @@
           probe = "ping";
         }) globals.monitoring.ping
       );
+
+      tlsTargets = targetsFor config.node.name (
+        lib.mapAttrsToList (name: cfg: {
+          inherit name;
+          inherit (cfg) network;
+          __address__ = cfg.address;
+          __param_module = "tls_${name}";
+          probe = "tls";
+        }) globals.monitoring.tls
+      );
     in
     {
       config = {
@@ -158,6 +183,10 @@
             + lib.optionalString (pingTargets != [ ]) (mkBlackboxBlock {
               probeLabel = "ping";
               targets = pingTargets;
+            })
+            + lib.optionalString (tlsTargets != [ ]) (mkBlackboxBlock {
+              probeLabel = "tls";
+              targets = tlsTargets;
             })
           )
         );

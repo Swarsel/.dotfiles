@@ -17,14 +17,22 @@
       acmeDns = globals.services.acme-dns;
 
       sopsFile = self + "/secrets/nginx/acme.json";
+      probeDomain = "ssl.${globals.domains.main}";
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "acme" ];
-        globals.networks.${webProxyIf}.hosts.${acmeDnsServer}.firewallRuleForNode.${config.node.name}.allowedTCPPorts =
-          [
-            acmeDns.extraConfig.port
-          ];
+        globals = {
+          monitoring.tls.${config.node.name} = {
+            address = "127.0.0.1:443";
+            network = "local-${config.node.name}";
+            serverName = probeDomain;
+          };
+          networks.${webProxyIf}.hosts.${acmeDnsServer}.firewallRuleForNode.${config.node.name}.allowedTCPPorts =
+            [
+              acmeDns.extraConfig.port
+            ];
+        };
         sops = {
           secrets.acme-creds = {
             inherit sopsFile;
@@ -43,6 +51,12 @@
             "nginx"
           ];
           persistentIds.acme = confLib.mkIds 967;
+        };
+        services.nginx.virtualHosts.${probeDomain} = {
+          acmeRoot = null;
+          locations."/".return = "444";
+          onlySSL = true;
+          useACMEHost = globals.domains.main;
         };
         environment = {
           persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
