@@ -22,6 +22,13 @@
         servicePort
         ;
       inherit (config.swarselsystems) sopsFile;
+      keyName = globals.domains.main;
+      keyName4 = "${keyName}.${proxyAddress4}";
+      keyName6 = "${keyName}.${
+        lib.concatMapStringsSep "-" (lib.fixedWidthString 4 "0") (
+          lib.splitString ":" (lib.network.ipv6.fromString proxyAddress6).address
+        )
+      }";
     in
     {
       config = {
@@ -37,26 +44,13 @@
             "10.1.2.157"
             "2603:c020:801f:a0cc::9d"
           ];
-          keys = {
-            "${globals.domains.main}" = {
-              algorithm = "hmac-sha256";
-              keyFile = config.sops.secrets.tsig-key.path;
-            };
-            "${globals.domains.main}.${proxyAddress4}" = {
-              algorithm = "hmac-sha256";
-              keyFile = config.sops.secrets.tsig-key.path;
-            };
-            "${globals.domains.main}.${proxyAddress6}" = {
-              algorithm = "hmac-sha256";
-              keyFile = config.sops.secrets.tsig-key.path;
-            };
-          };
+          keys = lib.genAttrs [ keyName keyName4 keyName6 ] (_: {
+            algorithm = "hmac-sha256";
+            keyFile = config.sops.secrets.tsig-key.path;
+          });
           zones = {
             "${globals.domains.main}" =
               let
-                keyName4 = "${globals.domains.main}.${proxyAddress4}";
-                keyName6 = "${globals.domains.main}.${proxyAddress6}";
-                keyName = "${globals.domains.main}";
                 transferList = [
                   "213.239.242.238 ${keyName4}"
                   "2a01:4f8:0:a101::a:1 ${keyName6}"

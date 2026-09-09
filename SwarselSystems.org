@@ -36576,6 +36576,13 @@ This is the setup of my authoritative dns server. This here is the general confi
           servicePort
           ;
         inherit (config.swarselsystems) sopsFile;
+        keyName = globals.domains.main;
+        keyName4 = "${keyName}.${proxyAddress4}";
+        keyName6 = "${keyName}.${
+          lib.concatMapStringsSep "-" (lib.fixedWidthString 4 "0") (
+            lib.splitString ":" (lib.network.ipv6.fromString proxyAddress6).address
+          )
+        }";
       in
       {
         config = {
@@ -36591,26 +36598,13 @@ This is the setup of my authoritative dns server. This here is the general confi
               "10.1.2.157"
               "2603:c020:801f:a0cc::9d"
             ];
-            keys = {
-              "${globals.domains.main}" = {
-                algorithm = "hmac-sha256";
-                keyFile = config.sops.secrets.tsig-key.path;
-              };
-              "${globals.domains.main}.${proxyAddress4}" = {
-                algorithm = "hmac-sha256";
-                keyFile = config.sops.secrets.tsig-key.path;
-              };
-              "${globals.domains.main}.${proxyAddress6}" = {
-                algorithm = "hmac-sha256";
-                keyFile = config.sops.secrets.tsig-key.path;
-              };
-            };
+            keys = lib.genAttrs [ keyName keyName4 keyName6 ] (_: {
+              algorithm = "hmac-sha256";
+              keyFile = config.sops.secrets.tsig-key.path;
+            });
             zones = {
               "${globals.domains.main}" =
                 let
-                  keyName4 = "${globals.domains.main}.${proxyAddress4}";
-                  keyName6 = "${globals.domains.main}.${proxyAddress6}";
-                  keyName = "${globals.domains.main}";
                   transferList = [
                     "213.239.242.238 ${keyName4}"
                     "2a01:4f8:0:a101::a:1 ${keyName6}"
@@ -36735,7 +36729,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
     SOA = {
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
       nameServer = "soa";
-      serial = 2026090903; # update this on changes for secondary dns
+      serial = 2026090904; # update this on changes for secondary dns
     };
 
     SRV = [
@@ -36823,7 +36817,7 @@ This is the reverse zone by Hurricane Electric using a trick I learned in https:
     SOA = {
       adminEmail = "admin@${globals.domains.main}";
       nameServer = "soa.${globals.domains.main}.";
-      serial = 2026090902;
+      serial = 2026090903;
     };
 
     subdomains = globals.dns.${globals.domains.reverse6}.subdomainRecords;

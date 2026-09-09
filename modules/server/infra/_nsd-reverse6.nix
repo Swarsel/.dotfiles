@@ -8,7 +8,7 @@
   SOA = {
     adminEmail = "admin@${globals.domains.main}";
     nameServer = "soa.${globals.domains.main}.";
-    serial = 2026090902;
+    serial = 2026090903;
   };
 
   subdomains = globals.dns.${globals.domains.reverse6}.subdomainRecords;
