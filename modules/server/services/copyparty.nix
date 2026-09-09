@@ -73,6 +73,7 @@
               monitoring.http = confLib.mkHttpMonitoring {
                 inherit serviceName servicePort;
                 expectedBodyRegex = "copyparty";
+                path = "/?h";
               };
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             };
@@ -107,12 +108,21 @@
                 xff-src = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".cidrv4;
               };
               user = serviceUser;
-              volumes."/" = {
-                access = {
-                  rw = "guest";
-                  rwmda = mainUser;
+              volumes = {
+                "/" = {
+                  access = {
+                    r = "*";
+                    rwmda = mainUser;
+                  };
+                  path = "${dataDir}/public";
                 };
-                path = dataDir;
+                "/private" = {
+                  access = {
+                    rw = "guest";
+                    rwmda = mainUser;
+                  };
+                  path = "${dataDir}/private";
+                };
               };
             };
             environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [

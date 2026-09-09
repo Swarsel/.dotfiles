@@ -40477,6 +40477,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                 monitoring.http = confLib.mkHttpMonitoring {
                   inherit serviceName servicePort;
                   expectedBodyRegex = "copyparty";
+                  path = "/?h";
                 };
                 networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
               };
@@ -40511,12 +40512,21 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                   xff-src = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".cidrv4;
                 };
                 user = serviceUser;
-                volumes."/" = {
-                  access = {
-                    rw = "guest";
-                    rwmda = mainUser;
+                volumes = {
+                  "/" = {
+                    access = {
+                      r = "*";
+                      rwmda = mainUser;
+                    };
+                    path = "${dataDir}/public";
                   };
-                  path = dataDir;
+                  "/private" = {
+                    access = {
+                      rw = "guest";
+                      rwmda = mainUser;
+                    };
+                    path = "${dataDir}/private";
+                  };
                 };
               };
               environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
