@@ -53,6 +53,7 @@ in
     lowResolution = "1280x800";
     sharescreen = "eDP-2";
     wallpaper = root "files/wallpaper/landscape/lenovowp.png";
+    wifiMac = config.repo.secrets.local.network.wifiMac;
   };
   topology.self.interfaces = {
     eth1.network = lib.mkForce "home";

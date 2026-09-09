@@ -116,6 +116,10 @@
           default = root "files/wallpaper/landscape/lenovowp.png";
           type = lib.types.path;
         };
+        wifiMac = lib.mkOption {
+          default = null;
+          type = lib.types.nullOr lib.types.str;
+        };
         withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";
         writeGlobalNetworks = lib.mkOption {
           default = true;

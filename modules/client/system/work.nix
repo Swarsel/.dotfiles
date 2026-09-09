@@ -33,7 +33,6 @@ in
       }:
       let
         inherit (config.swarselsystems) homeDir mainUser;
-        iwd = config.networking.networkmanager.wifi.backend == "iwd";
         owner = mainUser;
         sopsFile = self + /secrets/work/secrets.yaml;
       in
@@ -65,6 +64,8 @@ in
                 "govcpool"
                 "baseuser"
                 "basepw"
+                "vbc-guest-pw"
+                "vpn-cert"
               ];
             in
             {
@@ -77,6 +78,7 @@ in
               templates."network-manager-work.env".content = ''
                 BASEUSER=${config.sops.placeholder.baseuser}
                 BASEPASS=${config.sops.placeholder.basepw}
+                VBC_GUEST_PW=${config.sops.placeholder.vbc-guest-pw}
               '';
             };
           services = {
@@ -166,40 +168,7 @@ in
                 environmentFiles = [
                   "${config.sops.templates."network-manager-work.env".path}"
                 ];
-                profiles.VBC = {
-                  "802-1x" = {
-                    eap = if (!iwd) then "ttls;" else "peap;";
-                    identity = "$BASEUSER";
-                    password = "$BASEPASS";
-                    phase2-auth = "mschapv2";
-                  };
-                  connection = {
-                    autoconnect-priority = "500";
-                    id = "VBC";
-                    secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
-                    type = "wifi";
-                    uuid = "3988f10e-6451-381f-9330-a12e66f45051";
-                  };
-                  ipv4.method = "auto";
-                  ipv6 = {
-                    # addr-gen-mode = "default";
-                    addr-gen-mode = "stable-privacy";
-                    method = "auto";
-                  };
-                  proxy = { };
-                  wifi = {
-                    band = "a";
-                    cloned-mac-address = "permanent";
-                    mac-address = "E8:65:38:52:63:FF";
-                    mac-address-randomization = "1";
-                    mode = "infrastructure";
-                    ssid = "VBC";
-                  };
-                  wifi-security = {
-                    # auth-alg = "open";
-                    key-mgmt = "wpa-eap";
-                  };
-                };
+                profiles = config.repo.secrets.work.network.profiles;
               };
               wifi.scanRandMacAddress = false;
             };
