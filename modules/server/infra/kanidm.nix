@@ -129,7 +129,7 @@
                 bindaddress = "0.0.0.0:${toString servicePort}";
                 domain = serviceDomain;
                 origin = "https://${serviceDomain}";
-                otel_grpc_url = "http://127.0.0.1:${toString otlpGrpcPort}";
+                otel_grpc_endpoint = "http://127.0.0.1:${toString otlpGrpcPort}";
                 tls_chain = certPathBase;
                 tls_key = keyPathBase;
               };
