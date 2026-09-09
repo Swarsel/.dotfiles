@@ -156,9 +156,12 @@
             { directory = "/var/cache/private/tika"; }
           ];
         };
-        systemd.services.paperless-web.serviceConfig.EnvironmentFile = [
-          config.sops.templates."paperless-oidc.env".path
-        ];
+        systemd.services = {
+          paperless-scheduler.serviceConfig.TimeoutStartSec = "30min";
+          paperless-web.serviceConfig.EnvironmentFile = [
+            config.sops.templates."paperless-oidc.env".path
+          ];
+        };
         nodes =
           let
             extraConfigLoc = ''
