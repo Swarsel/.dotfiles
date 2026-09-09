@@ -14,6 +14,7 @@
         (confLib.gen {
           name = "nsd";
           port = 53;
+          proxy = config.node.name;
         })
         proxyAddress4
         proxyAddress6
@@ -88,6 +89,9 @@
                   "2001:470:600::2 ${keyName}"
                 ];
               };
+            "${globals.domains.reverse6}".data = dns.lib.toString "${globals.domains.reverse6}" (
+              import ./_nsd-reverse6.nix { inherit globals; }
+            );
           };
         };
         # services.resolved.enable = false;

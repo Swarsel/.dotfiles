@@ -216,6 +216,7 @@ wireguard_networks = {
       "hintbooth-adguardhome",
       "hintbooth-nginx",
       "moonside",
+      "stoicclub",
       "summers-ankisync",
       "summers-atuin",
       "summers-audio",

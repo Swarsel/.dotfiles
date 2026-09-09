@@ -44,6 +44,7 @@
   globals.wireguard.wgProxy = {
     clients = [
       "moonside"
+      "stoicclub"
       "winters"
       "summers"
       "summers-ankisync"

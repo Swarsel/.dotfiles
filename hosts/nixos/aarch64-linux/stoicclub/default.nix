@@ -14,7 +14,9 @@
   ]
   ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
+    self.modules.nixos.wireguard
     self.modules.nixos.nsd
+    self.modules.nixos.acme-dns
   ];
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -27,7 +29,11 @@
     isLinux = true;
     isSecureBoot = false;
     isSwap = false;
-    nodeRoles = [ "dnsServer" ];
+    nodeRoles = [
+      "dnsServer"
+      "acmeDnsServer"
+    ];
+    proxyHost = "twothreetunnel";
     rootDisk = "/dev/disk/by-id/scsi-360e1a5236f034316a10a97cc703ce9e3";
   };
   topology.self.icon = "devices.cloud-server";

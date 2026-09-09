@@ -212,6 +212,10 @@
                 main = mkOption {
                   type = types.str;
                 };
+                reverse6 = mkOption {
+                  description = "ip6.arpa zone of the delegated IPv6 prefix, served by nsd";
+                  type = types.str;
+                };
               };
               general = lib.mkOption {
                 type = types.submodule {

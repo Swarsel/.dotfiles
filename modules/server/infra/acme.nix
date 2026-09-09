@@ -10,13 +10,21 @@
       ...
     }:
     let
-      inherit (config.repo.secrets.common) dnsBase dnsMail dnsProvider;
+      inherit (config.repo.secrets.common) dnsMail dnsProvider;
+      inherit (globals.general) acmeDnsServer;
+      inherit (confLib.static) webProxyIf;
+
+      acmeDns = globals.services.acme-dns;
 
       sopsFile = self + "/secrets/nginx/acme.json";
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "acme" ];
+        globals.networks.${webProxyIf}.hosts.${acmeDnsServer}.firewallRuleForNode.${config.node.name}.allowedTCPPorts =
+          [
+            acmeDns.extraConfig.port
+          ];
         sops = {
           secrets.acme-creds = {
             inherit sopsFile;
@@ -26,7 +34,7 @@
             mode = "0660";
           };
           templates."certs.secret".content = ''
-            ACME_DNS_API_BASE = ${dnsBase}
+            ACME_DNS_API_BASE = http://${acmeDns.serviceAddress}:${toString acmeDns.extraConfig.port}
             ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
           '';
         };

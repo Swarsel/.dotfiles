@@ -8221,7 +8221,9 @@ This machine is the authoritative DNS server for my domain and is responsible fo
     ]
     ++ lib.optionals (!minimal) [
       self.modules.nixos.profile-localserver
+      self.modules.nixos.wireguard
       self.modules.nixos.nsd
+      self.modules.nixos.acme-dns
     ];
     swarselsystems = {
       flakePath = "/root/.dotfiles";
@@ -8234,7 +8236,11 @@ This machine is the authoritative DNS server for my domain and is responsible fo
       isLinux = true;
       isSecureBoot = false;
       isSwap = false;
-      nodeRoles = [ "dnsServer" ];
+      nodeRoles = [
+        "dnsServer"
+        "acmeDnsServer"
+      ];
+      proxyHost = "twothreetunnel";
       rootDisk = "/dev/disk/by-id/scsi-360e1a5236f034316a10a97cc703ce9e3";
     };
     topology.self.icon = "devices.cloud-server";
@@ -8694,6 +8700,7 @@ This host acts as my main HTTP proxy for external access.
     globals.wireguard.wgProxy = {
       clients = [
         "moonside"
+        "stoicclub"
         "winters"
         "summers"
         "summers-ankisync"
@@ -10763,6 +10770,10 @@ Do note that the below does not achieve anything on its own - as is, these would
                     type = types.listOf types.str;
                   };
                   main = mkOption {
+                    type = types.str;
+                  };
+                  reverse6 = mkOption {
+                    description = "ip6.arpa zone of the delegated IPv6 prefix, served by nsd";
                     type = types.str;
                   };
                 };
@@ -26111,13 +26122,21 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
         ...
       }:
       let
-        inherit (config.repo.secrets.common) dnsBase dnsMail dnsProvider;
+        inherit (config.repo.secrets.common) dnsMail dnsProvider;
+        inherit (globals.general) acmeDnsServer;
+        inherit (confLib.static) webProxyIf;
+
+        acmeDns = globals.services.acme-dns;
 
         sopsFile = self + "/secrets/nginx/acme.json";
       in
       {
         config = {
           swarselsystems.enabledServerModules = [ "acme" ];
+          globals.networks.${webProxyIf}.hosts.${acmeDnsServer}.firewallRuleForNode.${config.node.name}.allowedTCPPorts =
+            [
+              acmeDns.extraConfig.port
+            ];
           sops = {
             secrets.acme-creds = {
               inherit sopsFile;
@@ -26127,7 +26146,7 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
               mode = "0660";
             };
             templates."certs.secret".content = ''
-              ACME_DNS_API_BASE = ${dnsBase}
+              ACME_DNS_API_BASE = http://${acmeDns.serviceAddress}:${toString acmeDns.extraConfig.port}
               ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
             '';
           };
@@ -26162,6 +26181,122 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
       }
 
     ;
+  }
+#+end_src
+
+**** acme-dns
+:PROPERTIES:
+:CUSTOM_ID: h:86daedd7-8121-40cd-bccb-759ea8c644bf
+:END:
+
+This is my self-hosted acme-dns instance, which replaces the previous =auth.acme-dns.io= service. It runs on the same host as [[#h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a][NSD (dns)]], so the dns part listens on a dedicated secondary IPv6 address (port 53 on the primary addresses belongs to nsd) and can only do IPv6 due to its nature. The http api is never exposed publicly: acme clients reach it as plain http over the wgProxy network, and each acme host registers its own firewall opening on the =acmeDnsServer= node.
+
+#+begin_src nix-ts :tangle modules/server/infra/acme-dns.nix
+  {
+    flake.modules.nixos.acme-dns =
+      {
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/private/acme-dns";
+            domain = "";
+            name = "acme-dns";
+            port = 8053;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDir
+          serviceDomain
+          serviceName
+          servicePort
+          ;
+        inherit (confLib.static) homeServiceAddress isHome;
+        inherit (config.swarselsystems.server) localNetwork netConfigName;
+        inherit (globals.domains) reverse6;
+
+        zoneLabel = "dns";
+        zone = "${zoneLabel}.${reverse6}";
+        addressId = 53;
+        listenAddress6 = lib.net.cidr.host addressId globals.networks.${netConfigName}.cidrv6;
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName} = {
+            info = zone;
+            name = serviceName;
+          };
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+              extra.extraConfig.port = servicePort;
+            };
+            dns.${reverse6}.subdomainRecords.${zoneLabel} = {
+              AAAA = [ listenAddress6 ];
+              NS = [ "${zone}." ];
+            };
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              path = "/health";
+            };
+          };
+          services.acme-dns = {
+            enable = true;
+            settings = {
+              api = {
+                disable_registration = true;
+                header_name = "X-Forwarded-For";
+                port = servicePort;
+                tls = "none";
+                use_header = true;
+              };
+              general = {
+                domain = zone;
+                listen = "[${listenAddress6}]:53";
+                nsadmin = lib.replaceStrings [ "@" ] [ "." ] config.repo.secrets.common.dnsMail;
+                nsname = zone;
+                protocol = "both6";
+                records = [
+                  "${zone}. AAAA ${listenAddress6}"
+                  "${zone}. NS ${zone}."
+                ];
+              };
+              logconfig = {
+                logformat = "text";
+                loglevel = "info";
+                logtype = "stdout";
+              };
+            };
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              mode = "0700";
+            }
+          ];
+          systemd = {
+            services.acme-dns.serviceConfig.RestartSec = 5;
+            network.networks."10-${localNetwork}".address = [
+              (lib.net.cidr.hostCidr addressId globals.networks.${netConfigName}.cidrv6)
+            ];
+          };
+        };
+      };
   }
 #+end_src
 
@@ -26282,18 +26417,39 @@ This is the general NGINX config using on [[#h:19300583-322b-4e0b-b657-857fbf23d
     };
 
     flake.modules.nixos.nginx-otel =
-      { inputs, lib, ... }:
       {
-        imports = lib.optionals (inputs ? nginx-otel) [
-          inputs.nginx-otel.nixosModules.default
-          ({ config, globals, ... }: {
-            services.nginx.otel = {
-              enable = true;
-              endpoint = "127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
-              serviceName = "nginx-${config.node.name}";
-            };
-          })
-        ];
+        inputs,
+        config,
+        lib,
+        pkgs,
+        globals,
+        ...
+      }:
+      let
+        nginxCompat = pkgs.nginx.overrideAttrs (old: {
+          configureFlags = old.configureFlags ++ [ "--with-compat" ];
+        });
+        nginxOtelModule = pkgs.callPackage "${inputs.nginx-otel}/nginx-otel-module.nix" {
+          nginx = nginxCompat;
+        };
+      in
+      {
+        config = lib.mkIf (inputs ? nginx-otel) {
+          services.nginx = {
+            package = nginxCompat;
+            appendHttpConfig = ''
+              otel_service_name "nginx-${config.node.name}";
+              otel_exporter {
+                endpoint 127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort};
+              }
+              otel_trace on;
+              otel_trace_context propagate;
+            '';
+            prependConfig = ''
+              load_module ${nginxOtelModule}/lib/nginx/modules/ngx_otel_module.so;
+            '';
+          };
+        };
       };
   }
 #+end_src
@@ -36418,6 +36574,7 @@ This is the setup of my authoritative dns server. This here is the general confi
           (confLib.gen {
             name = "nsd";
             port = 53;
+            proxy = config.node.name;
           })
           proxyAddress4
           proxyAddress6
@@ -36492,6 +36649,9 @@ This is the setup of my authoritative dns server. This here is the general confi
                     "2001:470:600::2 ${keyName}"
                   ];
                 };
+              "${globals.domains.reverse6}".data = dns.lib.toString "${globals.domains.reverse6}" (
+                import ./_nsd-reverse6.nix { inherit globals; }
+              );
             };
           };
           # services.resolved.enable = false;
@@ -36581,7 +36741,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
     SOA = {
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
       nameServer = "soa";
-      serial = 2026080801; # update this on changes for secondary dns
+      serial = 2026090903; # update this on changes for secondary dns
     };
 
     SRV = [
@@ -36646,6 +36806,33 @@ The options for A/AAAA records themselves should usually be defined in the respe
       }
       // config.repo.secrets.local.dns.extra-records;
 
+    useOrigin = false;
+  }
+#+end_src
+
+***** NSD (dns) - reverse6
+:PROPERTIES:
+:CUSTOM_ID: h:2285f506-9053-4beb-91e3-60d45b74a6b6
+:END:
+
+
+This is the reverse zone by Hurricane Electric using a trick I learned in https://hawksley.dev/blog/get-free-arpa-domain. It is delegated to =soa= and =srv= in the tunnelbroker rDNS settings and delegates the [[#h:86daedd7-8121-40cd-bccb-759ea8c644bf][acme-dns]] subdomain.
+
+#+begin_src nix-ts :tangle modules/server/infra/_nsd-reverse6.nix
+  { globals, ... }:
+  {
+    NS = [
+      "soa.${globals.domains.main}."
+      "srv.${globals.domains.main}."
+    ];
+
+    SOA = {
+      adminEmail = "admin@${globals.domains.main}";
+      nameServer = "soa.${globals.domains.main}.";
+      serial = 2026090902;
+    };
+
+    subdomains = globals.dns.${globals.domains.reverse6}.subdomainRecords;
     useOrigin = false;
   }
 #+end_src
@@ -47828,6 +48015,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
         "hintbooth-adguardhome",
         "hintbooth-nginx",
         "moonside",
+        "stoicclub",
         "summers-ankisync",
         "summers-atuin",
         "summers-audio",
