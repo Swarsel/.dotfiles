@@ -1,19 +1,12 @@
 {
   flake.modules.homeManager.glide.programs.glide-browser.config = ''
     function enforce_input_mode() {
-      if (glide.ctx.mode !== "normal") {
-        return;
-      }
-      if (glide.commandline.is_active()) {
-        void glide.excmds.execute("mode_change command");
-      } else if (glide.findbar.is_focused()) {
+      if (glide.ctx.mode === "normal" && glide.findbar.is_focused()) {
         void glide.excmds.execute("mode_change insert");
       }
     }
 
     glide.autocmds.create("ModeChanged", "*:normal", enforce_input_mode);
-    glide.autocmds.create("CommandLineExit", enforce_input_mode);
-    glide.autocmds.create("ModeChanged", "*:command", () => start_enforce_polling());
 
     let enforce_timer: ReturnType<typeof setInterval> | null = null;
     function stop_enforce_polling() {
@@ -27,7 +20,7 @@
         return;
       }
       enforce_timer = setInterval(() => {
-        if (!glide.findbar.is_open() && !glide.commandline.is_active()) {
+        if (!glide.findbar.is_open()) {
           stop_enforce_polling();
           return;
         }
