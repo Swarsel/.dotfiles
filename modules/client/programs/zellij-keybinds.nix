@@ -695,7 +695,7 @@
           "shared_except \"locked\" \"scroll\" \"search\" \"tmux\""._children = [
             {
               bind = {
-                _args = [ "Ctrl b" ];
+                _args = [ "Ctrl a" ];
                 _children = [ { SwitchToMode._args = [ "tmux" ]; } ];
               };
             }
