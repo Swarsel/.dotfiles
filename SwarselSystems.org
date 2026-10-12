@@ -3961,6 +3961,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                     prev.browserpass
                   ];
                 };
+                go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
                 isync = prev.isync.override {
                   withCyrusSaslXoauth2 = true;
                 };
@@ -3987,11 +3988,15 @@ On the structure of overlays: as you notice, all of the attributes within overla
                     dolphin # gc/wii
                   ]
                 );
+                sesh = prev.sesh.overrideAttrs {
+                  doCheck = false;
+                  preBuild = "";
+                };
                 shikane = prev.shikane.overrideAttrs (old: {
                   postPatch = (old.postPatch or "") + ''
                     substituteInPlace src/settings.rs \
-                      --replace-fail ".create(true)" "" \
-                      --replace-fail ".append(true)" ""
+                        --replace-fail ".create(true)" "" \
+                        --replace-fail ".append(true)" ""
                   '';
                 });
                 syncstorage-rs =
@@ -4013,7 +4018,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                       lib.concatMapStrings
                         (name: ''
                           substituteInPlace zellij-utils/src/input/layout.rs \
-                            --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
+                                --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
                         '')
                         [
                           "default"
@@ -12820,7 +12825,7 @@ This defines all remote builds that I want to use on client machines. This inclu
           programs.ssh = {
             extraConfig = ''
               Host eu.nixbuild.net
-                ConnectTimeout 1
+                ConnectTimeout 5
                 PubkeyAcceptedKeyTypes ssh-ed25519
                 ServerAliveInterval 60
                 IPQoS throughput
@@ -12828,7 +12833,7 @@ This defines all remote builds that I want to use on client machines. This inclu
             ''
             + lib.optionalString isClient ''
               Host ${config.repo.secrets.common.builder1-ip}
-                ConnectTimeout 1
+                ConnectTimeout 2
                 User ${mainUser}
                 IdentityFile ${config.sops.secrets.builder-key.path}
 
@@ -12839,7 +12844,7 @@ This defines all remote builds that I want to use on client machines. This inclu
                 IdentityFile ${config.sops.secrets.builder-key.path}
 
               Host ${globals.hosts.liliputsteps.wanAddress4}
-                ConnectTimeout 1
+                ConnectTimeout 2
                 User jump
                 IdentityFile ${config.sops.secrets.builder-key.path}
             '';
@@ -14201,6 +14206,7 @@ With this, evaluation will fail if there are any users/groups that are not decla
             resolvconf = lib.mkIf config.networking.resolvconf.enable (confLib.mkIds 951);
             systemd-coredump = confLib.mkIds 998;
             systemd-oom = confLib.mkIds 997;
+            uinput = confLib.mkIds 944;
           };
           assertions =
             concatLists (
@@ -21019,8 +21025,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
                   dicts: with dicts; [
                     de
                     en
-                    en-computers
-                    en-science
                   ]
                 ))
 
@@ -21115,7 +21119,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
                 #keychain
                 qalculate-gtk
-                gcr # needed for gnome-secrets to work
+                # gcr # needed for gnome-secrets to work
                 seahorse
 
                 # latex and related packages
@@ -22577,11 +22581,13 @@ This section houses the greetd related settings. I do not really want to use a d
         config = {
 
           users.persistentIds.greeter = confLib.mkIds 958;
-          services.greetd = {
-            enable = true;
-            settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";
+          services = {
+            displayManager.noctalia-greeter.enable = true;
+            greetd = {
+              enable = true;
+              settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";
+            };
           };
-          programs.noctalia-greeter.enable = true;
           environment = {
             pathsToLink = [ "/share/wayland-sessions" ];
             systemPackages = config.services.displayManager.sessionPackages;
@@ -41461,7 +41467,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 #+begin_src nix-ts :tangle pkgs/flake/e/default.nix
   {
     name,
-    emacs30-pgtk,
+    emacs-pgtk,
     jq,
     sway,
     writeShellApplication,
@@ -41470,7 +41476,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
   writeShellApplication {
     inherit name;
     runtimeInputs = [
-      emacs30-pgtk
+      emacs-pgtk
       sway
       jq
     ];
@@ -41513,7 +41519,7 @@ A version of =e= for usage with Niri
   {
     root,
     name,
-    emacs30-pgtk,
+    emacs-pgtk,
     jq,
     kitty,
     writeShellApplication,
@@ -41522,7 +41528,7 @@ A version of =e= for usage with Niri
   writeShellApplication {
     inherit name;
     runtimeInputs = [
-      emacs30-pgtk
+      emacs-pgtk
       kitty
       jq
     ];
@@ -44304,7 +44310,6 @@ In this section I define custom aspect sets. These are mostly used to combine co
         imports = pickH [
           "attic-client"
           "atuin"
-          "hexchat"
           "kdeconnect"
           "khal"
           "nixgl"

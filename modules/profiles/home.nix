@@ -52,7 +52,6 @@ in
       imports = pickH [
         "attic-client"
         "atuin"
-        "hexchat"
         "kdeconnect"
         "khal"
         "nixgl"

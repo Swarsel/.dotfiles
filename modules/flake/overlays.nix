@@ -168,6 +168,7 @@ in
                   prev.browserpass
                 ];
               };
+              go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
               isync = prev.isync.override {
                 withCyrusSaslXoauth2 = true;
               };
@@ -194,11 +195,15 @@ in
                   dolphin # gc/wii
                 ]
               );
+              sesh = prev.sesh.overrideAttrs {
+                doCheck = false;
+                preBuild = "";
+              };
               shikane = prev.shikane.overrideAttrs (old: {
                 postPatch = (old.postPatch or "") + ''
                   substituteInPlace src/settings.rs \
-                    --replace-fail ".create(true)" "" \
-                    --replace-fail ".append(true)" ""
+                      --replace-fail ".create(true)" "" \
+                      --replace-fail ".append(true)" ""
                 '';
               });
               syncstorage-rs =
@@ -220,7 +225,7 @@ in
                     lib.concatMapStrings
                       (name: ''
                         substituteInPlace zellij-utils/src/input/layout.rs \
-                          --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
+                              --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
                       '')
                       [
                         "default"

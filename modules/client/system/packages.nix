@@ -88,8 +88,6 @@
                 dicts: with dicts; [
                   de
                   en
-                  en-computers
-                  en-science
                 ]
               ))
 
@@ -184,7 +182,7 @@
 
               #keychain
               qalculate-gtk
-              gcr # needed for gnome-secrets to work
+              # gcr # needed for gnome-secrets to work
               seahorse
 
               # latex and related packages

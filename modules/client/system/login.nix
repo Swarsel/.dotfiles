@@ -16,11 +16,13 @@
       config = {
 
         users.persistentIds.greeter = confLib.mkIds 958;
-        services.greetd = {
-          enable = true;
-          settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";
+        services = {
+          displayManager.noctalia-greeter.enable = true;
+          greetd = {
+            enable = true;
+            settings.initial_session.command = "uwsm start -- niri-uwsm.desktop";
+          };
         };
-        programs.noctalia-greeter.enable = true;
         environment = {
           pathsToLink = [ "/share/wayland-sessions" ];
           systemPackages = config.services.displayManager.sessionPackages;

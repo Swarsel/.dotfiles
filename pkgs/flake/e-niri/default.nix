@@ -1,7 +1,7 @@
 {
   root,
   name,
-  emacs30-pgtk,
+  emacs-pgtk,
   jq,
   kitty,
   writeShellApplication,
@@ -10,7 +10,7 @@
 writeShellApplication {
   inherit name;
   runtimeInputs = [
-    emacs30-pgtk
+    emacs-pgtk
     kitty
     jq
   ];

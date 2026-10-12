@@ -27,7 +27,7 @@
         programs.ssh = {
           extraConfig = ''
             Host eu.nixbuild.net
-              ConnectTimeout 1
+              ConnectTimeout 5
               PubkeyAcceptedKeyTypes ssh-ed25519
               ServerAliveInterval 60
               IPQoS throughput
@@ -35,7 +35,7 @@
           ''
           + lib.optionalString isClient ''
             Host ${config.repo.secrets.common.builder1-ip}
-              ConnectTimeout 1
+              ConnectTimeout 2
               User ${mainUser}
               IdentityFile ${config.sops.secrets.builder-key.path}
 
@@ -46,7 +46,7 @@
               IdentityFile ${config.sops.secrets.builder-key.path}
 
             Host ${globals.hosts.liliputsteps.wanAddress4}
-              ConnectTimeout 1
+              ConnectTimeout 2
               User jump
               IdentityFile ${config.sops.secrets.builder-key.path}
           '';

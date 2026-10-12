@@ -82,6 +82,7 @@
           resolvconf = lib.mkIf config.networking.resolvconf.enable (confLib.mkIds 951);
           systemd-coredump = confLib.mkIds 998;
           systemd-oom = confLib.mkIds 997;
+          uinput = confLib.mkIds 944;
         };
         assertions =
           concatLists (

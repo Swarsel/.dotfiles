@@ -1,6 +1,6 @@
 {
   name,
-  emacs30-pgtk,
+  emacs-pgtk,
   jq,
   sway,
   writeShellApplication,
@@ -9,7 +9,7 @@
 writeShellApplication {
   inherit name;
   runtimeInputs = [
-    emacs30-pgtk
+    emacs-pgtk
     sway
     jq
   ];
