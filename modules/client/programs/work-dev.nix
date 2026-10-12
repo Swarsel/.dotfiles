@@ -68,6 +68,7 @@
             inherit (confLib.getConfig.repo.secrets.work)
               browser
               clouds
+              githubOrgs
               path1
               user1
               user1Long
@@ -124,6 +125,11 @@
                   } vars.firefox;
                 };
             };
+            git.settings.url = lib.listToAttrs (
+              map (
+                org: lib.nameValuePair "git@github.com:${org}/" { insteadOf = "https://github.com/${org}/"; }
+              ) githubOrgs
+            );
             glide-browser = lib.mkIf config.programs.glide-browser.enable {
               config = lib.mkAfter ''
                 container_rules.push(
