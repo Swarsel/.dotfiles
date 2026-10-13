@@ -173,12 +173,16 @@ in
               bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
               bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";
               experimental-features = experimentalFeatures;
+              extra-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+              extra-trusted-public-keys =
+                lib.optionals (!config.swarselsystems.isPublic) [
+                  atticPublicKey
+                ]
+                ++ [
+                  "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                ];
+              extra-trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
               netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
-              substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
-              trusted-public-keys = lib.optionals (!config.swarselsystems.isPublic) [
-                atticPublicKey
-              ];
-              trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
               trusted-users = [
                 "@wheel"
                 "${mainUser}"

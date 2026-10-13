@@ -7698,6 +7698,7 @@ This is my workstation located at my workplace - I use it as a remote builder an
   {
     root,
     inputs,
+    config,
     lib,
     pkgs,
     ...
@@ -7707,6 +7708,13 @@ This is my workstation located at my workplace - I use it as a remote builder an
     imports = [
       inputs.self.modules.homeManager.profile-base
       inputs.self.modules.homeManager.profile-dgxspark
+    ]
+    ++ lib.optionals (inputs.vbc-nix ? homeManagerModules) [
+      inputs.vbc-nix.homeManagerModules.work-remote
+      {
+        services.work-remote.enable = true;
+        nixpkgs.overlays = [ inputs.vbc-nix.overlays.default ];
+      }
     ];
 
     swarselsystems = {
@@ -7720,6 +7728,10 @@ This is my workstation located at my workplace - I use it as a remote builder an
     };
 
     programs = {
+      git.signing = {
+        format = lib.mkForce "ssh";
+        key = lib.mkForce "${config.home.homeDirectory}/.ssh/id_rsa.pub";
+      };
       tmux.shell = lib.mkForce (lib.getExe pkgs.bash);
       zellij.settings.default_shell = lib.mkForce "bash";
     };
@@ -7727,6 +7739,8 @@ This is my workstation located at my workplace - I use it as a remote builder an
     home.packages = with pkgs; [
       attic-client
     ];
+
+    nix.settings.max-jobs = lib.mkForce "auto";
 
   }
 #+end_src
@@ -11446,12 +11460,16 @@ A breakdown of the flags being set:
                 bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
                 bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";
                 experimental-features = experimentalFeatures;
+                extra-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
+                extra-trusted-public-keys =
+                  lib.optionals (!config.swarselsystems.isPublic) [
+                    atticPublicKey
+                  ]
+                  ++ [
+                    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                  ];
+                extra-trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
                 netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;
-                substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
-                trusted-public-keys = lib.optionals (!config.swarselsystems.isPublic) [
-                  atticPublicKey
-                ];
-                trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
                 trusted-users = [
                   "@wheel"
                   "${mainUser}"
