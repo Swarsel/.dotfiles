@@ -52,6 +52,7 @@ in
           sops =
             let
               secretNames = [
+                "automationhubtoken"
                 "vcuser"
                 "vcpw"
                 "govcuser"

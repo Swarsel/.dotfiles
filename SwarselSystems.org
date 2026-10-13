@@ -24265,6 +24265,7 @@ When setting up a new machine:
             sops =
               let
                 secretNames = [
+                  "automationhubtoken"
                   "vcuser"
                   "vcpw"
                   "govcuser"
@@ -24733,16 +24734,36 @@ When setting up a new machine:
                   s = "$HOME/.dotfiles/secrets";
                   w = "$HOME/Documents/Work";
                 };
-                initContent = lib.mkIf config.programs.glide-browser.enable ''
-                  step() {
-                    if [[ "$1" == "ssh" && "$2" == "login" ]] && ! pgrep -x .glide-wrapped >/dev/null 2>&1; then
-                      niri msg action spawn -- glide >/dev/null 2>&1 || (setsid glide >/dev/null 2>&1 &)
-                      sleep 5
-                    fi
-                    command step "$@"
-                  }
-                '';
+                initContent = lib.mkMerge [
+                  (lib.mkIf config.programs.glide-browser.enable ''
+                    step() {
+                      if [[ "$1" == "ssh" && "$2" == "login" ]] && ! pgrep -x .glide-wrapped >/dev/null 2>&1; then
+                        niri msg action spawn -- glide >/dev/null 2>&1 || (setsid glide >/dev/null 2>&1 &)
+                        sleep 5
+                      fi
+                      command step "$@"
+                    }
+                  '')
+                  ''
+                    # vbc-nix ansible devshells: local checkout when present, remote otherwise
+                    _vbc_ansible_env() {
+                      local tmpl="ansible-2_$1"
+                      local local_flake="$HOME/Documents/Work/vbc-nix/templates/$tmpl"
+                      if [[ -e "$local_flake/flake.nix" ]]; then
+                        nix develop "path:$local_flake" -c zsh
+                      else
+                        nix develop "git+ssh://git@github.com/vbc-it/vbc-nix?ref=main&dir=templates/$tmpl" -c zsh
+                      fi
+                    }
+                    a215() { _vbc_ansible_env 15; }
+                    a220() { _vbc_ansible_env 20; }
+                  ''
+                ];
                 sessionVariables = {
+                  ANSIBLE_GALAXY_SERVER_COMMUNITY_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
+                  ANSIBLE_GALAXY_SERVER_PUBLISHED_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
+                  ANSIBLE_GALAXY_SERVER_RH_CERTIFIED_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
+                  ANSIBLE_GALAXY_SERVER_STAGING_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
                   GOVC_DATACENTER = "$(cat ${confLib.getConfig.sops.secrets.govcdc.path})";
                   GOVC_DATASTORE = "$(cat ${confLib.getConfig.sops.secrets.govcds.path})";
                   GOVC_HOST = "$(cat ${confLib.getConfig.sops.secrets.govchost.path})";
