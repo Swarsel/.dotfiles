@@ -44,6 +44,8 @@
       whatsappPort = 29318;
       telegramPort = 29317;
       signalPort = 29328;
+      ircPort = 8009;
+      ircMediaPort = 11111;
       baseUrl = "https://${serviceDomain}";
       clientConfig."m.homeserver".base_url = baseUrl;
       serverConfig."m.server" = "${serviceDomain}:443";
@@ -78,7 +80,12 @@
             path = "/health";
           };
           networks = lib.mkMerge [
-            (confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; })
+            (confLib.mkDualFirewallRules {
+              tcpPorts = [
+                servicePort
+                ircMediaPort
+              ];
+            })
             {
               ${webProxyIf}.hosts = lib.mkIf isProxied {
                 ${config.node.name}.firewallRuleForNode.${webProxy}.allowedTCPPorts = [ federationPort ];
@@ -87,43 +94,47 @@
           ];
         };
         sops = {
-          secrets = {
-            kanidm-matrix = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+          secrets =
+            lib.mapAttrs' (
+              id: _: lib.nameValuePair "matrix-irc-${id}-key" { sopsFile = config.node.secretsDir + "/irc.yaml"; }
+            ) (lib.filterAttrs (_: server: server ? onConnectCommands) config.repo.secrets.local.irc.servers)
+            // {
+              kanidm-matrix = {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+                sopsFile = kanidmSopsFile;
+              };
+              matrix-doublepuppet-token = {
+                inherit sopsFile;
+              };
+              matrix-shared-secret = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
+              mautrix-signal-pickle-key = {
+                inherit sopsFile;
+              };
+              mautrix-telegram-api-hash = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
+              mautrix-telegram-api-id = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
+              mautrix-telegram-as-token = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
+              mautrix-telegram-hs-token = {
+                inherit sopsFile;
+                owner = serviceUser;
+              };
+              mautrix-whatsapp-pickle-key = {
+                inherit sopsFile;
+              };
             };
-            matrix-doublepuppet-token = {
-              inherit sopsFile;
-            };
-            matrix-shared-secret = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
-            mautrix-signal-pickle-key = {
-              inherit sopsFile;
-            };
-            mautrix-telegram-api-hash = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
-            mautrix-telegram-api-id = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
-            mautrix-telegram-as-token = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
-            mautrix-telegram-hs-token = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
-            mautrix-whatsapp-pickle-key = {
-              inherit sopsFile;
-            };
-          };
           templates = {
             "doublepuppet.yaml" = {
               content = ''
@@ -139,6 +150,11 @@
                     exclusive: false
               '';
               owner = serviceUser;
+            };
+            "matrix-appservice-irc.yml" = {
+              content = builtins.toJSON config.services.matrix-appservice-irc.settings;
+              owner = "matrix-appservice-irc";
+              restartUnits = [ "matrix-appservice-irc.service" ];
             };
             "matrix_user_register.sh".content = ''
               register_new_matrix_user -k ${config.sops.placeholder.matrix-shared-secret} http://localhost:${builtins.toString servicePort}
@@ -178,11 +194,104 @@
         # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
         # messages out after a while.
         users.persistentIds = {
+          matrix-appservice-irc = confLib.mkIds 943;
           mautrix-signal = confLib.mkIds 993;
           mautrix-telegram = confLib.mkIds 991;
           mautrix-whatsapp = confLib.mkIds 992;
         };
         services = {
+          matrix-appservice-irc = {
+            enable = true;
+            port = ircPort;
+            registrationUrl = "http://localhost:${builtins.toString ircPort}";
+            settings = {
+              database = {
+                connectionString = "postgres://matrix-appservice-irc@/matrix-appservice-irc?host=/run/postgresql";
+                engine = "postgres";
+              };
+              homeserver = {
+                domain = serviceDomain;
+                url = "http://localhost:${builtins.toString servicePort}";
+              };
+              ircService = {
+                logging = {
+                  level = "info";
+                  toConsole = true;
+                };
+                mediaProxy = {
+                  bindPort = ircMediaPort;
+                  publicUrl = "https://${serviceDomain}/media";
+                };
+                permissions."@swarsel:${serviceDomain}" = "admin";
+                servers = lib.mapAttrs' (
+                  id: server:
+                  lib.nameValuePair server.address (
+                    lib.recursiveUpdate {
+                      botConfig = {
+                        enabled = true;
+                        joinChannelsIfNoUsers = false;
+                        nick = "MatrixBridge";
+                        username = "matrixbridge";
+                      };
+                      dynamicChannels = {
+                        aliasTemplate = "#${id}_$CHANNEL";
+                        createAlias = true;
+                        enabled = true;
+                        federate = false;
+                        joinRule = "public";
+                        published = false;
+                        useHomeserverDirectory = false;
+                      };
+                      ircClients = {
+                        allowNickChanges = true;
+                        idleTimeout = 0;
+                        kickOn = {
+                          channelJoinFailure = true;
+                          ircConnectionFailure = true;
+                          userQuit = true;
+                        };
+                        lineLimit = 3;
+                        maxClients = 30;
+                        nickTemplate = "$DISPLAY[m]";
+                        realnameFormat = "mxid";
+                      };
+                      matrixClients = {
+                        displayName = "$NICK (IRC)";
+                        joinAttempts = -1;
+                        userTemplate = "@${id}_$NICK";
+                      };
+                      membershipLists = {
+                        enabled = true;
+                        floodDelayMs = 10000;
+                        global = {
+                          ircToMatrix = {
+                            incremental = true;
+                            initial = true;
+                            requireMatrixJoined = false;
+                          };
+                          matrixToIrc = {
+                            incremental = true;
+                            initial = true;
+                          };
+                        };
+                        ignoreIdleUsersOnStartup = {
+                          enabled = true;
+                          idleForHours = 720;
+                        };
+                      };
+                      networkId = id;
+                      privateMessages = {
+                        enabled = true;
+                        federate = false;
+                      };
+                      sendConnectionMessages = true;
+                      ssl = true;
+                    } (builtins.removeAttrs server [ "address" ])
+                  )
+                ) config.repo.secrets.local.irc.servers;
+              };
+            };
+          };
           matrix-synapse = {
             enable = true;
             dataDir = "/var/lib/matrix-synapse";
@@ -198,6 +307,7 @@
                   "${dataDir}/telegram-registration.yaml"
                   "${dataDir}/whatsapp-registration.yaml"
                   "${dataDir}/signal-registration.yaml"
+                  "/var/lib/matrix-appservice-irc/registration.yml"
                   config.sops.templates."doublepuppet.yaml".path
                 ];
               listeners = [
@@ -375,6 +485,7 @@
           postgresql = {
             ensureDatabases = [
               "matrix-synapse"
+              "matrix-appservice-irc"
               "mautrix-telegram"
               "mautrix-whatsapp"
               "mautrix-signal"
@@ -383,6 +494,10 @@
               {
                 ensureDBOwnership = true;
                 name = "matrix-synapse";
+              }
+              {
+                ensureDBOwnership = true;
+                name = "matrix-appservice-irc";
               }
               {
                 ensureDBOwnership = true;
@@ -414,6 +529,11 @@
                 user = serviceUser;
               }
               {
+                directory = "/var/lib/matrix-appservice-irc";
+                group = "matrix-appservice-irc";
+                user = "matrix-appservice-irc";
+              }
+              {
                 directory = "/var/lib/mautrix-whatsapp";
                 group = "mautrix-whatsapp";
                 user = "mautrix-whatsapp";
@@ -439,6 +559,14 @@
         # networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
         systemd = {
           services = {
+            matrix-appservice-irc.serviceConfig.ExecStart = lib.mkForce (
+              lib.concatStringsSep " " [
+                (lib.getExe pkgs.matrix-appservice-irc)
+                "--config ${config.sops.templates."matrix-appservice-irc.yml".path}"
+                "--file /var/lib/matrix-appservice-irc/registration.yml"
+                "--port ${builtins.toString ircPort}"
+              ]
+            );
             mautrix-telegram.path = with pkgs; [
               lottieconverter # for animated stickers conversion, unfree package
               ffmpeg # if converting animated stickers to webm (very slow!)
@@ -470,6 +598,9 @@
               upstreams = {
                 ${serviceName}.servers = {
                   "${toAddress}:${builtins.toString servicePort}" = { };
+                };
+                "${serviceName}-irc-media".servers = {
+                  "${toAddress}:${builtins.toString ircMediaPort}" = { };
                 };
               };
               virtualHosts = {
@@ -506,6 +637,7 @@
                     }
                   ];
                   locations = {
+                    "/media/".proxyPass = "http://${serviceName}-irc-media/";
                     "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
                     "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
                     "~ ^(/_matrix|/_synapse/client)" = {

@@ -1,0 +1,54 @@
+diff -ruN irc-a/config.schema.yml irc-b/config.schema.yml
+--- a/config.schema.yml
++++ b/config.schema.yml
+@@ -243,6 +243,10 @@
+                             type: "boolean"
+                         allowExpiredCerts:
+                             type: "boolean"
++                        onConnectCommands:
++                            type: "array"
++                            items:
++                                type: "string"
+                         password:
+                             type: "string"
+                         sendConnectionMessages:
+diff -ruN irc-a/src/irc/BridgedClient.ts irc-b/src/irc/BridgedClient.ts
+--- a/src/irc/BridgedClient.ts
++++ b/src/irc/BridgedClient.ts
+@@ -290,6 +290,14 @@
+
+             this.eventBroker.sendMetadata(this, connectText);
+
++            for (const command of this.server.getOnConnectCommands()) {
++                const trailingIndex = command.indexOf(" :");
++                const args = trailingIndex === -1
++                    ? command.split(" ")
++                    : [...command.slice(0, trailingIndex).split(" "), command.slice(trailingIndex + 2)];
++                connInst.client.send(...args);
++            }
++
+             connInst.client.on("nick", (old, newNick) => {
+                 if (old === this.nick) {
+                     this.log.info(
+diff -ruN irc-a/src/irc/IrcServer.ts irc-b/src/irc/IrcServer.ts
+--- a/src/irc/IrcServer.ts
++++ b/src/irc/IrcServer.ts
+@@ -36,6 +36,7 @@
+     sasl?: boolean;
+     tlsOptions?: Record<string, unknown>;
+     password?: string;
++    onConnectCommands?: string[];
+     allowExpiredCerts?: boolean;
+     additionalAddresses?: string[];
+     onlyAdditionalAddresses: boolean;
+@@ -342,6 +343,10 @@
+         return Boolean(this.config.allowExpiredCerts);
+     }
+
++    public getOnConnectCommands(): string[] {
++        return this.config.onConnectCommands || [];
++    }
++
+     public getIdleTimeout() {
+         return this.config.ircClients.idleTimeout;
+     }

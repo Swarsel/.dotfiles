@@ -176,6 +176,9 @@ in
                 swarselsystems = self.outputs.swarselsystemsLib;
                 hm = self.outputs.homeLib;
               };
+              matrix-appservice-irc = prev.matrix-appservice-irc.overrideAttrs {
+                patches = [ (root "files/patches/matrix-appservice-irc-on-connect-commands.patch") ];
+              };
               mautrix-telegram = prev.mautrix-telegram.override {
                 python3 = prev.python313;
               };
