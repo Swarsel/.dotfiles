@@ -65,11 +65,11 @@ kanidm_clients = [
 extra_rules = [
   {
     path_regex = "secrets/work/[^/]+\\.(yaml|json|env|ini)$"
-    age_keys   = ["pyramid"]
+    age_keys   = ["pyramid", "dgx"]
   },
   {
     path_regex = "secrets/work/[^/]+\\.enc$"
-    age_keys   = ["pyramid", "buildbot"]
+    age_keys   = ["pyramid", "dgx", "buildbot"]
   },
   {
     path_regex = "secrets/general/invidious-companion.yaml$"

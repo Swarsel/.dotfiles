@@ -7718,6 +7718,13 @@ This is my workstation located at my workplace - I use it as a remote builder an
     ];
 
     swarselsystems = {
+      homeSopsSecrets = {
+        ucKey.sopsFile = inputs.self + /secrets/work/secrets.yaml;
+        vpn-cert = {
+          path = "${config.home.homeDirectory}/.config/vpn/vbc.pem";
+          sopsFile = inputs.self + /secrets/work/secrets.yaml;
+        };
+      };
       isLaptop = false;
       wallpaper = root "files/wallpaper/landscape/surfacewp.png";
     };
@@ -7732,15 +7739,31 @@ This is my workstation located at my workplace - I use it as a remote builder an
         format = lib.mkForce "ssh";
         key = lib.mkForce "${config.home.homeDirectory}/.ssh/id_rsa.pub";
       };
+      openstackclient = {
+        enable = true;
+        cloudsSettings = {
+          inherit (config.repo.secrets.work) clouds;
+        };
+      };
+      ssh = {
+        enable = true;
+        enableDefaultConfig = false;
+        settings = builtins.removeAttrs config.repo.secrets.work.sshConfig [ "*" ];
+      };
       tmux.shell = lib.mkForce (lib.getExe pkgs.bash);
       zellij.settings.default_shell = lib.mkForce "bash";
     };
 
-    home.packages = with pkgs; [
-      attic-client
+    home.packages = [
+      pkgs._1password-cli
+      pkgs.attic-client
+      pkgs.azure-cli
+      pkgs.step-cli
+      (config.repo.secrets.work.vpnCli pkgs)
     ];
 
     nix.settings.max-jobs = lib.mkForce "auto";
+    repo.secretFiles.work = ../../../../secrets/work/pii.nix.enc;
 
   }
 #+end_src
@@ -20196,6 +20219,7 @@ When setting up a new machine:
         lib,
         pkgs,
         options,
+        nixosConfig ? null,
         ...
       }:
       let
@@ -44455,7 +44479,6 @@ In this section I define custom aspect sets. These are mostly used to combine co
         "nix-your-shell"
         "network-manager-applet"
         "sops"
-        "starship"
         "stylix"
         "tmux"
         "zellij"
@@ -48178,11 +48201,11 @@ I have 5 main blocks of rules in my =.sops.yaml=:
   extra_rules = [
     {
       path_regex = "secrets/work/[^/]+\\.(yaml|json|env|ini)$"
-      age_keys   = ["pyramid"]
+      age_keys   = ["pyramid", "dgx"]
     },
     {
       path_regex = "secrets/work/[^/]+\\.enc$"
-      age_keys   = ["pyramid", "buildbot"]
+      age_keys   = ["pyramid", "dgx", "buildbot"]
     },
     {
       path_regex = "secrets/general/invidious-companion.yaml$"

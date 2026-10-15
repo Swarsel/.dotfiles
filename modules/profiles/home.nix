@@ -23,7 +23,6 @@ in
       "nix-your-shell"
       "network-manager-applet"
       "sops"
-      "starship"
       "stylix"
       "tmux"
       "zellij"
