@@ -112,6 +112,7 @@
                 inherit sopsFile;
                 owner = serviceUser;
               };
+              mautrix-meta-instagram-pickle-key.sopsFile = config.node.secretsDir + "/mautrix-meta.yaml";
               mautrix-signal-pickle-key = {
                 inherit sopsFile;
               };
@@ -165,6 +166,13 @@
               '';
               owner = serviceUser;
             };
+            mautrixmetainstagram = {
+              content = ''
+                MAUTRIX_META_INSTAGRAM_PICKLE_KEY=${config.sops.placeholder.mautrix-meta-instagram-pickle-key}
+                MAUTRIX_META_INSTAGRAM_DOUBLEPUPPET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
+              '';
+              owner = serviceUser;
+            };
             mautrixsignal = {
               content = ''
                 MAUTRIX_SIGNAL_PICKLE_KEY=${config.sops.placeholder.mautrix-signal-pickle-key}
@@ -195,6 +203,9 @@
         # messages out after a while.
         users.persistentIds = {
           matrix-appservice-irc = confLib.mkIds 943;
+          mautrix-meta.gid = 941;
+          mautrix-meta-instagram = confLib.mkIds 942;
+          mautrix-meta-registration.gid = 940;
           mautrix-signal = confLib.mkIds 993;
           mautrix-telegram = confLib.mkIds 991;
           mautrix-whatsapp = confLib.mkIds 992;
@@ -356,6 +367,27 @@
               server_name = serviceDomain;
             };
           };
+          mautrix-meta.instances.instagram = {
+            enable = true;
+            environmentFile = config.sops.templates.mautrixmetainstagram.path;
+            settings = {
+              backfill.enabled = true;
+              bridge.permissions = {
+                "*" = "relay";
+                "@swarsel:${serviceDomain}" = "admin";
+              };
+              database = {
+                type = "postgres";
+                uri = "postgresql:///mautrix-meta-instagram?host=/run/postgresql";
+              };
+              double_puppet.secrets.${serviceDomain} = "$MAUTRIX_META_INSTAGRAM_DOUBLEPUPPET";
+              encryption.pickle_key = "$MAUTRIX_META_INSTAGRAM_PICKLE_KEY";
+              homeserver = {
+                address = "http://localhost:${builtins.toString servicePort}";
+                domain = serviceDomain;
+              };
+            };
+          };
           mautrix-signal = {
             enable = true;
             environmentFile = config.sops.templates.mautrixsignal.path;
@@ -486,6 +518,7 @@
             ensureDatabases = [
               "matrix-synapse"
               "matrix-appservice-irc"
+              "mautrix-meta-instagram"
               "mautrix-telegram"
               "mautrix-whatsapp"
               "mautrix-signal"
@@ -498,6 +531,10 @@
               {
                 ensureDBOwnership = true;
                 name = "matrix-appservice-irc";
+              }
+              {
+                ensureDBOwnership = true;
+                name = "mautrix-meta-instagram";
               }
               {
                 ensureDBOwnership = true;
@@ -532,6 +569,11 @@
                 directory = "/var/lib/matrix-appservice-irc";
                 group = "matrix-appservice-irc";
                 user = "matrix-appservice-irc";
+              }
+              {
+                directory = "/var/lib/mautrix-meta-instagram";
+                group = "mautrix-meta";
+                user = "mautrix-meta-instagram";
               }
               {
                 directory = "/var/lib/mautrix-whatsapp";
@@ -576,6 +618,7 @@
                 systemctl restart mautrix-whatsapp.service
                 systemctl restart mautrix-signal.service
                 systemctl restart mautrix-telegram.service
+                systemctl restart mautrix-meta-instagram.service
               '';
               serviceConfig = {
                 Type = "oneshot";
