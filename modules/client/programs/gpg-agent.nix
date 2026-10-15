@@ -6,6 +6,7 @@
       lib,
       pkgs,
       options,
+      nixosConfig ? null,
       ...
     }:
     let
@@ -55,26 +56,35 @@
             disable-ccid = true; # prevent conflicts between pcscd and scdameon
             # pcsc-shared = true; # as long as only one key is used, this prevents key from not being detected sometimes
           };
+          settings.no-autostart = true;
         };
         home.packages = [
           (lib.mkIf withYubikeyAgent config.services.yubikey-agent.package)
         ];
         systemd.user = {
-          services.yubikey-agent = lib.mkIf withYubikeyAgent {
-            Service = {
-              ExecStart = "${config.services.yubikey-agent.package}/bin/yubikey-agent -l %t/yubikey-agent/yubikey-agent.sock";
-              ReadWritePaths = [ "%t" ];
-              Type = "simple";
+          services = {
+            gpg-agent.Unit = lib.mkIf (nixosConfig != null && nixosConfig.programs.uwsm.enable) {
+              After = lib.mkForce [
+                "gpg-agent.socket"
+                "graphical-session.target"
+              ];
+              PartOf = [ "graphical-session.target" ];
             };
-            Unit = {
-              After = "yubikey-agent.socket";
-              Description = "Seamless ssh-agent for YubiKeys";
-              Documentation = "https://github.com/FiloSottile/yubikey-agent";
-              RefuseManualStart = true;
-              Requires = "yubikey-agent.socket";
+            yubikey-agent = lib.mkIf withYubikeyAgent {
+              Service = {
+                ExecStart = "${config.services.yubikey-agent.package}/bin/yubikey-agent -l %t/yubikey-agent/yubikey-agent.sock";
+                ReadWritePaths = [ "%t" ];
+                Type = "simple";
+              };
+              Unit = {
+                After = "yubikey-agent.socket";
+                Description = "Seamless ssh-agent for YubiKeys";
+                Documentation = "https://github.com/FiloSottile/yubikey-agent";
+                RefuseManualStart = true;
+                Requires = "yubikey-agent.socket";
+              };
             };
           };
-
           sockets = {
             gpg-agent-ssh =
               let
@@ -171,7 +181,6 @@
               };
             };
           };
-
           tmpfiles.rules = [
             "d ${homeDir}/.gnupg 0700 ${mainUser} users - -"
           ];
