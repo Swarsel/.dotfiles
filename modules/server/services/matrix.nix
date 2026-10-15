@@ -166,6 +166,12 @@
               '';
               owner = serviceUser;
             };
+            mautrixdiscord = {
+              content = ''
+                MAUTRIX_DISCORD_DOUBLEPUPPET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
+              '';
+              owner = serviceUser;
+            };
             mautrixmetainstagram = {
               content = ''
                 MAUTRIX_META_INSTAGRAM_PICKLE_KEY=${config.sops.placeholder.mautrix-meta-instagram-pickle-key}
@@ -203,6 +209,7 @@
         # messages out after a while.
         users.persistentIds = {
           matrix-appservice-irc = confLib.mkIds 943;
+          mautrix-discord = confLib.mkIds 939;
           mautrix-meta.gid = 941;
           mautrix-meta-instagram = confLib.mkIds 942;
           mautrix-meta-registration.gid = 940;
@@ -367,6 +374,43 @@
               server_name = serviceDomain;
             };
           };
+          mautrix-discord = {
+            enable = true;
+            environmentFile = config.sops.templates.mautrixdiscord.path;
+            settings = {
+              appservice.database = {
+                type = "postgres";
+                uri = "postgresql:///mautrix-discord?host=/run/postgresql";
+              };
+              bridge = {
+                backfill.forward_limits = {
+                  initial = {
+                    channel = 50;
+                    dm = 50;
+                    thread = 50;
+                  };
+                  missed = {
+                    channel = 50;
+                    dm = 50;
+                    thread = 50;
+                  };
+                };
+                encryption = {
+                  allow = true;
+                  default = true;
+                };
+                login_shared_secret_map.${serviceDomain} = "as_token:$MAUTRIX_DISCORD_DOUBLEPUPPET";
+                permissions = {
+                  "*" = "relay";
+                  "@swarsel:${serviceDomain}" = "admin";
+                };
+              };
+              homeserver = {
+                address = "http://localhost:${builtins.toString servicePort}";
+                domain = serviceDomain;
+              };
+            };
+          };
           mautrix-meta.instances.instagram = {
             enable = true;
             environmentFile = config.sops.templates.mautrixmetainstagram.path;
@@ -518,6 +562,7 @@
             ensureDatabases = [
               "matrix-synapse"
               "matrix-appservice-irc"
+              "mautrix-discord"
               "mautrix-meta-instagram"
               "mautrix-telegram"
               "mautrix-whatsapp"
@@ -531,6 +576,10 @@
               {
                 ensureDBOwnership = true;
                 name = "matrix-appservice-irc";
+              }
+              {
+                ensureDBOwnership = true;
+                name = "mautrix-discord";
               }
               {
                 ensureDBOwnership = true;
@@ -569,6 +618,11 @@
                 directory = "/var/lib/matrix-appservice-irc";
                 group = "matrix-appservice-irc";
                 user = "matrix-appservice-irc";
+              }
+              {
+                directory = "/var/lib/mautrix-discord";
+                group = "mautrix-discord";
+                user = "mautrix-discord";
               }
               {
                 directory = "/var/lib/mautrix-meta-instagram";
@@ -619,6 +673,7 @@
                 systemctl restart mautrix-signal.service
                 systemctl restart mautrix-telegram.service
                 systemctl restart mautrix-meta-instagram.service
+                systemctl restart mautrix-discord.service
               '';
               serviceConfig = {
                 Type = "oneshot";
