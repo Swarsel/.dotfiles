@@ -3976,7 +3976,11 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   hm = self.outputs.homeLib;
                 };
                 matrix-appservice-irc = prev.matrix-appservice-irc.overrideAttrs {
-                  patches = [ (root "files/patches/matrix-appservice-irc-on-connect-commands.patch") ];
+                  patches = [
+                    (root "files/patches/matrix-appservice-irc-on-connect-commands.patch")
+                    (root "files/patches/matrix-appservice-irc-pm-room-v12.patch")
+                    (root "files/patches/matrix-appservice-irc-provisioner-silent-pm.patch")
+                  ];
                 };
                 mautrix-telegram = prev.mautrix-telegram.override {
                   python3 = prev.python313;
@@ -28946,9 +28950,9 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
           };
           sops = {
             secrets =
-              lib.mapAttrs' (
-                id: _: lib.nameValuePair "matrix-irc-${id}-key" { sopsFile = config.node.secretsDir + "/irc.yaml"; }
-              ) (lib.filterAttrs (_: server: server ? onConnectCommands) config.repo.secrets.local.irc.servers)
+              lib.mapAttrs' (id: _: lib.nameValuePair "matrix-irc-${id}-key" { inherit sopsFile; }) (
+                lib.filterAttrs (_: server: server ? onConnectCommands) config.repo.secrets.local.irc.servers
+              )
               // {
                 kanidm-matrix = {
                   group = serviceGroup;
@@ -28963,7 +28967,9 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                   inherit sopsFile;
                   owner = serviceUser;
                 };
-                mautrix-meta-instagram-pickle-key.sopsFile = config.node.secretsDir + "/mautrix-meta.yaml";
+                mautrix-meta-instagram-pickle-key = {
+                  inherit sopsFile;
+                };
                 mautrix-signal-pickle-key = {
                   inherit sopsFile;
                 };
@@ -29097,7 +29103,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                     lib.nameValuePair server.address (
                       lib.recursiveUpdate {
                         botConfig = {
-                          enabled = true;
+                          enabled = false;
                           joinChannelsIfNoUsers = false;
                           nick = "MatrixBridge";
                           username = "matrixbridge";
@@ -29135,7 +29141,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                           global = {
                             ircToMatrix = {
                               incremental = true;
-                              initial = true;
+                              initial = false;
                               requireMatrixJoined = false;
                             };
                             matrixToIrc = {
@@ -29153,6 +29159,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                           enabled = true;
                           federate = false;
                         };
+                        sasl = true;
                         sendConnectionMessages = true;
                         ssl = true;
                       } (builtins.removeAttrs server [ "address" ])
@@ -52372,6 +52379,145 @@ This file defines a few workflows that I often need to run when working on my co
   +#include <nix/util/config-global.hh>
 
    #include "nix-plugins-config.h"
+#+end_src
+** Matrix IRC Patch to allow on-connect commands
+:PROPERTIES:
+:CUSTOM_ID: h:60ede4f1-b4dc-4fad-a49a-1e009c483748
+:END:
+
+#+begin_src diff :tangle files/patches/matrix-appservice-irc-on-connect-commands.patch :mkdirp yes
+  diff -ruN irc-a/config.schema.yml irc-b/config.schema.yml
+  --- a/config.schema.yml
+  +++ b/config.schema.yml
+  @@ -243,6 +243,10 @@
+                               type: "boolean"
+                           allowExpiredCerts:
+                               type: "boolean"
+  +                        onConnectCommands:
+  +                            type: "array"
+  +                            items:
+  +                                type: "string"
+                           password:
+                               type: "string"
+                           sendConnectionMessages:
+  diff -ruN irc-a/src/irc/BridgedClient.ts irc-b/src/irc/BridgedClient.ts
+  --- a/src/irc/BridgedClient.ts
+  +++ b/src/irc/BridgedClient.ts
+  @@ -290,6 +290,14 @@
+
+               this.eventBroker.sendMetadata(this, connectText);
+
+  +            for (const command of this.isBot ? [] : this.server.getOnConnectCommands()) {
+  +                const trailingIndex = command.indexOf(" :");
+  +                const args = trailingIndex === -1
+  +                    ? command.split(" ")
+  +                    : [...command.slice(0, trailingIndex).split(" "), command.slice(trailingIndex + 2)];
+  +                connInst.client.send(...args);
+  +            }
+  +
+               connInst.client.on("nick", (old, newNick) => {
+                   if (old === this.nick) {
+                       this.log.info(
+  diff -ruN irc-a/src/irc/IrcServer.ts irc-b/src/irc/IrcServer.ts
+  --- a/src/irc/IrcServer.ts
+  +++ b/src/irc/IrcServer.ts
+  @@ -36,6 +36,7 @@
+       sasl?: boolean;
+       tlsOptions?: Record<string, unknown>;
+       password?: string;
+  +    onConnectCommands?: string[];
+       allowExpiredCerts?: boolean;
+       additionalAddresses?: string[];
+       onlyAdditionalAddresses: boolean;
+  @@ -342,6 +343,10 @@
+           return Boolean(this.config.allowExpiredCerts);
+       }
+
+  +    public getOnConnectCommands(): string[] {
+  +        return this.config.onConnectCommands || [];
+  +    }
+  +
+       public getIdleTimeout() {
+           return this.config.ircClients.idleTimeout;
+       }
+#+end_src
+** Matrix IRC Patch to open rooms on bot DMs in v12 matrix rooms
+:PROPERTIES:
+:CUSTOM_ID: h:dc7d52e7-155e-4144-bb54-de84274fae94
+:END:
+
+#+begin_src diff :tangle files/patches/matrix-appservice-irc-pm-room-v12.patch :mkdirp yes
+  diff -ruN irc-a/src/bridge/IrcHandler.ts irc-b/src/bridge/IrcHandler.ts
+  --- a/src/bridge/IrcHandler.ts
+  +++ b/src/bridge/IrcHandler.ts
+  @@ -17,7 +17,6 @@
+   import { PrivacyProtection } from "../irc/PrivacyProtection";
+   const NICK_USERID_CACHE_MAX = 512;
+   const PM_POWERLEVEL_MATRIXUSER = 10;
+  -const PM_POWERLEVEL_IRCUSER = 100;
+   const MEMBERSHIP_INITIAL_TTL_MS = 30 * 60 * 1000; // 30 mins
+   const PM_ROOM_CREATION_RETRIES = 3; // How often to retry to create a PM room, if it fails?
+
+  @@ -184,11 +183,11 @@
+                               "m.federate": server.shouldFederatePMs()
+                           },
+                           is_direct: true,
+  +                        room_version: "12",
+                           initial_state: [{
+                               content: {
+                                   users: {
+                                       [toUserId]: PM_POWERLEVEL_MATRIXUSER,
+  -                                    [fromUserId]: PM_POWERLEVEL_IRCUSER,
+                                   },
+                                   events: {
+                                       "m.room.avatar": 10,
+#+end_src
+** Matrix IRC Patch to not reply to all DMs received by the bot
+:PROPERTIES:
+:CUSTOM_ID: h:fc36e29a-5f32-49ac-add6-3691650e0684
+:END:
+
+#+begin_src diff :tangle files/patches/matrix-appservice-irc-provisioner-silent-pm.patch :mkdirp yes
+  diff -ruN irc-a/src/provisioning/Provisioner.ts irc-b/src/provisioning/Provisioner.ts
+  --- a/src/provisioning/Provisioner.ts
+  +++ b/src/provisioning/Provisioner.ts
+  @@ -608,6 +608,11 @@
+       }
+
+       public async handlePm (server: IrcServer, fromUser: IrcUser, text: string) {
+  +        const request = this.getRequest(server, fromUser.nick);
+  +        if (!request) {
+  +            log.warn(`Provisioner was not expecting PM from ${fromUser.nick} on ${server.domain}`);
+  +            return;
+  +        }
+           if (!['y', 'yes'].includes(text.trim().toLowerCase())) {
+               log.warn(`Provisioner only handles text 'yes'/'y' ` +
+                       `(from ${fromUser.nick} on ${server.domain})`);
+  @@ -618,22 +623,12 @@
+               );
+               return;
+           }
+  -        const request = this.getRequest(server, fromUser.nick);
+  -        if (request) {
+  -            request.log.info(`${fromUser.nick} has authorised a new provisioning`);
+  -            request.defer.resolve();
+  -
+  -            await this.sendToUser(
+  -                fromUser.nick, server,
+  -                'Thanks for your response, bridge request authorised.'
+  -            );
+  +        request.log.info(`${fromUser.nick} has authorised a new provisioning`);
+  +        request.defer.resolve();
+
+  -            return;
+  -        }
+  -        log.warn(`Provisioner was not expecting PM from ${fromUser.nick} on ${server.domain}`);
+           await this.sendToUser(
+               fromUser.nick, server,
+  -            'The bot was not expecting a message from you. You might have already replied to a request.'
+  +            'Thanks for your response, bridge request authorised.'
+           );
+       }
 #+end_src
 ** Zellij layout swarsel.kdl.nix
 :PROPERTIES:

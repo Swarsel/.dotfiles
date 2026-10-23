@@ -95,9 +95,9 @@
         };
         sops = {
           secrets =
-            lib.mapAttrs' (
-              id: _: lib.nameValuePair "matrix-irc-${id}-key" { sopsFile = config.node.secretsDir + "/irc.yaml"; }
-            ) (lib.filterAttrs (_: server: server ? onConnectCommands) config.repo.secrets.local.irc.servers)
+            lib.mapAttrs' (id: _: lib.nameValuePair "matrix-irc-${id}-key" { inherit sopsFile; }) (
+              lib.filterAttrs (_: server: server ? onConnectCommands) config.repo.secrets.local.irc.servers
+            )
             // {
               kanidm-matrix = {
                 group = serviceGroup;
@@ -112,7 +112,9 @@
                 inherit sopsFile;
                 owner = serviceUser;
               };
-              mautrix-meta-instagram-pickle-key.sopsFile = config.node.secretsDir + "/mautrix-meta.yaml";
+              mautrix-meta-instagram-pickle-key = {
+                inherit sopsFile;
+              };
               mautrix-signal-pickle-key = {
                 inherit sopsFile;
               };
@@ -246,7 +248,7 @@
                   lib.nameValuePair server.address (
                     lib.recursiveUpdate {
                       botConfig = {
-                        enabled = true;
+                        enabled = false;
                         joinChannelsIfNoUsers = false;
                         nick = "MatrixBridge";
                         username = "matrixbridge";
@@ -284,7 +286,7 @@
                         global = {
                           ircToMatrix = {
                             incremental = true;
-                            initial = true;
+                            initial = false;
                             requireMatrixJoined = false;
                           };
                           matrixToIrc = {
@@ -302,6 +304,7 @@
                         enabled = true;
                         federate = false;
                       };
+                      sasl = true;
                       sendConnectionMessages = true;
                       ssl = true;
                     } (builtins.removeAttrs server [ "address" ])

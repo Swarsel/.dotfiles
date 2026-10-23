@@ -19,7 +19,7 @@ diff -ruN irc-a/src/irc/BridgedClient.ts irc-b/src/irc/BridgedClient.ts
 
              this.eventBroker.sendMetadata(this, connectText);
 
-+            for (const command of this.server.getOnConnectCommands()) {
++            for (const command of this.isBot ? [] : this.server.getOnConnectCommands()) {
 +                const trailingIndex = command.indexOf(" :");
 +                const args = trailingIndex === -1
 +                    ? command.split(" ")

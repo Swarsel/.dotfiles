@@ -1,0 +1,40 @@
+diff -ruN irc-a/src/provisioning/Provisioner.ts irc-b/src/provisioning/Provisioner.ts
+--- a/src/provisioning/Provisioner.ts
++++ b/src/provisioning/Provisioner.ts
+@@ -608,6 +608,11 @@
+     }
+
+     public async handlePm (server: IrcServer, fromUser: IrcUser, text: string) {
++        const request = this.getRequest(server, fromUser.nick);
++        if (!request) {
++            log.warn(`Provisioner was not expecting PM from ${fromUser.nick} on ${server.domain}`);
++            return;
++        }
+         if (!['y', 'yes'].includes(text.trim().toLowerCase())) {
+             log.warn(`Provisioner only handles text 'yes'/'y' ` +
+                     `(from ${fromUser.nick} on ${server.domain})`);
+@@ -618,22 +623,12 @@
+             );
+             return;
+         }
+-        const request = this.getRequest(server, fromUser.nick);
+-        if (request) {
+-            request.log.info(`${fromUser.nick} has authorised a new provisioning`);
+-            request.defer.resolve();
+-
+-            await this.sendToUser(
+-                fromUser.nick, server,
+-                'Thanks for your response, bridge request authorised.'
+-            );
++        request.log.info(`${fromUser.nick} has authorised a new provisioning`);
++        request.defer.resolve();
+
+-            return;
+-        }
+-        log.warn(`Provisioner was not expecting PM from ${fromUser.nick} on ${server.domain}`);
+         await this.sendToUser(
+             fromUser.nick, server,
+-            'The bot was not expecting a message from you. You might have already replied to a request.'
++            'Thanks for your response, bridge request authorised.'
+         );
+     }

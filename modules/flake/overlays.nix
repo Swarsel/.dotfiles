@@ -177,7 +177,11 @@ in
                 hm = self.outputs.homeLib;
               };
               matrix-appservice-irc = prev.matrix-appservice-irc.overrideAttrs {
-                patches = [ (root "files/patches/matrix-appservice-irc-on-connect-commands.patch") ];
+                patches = [
+                  (root "files/patches/matrix-appservice-irc-on-connect-commands.patch")
+                  (root "files/patches/matrix-appservice-irc-pm-room-v12.patch")
+                  (root "files/patches/matrix-appservice-irc-provisioner-silent-pm.patch")
+                ];
               };
               mautrix-telegram = prev.mautrix-telegram.override {
                 python3 = prev.python313;
