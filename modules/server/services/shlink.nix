@@ -78,7 +78,6 @@
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           { directory = serviceDir; }
-          { directory = "/var/lib/containers"; }
         ];
         virtualisation.oci-containers.containers.${serviceName} = {
           environment = {
