@@ -41,7 +41,7 @@
         "attic"
       ];
       data_dir = {
-        capacity = "150G";
+        capacity = "100G";
         path = "/var/lib/garage/data";
       };
       keys.nixos = [
@@ -59,4 +59,5 @@
   };
 
   node.lockFromBootstrapping = lib.mkForce false;
+  zramSwap.enable = true;
 }

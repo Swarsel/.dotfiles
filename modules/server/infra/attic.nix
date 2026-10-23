@@ -98,7 +98,7 @@
               };
               database.url = "postgresql://${serviceDB}@localhost/${serviceDB}?host=/run/postgresql";
               garbage-collection = {
-                default-retention-period = "3 months";
+                default-retention-period = "1 month";
                 interval = "1 day";
               };
               listen = "[::]:${builtins.toString servicePort}";

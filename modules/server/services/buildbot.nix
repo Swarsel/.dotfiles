@@ -622,18 +622,28 @@
         ];
         nix = {
           gc = {
-            options = lib.mkForce "--delete-older-than 5d";
+            options = lib.mkForce "--delete-older-than 2d";
             automatic = true;
             dates = lib.mkForce "20:00";
           };
-          settings.trusted-users = [ "buildbot" ];
+          settings = {
+            max-free = lib.mkForce (40 * 1024 * 1024 * 1024);
+            min-free = lib.mkForce (15 * 1024 * 1024 * 1024);
+            trusted-users = [ "buildbot" ];
+          };
         };
         systemd = {
-          services.buildbot-master = {
-            environment.SOPS_AGE_KEY_FILE = config.sops.secrets.buildbot-age-key.path;
-            serviceConfig = {
-              MemoryMax = "20G";
-              Restart = "always";
+          services = {
+            buildbot-master = {
+              environment.SOPS_AGE_KEY_FILE = config.sops.secrets.buildbot-age-key.path;
+              serviceConfig = {
+                MemoryMax = "20G";
+                Restart = "always";
+              };
+            };
+            nix-daemon.serviceConfig = {
+              MemoryHigh = "14G";
+              MemoryMax = "18G";
             };
           };
           tmpfiles.settings."10-buildbot" = builtins.listToAttrs (
