@@ -38,6 +38,7 @@ in
     self.modules.nixos.copyparty
     self.modules.nixos.shopservatory
     self.modules.nixos.readeck
+    self.modules.nixos.metube
     self.modules.nixos.collabora-online
     self.modules.nixos.filestash
   ];
