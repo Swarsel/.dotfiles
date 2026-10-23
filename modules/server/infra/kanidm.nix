@@ -31,6 +31,7 @@
         homeWebProxy
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
@@ -44,6 +45,7 @@
       keyPathBase = "${privateDir}/${serviceName}.key";
       keyPath =
         if config.swarselsystems.isImpermanence then "/persist${keyPathBase}" else "${keyPathBase}";
+      mailSenderUnit = "${serviceName}-mail-sender";
     in
     {
       config = {
@@ -70,32 +72,49 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        sops.secrets = {
-          kanidm-admin-pw = {
-            inherit sopsFile;
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
+        sops = {
+          secrets = {
+            kanidm-admin-pw = {
+              inherit sopsFile;
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            };
+            kanidm-idm-admin-pw = {
+              inherit sopsFile;
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            };
+            kanidm-mail-sender-token = { inherit sopsFile; };
+            kanidm-self-signed-crt = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = certsSopsFile;
+            };
+            kanidm-self-signed-key = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = certsSopsFile;
+            };
+            # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            notification-mail-pw.sopsFile = notificationMail.sopsFile;
           };
-          kanidm-idm-admin-pw = {
-            inherit sopsFile;
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
+          templates."${mailSenderUnit}.toml" = {
+            content = ''
+              token = "${config.sops.placeholder.kanidm-mail-sender-token}"
+              instance_display_name = "Kanidm"
+              instance_url = "https://${serviceDomain}"
+              mail_from_address = "${notificationMail.address}"
+              mail_reply_to_address = "${notificationMail.address}"
+              mail_relay = "smtp://${notificationMail.host}:587"
+              mail_username = "${notificationMail.address}"
+              mail_password = "${config.sops.placeholder.notification-mail-pw}"
+            '';
+            restartUnits = [ "${mailSenderUnit}.service" ];
           };
-          kanidm-self-signed-crt = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            sopsFile = certsSopsFile;
-          };
-          kanidm-self-signed-key = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            sopsFile = certsSopsFile;
-          };
-          # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
         users = {
           users.${serviceUser} = {
@@ -155,6 +174,22 @@
           };
         };
         systemd.services = {
+          ${mailSenderUnit} = {
+            after = [
+              "${serviceName}.service"
+              "network-online.target"
+            ];
+            description = "Deliver queued Kanidm messages via SMTP";
+            serviceConfig = {
+              DynamicUser = true;
+              ExecStart = "${lib.getExe' config.services.kanidm.package "kanidm-mail-sender"} -m \${CREDENTIALS_DIRECTORY}/config";
+              LoadCredential = "config:${config.sops.templates."${mailSenderUnit}.toml".path}";
+              Restart = "on-failure";
+              RestartSec = "30";
+            };
+            wantedBy = [ "multi-user.target" ];
+            wants = [ "network-online.target" ];
+          };
           "generateSSLCert-${serviceName}" =
             let
               daysValid = 3650;

@@ -38,6 +38,7 @@
         isProxied
         monitoringServer
         nginxAccessRules
+        notificationMail
         webProxy
         webProxyIf
         ;
@@ -205,13 +206,13 @@
             inherit sopsFile;
             mode = "0400";
           };
-          firezone-smtp-password = {
-            inherit sopsFile;
-            mode = "0440";
-          };
           kanidm-firezone = {
             mode = "0400";
             sopsFile = kanidmSopsFile;
+          };
+          notification-mail-pw = {
+            inherit (notificationMail) sopsFile;
+            mode = "0440";
           };
         };
         services.firezone = {
@@ -327,9 +328,9 @@
             };
             smtp = {
               inherit (config.repo.secrets.local.firezone.mail) from username;
-              host = globals.services.mailserver.domain;
+              inherit (notificationMail) host;
               implicitTls = true;
-              passwordFile = config.sops.secrets.firezone-smtp-password.path;
+              passwordFile = config.sops.secrets.notification-mail-pw.path;
               port = 465;
             };
             web = {

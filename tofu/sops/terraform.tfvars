@@ -79,6 +79,23 @@ extra_rules = [
     age_keys   = ["moonside", "summers-utility"]
   },
   {
+    path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
+    age_keys = [
+      "moonside",
+      "twothreetunnel",
+      "summers-dawarich",
+      "summers-firefly",
+      "summers-forgejo",
+      "summers-immich",
+      "summers-kanidm",
+      "summers-matrix",
+      "summers-mealie",
+      "summers-monitoring",
+      "summers-nextcloud",
+      "summers-paperless",
+    ]
+  },
+  {
     path_regex = "secrets/nginx/acme.json"
     age_keys   = ["twothreetunnel", "summers", "eagleland", "hintbooth-nginx", "belchsfactory"]
   },

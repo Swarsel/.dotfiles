@@ -30,9 +30,9 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
-      inherit (config.swarselsystems) sopsFile;
 
       kanidmDomain = globals.services.kanidm.domain;
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
@@ -66,17 +66,17 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops.secrets = {
-          immich-smtp-pw = {
-            inherit sopsFile;
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-          };
           kanidm-immich = {
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
             sopsFile = kanidmSopsFile;
+          };
+          notification-mail-pw = {
+            inherit (notificationMail) sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
         };
         users = {
@@ -232,15 +232,15 @@
             };
             notifications.smtp = {
               enabled = true;
-              from = "Immich <notification@${globals.domains.main}>";
-              replyTo = "notification@${globals.domains.main}";
+              from = "Immich <${notificationMail.address}>";
+              replyTo = notificationMail.address;
               transport = {
-                host = globals.services.mailserver.domain;
+                inherit (notificationMail) host;
                 ignoreCert = false;
-                password._secret = config.sops.secrets.immich-smtp-pw.path;
+                password._secret = config.sops.secrets.notification-mail-pw.path;
                 port = 587;
                 secure = false;
-                username = "notification@${globals.domains.main}";
+                username = notificationMail.address;
               };
             };
             oauth = {

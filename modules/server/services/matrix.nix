@@ -33,6 +33,7 @@
         isHome
         isProxied
         nginxAccessRules
+        notificationMail
         webProxy
         webProxyIf
         ;
@@ -137,6 +138,7 @@
               mautrix-whatsapp-pickle-key = {
                 inherit sopsFile;
               };
+              notification-mail-pw.sopsFile = notificationMail.sopsFile;
             };
           templates = {
             "doublepuppet.yaml" = {
@@ -158,6 +160,21 @@
               content = builtins.toJSON config.services.matrix-appservice-irc.settings;
               owner = "matrix-appservice-irc";
               restartUnits = [ "matrix-appservice-irc.service" ];
+            };
+            "matrix-email.yaml" = {
+              content = builtins.toJSON {
+                email = {
+                  app_name = "Matrix";
+                  enable_notifs = true;
+                  notif_from = "%(app)s <${notificationMail.address}>";
+                  require_transport_security = true;
+                  smtp_host = notificationMail.host;
+                  smtp_pass = config.sops.placeholder.notification-mail-pw;
+                  smtp_port = 587;
+                  smtp_user = notificationMail.address;
+                };
+              };
+              owner = serviceUser;
             };
             "matrix_user_register.sh".content = ''
               register_new_matrix_user -k ${config.sops.placeholder.matrix-shared-secret} http://localhost:${builtins.toString servicePort}
@@ -317,6 +334,7 @@
             enable = true;
             dataDir = "/var/lib/matrix-synapse";
             extraConfigFiles = [
+              config.sops.templates."matrix-email.yaml".path
               config.sops.templates.matrixshared.path
             ];
             settings = {

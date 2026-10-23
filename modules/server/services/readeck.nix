@@ -31,6 +31,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -69,10 +70,12 @@
         sops = {
           secrets = {
             kanidm-readeck.sopsFile = kanidmSopsFile;
+            notification-mail-pw.sopsFile = notificationMail.sopsFile;
             readeck-secret-key = { inherit sopsFile; };
           };
           templates.readeck-env.content = ''
             READECK_AUTH_OIDC_PROVIDERS_0_CLIENT_SECRET=${config.sops.placeholder.kanidm-readeck}
+            READECK_MAIL_PASSWORD=${config.sops.placeholder.notification-mail-pw}
             READECK_SECRET_KEY=${config.sops.placeholder.readeck-secret-key}
           '';
         };
@@ -99,6 +102,14 @@
                 url = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
               }
             ];
+            email = {
+              inherit (notificationMail) host;
+              encryption = "starttls";
+              from = "Readeck <${notificationMail.address}>";
+              from_noreply = "Readeck <${notificationMail.address}>";
+              port = 587;
+              username = notificationMail.address;
+            };
             main = {
               data_directory = "/var/lib/${serviceName}/data";
               log_format = "text";

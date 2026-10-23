@@ -32,6 +32,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -71,7 +72,10 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets.kanidm-dawarich.sopsFile = kanidmSopsFile;
+          secrets = {
+            kanidm-dawarich.sopsFile = kanidmSopsFile;
+            notification-mail-pw.sopsFile = notificationMail.sopsFile;
+          };
           templates.dawarich-oidc-env.content = ''
             OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-dawarich}
           '';
@@ -90,9 +94,17 @@
             OIDC_PKCE_ENABLED = "true";
             OIDC_PROVIDER_NAME = "Kanidm";
             OIDC_REDIRECT_URI = "https://${serviceDomain}/users/auth/openid_connect/callback";
+            SMTP_DOMAIN = globals.domains.main;
           };
           extraEnvFiles = [ config.sops.templates.dawarich-oidc-env.path ];
           localDomain = serviceDomain;
+          smtp = {
+            inherit (notificationMail) host;
+            fromAddress = "Dawarich <${notificationMail.address}>";
+            passwordFile = config.sops.secrets.notification-mail-pw.path;
+            port = 587;
+            user = notificationMail.address;
+          };
           webPort = servicePort;
         };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {

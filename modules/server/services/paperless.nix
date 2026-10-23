@@ -31,6 +31,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -66,29 +67,38 @@
         sops = {
           secrets = {
             kanidm-paperless.sopsFile = kanidmSopsFile;
+            notification-mail-pw.sopsFile = notificationMail.sopsFile;
             paperless-admin-pw = {
               inherit sopsFile;
               owner = serviceUser;
             };
           };
-          templates."paperless-oidc.env".content = ''
-            PAPERLESS_SOCIALACCOUNT_PROVIDERS='${
-              builtins.toJSON {
-                openid_connect = {
-                  APPS = [
-                    rec {
-                      client_id = "paperless";
-                      name = "Kanidm";
-                      provider_id = "kanidm";
-                      secret = config.sops.placeholder.kanidm-paperless;
-                      settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
-                    }
-                  ];
-                  OAUTH_PKCE_ENABLED = "True";
-                };
-              }
-            }'
-          '';
+          templates = {
+            "paperless-mail.env" = {
+              content = ''
+                PAPERLESS_EMAIL_HOST_PASSWORD=${config.sops.placeholder.notification-mail-pw}
+              '';
+              owner = serviceUser;
+            };
+            "paperless-oidc.env".content = ''
+              PAPERLESS_SOCIALACCOUNT_PROVIDERS='${
+                builtins.toJSON {
+                  openid_connect = {
+                    APPS = [
+                      rec {
+                        client_id = "paperless";
+                        name = "Kanidm";
+                        provider_id = "kanidm";
+                        secret = config.sops.placeholder.kanidm-paperless;
+                        settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                      }
+                    ];
+                    OAUTH_PKCE_ENABLED = "True";
+                  };
+                }
+              }'
+            '';
+          };
         };
         users = {
           users.${serviceUser}.extraGroups = [ "users" ];
@@ -99,11 +109,17 @@
             enable = true;
             address = "0.0.0.0";
             dataDir = "/var/lib/${serviceName}";
+            environmentFile = config.sops.templates."paperless-mail.env".path;
             mediaDir = "/storage/Documents/${serviceName}";
             passwordFile = config.sops.secrets.paperless-admin-pw.path;
             port = servicePort;
             settings = {
               PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
+              PAPERLESS_EMAIL_FROM = notificationMail.address;
+              PAPERLESS_EMAIL_HOST = notificationMail.host;
+              PAPERLESS_EMAIL_HOST_USER = notificationMail.address;
+              PAPERLESS_EMAIL_PORT = 587;
+              PAPERLESS_EMAIL_USE_TLS = true;
               PAPERLESS_OCR_LANGUAGE = "deu+eng";
               PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
                 invalidate_digital_signatures = true;

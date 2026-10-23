@@ -31,6 +31,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -76,17 +77,17 @@
             mode = "0440";
             owner = serviceUser;
           };
-          grafana-smtp-pw = {
-            inherit sopsFile;
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-          };
           kanidm-grafana = {
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
             sopsFile = kanidmSopsFile;
+          };
+          notification-mail-pw = {
+            inherit (notificationMail) sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
           };
         };
         users = {
@@ -198,10 +199,10 @@
               enabled = true;
               from_address = "monitoring@${globals.domains.main}";
               from_name = "Monitoring";
-              host = "${globals.services.mailserver.domain}:587";
-              password = "$__file{${config.sops.secrets.grafana-smtp-pw.path}}";
+              host = "${notificationMail.host}:587";
+              password = "$__file{${config.sops.secrets.notification-mail-pw.path}}";
               startTLS_policy = "MandatoryStartTLS";
-              user = "notification@${globals.domains.main}";
+              user = notificationMail.address;
             };
           };
         };

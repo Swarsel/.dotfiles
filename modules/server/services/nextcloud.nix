@@ -32,6 +32,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -65,18 +66,24 @@
             path = "/status.php";
           };
         };
-        sops.secrets = {
-          kanidm-nextcloud = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+        sops = {
+          secrets = {
+            kanidm-nextcloud = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = kanidmSopsFile;
+            };
+            nextcloud-admin-pw = {
+              inherit sopsFile;
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            };
+            notification-mail-pw.sopsFile = notificationMail.sopsFile;
           };
-          nextcloud-admin-pw = {
-            inherit sopsFile;
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
+          templates."nextcloud-secrets.json".content = builtins.toJSON {
+            mail_smtppassword = config.sops.placeholder.notification-mail-pw;
           };
         };
         users.persistentIds = {
@@ -113,7 +120,15 @@
             hostName = serviceDomain;
             https = true;
             maxUploadSize = "64G";
+            secretFile = config.sops.templates."nextcloud-secrets.json".path;
             settings = {
+              mail_domain = notificationMail.domain;
+              mail_from_address = notificationMail.localPart;
+              mail_smtpauth = true;
+              mail_smtphost = notificationMail.host;
+              mail_smtpmode = "smtp";
+              mail_smtpname = notificationMail.address;
+              mail_smtpport = 587;
               overwriteprotocol = "https";
               trusted_proxies = [ "0.0.0.0" ];
             };

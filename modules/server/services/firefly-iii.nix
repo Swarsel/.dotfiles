@@ -29,6 +29,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -68,11 +69,19 @@
             path = "/health";
           };
         };
-        sops.secrets.firefly-iii-app-key = {
-          inherit sopsFile;
-          group = if cfg.enableNginx then nginxGroup else serviceGroup;
-          mode = "0440";
-          owner = serviceUser;
+        sops.secrets = {
+          firefly-iii-app-key = {
+            inherit sopsFile;
+            group = if cfg.enableNginx then nginxGroup else serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+          };
+          notification-mail-pw = {
+            inherit (notificationMail) sopsFile;
+            group = if cfg.enableNginx then nginxGroup else serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+          };
         };
         users = {
           users.${serviceUser} = {
@@ -94,6 +103,12 @@
               APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
               APP_URL = "https://${serviceDomain}";
               DB_CONNECTION = "sqlite";
+              MAIL_FROM = notificationMail.address;
+              MAIL_HOST = notificationMail.host;
+              MAIL_MAILER = "smtp";
+              MAIL_PASSWORD_FILE = config.sops.secrets.notification-mail-pw.path;
+              MAIL_PORT = 587;
+              MAIL_USERNAME = notificationMail.address;
               TRUSTED_PROXIES = "**";
               TZ = config.repo.secrets.common.location.timezone;
               # turning these on breaks api access using the waterfly app

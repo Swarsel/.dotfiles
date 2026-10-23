@@ -524,6 +524,13 @@
               allow ${wgHomeNet.cidrv6};
               deny all;
             '';
+          notificationMail = rec {
+            address = "${localPart}@${domain}";
+            domain = globals.domains.main;
+            host = globals.services.mailserver.domain;
+            localPart = "notification";
+            sopsFile = self + /secrets/mail/secrets.yaml;
+          };
           scannerDropRules = ''
             location ~* "\.(php|aspx?|env|jsp|cgi|bak|sql|old)(\?|$|/)" {
               access_log off;

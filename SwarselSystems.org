@@ -13785,6 +13785,13 @@ I also take some precautions in how I get networking information during stage 1.
                 allow ${wgHomeNet.cidrv6};
                 deny all;
               '';
+            notificationMail = rec {
+              address = "${localPart}@${domain}";
+              domain = globals.domains.main;
+              host = globals.services.mailserver.domain;
+              localPart = "notification";
+              sopsFile = self + /secrets/mail/secrets.yaml;
+            };
             scannerDropRules = ''
               location ~* "\.(php|aspx?|env|jsp|cgi|bak|sql|old)(\?|$|/)" {
                 access_log off;
@@ -28888,6 +28895,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
           isHome
           isProxied
           nginxAccessRules
+          notificationMail
           webProxy
           webProxyIf
           ;
@@ -28992,6 +29000,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 mautrix-whatsapp-pickle-key = {
                   inherit sopsFile;
                 };
+                notification-mail-pw.sopsFile = notificationMail.sopsFile;
               };
             templates = {
               "doublepuppet.yaml" = {
@@ -29013,6 +29022,21 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 content = builtins.toJSON config.services.matrix-appservice-irc.settings;
                 owner = "matrix-appservice-irc";
                 restartUnits = [ "matrix-appservice-irc.service" ];
+              };
+              "matrix-email.yaml" = {
+                content = builtins.toJSON {
+                  email = {
+                    app_name = "Matrix";
+                    enable_notifs = true;
+                    notif_from = "%(app)s <${notificationMail.address}>";
+                    require_transport_security = true;
+                    smtp_host = notificationMail.host;
+                    smtp_pass = config.sops.placeholder.notification-mail-pw;
+                    smtp_port = 587;
+                    smtp_user = notificationMail.address;
+                  };
+                };
+                owner = serviceUser;
               };
               "matrix_user_register.sh".content = ''
                 register_new_matrix_user -k ${config.sops.placeholder.matrix-shared-secret} http://localhost:${builtins.toString servicePort}
@@ -29172,6 +29196,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               enable = true;
               dataDir = "/var/lib/matrix-synapse";
               extraConfigFiles = [
+                config.sops.templates."matrix-email.yaml".path
                 config.sops.templates.matrixshared.path
               ];
               settings = {
@@ -29697,6 +29722,7 @@ Social Login (OIDC) setup:
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -29730,18 +29756,24 @@ Social Login (OIDC) setup:
               path = "/status.php";
             };
           };
-          sops.secrets = {
-            kanidm-nextcloud = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+          sops = {
+            secrets = {
+              kanidm-nextcloud = {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+                sopsFile = kanidmSopsFile;
+              };
+              nextcloud-admin-pw = {
+                inherit sopsFile;
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+              };
+              notification-mail-pw.sopsFile = notificationMail.sopsFile;
             };
-            nextcloud-admin-pw = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
+            templates."nextcloud-secrets.json".content = builtins.toJSON {
+              mail_smtppassword = config.sops.placeholder.notification-mail-pw;
             };
           };
           users.persistentIds = {
@@ -29778,7 +29810,15 @@ Social Login (OIDC) setup:
               hostName = serviceDomain;
               https = true;
               maxUploadSize = "64G";
+              secretFile = config.sops.templates."nextcloud-secrets.json".path;
               settings = {
+                mail_domain = notificationMail.domain;
+                mail_from_address = notificationMail.localPart;
+                mail_smtpauth = true;
+                mail_smtphost = notificationMail.host;
+                mail_smtpmode = "smtp";
+                mail_smtpname = notificationMail.address;
+                mail_smtpport = 587;
                 overwriteprotocol = "https";
                 trusted_proxies = [ "0.0.0.0" ];
               };
@@ -29908,9 +29948,9 @@ My photo service. It does some cool things like face recognition automatically (
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
-        inherit (config.swarselsystems) sopsFile;
 
         kanidmDomain = globals.services.kanidm.domain;
         kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
@@ -29944,17 +29984,17 @@ My photo service. It does some cool things like face recognition automatically (
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops.secrets = {
-            immich-smtp-pw = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
             kanidm-immich = {
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
               sopsFile = kanidmSopsFile;
+            };
+            notification-mail-pw = {
+              inherit (notificationMail) sopsFile;
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
             };
           };
           users = {
@@ -30110,15 +30150,15 @@ My photo service. It does some cool things like face recognition automatically (
               };
               notifications.smtp = {
                 enabled = true;
-                from = "Immich <notification@${globals.domains.main}>";
-                replyTo = "notification@${globals.domains.main}";
+                from = "Immich <${notificationMail.address}>";
+                replyTo = notificationMail.address;
                 transport = {
-                  host = globals.services.mailserver.domain;
+                  inherit (notificationMail) host;
                   ignoreCert = false;
-                  password._secret = config.sops.secrets.immich-smtp-pw.path;
+                  password._secret = config.sops.secrets.notification-mail-pw.path;
                   port = 587;
                   secure = false;
-                  username = "notification@${globals.domains.main}";
+                  username = notificationMail.address;
                 };
               };
               oauth = {
@@ -30296,6 +30336,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -30331,29 +30372,38 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           sops = {
             secrets = {
               kanidm-paperless.sopsFile = kanidmSopsFile;
+              notification-mail-pw.sopsFile = notificationMail.sopsFile;
               paperless-admin-pw = {
                 inherit sopsFile;
                 owner = serviceUser;
               };
             };
-            templates."paperless-oidc.env".content = ''
-              PAPERLESS_SOCIALACCOUNT_PROVIDERS='${
-                builtins.toJSON {
-                  openid_connect = {
-                    APPS = [
-                      rec {
-                        client_id = "paperless";
-                        name = "Kanidm";
-                        provider_id = "kanidm";
-                        secret = config.sops.placeholder.kanidm-paperless;
-                        settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
-                      }
-                    ];
-                    OAUTH_PKCE_ENABLED = "True";
-                  };
-                }
-              }'
-            '';
+            templates = {
+              "paperless-mail.env" = {
+                content = ''
+                  PAPERLESS_EMAIL_HOST_PASSWORD=${config.sops.placeholder.notification-mail-pw}
+                '';
+                owner = serviceUser;
+              };
+              "paperless-oidc.env".content = ''
+                PAPERLESS_SOCIALACCOUNT_PROVIDERS='${
+                  builtins.toJSON {
+                    openid_connect = {
+                      APPS = [
+                        rec {
+                          client_id = "paperless";
+                          name = "Kanidm";
+                          provider_id = "kanidm";
+                          secret = config.sops.placeholder.kanidm-paperless;
+                          settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                        }
+                      ];
+                      OAUTH_PKCE_ENABLED = "True";
+                    };
+                  }
+                }'
+              '';
+            };
           };
           users = {
             users.${serviceUser}.extraGroups = [ "users" ];
@@ -30364,11 +30414,17 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               enable = true;
               address = "0.0.0.0";
               dataDir = "/var/lib/${serviceName}";
+              environmentFile = config.sops.templates."paperless-mail.env".path;
               mediaDir = "/storage/Documents/${serviceName}";
               passwordFile = config.sops.secrets.paperless-admin-pw.path;
               port = servicePort;
               settings = {
                 PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
+                PAPERLESS_EMAIL_FROM = notificationMail.address;
+                PAPERLESS_EMAIL_HOST = notificationMail.host;
+                PAPERLESS_EMAIL_HOST_USER = notificationMail.address;
+                PAPERLESS_EMAIL_PORT = 587;
+                PAPERLESS_EMAIL_USE_TLS = true;
                 PAPERLESS_OCR_LANGUAGE = "deu+eng";
                 PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
                   invalidate_digital_signatures = true;
@@ -31662,6 +31718,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -31707,17 +31764,17 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
               mode = "0440";
               owner = serviceUser;
             };
-            grafana-smtp-pw = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
             kanidm-grafana = {
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
               sopsFile = kanidmSopsFile;
+            };
+            notification-mail-pw = {
+              inherit (notificationMail) sopsFile;
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
             };
           };
           users = {
@@ -31829,10 +31886,10 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 enabled = true;
                 from_address = "monitoring@${globals.domains.main}";
                 from_name = "Monitoring";
-                host = "${globals.services.mailserver.domain}:587";
-                password = "$__file{${config.sops.secrets.grafana-smtp-pw.path}}";
+                host = "${notificationMail.host}:587";
+                password = "$__file{${config.sops.secrets.notification-mail-pw.path}}";
                 startTLS_policy = "MandatoryStartTLS";
-                user = "notification@${globals.domains.main}";
+                user = notificationMail.address;
               };
             };
           };
@@ -33999,6 +34056,7 @@ My self-hosted git solution.
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -34036,11 +34094,14 @@ My self-hosted git solution.
               ];
             };
           };
-          sops.secrets.kanidm-forgejo = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+          sops.secrets = {
+            kanidm-forgejo = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = kanidmSopsFile;
+            };
+            notification-mail-pw.sopsFile = notificationMail.sopsFile;
           };
           # networking.firewall.allowedTCPPorts = [ servicePort ];
           users = {
@@ -34055,11 +34116,20 @@ My self-hosted git solution.
             enable = true;
             group = serviceGroup;
             lfs.enable = lib.mkDefault true;
+            secrets.mailer.PASSWD = config.sops.secrets.notification-mail-pw.path;
             settings = {
               DEFAULT.APP_NAME = "~SwaGit~";
               federation = {
                 ENABLED = true;
                 SHARE_USER_STATISTICS = false;
+              };
+              mailer = {
+                ENABLED = true;
+                FROM = "Forgejo <${notificationMail.address}>";
+                PROTOCOL = "smtp+starttls";
+                SMTP_ADDR = notificationMail.host;
+                SMTP_PORT = 587;
+                USER = notificationMail.address;
               };
               oauth2_client = {
                 # Never use auto account linking with this, otherwise users cannot change
@@ -34092,6 +34162,7 @@ My self-hosted git solution.
                 ALLOW_ONLY_EXTERNAL_REGISTRATION = true;
                 ALLOW_ONLY_INTERNAL_REGISTRATION = false;
                 DISABLE_REGISTRATION = false;
+                ENABLE_NOTIFY_MAIL = true;
                 SHOW_REGISTRATION_BUTTON = false;
               };
               session.COOKIE_SECURE = true;
@@ -34403,6 +34474,7 @@ kanidm person credential create-reset-token <user>
           homeWebProxy
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
         inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
@@ -34416,6 +34488,7 @@ kanidm person credential create-reset-token <user>
         keyPathBase = "${privateDir}/${serviceName}.key";
         keyPath =
           if config.swarselsystems.isImpermanence then "/persist${keyPathBase}" else "${keyPathBase}";
+        mailSenderUnit = "${serviceName}-mail-sender";
       in
       {
         config = {
@@ -34442,32 +34515,49 @@ kanidm person credential create-reset-token <user>
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
-          sops.secrets = {
-            kanidm-admin-pw = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
+          sops = {
+            secrets = {
+              kanidm-admin-pw = {
+                inherit sopsFile;
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+              };
+              kanidm-idm-admin-pw = {
+                inherit sopsFile;
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+              };
+              kanidm-mail-sender-token = { inherit sopsFile; };
+              kanidm-self-signed-crt = {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+                sopsFile = certsSopsFile;
+              };
+              kanidm-self-signed-key = {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+                sopsFile = certsSopsFile;
+              };
+              # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+              notification-mail-pw.sopsFile = notificationMail.sopsFile;
             };
-            kanidm-idm-admin-pw = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
+            templates."${mailSenderUnit}.toml" = {
+              content = ''
+                token = "${config.sops.placeholder.kanidm-mail-sender-token}"
+                instance_display_name = "Kanidm"
+                instance_url = "https://${serviceDomain}"
+                mail_from_address = "${notificationMail.address}"
+                mail_reply_to_address = "${notificationMail.address}"
+                mail_relay = "smtp://${notificationMail.host}:587"
+                mail_username = "${notificationMail.address}"
+                mail_password = "${config.sops.placeholder.notification-mail-pw}"
+              '';
+              restartUnits = [ "${mailSenderUnit}.service" ];
             };
-            kanidm-self-signed-crt = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = certsSopsFile;
-            };
-            kanidm-self-signed-key = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = certsSopsFile;
-            };
-            # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           };
           users = {
             users.${serviceUser} = {
@@ -34527,6 +34617,22 @@ kanidm person credential create-reset-token <user>
             };
           };
           systemd.services = {
+            ${mailSenderUnit} = {
+              after = [
+                "${serviceName}.service"
+                "network-online.target"
+              ];
+              description = "Deliver queued Kanidm messages via SMTP";
+              serviceConfig = {
+                DynamicUser = true;
+                ExecStart = "${lib.getExe' config.services.kanidm.package "kanidm-mail-sender"} -m \${CREDENTIALS_DIRECTORY}/config";
+                LoadCredential = "config:${config.sops.templates."${mailSenderUnit}.toml".path}";
+                Restart = "on-failure";
+                RestartSec = "30";
+              };
+              wantedBy = [ "multi-user.target" ];
+              wants = [ "network-online.target" ];
+            };
             "generateSSLCert-${serviceName}" =
               let
                 daysValid = 3650;
@@ -35006,6 +35112,7 @@ My expenses tracker.
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -35045,11 +35152,19 @@ My expenses tracker.
               path = "/health";
             };
           };
-          sops.secrets.firefly-iii-app-key = {
-            inherit sopsFile;
-            group = if cfg.enableNginx then nginxGroup else serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
+          sops.secrets = {
+            firefly-iii-app-key = {
+              inherit sopsFile;
+              group = if cfg.enableNginx then nginxGroup else serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            };
+            notification-mail-pw = {
+              inherit (notificationMail) sopsFile;
+              group = if cfg.enableNginx then nginxGroup else serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            };
           };
           users = {
             users.${serviceUser} = {
@@ -35071,6 +35186,12 @@ My expenses tracker.
                 APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
                 APP_URL = "https://${serviceDomain}";
                 DB_CONNECTION = "sqlite";
+                MAIL_FROM = notificationMail.address;
+                MAIL_HOST = notificationMail.host;
+                MAIL_MAILER = "smtp";
+                MAIL_PASSWORD_FILE = config.sops.secrets.notification-mail-pw.path;
+                MAIL_PORT = 587;
+                MAIL_USERNAME = notificationMail.address;
                 TRUSTED_PROXIES = "**";
                 TZ = config.repo.secrets.common.location.timezone;
                 # turning these on breaks api access using the waterfly app
@@ -36313,6 +36434,7 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -36351,10 +36473,12 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
           sops = {
             secrets = {
               kanidm-readeck.sopsFile = kanidmSopsFile;
+              notification-mail-pw.sopsFile = notificationMail.sopsFile;
               readeck-secret-key = { inherit sopsFile; };
             };
             templates.readeck-env.content = ''
               READECK_AUTH_OIDC_PROVIDERS_0_CLIENT_SECRET=${config.sops.placeholder.kanidm-readeck}
+              READECK_MAIL_PASSWORD=${config.sops.placeholder.notification-mail-pw}
               READECK_SECRET_KEY=${config.sops.placeholder.readeck-secret-key}
             '';
           };
@@ -36381,6 +36505,14 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
                   url = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
                 }
               ];
+              email = {
+                inherit (notificationMail) host;
+                encryption = "starttls";
+                from = "Readeck <${notificationMail.address}>";
+                from_noreply = "Readeck <${notificationMail.address}>";
+                port = 587;
+                username = notificationMail.address;
+              };
               main = {
                 data_directory = "/var/lib/${serviceName}/data";
                 log_format = "text";
@@ -37393,6 +37525,7 @@ Self-hosted location history tracker. After my father paid for one month of subs
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -37432,7 +37565,10 @@ Self-hosted location history tracker. After my father paid for one month of subs
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops = {
-            secrets.kanidm-dawarich.sopsFile = kanidmSopsFile;
+            secrets = {
+              kanidm-dawarich.sopsFile = kanidmSopsFile;
+              notification-mail-pw.sopsFile = notificationMail.sopsFile;
+            };
             templates.dawarich-oidc-env.content = ''
               OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-dawarich}
             '';
@@ -37451,9 +37587,17 @@ Self-hosted location history tracker. After my father paid for one month of subs
               OIDC_PKCE_ENABLED = "true";
               OIDC_PROVIDER_NAME = "Kanidm";
               OIDC_REDIRECT_URI = "https://${serviceDomain}/users/auth/openid_connect/callback";
+              SMTP_DOMAIN = globals.domains.main;
             };
             extraEnvFiles = [ config.sops.templates.dawarich-oidc-env.path ];
             localDomain = serviceDomain;
+            smtp = {
+              inherit (notificationMail) host;
+              fromAddress = "Dawarich <${notificationMail.address}>";
+              passwordFile = config.sops.secrets.notification-mail-pw.path;
+              port = 587;
+              user = notificationMail.address;
+            };
             webPort = servicePort;
           };
           environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -39949,6 +40093,7 @@ Sometimes the GUI login fails:
           isProxied
           monitoringServer
           nginxAccessRules
+          notificationMail
           webProxy
           webProxyIf
           ;
@@ -40116,13 +40261,13 @@ Sometimes the GUI login fails:
               inherit sopsFile;
               mode = "0400";
             };
-            firezone-smtp-password = {
-              inherit sopsFile;
-              mode = "0440";
-            };
             kanidm-firezone = {
               mode = "0400";
               sopsFile = kanidmSopsFile;
+            };
+            notification-mail-pw = {
+              inherit (notificationMail) sopsFile;
+              mode = "0440";
             };
           };
           services.firezone = {
@@ -40238,9 +40383,9 @@ Sometimes the GUI login fails:
               };
               smtp = {
                 inherit (config.repo.secrets.local.firezone.mail) from username;
-                host = globals.services.mailserver.domain;
+                inherit (notificationMail) host;
                 implicitTls = true;
-                passwordFile = config.sops.secrets.firezone-smtp-password.path;
+                passwordFile = config.sops.secrets.notification-mail-pw.path;
                 port = 465;
               };
               web = {
@@ -42713,6 +42858,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           idmServer
           isHome
           nginxAccessRules
+          notificationMail
           webProxy
           ;
 
@@ -42744,17 +42890,21 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops = {
-            secrets.kanidm-mealie = {
-              mode = "0400";
-              sopsFile = kanidmSopsFile;
+            secrets = {
+              kanidm-mealie = {
+                mode = "0400";
+                sopsFile = kanidmSopsFile;
+              };
+              notification-mail-pw.sopsFile = notificationMail.sopsFile;
             };
-            templates.mealie-oidc-env.content = ''
+            templates.mealie-env.content = ''
               OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-mealie}
+              SMTP_PASSWORD=${config.sops.placeholder.notification-mail-pw}
             '';
           };
           services.${serviceName} = {
             enable = true;
-            credentialsFile = config.sops.templates.mealie-oidc-env.path;
+            credentialsFile = config.sops.templates.mealie-env.path;
             settings = {
               ALLOW_SIGNUP = "false";
               BASE_URL = "https://${serviceDomain}";
@@ -42767,6 +42917,12 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               OIDC_PROVIDER_NAME = "Kanidm";
               OIDC_SIGNUP_ENABLED = "true";
               OIDC_USER_GROUP = "${serviceName}.access@${kanidmDomain}";
+              SMTP_AUTH_STRATEGY = "TLS";
+              SMTP_FROM_EMAIL = notificationMail.address;
+              SMTP_FROM_NAME = "Mealie";
+              SMTP_HOST = notificationMail.host;
+              SMTP_PORT = "587";
+              SMTP_USER = notificationMail.address;
               TZ = config.repo.secrets.common.location.timezone;
             };
           };
@@ -49962,6 +50118,23 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     {
       path_regex = "secrets/general/invidious-companion.yaml$"
       age_keys   = ["moonside", "summers-utility"]
+    },
+    {
+      path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
+      age_keys = [
+        "moonside",
+        "twothreetunnel",
+        "summers-dawarich",
+        "summers-firefly",
+        "summers-forgejo",
+        "summers-immich",
+        "summers-kanidm",
+        "summers-matrix",
+        "summers-mealie",
+        "summers-monitoring",
+        "summers-nextcloud",
+        "summers-paperless",
+      ]
     },
     {
       path_regex = "secrets/nginx/acme.json"

@@ -27,6 +27,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -58,17 +59,21 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets.kanidm-mealie = {
-            mode = "0400";
-            sopsFile = kanidmSopsFile;
+          secrets = {
+            kanidm-mealie = {
+              mode = "0400";
+              sopsFile = kanidmSopsFile;
+            };
+            notification-mail-pw.sopsFile = notificationMail.sopsFile;
           };
-          templates.mealie-oidc-env.content = ''
+          templates.mealie-env.content = ''
             OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-mealie}
+            SMTP_PASSWORD=${config.sops.placeholder.notification-mail-pw}
           '';
         };
         services.${serviceName} = {
           enable = true;
-          credentialsFile = config.sops.templates.mealie-oidc-env.path;
+          credentialsFile = config.sops.templates.mealie-env.path;
           settings = {
             ALLOW_SIGNUP = "false";
             BASE_URL = "https://${serviceDomain}";
@@ -81,6 +86,12 @@
             OIDC_PROVIDER_NAME = "Kanidm";
             OIDC_SIGNUP_ENABLED = "true";
             OIDC_USER_GROUP = "${serviceName}.access@${kanidmDomain}";
+            SMTP_AUTH_STRATEGY = "TLS";
+            SMTP_FROM_EMAIL = notificationMail.address;
+            SMTP_FROM_NAME = "Mealie";
+            SMTP_HOST = notificationMail.host;
+            SMTP_PORT = "587";
+            SMTP_USER = notificationMail.address;
             TZ = config.repo.secrets.common.location.timezone;
           };
         };

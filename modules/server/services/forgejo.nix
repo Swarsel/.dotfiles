@@ -30,6 +30,7 @@
         idmServer
         isHome
         nginxAccessRules
+        notificationMail
         webProxy
         ;
 
@@ -67,11 +68,14 @@
             ];
           };
         };
-        sops.secrets.kanidm-forgejo = {
-          group = serviceGroup;
-          mode = "0440";
-          owner = serviceUser;
-          sopsFile = kanidmSopsFile;
+        sops.secrets = {
+          kanidm-forgejo = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = kanidmSopsFile;
+          };
+          notification-mail-pw.sopsFile = notificationMail.sopsFile;
         };
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         users = {
@@ -86,11 +90,20 @@
           enable = true;
           group = serviceGroup;
           lfs.enable = lib.mkDefault true;
+          secrets.mailer.PASSWD = config.sops.secrets.notification-mail-pw.path;
           settings = {
             DEFAULT.APP_NAME = "~SwaGit~";
             federation = {
               ENABLED = true;
               SHARE_USER_STATISTICS = false;
+            };
+            mailer = {
+              ENABLED = true;
+              FROM = "Forgejo <${notificationMail.address}>";
+              PROTOCOL = "smtp+starttls";
+              SMTP_ADDR = notificationMail.host;
+              SMTP_PORT = 587;
+              USER = notificationMail.address;
             };
             oauth2_client = {
               # Never use auto account linking with this, otherwise users cannot change
@@ -123,6 +136,7 @@
               ALLOW_ONLY_EXTERNAL_REGISTRATION = true;
               ALLOW_ONLY_INTERNAL_REGISTRATION = false;
               DISABLE_REGISTRATION = false;
+              ENABLE_NOTIFY_MAIL = true;
               SHOW_REGISTRATION_BUTTON = false;
             };
             session.COOKIE_SECURE = true;
