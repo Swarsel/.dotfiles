@@ -8938,6 +8938,7 @@ This host acts as my main HTTP proxy for external access.
         "belchsfactory"
         "eagleland"
         "hintbooth-adguardhome"
+        "hintbooth-nginx"
       ];
       netConfigPrefix = config.node.name;
       server = config.node.name;
@@ -26463,6 +26464,7 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
             defaults = {
               inherit dnsProvider;
               dnsPropagationCheck = true;
+              dnsResolver = "1.1.1.1:53";
               email = dnsMail;
               environmentFile = "${config.sops.templates."certs.secret".path}";
               keyType = "ec384";

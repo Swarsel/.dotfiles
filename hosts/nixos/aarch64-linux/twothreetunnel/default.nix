@@ -71,6 +71,7 @@
       "belchsfactory"
       "eagleland"
       "hintbooth-adguardhome"
+      "hintbooth-nginx"
     ];
     netConfigPrefix = config.node.name;
     server = config.node.name;

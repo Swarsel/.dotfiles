@@ -72,6 +72,7 @@
           defaults = {
             inherit dnsProvider;
             dnsPropagationCheck = true;
+            dnsResolver = "1.1.1.1:53";
             email = dnsMail;
             environmentFile = "${config.sops.templates."certs.secret".path}";
             keyType = "ec384";
