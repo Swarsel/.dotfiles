@@ -37,6 +37,7 @@ in
     self.modules.nixos.firefox-syncserver
     self.modules.nixos.copyparty
     self.modules.nixos.shopservatory
+    self.modules.nixos.readeck
   ];
   swarselsystems = {
     flakePath = "/root/.dotfiles";
