@@ -50,6 +50,7 @@
       "summers-ankisync"
       "summers-atuin"
       "summers-audio"
+      "summers-dawarich"
       "summers-firefly"
       "summers-forgejo"
       "summers-freshrss"

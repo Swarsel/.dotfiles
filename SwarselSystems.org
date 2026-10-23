@@ -416,6 +416,7 @@ This is a comprehensive list of the services/components ran by my server machine
   | 🕸️ **Nix Binary Cache**      | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/attic.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
   | 🗃️ **Shell History**         | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/atuin.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
   | 🗨️ **Messaging**             | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/matrix.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+  | 🗺️ **Location History**      | [Dawarich](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/dawarich.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
   | 🚇 **VPN Access**            | [Firezone](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/firezone.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
   | 🛎️ **DHCP**                  | [Kea](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/kea.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
   | 🛡️ **Local DNS Resolver**    | [AdGuard Home](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/adguardhome.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -6212,6 +6213,7 @@ This is my current main server at home; all services except filesystem backups r
         eternorPaths = [ "Music" ];
         withZfs = true;
       }
+      // confLib.mkMicrovm "dawarich" { withZfs = true; }
       // confLib.mkMicrovm "firefly" { withZfs = true; }
       // confLib.mkMicrovm "forgejo" { withZfs = true; }
       // confLib.mkMicrovm "freshrss" { withZfs = true; }
@@ -7199,6 +7201,41 @@ This is my current main server at home; all services except filesystem backups r
   }
 #+end_src
 
+****** Dawarich
+:PROPERTIES:
+:CUSTOM_ID: h:e1e565ea-6608-4501-b59c-f16f7fb07f10
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/dawarich/default.nix
+  {
+    self,
+    lib,
+    minimal,
+    ...
+  }:
+  {
+    imports = [
+      self.modules.nixos.profile-microvm
+      self.modules.nixos.dawarich
+    ];
+
+    swarselsystems = {
+      isImpermanence = true;
+      isMicroVM = true;
+      proxyHost = "twothreetunnel";
+    };
+
+  }
+  // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 3;
+      vcpu = 2;
+    };
+
+  }
+#+end_src
+
 **** Hintbooth (Router: HUNSN RM02)
 :PROPERTIES:
 :CUSTOM_ID: h:58c7563e-6954-42e6-a622-9d06523e8e24
@@ -7288,6 +7325,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
         "summers-ankisync"
         "summers-atuin"
         "summers-audio"
+        "summers-dawarich"
         "summers-firefly"
         "summers-forgejo"
         "summers-freshrss"
@@ -8837,6 +8875,7 @@ This host acts as my main HTTP proxy for external access.
         "summers-ankisync"
         "summers-atuin"
         "summers-audio"
+        "summers-dawarich"
         "summers-firefly"
         "summers-forgejo"
         "summers-freshrss"
@@ -37210,6 +37249,165 @@ To make the waters even friendlier, I run this behind its own PIA namespace, of 
               proxyWebsockets = true;
             };
           };
+        };
+      }
+
+    ;
+  }
+#+end_src
+
+**** Dawarich
+:PROPERTIES:
+:CUSTOM_ID: h:94719e52-298a-4051-ac18-8033dc91ef05
+:END:
+
+Self-hosted location history tracker. After my father paid for one month of subscription to a service called Li****0, I felt compelled to do this on my own to avoid such expenditures in the future ;0
+
+#+begin_src nix-ts :tangle modules/server/services/dawarich.nix
+  {
+    flake.modules.nixos.dawarich =
+      {
+        self,
+        root,
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/dawarich";
+            name = "dawarich";
+            port = 3000;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDir
+          serviceDomain
+          serviceGroup
+          serviceName
+          servicePort
+          serviceUser
+          ;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          idmServer
+          isHome
+          nginxAccessRules
+          webProxy
+          ;
+
+        kanidmDomain = globals.services.kanidm.domain;
+        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
+      in
+      {
+        imports = [
+          self.modules.nixos.postgresql
+        ];
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
+            info = "https://${serviceDomain}";
+            name = serviceName;
+          };
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              expectedBodyRegex = ''"status":\s*"ok"'';
+              hostHeader = serviceDomain;
+              path = "/api/v1/health";
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          sops = {
+            secrets.kanidm-dawarich.sopsFile = kanidmSopsFile;
+            templates.dawarich-oidc-env.content = ''
+              OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-dawarich}
+            '';
+          };
+          users.persistentIds = {
+            ${serviceName} = confLib.mkIds 936;
+            "redis-${serviceName}" = confLib.mkIds 934;
+          };
+          services.${serviceName} = {
+            enable = true;
+            configureNginx = false;
+            environment = {
+              ALLOW_EMAIL_PASSWORD_REGISTRATION = "false";
+              OIDC_CLIENT_ID = serviceName;
+              OIDC_ISSUER = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+              OIDC_PKCE_ENABLED = "true";
+              OIDC_PROVIDER_NAME = "Kanidm";
+              OIDC_REDIRECT_URI = "https://${serviceDomain}/users/auth/openid_connect/callback";
+            };
+            extraEnvFiles = [ config.sops.templates.dawarich-oidc-env.path ];
+            localDomain = serviceDomain;
+            webPort = servicePort;
+          };
+          environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+            directories = [
+              {
+                directory = serviceDir;
+                group = serviceGroup;
+                mode = "0750";
+                user = serviceUser;
+              }
+              {
+                directory = "/var/lib/redis-${serviceName}";
+                group = "redis-${serviceName}";
+                user = "redis-${serviceName}";
+              }
+            ];
+          };
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOidcSystem {
+                inherit kanidmSopsFile serviceDomain serviceName;
+                originUrl = "https://${serviceDomain}/users/auth/openid_connect/callback";
+              };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  servicePort
+                  ;
+                maxBody = 0;
+                proxyWebsockets = true;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit serviceDomain serviceName servicePort;
+                  extraConfig = nginxAccessRules;
+                  maxBody = 0;
+                  proxyWebsockets = true;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
+
         };
       }
 

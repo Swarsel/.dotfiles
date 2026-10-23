@@ -100,6 +100,7 @@
       eternorPaths = [ "Music" ];
       withZfs = true;
     }
+    // confLib.mkMicrovm "dawarich" { withZfs = true; }
     // confLib.mkMicrovm "firefly" { withZfs = true; }
     // confLib.mkMicrovm "forgejo" { withZfs = true; }
     // confLib.mkMicrovm "freshrss" { withZfs = true; }
