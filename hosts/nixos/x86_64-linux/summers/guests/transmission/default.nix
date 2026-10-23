@@ -22,7 +22,7 @@
 
   microvm = {
     mem = 1024 * 6;
-    vcpu = 6;
+    vcpu = 4;
   };
 
 }

@@ -67,6 +67,7 @@
       "summers-paperless"
       "summers-radicale"
       "summers-storage"
+      "summers-utility"
       "belchsfactory"
       "eagleland"
       "hintbooth-adguardhome"

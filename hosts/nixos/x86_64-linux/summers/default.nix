@@ -148,6 +148,7 @@
       ];
       withZfs = true;
     }
+    // confLib.mkMicrovm "utility" { withZfs = true; }
   );
 
   networking.nftables.firewall.zones.untrusted.interfaces = [

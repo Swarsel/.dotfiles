@@ -93,6 +93,7 @@
       "summers-radicale"
       "summers-storage"
       "summers-transmission"
+      "summers-utility"
       "winters"
     ];
     netConfigPrefix = "home";

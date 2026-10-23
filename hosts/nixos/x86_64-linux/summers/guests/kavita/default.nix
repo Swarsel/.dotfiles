@@ -21,7 +21,7 @@
 // lib.optionalAttrs (!minimal) {
 
   microvm = {
-    mem = 1024 * 1;
+    mem = 1024 * 3;
     vcpu = 2;
 
   };

@@ -6261,6 +6261,7 @@ This is my current main server at home; all services except filesystem backups r
         ];
         withZfs = true;
       }
+      // confLib.mkMicrovm "utility" { withZfs = true; }
     );
 
     networking.nftables.firewall.zones.untrusted.interfaces = [
@@ -6488,7 +6489,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 1;
+      mem = 1024 * 3;
       vcpu = 2;
 
     };
@@ -6576,7 +6577,7 @@ This is my current main server at home; all services except filesystem backups r
           path = "0000:04:04.0";
         }
       ];
-      mem = 1024 * 4;
+      mem = 1024 * 3;
       qemu.machine = "q35";
       vcpu = 2;
     };
@@ -6623,7 +6624,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 6;
+      mem = 1024 * 3;
       vcpu = 2;
     };
 
@@ -6693,8 +6694,8 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 16;
-      vcpu = 14;
+      mem = 1024 * 10;
+      vcpu = 8;
     };
 
   }
@@ -6728,7 +6729,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 8;
+      mem = 1024 * 5;
       vcpu = 4;
     };
 
@@ -6765,7 +6766,7 @@ This is my current main server at home; all services except filesystem backups r
 
     microvm = {
       mem = 1024 * 6;
-      vcpu = 6;
+      vcpu = 4;
     };
 
   }
@@ -6801,7 +6802,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 4;
+      mem = 1024 * 2 - 1;
       vcpu = 2;
     };
 
@@ -6842,8 +6843,8 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 24;
-      vcpu = 8;
+      mem = 1024 * 8;
+      vcpu = 4;
     };
 
   }
@@ -6877,7 +6878,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 3;
+      mem = 1024 * 2 - 1;
       vcpu = 1;
     };
 
@@ -6912,7 +6913,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 4;
+      mem = 1024 * 2 - 1;
       vcpu = 2;
     };
 
@@ -6947,7 +6948,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 3;
+      mem = 1024 * 2 - 1;
       vcpu = 1;
     };
 
@@ -7087,7 +7088,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 1;
+      mem = 1024 * 2 - 1;
       vcpu = 1;
     };
 
@@ -7110,8 +7111,6 @@ This is my current main server at home; all services except filesystem backups r
     imports = [
       self.modules.nixos.profile-microvm
       self.modules.nixos.ankisync
-      self.modules.nixos.invidious-companion
-      self.modules.nixos.socks-proxy
     ];
 
     swarselsystems = {
@@ -7194,7 +7193,7 @@ This is my current main server at home; all services except filesystem backups r
   // lib.optionalAttrs (!minimal) {
 
     microvm = {
-      mem = 1024 * 1;
+      mem = 1024 * 2 - 1;
       vcpu = 1;
     };
 
@@ -7230,6 +7229,44 @@ This is my current main server at home; all services except filesystem backups r
 
     microvm = {
       mem = 1024 * 3;
+      vcpu = 2;
+    };
+
+  }
+#+end_src
+
+****** Utility
+:PROPERTIES:
+:CUSTOM_ID: h:79057b32-64b0-46ee-9fa0-db4fe334e692
+:END:
+
+Small helper services that other hosts consume: the invidious companion for the main [[#h:2422b3e0-3cf5-44c9-af60-b9d9b511112a][Invidious]] and the SOCKS proxy that lets various services egress through the home connection.
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/utility/default.nix
+  {
+    self,
+    lib,
+    minimal,
+    ...
+  }:
+  {
+    imports = [
+      self.modules.nixos.profile-microvm
+      self.modules.nixos.invidious-companion
+      self.modules.nixos.socks-proxy
+    ];
+
+    swarselsystems = {
+      isImpermanence = true;
+      isMicroVM = true;
+      proxyHost = "twothreetunnel";
+    };
+
+  }
+  // lib.optionalAttrs (!minimal) {
+
+    microvm = {
+      mem = 1024 * 1;
       vcpu = 2;
     };
 
@@ -7343,6 +7380,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
         "summers-radicale"
         "summers-storage"
         "summers-transmission"
+        "summers-utility"
         "winters"
       ];
       netConfigPrefix = "home";
@@ -8892,6 +8930,7 @@ This host acts as my main HTTP proxy for external access.
         "summers-paperless"
         "summers-radicale"
         "summers-storage"
+        "summers-utility"
         "belchsfactory"
         "eagleland"
         "hintbooth-adguardhome"
