@@ -11,6 +11,7 @@
     self.modules.nixos.navidrome
     self.modules.nixos.spotifyd
     self.modules.nixos.mpd
+    self.modules.nixos.yubal
   ];
 
   swarselsystems = {
