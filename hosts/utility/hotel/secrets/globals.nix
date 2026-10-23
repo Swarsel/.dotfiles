@@ -9,7 +9,9 @@
       attic.domain = "attic.example.org";
       atuin.domain = "atuin.example.org";
       buildbot.domain = "buildbot.example.org";
+      collabora-online.domain = "collabora-online.example.org";
       copyparty.domain = "copyparty.example.org";
+      filestash.domain = "filestash.example.org";
       firefly-iii.domain = "firefly.example.org";
       firefox-syncserver.domain = "firefox-sync.example.org";
       forgejo.domain = "forgejo.example.org";
@@ -28,6 +30,7 @@
       navidrome.domain = "navidrome.example.org";
       nextcloud.domain = "nextcloud.example.org";
       paperless.domain = "paperless.example.org";
+      readeck.domain = "readeck.example.org";
       searx.domain = "searx.example.org";
       shlink.domain = "shlink.example.org";
       shopservatory.domain = "shopservatory.example.org";
@@ -36,6 +39,7 @@
       syncthing-shim.extraConfig.devices = { };
       syncthing-summers-storage.domain = "syncthing-summers-storage.example.org";
       transmission.domain = "transmission.example.org";
+      yubal.domain = "yubal.example.org";
     };
     general = {
       homeProxy = "shim";

@@ -21,6 +21,7 @@ keys:
     - &summers-ankisync age1kyue7mfvzuxprjz2g6ulz2mxlr57rgzg6lfpnrqedkelehley5ls3enwsd
     - &summers-atuin age1qpgj3ell93rzkpjq0ezs6t669ds3nyxx67pj50smx597pspz6fqs4jc6pt
     - &summers-audio age1f63r2klnpfxmntswz5xydpa75ckgjqcs2yzkm0msqwqgz9aqgu0qwzr659
+    - &summers-dawarich age1ue04t2d29t0awmv6rja9nu5n5e2ry7t6r9jmu068y50dz5zk44xspesevy
     - &summers-firefly age17328xwk0z3znalpmma5rvp0lt5ghn5p8xfvnrtdxwsw80dqysacqj9j37q
     - &summers-forgejo age1qdzkn6v3xhrfjwe8jxz3945dhyyhevwal0narjtr8whf9y7nh3wsn524u5
     - &summers-freshrss age1etgfym5m8hn3hxs6cgg757zcv5zg5n22wq38fuq59n7qk7nef5uqyg6vvs
@@ -38,6 +39,7 @@ keys:
     - &summers-radicale age1gxg2peektn8x36kk3nsgmeawl73e54kaadqd649ygwrv43kkvejq2cw64z
     - &summers-storage age1kn34ny229gm0rg7wlcvxmcyjtz4gka6f2vd958fde6vmuzrxcvcsufra90
     - &summers-transmission age1y69f2elvmq39lc3t3ucq9y7wt675520n7rvug88qg368qsmmk47qvwrtny
+    - &summers-utility age13gu8hndaqxtxwzm0ede5lt0hcrspvl2dfehffk3qtchky24qmy2s2qscjw
     - &buildbot age15dewhja45kljg3ehd6anzwlxmavaf8wpqqj0gf6u859kd5v70ves6zkxr7
 
 creation_rules:
@@ -63,6 +65,7 @@ creation_rules:
       - *summers-ankisync
       - *summers-atuin
       - *summers-audio
+      - *summers-dawarich
       - *summers-firefly
       - *summers-forgejo
       - *summers-freshrss
@@ -80,6 +83,7 @@ creation_rules:
       - *summers-radicale
       - *summers-storage
       - *summers-transmission
+      - *summers-utility
   - path_regex: secrets/repo/[^/]+\.enc$
     key_groups:
     - pgp:
@@ -103,6 +107,7 @@ creation_rules:
       - *summers-ankisync
       - *summers-atuin
       - *summers-audio
+      - *summers-dawarich
       - *summers-firefly
       - *summers-forgejo
       - *summers-freshrss
@@ -120,6 +125,7 @@ creation_rules:
       - *summers-radicale
       - *summers-storage
       - *summers-transmission
+      - *summers-utility
   - path_regex: secrets/work/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -141,7 +147,7 @@ creation_rules:
       - *swarsel
       age:
       - *moonside
-      - *summers-ankisync
+      - *summers-utility
   - path_regex: secrets/nginx/acme.json
     key_groups:
     - pgp:
@@ -152,6 +158,13 @@ creation_rules:
       - *eagleland
       - *hintbooth-nginx
       - *belchsfactory
+  - path_regex: secrets/kanidm/summers-dawarich.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers-kanidm
+      - *summers-dawarich
   - path_regex: secrets/kanidm/summers-forgejo.yaml
     key_groups:
     - pgp:
@@ -501,6 +514,21 @@ creation_rules:
       - *summers
       - *summers-audio
       - *buildbot
+  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/dawarich/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers
+      - *summers-dawarich
+  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/dawarich/[^/]+\.enc$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers
+      - *summers-dawarich
+      - *buildbot
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/firefly/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -756,6 +784,21 @@ creation_rules:
       - *summers
       - *summers-transmission
       - *buildbot
+  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/utility/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers
+      - *summers-utility
+  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/utility/[^/]+\.enc$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *summers
+      - *summers-utility
+      - *buildbot
   - path_regex: secrets/wireguard/hintbooth-hintbooth-adguardhome.yaml$
     key_groups:
     - pgp:
@@ -793,6 +836,14 @@ creation_rules:
       age:
       - *hintbooth
       - *summers-audio
+      - *summers
+  - path_regex: secrets/wireguard/hintbooth-summers-dawarich.yaml$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *hintbooth
+      - *summers-dawarich
       - *summers
   - path_regex: secrets/wireguard/hintbooth-summers-firefly.yaml$
     key_groups:
@@ -930,6 +981,14 @@ creation_rules:
       - *hintbooth
       - *summers-transmission
       - *summers
+  - path_regex: secrets/wireguard/hintbooth-summers-utility.yaml$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *hintbooth
+      - *summers-utility
+      - *summers
   - path_regex: secrets/wireguard/hintbooth-summers.yaml$
     key_groups:
     - pgp:
@@ -1011,6 +1070,14 @@ creation_rules:
       age:
       - *twothreetunnel
       - *summers-audio
+      - *summers
+  - path_regex: secrets/wireguard/twothreetunnel-summers-dawarich.yaml$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *twothreetunnel
+      - *summers-dawarich
       - *summers
   - path_regex: secrets/wireguard/twothreetunnel-summers-firefly.yaml$
     key_groups:
@@ -1147,6 +1214,14 @@ creation_rules:
       age:
       - *twothreetunnel
       - *summers-transmission
+      - *summers
+  - path_regex: secrets/wireguard/twothreetunnel-summers-utility.yaml$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *twothreetunnel
+      - *summers-utility
       - *summers
   - path_regex: secrets/wireguard/twothreetunnel-summers.yaml$
     key_groups:

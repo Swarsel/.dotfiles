@@ -25,6 +25,7 @@ guests = {
   hintbooth-nginx       = "age1nanlervuderw4qskcuessycqy2yfmptl6nym9scgp9ky2265ssmq3u73r0"
   summers-ankisync      = "age1kyue7mfvzuxprjz2g6ulz2mxlr57rgzg6lfpnrqedkelehley5ls3enwsd"
   summers-atuin         = "age1qpgj3ell93rzkpjq0ezs6t669ds3nyxx67pj50smx597pspz6fqs4jc6pt"
+  summers-dawarich      = "age1ue04t2d29t0awmv6rja9nu5n5e2ry7t6r9jmu068y50dz5zk44xspesevy"
   summers-audio         = "age1f63r2klnpfxmntswz5xydpa75ckgjqcs2yzkm0msqwqgz9aqgu0qwzr659"
   summers-firefly       = "age17328xwk0z3znalpmma5rvp0lt5ghn5p8xfvnrtdxwsw80dqysacqj9j37q"
   summers-forgejo       = "age1qdzkn6v3xhrfjwe8jxz3945dhyyhevwal0narjtr8whf9y7nh3wsn524u5"
@@ -43,9 +44,11 @@ guests = {
   summers-radicale      = "age1gxg2peektn8x36kk3nsgmeawl73e54kaadqd649ygwrv43kkvejq2cw64z"
   summers-storage       = "age1kn34ny229gm0rg7wlcvxmcyjtz4gka6f2vd958fde6vmuzrxcvcsufra90"
   summers-transmission  = "age1y69f2elvmq39lc3t3ucq9y7wt675520n7rvug88qg368qsmmk47qvwrtny"
+  summers-utility       = "age13gu8hndaqxtxwzm0ede5lt0hcrspvl2dfehffk3qtchky24qmy2s2qscjw"
 }
 
 kanidm_clients = [
+  "summers-dawarich",
   "summers-forgejo",
   "summers-freshrss",
   "summers-homebox",
@@ -73,7 +76,7 @@ extra_rules = [
   },
   {
     path_regex = "secrets/general/invidious-companion.yaml$"
-    age_keys   = ["moonside", "summers-ankisync"]
+    age_keys   = ["moonside", "summers-utility"]
   },
   {
     path_regex = "secrets/nginx/acme.json"
@@ -114,6 +117,7 @@ host_configs = {
       "ankisync",
       "atuin",
       "audio",
+      "dawarich",
       "firefly",
       "forgejo",
       "freshrss",
@@ -131,6 +135,7 @@ host_configs = {
       "radicale",
       "storage",
       "transmission",
+      "utility",
     ]
   }
   hintbooth = {
@@ -187,6 +192,7 @@ wireguard_networks = {
       "summers-ankisync",
       "summers-atuin",
       "summers-audio",
+      "summers-dawarich",
       "summers-firefly",
       "summers-forgejo",
       "summers-freshrss",
@@ -204,6 +210,7 @@ wireguard_networks = {
       "summers-radicale",
       "summers-storage",
       "summers-transmission",
+      "summers-utility",
       "summers",
       "winters",
     ]
@@ -220,6 +227,7 @@ wireguard_networks = {
       "summers-ankisync",
       "summers-atuin",
       "summers-audio",
+      "summers-dawarich",
       "summers-firefly",
       "summers-forgejo",
       "summers-freshrss",
@@ -237,6 +245,7 @@ wireguard_networks = {
       "summers-radicale",
       "summers-storage",
       "summers-transmission",
+      "summers-utility",
       "summers",
       "winters",
     ]
