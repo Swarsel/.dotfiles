@@ -16,6 +16,9 @@
     self.modules.nixos.systemd-networkd-server-home
     self.modules.nixos.microvm-host
   ]
+  ++ lib.optionals minimal [
+    self.modules.nixos.server-network
+  ]
   ++ lib.optionals (!minimal) [
     self.modules.nixos.wireguard
     self.modules.nixos.profile-localserver
@@ -31,14 +34,14 @@
     isImpermanence = true;
     isLinux = true;
     isSecureBoot = true;
+    isSwap = false;
     localVLANs = map (name: "${name}") (builtins.attrNames globals.networks.home-lan.vlans);
     networkKernelModules = [ "igb" ];
     nodeRoles = [
       "homeProxy"
       "routerServer"
     ];
-    rootDisk = "/dev/sda";
-    swapSize = "8G";
+    rootDisk = "/dev/disk/by-id/ata-TS64GMSA220S_K191160084";
     withMicroVMs = true;
   };
   topology.self.interfaces = {
@@ -99,6 +102,7 @@
     netConfigPrefix = "home";
     server = config.node.name;
   };
+  zramSwap.enable = true;
 
 }
 // lib.optionalAttrs (!minimal) {
