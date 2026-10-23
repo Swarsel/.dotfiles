@@ -17,7 +17,7 @@ hosts = {
   toto           = "placeholder"
   twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
   vacanthouse    = "age1qt0aw537kymdx6eaje5447vmfp9yeskpzxgcte325p4zd0h0kcsshjsseu"
-  winters        = "age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza"
+  winters        = "age14lxzqrjgmart7e2ckl9cr9nkq4fwyrj3qx6l4gg5y0ad655dfg0sz2evqq"
 }
 
 guests = {

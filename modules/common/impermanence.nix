@@ -9,13 +9,13 @@
       inputs,
       config,
       lib,
+      utils,
       ...
     }:
     let
-      mapperTarget =
-        lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot"
-          "/dev/disk/by-label/nixos";
-      inherit (config.swarselsystems) isBtrfs isCrypted isImpermanence;
+      rootDevice = config.fileSystems."/".device;
+      rootDeviceUnit = "${utils.escapeSystemdPath rootDevice}.device";
+      inherit (config.swarselsystems) isBtrfs isImpermanence;
     in
     {
       imports = [ inputs.impermanence.nixosModules.impermanence ];
@@ -27,20 +27,17 @@
           services.rollback = {
             # make sure it's done after encryption
             # i.e. LUKS/TPM process
-            after =
-              lib.swarselsystems.mkIfElseList isCrypted
-                [ "systemd-cryptsetup@cryptroot.service" ]
-                [ "dev-disk-by\\x2dlabel-nixos.device" ];
+            after = [ rootDeviceUnit ];
             # mount the root fs before clearing
             before = [ "sysroot.mount" ];
             description = "Rollback BTRFS root subvolume to a pristine state";
-            requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
+            requires = [ rootDeviceUnit ];
             script = ''
               mkdir -p /mnt
 
               # We first mount the btrfs root to /mnt
               # so we can manipulate btrfs subvolumes.
-              mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
+              mount -o subvolid=5 -t btrfs ${rootDevice} /mnt
               btrfs subvolume list -o /mnt/root
 
               # While we're tempted to just delete /root and create

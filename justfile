@@ -49,7 +49,7 @@ sync-secrets USER HOST:
   rsync -rltv -e "ssh -l {{USER}}" /var/tmp/nix-import-encrypted/$(id -u)/ {{USER}}@{{HOST}}:/var/tmp/nix-import-encrypted/0
 
 bootstrap DEST CONFIG ARCH="x86_64-linux" NODISKODEPS="":
-  nix develop .#deploy --command zsh -c "swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
+  nix develop .#deploy --command zsh -c "SSH_AUTH_SOCK=\$(gpgconf --list-dirs agent-ssh-socket) swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
 
 updatekeys:
   find . -path ./files/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}

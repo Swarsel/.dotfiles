@@ -45,22 +45,16 @@
     withMicroVMs = true;
   };
   topology.self.interfaces = {
-    lan2.physicalConnections = [
-      {
-        interface = "lan";
-        node = "summers";
-      }
-    ];
-    lan3.physicalConnections = [
-      {
-        interface = "bmc";
-        node = "summers";
-      }
-    ];
-    lan4.physicalConnections = [
+    lan1.physicalConnections = [
       {
         interface = "eth1";
         node = "switch-bedroom";
+      }
+    ];
+    lan2.physicalConnections = [
+      {
+        interface = "eth1";
+        node = "switch-kitchen";
       }
     ];
     lan5.physicalConnections = [

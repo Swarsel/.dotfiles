@@ -3052,6 +3052,10 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     inherit (globals.networks.home-lan.vlans.home) cidrv4 cidrv6;
                     name = "VLAN: Home";
                   };
+                  iot = {
+                    inherit (globals.networks.home-lan.vlans.iot) cidrv4 cidrv6;
+                    name = "VLAN: IoT";
+                  };
                   wgHome = {
                     inherit (globals.networks.home-wgHome) cidrv4 cidrv6;
                     name = "WireGuard: Home proxy tunnel";
@@ -3074,10 +3078,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     interfaces.eth1 = { };
                   };
                   fritzbox = mkRouter "FRITZ!Box" {
-                    connections = {
-                      eth-wan = mkConnection "hintbooth" "lan";
-                      eth1 = mkConnection "winters" "eth1";
-                    };
+                    connections.eth-wan = mkConnection "hintbooth" "lan";
                     image = root "files/topology-images/FritzBox_7682.png";
                     info = "FRITZ!Box 7682";
                     interfaceGroups = [
@@ -3205,6 +3206,22 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                       eth3.network = lib.mkForce "guests";
                     };
                   };
+                  switch-kitchen = mkSwitch "Switch Kitchen" {
+                    connections = {
+                      eth2 = mkConnection "zigbee-coordinator" "eth1";
+                      eth8 = mkConnection "winters" "lan";
+                    };
+                    image = root "files/topology-images/TL-SG108E.png";
+                    info = "TL-SG108E";
+                    interfaceGroups = [
+                      [
+                        "eth1"
+                        "eth8"
+                      ]
+                      [ "eth2" ]
+                    ];
+                    interfaces.eth2.network = lib.mkForce "iot";
+                  };
                   switch-livingroom = mkSwitch "Switch Livingroom" {
                     connections = {
                       eth2 = mkConnection "nswitch" "eth1";
@@ -3267,6 +3284,10 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                       eth1 = { };
                       wifi = { };
                     };
+                  };
+                  zigbee-coordinator = mkDevice "Zigbee Coordinator" {
+                    info = "SMLIGHT SLZB-06M";
+                    interfaces.eth1 = { };
                   };
 
                 };
@@ -5993,7 +6014,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
 :CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
 :END:
 
-This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]]). Currently I use this host as a staging system for several services, and in the future this will be my IoT management system.
+This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463][Summers (Server: ASUS Z10PA-D8)]]). It is now my IoT management system and the Wi-Fi access point for the home, guest and IoT networks. Its root filesystem is a btrfs RAID1 mirrored across two encrypted disks.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -6002,52 +6023,58 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/default.nix
   {
     self,
+    inputs,
     lib,
-    globals,
     minimal,
     ...
   }:
   {
-
     imports = [
       ./hardware-configuration.nix
+      ./disk-config.nix
 
-      self.modules.nixos.systemd-networkd-server
+      inputs.nixos-hardware.nixosModules.common-cpu-intel
+
+      self.modules.nixos.systemd-networkd-server-home
       self.modules.nixos.nix-topology-self
+    ]
+    ++ lib.optionals minimal [
+      self.modules.nixos.server-network
     ]
     ++ lib.optionals (!minimal) [
       self.modules.nixos.profile-localserver
       self.modules.nixos.smartctl-exporter
     ];
+
     swarselsystems = {
       flakePath = "/root/.dotfiles";
       info = "ASRock J4105-ITX, 32GB RAM";
-      isBtrfs = false;
-      isCrypted = false;
-      isImpermanence = false;
+      initrdVLAN = "home";
+      isBtrfs = true;
+      isCrypted = true;
+      isImpermanence = true;
       isLinux = true;
-      isSecureBoot = false;
+      isSecureBoot = true;
+      isSwap = false;
+      localVLANs = [
+        "services"
+        "home"
+        "iot"
+      ];
+      networkKernelModules = [ "r8169" ];
       proxyHost = "twothreetunnel";
-
+      rootDisk = "/dev/disk/by-id/ata-Vi550_S3_SSD_493525388374974";
+      writeGlobalNetworks = false;
     };
-    topology.self.interfaces.eth1 = { };
+
+    topology.self.interfaces.lan = { };
+
     boot.loader = {
       efi.canTouchEfiVariables = true;
       systemd-boot.enable = true;
     };
-    networking.hosts = {
-      ${globals.networks.home-lan.hosts.hintbooth.ipv4} = [ "server.hintbooth.${globals.domains.main}" ];
-      ${globals.networks.home-lan.hosts.hintbooth.ipv6} = [ "server.hintbooth.${globals.domains.main}" ];
-    };
 
-  }
-  // lib.optionalAttrs (!minimal) {
-
-    networking.nftables.firewall.zones.untrusted.interfaces = [
-      "lan"
-      "enp3s0"
-    ];
-
+    hardware.enableRedistributableFirmware = true;
   }
 #+end_src
 
@@ -6062,7 +6089,6 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
     modulesPath,
     ...
   }:
-
   {
     imports = [
       (modulesPath + "/installer/scan/not-detected.nix")
@@ -6074,38 +6100,127 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
         availableKernelModules = [
           "ahci"
           "xhci_pci"
-          "usbhid"
           "usb_storage"
+          "usbhid"
           "sd_mod"
         ];
         kernelModules = [ ];
       };
       kernelModules = [ "kvm-intel" ];
-      supportedFilesystems = [ "zfs" ];
-      # zfs.extraPools = [ "Vault" ];
-    };
-
-    fileSystems = {
-      "/" = {
-        device = "/dev/disk/by-uuid/30e2f96a-b01d-4c27-9ebb-d5d7e9f0031f";
-        fsType = "ext4";
-      };
-
-      "/boot" = {
-        device = "/dev/disk/by-uuid/F0D8-8BD1";
-        fsType = "vfat";
-      };
     };
 
     hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
-    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-    # (the default) this is the recommended approach. When using systemd-networkd it's
-    # still possible to use this option, but it's recommended to use it in conjunction
-    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-    networking.useDHCP = lib.mkDefault true;
-    # networking.interfaces.enp3s0.useDHCP = lib.mkDefault true;
     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-    swapDevices = [ { device = "/dev/disk/by-uuid/a8eb6f3b-69bf-4160-90aa-9247abc108e0"; } ];
+  }
+#+end_src
+***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:42f952e3-1963-427d-b12a-adbbda14c6e5
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/disk-config.nix
+  { config, lib, ... }:
+  let
+    mkDisk =
+      {
+        content,
+        cryptName,
+        device,
+        espMountpoint,
+      }:
+      {
+        inherit device;
+        content = {
+          partitions = {
+            ESP = {
+              content = {
+                format = "vfat";
+                mountOptions = [ "defaults" ] ++ lib.optional (espMountpoint != "/boot") "nofail";
+                mountpoint = espMountpoint;
+                type = "filesystem";
+              };
+              name = "ESP";
+              priority = 1;
+              size = "512M";
+              type = "EF00";
+            };
+            luks = {
+              content = {
+                inherit content;
+                name = cryptName;
+                passwordFile = "/tmp/disko-password";
+                settings = {
+                  allowDiscards = true;
+                  crypttabExtraOpts = [
+                    "fido2-device=auto"
+                    "token-timeout=10"
+                  ];
+                };
+                type = "luks";
+              };
+              size = "100%";
+            };
+          };
+          type = "gpt";
+        };
+        type = "disk";
+      };
+    mkSubvolume = name: mountpoint: {
+      inherit mountpoint;
+      mountOptions = [
+        "subvol=${name}"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+  in
+  {
+    boot.lanzaboote.extraEfiSysMountPoints = [ "/boot-mirror" ];
+
+    disko.devices.disk = {
+      disk0 = mkDisk {
+        content = null;
+        cryptName = "cryptroot";
+        device = config.swarselsystems.rootDisk;
+        espMountpoint = "/boot";
+      };
+      disk1 = mkDisk {
+        content = {
+          extraArgs = [
+            "-L"
+            "nixos"
+            "-f"
+            "-d"
+            "raid1"
+            "-m"
+            "raid1"
+            "/dev/mapper/cryptroot"
+          ];
+          postCreateHook = ''
+            MNTPOINT=$(mktemp -d)
+            mount "/dev/mapper/cryptroot-mirror" "$MNTPOINT" -o subvolid=5
+            trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+            btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+          '';
+          subvolumes = {
+            "/home" = mkSubvolume "home" "/home";
+            "/log" = mkSubvolume "log" "/var/log";
+            "/nix" = mkSubvolume "nix" "/nix";
+            "/persist" = mkSubvolume "persist" "/persist";
+            "/root" = mkSubvolume "root" "/";
+          };
+          type = "btrfs";
+        };
+        cryptName = "cryptroot-mirror";
+        device = "/dev/disk/by-id/ata-C300-CTFDDAC064MAG_00000000104302FE494D";
+        espMountpoint = "/boot-mirror";
+      };
+    };
+
+    fileSystems = {
+      "/home".neededForBoot = true;
+      "/persist".neededForBoot = true;
+    };
   }
 #+end_src
 **** Summers (Server: ASUS Z10PA-D8)
@@ -7341,22 +7456,16 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
       withMicroVMs = true;
     };
     topology.self.interfaces = {
-      lan2.physicalConnections = [
-        {
-          interface = "lan";
-          node = "summers";
-        }
-      ];
-      lan3.physicalConnections = [
-        {
-          interface = "bmc";
-          node = "summers";
-        }
-      ];
-      lan4.physicalConnections = [
+      lan1.physicalConnections = [
         {
           interface = "eth1";
           node = "switch-bedroom";
+        }
+      ];
+      lan2.physicalConnections = [
+        {
+          interface = "eth1";
+          node = "switch-kitchen";
         }
       ];
       lan5.physicalConnections = [
@@ -9672,6 +9781,7 @@ Steps to recover using live ISO:
           enable = true;
           authorizedKeysFiles = lib.mkForce [
             "/etc/ssh/authorized_keys.d/%u"
+            "%h/.ssh/authorized_keys"
           ];
           settings.PermitRootLogin = "yes";
         };
@@ -9735,7 +9845,31 @@ Steps to recover using live ISO:
       };
       networking = {
         hostName = "drugstore";
-        networkmanager.enable = true;
+        networkmanager = {
+          enable = true;
+          ensureProfiles.profiles = lib.listToAttrs (
+            lib.genList (
+              index:
+              let
+                parent = "eth${toString index}";
+                inherit (self.outputs.globals.${pkgs.stdenv.hostPlatform.system}.networks.home-lan.vlans.home) id;
+              in
+              lib.nameValuePair "vlan-home-${parent}" {
+                connection = {
+                  autoconnect = true;
+                  id = "vlan-home-${parent}";
+                  interface-name = "${parent}.${toString id}";
+                  type = "vlan";
+                };
+                ipv4.method = "auto";
+                ipv6.method = "auto";
+                vlan = {
+                  inherit id parent;
+                };
+              }
+            ) 8
+          );
+        };
         usePredictableInterfaceNames = false;
         wireless.enable = lib.mkForce false;
       };
@@ -14134,13 +14268,13 @@ Normally, doing that also resets the lecture that happens on the first use of =s
         inputs,
         config,
         lib,
+        utils,
         ...
       }:
       let
-        mapperTarget =
-          lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot"
-            "/dev/disk/by-label/nixos";
-        inherit (config.swarselsystems) isBtrfs isCrypted isImpermanence;
+        rootDevice = config.fileSystems."/".device;
+        rootDeviceUnit = "${utils.escapeSystemdPath rootDevice}.device";
+        inherit (config.swarselsystems) isBtrfs isImpermanence;
       in
       {
         imports = [ inputs.impermanence.nixosModules.impermanence ];
@@ -14152,20 +14286,17 @@ Normally, doing that also resets the lecture that happens on the first use of =s
             services.rollback = {
               # make sure it's done after encryption
               # i.e. LUKS/TPM process
-              after =
-                lib.swarselsystems.mkIfElseList isCrypted
-                  [ "systemd-cryptsetup@cryptroot.service" ]
-                  [ "dev-disk-by\\x2dlabel-nixos.device" ];
+              after = [ rootDeviceUnit ];
               # mount the root fs before clearing
               before = [ "sysroot.mount" ];
               description = "Rollback BTRFS root subvolume to a pristine state";
-              requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
+              requires = [ rootDeviceUnit ];
               script = ''
                 mkdir -p /mnt
 
                 # We first mount the btrfs root to /mnt
                 # so we can manipulate btrfs subvolumes.
-                mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
+                mount -o subvolid=5 -t btrfs ${rootDevice} /mnt
                 btrfs subvolume list -o /mnt/root
 
                 # While we're tempted to just delete /root and create
@@ -27508,11 +27639,6 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
           "devices"
           "guests"
         ];
-        lan2VLANs = selectVLANs [
-          "home"
-          "devices"
-          "services"
-        ];
         lan3VLANs = selectVLANs [
           "home"
           "devices"
@@ -27598,6 +27724,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                     to = [
                       "vlan-services"
                       "vlan-devices"
+                      "vlan-iot"
                     ];
                     verdict = "accept";
                   };
@@ -27716,7 +27843,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 };
                 vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
               };
-              # br
+              # swBedroom
               "30-lan1" = {
                 bridgeVLANs = lan1VLANs;
                 linkConfig.RequiredForOnline = "enslaved";
@@ -27726,9 +27853,9 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                   ConfigureWithoutCarrier = true;
                 };
               };
-              # winters
+              # swKitchen
               "30-lan2" = {
-                bridgeVLANs = lan2VLANs;
+                inherit bridgeVLANs;
                 linkConfig.RequiredForOnline = "enslaved";
                 matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
                 networkConfig = {
@@ -27756,7 +27883,7 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                   ConfigureWithoutCarrier = true;
                 };
               };
-              # lr
+              # swLivingRoom
               "30-lan5" = {
                 bridgeVLANs = lan5VLANs;
                 linkConfig.RequiredForOnline = "enslaved";
@@ -50070,7 +50197,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     toto           = "placeholder"
     twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
     vacanthouse    = "age1qt0aw537kymdx6eaje5447vmfp9yeskpzxgcte325p4zd0h0kcsshjsseu"
-    winters        = "age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza"
+    winters        = "age14lxzqrjgmart7e2ckl9cr9nkq4fwyrj3qx6l4gg5y0ad655dfg0sz2evqq"
   }
 
   guests = {
@@ -52447,7 +52574,7 @@ This file defines a few workflows that I often need to run when working on my co
     rsync -rltv -e "ssh -l {{USER}}" /var/tmp/nix-import-encrypted/$(id -u)/ {{USER}}@{{HOST}}:/var/tmp/nix-import-encrypted/0
 
   bootstrap DEST CONFIG ARCH="x86_64-linux" NODISKODEPS="":
-    nix develop .#deploy --command zsh -c "swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
+    nix develop .#deploy --command zsh -c "SSH_AUTH_SOCK=\$(gpgconf --list-dirs agent-ssh-socket) swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
 
   updatekeys:
     find . -path ./files/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}

@@ -54,6 +54,7 @@ in
         enable = true;
         authorizedKeysFiles = lib.mkForce [
           "/etc/ssh/authorized_keys.d/%u"
+          "%h/.ssh/authorized_keys"
         ];
         settings.PermitRootLogin = "yes";
       };
@@ -117,7 +118,31 @@ in
     };
     networking = {
       hostName = "drugstore";
-      networkmanager.enable = true;
+      networkmanager = {
+        enable = true;
+        ensureProfiles.profiles = lib.listToAttrs (
+          lib.genList (
+            index:
+            let
+              parent = "eth${toString index}";
+              inherit (self.outputs.globals.${pkgs.stdenv.hostPlatform.system}.networks.home-lan.vlans.home) id;
+            in
+            lib.nameValuePair "vlan-home-${parent}" {
+              connection = {
+                autoconnect = true;
+                id = "vlan-home-${parent}";
+                interface-name = "${parent}.${toString id}";
+                type = "vlan";
+              };
+              ipv4.method = "auto";
+              ipv6.method = "auto";
+              vlan = {
+                inherit id parent;
+              };
+            }
+          ) 8
+        );
+      };
       usePredictableInterfaceNames = false;
       wireless.enable = lib.mkForce false;
     };

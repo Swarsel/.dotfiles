@@ -65,6 +65,10 @@
                   inherit (globals.networks.home-lan.vlans.home) cidrv4 cidrv6;
                   name = "VLAN: Home";
                 };
+                iot = {
+                  inherit (globals.networks.home-lan.vlans.iot) cidrv4 cidrv6;
+                  name = "VLAN: IoT";
+                };
                 wgHome = {
                   inherit (globals.networks.home-wgHome) cidrv4 cidrv6;
                   name = "WireGuard: Home proxy tunnel";
@@ -87,10 +91,7 @@
                   interfaces.eth1 = { };
                 };
                 fritzbox = mkRouter "FRITZ!Box" {
-                  connections = {
-                    eth-wan = mkConnection "hintbooth" "lan";
-                    eth1 = mkConnection "winters" "eth1";
-                  };
+                  connections.eth-wan = mkConnection "hintbooth" "lan";
                   image = root "files/topology-images/FritzBox_7682.png";
                   info = "FRITZ!Box 7682";
                   interfaceGroups = [
@@ -218,6 +219,22 @@
                     eth3.network = lib.mkForce "guests";
                   };
                 };
+                switch-kitchen = mkSwitch "Switch Kitchen" {
+                  connections = {
+                    eth2 = mkConnection "zigbee-coordinator" "eth1";
+                    eth8 = mkConnection "winters" "lan";
+                  };
+                  image = root "files/topology-images/TL-SG108E.png";
+                  info = "TL-SG108E";
+                  interfaceGroups = [
+                    [
+                      "eth1"
+                      "eth8"
+                    ]
+                    [ "eth2" ]
+                  ];
+                  interfaces.eth2.network = lib.mkForce "iot";
+                };
                 switch-livingroom = mkSwitch "Switch Livingroom" {
                   connections = {
                     eth2 = mkConnection "nswitch" "eth1";
@@ -280,6 +297,10 @@
                     eth1 = { };
                     wifi = { };
                   };
+                };
+                zigbee-coordinator = mkDevice "Zigbee Coordinator" {
+                  info = "SMLIGHT SLZB-06M";
+                  interfaces.eth1 = { };
                 };
 
               };

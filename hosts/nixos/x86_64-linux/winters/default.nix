@@ -1,49 +1,55 @@
 {
   self,
+  inputs,
   lib,
-  globals,
   minimal,
   ...
 }:
 {
-
   imports = [
     ./hardware-configuration.nix
+    ./disk-config.nix
 
-    self.modules.nixos.systemd-networkd-server
+    inputs.nixos-hardware.nixosModules.common-cpu-intel
+
+    self.modules.nixos.systemd-networkd-server-home
     self.modules.nixos.nix-topology-self
+  ]
+  ++ lib.optionals minimal [
+    self.modules.nixos.server-network
   ]
   ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.smartctl-exporter
   ];
+
   swarselsystems = {
     flakePath = "/root/.dotfiles";
     info = "ASRock J4105-ITX, 32GB RAM";
-    isBtrfs = false;
-    isCrypted = false;
-    isImpermanence = false;
+    initrdVLAN = "home";
+    isBtrfs = true;
+    isCrypted = true;
+    isImpermanence = true;
     isLinux = true;
-    isSecureBoot = false;
+    isSecureBoot = true;
+    isSwap = false;
+    localVLANs = [
+      "services"
+      "home"
+      "iot"
+    ];
+    networkKernelModules = [ "r8169" ];
     proxyHost = "twothreetunnel";
-
+    rootDisk = "/dev/disk/by-id/ata-Vi550_S3_SSD_493525388374974";
+    writeGlobalNetworks = false;
   };
-  topology.self.interfaces.eth1 = { };
+
+  topology.self.interfaces.lan = { };
+
   boot.loader = {
     efi.canTouchEfiVariables = true;
     systemd-boot.enable = true;
   };
-  networking.hosts = {
-    ${globals.networks.home-lan.hosts.hintbooth.ipv4} = [ "server.hintbooth.${globals.domains.main}" ];
-    ${globals.networks.home-lan.hosts.hintbooth.ipv6} = [ "server.hintbooth.${globals.domains.main}" ];
-  };
 
-}
-// lib.optionalAttrs (!minimal) {
-
-  networking.nftables.firewall.zones.untrusted.interfaces = [
-    "lan"
-    "enp3s0"
-  ];
-
+  hardware.enableRedistributableFirmware = true;
 }

@@ -17,11 +17,6 @@
         "devices"
         "guests"
       ];
-      lan2VLANs = selectVLANs [
-        "home"
-        "devices"
-        "services"
-      ];
       lan3VLANs = selectVLANs [
         "home"
         "devices"
@@ -107,6 +102,7 @@
                   to = [
                     "vlan-services"
                     "vlan-devices"
+                    "vlan-iot"
                   ];
                   verdict = "accept";
                 };
@@ -225,7 +221,7 @@
               };
               vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
             };
-            # br
+            # swBedroom
             "30-lan1" = {
               bridgeVLANs = lan1VLANs;
               linkConfig.RequiredForOnline = "enslaved";
@@ -235,9 +231,9 @@
                 ConfigureWithoutCarrier = true;
               };
             };
-            # winters
+            # swKitchen
             "30-lan2" = {
-              bridgeVLANs = lan2VLANs;
+              inherit bridgeVLANs;
               linkConfig.RequiredForOnline = "enslaved";
               matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
               networkConfig = {
@@ -265,7 +261,7 @@
                 ConfigureWithoutCarrier = true;
               };
             };
-            # lr
+            # swLivingRoom
             "30-lan5" = {
               bridgeVLANs = lan5VLANs;
               linkConfig.RequiredForOnline = "enslaved";
