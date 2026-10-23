@@ -45,7 +45,7 @@
           };
           zsh.sessionVariables.MOZ_DISABLE_RDD_SANDBOX = "1";
         };
-        home.activation.sponsorblockSettings = vars.sponsorblockActivation;
+        home.activation.extensionSyncStorage = vars.extensionSyncStorageActivation;
       };
     };
 }
