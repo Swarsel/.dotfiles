@@ -223,10 +223,13 @@
                   _vbc_ansible_env() {
                     local tmpl="ansible-2_$1"
                     local local_flake="$HOME/Documents/Work/vbc-nix/templates/$tmpl"
+                    # --profile registers the dev env as a GC root so nix-collect-garbage keeps it
+                    local profile_dir="$HOME/.local/state/nix/profiles/devshells"
+                    mkdir -p "$profile_dir"
                     if [[ -e "$local_flake/flake.nix" ]]; then
-                      nix develop "path:$local_flake" -c zsh
+                      nix develop --profile "$profile_dir/vbc-$tmpl" "path:$local_flake" -c zsh
                     else
-                      nix develop "git+ssh://git@github.com/vbc-it/vbc-nix?ref=main&dir=templates/$tmpl" -c zsh
+                      nix develop --profile "$profile_dir/vbc-$tmpl" "git+ssh://git@github.com/vbc-it/vbc-nix?ref=main&dir=templates/$tmpl" -c zsh
                     fi
                   }
                   a215() { _vbc_ansible_env 15; }
