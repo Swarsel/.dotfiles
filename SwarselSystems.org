@@ -398,7 +398,7 @@ This is a comprehensive list of the services/components ran by my server machine
   | 👁️ **Monitoring**            | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/alloy.nix) + [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/gotify.nix) |
   | 💸 **Finance**               | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefly-iii.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
   | 💾 **Backups**               | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/restic.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-  | 📁 **Filesharing**           | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/nextcloud.nix) +  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/copyparty.nix) +  [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/croc.nix)                                                                                                                                                                                                                                                                                                                                                           |
+  | 📁 **Filesharing**           | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/nextcloud.nix) +  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/copyparty.nix) +  [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/croc.nix). Also [slskd](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/slskd.nix), [transmission + friends](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/transmission.nix)                                                                                                                                                                                                                                                                                                                                                           |
   | 📄 **Documents**             | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/paperless.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
   | 📅 **CalDav/CardDav**        | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/radicale.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
   | 📖 **Books**                 | [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/kavita.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -6750,6 +6750,7 @@ This is my current main server at home; all services except filesystem backups r
 
       self.modules.nixos.profile-microvm
       self.modules.nixos.transmission
+      self.modules.nixos.slskd
     ];
 
     swarselsystems = {
@@ -30382,8 +30383,8 @@ I use this configuration for sailing.
         inherit (config.swarselsystems) sopsFile;
 
         piaNamespace = "pia";
-        piaNetnsPath = "/var/run/netns/${piaNamespace}";
         piaPortFile = "/run/pia/forwarded-port";
+        piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
 
         lidarrUser = "lidarr";
         lidarrGroup = lidarrUser;
@@ -30506,11 +30507,9 @@ I use this configuration for sailing.
               settings.server.port = lidarrPort;
               user = lidarrUser;
             };
-            pia-netns = {
-              enable = true;
+            pia-netns.tunnels.${piaNamespace} = {
               credentialsFile = config.sops.secrets.pia.path;
               dns = true;
-              namespace = piaNamespace;
               portForwarding = {
                 enable = true;
                 portFile = piaPortFile;
@@ -30628,14 +30627,14 @@ I use this configuration for sailing.
           systemd = {
             services = {
               mam-dynamic-seedbox = {
-                after = [ "pia-netns.service" ];
-                partOf = [ "pia-netns.service" ];
+                after = [ piaTunnel.unit ];
+                partOf = [ piaTunnel.unit ];
                 path = with pkgs; [
                   curl
                   iproute2
                   coreutils
                 ];
-                requires = [ "pia-netns.service" ];
+                requires = [ piaTunnel.unit ];
                 script = ''
                   COOKIES=/var/lib/mam/cookies.txt
                   install -d -m 0700 /var/lib/mam
@@ -30671,13 +30670,13 @@ I use this configuration for sailing.
                   RestartSec = "5min";
                   Type = "oneshot";
                 };
-                wantedBy = [ "pia-netns.service" ];
+                wantedBy = [ piaTunnel.unit ];
               };
               transmission = {
-                after = [ "pia-netns.service" ];
-                bindsTo = [ "pia-netns.service" ];
-                partOf = [ "pia-netns.service" ];
-                requires = [ "pia-netns.service" ];
+                after = [ piaTunnel.unit ];
+                bindsTo = [ piaTunnel.unit ];
+                partOf = [ piaTunnel.unit ];
+                requires = [ piaTunnel.unit ];
                 serviceConfig = {
                   BindPaths = [
                     "/storage/Music"
@@ -30686,7 +30685,7 @@ I use this configuration for sailing.
                     "/storage/Software"
                   ];
                   BindReadOnlyPaths = [ "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf" ];
-                  NetworkNamespacePath = piaNetnsPath;
+                  NetworkNamespacePath = piaTunnel.netnsPath;
                   TimeoutStartSec = "3600s";
                 };
               };
@@ -30905,238 +30904,268 @@ I use this configuration for sailing.
           -----END CERTIFICATE-----
         '';
 
-        piaUp = pkgs.writeShellApplication {
-          name = "pia-netns-up";
-          runtimeInputs = with pkgs; [
-            iproute2
-            wireguard-tools
-            curl
-            jq
-            coreutils
-            gnused
-            gawk
-            systemd
-          ];
-          text = ''
-            set -euo pipefail
+        mkPiaUp =
+          name: tunnel:
+          pkgs.writeShellApplication {
+            name = "pia-netns-${name}-up";
+            runtimeInputs = with pkgs; [
+              iproute2
+              wireguard-tools
+              curl
+              jq
+              coreutils
+              gnused
+              gawk
+              systemd
+            ];
+            text = ''
+              set -euo pipefail
 
-            NETNS="${cfg.namespace}"
-            WG_IFACE="wg-${cfg.namespace}"
-            STATE_DIR="/run/pia"
-            CA_CERT="${piaCaCert}"
-            REGION="${cfg.region}"
+              NETNS="${tunnel.namespace}"
+              WG_IFACE="wg-${tunnel.namespace}"
+              STATE_DIR="/run/pia"
+              CA_CERT="${piaCaCert}"
+              REGION="${tunnel.region}"
 
-            install -d -m 0700 "$STATE_DIR"
-            install -d -m 0755 "/etc/netns/$NETNS"
+              install -d -m 0700 "$STATE_DIR"
+              ${lib.optionalString tunnel.portForwarding.enable ''
+                install -d -m 0755 "$(dirname "${tunnel.portForwarding.portFile}")"
+              ''}
+              install -d -m 0755 "/etc/netns/$NETNS"
 
-            PIA_USER="$(head -n1 "${cfg.credentialsFile}")"
-            PIA_PASS="$(tail -n1 "${cfg.credentialsFile}")"
+              PIA_USER="$(head -n1 "${tunnel.credentialsFile}")"
+              PIA_PASS="$(tail -n1 "${tunnel.credentialsFile}")"
 
-            echo "Authenticating with PIA..."
-            TOKEN_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
-              --location --request POST \
-              --header "Content-Type: application/json" \
-              --data "{\"username\":\"$PIA_USER\",\"password\":\"$PIA_PASS\"}" \
-              "https://www.privateinternetaccess.com/api/client/v2/token")
-            TOKEN=$(echo "$TOKEN_RESP" | jq -er '.token')
+              echo "Authenticating with PIA..."
+              TOKEN_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
+                --location --request POST \
+                --header "Content-Type: application/json" \
+                --data "{\"username\":\"$PIA_USER\",\"password\":\"$PIA_PASS\"}" \
+                "https://www.privateinternetaccess.com/api/client/v2/token")
+              TOKEN=$(echo "$TOKEN_RESP" | jq -er '.token')
 
-            echo "Fetching region servers..."
-            REGION_DATA=$(curl -sS --connect-timeout 10 --max-time 30 \
-              "https://serverlist.piaservers.net/vpninfo/servers/v6" \
-              | head -n1 | jq -er ".regions[] | select(.id==\"$REGION\")")
+              echo "Fetching region servers..."
+              REGION_DATA=$(curl -sS --connect-timeout 10 --max-time 30 \
+                "https://serverlist.piaservers.net/vpninfo/servers/v6" \
+                | head -n1 | jq -er ".regions[] | select(.id==\"$REGION\")")
 
-            SERVER_IP=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].ip')
-            SERVER_HOST=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].cn')
+              SERVER_IP=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].ip')
+              SERVER_HOST=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].cn')
 
-            echo "Generating WireGuard keys..."
-            WG_PRIV=$(wg genkey)
-            WG_PUB=$(echo "$WG_PRIV" | wg pubkey)
+              echo "Generating WireGuard keys..."
+              WG_PRIV=$(wg genkey)
+              WG_PUB=$(echo "$WG_PRIV" | wg pubkey)
 
-            echo "Registering public key with PIA ($SERVER_HOST)..."
-            WG_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
-              --connect-to "$SERVER_HOST::$SERVER_IP:" \
-              --cacert "$CA_CERT" -G \
-              --data-urlencode "pt=$TOKEN" \
-              --data-urlencode "pubkey=$WG_PUB" \
-              "https://$SERVER_HOST:1337/addKey")
+              echo "Registering public key with PIA ($SERVER_HOST)..."
+              WG_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
+                --connect-to "$SERVER_HOST::$SERVER_IP:" \
+                --cacert "$CA_CERT" -G \
+                --data-urlencode "pt=$TOKEN" \
+                --data-urlencode "pubkey=$WG_PUB" \
+                "https://$SERVER_HOST:1337/addKey")
 
-            [ "$(echo "$WG_RESP" | jq -r '.status')" = "OK" ] || {
-              echo "addKey failed: $WG_RESP" >&2; exit 1;
-            }
-
-            PEER_IP=$(echo "$WG_RESP" | jq -r '.peer_ip')
-            SERVER_KEY=$(echo "$WG_RESP" | jq -r '.server_key')
-            SERVER_PORT=$(echo "$WG_RESP" | jq -r '.server_port')
-            DNS=$(echo "$WG_RESP" | jq -r '.dns_servers[0]')
-
-            ${lib.optionalString cfg.dns ''
-              echo "nameserver $DNS" > "/etc/netns/$NETNS/resolv.conf"
-            ''}
-
-            ip netns list | awk '{print $1}' | grep -qx "$NETNS" || ip netns add "$NETNS"
-            ip -n "$NETNS" link set lo up
-
-            ip link del "$WG_IFACE" 2>/dev/null || true
-            ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
-
-            ip link add "$WG_IFACE" type wireguard
-            wg set "$WG_IFACE" private-key <(echo "$WG_PRIV")
-            wg set "$WG_IFACE" peer "$SERVER_KEY" \
-              endpoint "$SERVER_IP:$SERVER_PORT" \
-              allowed-ips 0.0.0.0/0,::/0 \
-              persistent-keepalive 25
-
-            ip link set "$WG_IFACE" netns "$NETNS"
-            ip -n "$NETNS" addr add "$PEER_IP" dev "$WG_IFACE"
-            ip -n "$NETNS" link set mtu 1420 up dev "$WG_IFACE"
-            ip -n "$NETNS" route add default dev "$WG_IFACE"
-
-            echo "WireGuard tunnel up; peer_ip=$PEER_IP dns=$DNS"
-
-            ${lib.optionalString cfg.portForwarding.enable ''
-              echo "Requesting forwarded port..."
-              for attempt in 1 2 3 4 5; do
-                PF_RESP=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
-                  --connect-to "$SERVER_HOST::$SERVER_IP:" \
-                  --cacert "$CA_CERT" -G \
-                  --data-urlencode "token=$TOKEN" \
-                  "https://$SERVER_HOST:19999/getSignature") || PF_RESP=""
-                if [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ]; then
-                  break
-                fi
-                echo "getSignature attempt $attempt failed; retrying..." >&2
-                sleep 3
-              done
-
-              [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ] || {
-                echo "getSignature failed after retries: $PF_RESP" >&2; exit 1;
+              [ "$(echo "$WG_RESP" | jq -r '.status')" = "OK" ] || {
+                echo "addKey failed: $WG_RESP" >&2; exit 1;
               }
 
-              PAYLOAD=$(echo "$PF_RESP" | jq -r '.payload')
-              SIGNATURE=$(echo "$PF_RESP" | jq -r '.signature')
-              PORT=$(echo "$PAYLOAD" | base64 -d | jq -r '.port')
+              PEER_IP=$(echo "$WG_RESP" | jq -r '.peer_ip')
+              SERVER_KEY=$(echo "$WG_RESP" | jq -r '.server_key')
+              SERVER_PORT=$(echo "$WG_RESP" | jq -r '.server_port')
+              DNS=$(echo "$WG_RESP" | jq -r '.dns_servers[0]')
 
-              echo -n "$PORT" > "${cfg.portForwarding.portFile}"
-              chmod 0644 "${cfg.portForwarding.portFile}"
-              echo "Forwarded port: $PORT"
+              ${lib.optionalString tunnel.dns ''
+                echo "nameserver $DNS" > "/etc/netns/$NETNS/resolv.conf"
+              ''}
 
-              bind_port() {
-                local resp
-                resp=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
-                  --connect-to "$SERVER_HOST::$SERVER_IP:" \
-                  --cacert "$CA_CERT" -G \
-                  --data-urlencode "payload=$PAYLOAD" \
-                  --data-urlencode "signature=$SIGNATURE" \
-                  "https://$SERVER_HOST:19999/bindPort") || return 1
-                [ "$(echo "$resp" | jq -r '.status')" = "OK" ] || return 1
-                echo "bindPort ok: $(echo "$resp" | jq -r '.message')"
-              }
+              ip netns list | awk '{print $1}' | grep -qx "$NETNS" || ip netns add "$NETNS"
+              ip -n "$NETNS" link set lo up
 
-              bind_port
+              ip link del "$WG_IFACE" 2>/dev/null || true
+              ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
 
-              systemd-notify --ready --status="PIA tunnel up, port $PORT forwarded"
+              ip link add "$WG_IFACE" type wireguard
+              wg set "$WG_IFACE" private-key <(echo "$WG_PRIV")
+              wg set "$WG_IFACE" peer "$SERVER_KEY" \
+                endpoint "$SERVER_IP:$SERVER_PORT" \
+                allowed-ips 0.0.0.0/0,::/0 \
+                persistent-keepalive 25
 
-              while true; do
-                sleep 880
-                if ! bind_port; then
-                  echo "bindPort failed; exiting to let systemd restart" >&2
-                  exit 1
-                fi
-              done
-            ''}
+              ip link set "$WG_IFACE" netns "$NETNS"
+              ip -n "$NETNS" addr add "$PEER_IP" dev "$WG_IFACE"
+              ip -n "$NETNS" link set mtu 1420 up dev "$WG_IFACE"
+              ip -n "$NETNS" route add default dev "$WG_IFACE"
 
-            ${lib.optionalString (!cfg.portForwarding.enable) ''
-              systemd-notify --ready --status="PIA tunnel up (no port forwarding)"
+              echo "WireGuard tunnel up; peer_ip=$PEER_IP dns=$DNS"
 
-              stale_handshake() {
-                local last now age
-                last=$(ip netns exec "$NETNS" wg show "$WG_IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | head -n1)
-                [ -n "$last" ] || return 0
-                [ "$last" = "0" ] && return 0
-                now=$(date +%s)
-                age=$(( now - last ))
-                [ "$age" -gt "${toString cfg.handshakeMaxAge}" ]
-              }
+              ${lib.optionalString tunnel.portForwarding.enable ''
+                echo "Requesting forwarded port..."
+                for attempt in 1 2 3 4 5; do
+                  PF_RESP=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
+                    --connect-to "$SERVER_HOST::$SERVER_IP:" \
+                    --cacert "$CA_CERT" -G \
+                    --data-urlencode "token=$TOKEN" \
+                    "https://$SERVER_HOST:19999/getSignature") || PF_RESP=""
+                  if [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ]; then
+                    break
+                  fi
+                  echo "getSignature attempt $attempt failed; retrying..." >&2
+                  sleep 3
+                done
 
-              while true; do
-                sleep 60
-                if stale_handshake; then
-                  echo "wireguard handshake is stale (older than ${toString cfg.handshakeMaxAge}s); exiting so systemd rebuilds the tunnel" >&2
-                  exit 1
-                fi
-              done
-            ''}
-          '';
-        };
+                [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ] || {
+                  echo "getSignature failed after retries: $PF_RESP" >&2; exit 1;
+                }
 
-        piaDown = pkgs.writeShellApplication {
-          name = "pia-netns-down";
-          runtimeInputs = with pkgs; [
-            iproute2
-            coreutils
-          ];
-          text = ''
-            NETNS="${cfg.namespace}"
-            WG_IFACE="wg-${cfg.namespace}"
-            ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
-            ip link del "$WG_IFACE" 2>/dev/null || true
-            ip netns del "$NETNS" 2>/dev/null || true
-            rm -f "/etc/netns/$NETNS/resolv.conf"
-            rmdir "/etc/netns/$NETNS" 2>/dev/null || true
-            ${lib.optionalString cfg.portForwarding.enable ''rm -f "${cfg.portForwarding.portFile}"''}
-          '';
-        };
+                PAYLOAD=$(echo "$PF_RESP" | jq -r '.payload')
+                SIGNATURE=$(echo "$PF_RESP" | jq -r '.signature')
+                PORT=$(echo "$PAYLOAD" | base64 -d | jq -r '.port')
+
+                echo -n "$PORT" > "${tunnel.portForwarding.portFile}"
+                chmod 0644 "${tunnel.portForwarding.portFile}"
+                echo "Forwarded port: $PORT"
+
+                bind_port() {
+                  local resp
+                  resp=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
+                    --connect-to "$SERVER_HOST::$SERVER_IP:" \
+                    --cacert "$CA_CERT" -G \
+                    --data-urlencode "payload=$PAYLOAD" \
+                    --data-urlencode "signature=$SIGNATURE" \
+                    "https://$SERVER_HOST:19999/bindPort") || return 1
+                  [ "$(echo "$resp" | jq -r '.status')" = "OK" ] || return 1
+                  echo "bindPort ok: $(echo "$resp" | jq -r '.message')"
+                }
+
+                bind_port
+
+                systemd-notify --ready --status="PIA tunnel up, port $PORT forwarded"
+
+                while true; do
+                  sleep 880
+                  if ! bind_port; then
+                    echo "bindPort failed; exiting to let systemd restart" >&2
+                    exit 1
+                  fi
+                done
+              ''}
+
+              ${lib.optionalString (!tunnel.portForwarding.enable) ''
+                systemd-notify --ready --status="PIA tunnel up (no port forwarding)"
+
+                stale_handshake() {
+                  local last now age
+                  last=$(ip netns exec "$NETNS" wg show "$WG_IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | head -n1)
+                  [ -n "$last" ] || return 0
+                  [ "$last" = "0" ] && return 0
+                  now=$(date +%s)
+                  age=$(( now - last ))
+                  [ "$age" -gt "${toString tunnel.handshakeMaxAge}" ]
+                }
+
+                while true; do
+                  sleep 60
+                  if stale_handshake; then
+                    echo "wireguard handshake is stale (older than ${toString tunnel.handshakeMaxAge}s); exiting so systemd rebuilds the tunnel" >&2
+                    exit 1
+                  fi
+                done
+              ''}
+            '';
+          };
+
+        mkPiaDown =
+          name: tunnel:
+          pkgs.writeShellApplication {
+            name = "pia-netns-${name}-down";
+            runtimeInputs = with pkgs; [
+              iproute2
+              coreutils
+            ];
+            text = ''
+              NETNS="${tunnel.namespace}"
+              WG_IFACE="wg-${tunnel.namespace}"
+              ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
+              ip link del "$WG_IFACE" 2>/dev/null || true
+              ip netns del "$NETNS" 2>/dev/null || true
+              rm -f "/etc/netns/$NETNS/resolv.conf"
+              rmdir "/etc/netns/$NETNS" 2>/dev/null || true
+              ${lib.optionalString tunnel.portForwarding.enable ''rm -f "${tunnel.portForwarding.portFile}"''}
+            '';
+          };
       in
       {
-        options.services.pia-netns = {
-          enable = lib.mkEnableOption "PIA WireGuard VPN inside a Linux network namespace";
-          credentialsFile = lib.mkOption {
-            description = "File with PIA username on line 1 and password on line 2.";
-            type = lib.types.path;
-          };
-          dns = lib.mkOption {
-            default = true;
-            type = lib.types.bool;
-          };
-          handshakeMaxAge = lib.mkOption {
-            default = 300;
-            type = lib.types.int;
-          };
-          namespace = lib.mkOption {
-            default = "pia";
-            type = lib.types.str;
-          };
-          portForwarding = {
-            enable = lib.mkEnableOption "PIA port forwarding with keepalive";
+        options.services.pia-netns.tunnels = lib.mkOption {
+          default = { };
+          description = "PIA WireGuard tunnels, each inside its own network namespace.";
+          type = lib.types.attrsOf (
+            lib.types.submodule (
+              { name, config, ... }:
+              {
+                options = {
+                  credentialsFile = lib.mkOption {
+                    description = "File with PIA username on line 1 and password on line 2.";
+                    type = lib.types.path;
+                  };
+                  dns = lib.mkOption {
+                    default = true;
+                    type = lib.types.bool;
+                  };
+                  handshakeMaxAge = lib.mkOption {
+                    default = 300;
+                    type = lib.types.int;
+                  };
+                  namespace = lib.mkOption {
+                    default = name;
+                    type = lib.types.str;
+                  };
+                  netnsPath = lib.mkOption {
+                    default = "/var/run/netns/${config.namespace}";
+                    readOnly = true;
+                    type = lib.types.str;
+                  };
+                  portForwarding = {
+                    enable = lib.mkEnableOption "PIA port forwarding with keepalive";
 
-            portFile = lib.mkOption {
-              default = "/run/pia/forwarded-port";
-              type = lib.types.path;
-            };
-          };
-          region = lib.mkOption {
-            example = "sweden";
-            type = lib.types.str;
-          };
+                    portFile = lib.mkOption {
+                      default = "/run/pia/${name}/forwarded-port";
+                      type = lib.types.path;
+                    };
+                  };
+                  region = lib.mkOption {
+                    example = "sweden";
+                    type = lib.types.str;
+                  };
+                  unit = lib.mkOption {
+                    default = "pia-netns-${name}.service";
+                    readOnly = true;
+                    type = lib.types.str;
+                  };
+                };
+              }
+            )
+          );
         };
-        config = lib.mkIf cfg.enable {
+        config = lib.mkIf (cfg.tunnels != { }) {
           boot.kernelModules = [ "wireguard" ];
 
-          systemd.services.pia-netns = {
-            after = [ "network-online.target" ];
-            description = "PIA WireGuard tunnel in network namespace";
-            serviceConfig = {
-              ExecStart = lib.getExe piaUp;
-              ExecStop = lib.getExe piaDown;
-              NotifyAccess = "exec";
-              Restart = "on-failure";
-              RestartSec = "30s";
-              TimeoutStartSec = "120s";
-              Type = "notify";
-            };
-            wantedBy = [ "multi-user.target" ];
-            wants = [ "network-online.target" ];
-          };
+          systemd.services = lib.mapAttrs' (
+            name: tunnel:
+            lib.nameValuePair "pia-netns-${name}" {
+              after = [ "network-online.target" ];
+              description = "PIA WireGuard tunnel in network namespace ${tunnel.namespace}";
+              serviceConfig = {
+                ExecStart = lib.getExe (mkPiaUp name tunnel);
+                ExecStop = lib.getExe (mkPiaDown name tunnel);
+                NotifyAccess = "exec";
+                Restart = "on-failure";
+                RestartSec = "30s";
+                TimeoutStartSec = "120s";
+                Type = "notify";
+              };
+              wantedBy = [ "multi-user.target" ];
+              wants = [ "network-online.target" ];
+            }
+          ) cfg.tunnels;
         };
       }
 
@@ -36983,6 +37012,211 @@ This one needs manual OIDC setup in the admin UI (TODO?)
   }
 #+end_src
 
+**** slskd
+:PROPERTIES:
+:CUSTOM_ID: h:2d743c35-5a32-4424-97e1-1ca7dd779555
+:END:
+
+Another service that is only available locally ... some ships sail only in friendly waters :)
+
+To make the waters even friendlier, I run this behind its own PIA namespace, of course with port forwarding. This however means that I have to pass the entire config on the command line, which leads to a lot of redefining in the systemd service. But hey, at least I have two tunnels on the same machine!
+
+#+begin_src nix-ts :tangle modules/server/services/slskd.nix
+  {
+    flake.modules.nixos.slskd =
+      {
+        root,
+        config,
+        lib,
+        pkgs,
+        confLib,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/slskd";
+            name = "slskd";
+            port = 5030;
+          })
+          serviceDir
+          serviceGroup
+          serviceName
+          servicePort
+          serviceUser
+          ;
+        inherit (confLib.gen { name = "transmission"; }) serviceDomain;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          isHome
+          ;
+        inherit (config.swarselsystems) sopsFile;
+
+        piaNamespace = "pia-slsk";
+        piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
+        urlBase = "/${serviceName}";
+        downloadDir = "/storage/Music/${serviceName}";
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
+            info = "https://${serviceDomain}${urlBase}";
+            name = serviceName;
+          };
+          globals = {
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              path = "${urlBase}/";
+            };
+            networks = confLib.mkDualFirewallRules {
+              forWebProxy = false;
+              tcpPorts = [ servicePort ];
+            };
+          };
+          sops = {
+            secrets = {
+              slskd-soulseek-password = { inherit sopsFile; };
+              slskd-soulseek-username = { inherit sopsFile; };
+              slskd-web-password = { inherit sopsFile; };
+            };
+            templates."slskd.env".content = ''
+              SLSKD_SLSK_USERNAME=${config.sops.placeholder.slskd-soulseek-username}
+              SLSKD_SLSK_PASSWORD=${config.sops.placeholder.slskd-soulseek-password}
+              SLSKD_USERNAME=${config.swarselsystems.mainUser}
+              SLSKD_PASSWORD=${config.sops.placeholder.slskd-web-password}
+            '';
+          };
+          users = {
+            users.${serviceUser}.extraGroups = [ "users" ];
+            persistentIds.${serviceName} = confLib.mkIds 937;
+          };
+          services = {
+            ${serviceName} = {
+              enable = true;
+              environmentFile = config.sops.templates."slskd.env".path;
+              settings = {
+                directories = {
+                  downloads = downloadDir;
+                  incomplete = "${serviceDir}/incomplete";
+                };
+                shares.directories = [ "/storage/Music" ];
+                transfers = {
+                  download.speed_limit = 6000;
+                  upload = {
+                    slots = 5;
+                    speed_limit = 1000;
+                  };
+                };
+                web = {
+                  port = servicePort;
+                  url_base = urlBase;
+                };
+              };
+            };
+            pia-netns.tunnels.${piaNamespace} = {
+              credentialsFile = config.sops.secrets.pia.path;
+              dns = true;
+              portForwarding.enable = true;
+              region = "sweden";
+            };
+          };
+          environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+            directories = [
+              {
+                directory = serviceDir;
+                group = serviceGroup;
+                user = serviceUser;
+              }
+            ];
+          };
+          systemd = {
+            services = {
+              ${serviceName} = {
+                after = [ piaTunnel.unit ];
+                bindsTo = [ piaTunnel.unit ];
+                partOf = [ piaTunnel.unit ];
+                requires = [ piaTunnel.unit ];
+                serviceConfig = {
+                  BindReadOnlyPaths = [ "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf" ];
+                  ExecStart =
+                    let
+                      cfg = config.services.${serviceName};
+                      configurationYaml = (pkgs.formats.yaml { }).generate "slskd.yml" (
+                        lib.filterAttrsRecursive (_: value: (builtins.tryEval value).success && value != null) (
+                          lib.removeAttrs cfg.settings [ "global" ]
+                        )
+                      );
+                    in
+                    lib.mkForce (
+                      pkgs.writeShellScript "${serviceName}-start" ''
+                        exec ${cfg.package}/bin/slskd \
+                          --app-dir ${serviceDir} \
+                          --config ${configurationYaml} \
+                          --slsk-listen-port "$(cat "$CREDENTIALS_DIRECTORY/listen-port")"
+                      ''
+                    );
+                  LoadCredential = [ "listen-port:${piaTunnel.portForwarding.portFile}" ];
+                  NetworkNamespacePath = piaTunnel.netnsPath;
+                  PrivateUsers = lib.mkForce false;
+                  UMask = "0002";
+                };
+                wantedBy = [ piaTunnel.unit ];
+              };
+              "${serviceName}-web-forward" =
+                let
+                  inner = pkgs.writeShellScript "${serviceName}-web-into-netns" ''
+                    exec ${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} \
+                      ${pkgs.socat}/bin/socat - TCP:127.0.0.1:${toString servicePort}
+                  '';
+                in
+                {
+                  after = [ "${serviceName}.service" ];
+                  bindsTo = [ "${serviceName}.service" ];
+                  description = "Forward 0.0.0.0:${toString servicePort} into the ${piaNamespace} netns";
+                  partOf = [ "${serviceName}.service" ];
+                  serviceConfig = {
+                    ExecStart = pkgs.writeShellScript "${serviceName}-web-forward" ''
+                      exec ${pkgs.socat}/bin/socat \
+                        TCP-LISTEN:${toString servicePort},reuseaddr,fork \
+                        EXEC:${inner}
+                    '';
+                    Restart = "on-failure";
+                    RestartSec = "5s";
+                    Type = "simple";
+                  };
+                  wantedBy = [
+                    "multi-user.target"
+                    "${serviceName}.service"
+                  ];
+                };
+            };
+            tmpfiles.rules = [
+              "d ${downloadDir} 0775 ${serviceUser} users -"
+              "d ${serviceDir}/incomplete 0750 ${serviceUser} ${serviceGroup} -"
+            ];
+          };
+          nodes.${homeWebProxy}.services.nginx = lib.mkIf isHome {
+            upstreams.${serviceName}.servers = {
+              "${homeServiceAddress}:${builtins.toString servicePort}" = { };
+            };
+            virtualHosts.${serviceDomain}.locations.${urlBase} = {
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+              proxyPass = "http://${serviceName}";
+              proxyWebsockets = true;
+            };
+          };
+        };
+      }
+
+    ;
+  }
+#+end_src
+
 **** MeTube
 :PROPERTIES:
 :CUSTOM_ID: h:57ad0c5e-dd15-4a80-bc1b-18621e279bbb
@@ -42337,7 +42571,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
         kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
         piaNamespace = "pia";
-        piaNetnsPath = "/var/run/netns/${piaNamespace}";
+        piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
         jpProxyPort = 1081;
         jpProxyAddress = "127.0.0.1:${builtins.toString jpProxyPort}";
         jpNetnsPort = 1080;
@@ -42432,11 +42666,9 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               ip = "127.0.0.1";
               port = jpNetnsPort;
             };
-            pia-netns = {
-              enable = true;
+            pia-netns.tunnels.${piaNamespace} = {
               credentialsFile = config.sops.secrets.pia.path;
               dns = true;
-              namespace = piaNamespace;
               region = "japan";
             };
             shopservatory = {
@@ -42482,18 +42714,18 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           ];
           systemd.services = {
             microsocks = {
-              after = [ "pia-netns.service" ];
-              bindsTo = [ "pia-netns.service" ];
-              partOf = [ "pia-netns.service" ];
-              requires = [ "pia-netns.service" ];
+              after = [ piaTunnel.unit ];
+              bindsTo = [ piaTunnel.unit ];
+              partOf = [ piaTunnel.unit ];
+              requires = [ piaTunnel.unit ];
               serviceConfig = {
                 BindReadOnlyPaths = [
                   "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf"
                 ];
-                NetworkNamespacePath = piaNetnsPath;
+                NetworkNamespacePath = piaTunnel.netnsPath;
                 PrivateNetwork = lib.mkForce false;
               };
-              wantedBy = lib.mkForce [ "pia-netns.service" ];
+              wantedBy = lib.mkForce [ piaTunnel.unit ];
             };
             shopservatory-jp-proxy = {
               after = [ "microsocks.service" ];

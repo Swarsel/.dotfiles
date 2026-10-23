@@ -28,8 +28,8 @@
       inherit (config.swarselsystems) sopsFile;
 
       piaNamespace = "pia";
-      piaNetnsPath = "/var/run/netns/${piaNamespace}";
       piaPortFile = "/run/pia/forwarded-port";
+      piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
 
       lidarrUser = "lidarr";
       lidarrGroup = lidarrUser;
@@ -152,11 +152,9 @@
             settings.server.port = lidarrPort;
             user = lidarrUser;
           };
-          pia-netns = {
-            enable = true;
+          pia-netns.tunnels.${piaNamespace} = {
             credentialsFile = config.sops.secrets.pia.path;
             dns = true;
-            namespace = piaNamespace;
             portForwarding = {
               enable = true;
               portFile = piaPortFile;
@@ -274,14 +272,14 @@
         systemd = {
           services = {
             mam-dynamic-seedbox = {
-              after = [ "pia-netns.service" ];
-              partOf = [ "pia-netns.service" ];
+              after = [ piaTunnel.unit ];
+              partOf = [ piaTunnel.unit ];
               path = with pkgs; [
                 curl
                 iproute2
                 coreutils
               ];
-              requires = [ "pia-netns.service" ];
+              requires = [ piaTunnel.unit ];
               script = ''
                 COOKIES=/var/lib/mam/cookies.txt
                 install -d -m 0700 /var/lib/mam
@@ -317,13 +315,13 @@
                 RestartSec = "5min";
                 Type = "oneshot";
               };
-              wantedBy = [ "pia-netns.service" ];
+              wantedBy = [ piaTunnel.unit ];
             };
             transmission = {
-              after = [ "pia-netns.service" ];
-              bindsTo = [ "pia-netns.service" ];
-              partOf = [ "pia-netns.service" ];
-              requires = [ "pia-netns.service" ];
+              after = [ piaTunnel.unit ];
+              bindsTo = [ piaTunnel.unit ];
+              partOf = [ piaTunnel.unit ];
+              requires = [ piaTunnel.unit ];
               serviceConfig = {
                 BindPaths = [
                   "/storage/Music"
@@ -332,7 +330,7 @@
                   "/storage/Software"
                 ];
                 BindReadOnlyPaths = [ "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf" ];
-                NetworkNamespacePath = piaNetnsPath;
+                NetworkNamespacePath = piaTunnel.netnsPath;
                 TimeoutStartSec = "3600s";
               };
             };

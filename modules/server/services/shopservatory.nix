@@ -51,7 +51,7 @@
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
       piaNamespace = "pia";
-      piaNetnsPath = "/var/run/netns/${piaNamespace}";
+      piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
       jpProxyPort = 1081;
       jpProxyAddress = "127.0.0.1:${builtins.toString jpProxyPort}";
       jpNetnsPort = 1080;
@@ -146,11 +146,9 @@
             ip = "127.0.0.1";
             port = jpNetnsPort;
           };
-          pia-netns = {
-            enable = true;
+          pia-netns.tunnels.${piaNamespace} = {
             credentialsFile = config.sops.secrets.pia.path;
             dns = true;
-            namespace = piaNamespace;
             region = "japan";
           };
           shopservatory = {
@@ -196,18 +194,18 @@
         ];
         systemd.services = {
           microsocks = {
-            after = [ "pia-netns.service" ];
-            bindsTo = [ "pia-netns.service" ];
-            partOf = [ "pia-netns.service" ];
-            requires = [ "pia-netns.service" ];
+            after = [ piaTunnel.unit ];
+            bindsTo = [ piaTunnel.unit ];
+            partOf = [ piaTunnel.unit ];
+            requires = [ piaTunnel.unit ];
             serviceConfig = {
               BindReadOnlyPaths = [
                 "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf"
               ];
-              NetworkNamespacePath = piaNetnsPath;
+              NetworkNamespacePath = piaTunnel.netnsPath;
               PrivateNetwork = lib.mkForce false;
             };
-            wantedBy = lib.mkForce [ "pia-netns.service" ];
+            wantedBy = lib.mkForce [ piaTunnel.unit ];
           };
           shopservatory-jp-proxy = {
             after = [ "microsocks.service" ];

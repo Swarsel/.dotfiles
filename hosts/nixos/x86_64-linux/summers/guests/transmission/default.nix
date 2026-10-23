@@ -9,6 +9,7 @@
 
     self.modules.nixos.profile-microvm
     self.modules.nixos.transmission
+    self.modules.nixos.slskd
   ];
 
   swarselsystems = {
