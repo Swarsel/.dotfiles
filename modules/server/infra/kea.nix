@@ -54,6 +54,18 @@
                   ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
                     data = globals.domains.main;
                     name = "domain-search";
+                  }
+                  ++ lib.optional (intX == 4 && lib.elem vlanName globals.general.internetVLANs) {
+                    data = lib.concatMapStringsSep ", " (cidr: "${cidr} - ${vlanCfg.hosts.hintbooth.ipv4}") (
+                      lib.mapAttrsToList (_: otherVlan: otherVlan.cidrv4) (
+                        lib.filterAttrs (otherName: _: otherName != vlanName) globals.networks.home-lan.vlans
+                      )
+                      ++ [
+                        globals.networks.home-wgHome.cidrv4
+                        "0.0.0.0/0"
+                      ]
+                    );
+                    name = "classless-static-route";
                   };
                 pd-pools = lib.mkIf (intX == 6) [
                   {
