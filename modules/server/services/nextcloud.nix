@@ -6,6 +6,7 @@
       lib,
       pkgs,
       confLib,
+      globals,
       ...
     }:
     let
@@ -143,6 +144,11 @@
             '';
           in
           lib.mkMerge [
+            (lib.optionalAttrs (globals.services ? collabora-online) {
+              ${globals.services.collabora-online.extraConfig.node}.services.collabora-online.aliasGroups = [
+                { host = "https://${serviceDomain}"; }
+              ];
+            })
             {
               ${idmServer} =
                 lib.recursiveUpdate

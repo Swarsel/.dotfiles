@@ -401,6 +401,7 @@ This is a comprehensive list of the services/components ran by my server machine
   | 📅 **CalDav/CardDav**        | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/radicale.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
   | 📖 **Books**                 | [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/kavita.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
   | 📚 **Bookmarks**            | [Readeck](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/readeck.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+  | 📝 **Office Suite**          | [Collabora Online](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/collabora-online.nix) + [Filestash](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/filestash.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                         |
   | 📸 **Image Sharing**         | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/slink.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
   | 📺 **Video Streaming**       | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious-companion.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
   | 📼 **Videos**                | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/jellyfin.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -7838,6 +7839,8 @@ This machine used to be my proxy server, a functionality that is now provided by
       self.modules.nixos.copyparty
       self.modules.nixos.shopservatory
       self.modules.nixos.readeck
+      self.modules.nixos.collabora-online
+      self.modules.nixos.filestash
     ];
     swarselsystems = {
       flakePath = "/root/.dotfiles";
@@ -10622,6 +10625,10 @@ Note that not all configuration can be sent by default, rather it has to be defi
         ++ expandOptions (splitPath "networking.nftables.firewall") [
           "zones"
           "rules"
+        ]
+        ++ expandOptions (splitPath "services.collabora-online") [
+          "aliasGroups"
+          "settings"
         ]
         ++ expandOptions (splitPath "services.firezone.gateway") [
           "enable"
@@ -29523,6 +29530,7 @@ Social Login (OIDC) setup:
         lib,
         pkgs,
         confLib,
+        globals,
         ...
       }:
       let
@@ -29660,6 +29668,11 @@ Social Login (OIDC) setup:
               '';
             in
             lib.mkMerge [
+              (lib.optionalAttrs (globals.services ? collabora-online) {
+                ${globals.services.collabora-online.extraConfig.node}.services.collabora-online.aliasGroups = [
+                  { host = "https://${serviceDomain}"; }
+                ];
+              })
               {
                 ${idmServer} =
                   lib.recursiveUpdate
@@ -36264,6 +36277,402 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
   }
 #+end_src
 
+**** Collabora Online
+:PROPERTIES:
+:CUSTOM_ID: h:3c1d7f0e-5b2a-4e8d-9f61-2a7c4b9d8e10
+:END:
+
+Online office suite (WOPI server) using the native NixOS module, terminated behind nginx. The admin console credentials come from sops; Nextcloud is the allowed WOPI host.
+
+#+begin_src nix-ts :tangle modules/server/services/collabora-online.nix
+  {
+    flake.modules.nixos.collabora-online =
+      {
+        root,
+        config,
+        lib,
+        pkgs,
+        confLib,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            name = "collabora-online";
+            port = 9980;
+            user = "cool";
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDomain
+          serviceName
+          servicePort
+          serviceUser
+          ;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          isHome
+          nginxAccessRules
+          webProxy
+          ;
+
+        inherit (config.swarselsystems) sopsFile;
+
+        extraConfigLoc = ''
+          proxy_read_timeout 36000s;
+        '';
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ "collabora-online" ];
+          topology.self.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
+            info = "https://${serviceDomain}";
+            name = "Collabora Online";
+          };
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+              extra.extraConfig = {
+                node = config.node.name;
+                port = servicePort;
+              };
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              expectedBodyRegex = "wopi-discovery";
+              path = "/hosting/discovery";
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          sops = {
+            secrets.collabora-admin-password = { inherit sopsFile; };
+            templates.collabora-env.content = ''
+              username=admin
+              password=${config.sops.placeholder.collabora-admin-password}
+            '';
+          };
+          users.persistentIds.${serviceUser} = confLib.mkIds 1004;
+          services.${serviceName} = {
+            enable = true;
+            package = pkgs.collabora-online;
+            port = servicePort;
+            settings = {
+              server_name = serviceDomain;
+              ssl = {
+                enable = false;
+                termination = true;
+              };
+            };
+          };
+          systemd.services.coolwsd.serviceConfig.EnvironmentFile = config.sops.templates.collabora-env.path;
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = lib.recursiveUpdate (confLib.genNginx {
+                inherit
+                  extraConfigLoc
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  servicePort
+                  ;
+                maxBody = 0;
+                proxyWebsockets = true;
+              }) { virtualHosts.${serviceDomain}.locations."/".recommendedSecurityHeaders = false; };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                lib.recursiveUpdate (confLib.genNginx {
+                  inherit
+                    extraConfigLoc
+                    serviceDomain
+                    serviceName
+                    servicePort
+                    ;
+                  extraConfig = nginxAccessRules;
+                  maxBody = 0;
+                  proxyWebsockets = true;
+                  serviceAddress = homeServiceAddress;
+                }) { virtualHosts.${serviceDomain}.locations."/".recommendedSecurityHeaders = false; }
+              );
+            }
+          ];
+
+        };
+      }
+
+    ;
+  }
+#+end_src
+
+**** Filestash
+:PROPERTIES:
+:CUSTOM_ID: h:34abfc03-7e68-4358-a7be-8b1bfc82770d
+:END:
+
+This is pretty much just used as the WOPI host for [[#h:3c1d7f0e-5b2a-4e8d-9f61-2a7c4b9d8e10][Collabora Online]].
+
+Collaborative editing of =.odt= files is a bit weird, as it requires creating the share link first and then *opening the page through that share link*. Otherwise some bug in Collabora will make it so that the live updates break. And also all editors are anonymous (oh well).
+
+#+begin_src nix-ts :tangle modules/server/services/filestash.nix
+  {
+    flake.modules.nixos.filestash =
+      {
+        self,
+        root,
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/filestash";
+            name = "filestash";
+            port = 8334;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDir
+          serviceDomain
+          serviceGroup
+          serviceName
+          servicePort
+          serviceUser
+          topologyContainerName
+          ;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          idmServer
+          isHome
+          nginxAccessRules
+          webProxy
+          ;
+
+        inherit (config.swarselsystems) mainUser sopsFile;
+
+        containerRev = "sha256:f595b7e8cffdad7105ad7a2fc5edad51b4de3f2b0ecf80d64d58bec3c246aab1";
+        containerUid = 1000;
+        serviceId = 1005;
+        storageLabel = "copyparty";
+        hostGateway = "host.docker.internal";
+        collaboraPort = globals.services.collabora-online.extraConfig.port;
+        copypartyPort = globals.services.copyparty.extraConfig.port;
+      in
+      {
+        imports = [
+          self.modules.nixos.podman
+        ];
+        config = {
+          swarselsystems.enabledServerModules = [ "filestash" ];
+          topology.nodes.${topologyContainerName}.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
+            info = "https://${serviceDomain}";
+            name = lib.swarselsystems.toCapitalized serviceName;
+          };
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              expectedBodyRegex = ''"status":\s*"pass"'';
+              path = "/healthz";
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          sops = {
+            secrets = {
+              filestash-admin-hash = { inherit sopsFile; };
+              filestash-secret-key = { inherit sopsFile; };
+            };
+            templates.filestash-config.content = builtins.toJSON {
+              auth.admin = config.sops.placeholder.filestash-admin-hash;
+              connections = [
+                {
+                  label = storageLabel;
+                  type = "webdav";
+                }
+              ];
+              features = {
+                office = {
+                  enable = true;
+                  filestash_server = "http://127.0.0.1:${builtins.toString servicePort}";
+                  office_server = "http://${hostGateway}:${builtins.toString collaboraPort}";
+                  rewrite_discovery_url = "https://${globals.services.collabora-online.domain}";
+                };
+                share.enable = true;
+              };
+              general = {
+                force_ssl = true;
+                host = serviceDomain;
+                logout = "https://${serviceDomain}/oauth2/sign_out";
+                secret_key = config.sops.placeholder.filestash-secret-key;
+              };
+              middleware = {
+                attribute_mapping = {
+                  params = builtins.toJSON {
+                    ${storageLabel} = {
+                      password = config.sops.placeholder.copyparty-password;
+                      type = "webdav";
+                      url = "http://${hostGateway}:${builtins.toString copypartyPort}";
+                      username = mainUser;
+                    };
+                  };
+                  related_backend = storageLabel;
+                };
+                identity_provider = {
+                  params = builtins.toJSON {
+                    strategy = "direct";
+                    type = "passthrough";
+                  };
+                  type = "passthrough";
+                };
+              };
+            };
+          };
+          users = {
+            users.${serviceUser} = {
+              group = serviceGroup;
+              isSystemUser = true;
+            };
+            groups.${serviceGroup} = { };
+            persistentIds.${serviceName} = confLib.mkIds serviceId;
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              group = serviceGroup;
+              mode = "0750";
+              user = serviceUser;
+            }
+          ];
+          networking.nftables.firewall.rules.podman-to-filestash-backends = {
+            allowedTCPPorts = [
+              collaboraPort
+              copypartyPort
+            ];
+            before = [ "drop" ];
+            from = [ "podman" ];
+            to = [ "local" ];
+          };
+          virtualisation.oci-containers.containers.${serviceName} = {
+            environment.CONFIG_ENCRYPT = "false";
+            extraOptions = [
+              "--add-host=${hostGateway}:host-gateway"
+              "--gidmap=0:0:${builtins.toString containerUid}"
+              "--gidmap=${builtins.toString containerUid}:${builtins.toString serviceId}:1"
+              "--uidmap=0:0:${builtins.toString containerUid}"
+              "--uidmap=${builtins.toString containerUid}:${builtins.toString serviceId}:1"
+            ];
+            image = "machines/filestash@${containerRev}";
+            ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
+            volumes = [ "${serviceDir}:/app/data/state" ];
+          };
+          systemd.services."podman-${serviceName}" = {
+            preStart = lib.mkAfter ''
+              install -d -o ${serviceUser} -g ${serviceGroup} -m 0750 ${serviceDir}/config
+              install -o ${serviceUser} -g ${serviceGroup} -m 0600 ${config.sops.templates.filestash-config.path} ${serviceDir}/config/config.json
+            '';
+            unitConfig.RequiresMountsFor = [ serviceDir ];
+          };
+          nodes =
+            let
+              genNginx = toAddress: extraConfig: {
+                upstreams = {
+                  ${serviceName}.servers = {
+                    "${toAddress}:${builtins.toString servicePort}" = { };
+                  };
+                };
+                virtualHosts = {
+                  "${serviceDomain}" = {
+                    inherit extraConfig;
+                    acmeRoot = null;
+                    forceSSL = true;
+                    locations = {
+                      "/" = {
+                        X-Frame-Options = "SAMEORIGIN";
+                        extraConfig = ''
+                          client_max_body_size 0;
+                        '';
+                        proxyPass = "http://${serviceName}";
+                      };
+                      "/api/session/auth/" = {
+                        X-Frame-Options = "SAMEORIGIN";
+                        proxyPass = "http://${serviceName}";
+                      };
+                    }
+                    //
+                      lib.genAttrs
+                        [
+                          "/api/"
+                          "/assets/"
+                          "/overrides/"
+                          "/s/"
+                        ]
+                        (_: {
+                          X-Frame-Options = "SAMEORIGIN";
+                          bypassAuth = true;
+                          extraConfig = ''
+                            client_max_body_size 0;
+                          '';
+                          proxyPass = "http://${serviceName}";
+                          setOauth2Headers = false;
+                        });
+                    oauth2 = {
+                      enable = true;
+                      allowedGroups = [ "${serviceName}_access" ];
+                    };
+                    useACMEHost = globals.domains.main;
+                  };
+                };
+              };
+            in
+            lib.mkMerge [
+              (lib.optionalAttrs (globals.services ? collabora-online) {
+                ${globals.services.collabora-online.extraConfig.node}.services.collabora-online = {
+                  aliasGroups = [ { host = "http://127.0.0.1:${builtins.toString servicePort}"; } ];
+                  settings.net.content_security_policy = "frame-ancestors https://${serviceDomain}";
+                };
+              })
+              { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+              { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+              }
+            ];
+
+        };
+      }
+
+    ;
+  }
+#+end_src
+
 **** [CURRENTLY UNUSED] Snipe-IT
 :PROPERTIES:
 :CUSTOM_ID: h:470f7ee3-3307-4949-b0fa-403171e3859a
@@ -41137,6 +41546,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                     serviceDomain
                     serviceName
                     ;
+                  extra.extraConfig.port = servicePort;
                 };
                 dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
                 monitoring.http = confLib.mkHttpMonitoring {
@@ -41183,6 +41593,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                       r = "*";
                       rwmda = mainUser;
                     };
+                    flags.daw = true;
                     path = "${dataDir}/public";
                   };
                   "/private" = {
@@ -41190,6 +41601,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                       rw = "guest";
                       rwmda = mainUser;
                     };
+                    flags.daw = true;
                     path = "${dataDir}/private";
                   };
                 };

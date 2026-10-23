@@ -68,6 +68,7 @@
                   serviceDomain
                   serviceName
                   ;
+                extra.extraConfig.port = servicePort;
               };
               dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
               monitoring.http = confLib.mkHttpMonitoring {
@@ -114,6 +115,7 @@
                     r = "*";
                     rwmda = mainUser;
                   };
+                  flags.daw = true;
                   path = "${dataDir}/public";
                 };
                 "/private" = {
@@ -121,6 +123,7 @@
                     rw = "guest";
                     rwmda = mainUser;
                   };
+                  flags.daw = true;
                   path = "${dataDir}/private";
                 };
               };

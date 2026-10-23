@@ -44,6 +44,10 @@
         "zones"
         "rules"
       ]
+      ++ expandOptions (splitPath "services.collabora-online") [
+        "aliasGroups"
+        "settings"
+      ]
       ++ expandOptions (splitPath "services.firezone.gateway") [
         "enable"
         "name"
