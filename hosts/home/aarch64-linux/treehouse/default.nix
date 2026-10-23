@@ -22,6 +22,7 @@
 
   swarselsystems = {
     homeSopsSecrets = {
+      automationhubtoken.sopsFile = inputs.self + /secrets/work/secrets.yaml;
       ucKey.sopsFile = inputs.self + /secrets/work/secrets.yaml;
       vpn-cert = {
         path = "${config.home.homeDirectory}/.config/vpn/vbc.pem";
@@ -38,6 +39,12 @@
   };
 
   programs = {
+    bash.sessionVariables = lib.genAttrs [
+      "ANSIBLE_GALAXY_SERVER_COMMUNITY_TOKEN"
+      "ANSIBLE_GALAXY_SERVER_PUBLISHED_TOKEN"
+      "ANSIBLE_GALAXY_SERVER_RH_CERTIFIED_TOKEN"
+      "ANSIBLE_GALAXY_SERVER_STAGING_TOKEN"
+    ] (_: "$(cat ${config.sops.secrets.automationhubtoken.path})");
     git.signing = {
       format = lib.mkForce "ssh";
       key = lib.mkForce "${config.home.homeDirectory}/.ssh/id_rsa.pub";
