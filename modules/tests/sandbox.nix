@@ -76,7 +76,7 @@ let
   };
 in
 {
-  flake-file.inputs.nixpkgs-sandbox.url = "github:tebriel/nixpkgs/homebox/0.26.2";
+  flake-file.inputs.nixpkgs-sandbox.url = "github:r-ryantm/nixpkgs/4800f20ae2dc52cc7422118d28d427ef412f0841";
   flake.nixosConfigurations.${configName} = vacanthouse;
 
   perSystem =

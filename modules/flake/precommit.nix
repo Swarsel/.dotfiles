@@ -47,6 +47,14 @@
             end-of-file-fixer.enable = true;
             fix-byte-order-marker.enable = true;
             flake-checker.enable = true;
+            flake-file-in-sync = {
+              enable = true;
+              description = "Ensure flake.nix matches the inputs declared with flake-file";
+              entry = lib.getExe self.packages.${system}.check-flake-file;
+              files = "\\.nix$";
+              name = "flake-file-in-sync";
+              pass_filenames = false;
+            };
             forbid-new-submodules.enable = true;
             mixed-line-endings.enable = true;
             modules-tangled = {

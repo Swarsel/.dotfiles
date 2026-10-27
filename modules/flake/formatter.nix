@@ -1,19 +1,41 @@
-{ inputs, lib, ... }:
 {
-  flake-file.inputs = {
-    pedantix = {
-      inputs = {
-        flake-parts.follows = "flake-parts";
-        git-hooks-nix.follows = "pre-commit-hooks";
-        nixpkgs.follows = "nixpkgs";
-        treefmt-nix.follows = "treefmt-nix";
-      };
-      url = "github:Swarsel/pedantix";
-    };
+  inputs,
+  lib,
+  withSystem,
+  ...
+}:
+{
+  flake-file = {
+    formatter = lib.mkIf (inputs ? treefmt-nix) (
+      pkgs:
+      withSystem pkgs.stdenv.hostPlatform.system (
+        { config, ... }:
+        let
+          inherit (config.treefmt.settings) formatter;
+          nixFormatter = formatter.pedantix or formatter.nixfmt;
+        in
+        pkgs.writeShellApplication {
+          name = "flake-file-formatter";
+          text = ''exec ${nixFormatter.command} ${lib.escapeShellArgs nixFormatter.options} "$@"'';
+        }
+      )
+    );
 
-    treefmt-nix = {
-      inputs.nixpkgs.follows = "nixpkgs";
-      url = "github:numtide/treefmt-nix";
+    inputs = {
+      pedantix = {
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          git-hooks-nix.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+          treefmt-nix.follows = "treefmt-nix";
+        };
+        url = "github:Swarsel/pedantix";
+      };
+
+      treefmt-nix = {
+        inputs.nixpkgs.follows = "nixpkgs";
+        url = "github:numtide/treefmt-nix";
+      };
     };
   };
 }

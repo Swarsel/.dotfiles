@@ -1761,7 +1761,7 @@ A short overview over each notable input and what it does:
   Provides an NGINX module extension that adds OpenTelemetry support.
 
 #+begin_src nix-ts :tangle flake.nix
-  # DO-NOT-EDIT. This file was auto-generated using github:vic/flake-file.
+  # DO-NOT-EDIT. This file was auto-generated using github:denful/flake-file.
   # Use `nix run .#write-flake` to regenerate it.
   {
     description = "SwarseFlake - Nix Flake for all SwarselSystems";
@@ -3361,6 +3361,14 @@ This file defines a number of checks that can either be run by calling =nix flak
               end-of-file-fixer.enable = true;
               fix-byte-order-marker.enable = true;
               flake-checker.enable = true;
+              flake-file-in-sync = {
+                enable = true;
+                description = "Ensure flake.nix matches the inputs declared with flake-file";
+                entry = lib.getExe self.packages.${system}.check-flake-file;
+                files = "\\.nix$";
+                name = "flake-file-in-sync";
+                pass_filenames = false;
+              };
               forbid-new-submodules.enable = true;
               mixed-line-endings.enable = true;
               modules-tangled = {
@@ -3448,6 +3456,16 @@ Aside from the =default= devShell which is the one that should usually be called
         system,
         ...
       }:
+      let
+        preCommitStartup = ''
+          top="$(${lib.getExe pkgs.git} rev-parse --show-toplevel)"
+          hooks="$(${lib.getExe pkgs.git} rev-parse --path-format=absolute --git-common-dir)/hooks"
+          if [[ ! -e "$top/.pre-commit-config.yaml" || ! -x "$hooks/pre-commit" ]]; then
+              rm -f "$top/.pre-commit-config.yaml"
+          fi
+          ${config.pre-commit.installationScript}
+        '';
+      in
       {
         devshells = {
           default =
@@ -3517,7 +3535,7 @@ Aside from the =default= devShell which is the one that should usually be called
                   name = "c";
                 }
               ];
-              devshell.startup.pre-commit.text = config.pre-commit.installationScript;
+              devshell.startup.pre-commit.text = preCommitStartup;
               env =
                 let
                   nix-plugins = pkgs.stable26_05.nix-plugins.override {
@@ -3591,7 +3609,10 @@ Aside from the =default= devShell which is the one that should usually be called
                 self.packages.${system}.swarsel-bootstrap
               ];
             };
-          hooks.devshell.startup.pre-commit.text = config.pre-commit.installationScript;
+          hooks.devshell = {
+            motd = "";
+            startup.pre-commit.text = preCommitStartup;
+          };
         };
       };
   }
@@ -3646,22 +3667,44 @@ Defines a formatter that can be called using =nix fmt=.
 Usually all formatting in this repo is done automatically while editing in Emacs. However, it is nice to have a backup formatter to rely on and treefmt is extremely nice to work with, as it allows setting formatters for all kinds of aspects of the flake.
 
 #+begin_src nix-ts :tangle modules/flake/formatter.nix
-  { inputs, lib, ... }:
   {
-    flake-file.inputs = {
-      pedantix = {
-        inputs = {
-          flake-parts.follows = "flake-parts";
-          git-hooks-nix.follows = "pre-commit-hooks";
-          nixpkgs.follows = "nixpkgs";
-          treefmt-nix.follows = "treefmt-nix";
-        };
-        url = "github:Swarsel/pedantix";
-      };
+    inputs,
+    lib,
+    withSystem,
+    ...
+  }:
+  {
+    flake-file = {
+      formatter = lib.mkIf (inputs ? treefmt-nix) (
+        pkgs:
+        withSystem pkgs.stdenv.hostPlatform.system (
+          { config, ... }:
+          let
+            inherit (config.treefmt.settings) formatter;
+            nixFormatter = formatter.pedantix or formatter.nixfmt;
+          in
+          pkgs.writeShellApplication {
+            name = "flake-file-formatter";
+            text = ''exec ${nixFormatter.command} ${lib.escapeShellArgs nixFormatter.options} "$@"'';
+          }
+        )
+      );
 
-      treefmt-nix = {
-        inputs.nixpkgs.follows = "nixpkgs";
-        url = "github:numtide/treefmt-nix";
+      inputs = {
+        pedantix = {
+          inputs = {
+            flake-parts.follows = "flake-parts";
+            git-hooks-nix.follows = "pre-commit-hooks";
+            nixpkgs.follows = "nixpkgs";
+            treefmt-nix.follows = "treefmt-nix";
+          };
+          url = "github:Swarsel/pedantix";
+        };
+
+        treefmt-nix = {
+          inputs.nixpkgs.follows = "nixpkgs";
+          url = "github:numtide/treefmt-nix";
+        };
       };
     };
   }
@@ -4966,7 +5009,7 @@ This library file defines a few commonly used functions for the tests.
     };
   in
   {
-    flake-file.inputs.nixpkgs-sandbox.url = "github:tebriel/nixpkgs/homebox/0.26.2";
+    flake-file.inputs.nixpkgs-sandbox.url = "github:r-ryantm/nixpkgs/4800f20ae2dc52cc7422118d28d427ef412f0841";
     flake.nixosConfigurations.${configName} = vacanthouse;
 
     perSystem =
@@ -37281,7 +37324,7 @@ Collaborative editing of =.odt= files is a bit weird, as it requires creating th
 :CUSTOM_ID: h:1456dfa6-6e7b-435e-bd0b-d2bb63ce9bd4
 :END:
 
-Recently I have grown to enjoy listening to audiobooks and podcasts while riding my bike.
+Recently I have grown to enjoy listening to audio books and podcasts while riding my bike.
 
 This one needs manual OIDC setup in the admin UI (TODO?)
 
@@ -39153,7 +39196,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
 :END:
 
 
-This is the reverse zone by Hurricane Electric using a trick I learned in https://hawksley.dev/blog/get-free-arpa-domain. It is delegated to =soa= and =srv= in the tunnelbroker rDNS settings and delegates the [[#h:86daedd7-8121-40cd-bccb-759ea8c644bf][acme-dns]] subdomain.
+This is the reverse zone by Hurricane Electric using a trick I learned in https://hawksley.dev/blog/get-free-arpa-domain. It is delegated to =soa= and =srv= in the tunnel-broker rDNS settings and delegates the [[#h:86daedd7-8121-40cd-bccb-759ea8c644bf][acme-dns]] subdomain.
 
 #+begin_src nix-ts :tangle modules/server/infra/_nsd-reverse6.nix
   { globals, ... }:
@@ -46090,6 +46133,33 @@ Calls [[#h:0d64a607-e96e-48a9-aa66-6d968fa20df9][sync-org-from-files]] --dry-run
           echo "org file is out of sync with $updated tangled file(s); run sync-org-from-files and stage SwarselSystems.org."
           exit 1
       fi
+    '';
+  }
+#+end_src
+
+***** check-flake-file
+:PROPERTIES:
+:CUSTOM_ID: h:269ac107-bf21-4721-ae21-7f03fc52929f
+:END:
+
+Makes sure that flake.nix is the same as what =nix run .#write-flake= from [[#h:a51e166a-dbdb-40c6-b9b1-1523537426f0][flake-file]] would produce.
+
+#+begin_src nix-ts :tangle pkgs/flake/check-flake-file/default.nix
+  {
+    name,
+    stdenv,
+    writeShellApplication,
+    ...
+  }:
+
+  writeShellApplication {
+    inherit name;
+    text = ''
+      if [[ -n ''${NIX_BUILD_TOP:-} ]]; then
+          exit 0
+      fi
+
+      nix build --no-link --print-build-logs ".#checks.${stdenv.hostPlatform.system}.check-flake-file"
     '';
   }
 #+end_src

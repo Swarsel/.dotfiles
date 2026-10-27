@@ -23,6 +23,16 @@
       system,
       ...
     }:
+    let
+      preCommitStartup = ''
+        top="$(${lib.getExe pkgs.git} rev-parse --show-toplevel)"
+        hooks="$(${lib.getExe pkgs.git} rev-parse --path-format=absolute --git-common-dir)/hooks"
+        if [[ ! -e "$top/.pre-commit-config.yaml" || ! -x "$hooks/pre-commit" ]]; then
+            rm -f "$top/.pre-commit-config.yaml"
+        fi
+        ${config.pre-commit.installationScript}
+      '';
+    in
     {
       devshells = {
         default =
@@ -92,7 +102,7 @@
                 name = "c";
               }
             ];
-            devshell.startup.pre-commit.text = config.pre-commit.installationScript;
+            devshell.startup.pre-commit.text = preCommitStartup;
             env =
               let
                 nix-plugins = pkgs.stable26_05.nix-plugins.override {
@@ -166,7 +176,10 @@
               self.packages.${system}.swarsel-bootstrap
             ];
           };
-        hooks.devshell.startup.pre-commit.text = config.pre-commit.installationScript;
+        hooks.devshell = {
+          motd = "";
+          startup.pre-commit.text = preCommitStartup;
+        };
       };
     };
 }
