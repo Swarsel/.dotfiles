@@ -113,6 +113,7 @@
             ${serviceName} = {
               after = [ piaTunnel.unit ];
               bindsTo = [ piaTunnel.unit ];
+              environment.SQLITE_TMPDIR = "/tmp";
               partOf = [ piaTunnel.unit ];
               requires = [ piaTunnel.unit ];
               serviceConfig = {
