@@ -160,7 +160,7 @@
                       uid = "host_down";
                     })
                     (confLib.mkGrafanaAlertRule {
-                      expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
+                      expr = ''max by (host, mountpoint) (100 * (node_filesystem_size_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} - node_filesystem_free_bytes) / (node_filesystem_size_bytes - node_filesystem_free_bytes + node_filesystem_avail_bytes))'';
                       forDuration = "10m";
                       op = "gt";
                       severity = "warning";
@@ -168,6 +168,14 @@
                       threshold = 80;
                       title = "Disk above 80% used";
                       uid = "disk_filling";
+                    })
+                    (confLib.mkGrafanaAlertRule {
+                      expr = "max by (host, device) (node_btrfs_device_errors_total)";
+                      op = "gt";
+                      summary = "{{ $labels.host }}: btrfs device {{ $labels.device }} has recorded I/O or checksum errors";
+                      threshold = 0;
+                      title = "btrfs device errors";
+                      uid = "btrfs_device_errors";
                     })
                   ];
                 }

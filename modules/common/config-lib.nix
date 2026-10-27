@@ -389,12 +389,12 @@
                       # other stuff that should only reside on zfs, not backed up remotely
                       "/persist" = {
                         dataset = "guests/${guestName}/persist";
-                        pool = "Vault";
+                        pool = config.swarselsystems.microVMPool;
                       };
                       # stateful config usually bind-mounted to /var/lib/ that should be backed up remotely
                       "/state" = {
                         dataset = "guests/${guestName}/state";
-                        pool = "Vault";
+                        pool = config.swarselsystems.microVMPool;
                       };
                     }
                     // lib.optionalAttrs (eternorPaths != [ ]) (
@@ -405,7 +405,7 @@
                             eternorPath:
                             lib.nameValuePair "/storage/${eternorPath}" {
                               dataset = "Eternor/${eternorPath}";
-                              pool = "Vault";
+                              pool = config.swarselsystems.storagePool;
                             }
                           )
                           eternorPaths

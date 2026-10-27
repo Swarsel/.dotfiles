@@ -86,6 +86,11 @@
           default = "swarsel";
           type = lib.types.str;
         };
+        microVMPool = lib.mkOption {
+          default = config.swarselsystems.storagePool;
+          description = "ZFS pool holding the persist and state datasets of this host's MicroVM guests.";
+          type = lib.types.str;
+        };
         nodeRoles = lib.mkOption {
           default = [ ];
           description = "List of roles this server fulfills in the infrastructure. Will set `globals.general.<itemName>` to the nodeName for each item.";
@@ -107,6 +112,10 @@
           # default = (if config.swarselsystems.isImpermanence then "/persist" else "") + config.node.secretsDir + "/secrets.yaml";
           default = config.node.secretsDir + "/secrets.yaml";
           type = lib.types.either lib.types.str lib.types.path;
+        };
+        storagePool = lib.mkOption {
+          description = "ZFS pool holding the storage datasets that are shared into MicroVM guests.";
+          type = lib.types.str;
         };
         swapSize = lib.mkOption {
           default = "8G";

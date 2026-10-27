@@ -30,7 +30,7 @@
           nixpkgs.follows = "nixpkgs";
           pre-commit-hooks.follows = "pre-commit-hooks";
         };
-        url = "github:oddlama/nixos-extra-modules/main";
+        url = "github:Swarsel/nixos-extra-modules/dev";
       };
 
       nixos-hardware = {

@@ -1953,7 +1953,7 @@ A short overview over each notable input and what it does:
           nixpkgs.follows = "nixpkgs";
           pre-commit-hooks.follows = "pre-commit-hooks";
         };
-        url = "github:oddlama/nixos-extra-modules/main";
+        url = "github:Swarsel/nixos-extra-modules/dev";
       };
 
       nixos-generators = {
@@ -4191,7 +4191,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
             nixpkgs.follows = "nixpkgs";
             pre-commit-hooks.follows = "pre-commit-hooks";
           };
-          url = "github:oddlama/nixos-extra-modules/main";
+          url = "github:Swarsel/nixos-extra-modules/dev";
         };
 
         nixos-hardware = {
@@ -5050,6 +5050,247 @@ This library file defines a few commonly used functions for the tests.
             };
           }
         );
+      };
+  }
+#+end_src
+
+*** Root mirror
+:PROPERTIES:
+:CUSTOM_ID: h:acec063c-423a-4fd0-b9ae-7b635a13bad9
+:END:
+
+Makes sure that both =swarsel-degraded= and =ssh … degraded= lead to a degraded state that can then boot.
+
+#+begin_src nix-ts :tangle modules/tests/root-mirror.nix
+  { self, inputs, ... }:
+  {
+    perSystem =
+      {
+        lib,
+        pkgs,
+        system,
+        ...
+      }:
+      lib.optionalAttrs (system == "x86_64-linux") {
+        packages.root-mirror-test =
+          let
+            mirror = inputs.nixpkgs.lib.nixosSystem {
+              modules = [
+                inputs.disko.nixosModules.disko
+                inputs.lanzaboote.nixosModules.lanzaboote
+                self.modules.generic.options
+                self.modules.nixos.disk-encrypt
+                self.modules.nixos.impermanence
+                self.modules.nixos.disk-setup
+                "${inputs.nixpkgs}/nixos/modules/profiles/qemu-guest.nix"
+                (
+                  { config, pkgs, ... }:
+                  {
+                    swarselsystems = {
+                      isBtrfs = true;
+                      isCrypted = true;
+                      isImpermanence = true;
+                      rootDisk = "/dev/disk/by-id/virtio-mirror-a";
+                      rootMirrorDisk = "/dev/disk/by-id/virtio-mirror-b";
+                    };
+                    services.getty.autologinUser = "root";
+                    boot = {
+                      initrd.systemd = {
+                        services.root-mirror-degraded.serviceConfig.StandardError = "journal+console";
+                        contents."/etc/ssh/authorized_keys.d/root".source = lib.mkForce (
+                          pkgs.runCommand "root-mirror-test-authorized-keys" { } ''
+                            echo "command=\"${config.swarselsystems.initrdSshCommand}\" $(cat ${testKey}/key.pub)" > $out
+                          ''
+                        );
+                        emergencyAccess = true;
+                        network = {
+                          enable = true;
+                          networks."10-test" = {
+                            address = [ "192.168.1.200/24" ];
+                            matchConfig.Name = "en* eth*";
+                          };
+                        };
+                      };
+                      loader.grub.enable = false;
+                    };
+                    networking.hostName = "mirror";
+                    nixpkgs = {
+                      hostPlatform = system;
+                      overlays = [ self.overlays.additions ];
+                    };
+                    system.stateVersion = "26.05";
+                  }
+                )
+              ];
+              specialArgs = {
+                inherit self inputs;
+                inherit (self.outputs) lib;
+                inherit (self.outputs.swarselsystemsLib) root;
+                minimal = true;
+              };
+            };
+            testKey = pkgs.runCommand "root-mirror-test-key" { nativeBuildInputs = [ pkgs.openssh ]; } ''
+              mkdir $out
+              ssh-keygen -q -t ed25519 -N "" -C root-mirror-test -f $out/key
+            '';
+            normal = mirror.config.system.build.toplevel;
+            mkTarget = toplevel: disks: {
+              virtualisation = {
+                directBoot.enable = false;
+                diskImage = null;
+                fileSystems."/" = {
+                  device = "/dev/disk/by-label/unused";
+                  fsType = "btrfs";
+                };
+                memorySize = 2048;
+                qemu = {
+                  options = [
+                    "-kernel ${toplevel}/kernel"
+                    "-initrd ${toplevel}/initrd"
+                    ''-append "$(cat ${toplevel}/kernel-params) init=${toplevel}/init console=ttyS0"''
+                  ];
+                  drives = map (disk: {
+                    deviceExtraOpts.serial = "mirror-${disk}";
+                    file = "$(pwd)/disk-${disk}.qcow2";
+                    name = "disk-${disk}";
+                  }) disks;
+                  networkingOptions = lib.mkForce [ ];
+                };
+                useDefaultFilesystems = false;
+                useEFIBoot = true;
+              };
+            };
+          in
+          pkgs.testers.runNixOSTest {
+            name = "root-mirror-test";
+            testScript = ''
+              import os
+              import shutil
+
+              installer.start()
+              installer.wait_for_unit("multi-user.target")
+
+              with subtest("Format both disks as LUKS-backed btrfs RAID1 and install"):
+                  installer.succeed("echo mirrorpass > /tmp/disko-password")
+                  installer.succeed("${mirror.config.system.build.formatMount}/bin/disko-format-mount >&2", timeout=900)
+                  installer.succeed("btrfs filesystem df /mnt | grep -q 'Data, RAID1'")
+                  installer.succeed("nixos-install --no-root-passwd --no-bootloader --no-channel-copy --system ${normal} >&2", timeout=1800)
+                  installer.succeed("umount -R /mnt && cryptsetup close cryptroot && cryptsetup close cryptroot-mirror && sync")
+
+              installer.shutdown()
+              os.rename(os.path.join(installer.state_dir, "empty0.qcow2"), os.path.join(installer.state_dir, "disk-a.qcow2"))
+              os.rename(os.path.join(installer.state_dir, "empty1.qcow2"), os.path.join(installer.state_dir, "disk-b.qcow2"))
+
+              checks = 0
+
+              def check(machine, title, command):
+                  global checks
+                  checks += 1
+                  with subtest(title):
+                      machine.send_console(f"{command} && echo check-\"ok\"-{checks}\n")
+                      machine.wait_for_console_text(f"check-ok-{checks}", timeout=120)
+
+              def boot(machine, title):
+                  with subtest(title):
+                      machine.state_dir = installer.state_dir
+                      machine.start()
+                      for _ in range(40):
+                          machine.send_console("mirrorpass\n")
+                          machine.send_console("echo booted-$(hostname)\n")
+                          try:
+                              machine.wait_for_console_text("booted-mirror", timeout=15)
+                              return
+                          except Exception:
+                              pass
+                      raise Exception(f"{machine.name} did not reach a shell")
+
+              def poweroff(machine):
+                  machine.send_console("poweroff\n")
+                  machine.wait_for_shutdown()
+
+              def assert_degraded_flag(machine):
+                  machine.wait_for_console_text("reboot: Restarting system", timeout=180)
+                  machine.wait_for_shutdown()
+                  flag = next(
+                      (v.data for vendor in (machine.efi_vars.read_content() or {}).values() for name, v in vendor.items() if name == "SwarselDegraded"),
+                      None,
+                  )
+                  assert flag == b"\x01", f"{machine.name} set SwarselDegraded to {flag!r}"
+
+              def degraded_checks(machine):
+                  check(machine, f"{machine.name}: btrfs reports the missing device", "btrfs filesystem show / | grep -qi missing")
+                  check(machine, f"{machine.name}: the degraded flag was consumed", "test ! -e /sys/firmware/efi/efivars/SwarselDegraded-*")
+                  check(machine, f"{machine.name}: persisted data survived", "grep -q kept /persist/marker")
+                  check(machine, f"{machine.name}: impermanence rollback ran", "test ! -e /wiped")
+
+              boot(both, "Normal boot with both disks")
+              check(both, "Root spans both devices", "test \"$(btrfs filesystem show / | grep -c devid)\" = 2 && ! btrfs filesystem show / | grep -qi missing")
+              check(both, "Data and metadata are RAID1", "btrfs filesystem df / | grep -q 'Data, RAID1' && btrfs filesystem df / | grep -q 'Metadata, RAID1'")
+              check(both, "Persist a marker and leave a file on the ephemeral root", "echo kept > /persist/marker && touch /wiped && sync")
+              with subtest("swarsel-degraded sets the degraded flag and reboots"):
+                  both.send_console("swarsel-degraded\n")
+                  assert_degraded_flag(both)
+
+              shutil.copy(both.efi_vars_path, onlyB.efi_vars_path)
+              boot(onlyB, "Flagged boot with only disk B comes up degraded")
+              degraded_checks(onlyB)
+              poweroff(onlyB)
+
+              with subtest("Without the flag, a missing disk stops the boot instead of mounting degraded"):
+                  hungA.state_dir = installer.state_dir
+                  hungA.start()
+                  hungA.wait_for_console_text("passphrase", timeout=300)
+                  hungA.send_console("mirrorpass\n")
+                  hungA.wait_for_console_text("Press Enter for system maintenance", timeout=300)
+
+              with subtest("The stuck boot sets the degraded flag over initrd SSH"):
+                  client.start()
+                  client.wait_until_succeeds("nc -z 192.168.1.200 2222", timeout=300)
+                  client.execute("ssh -p 2222 -i /etc/mirror-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@192.168.1.200 degraded")
+                  assert_degraded_flag(hungA)
+
+              boot(hungA, "Flagged boot with only disk A comes up degraded")
+              degraded_checks(hungA)
+              poweroff(hungA)
+            '';
+            nodes = {
+              both = mkTarget normal [
+                "a"
+                "b"
+              ];
+              client.environment = {
+                etc.mirror-key = {
+                  mode = "0600";
+                  source = "${testKey}/key";
+                };
+                systemPackages = [ pkgs.netcat ];
+              };
+              hungA = mkTarget normal [ "a" ];
+              installer = {
+                boot.supportedFilesystems = [ "btrfs" ];
+                environment.systemPackages = [ pkgs.cryptsetup ];
+                nix.settings.substituters = lib.mkForce [ ];
+                virtualisation = {
+                  additionalPaths = [
+                    normal
+                    mirror.config.system.build.formatMount
+                  ];
+                  emptyDiskImages = [
+                    {
+                      driveConfig.deviceExtraOpts.serial = "mirror-a";
+                      size = 4096;
+                    }
+                    {
+                      driveConfig.deviceExtraOpts.serial = "mirror-b";
+                      size = 4096;
+                    }
+                  ];
+                  memorySize = 4096;
+                };
+              };
+              onlyB = mkTarget normal [ "b" ];
+            };
+          };
       };
   }
 #+end_src
@@ -6079,10 +6320,10 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
   {
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
 
       inputs.nixos-hardware.nixosModules.common-cpu-intel
 
+      self.modules.nixos.disk-setup
       self.modules.nixos.systemd-networkd-server-home
       self.modules.nixos.nix-topology-self
     ]
@@ -6112,6 +6353,7 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
       networkKernelModules = [ "r8169" ];
       proxyHost = "twothreetunnel";
       rootDisk = "/dev/disk/by-id/ata-Vi550_S3_SSD_493525388374974";
+      rootMirrorDisk = "/dev/disk/by-id/ata-C300-CTFDDAC064MAG_00000000104302FE494D";
       writeGlobalNetworks = false;
     };
 
@@ -6161,116 +6403,6 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   }
 #+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:42f952e3-1963-427d-b12a-adbbda14c6e5
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/disk-config.nix
-  { config, lib, ... }:
-  let
-    mkDisk =
-      {
-        content,
-        cryptName,
-        device,
-        espMountpoint,
-      }:
-      {
-        inherit device;
-        content = {
-          partitions = {
-            ESP = {
-              content = {
-                format = "vfat";
-                mountOptions = [ "defaults" ] ++ lib.optional (espMountpoint != "/boot") "nofail";
-                mountpoint = espMountpoint;
-                type = "filesystem";
-              };
-              name = "ESP";
-              priority = 1;
-              size = "512M";
-              type = "EF00";
-            };
-            luks = {
-              content = {
-                inherit content;
-                name = cryptName;
-                passwordFile = "/tmp/disko-password";
-                settings = {
-                  allowDiscards = true;
-                  crypttabExtraOpts = [
-                    "fido2-device=auto"
-                    "token-timeout=10"
-                  ];
-                };
-                type = "luks";
-              };
-              size = "100%";
-            };
-          };
-          type = "gpt";
-        };
-        type = "disk";
-      };
-    mkSubvolume = name: mountpoint: {
-      inherit mountpoint;
-      mountOptions = [
-        "subvol=${name}"
-        "compress=zstd"
-        "noatime"
-      ];
-    };
-  in
-  {
-    boot.lanzaboote.extraEfiSysMountPoints = [ "/boot-mirror" ];
-
-    disko.devices.disk = {
-      disk0 = mkDisk {
-        content = null;
-        cryptName = "cryptroot";
-        device = config.swarselsystems.rootDisk;
-        espMountpoint = "/boot";
-      };
-      disk1 = mkDisk {
-        content = {
-          extraArgs = [
-            "-L"
-            "nixos"
-            "-f"
-            "-d"
-            "raid1"
-            "-m"
-            "raid1"
-            "/dev/mapper/cryptroot"
-          ];
-          postCreateHook = ''
-            MNTPOINT=$(mktemp -d)
-            mount "/dev/mapper/cryptroot-mirror" "$MNTPOINT" -o subvolid=5
-            trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-            btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-          '';
-          subvolumes = {
-            "/home" = mkSubvolume "home" "/home";
-            "/log" = mkSubvolume "log" "/var/log";
-            "/nix" = mkSubvolume "nix" "/nix";
-            "/persist" = mkSubvolume "persist" "/persist";
-            "/root" = mkSubvolume "root" "/";
-          };
-          type = "btrfs";
-        };
-        cryptName = "cryptroot-mirror";
-        device = "/dev/disk/by-id/ata-C300-CTFDDAC064MAG_00000000104302FE494D";
-        espMountpoint = "/boot-mirror";
-      };
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = true;
-      "/persist".neededForBoot = true;
-    };
-  }
-#+end_src
 **** Summers (Server: ASUS Z10PA-D8)
 :PROPERTIES:
 :CUSTOM_ID: h:82bf7fb1-631b-4acd-966b-d0c71a9eb463
@@ -6296,10 +6428,10 @@ This is my current main server at home; all services except filesystem backups r
 
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
 
       inputs.nixos-hardware.nixosModules.common-cpu-intel
 
+      self.modules.nixos.disk-setup
       self.modules.nixos.systemd-networkd-server-home
       self.modules.nixos.microvm-host
     ]
@@ -6307,6 +6439,7 @@ This is my current main server at home; all services except filesystem backups r
       self.modules.nixos.profile-localserver
       self.modules.nixos.wireguard
       self.modules.nixos.restic
+      self.modules.nixos.syncoid
       self.modules.nixos.podman
       self.modules.nixos.opkssh
       self.modules.nixos.smartctl-exporter
@@ -6326,25 +6459,33 @@ This is my current main server at home; all services except filesystem backups r
         "services"
         "home"
       ]; # devices is only provided on interface for bmc
+      microVMPool = "Speed";
       networkKernelModules = [ "igb" ];
       proxyHost = "twothreetunnel";
       rootDisk = "/dev/disk/by-id/ata-TS120GMTS420S_J024880123";
-      server.restic.targets = {
-        SwarselState = {
-          # nextcloud stores all data in state dir and has no data that needs backup
-          paths = lib.map (guest: "/Vault/guests/${guest}/state") (
-            builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests)
-          );
-          repository = config.repo.secrets.local.resticRepoState;
+      rootMirrorDisk = "/dev/disk/by-id/ata-Intenso_SSD_Sata_III_2026071600222";
+      server = {
+        restic.targets = {
+          SwarselState = {
+            # nextcloud stores all data in state dir and has no data that needs backup
+            paths = lib.map (guest: "/${config.swarselsystems.microVMPool}/guests/${guest}/state") (
+              builtins.filter (name: name != "nextcloud") (builtins.attrNames config.guests)
+            );
+            repository = config.repo.secrets.local.resticRepoState;
+          };
+          SwarselStorage = {
+            paths = [
+              "/${config.swarselsystems.storagePool}/Eternor/Pictures"
+              "/${config.swarselsystems.storagePool}/Eternor/Documents/paperless"
+            ];
+            repository = config.repo.secrets.local.resticRepoStorage;
+          };
         };
-        SwarselStorage = {
-          paths = [
-            "/Vault/Eternor/Pictures"
-            "/Vault/Eternor/Documents/paperless"
-          ];
-          repository = config.repo.secrets.local.resticRepoStorage;
-        };
+        sanoid.datasets."${config.swarselsystems.microVMPool}/guests" = { };
+        syncoid.targets."${config.swarselsystems.microVMPool}/guests".target =
+          "${config.swarselsystems.storagePool}/backup/guests";
       };
+      storagePool = "Lazy";
       withMicroVMs = true;
       writeGlobalNetworks = false;
     };
@@ -6440,7 +6581,6 @@ This is my current main server at home; all services except filesystem backups r
       "lan"
       "bmc"
     ];
-
   }
 #+end_src
 
@@ -6476,7 +6616,10 @@ This is my current main server at home; all services except filesystem backups r
       kernelModules = [ "kvm-intel" ];
       supportedFilesystems = [ "zfs" ];
       zfs = {
-        extraPools = [ "Vault" ];
+        extraPools = [
+          "Lazy"
+          "Speed"
+        ];
         forceImportRoot = false;
       };
     };
@@ -6489,133 +6632,6 @@ This is my current main server at home; all services except filesystem backups r
     networking.useDHCP = lib.mkDefault true;
     # networking.interfaces.enp3s0.useDHCP = lib.mkDefault true;
     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  }
-#+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:664b45fd-bd7e-4fff-bfc5-29f7a0657be6
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/disk-config.nix
-  { config, lib, ... }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko.devices.disk.disk0 = {
-      content = {
-        partitions = {
-          ESP = {
-            content = {
-              format = "vfat";
-              mountOptions = [ "defaults" ];
-              mountpoint = "/boot";
-              type = "filesystem";
-            };
-            name = "ESP";
-            priority = 1;
-            size = "512M";
-            type = "EF00";
-          };
-          luks = lib.mkIf config.swarselsystems.isCrypted {
-            content = {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              name = "cryptroot";
-              passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-              settings = {
-                allowDiscards = true;
-                # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                crypttabExtraOpts = [
-                  "fido2-device=auto"
-                  "token-timeout=10"
-                ];
-              };
-              type = "luks";
-            };
-            size = "100%";
-          };
-          root = lib.mkIf (!config.swarselsystems.isCrypted) {
-            content = {
-              inherit extraArgs subvolumes type;
-              postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                MNTPOINT=$(mktemp -d)
-                mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-              '';
-            };
-            size = "100%";
-          };
-        };
-        type = "gpt";
-      };
-      device = config.swarselsystems.rootDisk;
-      type = "disk";
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
   }
 #+end_src
 ***** Guests
@@ -11499,6 +11515,11 @@ These are my own configuration options that are used in multiple places througho
             default = "swarsel";
             type = lib.types.str;
           };
+          microVMPool = lib.mkOption {
+            default = config.swarselsystems.storagePool;
+            description = "ZFS pool holding the persist and state datasets of this host's MicroVM guests.";
+            type = lib.types.str;
+          };
           nodeRoles = lib.mkOption {
             default = [ ];
             description = "List of roles this server fulfills in the infrastructure. Will set `globals.general.<itemName>` to the nodeName for each item.";
@@ -11520,6 +11541,10 @@ These are my own configuration options that are used in multiple places througho
             # default = (if config.swarselsystems.isImpermanence then "/persist" else "") + config.node.secretsDir + "/secrets.yaml";
             default = config.node.secretsDir + "/secrets.yaml";
             type = lib.types.either lib.types.str lib.types.path;
+          };
+          storagePool = lib.mkOption {
+            description = "ZFS pool holding the storage datasets that are shared into MicroVM guests.";
+            type = lib.types.str;
           };
           swapSize = lib.mkOption {
             default = "8G";
@@ -13373,9 +13398,16 @@ I also take some precautions in how I get networking information during stage 1.
         '';
       in
       {
-        options.swarselsystems.networkKernelModules = lib.mkOption {
-          default = [ ];
-          type = lib.types.listOf lib.types.str;
+        options.swarselsystems = {
+          initrdSshCommand = lib.mkOption {
+            default = "/bin/systemctl default";
+            description = "Command forced on every SSH login to the initrd.";
+            type = lib.types.str;
+          };
+          networkKernelModules = lib.mkOption {
+            default = [ ];
+            type = lib.types.listOf lib.types.str;
+          };
         };
         config = lib.mkIf config.swarselsystems.isCrypted {
           swarselsystems.enabledServerModules = [ "diskEncryption" ];
@@ -13392,15 +13424,15 @@ I also take some precautions in how I get networking information during stage 1.
                 ssh = {
                   enable = true;
                   authorizedKeys = [
-                    ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/yubikey.pub"}''
-                    ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/magicant.pub"}''
+                    ''command="${config.swarselsystems.initrdSshCommand}" ${builtins.readFile "${self}/files/public/ssh/yubikey.pub"}''
+                    ''command="${config.swarselsystems.initrdSshCommand}" ${builtins.readFile "${self}/files/public/ssh/magicant.pub"}''
                   ];
                   hostKeys = [ "/tmp${hostKeyPathBase}" ]; # use a tmp file otherwise persist mount will be unhappy
                   port = 2222; # avoid hostkey changed nag
                 };
               };
               secrets."/tmp${hostKeyPathBase}" =
-                if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
+                if minimal then (lib.mkForce "${generatedHostKey}") else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
               systemd.initrdBin = with pkgs; [
                 cryptsetup
               ];
@@ -13846,12 +13878,12 @@ I also take some precautions in how I get networking information during stage 1.
                         # other stuff that should only reside on zfs, not backed up remotely
                         "/persist" = {
                           dataset = "guests/${guestName}/persist";
-                          pool = "Vault";
+                          pool = config.swarselsystems.microVMPool;
                         };
                         # stateful config usually bind-mounted to /var/lib/ that should be backed up remotely
                         "/state" = {
                           dataset = "guests/${guestName}/state";
-                          pool = "Vault";
+                          pool = config.swarselsystems.microVMPool;
                         };
                       }
                       // lib.optionalAttrs (eternorPaths != [ ]) (
@@ -13862,7 +13894,7 @@ I also take some precautions in how I get networking information during stage 1.
                               eternorPath:
                               lib.nameValuePair "/storage/${eternorPath}" {
                                 dataset = "Eternor/${eternorPath}";
-                                pool = "Vault";
+                                pool = config.swarselsystems.storagePool;
                               }
                             )
                             eternorPaths
@@ -14346,7 +14378,11 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 
                 # We first mount the btrfs root to /mnt
                 # so we can manipulate btrfs subvolumes.
-                mount -o subvolid=5 -t btrfs ${rootDevice} /mnt
+                mount -o ${
+                  lib.concatStringsSep "," (
+                    [ "subvolid=5" ] ++ lib.optional (lib.elem "degraded" config.fileSystems."/".options) "degraded"
+                  )
+                } -t btrfs ${rootDevice} /mnt
                 btrfs subvolume list -o /mnt/root
 
                 # While we're tempted to just delete /root and create
@@ -14407,6 +14443,211 @@ Normally, doing that also resets the lecture that happens on the first use of =s
           # rollback results in sudo lectures after each reboot
           Defaults lecture = never
         '';
+      };
+  }
+#+end_src
+
+**** Disk setup (with mirrored root)
+:PROPERTIES:
+:CUSTOM_ID: h:3820668d-821b-4901-863a-53dc6b7f24b6
+:END:
+
+This module sets up disks for hosts that use a mirrored root. (#TODO: generalize the module)
+
+If a disk dies, do either:
+- =swarsel-degraded= if the system is still running
+- =ssh -p 2222 <host> degraded= into the initrd
+
+  both set according EFI variables for the next boot and then reboot the system.
+
+#+begin_src nix-ts :tangle modules/common/disk-setup.nix
+  {
+    flake.modules.nixos.disk-setup =
+      {
+        config,
+        lib,
+        pkgs,
+        utils,
+        ...
+      }:
+      let
+        label = "nixos";
+        rootLuks = "cryptroot";
+        mirrorLuks = "cryptroot-mirror";
+        initrdSshCommand = pkgs.writeShellScript "initrd-ssh-command" ''
+          if [ "''${SSH_ORIGINAL_COMMAND:-}" = degraded ]; then
+            exec ${lib.getExe pkgs.swarsel-degraded}
+          fi
+          exec /bin/systemctl default
+        '';
+        degradedFlag = "/run/root-mirror-degraded";
+        efiVariable = "/sys/firmware/efi/efivars/${pkgs.swarsel-degraded.efiVariable}";
+        mkDisk =
+          {
+            content,
+            cryptName,
+            device,
+            espMountpoint,
+          }:
+          {
+            inherit device;
+            content = {
+              partitions = {
+                ESP = {
+                  content = {
+                    format = "vfat";
+                    mountOptions = [
+                      "defaults"
+                      "nofail"
+                    ];
+                    mountpoint = espMountpoint;
+                    type = "filesystem";
+                  };
+                  name = "ESP";
+                  priority = 1;
+                  size = "512M";
+                  type = "EF00";
+                };
+                luks = {
+                  content = {
+                    inherit content;
+                    name = cryptName;
+                    passwordFile = "/tmp/disko-password";
+                    settings = {
+                      allowDiscards = true;
+                      crypttabExtraOpts = [
+                        "fido2-device=auto"
+                        "token-timeout=10"
+                        "nofail"
+                        "x-systemd.device-timeout=30s"
+                      ];
+                    };
+                    type = "luks";
+                  };
+                  size = "100%";
+                };
+              };
+              type = "gpt";
+            };
+            type = "disk";
+          };
+        mkSubvolume = name: mountpoint: {
+          inherit mountpoint;
+          mountOptions = [
+            "subvol=${name}"
+            "compress=zstd"
+            "noatime"
+            "degraded"
+          ];
+        };
+        subvolumes = {
+          "/home" = mkSubvolume "home" "/home";
+          "/log" = mkSubvolume "log" "/var/log";
+          "/nix" = mkSubvolume "nix" "/nix";
+          "/persist" = mkSubvolume "persist" "/persist";
+          "/root" = mkSubvolume "root" "/";
+        };
+      in
+      {
+        options.swarselsystems.rootMirrorDisk = lib.mkOption {
+          type = lib.types.str;
+        };
+        config = {
+          swarselsystems.initrdSshCommand = "${initrdSshCommand}";
+          boot = {
+            initrd = {
+              services.udev.rules = ''TEST=="${degradedFlag}", SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="btrfs", ENV{ID_FS_LABEL}=="${label}", ENV{SYSTEMD_READY}="1"'';
+              systemd = {
+                services = {
+                  root-mirror-degraded = {
+                    before = [ "cryptsetup-pre.target" ];
+                    script = ''
+                      ${lib.getExe' pkgs.e2fsprogs "chattr"} -i ${efiVariable}
+                      rm ${efiVariable}
+                      touch ${degradedFlag}
+                    '';
+                    serviceConfig.Type = "oneshot";
+                    unitConfig = {
+                      ConditionPathExists = efiVariable;
+                      DefaultDependencies = "no";
+                    };
+                    wantedBy = [ "initrd.target" ];
+                    wants = [ "cryptsetup-pre.target" ];
+                  };
+                  root-mirror-scan = {
+                    after = map (name: "systemd-cryptsetup@${utils.escapeSystemdPath name}.service") [
+                      rootLuks
+                      mirrorLuks
+                    ];
+                    before = [
+                      "rollback.service"
+                      "sysroot.mount"
+                    ];
+                    script = ''
+                      udevadm settle
+                      btrfs device scan
+                    '';
+                    serviceConfig.Type = "oneshot";
+                    unitConfig = {
+                      ConditionPathExists = degradedFlag;
+                      DefaultDependencies = "no";
+                    };
+                    wantedBy = [ "initrd.target" ];
+                  };
+                };
+                storePaths = [
+                  initrdSshCommand
+                  (lib.getExe pkgs.swarsel-degraded)
+                  (lib.getExe' pkgs.e2fsprogs "chattr")
+                ];
+              };
+            };
+            lanzaboote.extraEfiSysMountPoints = [ "/boot-mirror" ];
+          };
+          disko.devices.disk = {
+            disk0 = mkDisk {
+              content = null;
+              cryptName = rootLuks;
+              device = config.swarselsystems.rootDisk;
+              espMountpoint = "/boot";
+            };
+            disk1 = mkDisk {
+              content = {
+                inherit subvolumes;
+                extraArgs = [
+                  "-L"
+                  label
+                  "-f"
+                  "-d"
+                  "raid1"
+                  "-m"
+                  "raid1"
+                  "/dev/mapper/${rootLuks}"
+                ];
+                postCreateHook = ''
+                  MNTPOINT=$(mktemp -d)
+                  mount "/dev/mapper/${mirrorLuks}" "$MNTPOINT" -o subvolid=5
+                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                '';
+                type = "btrfs";
+              };
+              cryptName = mirrorLuks;
+              device = config.swarselsystems.rootMirrorDisk;
+              espMountpoint = "/boot-mirror";
+            };
+          };
+          environment.systemPackages = [ pkgs.swarsel-degraded ];
+          fileSystems = lib.mkMerge [
+            (lib.genAttrs (lib.mapAttrsToList (_: subvolume: subvolume.mountpoint) subvolumes) (_: {
+              device = lib.mkForce "/dev/disk/by-label/${label}";
+            }))
+            {
+              "/home".neededForBoot = true;
+              "/persist".neededForBoot = true;
+            }
+          ];
+        };
       };
   }
 #+end_src
@@ -32013,14 +32254,16 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                 ${pkgs.restic}/bin/restic prune
               '';
               environmentFile = config.sops.templates."restic-env-${name}".path;
+              extraBackupArgs = [ "--group-by host" ];
               initialize = true;
               passwordFile = config.sops.secrets."resticpw-${name}".path;
               paths = target.paths ++ lib.optional target.withPostgres postgresDumpDir;
               pruneOpts = [
+                "--group-by host"
                 "--keep-daily 3"
                 "--keep-weekly 2"
                 "--keep-monthly 3"
-                "--keep-yearly 100"
+                "--keep-yearly 5"
               ];
               timerConfig.OnCalendar = "03:00";
             }
@@ -32029,6 +32272,152 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
       }
 
     ;
+  }
+#+end_src
+
+**** sanoid
+:PROPERTIES:
+:CUSTOM_ID: h:d97f7b4e-2a6c-4161-b3ec-5efcfe968a7f
+:END:
+
+This prunes ZFS snapshots of local datasets and prunes them. I set this up in a way so that receiving systems keep them for longer. This allows me, together with [[#h:f7773fd8-6eaa-4b0c-b335-394bde186e6f][syncoid]], to use a single SSD storage for my MicroVMs safely.
+
+#+begin_src nix-ts :tangle modules/server/infra/sanoid.nix
+  {
+    flake.modules.nixos.sanoid =
+      {
+        root,
+        config,
+        lib,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems.server.sanoid) datasets;
+        retentionFor =
+          dataset:
+          if dataset.replica then
+            {
+              daily = 30;
+              hourly = 48;
+              monthly = 6;
+            }
+          else
+            {
+              daily = 7;
+              hourly = 24;
+              monthly = 0;
+            };
+      in
+      {
+        options.swarselsystems.server.sanoid.datasets = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options.replica = lib.mkOption {
+                default = false;
+                description = "Whether this dataset only receives snapshots instead of taking its own.";
+                type = lib.types.bool;
+              };
+            }
+          );
+        };
+        config = {
+          swarselsystems.enabledServerModules = [ "sanoid" ];
+          topology.self.services = lib.mapAttrs' (
+            name: dataset:
+            lib.nameValuePair "sanoid-${lib.replaceStrings [ "/" ] [ "-" ] name}" {
+              details.retention.text = lib.concatStringsSep ", " (
+                lib.mapAttrsToList (period: count: "${toString count} ${period}") (retentionFor dataset)
+              );
+              icon = root "files/topology-images/openzfs.png";
+              info = if dataset.replica then "${name} (replica)" else name;
+              name = "Sanoid snapshots";
+            }
+          ) datasets;
+          services.sanoid = {
+            enable = true;
+            datasets = lib.mapAttrs (
+              _: dataset:
+              {
+                autoprune = true;
+                autosnap = !dataset.replica;
+                recursive = true;
+              }
+              // retentionFor dataset
+            ) datasets;
+          };
+        };
+      };
+  }
+#+end_src
+
+**** syncoid
+:PROPERTIES:
+:CUSTOM_ID: h:f7773fd8-6eaa-4b0c-b335-394bde186e6f
+:END:
+
+This replicates ZFS datasets into another pool. I use this to backup the data on my SSD MicroVM storage onto my HDD storage.
+
+#+begin_src nix-ts :tangle modules/server/infra/syncoid.nix
+  {
+    flake.modules.nixos.syncoid =
+      {
+        self,
+        root,
+        config,
+        lib,
+        confLib,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems.server.syncoid) targets;
+      in
+      {
+        imports = [
+          self.modules.nixos.sanoid
+        ];
+        options.swarselsystems.server.syncoid.targets = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options.target = lib.mkOption {
+                description = "Dataset that receives the snapshots of the to be backed up dataset.";
+                type = lib.types.str;
+              };
+            }
+          );
+        };
+        config = {
+          swarselsystems = {
+            enabledServerModules = [ "syncoid" ];
+            server.sanoid.datasets = lib.mapAttrs' (
+              _: target: lib.nameValuePair target.target { replica = true; }
+            ) targets;
+          };
+          topology.self.services = lib.mapAttrs' (
+            source: target:
+            lib.nameValuePair "syncoid-${lib.replaceStrings [ "/" ] [ "-" ] source}" {
+              details.interval.text = config.services.syncoid.interval;
+              icon = root "files/topology-images/openzfs.png";
+              info = "${source} → ${target.target}";
+              name = "Syncoid replication";
+            }
+          ) targets;
+          users.persistentIds.syncoid = confLib.mkIds 933;
+          services.syncoid = {
+            enable = true;
+            commands = lib.mapAttrs (_: target: {
+              inherit (target) target;
+              extraArgs = [
+                "--no-sync-snap"
+                "--recvoptions=u"
+              ];
+              recursive = true;
+            }) targets;
+            interval = "hourly";
+          };
+        };
+      };
   }
 #+end_src
 
@@ -33906,7 +34295,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                         uid = "host_down";
                       })
                       (confLib.mkGrafanaAlertRule {
-                        expr = ''max by (host, mountpoint) (100 - (node_filesystem_avail_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} / node_filesystem_size_bytes * 100))'';
+                        expr = ''max by (host, mountpoint) (100 * (node_filesystem_size_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} - node_filesystem_free_bytes) / (node_filesystem_size_bytes - node_filesystem_free_bytes + node_filesystem_avail_bytes))'';
                         forDuration = "10m";
                         op = "gt";
                         severity = "warning";
@@ -33914,6 +34303,14 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
                         threshold = 80;
                         title = "Disk above 80% used";
                         uid = "disk_filling";
+                      })
+                      (confLib.mkGrafanaAlertRule {
+                        expr = "max by (host, device) (node_btrfs_device_errors_total)";
+                        op = "gt";
+                        summary = "{{ $labels.host }}: btrfs device {{ $labels.device }} has recorded I/O or checksum errors";
+                        threshold = 0;
+                        title = "btrfs device errors";
+                        uid = "btrfs_device_errors";
                       })
                     ];
                   }
@@ -44317,6 +44714,42 @@ This utility is used to compare the current state of the root directory with the
                   echo "$path"
               fi
           done
+    '';
+  }
+#+end_src
+
+***** swarsel-degraded
+:PROPERTIES:
+:CUSTOM_ID: h:56b0e717-1aa1-4618-acbf-a85fab6cdce8
+:END:
+
+On hosts with a mirrored root, this sets a (non-volatile due to =0x07=) EFI variable called  =SwarselDegraded= and reboots. The variable is used and unset in [[#h:3820668d-821b-4901-863a-53dc6b7f24b6][Disk setup (with mirrored root)]]. The same is done by =ssh -p 2222 <host> degraded=.
+
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-degraded/default.nix
+  {
+    name,
+    e2fsprogs,
+    systemd,
+    writeShellApplication,
+    ...
+  }:
+  let
+    efiVariable = "SwarselDegraded-93933e1c-d7df-47ca-9af3-e98f6553ca3c";
+  in
+  writeShellApplication {
+    inherit name;
+    passthru = { inherit efiVariable; };
+    runtimeInputs = [
+      e2fsprogs
+      systemd
+    ];
+    text = ''
+      variable=/sys/firmware/efi/efivars/${efiVariable}
+      if [ -e "$variable" ]; then
+        chattr -i "$variable"
+      fi
+      printf '\x07\x00\x00\x00\x01' > "$variable"
+      systemctl reboot
     '';
   }
 #+end_src
@@ -55421,7 +55854,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "kind": "DataQuery",
                         "spec": {
                           "editorMode": "code",
-                          "expr": "zfs_pool_health{pool=\"Vault\"}",
+                          "expr": "zfs_pool_health{pool=\"Lazy\"}",
                           "legendFormat": "__auto",
                           "range": true
                         },
@@ -56142,7 +56575,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "spec": {
                           "editorMode": "code",
                           "exemplar": false,
-                          "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype=\"zfs\",host=\"summers\",device=\"Vault\"}\n    / node_filesystem_size_bytes{fstype=\"zfs\",host=\"summers\",device=\"Vault\"}\n  )",
+                          "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n    / node_filesystem_size_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n  )",
                           "format": "table",
                           "instant": true,
                           "legendFormat": "__auto",
@@ -56164,7 +56597,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "excludeByName": {
                           "Time": true,
                           "fstype": false,
-                          "{device=\"Vault\", fstype=\"zfs\", host=\"summers\"}": false
+                          "{device=\"Lazy\", fstype=\"zfs\", host=\"summers\"}": false
                         },
                         "includeByName": {},
                         "indexByName": {},

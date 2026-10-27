@@ -25,7 +25,10 @@
     kernelModules = [ "kvm-intel" ];
     supportedFilesystems = [ "zfs" ];
     zfs = {
-      extraPools = [ "Vault" ];
+      extraPools = [
+        "Lazy"
+        "Speed"
+      ];
       forceImportRoot = false;
     };
   };

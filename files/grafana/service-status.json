@@ -153,7 +153,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
-                        "expr": "zfs_pool_health{pool=\"Vault\"}",
+                        "expr": "zfs_pool_health{pool=\"Lazy\"}",
                         "legendFormat": "__auto",
                         "range": true
                       },
@@ -874,7 +874,7 @@
                       "spec": {
                         "editorMode": "code",
                         "exemplar": false,
-                        "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype=\"zfs\",host=\"summers\",device=\"Vault\"}\n    / node_filesystem_size_bytes{fstype=\"zfs\",host=\"summers\",device=\"Vault\"}\n  )",
+                        "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n    / node_filesystem_size_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n  )",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "__auto",
@@ -896,7 +896,7 @@
                       "excludeByName": {
                         "Time": true,
                         "fstype": false,
-                        "{device=\"Vault\", fstype=\"zfs\", host=\"summers\"}": false
+                        "{device=\"Lazy\", fstype=\"zfs\", host=\"summers\"}": false
                       },
                       "includeByName": {},
                       "indexByName": {},

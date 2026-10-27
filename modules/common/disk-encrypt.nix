@@ -23,9 +23,16 @@
       '';
     in
     {
-      options.swarselsystems.networkKernelModules = lib.mkOption {
-        default = [ ];
-        type = lib.types.listOf lib.types.str;
+      options.swarselsystems = {
+        initrdSshCommand = lib.mkOption {
+          default = "/bin/systemctl default";
+          description = "Command forced on every SSH login to the initrd.";
+          type = lib.types.str;
+        };
+        networkKernelModules = lib.mkOption {
+          default = [ ];
+          type = lib.types.listOf lib.types.str;
+        };
       };
       config = lib.mkIf config.swarselsystems.isCrypted {
         swarselsystems.enabledServerModules = [ "diskEncryption" ];
@@ -42,15 +49,15 @@
               ssh = {
                 enable = true;
                 authorizedKeys = [
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/yubikey.pub"}''
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/files/public/ssh/magicant.pub"}''
+                  ''command="${config.swarselsystems.initrdSshCommand}" ${builtins.readFile "${self}/files/public/ssh/yubikey.pub"}''
+                  ''command="${config.swarselsystems.initrdSshCommand}" ${builtins.readFile "${self}/files/public/ssh/magicant.pub"}''
                 ];
                 hostKeys = [ "/tmp${hostKeyPathBase}" ]; # use a tmp file otherwise persist mount will be unhappy
                 port = 2222; # avoid hostkey changed nag
               };
             };
             secrets."/tmp${hostKeyPathBase}" =
-              if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
+              if minimal then (lib.mkForce "${generatedHostKey}") else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
             systemd.initrdBin = with pkgs; [
               cryptsetup
             ];

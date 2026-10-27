@@ -75,14 +75,16 @@
               ${pkgs.restic}/bin/restic prune
             '';
             environmentFile = config.sops.templates."restic-env-${name}".path;
+            extraBackupArgs = [ "--group-by host" ];
             initialize = true;
             passwordFile = config.sops.secrets."resticpw-${name}".path;
             paths = target.paths ++ lib.optional target.withPostgres postgresDumpDir;
             pruneOpts = [
+              "--group-by host"
               "--keep-daily 3"
               "--keep-weekly 2"
               "--keep-monthly 3"
-              "--keep-yearly 100"
+              "--keep-yearly 5"
             ];
             timerConfig.OnCalendar = "03:00";
           }

@@ -37,7 +37,11 @@
 
               # We first mount the btrfs root to /mnt
               # so we can manipulate btrfs subvolumes.
-              mount -o subvolid=5 -t btrfs ${rootDevice} /mnt
+              mount -o ${
+                lib.concatStringsSep "," (
+                  [ "subvolid=5" ] ++ lib.optional (lib.elem "degraded" config.fileSystems."/".options) "degraded"
+                )
+              } -t btrfs ${rootDevice} /mnt
               btrfs subvolume list -o /mnt/root
 
               # While we're tempted to just delete /root and create
