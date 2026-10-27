@@ -8,6 +8,7 @@
   imports = [
     self.modules.nixos.profile-microvm
     self.modules.nixos.jellyfin
+    self.modules.nixos.seerr
   ];
 
   swarselsystems = {

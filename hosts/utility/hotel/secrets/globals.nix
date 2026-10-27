@@ -32,6 +32,7 @@
       paperless.domain = "paperless.example.org";
       readeck.domain = "readeck.example.org";
       searx.domain = "searx.example.org";
+      seerr.domain = "seerr.example.org";
       shlink.domain = "shlink.example.org";
       shopservatory.domain = "shopservatory.example.org";
       slink.domain = "slink.example.org";

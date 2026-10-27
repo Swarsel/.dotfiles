@@ -270,6 +270,11 @@
 
     repoSecrets.url = "./secrets/repo";
 
+    seerr-oidc = {
+      flake = false;
+      url = "github:michaelhthomas/seerr/feat/oidc-login-basic";
+    };
+
     shopservatory = {
       inputs = {
         flake-parts.follows = "flake-parts";

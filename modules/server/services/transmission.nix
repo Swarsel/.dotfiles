@@ -20,6 +20,7 @@
         servicePort
         ;
       inherit (confLib.static)
+        homeProxyIf
         homeServiceAddress
         homeWebProxy
         isHome
@@ -69,17 +70,26 @@
             inherit isHome;
             domain = serviceDomain;
           };
-          networks = confLib.mkDualFirewallRules {
-            forWebProxy = false;
-            tcpPorts = [
-              servicePort
-              radarrPort
-              readarrPort
-              sonarrPort
-              lidarrPort
-              prowlarrPort
-            ];
-          };
+          networks = lib.mkMerge [
+            (confLib.mkDualFirewallRules {
+              forWebProxy = false;
+              tcpPorts = [
+                servicePort
+                radarrPort
+                readarrPort
+                sonarrPort
+                lidarrPort
+                prowlarrPort
+              ];
+            })
+            (lib.optionalAttrs (globals.services ? seerr) {
+              ${homeProxyIf}.hosts.${config.node.name}.firewallRuleForNode.${globals.services.seerr.extraConfig.node}.allowedTCPPorts =
+                [
+                  radarrPort
+                  sonarrPort
+                ];
+            })
+          ];
         };
         sops = {
           secrets = {
