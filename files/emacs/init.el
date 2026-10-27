@@ -1127,12 +1127,17 @@ there's a region, all lines that region covers will be duplicated."
           ("C-c C-x C-u" . markdown-toggle-url-hiding)
           )
   :hook (markdown-mode . swarsel/markdown-mode-keys)
+  :hook (markdown-mode . swarsel/markdown-block-local-font-lock)
   :mode ("README\\.md\\'" . gfm-mode)
   :init
   (defun swarsel/markdown-mode-keys ()
     "Local markdown key customizations."
     (local-set-key (kbd "C-c C-x C-l") #'org-latex-preview)
     (local-set-key (kbd "C-c C-x C-u") #'markdown-toggle-url-hiding))
+
+  (defun swarsel/markdown-block-local-font-lock ()
+    "Stop font-lock from widening every jit-lock chunk to its whole block."
+    (remove-hook 'font-lock-extend-region-functions #'markdown-font-lock-extend-region t))
 
   (setq markdown-command "multimarkdown")
   )
