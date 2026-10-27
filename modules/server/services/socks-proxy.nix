@@ -1,6 +1,7 @@
 {
   flake.modules.nixos.socks-proxy =
     {
+      root,
       config,
       lib,
       confLib,
@@ -32,7 +33,7 @@
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
         topology.self.services.${serviceName} = {
-          icon = "services.not-available";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceAddress}";
           name = lib.swarselsystems.toCapitalized serviceName;
         };

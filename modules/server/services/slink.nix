@@ -2,6 +2,7 @@
   flake.modules.nixos.slink =
     {
       self,
+      root,
       config,
       lib,
       confLib,
@@ -43,7 +44,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "slink" ];
         topology.nodes.${topologyContainerName}.services.${serviceName} = {
-          icon = "services.not-available";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = lib.swarselsystems.toCapitalized serviceName;
         };

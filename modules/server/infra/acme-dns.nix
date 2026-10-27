@@ -1,6 +1,7 @@
 {
   flake.modules.nixos.acme-dns =
     {
+      root,
       config,
       lib,
       confLib,
@@ -36,6 +37,7 @@
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
         topology.self.services.${serviceName} = {
+          icon = root "files/topology-images/${serviceName}.png";
           info = zone;
           name = serviceName;
         };

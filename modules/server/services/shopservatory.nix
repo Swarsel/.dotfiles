@@ -12,6 +12,7 @@
   flake.modules.nixos.shopservatory =
     {
       self,
+      root,
       inputs,
       config,
       lib,
@@ -64,7 +65,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "shopservatory" ];
         topology.self.services.${serviceName} = {
-          icon = "services.not-available";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = lib.swarselsystems.toCapitalized serviceName;
         };

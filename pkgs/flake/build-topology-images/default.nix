@@ -37,20 +37,31 @@ writeShellApplication {
     [[ -n "$width" && -n "$height" ]] \
       || { echo "could not parse svg dimensions from $svg" >&2; exit 1; }
 
-    profile="$(mktemp -d)"
-    trap 'rm -rf "$profile"' EXIT
+    work="$(mktemp -d)"
+    trap 'rm -rf "$work"' EXIT
 
-    chromium \
-      --headless \
-      --no-sandbox \
-      --hide-scrollbars \
-      --force-device-scale-factor=1 \
-      --user-data-dir="$profile" \
-      --default-background-color=00000000 \
-      --window-size="''${width%.*},''${height%.*}" \
-      --screenshot="$out/topology.png" \
-      "file://$svg"
+    stripHeight=4096
+    fullHeight=$(( ''${height%.*} + 1 ))
+    strips=()
+    for (( offset = 0; offset < fullHeight; offset += stripHeight )); do
+      strip="$work/strip-$(printf '%05d' "$offset").png"
+      printf '<!doctype html><body style="margin:0"><img src="file://%s" style="display:block;margin-top:-%dpx"></body>' \
+        "$svg" "$offset" > "$work/strip.html"
+      chromium \
+        --headless \
+        --no-sandbox \
+        --hide-scrollbars \
+        --allow-file-access-from-files \
+        --force-device-scale-factor=1 \
+        --user-data-dir="$work/profile" \
+        --default-background-color=00000000 \
+        --window-size="''${width%.*},$(( fullHeight - offset < stripHeight ? fullHeight - offset : stripHeight ))" \
+        --screenshot="$strip" \
+        "file://$work/strip.html"
+      strips+=("$strip")
+    done
 
+    magick "''${strips[@]}" +repage -append +repage "$out/topology.png"
     magick "$out/topology.png" -resize 500x "$out/topology_small.png"
 
     echo "wrote $out/topology.png and $out/topology_small.png"

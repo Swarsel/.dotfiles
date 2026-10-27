@@ -2,6 +2,7 @@
   flake.modules.nixos.metube =
     {
       self,
+      root,
       config,
       lib,
       confLib,
@@ -46,7 +47,7 @@
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
         topology.nodes.${topologyContainerName}.services.${serviceName} = {
-          icon = "services.not-available";
+          icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
           name = "MeTube";
         };

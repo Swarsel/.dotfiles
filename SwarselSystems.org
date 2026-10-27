@@ -7533,6 +7533,18 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
           node = "switch-kitchen";
         }
       ];
+      lan3.physicalConnections = [
+        {
+          interface = "lan";
+          node = "summers";
+        }
+      ];
+      lan4.physicalConnections = [
+        {
+          interface = "bmc";
+          node = "summers";
+        }
+      ];
       lan5.physicalConnections = [
         {
           interface = "eth1";
@@ -26966,6 +26978,7 @@ This is my self-hosted acme-dns instance, which replaces the previous =auth.acme
   {
     flake.modules.nixos.acme-dns =
       {
+        root,
         config,
         lib,
         confLib,
@@ -27001,6 +27014,7 @@ This is my self-hosted acme-dns instance, which replaces the previous =auth.acme
         config = {
           swarselsystems.enabledServerModules = [ serviceName ];
           topology.self.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
             info = zone;
             name = serviceName;
           };
@@ -36988,6 +37002,7 @@ Deployment notes:
     flake.modules.nixos.slink =
       {
         self,
+        root,
         config,
         lib,
         confLib,
@@ -37029,7 +37044,7 @@ Deployment notes:
         config = {
           swarselsystems.enabledServerModules = [ "slink" ];
           topology.nodes.${topologyContainerName}.services.${serviceName} = {
-            icon = "services.not-available";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -38417,6 +38432,7 @@ For many years I depended on the plentiful options of services to download YouTu
     flake.modules.nixos.metube =
       {
         self,
+        root,
         config,
         lib,
         confLib,
@@ -38461,7 +38477,7 @@ For many years I depended on the plentiful options of services to download YouTu
         config = {
           swarselsystems.enabledServerModules = [ serviceName ];
           topology.nodes.${topologyContainerName}.services.${serviceName} = {
-            icon = "services.not-available";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = "MeTube";
           };
@@ -43121,12 +43137,6 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
       }:
       let
         inherit (config.swarselsystems) sopsFile;
-        inherit
-          (confLib.gen {
-            name = "crowdsec";
-          })
-          serviceName
-          ;
         bootstrap = config.swarselsystems.crowdsecBootstrap;
         jumphost = globals.general.jumphost or null;
         jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
@@ -43150,7 +43160,6 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
         options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
         config = {
           swarselsystems.enabledServerModules = [ "crowdsec" ];
-          topology.self.services.${serviceName}.name = lib.swarselsystems.toCapitalized serviceName;
           globals.monitoring.http = confLib.mkHttpMonitoring {
             expectedStatus = 403;
             path = "/v1/decisions";
@@ -43754,6 +43763,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
     flake.modules.nixos.shopservatory =
       {
         self,
+        root,
         inputs,
         config,
         lib,
@@ -43806,7 +43816,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
         config = {
           swarselsystems.enabledServerModules = [ "shopservatory" ];
           topology.self.services.${serviceName} = {
-            icon = "services.not-available";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -44010,6 +44020,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
   {
     flake.modules.nixos.socks-proxy =
       {
+        root,
         config,
         lib,
         confLib,
@@ -44041,7 +44052,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
         config = {
           swarselsystems.enabledServerModules = [ serviceName ];
           topology.self.services.${serviceName} = {
-            icon = "services.not-available";
+            icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceAddress}";
             name = lib.swarselsystems.toCapitalized serviceName;
           };
@@ -46863,20 +46874,31 @@ Recreates the topology diagram + thumbnail.
       [[ -n "$width" && -n "$height" ]] \
         || { echo "could not parse svg dimensions from $svg" >&2; exit 1; }
 
-      profile="$(mktemp -d)"
-      trap 'rm -rf "$profile"' EXIT
+      work="$(mktemp -d)"
+      trap 'rm -rf "$work"' EXIT
 
-      chromium \
-        --headless \
-        --no-sandbox \
-        --hide-scrollbars \
-        --force-device-scale-factor=1 \
-        --user-data-dir="$profile" \
-        --default-background-color=00000000 \
-        --window-size="''${width%.*},''${height%.*}" \
-        --screenshot="$out/topology.png" \
-        "file://$svg"
+      stripHeight=4096
+      fullHeight=$(( ''${height%.*} + 1 ))
+      strips=()
+      for (( offset = 0; offset < fullHeight; offset += stripHeight )); do
+        strip="$work/strip-$(printf '%05d' "$offset").png"
+        printf '<!doctype html><body style="margin:0"><img src="file://%s" style="display:block;margin-top:-%dpx"></body>' \
+          "$svg" "$offset" > "$work/strip.html"
+        chromium \
+          --headless \
+          --no-sandbox \
+          --hide-scrollbars \
+          --allow-file-access-from-files \
+          --force-device-scale-factor=1 \
+          --user-data-dir="$work/profile" \
+          --default-background-color=00000000 \
+          --window-size="''${width%.*},$(( fullHeight - offset < stripHeight ? fullHeight - offset : stripHeight ))" \
+          --screenshot="$strip" \
+          "file://$work/strip.html"
+        strips+=("$strip")
+      done
 
+      magick "''${strips[@]}" +repage -append +repage "$out/topology.png"
       magick "$out/topology.png" -resize 500x "$out/topology_small.png"
 
       echo "wrote $out/topology.png and $out/topology_small.png"

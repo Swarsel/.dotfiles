@@ -57,6 +57,18 @@
         node = "switch-kitchen";
       }
     ];
+    lan3.physicalConnections = [
+      {
+        interface = "lan";
+        node = "summers";
+      }
+    ];
+    lan4.physicalConnections = [
+      {
+        interface = "bmc";
+        node = "summers";
+      }
+    ];
     lan5.physicalConnections = [
       {
         interface = "eth1";

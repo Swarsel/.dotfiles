@@ -10,12 +10,6 @@
     }:
     let
       inherit (config.swarselsystems) sopsFile;
-      inherit
-        (confLib.gen {
-          name = "crowdsec";
-        })
-        serviceName
-        ;
       bootstrap = config.swarselsystems.crowdsecBootstrap;
       jumphost = globals.general.jumphost or null;
       jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
@@ -39,7 +33,6 @@
       options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
       config = {
         swarselsystems.enabledServerModules = [ "crowdsec" ];
-        topology.self.services.${serviceName}.name = lib.swarselsystems.toCapitalized serviceName;
         globals.monitoring.http = confLib.mkHttpMonitoring {
           expectedStatus = 403;
           path = "/v1/decisions";
