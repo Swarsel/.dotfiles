@@ -1,0 +1,70 @@
+From e3b6c98b1556e4c82cec39acc7be91a62449fa84 Mon Sep 17 00:00:00 2001
+From: Aleksei Bavshin <a.bavshin@f5.com>
+Date: Mon, 30 Mar 2026 14:59:33 -0700
+Subject: [PATCH] Fix build with C++20.
+
+OpenTelemetry SDK built with C++20 uses std::span in the API, and we
+want to match the standard to avoid type changes at the API boundary.
+
+However, std::span constructor is explicit for non-default Extent,
+requiring us to use a more verbose specification instead of an
+initializer list.
+---
+ src/http_module.cpp   | 6 ++++--
+ src/trace_context.hpp | 7 +++++--
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/src/http_module.cpp b/src/http_module.cpp
+index 78a5e896..1ccfece9 100644
+--- a/src/http_module.cpp
++++ b/src/http_module.cpp
+@@ -859,6 +859,8 @@ template <class Id>
+ ngx_int_t hexIdVar(ngx_http_request_t* r, ngx_http_variable_value_t* v,
+     uintptr_t data)
+ {
++    namespace nostd = opentelemetry::nostd;
++
+     auto ctx = ensureOtelCtx(r);
+     if (!ctx) {
+         return NGX_ERROR;
+@@ -867,13 +869,13 @@ ngx_int_t hexIdVar(ngx_http_request_t* r, ngx_http_variable_value_t* v,
+     auto id = (Id*)((char*)ctx + data);
+
+     if (id->IsValid()) {
+-        auto size = id->Id().size() * 2;
++        constexpr auto size = 2 * Id::kSize;
+         auto buf = (char*)ngx_pnalloc(r->pool, size);
+         if (buf == NULL) {
+             return NGX_ERROR;
+         }
+
+-        id->ToLowerBase16({buf, size});
++        id->ToLowerBase16(nostd::span<char, size>{buf, size});
+
+         v->len = size;
+         v->valid = 1;
+diff --git a/src/trace_context.hpp b/src/trace_context.hpp
+index 2d9c266d..62ae0390 100644
+--- a/src/trace_context.hpp
++++ b/src/trace_context.hpp
+@@ -67,16 +67,19 @@ struct TraceContext {
+     static void serialize(const TraceContext& tc, char* out)
+     {
+         using namespace opentelemetry::trace::propagation;
++        namespace nostd = opentelemetry::nostd;
+
+         *out++ = '0';
+         *out++ = '0';
+         *out++ = '-';
+
+-        tc.traceId.ToLowerBase16({out, kTraceIdSize});
++        tc.traceId.ToLowerBase16(
++            nostd::span<char, kTraceIdSize>{out, kTraceIdSize});
+         out += kTraceIdSize;
+         *out++ = '-';
+
+-        tc.spanId.ToLowerBase16({out, kSpanIdSize});
++        tc.spanId.ToLowerBase16(
++            nostd::span<char, kSpanIdSize>{out, kSpanIdSize});
+         out += kSpanIdSize;
+         *out++ = '-';

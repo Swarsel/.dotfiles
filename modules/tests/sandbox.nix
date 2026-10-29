@@ -105,6 +105,7 @@ in
               hostDir
               nodeModule
             ];
+            users.users.root.hashedPassword = lib.mkForce null;
             virtualisation = {
               cores = 2;
               memorySize = 4096;

@@ -113,19 +113,9 @@ in
             };
             browserpass.enable = true;
           };
-          boot.initrd = {
-            services.udev.rules = ''
-              ACTION=="add", SUBSYSTEM=="thunderbolt", ATTR{authorized}=="0", ATTR{authorized}="1"
-            '';
-            luks = {
-              fido2Support = false;
-              # disable "support" since we use systemd-cryptenroll
-              # make sure yubikeys are enrolled using
-              # sudo systemd-cryptenroll --fido2-device=auto --fido2-with-user-verification=no --fido2-with-user-presence=true --fido2-with-client-pin=no /dev/nvme0n1p2
-              yubikeySupport = false;
-            };
-            systemd.enable = lib.mkForce true; # make sure we are using initrd systemd even when not using Impermanence
-          };
+          boot.initrd.services.udev.rules = ''
+            ACTION=="add", SUBSYSTEM=="thunderbolt", ATTR{authorized}=="0", ATTR{authorized}="1"
+          '';
           environment = {
             etc."1password/custom_allowed_browsers" = {
               mode = "0755";

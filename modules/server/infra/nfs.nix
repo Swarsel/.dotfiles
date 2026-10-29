@@ -25,9 +25,10 @@
             enable = true;
             nssmdns4 = true;
             openFirewall = true;
-            publish = {
-              enable = true;
-              userServices = true; # Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
+            settings.publish = {
+              disable-publishing = false;
+              disable-user-service-publishing = false; # Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
+              publish-addresses = true;
             };
           };
           # add a user with sudo smbpasswd -a <user>

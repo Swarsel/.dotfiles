@@ -3,7 +3,6 @@
     {
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       ...
@@ -26,7 +25,7 @@
       allowlistCountries = config.repo.secrets.local.crowdsec.allowlistCountries or [ ];
       allowlistCountryScenarios = config.repo.secrets.local.crowdsec.allowlistCountryScenarios or { };
       lapiPort = lib.toInt (
-        lib.last (lib.splitString ":" config.services.crowdsec.settings.general.api.server.listen_uri)
+        lib.last (lib.splitString ":" config.services.crowdsec.settings.config.api.server.listen_uri)
       );
     in
     {
@@ -74,7 +73,20 @@
               "crowdsecurity/http-cve"
               "crowdsecurity/sshd"
             ];
-            localConfig = {
+            settings = {
+              config = {
+                api = {
+                  client.credentials_path =
+                    if bootstrap then "/var/lib/crowdsec/state/lapi.yaml" else config.sops.secrets.crowdsec-lapi.path;
+                  server = {
+                    listen_uri = "127.0.0.1:8089";
+                    online_client.credentials_path =
+                      if bootstrap then "/var/lib/crowdsec/state/capi.yaml" else config.sops.secrets.crowdsec-capi.path;
+                  };
+                };
+                config_paths.data_dir = "/var/lib/crowdsec/state";
+                prometheus.listen_port = 6060;
+              };
               acquisitions = [
                 {
                   filenames = [
@@ -90,7 +102,6 @@
                   source = "journalctl";
                 }
               ];
-
               parsers.s02Enrich = [
                 {
                   description = "Fallback in case base allowlist ever changes";
@@ -125,7 +136,6 @@
                   reason = "Personal home addresses";
                 };
               };
-
               postOverflows.s01Whitelist = [
                 {
                   description = "Allow (but track) host addresses";
@@ -163,17 +173,6 @@
                 };
               };
             };
-            settings = {
-              capi.credentialsFile =
-                if bootstrap then "/var/lib/crowdsec/state/capi.yaml" else config.sops.secrets.crowdsec-capi.path;
-              general.api.server = {
-                enable = true;
-                listen_uri = "127.0.0.1:8089";
-              };
-              lapi.credentialsFile =
-                if bootstrap then "/var/lib/crowdsec/state/lapi.yaml" else config.sops.secrets.crowdsec-lapi.path;
-              simulation.simulation = false;
-            };
           };
           crowdsec-firewall-bouncer = {
             enable = true;
@@ -183,21 +182,16 @@
           };
         };
         environment = {
-          etc = {
-            "alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
-              lib.mkAfter ''
-                prometheus.scrape "crowdsec" {
-                  targets         = [{"__address__" = "127.0.0.1:${toString config.services.crowdsec.settings.general.prometheus.listen_port}"}]
-                  forward_to      = [prometheus.remote_write.mimir.receiver]
-                  job_name        = "crowdsec"
-                  scrape_interval = "30s"
-                }
-              ''
-            );
-            "crowdsec/config.yaml" = lib.mkIf bootstrap {
-              source = (pkgs.formats.yaml { }).generate "crowdsec.yaml" config.services.crowdsec.settings.general;
-            };
-          };
+          etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
+            lib.mkAfter ''
+              prometheus.scrape "crowdsec" {
+                targets         = [{"__address__" = "127.0.0.1:${toString config.services.crowdsec.settings.config.prometheus.listen_port}"}]
+                forward_to      = [prometheus.remote_write.mimir.receiver]
+                job_name        = "crowdsec"
+                scrape_interval = "30s"
+              }
+            ''
+          );
           persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
             directories = [
               {

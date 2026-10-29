@@ -30,6 +30,7 @@
       initrd.network.enable = false;
       kernel.sysctl."kernel.unprivileged_bpf_disabled" = 1;
       tmp.cleanOnBoot = true;
+      zfs.forceImportRoot = false;
     };
     environment = {
       interactiveShellInit = ''

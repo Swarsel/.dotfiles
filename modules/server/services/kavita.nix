@@ -4,7 +4,6 @@
       self,
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       ...
@@ -80,17 +79,20 @@
         };
         services.${serviceName} = {
           enable = true;
+          credentials = {
+            oidc_secret = config.sops.secrets.kanidm-kavita.path;
+            token_key = config.sops.secrets.kavita-token.path;
+          };
           dataDir = "/var/lib/${serviceName}";
           settings = {
             OpenIdConnectSettings = {
               Authority = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
               ClientId = serviceName;
               CustomScopes = [ ];
-              Secret = "@OIDC_SECRET@";
+              Secret = "@oidc_secret@";
             };
             Port = servicePort;
           };
-          tokenKeyFile = config.sops.secrets.kavita-token.path;
           user = serviceUser;
         };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
@@ -101,14 +103,6 @@
               user = serviceUser;
             }
           ];
-        };
-        systemd.services.${serviceName} = {
-          preStart = lib.mkAfter ''
-            ${pkgs.replace-secret}/bin/replace-secret '@OIDC_SECRET@' \
-              "''${CREDENTIALS_DIRECTORY}/oidc-secret" \
-              '/var/lib/${serviceName}/config/appsettings.json'
-          '';
-          serviceConfig.LoadCredential = [ "oidc-secret:${config.sops.secrets.kanidm-kavita.path}" ];
         };
         nodes = lib.mkMerge [
           {

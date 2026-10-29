@@ -70,6 +70,10 @@ in
     hostName = "hotel";
   };
 
-  nixpkgs.overlays = lib.mkAfter [ (_: prev: { niri-stable = prev.niri; }) ];
+  nixpkgs.overlays = lib.mkAfter [
+    (_: prev: {
+      niri-stable = prev.niri.overrideAttrs { inherit (prev.niri-stable) patches; };
+    })
+  ];
 
 }

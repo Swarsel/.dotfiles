@@ -718,6 +718,7 @@
         stylixHomeTargets = {
           emacs.enable = false;
           firefox.profileNames = [ "default" ];
+          rofi.enable = false;
           spicetify.enable = true;
           sway.useWallpaper = false;
           waybar.enable = false;

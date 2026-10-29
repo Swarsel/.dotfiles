@@ -9,6 +9,8 @@
 let
   pubKeys = lib.filesystem.listFilesRecursive (root "files/public/ssh");
   stateVersion = lib.mkDefault "23.05";
+  isSdImage = config.boot.loader.generic-extlinux-compatible.enable;
+  stablePkgs = import self.inputs.nixpkgs-stable26_05 { inherit (pkgs.stdenv.hostPlatform) system; };
   homeFiles = {
     ".bash_history".text = ''
       swarsel-install -n hotel
@@ -70,7 +72,7 @@ in
       git.enable = true;
     };
     boot = {
-      loader.systemd-boot.enable = true;
+      loader.systemd-boot.enable = !isSdImage;
       supportedFilesystems = lib.mkForce [
         "btrfs"
         "vfat"
@@ -102,7 +104,7 @@ in
         btrfs-progs
       ];
     };
-    fileSystems."/boot".options = [ "umask=0077" ];
+    fileSystems."/boot" = lib.mkIf (!isSdImage) { options = [ "umask=0077" ]; };
     home-manager.users = {
       root.home = {
         inherit stateVersion;
@@ -147,19 +149,11 @@ in
       wireless.enable = lib.mkForce false;
     };
     nix = {
-      package =
-        (import self.inputs.nixpkgs-stable26_05 { inherit (pkgs.stdenv.hostPlatform) system; })
-        .nixVersions.nix_2_28;
+      package = stablePkgs.nixVersions.nix_2_30;
       channel.enable = false;
       extraOptions = ''
         plugin-files = ${
-          pkgs.nix-plugins.overrideAttrs (o: {
-            buildInputs = [
-              config.nix.package
-              pkgs.boost
-            ];
-            patches = o.patches or [ ];
-          })
+          stablePkgs.nix-plugins.override { nixComponents = stablePkgs.nixVersions.nixComponents_2_30; }
         }/lib/nix/plugins
         extra-builtins-file = ${../../../files/nix/extra-builtins.nix}
       '';

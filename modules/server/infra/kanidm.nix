@@ -46,6 +46,7 @@
       keyPath =
         if config.swarselsystems.isImpermanence then "/persist${keyPathBase}" else "${keyPathBase}";
       mailSenderUnit = "${serviceName}-mail-sender";
+      hasMailserver = globals.services ? mailserver;
     in
     {
       config = {
@@ -86,7 +87,7 @@
               mode = "0440";
               owner = serviceUser;
             };
-            kanidm-mail-sender-token = { inherit sopsFile; };
+            kanidm-mail-sender-token = lib.mkIf hasMailserver { inherit sopsFile; };
             kanidm-self-signed-crt = {
               group = serviceGroup;
               mode = "0440";
@@ -100,9 +101,9 @@
               sopsFile = certsSopsFile;
             };
             # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
+            notification-mail-pw = lib.mkIf hasMailserver { inherit (notificationMail) sopsFile; };
           };
-          templates."${mailSenderUnit}.toml" = {
+          templates."${mailSenderUnit}.toml" = lib.mkIf hasMailserver {
             content = ''
               token = "${config.sops.placeholder.kanidm-mail-sender-token}"
               instance_display_name = "Kanidm"
@@ -174,7 +175,7 @@
           };
         };
         systemd.services = {
-          ${mailSenderUnit} = {
+          ${mailSenderUnit} = lib.mkIf hasMailserver {
             after = [
               "${serviceName}.service"
               "network-online.target"

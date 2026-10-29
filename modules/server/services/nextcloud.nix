@@ -10,8 +10,6 @@
       ...
     }:
     let
-      inherit (config.repo.secrets.local.nextcloud) adminuser;
-      inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
           name = "nextcloud";
@@ -36,7 +34,7 @@
         webProxy
         ;
 
-      nextcloudVersion = "34";
+      nextcloudVersion = "35";
 
       kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
@@ -74,12 +72,6 @@
               owner = serviceUser;
               sopsFile = kanidmSopsFile;
             };
-            nextcloud-admin-pw = {
-              inherit sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
             notification-mail-pw.sopsFile = notificationMail.sopsFile;
           };
           templates."nextcloud-secrets.json".content = builtins.toJSON {
@@ -92,11 +84,7 @@
         };
         services = {
           ${serviceName} = {
-            config = {
-              inherit adminuser;
-              adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
-              dbtype = "sqlite";
-            };
+            config.dbtype = "sqlite";
             enable = true;
             package = pkgs."nextcloud${nextcloudVersion}";
             configureRedis = true;

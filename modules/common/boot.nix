@@ -11,7 +11,6 @@
         boot = {
           initrd.systemd = {
             users.root.shell = "${pkgs.bashInteractive}/bin/bash";
-            enable = true;
             emergencyAccess = globals.root.hashedPassword;
             extraBin = {
               cryptsetup = "${pkgs.cryptsetup}/bin/cryptsetup";

@@ -58,9 +58,7 @@
         };
         services.adguardhome = {
           enable = true;
-          host = "0.0.0.0";
           mutableSettings = false;
-          port = servicePort;
           settings = {
             dns = {
               bind_hosts = [
@@ -113,6 +111,7 @@
                 url = "https://big.oisd.nl";
               }
             ];
+            http.address = "0.0.0.0:${toString servicePort}";
             user_rules = config.repo.secrets.local.adguardUserRules;
           };
         };

@@ -191,8 +191,8 @@
                 };
             };
             openstackclient = {
-              inherit clouds;
               enable = true;
+              cloudsSettings = { inherit clouds; };
             };
             ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.work.sshConfig {
               "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
@@ -287,7 +287,7 @@
             docker
             postman
             # rclone
-            libguestfs-with-appliance
+            # libguestfs-with-appliance
             prometheus.cli
             tigervnc
             # openstackclient

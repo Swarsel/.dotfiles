@@ -74,7 +74,6 @@
             unitConfig.DefaultDependencies = "no";
             wantedBy = [ "initrd.target" ];
           };
-          enable = true;
         };
         tmp.useTmpfs = lib.mkIf (!isImpermanence) true;
       };

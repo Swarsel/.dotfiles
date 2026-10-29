@@ -1,5 +1,6 @@
 {
   self,
+  config,
   lib,
   minimal,
   ...
@@ -16,6 +17,7 @@
     self.modules.nixos.profile-localserver
     self.modules.nixos.mailserver
     self.modules.nixos.wireguard
+    self.modules.nixos.restic
   ];
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -29,6 +31,15 @@
     isSwap = true;
     proxyHost = "twothreetunnel"; # mail shall not be proxied through twothreetunnel
     rootDisk = "/dev/sda";
+    server.restic.targets.SwarselMail = {
+      paths = [
+        "/var/dkim"
+        "/var/sieve"
+        "/var/vmail"
+      ];
+      repository = config.repo.secrets.local.resticRepo;
+      withPostgres = true;
+    };
     swapSize = "4G";
 
   };

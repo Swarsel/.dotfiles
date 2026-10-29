@@ -53,14 +53,14 @@
           avahi = {
             enable = true;
             openFirewall = true;
-            reflector = true;
+            settings.reflector.enable-reflector = true;
           };
-          resolved = {
-            fallbackDns = [
+          resolved.settings.Resolve = {
+            FallbackDNS = [
               "1.1.1.1"
               "9.9.9.9"
             ];
-            settings.Resolve.MulticastDNS = "no";
+            MulticastDNS = "no";
           };
         };
         boot.kernel.sysctl = {

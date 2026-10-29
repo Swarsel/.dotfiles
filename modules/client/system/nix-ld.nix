@@ -53,7 +53,6 @@
           libnotify
           libogg
           libpng
-          libpng12
           libpulseaudio
           librsvg
           libsamplerate

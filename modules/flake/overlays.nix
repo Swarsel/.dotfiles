@@ -32,6 +32,7 @@ let
       "transmission_3"
     ];
     stable26_05 = [
+      "azure-cli"
       "libdisplay-info_0_2"
       "hexchat"
     ];
@@ -168,6 +169,20 @@ in
                   prev.browserpass
                 ];
               };
+              firezone-gui-client = prev.firezone-gui-client.overrideAttrs (
+                old:
+                let
+                  frontend = old.passthru.frontend.overrideAttrs {
+                    patches = [ (root "files/patches/firezone-gui-client-update-state-loop.patch") ];
+                  };
+                in
+                {
+                  passthru = old.passthru // {
+                    inherit frontend;
+                  };
+                  postPatch = builtins.replaceStrings [ "${old.passthru.frontend}" ] [ "${frontend}" ] old.postPatch;
+                }
+              );
               go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
               isync = prev.isync.override {
                 withCyrusSaslXoauth2 = true;

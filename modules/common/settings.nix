@@ -1,29 +1,6 @@
 let
   nix-version = "2_34";
 
-  mkNixPlugins =
-    pkgs: lib:
-    pkgs.nix-plugins.overrideAttrs (old: {
-      buildInputs = [
-        pkgs.nixVersions."nix_${nix-version}"
-        pkgs.boost
-      ];
-      postPatch =
-        (old.postPatch or "")
-        + lib.optionalString (nix-version == "2_34") ''
-          substituteInPlace extra-builtins.cc \
-          --replace-fail 'Setting<Path> extraBuiltinsFile{this,' 'Setting<std::string> extraBuiltinsFile{this,' \
-          --replace-fail 'settings.nixConfDir + "/extra-builtins.nix",' '"/etc/nix/extra-builtins.nix",' \
-          --replace-fail '.fun = prim_exec,' '.impl = prim_exec,' \
-          --replace-fail '.fun = prim_importNative,' '.impl = prim_importNative,' \
-          --replace-fail '.fun = extraBuiltins,' '.impl = extraBuiltins,' \
-          --replace-fail '.fun = cflags,' '.impl = cflags,' \
-          --replace-fail 'attrs.alloc("NIX_INCLUDE_DIRS").mkString(NIX_INCLUDE_DIRS);' 'attrs.alloc("NIX_INCLUDE_DIRS").mkString(NIX_INCLUDE_DIRS, state.mem);' \
-          --replace-fail 'attrs.alloc("NIX_CFLAGS_OTHER").mkString(NIX_CFLAGS_OTHER);' 'attrs.alloc("NIX_CFLAGS_OTHER").mkString(NIX_CFLAGS_OTHER, state.mem);' \
-          --replace-fail 'attrs.alloc("BOOST_INCLUDE_DIR").mkString(BOOST_INCLUDE_DIR);' 'attrs.alloc("BOOST_INCLUDE_DIR").mkString(BOOST_INCLUDE_DIR, state.mem);'
-        '';
-    });
-
   mkExtraOptions =
     {
       self,
@@ -33,7 +10,9 @@ let
       minimal,
     }:
     ''
-      plugin-files = ${mkNixPlugins pkgs lib}/lib/nix/plugins
+      plugin-files = ${
+        pkgs.nix-plugins.override { nixComponents = pkgs.nixVersions."nixComponents_${nix-version}"; }
+      }/lib/nix/plugins
       extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
     ''
     + lib.optionalString (!minimal) ''
