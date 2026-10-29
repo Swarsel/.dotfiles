@@ -32,6 +32,9 @@
       piaPortFile = "/run/pia/forwarded-port";
       piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
 
+      bazarrUser = "bazarr";
+      bazarrGroup = bazarrUser;
+      bazarrPort = 6767;
       lidarrUser = "lidarr";
       lidarrGroup = lidarrUser;
       lidarrPort = 8686;
@@ -55,6 +58,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "transmission" ];
         topology.self.services = {
+          bazarr.info = "https://${serviceDomain}/bazarr";
           lidarr.info = "https://${serviceDomain}/lidarr";
           prowlarr.info = "https://${serviceDomain}/prowlarr";
           radarr.info = "https://${serviceDomain}/radarr";
@@ -70,11 +74,50 @@
             inherit isHome;
             domain = serviceDomain;
           };
+          monitoring = {
+            http = lib.mkMerge (
+              lib.mapAttrsToList
+                (
+                  serviceName:
+                  {
+                    servicePort,
+                    path ? "/${serviceName}/ping",
+                  }:
+                  confLib.mkHttpMonitoring {
+                    inherit path serviceName servicePort;
+                    expectedBodyRegex = "OK";
+                  }
+                )
+                {
+                  bazarr = {
+                    path = "/bazarr/api/system/ping";
+                    servicePort = bazarrPort;
+                  };
+                  lidarr.servicePort = lidarrPort;
+                  prowlarr.servicePort = prowlarrPort;
+                  radarr.servicePort = radarrPort;
+                  readarr.servicePort = readarrPort;
+                  sonarr.servicePort = sonarrPort;
+                }
+            );
+            systemd = lib.mkMerge [
+              (confLib.mkSystemdMonitoring {
+                oneshot = true;
+                serviceName = "mam-dynamic-seedbox";
+                unit = "mam-dynamic-seedbox.service";
+              })
+              (confLib.mkSystemdMonitoring {
+                serviceName = "transmission";
+                unit = "transmission.service";
+              })
+            ];
+          };
           networks = lib.mkMerge [
             (confLib.mkDualFirewallRules {
               forWebProxy = false;
               tcpPorts = [
                 servicePort
+                bazarrPort
                 radarrPort
                 readarrPort
                 sonarrPort
@@ -107,6 +150,11 @@
         # this user/group section is probably unneeded
         users = {
           users = {
+            "${bazarrUser}" = {
+              extraGroups = [ "users" ];
+              group = bazarrGroup;
+              isSystemUser = true;
+            };
             "${lidarrUser}" = {
               extraGroups = [ "users" ];
               group = lidarrGroup;
@@ -141,6 +189,7 @@
             transmission.extraGroups = [ "users" ];
           };
           groups = {
+            "${bazarrGroup}" = { };
             "${lidarrGroup}" = { };
             "${prowlarrGroup}" = { };
             "${radarrGroup}" = { };
@@ -149,11 +198,23 @@
             dockeruser.gid = 1155;
           };
           persistentIds = {
+            bazarr = confLib.mkIds 932;
             prowlarr = confLib.mkIds 971;
             readarr = confLib.mkIds 970;
           };
         };
         services = {
+          bazarr = {
+            enable = true;
+            group = bazarrGroup;
+            openFirewall = true;
+            settings.general = {
+              base_url = "/bazarr";
+              ip = "0.0.0.0";
+              port = bazarrPort;
+            };
+            user = bazarrUser;
+          };
           lidarr = {
             enable = true;
             dataDir = "/var/lib/lidarr";
@@ -236,6 +297,12 @@
         environment = {
           persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
             directories = [
+              {
+                directory = "/var/lib/bazarr";
+                group = bazarrGroup;
+                mode = "0700";
+                user = bazarrUser;
+              }
               {
                 directory = "/var/lib/radarr";
                 group = radarrGroup;
@@ -422,6 +489,9 @@
         nodes = {
           ${homeWebProxy}.services.nginx = {
             upstreams = {
+              bazarr.servers = {
+                "${homeServiceAddress}:${builtins.toString bazarrPort}" = { };
+              };
               lidarr.servers = {
                 "${homeServiceAddress}:${builtins.toString lidarrPort}" = { };
               };
@@ -452,6 +522,10 @@
                       client_max_body_size    0;
                     '';
                     proxyPass = "http://transmission";
+                  };
+                  "/bazarr" = {
+                    proxyPass = "http://bazarr";
+                    proxyWebsockets = true;
                   };
                   "/lidarr" = {
                     extraConfig = ''
