@@ -51,30 +51,25 @@
               serviceUser
               ;
             inherit (confLib.static)
+              dmarcMailAddress
               homeServiceAddress
               homeWebProxy
               isHome
               nginxAccessRules
               webProxy
               ;
-            inherit (config.repo.secrets.local.mailserver)
-              alias1_1
-              alias1_2
-              alias1_3
-              alias1_4
-              alias2_1
-              alias2_2
-              alias2_3
-              alias2_4
-              user1
-              user2
-              user3
-              ;
             baseDomain = globals.domains.main;
 
             roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
             endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
             endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6 or null;
+            mtaStsDomain = "mta-sts.${baseDomain}";
+            mtaStsPolicy = lib.concatMapStrings (line: "${line}\\r\\n") [
+              "version: STSv1"
+              "mode: testing"
+              "mx: ${serviceDomain}"
+              "max_age: 86400"
+            ];
           in
           {
             swarselsystems.enabledServerModules = [ "mailserver" ];
@@ -120,22 +115,79 @@
                 "${globals.services.${serviceName}.subDomain}" =
                   dns.lib.combinators.host endpointAddress4 endpointAddress6;
                 "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+                _mta-sts.TXT = [
+                  "v=STSv1; id=${builtins.substring 0 32 (builtins.hashString "sha256" mtaStsPolicy)}"
+                ];
+                "_smtp._tls".TXT = [ "v=TLSRPTv1; rua=mailto:${dmarcMailAddress}" ];
+                mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+              };
+              monitoring = {
+                http = confLib.mkHttpMonitoring {
+                  inherit servicePort;
+                  expectedBodyRegex = "Roundcube";
+                  hostHeader = roundcubeDomain;
+                  scheme = "https";
+                  serviceName = "roundcube";
+                };
+                tcp = lib.mkMerge [
+                  (confLib.mkTcpMonitoring {
+                    expectedRegex = "^220 ";
+                    serviceName = "smtp";
+                    servicePort = 25;
+                  })
+                  (confLib.mkTcpMonitoring {
+                    expectedRegex = "^220 ";
+                    serviceName = "submission";
+                    servicePort = 587;
+                  })
+                  (confLib.mkTcpMonitoring {
+                    expectedRegex = "^220 ";
+                    serviceName = "submissions";
+                    servicePort = 465;
+                    tls = true;
+                  })
+                  (confLib.mkTcpMonitoring {
+                    expectedRegex = "^\\* OK";
+                    serviceName = "imaps";
+                    servicePort = 993;
+                    tls = true;
+                  })
+                ];
+                systemd = lib.mkMerge (
+                  map
+                    (
+                      serviceName:
+                      confLib.mkSystemdMonitoring {
+                        inherit serviceName;
+                        unit = "${serviceName}.service";
+                      }
+                    )
+                    [
+                      "postfix-tlspol"
+                      "redis-rspamd"
+                      "rspamd"
+                    ]
+                  ++ [
+                    (confLib.mkSystemdMonitoring {
+                      oneshot = true;
+                      serviceName = "rspamd-dmarc-reporter";
+                      unit = "rspamd-dmarc-reporter.service";
+                    })
+                  ]
+                );
               };
             };
-            sops.secrets = {
-              user1-hashed-pw = {
+            sops.secrets =
+              lib.genAttrs config.repo.secrets.local.mailserver.passwordSecrets (_: {
                 inherit sopsFile;
                 owner = serviceUser;
+              })
+              // {
+                parsedmarc-imap-hashed-password = {
+                  owner = serviceUser;
+                  sopsFile = self + /secrets/general/parsedmarc.yaml;
+                };
               };
-              user2-hashed-pw = {
-                inherit sopsFile;
-                owner = serviceUser;
-              };
-              user3-hashed-pw = {
-                inherit sopsFile;
-                owner = serviceUser;
-              };
-            };
             users.persistentIds = {
               knot-resolver = confLib.mkIds 963;
               postfix-tlspol = confLib.mkIds 962;
@@ -231,35 +283,8 @@
             ];
             mailserver = {
               enable = true;
-              accounts = {
-                "${user1}@${baseDomain}" = {
-                  aliases = [
-                    "${alias1_1}@${baseDomain}"
-                    "${alias1_2}@${baseDomain}"
-                    "${alias1_3}@${baseDomain}"
-                    "${alias1_4}@${baseDomain}"
-                  ];
-                  hashedPasswordFile = config.sops.secrets.user1-hashed-pw.path;
-                };
-                "${user2}@${baseDomain}" = {
-                  aliases = [
-                    "${alias2_1}@${baseDomain}"
-                    "${alias2_2}@${baseDomain}"
-                    "${alias2_3}@${baseDomain}"
-                    "${alias2_4}@${baseDomain}"
-                  ];
-                  hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
-                  sendOnly = true;
-                };
-                "${user3}@${baseDomain}" = {
-                  aliases = [
-                    "@${baseDomain}"
-                  ];
-                  catchAll = [
-                    baseDomain
-                  ];
-                  hashedPasswordFile = config.sops.secrets.user3-hashed-pw.path;
-                };
+              accounts = config.repo.secrets.local.mailserver.accounts // {
+                ${dmarcMailAddress}.hashedPasswordFile = config.sops.secrets.parsedmarc-imap-hashed-password.path;
               };
               # certificateScheme = "acme";
               dmarcReporting.enable = true;
@@ -286,6 +311,17 @@
                 '';
               in
               lib.mkMerge [
+                {
+                  ${webProxy}.services.nginx.virtualHosts.${mtaStsDomain} = {
+                    acmeRoot = null;
+                    forceSSL = true;
+                    locations."= /.well-known/mta-sts.txt".extraConfig = ''
+                      default_type text/plain;
+                      return 200 "${mtaStsPolicy}";
+                    '';
+                    useACMEHost = globals.domains.main;
+                  };
+                }
                 {
                   ${webProxy}.services.nginx = confLib.genNginx {
                     inherit

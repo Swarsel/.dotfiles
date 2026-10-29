@@ -7051,6 +7051,7 @@ This is my current main server at home; all services except filesystem backups r
       self.modules.nixos.tempo
       self.modules.nixos.pyroscope
       self.modules.nixos.gotify
+      self.modules.nixos.parsedmarc
     ];
 
     swarselsystems = {
@@ -14157,6 +14158,7 @@ I also take some precautions in how I get networking information during stage 1.
               routerServer
               webProxy
               ;
+            dmarcMailAddress = "dmarc@${globals.domains.main}";
             homeProxyIf = "home-wgHome";
             homeServiceAddress =
               lib.optionalString inWgHome
@@ -34584,6 +34586,87 @@ This is just a lite probing that runs from the outside to make sure my most impo
   }
 #+end_src
 
+**** parsedmarc
+:PROPERTIES:
+:CUSTOM_ID: h:0d73772d-f728-443f-aebb-8ec7e85fb219
+:END:
+
+Reads the reports that arrive and makes them available to [[#h:a31c7192-e11d-4a26-915d-1bbc38e373d3][Grafana]] (the dashboard is disabled because it is not compatible with my Grafana version)
+
+#+begin_src nix-ts :tangle modules/server/infra/parsedmarc.nix
+  {
+    flake.modules.nixos.parsedmarc =
+      {
+        self,
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/private/opensearch";
+            name = "parsedmarc";
+          })
+          serviceDir
+          serviceName
+          ;
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName}.name = serviceName;
+          globals.monitoring = {
+            http = confLib.mkHttpMonitoring {
+              expectedBodyRegex = ''"status":"(green|yellow)"'';
+              path = "/_cluster/health";
+              serviceName = "opensearch";
+              servicePort = config.services.opensearch.settings."http.port";
+            };
+            systemd = confLib.mkSystemdMonitoring {
+              inherit serviceName;
+              unit = "parsedmarc.service";
+            };
+          };
+          sops.secrets.parsedmarc-imap-password.sopsFile = self + /secrets/general/parsedmarc.yaml;
+          services = {
+            ${serviceName} = {
+              enable = true;
+              provision = {
+                geoIp = false;
+                grafana.dashboard = false;
+              };
+              settings = {
+                general.save_smtp_tls = true;
+                imap = {
+                  host = globals.services.mailserver.domain;
+                  password._secret = config.sops.secrets.parsedmarc-imap-password.path;
+                  port = 993;
+                  ssl = true;
+                  user = confLib.static.dmarcMailAddress;
+                };
+              };
+            };
+            opensearch.extraJavaOptions = [
+              "-Xms512m"
+              "-Xmx512m"
+            ];
+          };
+          environment.persistence."/state".directories = lib.mkIf config.swarselsystems.isMicroVM [
+            {
+              directory = serviceDir;
+              mode = "0700";
+            }
+          ];
+        };
+      }
+
+    ;
+  }
+#+end_src
+
 **** smartctl-exporter
 :PROPERTIES:
 :CUSTOM_ID: h:2bcbd294-2dc1-4346-8c03-60cddb4f00c2
@@ -40395,6 +40478,7 @@ This is the setup of my authoritative dns server. This here is the general confi
                   # dnssec = true;
                   data = dns.lib.toString "${globals.domains.main}" (
                     import ./_nsd-site1.nix {
+                      inherit (confLib.static) dmarcMailAddress;
                       inherit
                         config
                         dns
@@ -40445,6 +40529,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
 #+begin_src nix-ts :tangle modules/server/infra/_nsd-site1.nix
   {
     config,
+    dmarcMailAddress,
     dns,
     globals,
     proxyAddress4,
@@ -40485,6 +40570,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
     DMARC = [
       {
         p = "none";
+        rua = "mailto:${dmarcMailAddress}";
         ttl = 10800;
       }
     ];
@@ -40505,7 +40591,7 @@ The options for A/AAAA records themselves should usually be defined in the respe
     SOA = {
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
       nameServer = "soa";
-      serial = 2026102702; # update this on changes for secondary dns
+      serial = 2026102901; # update this on changes for secondary dns
     };
 
     SRV = [
@@ -40750,30 +40836,25 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 serviceUser
                 ;
               inherit (confLib.static)
+                dmarcMailAddress
                 homeServiceAddress
                 homeWebProxy
                 isHome
                 nginxAccessRules
                 webProxy
                 ;
-              inherit (config.repo.secrets.local.mailserver)
-                alias1_1
-                alias1_2
-                alias1_3
-                alias1_4
-                alias2_1
-                alias2_2
-                alias2_3
-                alias2_4
-                user1
-                user2
-                user3
-                ;
               baseDomain = globals.domains.main;
 
               roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
               endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
               endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6 or null;
+              mtaStsDomain = "mta-sts.${baseDomain}";
+              mtaStsPolicy = lib.concatMapStrings (line: "${line}\\r\\n") [
+                "version: STSv1"
+                "mode: testing"
+                "mx: ${serviceDomain}"
+                "max_age: 86400"
+              ];
             in
             {
               swarselsystems.enabledServerModules = [ "mailserver" ];
@@ -40819,22 +40900,79 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                   "${globals.services.${serviceName}.subDomain}" =
                     dns.lib.combinators.host endpointAddress4 endpointAddress6;
                   "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+                  _mta-sts.TXT = [
+                    "v=STSv1; id=${builtins.substring 0 32 (builtins.hashString "sha256" mtaStsPolicy)}"
+                  ];
+                  "_smtp._tls".TXT = [ "v=TLSRPTv1; rua=mailto:${dmarcMailAddress}" ];
+                  mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+                };
+                monitoring = {
+                  http = confLib.mkHttpMonitoring {
+                    inherit servicePort;
+                    expectedBodyRegex = "Roundcube";
+                    hostHeader = roundcubeDomain;
+                    scheme = "https";
+                    serviceName = "roundcube";
+                  };
+                  tcp = lib.mkMerge [
+                    (confLib.mkTcpMonitoring {
+                      expectedRegex = "^220 ";
+                      serviceName = "smtp";
+                      servicePort = 25;
+                    })
+                    (confLib.mkTcpMonitoring {
+                      expectedRegex = "^220 ";
+                      serviceName = "submission";
+                      servicePort = 587;
+                    })
+                    (confLib.mkTcpMonitoring {
+                      expectedRegex = "^220 ";
+                      serviceName = "submissions";
+                      servicePort = 465;
+                      tls = true;
+                    })
+                    (confLib.mkTcpMonitoring {
+                      expectedRegex = "^\\* OK";
+                      serviceName = "imaps";
+                      servicePort = 993;
+                      tls = true;
+                    })
+                  ];
+                  systemd = lib.mkMerge (
+                    map
+                      (
+                        serviceName:
+                        confLib.mkSystemdMonitoring {
+                          inherit serviceName;
+                          unit = "${serviceName}.service";
+                        }
+                      )
+                      [
+                        "postfix-tlspol"
+                        "redis-rspamd"
+                        "rspamd"
+                      ]
+                    ++ [
+                      (confLib.mkSystemdMonitoring {
+                        oneshot = true;
+                        serviceName = "rspamd-dmarc-reporter";
+                        unit = "rspamd-dmarc-reporter.service";
+                      })
+                    ]
+                  );
                 };
               };
-              sops.secrets = {
-                user1-hashed-pw = {
+              sops.secrets =
+                lib.genAttrs config.repo.secrets.local.mailserver.passwordSecrets (_: {
                   inherit sopsFile;
                   owner = serviceUser;
+                })
+                // {
+                  parsedmarc-imap-hashed-password = {
+                    owner = serviceUser;
+                    sopsFile = self + /secrets/general/parsedmarc.yaml;
+                  };
                 };
-                user2-hashed-pw = {
-                  inherit sopsFile;
-                  owner = serviceUser;
-                };
-                user3-hashed-pw = {
-                  inherit sopsFile;
-                  owner = serviceUser;
-                };
-              };
               users.persistentIds = {
                 knot-resolver = confLib.mkIds 963;
                 postfix-tlspol = confLib.mkIds 962;
@@ -40930,35 +41068,8 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
               ];
               mailserver = {
                 enable = true;
-                accounts = {
-                  "${user1}@${baseDomain}" = {
-                    aliases = [
-                      "${alias1_1}@${baseDomain}"
-                      "${alias1_2}@${baseDomain}"
-                      "${alias1_3}@${baseDomain}"
-                      "${alias1_4}@${baseDomain}"
-                    ];
-                    hashedPasswordFile = config.sops.secrets.user1-hashed-pw.path;
-                  };
-                  "${user2}@${baseDomain}" = {
-                    aliases = [
-                      "${alias2_1}@${baseDomain}"
-                      "${alias2_2}@${baseDomain}"
-                      "${alias2_3}@${baseDomain}"
-                      "${alias2_4}@${baseDomain}"
-                    ];
-                    hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
-                    sendOnly = true;
-                  };
-                  "${user3}@${baseDomain}" = {
-                    aliases = [
-                      "@${baseDomain}"
-                    ];
-                    catchAll = [
-                      baseDomain
-                    ];
-                    hashedPasswordFile = config.sops.secrets.user3-hashed-pw.path;
-                  };
+                accounts = config.repo.secrets.local.mailserver.accounts // {
+                  ${dmarcMailAddress}.hashedPasswordFile = config.sops.secrets.parsedmarc-imap-hashed-password.path;
                 };
                 # certificateScheme = "acme";
                 dmarcReporting.enable = true;
@@ -40985,6 +41096,17 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                   '';
                 in
                 lib.mkMerge [
+                  {
+                    ${webProxy}.services.nginx.virtualHosts.${mtaStsDomain} = {
+                      acmeRoot = null;
+                      forceSSL = true;
+                      locations."= /.well-known/mta-sts.txt".extraConfig = ''
+                        default_type text/plain;
+                        return 200 "${mtaStsPolicy}";
+                      '';
+                      useACMEHost = globals.domains.main;
+                    };
+                  }
                   {
                     ${webProxy}.services.nginx = confLib.genNginx {
                       inherit
@@ -51847,6 +51969,10 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     {
       path_regex = "secrets/general/gatus.yaml$"
       age_keys   = ["moonside", "summers-monitoring"]
+    },
+    {
+      path_regex = "secrets/general/parsedmarc.yaml$"
+      age_keys   = ["eagleland", "summers-monitoring"]
     },
     {
       path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"

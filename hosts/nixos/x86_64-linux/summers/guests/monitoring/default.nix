@@ -13,6 +13,7 @@
     self.modules.nixos.tempo
     self.modules.nixos.pyroscope
     self.modules.nixos.gotify
+    self.modules.nixos.parsedmarc
   ];
 
   swarselsystems = {

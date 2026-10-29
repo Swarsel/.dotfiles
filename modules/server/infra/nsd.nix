@@ -70,6 +70,7 @@
                 # dnssec = true;
                 data = dns.lib.toString "${globals.domains.main}" (
                   import ./_nsd-site1.nix {
+                    inherit (confLib.static) dmarcMailAddress;
                     inherit
                       config
                       dns

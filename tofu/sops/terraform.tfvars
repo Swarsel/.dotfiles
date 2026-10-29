@@ -83,6 +83,10 @@ extra_rules = [
     age_keys   = ["moonside", "summers-monitoring"]
   },
   {
+    path_regex = "secrets/general/parsedmarc.yaml$"
+    age_keys   = ["eagleland", "summers-monitoring"]
+  },
+  {
     path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
     age_keys = [
       "moonside",

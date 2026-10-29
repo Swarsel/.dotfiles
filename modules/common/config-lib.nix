@@ -551,6 +551,7 @@
             routerServer
             webProxy
             ;
+          dmarcMailAddress = "dmarc@${globals.domains.main}";
           homeProxyIf = "home-wgHome";
           homeServiceAddress =
             lib.optionalString inWgHome

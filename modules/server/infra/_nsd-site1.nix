@@ -1,5 +1,6 @@
 {
   config,
+  dmarcMailAddress,
   dns,
   globals,
   proxyAddress4,
@@ -40,6 +41,7 @@ with dns.lib.combinators;
   DMARC = [
     {
       p = "none";
+      rua = "mailto:${dmarcMailAddress}";
       ttl = 10800;
     }
   ];
@@ -60,7 +62,7 @@ with dns.lib.combinators;
   SOA = {
     adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
     nameServer = "soa";
-    serial = 2026102702; # update this on changes for secondary dns
+    serial = 2026102901; # update this on changes for secondary dns
   };
 
   SRV = [
