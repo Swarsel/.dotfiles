@@ -156,6 +156,22 @@
             ))
           else
             (throw "Device MAC ID too large (max is 16777215)");
+        mkDnsMonitoring =
+          {
+            address,
+            queryName,
+            serviceName,
+            alertFor ? null,
+            queryType ? null,
+          }:
+          {
+            ${serviceName} = {
+              inherit address queryName;
+              network = "local-${config.node.name}";
+            }
+            // lib.optionalAttrs (alertFor != null) { inherit alertFor; }
+            // lib.optionalAttrs (queryType != null) { inherit queryType; };
+          };
         mkDnsRecord =
           {
             proxyAddress4,
@@ -462,6 +478,36 @@
           }
           // lib.optionalAttrs (monitor ? transform) { inherit (monitor) transform; }
           // overrides;
+        mkSystemdMonitoring =
+          {
+            serviceName,
+            unit,
+            oneshot ? false,
+          }:
+          {
+            ${serviceName} = {
+              inherit oneshot unit;
+              host = config.node.name;
+            };
+          };
+        mkTcpMonitoring =
+          {
+            serviceName,
+            servicePort,
+            address ? "127.0.0.1",
+            alertFor ? null,
+            expectedRegex ? null,
+            tls ? false,
+          }:
+          {
+            ${serviceName} = {
+              inherit tls;
+              address = "${address}:${toString servicePort}";
+              network = "local-${config.node.name}";
+            }
+            // lib.optionalAttrs (alertFor != null) { inherit alertFor; }
+            // lib.optionalAttrs (expectedRegex != null) { inherit expectedRegex; };
+          };
         mkTrayApplet =
           {
             description,

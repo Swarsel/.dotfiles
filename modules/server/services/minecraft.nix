@@ -46,6 +46,7 @@
             "${globals.services.${serviceName}.subDomain}" =
               dns.lib.combinators.host proxyAddress4 proxyAddress6;
           };
+          monitoring.tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
         };
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           {

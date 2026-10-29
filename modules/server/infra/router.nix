@@ -48,6 +48,10 @@
               network = lib.mkForce vlanName;
             }
           ) globals.networks.home-lan.vlans);
+        globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+          serviceName = "avahi-${config.node.name}";
+          unit = "avahi-daemon.service";
+        };
         users.persistentIds.avahi = confLib.mkIds 978;
         services = {
           avahi = {

@@ -119,6 +119,20 @@
             name = lib.swarselsystems.toCapitalized serviceName;
           };
         };
+        globals.monitoring.systemd = lib.mkMerge (
+          map
+            (
+              daemon:
+              confLib.mkSystemdMonitoring {
+                serviceName = "kea-${daemon}";
+                unit = "kea-${daemon}-server.service";
+              }
+            )
+            [
+              "dhcp4"
+              "dhcp6"
+            ]
+        );
         users.persistentIds.kea = confLib.mkIds 968;
         services.kea = {
           dhcp4 = dhcpX 4;

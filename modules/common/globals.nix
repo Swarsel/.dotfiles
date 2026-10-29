@@ -250,6 +250,58 @@
                 description = "Active probes consumed by each host's local Alloy + blackbox exporter.";
                 type = types.submodule {
                   options = {
+                    cert = mkOption {
+                      default = { };
+                      type = types.attrsOf (
+                        types.submodule {
+                          options = {
+                            address = mkOption {
+                              description = "host:port of a TLS endpoint whose certificate expiry is tracked.";
+                              type = types.str;
+                            };
+                            network = mkOption {
+                              description = "Logical network tag; see monitoring.http.<name>.network.";
+                              type = types.str;
+                            };
+                            serverName = mkOption {
+                              description = "SNI name sent during the handshake; selects the vhost whose certificate is inspected.";
+                              type = types.str;
+                            };
+                          };
+                        }
+                      );
+                    };
+                    dns = mkOption {
+                      default = { };
+                      type = types.attrsOf (
+                        types.submodule {
+                          options = {
+                            address = mkOption {
+                              description = "host:port of the DNS server to query.";
+                              type = types.str;
+                            };
+                            alertFor = mkOption {
+                              default = null;
+                              description = "How long the probe must stay failed before the alert fires";
+                              type = types.nullOr types.str;
+                            };
+                            network = mkOption {
+                              description = "Logical network tag; see monitoring.http.<name>.network.";
+                              type = types.str;
+                            };
+                            queryName = mkOption {
+                              description = "Name to resolve.";
+                              type = types.str;
+                            };
+                            queryType = mkOption {
+                              default = "SOA";
+                              description = "Record type to query.";
+                              type = types.str;
+                            };
+                          };
+                        }
+                      );
+                    };
                     hostNetworks = mkOption {
                       default = { };
                       description = ''
@@ -320,21 +372,50 @@
                         }
                       );
                     };
-                    tls = mkOption {
+                    tcp = mkOption {
                       default = { };
                       type = types.attrsOf (
                         types.submodule {
                           options = {
                             address = mkOption {
-                              description = "host:port of a TLS endpoint whose certificate expiry is tracked.";
+                              description = "host:port to connect to.";
                               type = types.str;
+                            };
+                            alertFor = mkOption {
+                              default = null;
+                              description = "How long the probe must stay failed before the alert fires";
+                              type = types.nullOr types.str;
+                            };
+                            expectedRegex = mkOption {
+                              default = null;
+                              type = types.nullOr types.str;
                             };
                             network = mkOption {
                               description = "Logical network tag; see monitoring.http.<name>.network.";
                               type = types.str;
                             };
-                            serverName = mkOption {
-                              description = "SNI name sent during the handshake; selects the vhost whose certificate is inspected.";
+                            tls = mkOption {
+                              default = false;
+                              type = types.bool;
+                            };
+                          };
+                        }
+                      );
+                    };
+                    systemd = mkOption {
+                      default = { };
+                      type = types.attrsOf (
+                        types.submodule {
+                          options = {
+                            host = mkOption {
+                              type = types.str;
+                            };
+                            oneshot = mkOption {
+                              default = false;
+                              type = types.bool;
+                            };
+                            unit = mkOption {
+                              description = "Full systemd unit name.";
                               type = types.str;
                             };
                           };

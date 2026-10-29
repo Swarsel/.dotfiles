@@ -4047,6 +4047,13 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   }
                 );
                 go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
+                grafanaPlugins = prev.grafanaPlugins // {
+                  grafana-pyroscope-datasource = prev.grafanaPlugins.grafanaPlugin {
+                    pname = "grafana-pyroscope-datasource";
+                    version = "13.0.9";
+                    zipHash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
+                  };
+                };
                 isync = prev.isync.override {
                   withCyrusSaslXoauth2 = true;
                 };
@@ -8147,6 +8154,7 @@ This machine used to be my proxy server, a functionality that is now provided by
       self.modules.nixos.metube
       self.modules.nixos.collabora-online
       self.modules.nixos.filestash
+      self.modules.nixos.gatus
     ];
     swarselsystems = {
       flakePath = "/root/.dotfiles";
@@ -11288,6 +11296,58 @@ Do note that the below does not achieve anything on its own - as is, these would
                   description = "Active probes consumed by each host's local Alloy + blackbox exporter.";
                   type = types.submodule {
                     options = {
+                      cert = mkOption {
+                        default = { };
+                        type = types.attrsOf (
+                          types.submodule {
+                            options = {
+                              address = mkOption {
+                                description = "host:port of a TLS endpoint whose certificate expiry is tracked.";
+                                type = types.str;
+                              };
+                              network = mkOption {
+                                description = "Logical network tag; see monitoring.http.<name>.network.";
+                                type = types.str;
+                              };
+                              serverName = mkOption {
+                                description = "SNI name sent during the handshake; selects the vhost whose certificate is inspected.";
+                                type = types.str;
+                              };
+                            };
+                          }
+                        );
+                      };
+                      dns = mkOption {
+                        default = { };
+                        type = types.attrsOf (
+                          types.submodule {
+                            options = {
+                              address = mkOption {
+                                description = "host:port of the DNS server to query.";
+                                type = types.str;
+                              };
+                              alertFor = mkOption {
+                                default = null;
+                                description = "How long the probe must stay failed before the alert fires";
+                                type = types.nullOr types.str;
+                              };
+                              network = mkOption {
+                                description = "Logical network tag; see monitoring.http.<name>.network.";
+                                type = types.str;
+                              };
+                              queryName = mkOption {
+                                description = "Name to resolve.";
+                                type = types.str;
+                              };
+                              queryType = mkOption {
+                                default = "SOA";
+                                description = "Record type to query.";
+                                type = types.str;
+                              };
+                            };
+                          }
+                        );
+                      };
                       hostNetworks = mkOption {
                         default = { };
                         description = ''
@@ -11358,21 +11418,50 @@ Do note that the below does not achieve anything on its own - as is, these would
                           }
                         );
                       };
-                      tls = mkOption {
+                      tcp = mkOption {
                         default = { };
                         type = types.attrsOf (
                           types.submodule {
                             options = {
                               address = mkOption {
-                                description = "host:port of a TLS endpoint whose certificate expiry is tracked.";
+                                description = "host:port to connect to.";
                                 type = types.str;
+                              };
+                              alertFor = mkOption {
+                                default = null;
+                                description = "How long the probe must stay failed before the alert fires";
+                                type = types.nullOr types.str;
+                              };
+                              expectedRegex = mkOption {
+                                default = null;
+                                type = types.nullOr types.str;
                               };
                               network = mkOption {
                                 description = "Logical network tag; see monitoring.http.<name>.network.";
                                 type = types.str;
                               };
-                              serverName = mkOption {
-                                description = "SNI name sent during the handshake; selects the vhost whose certificate is inspected.";
+                              tls = mkOption {
+                                default = false;
+                                type = types.bool;
+                              };
+                            };
+                          }
+                        );
+                      };
+                      systemd = mkOption {
+                        default = { };
+                        type = types.attrsOf (
+                          types.submodule {
+                            options = {
+                              host = mkOption {
+                                type = types.str;
+                              };
+                              oneshot = mkOption {
+                                default = false;
+                                type = types.bool;
+                              };
+                              unit = mkOption {
+                                description = "Full systemd unit name.";
                                 type = types.str;
                               };
                             };
@@ -13671,6 +13760,22 @@ I also take some precautions in how I get networking information during stage 1.
               ))
             else
               (throw "Device MAC ID too large (max is 16777215)");
+          mkDnsMonitoring =
+            {
+              address,
+              queryName,
+              serviceName,
+              alertFor ? null,
+              queryType ? null,
+            }:
+            {
+              ${serviceName} = {
+                inherit address queryName;
+                network = "local-${config.node.name}";
+              }
+              // lib.optionalAttrs (alertFor != null) { inherit alertFor; }
+              // lib.optionalAttrs (queryType != null) { inherit queryType; };
+            };
           mkDnsRecord =
             {
               proxyAddress4,
@@ -13977,6 +14082,36 @@ I also take some precautions in how I get networking information during stage 1.
             }
             // lib.optionalAttrs (monitor ? transform) { inherit (monitor) transform; }
             // overrides;
+          mkSystemdMonitoring =
+            {
+              serviceName,
+              unit,
+              oneshot ? false,
+            }:
+            {
+              ${serviceName} = {
+                inherit oneshot unit;
+                host = config.node.name;
+              };
+            };
+          mkTcpMonitoring =
+            {
+              serviceName,
+              servicePort,
+              address ? "127.0.0.1",
+              alertFor ? null,
+              expectedRegex ? null,
+              tls ? false,
+            }:
+            {
+              ${serviceName} = {
+                inherit tls;
+                address = "${address}:${toString servicePort}";
+                network = "local-${config.node.name}";
+              }
+              // lib.optionalAttrs (alertFor != null) { inherit alertFor; }
+              // lib.optionalAttrs (expectedRegex != null) { inherit expectedRegex; };
+            };
           mkTrayApplet =
             {
               description,
@@ -26807,6 +26942,22 @@ Handles my main NFS share. User password setup is currently not declarative, I n
       {
         config = {
           swarselsystems.enabledServerModules = [ "nfs" ];
+          globals.monitoring = {
+            tcp = confLib.mkTcpMonitoring {
+              serviceName = "samba";
+              servicePort = 445;
+            };
+            systemd = lib.mkMerge [
+              (confLib.mkSystemdMonitoring {
+                serviceName = "avahi-${config.node.name}";
+                unit = "avahi-daemon.service";
+              })
+              (confLib.mkSystemdMonitoring {
+                serviceName = "samba-wsdd";
+                unit = "samba-wsdd.service";
+              })
+            ];
+          };
           sops.secrets.samba-user-pw = {
             inherit sopsFile;
             mode = "0400";
@@ -26914,7 +27065,7 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
         config = {
           swarselsystems.enabledServerModules = [ "acme" ];
           globals = {
-            monitoring.tls.${config.node.name} = {
+            monitoring.cert.${config.node.name} = {
               address = "127.0.0.1:443";
               network = "local-${config.node.name}";
               serverName = probeDomain;
@@ -27970,6 +28121,10 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                 network = lib.mkForce vlanName;
               }
             ) globals.networks.home-lan.vlans);
+          globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+            serviceName = "avahi-${config.node.name}";
+            unit = "avahi-daemon.service";
+          };
           users.persistentIds.avahi = confLib.mkIds 978;
           services = {
             avahi = {
@@ -29018,6 +29173,10 @@ Simple config for running Spotifyd which allows me to remote play spotify songs 
       {
         config = {
           swarselsystems.enabledServerModules = [ "spotifyd" ];
+          globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+            inherit serviceName;
+            unit = "spotifyd.service";
+          };
           users = {
             users.${serviceUser} = {
               extraGroups = [
@@ -29136,6 +29295,10 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
         ];
         config = {
           swarselsystems.enabledServerModules = [ "mpd" ];
+          globals.monitoring.tcp = confLib.mkTcpMonitoring {
+            inherit serviceName servicePort;
+            expectedRegex = "^OK MPD";
+          };
           sops.secrets.mpd-pw = {
             inherit sopsFile;
             group = serviceGroup;
@@ -29302,6 +29465,10 @@ Many services require a database, and I like to go with full postgres when givin
       {
         config = {
           swarselsystems.enabledServerModules = [ "postgresql" ];
+          globals.monitoring.tcp = confLib.mkTcpMonitoring {
+            serviceName = "${serviceName}-${config.node.name}";
+            servicePort = config.services.${serviceName}.settings.port;
+          };
           services = {
             ${serviceName} = {
               enable = true;
@@ -32339,6 +32506,7 @@ This prunes ZFS snapshots of local datasets and prunes them. I set this up in a 
         root,
         config,
         lib,
+        confLib,
         ...
       }:
       let
@@ -32384,6 +32552,11 @@ This prunes ZFS snapshots of local datasets and prunes them. I set this up in a 
               name = "Sanoid snapshots";
             }
           ) datasets;
+          globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+            oneshot = true;
+            serviceName = "sanoid-${config.node.name}";
+            unit = "sanoid.service";
+          };
           services.sanoid = {
             enable = true;
             datasets = lib.mapAttrs (
@@ -32453,6 +32626,19 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
               name = "Syncoid replication";
             }
           ) targets;
+          globals.monitoring.systemd = lib.mkMerge (
+            map (
+              source:
+              let
+                unitName = "syncoid-${lib.replaceStrings [ "/" ] [ "-" ] source}";
+              in
+              confLib.mkSystemdMonitoring {
+                oneshot = true;
+                serviceName = "${unitName}-${config.node.name}";
+                unit = "${unitName}.service";
+              }
+            ) (lib.attrNames targets)
+          );
           users.persistentIds.syncoid = confLib.mkIds 933;
           services.syncoid = {
             enable = true;
@@ -32483,6 +32669,7 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
         self,
         config,
         lib,
+        pkgs,
         confLib,
         globals,
         ...
@@ -32544,6 +32731,12 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops.secrets = {
+            gatus-watchdog-token = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              sopsFile = self + /secrets/general/gatus.yaml;
+            };
             grafana-admin-pw = {
               inherit sopsFile;
               group = serviceGroup;
@@ -32576,6 +32769,19 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
           services.${serviceName} = {
             enable = true;
             dataDir = serviceDir;
+            declarativePlugins =
+              lib.pipe config.services.${serviceName}.provision.datasources.settings.datasources [
+                (map (datasource: datasource.type))
+                lib.unique
+                (lib.filter (type: pkgs.grafanaPlugins ? ${type}))
+                (map (type: pkgs.grafanaPlugins.${type}))
+              ]
+              ++ (with pkgs.grafanaPlugins; [
+                grafana-exploretraces-app
+                grafana-lokiexplore-app
+                grafana-metricsdrilldown-app
+                grafana-pyroscope-app
+              ]);
             provision = {
               enable = true;
               alerting = {
@@ -32606,6 +32812,23 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                         }
                       ];
                     }
+                    {
+                      name = "watchdog";
+                      orgId = 1;
+                      receivers = [
+                        {
+                          disableResolveMessage = true;
+                          settings = {
+                            authorization_credentials = "$__file{${config.sops.secrets.gatus-watchdog-token.path}}";
+                            authorization_scheme = "Bearer";
+                            httpMethod = "POST";
+                            url = globals.services.gatus.extraConfig.watchdogUrl;
+                          };
+                          type = "webhook";
+                          uid = "gatus_watchdog";
+                        }
+                      ];
+                    }
                   ];
                 };
 
@@ -32622,11 +32845,54 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                       orgId = 1;
                       receiver = "default";
                       repeat_interval = "4h";
+                      routes = [
+                        {
+                          group_interval = "1m";
+                          group_wait = "0s";
+                          object_matchers = [
+                            [
+                              "alertname"
+                              "="
+                              "Watchdog"
+                            ]
+                          ];
+                          receiver = "watchdog";
+                          repeat_interval = "5m";
+                        }
+                      ];
                     }
                   ];
                 };
 
-                rules.settings.apiVersion = 1;
+                rules.settings = {
+                  apiVersion = 1;
+                  groups = [
+                    {
+                      folder = "Infrastructure";
+                      interval = "1m";
+                      name = "watchdog";
+                      orgId = 1;
+                      rules = [
+                        (
+                          confLib.mkGrafanaAlertRule {
+                            expr = "vector(1)";
+                            forDuration = "0s";
+                            noDataState = "OK";
+                            op = "gt";
+                            severity = "none";
+                            summary = "Dead mans switch";
+                            threshold = 0;
+                            title = "Watchdog";
+                            uid = "watchdog";
+                          }
+                          // {
+                            execErrState = "OK";
+                          }
+                        )
+                      ];
+                    }
+                  ];
+                };
               };
               dashboards.settings.providers = [
                 {
@@ -33220,6 +33486,8 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
           ;
 
         memberlistPort = 7948;
+        grpcPort = 9098;
+        grpcAddress = "localhost:${toString grpcPort}";
       in
       {
         config = {
@@ -33258,11 +33526,12 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
             settings = {
               analytics.reporting_enabled = false;
               memberlist.bind_port = memberlistPort;
-              metastore.address = "localhost:9098";
+              metastore.address = grpcAddress;
               multitenancy_enabled = false;
               pyroscopedb.data_path = "${serviceDir}/pyroscope";
+              query_backend.address = grpcAddress;
               server = {
-                grpc_listen_port = 9098;
+                grpc_listen_port = grpcPort;
                 http_listen_address = "0.0.0.0";
                 http_listen_port = servicePort;
                 log_level = "warn";
@@ -33793,6 +34062,31 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
           timeout = "10s";
         };
 
+        mkTcpModule = cfg: {
+          prober = "tcp";
+          tcp = {
+            inherit (cfg) tls;
+            preferred_ip_protocol = "ip4";
+            tls_config.insecure_skip_verify = true;
+          }
+          // lib.optionalAttrs (cfg.expectedRegex != null) {
+            query_response = [ { expect = cfg.expectedRegex; } ];
+          };
+          timeout = "10s";
+        };
+
+        mkDnsModule = cfg: {
+          dns = {
+            preferred_ip_protocol = "ip4";
+            query_name = cfg.queryName;
+            query_type = cfg.queryType;
+            valid_rcodes = [ "NOERROR" ];
+            validate_answer_rrs.fail_if_none_matches_regexp = [ ".+" ];
+          };
+          prober = "dns";
+          timeout = "5s";
+        };
+
         blackboxConfig = pkgs.writeText "blackbox.yml" (
           builtins.toJSON {
             modules = {
@@ -33806,8 +34100,14 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
               name: cfg: lib.nameValuePair "http_${name}" (mkHttpModule cfg)
             ) globals.monitoring.http
             // lib.mapAttrs' (
+              name: cfg: lib.nameValuePair "tcp_${name}" (mkTcpModule cfg)
+            ) globals.monitoring.tcp
+            // lib.mapAttrs' (
+              name: cfg: lib.nameValuePair "dns_${name}" (mkDnsModule cfg)
+            ) globals.monitoring.dns
+            // lib.mapAttrs' (
               name: cfg:
-              lib.nameValuePair "tls_${name}" {
+              lib.nameValuePair "cert_${name}" {
                 prober = "tcp";
                 tcp = {
                   preferred_ip_protocol = "ip4";
@@ -33819,7 +34119,7 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                 };
                 timeout = "10s";
               }
-            ) globals.monitoring.tls;
+            ) globals.monitoring.cert;
           }
         );
 
@@ -33904,14 +34204,34 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
           }) globals.monitoring.ping
         );
 
-        tlsTargets = targetsFor config.node.name (
+        certTargets = targetsFor config.node.name (
           lib.mapAttrsToList (name: cfg: {
             inherit name;
             inherit (cfg) network;
             __address__ = cfg.address;
-            __param_module = "tls_${name}";
-            probe = "tls";
-          }) globals.monitoring.tls
+            __param_module = "cert_${name}";
+            probe = "cert";
+          }) globals.monitoring.cert
+        );
+
+        tcpTargets = targetsFor config.node.name (
+          lib.mapAttrsToList (name: cfg: {
+            inherit name;
+            inherit (cfg) network;
+            __address__ = cfg.address;
+            __param_module = "tcp_${name}";
+            probe = "tcp";
+          }) globals.monitoring.tcp
+        );
+
+        dnsTargets = targetsFor config.node.name (
+          lib.mapAttrsToList (name: cfg: {
+            inherit name;
+            inherit (cfg) network;
+            __address__ = cfg.address;
+            __param_module = "dns_${name}";
+            probe = "dns";
+          }) globals.monitoring.dns
         );
       in
       {
@@ -33921,7 +34241,16 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
             icon = "services.prometheus";
             name = "blackbox-exporter";
           };
-          globals.services.${serviceName}.extraConfig.port = servicePort;
+          globals = {
+            services.${serviceName}.extraConfig.port = servicePort;
+            monitoring.tcp = lib.mkIf config.services.openssh.enable (
+              confLib.mkTcpMonitoring {
+                expectedRegex = "^SSH-2.0";
+                serviceName = "ssh-${config.node.name}";
+                servicePort = lib.head config.services.openssh.ports;
+              }
+            );
+          };
           services.prometheus.exporters.blackbox = {
             enable = true;
             configFile = blackboxConfig;
@@ -33938,37 +34267,53 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                 probeLabel = "ping";
                 targets = pingTargets;
               })
-              + lib.optionalString (tlsTargets != [ ]) (mkBlackboxBlock {
-                probeLabel = "tls";
-                targets = tlsTargets;
+              + lib.optionalString (certTargets != [ ]) (mkBlackboxBlock {
+                probeLabel = "cert";
+                targets = certTargets;
+              })
+              + lib.optionalString (tcpTargets != [ ]) (mkBlackboxBlock {
+                probeLabel = "tcp";
+                targets = tcpTargets;
+              })
+              + lib.optionalString (dnsTargets != [ ]) (mkBlackboxBlock {
+                probeLabel = "dns";
+                targets = dnsTargets;
               })
             )
           );
           nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
             let
               defaultProbeFor = "3m";
-              probesByFor = lib.foldlAttrs (
-                acc: name: cfg:
+              mkProbeRules =
+                kind: probes:
                 let
-                  forDuration = if cfg.alertFor != null then cfg.alertFor else defaultProbeFor;
+                  probesByFor = lib.foldlAttrs (
+                    acc: name: cfg:
+                    let
+                      forDuration = if cfg.alertFor != null then cfg.alertFor else defaultProbeFor;
+                    in
+                    acc // { ${forDuration} = (acc.${forDuration} or [ ]) ++ [ name ]; }
+                  ) { } probes;
+                  mkProbeRule =
+                    forDuration: names:
+                    let
+                      selector = ''probe="${kind}",name=~"${lib.concatStringsSep "|" names}"'';
+                    in
+                    confLib.mkGrafanaAlertRule {
+                      inherit forDuration;
+                      expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
+                      summary = "Blackbox ${lib.toUpper kind} probe for {{ $labels.name }} has been failing";
+                      title = "${lib.toUpper kind} probe failed${
+                        lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"
+                      }";
+                      uid =
+                        if forDuration == defaultProbeFor then
+                          "${kind}_probe_failed"
+                        else
+                          "${kind}_probe_failed_${forDuration}";
+                    };
                 in
-                acc // { ${forDuration} = (acc.${forDuration} or [ ]) ++ [ name ]; }
-              ) { } globals.monitoring.http;
-              mkProbeRule =
-                forDuration: names:
-                let
-                  selector = ''probe="http",name=~"${lib.concatStringsSep "|" names}"'';
-                in
-                confLib.mkGrafanaAlertRule {
-                  inherit forDuration;
-                  expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
-                  summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
-                  title = "HTTP probe failed${
-                    lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"
-                  }";
-                  uid =
-                    if forDuration == defaultProbeFor then "http_probe_failed" else "http_probe_failed_${forDuration}";
-                };
+                lib.mapAttrsToList mkProbeRule probesByFor;
             in
             [
               {
@@ -33976,9 +34321,259 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                 interval = "1m";
                 name = "blackbox";
                 orgId = 1;
-                rules = lib.mapAttrsToList mkProbeRule probesByFor;
+                rules =
+                  lib.concatLists (lib.mapAttrsToList mkProbeRules { inherit (globals.monitoring) dns http tcp; })
+                  ++ [
+                    (confLib.mkGrafanaAlertRule {
+                      expr = ''min by (name) ((probe_ssl_earliest_cert_expiry{probe="cert"} - time()) / 86400) or on(name) (max by (name) (probe_expected{probe="cert"}) * 0)'';
+                      severity = "warning";
+                      summary = "Certificate served by {{ $labels.name }} expires in {{ $values.A.Value | printf \"%.0f\" }} days or could not be fetched";
+                      threshold = 14;
+                      title = "Certificate expiring";
+                      uid = "cert_expiring";
+                    })
+                  ];
               }
             ];
+        };
+      }
+
+    ;
+  }
+#+end_src
+
+**** Gatus
+:PROPERTIES:
+:CUSTOM_ID: h:399fdc6d-fe56-4fe4-9ecc-abad8a8b6e86
+:END:
+
+This is just a lite probing that runs from the outside to make sure my most important "basic needs" are doing fine.
+
+#+begin_src nix-ts :tangle modules/server/infra/gatus.nix
+  {
+    flake.modules.nixos.gatus =
+      {
+        self,
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/private/gatus";
+            name = "gatus";
+            port = 8099;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDir
+          serviceDomain
+          serviceName
+          servicePort
+          ;
+        inherit (confLib.static)
+          dnsServer
+          homeServiceAddress
+          idmServer
+          isHome
+          webProxy
+          ;
+
+        alertAddress = config.repo.secrets.common.mail.address3;
+        certificateValid = "[CERTIFICATE_EXPIRATION] > 240h";
+        mkEndpoint =
+          endpoint:
+          {
+            alerts = [ { type = "email"; } ];
+            interval = "1m";
+          }
+          // endpoint;
+        watchdog = {
+          group = "home";
+          name = "grafana-watchdog";
+        };
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName} = {
+            info = "https://${serviceDomain}";
+            name = lib.swarselsystems.toCapitalized serviceName;
+          };
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+              extra.extraConfig.watchdogUrl = "https://${serviceDomain}/api/v1/endpoints/${watchdog.group}_${watchdog.name}/external?success=true";
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              expectedBodyRegex = "UP";
+              path = "/health";
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          sops = {
+            secrets = {
+              gatus-smtp-password = { inherit (config.swarselsystems) sopsFile; };
+              gatus-watchdog-token.sopsFile = self + /secrets/general/gatus.yaml;
+            };
+            templates.gatus-env.content = ''
+              GATUS_SMTP_PASSWORD=${config.sops.placeholder.gatus-smtp-password}
+              GATUS_WATCHDOG_TOKEN=${config.sops.placeholder.gatus-watchdog-token}
+            '';
+          };
+          services.${serviceName} = {
+            enable = true;
+            environmentFile = config.sops.templates.gatus-env.path;
+            settings = {
+              alerting.email = {
+                default-alert = {
+                  failure-threshold = 3;
+                  send-on-resolved = true;
+                  success-threshold = 2;
+                };
+                from = alertAddress;
+                host = "smtp.gmail.com";
+                password = "\${GATUS_SMTP_PASSWORD}";
+                port = 587;
+                to = "${alertAddress},monitoring@${globals.domains.main}";
+                username = alertAddress;
+              };
+              endpoints = map mkEndpoint [
+                {
+                  conditions = [
+                    "[STATUS] == 200"
+                    "[BODY].database == ok"
+                  ];
+                  group = "home";
+                  name = "grafana";
+                  url = "https://${globals.services.grafana.domain}/api/health";
+                }
+                {
+                  conditions = [
+                    "[STATUS] == 200"
+                    "[BODY] == true"
+                  ];
+                  group = "home";
+                  name = "kanidm";
+                  url = "https://${globals.services.kanidm.domain}/status";
+                }
+                {
+                  conditions = [
+                    "[STATUS] == 200"
+                    certificateValid
+                  ];
+                  group = "cloud";
+                  name = "web-proxy";
+                  url = "https://${globals.services.oauth2-proxy.domain}/ping";
+                }
+                {
+                  conditions = [
+                    "[CONNECTED] == true"
+                    certificateValid
+                  ];
+                  group = "cloud";
+                  name = "smtp";
+                  url = "starttls://${globals.services.mailserver.domain}:587";
+                }
+                {
+                  conditions = [
+                    "[CONNECTED] == true"
+                    certificateValid
+                  ];
+                  group = "cloud";
+                  name = "imap";
+                  url = "tls://${globals.services.mailserver.domain}:993";
+                }
+                {
+                  conditions = [ "[DNS_RCODE] == NOERROR" ];
+                  dns = {
+                    query-name = globals.domains.main;
+                    query-type = "SOA";
+                  };
+                  group = "cloud";
+                  name = "dns";
+                  url = globals.hosts.${dnsServer}.wanAddress4;
+                }
+                {
+                  conditions = [
+                    "[STATUS] == 200"
+                    "[BODY] == pat(*Attic Binary Cache*)"
+                  ];
+                  group = "cloud";
+                  name = "binary-cache";
+                  url = "https://${globals.services.attic.domain}/";
+                }
+              ];
+              external-endpoints = [
+                (
+                  watchdog
+                  // {
+                    alerts = [
+                      {
+                        failure-threshold = 1;
+                        type = "email";
+                      }
+                    ];
+                    heartbeat.interval = "10m";
+                    token = "\${GATUS_WATCHDOG_TOKEN}";
+                  }
+                )
+              ];
+              storage = {
+                path = "/var/lib/gatus/data.db";
+                type = "sqlite";
+              };
+              web = {
+                address = "0.0.0.0";
+                port = servicePort;
+              };
+            };
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              mode = "0700";
+            }
+          ];
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  servicePort
+                  ;
+                oauth2 = true;
+                oauth2Groups = [ "${serviceName}_access" ];
+              };
+            }
+            {
+              ${webProxy}.services.nginx.virtualHosts.${serviceDomain}.locations."~ ^/api/v1/endpoints/[^/]+/external$" =
+                {
+                  bypassAuth = true;
+                  proxyPass = "http://${serviceName}";
+                  setOauth2Headers = false;
+                };
+            }
+          ];
         };
       }
 
@@ -34108,6 +34703,16 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                     threshold = 0;
                     title = "ZFS pool not online";
                     uid = "zfs_pool_unhealthy";
+                  })
+                  (confLib.mkGrafanaAlertRule {
+                    expr = "max by (host, pool) (100 * zfs_pool_allocated_bytes / zfs_pool_size_bytes)";
+                    forDuration = "10m";
+                    op = "gt";
+                    severity = "warning";
+                    summary = "ZFS pool {{ $labels.host }}:{{ $labels.pool }} is more than 80% full";
+                    threshold = 80;
+                    title = "ZFS pool above 80% used";
+                    uid = "zfs_pool_filling";
                   })
                 ];
               }
@@ -34345,7 +34950,7 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                         uid = "host_down";
                       })
                       (confLib.mkGrafanaAlertRule {
-                        expr = ''max by (host, mountpoint) (100 * (node_filesystem_size_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} - node_filesystem_free_bytes) / (node_filesystem_size_bytes - node_filesystem_free_bytes + node_filesystem_avail_bytes))'';
+                        expr = ''max by (host, mountpoint) (100 * (node_filesystem_size_bytes{fstype!~"tmpfs|.*tmpfs|overlay|virtiofs|zfs"} - node_filesystem_free_bytes) / (node_filesystem_size_bytes - node_filesystem_free_bytes + node_filesystem_avail_bytes))'';
                         forDuration = "10m";
                         op = "gt";
                         severity = "warning";
@@ -34361,6 +34966,18 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                         threshold = 0;
                         title = "btrfs device errors";
                         uid = "btrfs_device_errors";
+                      })
+                      (confLib.mkGrafanaAlertRule {
+                        expr = "min by (host, job) (up)";
+                        summary = "{{ $labels.host }}: scrape job {{ $labels.job }} is down";
+                        title = "Scrape target down";
+                        uid = "scrape_target_down";
+                      })
+                      (confLib.mkGrafanaAlertRule {
+                        expr = ''min by (check) (node_systemd_unit_state{state="active"} * on(host, name) group_left(check) unit_expected{oneshot="false"} or (1 - node_systemd_unit_state{state="failed"}) * on(host, name) group_left(check) unit_expected{oneshot="true"}) or on(check) (max by (check) (unit_expected) * 0)'';
+                        summary = "systemd unit for {{ $labels.check }} is not active or has failed";
+                        title = "Systemd unit unhealthy";
+                        uid = "systemd_unit_unhealthy";
                       })
                     ];
                   }
@@ -34393,11 +35010,27 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
               alloyHost:
               let
                 isCentral = alloyHost == globals.general.monitoringServer;
+                units = lib.catAttrs "unit" (
+                  lib.filter (check: check.host == alloyHost) (lib.attrValues globals.monitoring.systemd)
+                );
               in
               {
                 environment.etc = {
                   "alloy/config.alloy".text = lib.mkAfter ''
-                    prometheus.exporter.unix "node" {${lib.optionalString isCentral ''
+                    prometheus.exporter.unix "node" {${
+                      lib.optionalString (units != [ ]) ''
+
+                        enable_collectors = ["systemd"]
+
+                        systemd {
+                          unit_include = "${
+                            lib.replaceStrings [ "\\" ] [ "\\\\" ] (
+                              "(" + lib.concatMapStringsSep "|" lib.escapeRegex units + ")"
+                            )
+                          }"
+                        }
+                      ''
+                    }${lib.optionalString isCentral ''
 
                       textfile {
                         directory = "/etc/alloy/textfiles"
@@ -34442,8 +35075,21 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                         probe_expected{name="${n}",probe="ping"} 1
                       '') (lib.attrNames globals.monitoring.ping)
                       ++ map (n: ''
-                        probe_expected{name="${n}",probe="tls"} 1
-                      '') (lib.attrNames globals.monitoring.tls)
+                        probe_expected{name="${n}",probe="cert"} 1
+                      '') (lib.attrNames globals.monitoring.cert)
+                      ++ map (n: ''
+                        probe_expected{name="${n}",probe="tcp"} 1
+                      '') (lib.attrNames globals.monitoring.tcp)
+                      ++ map (n: ''
+                        probe_expected{name="${n}",probe="dns"} 1
+                      '') (lib.attrNames globals.monitoring.dns)
+                    );
+                  };
+                  "alloy/textfiles/unit_expected.prom" = lib.mkIf isCentral {
+                    text = lib.concatStrings (
+                      lib.mapAttrsToList (check: cfg: ''
+                        unit_expected{check="${check}",host="${cfg.host}",name="${cfg.unit}",oneshot="${lib.boolToString cfg.oneshot}"} 1
+                      '') globals.monitoring.systemd
                     );
                   };
                 };
@@ -36628,6 +37274,10 @@ P2P file-sharing similar to what you might know from wormhole(/-rs), but fully s
               domain = serviceDomain;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring.tcp = confLib.mkTcpMonitoring {
+              inherit serviceName;
+              servicePort = lib.head servicePorts;
+            };
           };
           sops = {
             secrets.croc-password = { inherit sopsFile; };
@@ -39605,6 +40255,11 @@ This is the setup of my authoritative dns server. This here is the general confi
             icon = root "files/topology-images/${serviceName}.png";
             name = lib.toUpper serviceName;
           };
+          globals.monitoring.dns = confLib.mkDnsMonitoring {
+            inherit serviceName;
+            address = "${lib.head config.services.nsd.interfaces}:${toString servicePort}";
+            queryName = globals.domains.main;
+          };
           sops.secrets.tsig-key = { inherit sopsFile; };
           services.nsd = {
             enable = true;
@@ -39894,6 +40549,7 @@ Handles my Minecraft server. It runs forge, so the full server is not NixOS mana
               "${globals.services.${serviceName}.subDomain}" =
                 dns.lib.combinators.host proxyAddress4 proxyAddress6;
             };
+            monitoring.tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
           };
           environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
             {
@@ -40807,6 +41463,20 @@ Apart from that, the only interesting bit here is the advertised dns-server whic
               name = lib.swarselsystems.toCapitalized serviceName;
             };
           };
+          globals.monitoring.systemd = lib.mkMerge (
+            map
+              (
+                daemon:
+                confLib.mkSystemdMonitoring {
+                  serviceName = "kea-${daemon}";
+                  unit = "kea-${daemon}-server.service";
+                }
+              )
+              [
+                "dhcp4"
+                "dhcp6"
+              ]
+          );
           users.persistentIds.kea = confLib.mkIds 968;
           services.kea = {
             dhcp4 = dhcpX 4;
@@ -41497,10 +42167,17 @@ Handles my home DNS server. It also provides some nice block-lists, but the main
                 ;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
-            monitoring.http = confLib.mkHttpMonitoring {
-              inherit serviceName servicePort;
-              expectedBodyRegex = ''"running":true'';
-              path = "/control/status";
+            monitoring = {
+              dns = confLib.mkDnsMonitoring {
+                address = "${lib.head config.services.adguardhome.settings.dns.bind_hosts}:53";
+                queryName = globals.domains.main;
+                serviceName = "${serviceName}-dns";
+              };
+              http = confLib.mkHttpMonitoring {
+                inherit serviceName servicePort;
+                expectedBodyRegex = ''"running":true'';
+                path = "/control/status";
+              };
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
@@ -44099,6 +44776,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               extra.extraConfig.port = servicePort;
               serviceDomain = "socks-proxy.${globals.domains.main}";
             };
+            monitoring.tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
             networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode.${consumer}.allowedTCPPorts =
               [
                 servicePort
@@ -50993,6 +51671,10 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       age_keys   = ["moonside", "summers-utility"]
     },
     {
+      path_regex = "secrets/general/gatus.yaml$"
+      age_keys   = ["moonside", "summers-monitoring"]
+    },
+    {
       path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
       age_keys = [
         "moonside",
@@ -56000,8 +56682,8 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "kind": "DataQuery",
                         "spec": {
                           "editorMode": "code",
-                          "expr": "zfs_pool_health{pool=\"Lazy\"}",
-                          "legendFormat": "__auto",
+                          "expr": "zfs_pool_health",
+                          "legendFormat": "{{host}}:{{pool}}",
                           "range": true
                         },
                         "version": "v0"
@@ -56166,7 +56848,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "spec": {
                           "editorMode": "code",
                           "exemplar": false,
-                          "expr": "min by (name) (probe_success{probe=\"http\"}) or on(name) (probe_expected{probe=\"http\"} * 0)\n",
+                          "expr": "min by (name) (probe_success{probe=~\"http|tcp|dns\"})\nor on(name) min by (name) (label_replace(node_systemd_unit_state{state=\"active\"} * on(host, name) group_left(check) unit_expected{oneshot=\"false\"} or (1 - node_systemd_unit_state{state=\"failed\"}) * on(host, name) group_left(check) unit_expected{oneshot=\"true\"}, \"name\", \"$1\", \"check\", \"(.*)\"))\nor on(name) (max by (name) (probe_expected{probe=~\"http|tcp|dns\"}) * 0)\nor on(name) (max by (name) (label_replace(unit_expected, \"name\", \"$1\", \"check\", \"(.*)\")) * 0)\n",
                           "format": "table",
                           "instant": true,
                           "legendFormat": "__auto",
@@ -56721,7 +57403,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "spec": {
                           "editorMode": "code",
                           "exemplar": false,
-                          "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n    / node_filesystem_size_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n  )",
+                          "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  label_replace(label_replace(100 * zfs_pool_allocated_bytes / zfs_pool_size_bytes, \"device\", \"$1\", \"pool\", \"(.+)\"), \"fstype\", \"zfs\", \"\", \"\")\n  )\n",
                           "format": "table",
                           "instant": true,
                           "legendFormat": "__auto",
@@ -56879,7 +57561,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "spec": {
                           "editorMode": "code",
                           "exemplar": false,
-                          "expr": "smartctl_device_smart_status{host=~\"hintbooth|summers|winters\"}",
+                          "expr": "smartctl_device_smart_status",
                           "format": "time_series",
                           "instant": false,
                           "legendFormat": "{{host}} ({{device}})",
@@ -57168,7 +57850,7 @@ This flake is loaded per default as an input to not obfuscate values that could 
                         "spec": {
                           "editorMode": "code",
                           "exemplar": false,
-                          "expr": "min by (name) ((probe_ssl_earliest_cert_expiry{probe=\"tls\"} - time()) / 86400) or (max by (name) (probe_expected{probe=\"tls\"}) * 0)",
+                          "expr": "min by (name) ((probe_ssl_earliest_cert_expiry{probe=\"cert\"} - time()) / 86400) or (max by (name) (probe_expected{probe=\"cert\"}) * 0)",
                           "format": "time_series",
                           "instant": false,
                           "legendFormat": "{{name}}",

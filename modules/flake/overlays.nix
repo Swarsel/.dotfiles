@@ -184,6 +184,13 @@ in
                 }
               );
               go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
+              grafanaPlugins = prev.grafanaPlugins // {
+                grafana-pyroscope-datasource = prev.grafanaPlugins.grafanaPlugin {
+                  pname = "grafana-pyroscope-datasource";
+                  version = "13.0.9";
+                  zipHash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
+                };
+              };
               isync = prev.isync.override {
                 withCyrusSaslXoauth2 = true;
               };

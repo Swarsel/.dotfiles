@@ -4,6 +4,7 @@
       root,
       config,
       lib,
+      confLib,
       ...
     }:
     let
@@ -49,6 +50,11 @@
             name = "Sanoid snapshots";
           }
         ) datasets;
+        globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+          oneshot = true;
+          serviceName = "sanoid-${config.node.name}";
+          unit = "sanoid.service";
+        };
         services.sanoid = {
           enable = true;
           datasets = lib.mapAttrs (

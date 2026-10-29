@@ -79,6 +79,10 @@ extra_rules = [
     age_keys   = ["moonside", "summers-utility"]
   },
   {
+    path_regex = "secrets/general/gatus.yaml$"
+    age_keys   = ["moonside", "summers-monitoring"]
+  },
+  {
     path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
     age_keys = [
       "moonside",

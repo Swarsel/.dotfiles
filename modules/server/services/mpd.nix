@@ -28,6 +28,10 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "mpd" ];
+        globals.monitoring.tcp = confLib.mkTcpMonitoring {
+          inherit serviceName servicePort;
+          expectedRegex = "^OK MPD";
+        };
         sops.secrets.mpd-pw = {
           inherit sopsFile;
           group = serviceGroup;

@@ -46,6 +46,10 @@
             domain = serviceDomain;
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          monitoring.tcp = confLib.mkTcpMonitoring {
+            inherit serviceName;
+            servicePort = lib.head servicePorts;
+          };
         };
         sops = {
           secrets.croc-password = { inherit sopsFile; };

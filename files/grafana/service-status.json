@@ -153,8 +153,8 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
-                        "expr": "zfs_pool_health{pool=\"Lazy\"}",
-                        "legendFormat": "__auto",
+                        "expr": "zfs_pool_health",
+                        "legendFormat": "{{host}}:{{pool}}",
                         "range": true
                       },
                       "version": "v0"
@@ -319,7 +319,7 @@
                       "spec": {
                         "editorMode": "code",
                         "exemplar": false,
-                        "expr": "min by (name) (probe_success{probe=\"http\"}) or on(name) (probe_expected{probe=\"http\"} * 0)\n",
+                        "expr": "min by (name) (probe_success{probe=~\"http|tcp|dns\"})\nor on(name) min by (name) (label_replace(node_systemd_unit_state{state=\"active\"} * on(host, name) group_left(check) unit_expected{oneshot=\"false\"} or (1 - node_systemd_unit_state{state=\"failed\"}) * on(host, name) group_left(check) unit_expected{oneshot=\"true\"}, \"name\", \"$1\", \"check\", \"(.*)\"))\nor on(name) (max by (name) (probe_expected{probe=~\"http|tcp|dns\"}) * 0)\nor on(name) (max by (name) (label_replace(unit_expected, \"name\", \"$1\", \"check\", \"(.*)\")) * 0)\n",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "__auto",
@@ -874,7 +874,7 @@
                       "spec": {
                         "editorMode": "code",
                         "exemplar": false,
-                        "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n    / node_filesystem_size_bytes{fstype=\"zfs\",host=\"summers\",device=\"Lazy\"}\n  )",
+                        "expr": "max by (host, device, fstype) (\n  100 - 100 * node_filesystem_avail_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n    / node_filesystem_size_bytes{fstype!~\"zfs|virtiofs|vfat|tmpfs|overlay|squashfs|fuse.*|ramfs|devtmpfs|autofs|nsfs|tracefs|debugfs|securityfs|cgroup.*|configfs|pstore|bpf|proc|sysfs|hugetlbfs|mqueue|binfmt_misc\"}\n  )\nor\nmax by (host, device, fstype) (\n  label_replace(label_replace(100 * zfs_pool_allocated_bytes / zfs_pool_size_bytes, \"device\", \"$1\", \"pool\", \"(.+)\"), \"fstype\", \"zfs\", \"\", \"\")\n  )\n",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "__auto",
@@ -1032,7 +1032,7 @@
                       "spec": {
                         "editorMode": "code",
                         "exemplar": false,
-                        "expr": "smartctl_device_smart_status{host=~\"hintbooth|summers|winters\"}",
+                        "expr": "smartctl_device_smart_status",
                         "format": "time_series",
                         "instant": false,
                         "legendFormat": "{{host}} ({{device}})",
@@ -1321,7 +1321,7 @@
                       "spec": {
                         "editorMode": "code",
                         "exemplar": false,
-                        "expr": "min by (name) ((probe_ssl_earliest_cert_expiry{probe=\"tls\"} - time()) / 86400) or (max by (name) (probe_expected{probe=\"tls\"}) * 0)",
+                        "expr": "min by (name) ((probe_ssl_earliest_cert_expiry{probe=\"cert\"} - time()) / 86400) or (max by (name) (probe_expected{probe=\"cert\"}) * 0)",
                         "format": "time_series",
                         "instant": false,
                         "legendFormat": "{{name}}",

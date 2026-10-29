@@ -23,7 +23,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "acme" ];
         globals = {
-          monitoring.tls.${config.node.name} = {
+          monitoring.cert.${config.node.name} = {
             address = "127.0.0.1:443";
             network = "local-${config.node.name}";
             serverName = probeDomain;

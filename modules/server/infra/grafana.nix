@@ -4,6 +4,7 @@
       self,
       config,
       lib,
+      pkgs,
       confLib,
       globals,
       ...
@@ -65,6 +66,12 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops.secrets = {
+          gatus-watchdog-token = {
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+            sopsFile = self + /secrets/general/gatus.yaml;
+          };
           grafana-admin-pw = {
             inherit sopsFile;
             group = serviceGroup;
@@ -97,6 +104,19 @@
         services.${serviceName} = {
           enable = true;
           dataDir = serviceDir;
+          declarativePlugins =
+            lib.pipe config.services.${serviceName}.provision.datasources.settings.datasources [
+              (map (datasource: datasource.type))
+              lib.unique
+              (lib.filter (type: pkgs.grafanaPlugins ? ${type}))
+              (map (type: pkgs.grafanaPlugins.${type}))
+            ]
+            ++ (with pkgs.grafanaPlugins; [
+              grafana-exploretraces-app
+              grafana-lokiexplore-app
+              grafana-metricsdrilldown-app
+              grafana-pyroscope-app
+            ]);
           provision = {
             enable = true;
             alerting = {
@@ -127,6 +147,23 @@
                       }
                     ];
                   }
+                  {
+                    name = "watchdog";
+                    orgId = 1;
+                    receivers = [
+                      {
+                        disableResolveMessage = true;
+                        settings = {
+                          authorization_credentials = "$__file{${config.sops.secrets.gatus-watchdog-token.path}}";
+                          authorization_scheme = "Bearer";
+                          httpMethod = "POST";
+                          url = globals.services.gatus.extraConfig.watchdogUrl;
+                        };
+                        type = "webhook";
+                        uid = "gatus_watchdog";
+                      }
+                    ];
+                  }
                 ];
               };
 
@@ -143,11 +180,54 @@
                     orgId = 1;
                     receiver = "default";
                     repeat_interval = "4h";
+                    routes = [
+                      {
+                        group_interval = "1m";
+                        group_wait = "0s";
+                        object_matchers = [
+                          [
+                            "alertname"
+                            "="
+                            "Watchdog"
+                          ]
+                        ];
+                        receiver = "watchdog";
+                        repeat_interval = "5m";
+                      }
+                    ];
                   }
                 ];
               };
 
-              rules.settings.apiVersion = 1;
+              rules.settings = {
+                apiVersion = 1;
+                groups = [
+                  {
+                    folder = "Infrastructure";
+                    interval = "1m";
+                    name = "watchdog";
+                    orgId = 1;
+                    rules = [
+                      (
+                        confLib.mkGrafanaAlertRule {
+                          expr = "vector(1)";
+                          forDuration = "0s";
+                          noDataState = "OK";
+                          op = "gt";
+                          severity = "none";
+                          summary = "Dead mans switch";
+                          threshold = 0;
+                          title = "Watchdog";
+                          uid = "watchdog";
+                        }
+                        // {
+                          execErrState = "OK";
+                        }
+                      )
+                    ];
+                  }
+                ];
+              };
             };
             dashboards.settings.providers = [
               {

@@ -23,6 +23,10 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "spotifyd" ];
+        globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+          inherit serviceName;
+          unit = "spotifyd.service";
+        };
         users = {
           users.${serviceUser} = {
             extraGroups = [

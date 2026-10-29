@@ -160,7 +160,7 @@
                       uid = "host_down";
                     })
                     (confLib.mkGrafanaAlertRule {
-                      expr = ''max by (host, mountpoint) (100 * (node_filesystem_size_bytes{fstype!~"tmpfs|.*tmpfs|overlay"} - node_filesystem_free_bytes) / (node_filesystem_size_bytes - node_filesystem_free_bytes + node_filesystem_avail_bytes))'';
+                      expr = ''max by (host, mountpoint) (100 * (node_filesystem_size_bytes{fstype!~"tmpfs|.*tmpfs|overlay|virtiofs|zfs"} - node_filesystem_free_bytes) / (node_filesystem_size_bytes - node_filesystem_free_bytes + node_filesystem_avail_bytes))'';
                       forDuration = "10m";
                       op = "gt";
                       severity = "warning";
@@ -176,6 +176,18 @@
                       threshold = 0;
                       title = "btrfs device errors";
                       uid = "btrfs_device_errors";
+                    })
+                    (confLib.mkGrafanaAlertRule {
+                      expr = "min by (host, job) (up)";
+                      summary = "{{ $labels.host }}: scrape job {{ $labels.job }} is down";
+                      title = "Scrape target down";
+                      uid = "scrape_target_down";
+                    })
+                    (confLib.mkGrafanaAlertRule {
+                      expr = ''min by (check) (node_systemd_unit_state{state="active"} * on(host, name) group_left(check) unit_expected{oneshot="false"} or (1 - node_systemd_unit_state{state="failed"}) * on(host, name) group_left(check) unit_expected{oneshot="true"}) or on(check) (max by (check) (unit_expected) * 0)'';
+                      summary = "systemd unit for {{ $labels.check }} is not active or has failed";
+                      title = "Systemd unit unhealthy";
+                      uid = "systemd_unit_unhealthy";
                     })
                   ];
                 }
@@ -208,11 +220,27 @@
             alloyHost:
             let
               isCentral = alloyHost == globals.general.monitoringServer;
+              units = lib.catAttrs "unit" (
+                lib.filter (check: check.host == alloyHost) (lib.attrValues globals.monitoring.systemd)
+              );
             in
             {
               environment.etc = {
                 "alloy/config.alloy".text = lib.mkAfter ''
-                  prometheus.exporter.unix "node" {${lib.optionalString isCentral ''
+                  prometheus.exporter.unix "node" {${
+                    lib.optionalString (units != [ ]) ''
+
+                      enable_collectors = ["systemd"]
+
+                      systemd {
+                        unit_include = "${
+                          lib.replaceStrings [ "\\" ] [ "\\\\" ] (
+                            "(" + lib.concatMapStringsSep "|" lib.escapeRegex units + ")"
+                          )
+                        }"
+                      }
+                    ''
+                  }${lib.optionalString isCentral ''
 
                     textfile {
                       directory = "/etc/alloy/textfiles"
@@ -257,8 +285,21 @@
                       probe_expected{name="${n}",probe="ping"} 1
                     '') (lib.attrNames globals.monitoring.ping)
                     ++ map (n: ''
-                      probe_expected{name="${n}",probe="tls"} 1
-                    '') (lib.attrNames globals.monitoring.tls)
+                      probe_expected{name="${n}",probe="cert"} 1
+                    '') (lib.attrNames globals.monitoring.cert)
+                    ++ map (n: ''
+                      probe_expected{name="${n}",probe="tcp"} 1
+                    '') (lib.attrNames globals.monitoring.tcp)
+                    ++ map (n: ''
+                      probe_expected{name="${n}",probe="dns"} 1
+                    '') (lib.attrNames globals.monitoring.dns)
+                  );
+                };
+                "alloy/textfiles/unit_expected.prom" = lib.mkIf isCentral {
+                  text = lib.concatStrings (
+                    lib.mapAttrsToList (check: cfg: ''
+                      unit_expected{check="${check}",host="${cfg.host}",name="${cfg.unit}",oneshot="${lib.boolToString cfg.oneshot}"} 1
+                    '') globals.monitoring.systemd
                   );
                 };
               };

@@ -41,6 +41,7 @@ in
     self.modules.nixos.metube
     self.modules.nixos.collabora-online
     self.modules.nixos.filestash
+    self.modules.nixos.gatus
   ];
   swarselsystems = {
     flakePath = "/root/.dotfiles";

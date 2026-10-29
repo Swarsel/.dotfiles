@@ -21,6 +21,10 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "postgresql" ];
+        globals.monitoring.tcp = confLib.mkTcpMonitoring {
+          serviceName = "${serviceName}-${config.node.name}";
+          servicePort = config.services.${serviceName}.settings.port;
+        };
         services = {
           ${serviceName} = {
             enable = true;

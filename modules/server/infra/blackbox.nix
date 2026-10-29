@@ -39,6 +39,31 @@
         timeout = "10s";
       };
 
+      mkTcpModule = cfg: {
+        prober = "tcp";
+        tcp = {
+          inherit (cfg) tls;
+          preferred_ip_protocol = "ip4";
+          tls_config.insecure_skip_verify = true;
+        }
+        // lib.optionalAttrs (cfg.expectedRegex != null) {
+          query_response = [ { expect = cfg.expectedRegex; } ];
+        };
+        timeout = "10s";
+      };
+
+      mkDnsModule = cfg: {
+        dns = {
+          preferred_ip_protocol = "ip4";
+          query_name = cfg.queryName;
+          query_type = cfg.queryType;
+          valid_rcodes = [ "NOERROR" ];
+          validate_answer_rrs.fail_if_none_matches_regexp = [ ".+" ];
+        };
+        prober = "dns";
+        timeout = "5s";
+      };
+
       blackboxConfig = pkgs.writeText "blackbox.yml" (
         builtins.toJSON {
           modules = {
@@ -52,8 +77,14 @@
             name: cfg: lib.nameValuePair "http_${name}" (mkHttpModule cfg)
           ) globals.monitoring.http
           // lib.mapAttrs' (
+            name: cfg: lib.nameValuePair "tcp_${name}" (mkTcpModule cfg)
+          ) globals.monitoring.tcp
+          // lib.mapAttrs' (
+            name: cfg: lib.nameValuePair "dns_${name}" (mkDnsModule cfg)
+          ) globals.monitoring.dns
+          // lib.mapAttrs' (
             name: cfg:
-            lib.nameValuePair "tls_${name}" {
+            lib.nameValuePair "cert_${name}" {
               prober = "tcp";
               tcp = {
                 preferred_ip_protocol = "ip4";
@@ -65,7 +96,7 @@
               };
               timeout = "10s";
             }
-          ) globals.monitoring.tls;
+          ) globals.monitoring.cert;
         }
       );
 
@@ -150,14 +181,34 @@
         }) globals.monitoring.ping
       );
 
-      tlsTargets = targetsFor config.node.name (
+      certTargets = targetsFor config.node.name (
         lib.mapAttrsToList (name: cfg: {
           inherit name;
           inherit (cfg) network;
           __address__ = cfg.address;
-          __param_module = "tls_${name}";
-          probe = "tls";
-        }) globals.monitoring.tls
+          __param_module = "cert_${name}";
+          probe = "cert";
+        }) globals.monitoring.cert
+      );
+
+      tcpTargets = targetsFor config.node.name (
+        lib.mapAttrsToList (name: cfg: {
+          inherit name;
+          inherit (cfg) network;
+          __address__ = cfg.address;
+          __param_module = "tcp_${name}";
+          probe = "tcp";
+        }) globals.monitoring.tcp
+      );
+
+      dnsTargets = targetsFor config.node.name (
+        lib.mapAttrsToList (name: cfg: {
+          inherit name;
+          inherit (cfg) network;
+          __address__ = cfg.address;
+          __param_module = "dns_${name}";
+          probe = "dns";
+        }) globals.monitoring.dns
       );
     in
     {
@@ -167,7 +218,16 @@
           icon = "services.prometheus";
           name = "blackbox-exporter";
         };
-        globals.services.${serviceName}.extraConfig.port = servicePort;
+        globals = {
+          services.${serviceName}.extraConfig.port = servicePort;
+          monitoring.tcp = lib.mkIf config.services.openssh.enable (
+            confLib.mkTcpMonitoring {
+              expectedRegex = "^SSH-2.0";
+              serviceName = "ssh-${config.node.name}";
+              servicePort = lib.head config.services.openssh.ports;
+            }
+          );
+        };
         services.prometheus.exporters.blackbox = {
           enable = true;
           configFile = blackboxConfig;
@@ -184,37 +244,53 @@
               probeLabel = "ping";
               targets = pingTargets;
             })
-            + lib.optionalString (tlsTargets != [ ]) (mkBlackboxBlock {
-              probeLabel = "tls";
-              targets = tlsTargets;
+            + lib.optionalString (certTargets != [ ]) (mkBlackboxBlock {
+              probeLabel = "cert";
+              targets = certTargets;
+            })
+            + lib.optionalString (tcpTargets != [ ]) (mkBlackboxBlock {
+              probeLabel = "tcp";
+              targets = tcpTargets;
+            })
+            + lib.optionalString (dnsTargets != [ ]) (mkBlackboxBlock {
+              probeLabel = "dns";
+              targets = dnsTargets;
             })
           )
         );
         nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
           let
             defaultProbeFor = "3m";
-            probesByFor = lib.foldlAttrs (
-              acc: name: cfg:
+            mkProbeRules =
+              kind: probes:
               let
-                forDuration = if cfg.alertFor != null then cfg.alertFor else defaultProbeFor;
+                probesByFor = lib.foldlAttrs (
+                  acc: name: cfg:
+                  let
+                    forDuration = if cfg.alertFor != null then cfg.alertFor else defaultProbeFor;
+                  in
+                  acc // { ${forDuration} = (acc.${forDuration} or [ ]) ++ [ name ]; }
+                ) { } probes;
+                mkProbeRule =
+                  forDuration: names:
+                  let
+                    selector = ''probe="${kind}",name=~"${lib.concatStringsSep "|" names}"'';
+                  in
+                  confLib.mkGrafanaAlertRule {
+                    inherit forDuration;
+                    expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
+                    summary = "Blackbox ${lib.toUpper kind} probe for {{ $labels.name }} has been failing";
+                    title = "${lib.toUpper kind} probe failed${
+                      lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"
+                    }";
+                    uid =
+                      if forDuration == defaultProbeFor then
+                        "${kind}_probe_failed"
+                      else
+                        "${kind}_probe_failed_${forDuration}";
+                  };
               in
-              acc // { ${forDuration} = (acc.${forDuration} or [ ]) ++ [ name ]; }
-            ) { } globals.monitoring.http;
-            mkProbeRule =
-              forDuration: names:
-              let
-                selector = ''probe="http",name=~"${lib.concatStringsSep "|" names}"'';
-              in
-              confLib.mkGrafanaAlertRule {
-                inherit forDuration;
-                expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
-                summary = "Blackbox HTTP probe for {{ $labels.name }} has been failing";
-                title = "HTTP probe failed${
-                  lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"
-                }";
-                uid =
-                  if forDuration == defaultProbeFor then "http_probe_failed" else "http_probe_failed_${forDuration}";
-              };
+              lib.mapAttrsToList mkProbeRule probesByFor;
           in
           [
             {
@@ -222,7 +298,18 @@
               interval = "1m";
               name = "blackbox";
               orgId = 1;
-              rules = lib.mapAttrsToList mkProbeRule probesByFor;
+              rules =
+                lib.concatLists (lib.mapAttrsToList mkProbeRules { inherit (globals.monitoring) dns http tcp; })
+                ++ [
+                  (confLib.mkGrafanaAlertRule {
+                    expr = ''min by (name) ((probe_ssl_earliest_cert_expiry{probe="cert"} - time()) / 86400) or on(name) (max by (name) (probe_expected{probe="cert"}) * 0)'';
+                    severity = "warning";
+                    summary = "Certificate served by {{ $labels.name }} expires in {{ $values.A.Value | printf \"%.0f\" }} days or could not be fetched";
+                    threshold = 14;
+                    title = "Certificate expiring";
+                    uid = "cert_expiring";
+                  })
+                ];
             }
           ];
       };

@@ -37,6 +37,11 @@
           icon = root "files/topology-images/${serviceName}.png";
           name = lib.toUpper serviceName;
         };
+        globals.monitoring.dns = confLib.mkDnsMonitoring {
+          inherit serviceName;
+          address = "${lib.head config.services.nsd.interfaces}:${toString servicePort}";
+          queryName = globals.domains.main;
+        };
         sops.secrets.tsig-key = { inherit sopsFile; };
         services.nsd = {
           enable = true;

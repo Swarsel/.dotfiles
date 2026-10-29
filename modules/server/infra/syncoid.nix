@@ -42,6 +42,19 @@
             name = "Syncoid replication";
           }
         ) targets;
+        globals.monitoring.systemd = lib.mkMerge (
+          map (
+            source:
+            let
+              unitName = "syncoid-${lib.replaceStrings [ "/" ] [ "-" ] source}";
+            in
+            confLib.mkSystemdMonitoring {
+              oneshot = true;
+              serviceName = "${unitName}-${config.node.name}";
+              unit = "${unitName}.service";
+            }
+          ) (lib.attrNames targets)
+        );
         users.persistentIds.syncoid = confLib.mkIds 933;
         services.syncoid = {
           enable = true;

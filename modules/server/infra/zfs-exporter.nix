@@ -58,6 +58,16 @@
                   title = "ZFS pool not online";
                   uid = "zfs_pool_unhealthy";
                 })
+                (confLib.mkGrafanaAlertRule {
+                  expr = "max by (host, pool) (100 * zfs_pool_allocated_bytes / zfs_pool_size_bytes)";
+                  forDuration = "10m";
+                  op = "gt";
+                  severity = "warning";
+                  summary = "ZFS pool {{ $labels.host }}:{{ $labels.pool }} is more than 80% full";
+                  threshold = 80;
+                  title = "ZFS pool above 80% used";
+                  uid = "zfs_pool_filling";
+                })
               ];
             }
           ];

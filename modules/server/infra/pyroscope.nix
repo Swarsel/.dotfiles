@@ -33,6 +33,8 @@
         ;
 
       memberlistPort = 7948;
+      grpcPort = 9098;
+      grpcAddress = "localhost:${toString grpcPort}";
     in
     {
       config = {
@@ -71,11 +73,12 @@
           settings = {
             analytics.reporting_enabled = false;
             memberlist.bind_port = memberlistPort;
-            metastore.address = "localhost:9098";
+            metastore.address = grpcAddress;
             multitenancy_enabled = false;
             pyroscopedb.data_path = "${serviceDir}/pyroscope";
+            query_backend.address = grpcAddress;
             server = {
-              grpc_listen_port = 9098;
+              grpc_listen_port = grpcPort;
               http_listen_address = "0.0.0.0";
               http_listen_port = servicePort;
               log_level = "warn";

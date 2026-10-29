@@ -49,10 +49,17 @@
               ;
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
-          monitoring.http = confLib.mkHttpMonitoring {
-            inherit serviceName servicePort;
-            expectedBodyRegex = ''"running":true'';
-            path = "/control/status";
+          monitoring = {
+            dns = confLib.mkDnsMonitoring {
+              address = "${lib.head config.services.adguardhome.settings.dns.bind_hosts}:53";
+              queryName = globals.domains.main;
+              serviceName = "${serviceName}-dns";
+            };
+            http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              expectedBodyRegex = ''"running":true'';
+              path = "/control/status";
+            };
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };

@@ -15,6 +15,22 @@
     {
       config = {
         swarselsystems.enabledServerModules = [ "nfs" ];
+        globals.monitoring = {
+          tcp = confLib.mkTcpMonitoring {
+            serviceName = "samba";
+            servicePort = 445;
+          };
+          systemd = lib.mkMerge [
+            (confLib.mkSystemdMonitoring {
+              serviceName = "avahi-${config.node.name}";
+              unit = "avahi-daemon.service";
+            })
+            (confLib.mkSystemdMonitoring {
+              serviceName = "samba-wsdd";
+              unit = "samba-wsdd.service";
+            })
+          ];
+        };
         sops.secrets.samba-user-pw = {
           inherit sopsFile;
           mode = "0400";

@@ -50,6 +50,7 @@
             extra.extraConfig.port = servicePort;
             serviceDomain = "socks-proxy.${globals.domains.main}";
           };
+          monitoring.tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
           networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode.${consumer}.allowedTCPPorts =
             [
               servicePort
