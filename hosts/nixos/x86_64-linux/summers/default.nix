@@ -27,6 +27,7 @@
     self.modules.nixos.opkssh
     self.modules.nixos.smartctl-exporter
     self.modules.nixos.zfs-exporter
+    self.modules.nixos.ipmi-exporter
   ];
   swarselsystems = {
     flakePath = "/root/.dotfiles";
