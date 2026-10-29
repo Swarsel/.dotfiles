@@ -79,12 +79,9 @@
                 "2001:4860:4860::8844"
               ];
               dhcp.enabled = false;
+              fallback_dns = [ "https://dns.quad9.net/dns-query" ];
               ratelimit = 300;
-              upstream_dns = [
-                "https://dns.cloudflare.com/dns-query"
-                "https://dns.google/dns-query"
-                "https://doh.mullvad.net/dns-query"
-              ];
+              upstream_dns = [ "https://doh.mullvad.net/dns-query" ];
             };
             filtering.rewrites =
               (map (domain: {
