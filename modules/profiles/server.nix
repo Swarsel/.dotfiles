@@ -62,6 +62,7 @@
         self.modules.nixos.nftables-rules
         self.modules.nixos.router
         self.modules.nixos.kea
+        self.modules.nixos.chrony
       ];
     };
   };

@@ -39,6 +39,7 @@
     networkKernelModules = [ "igb" ];
     nodeRoles = [
       "homeProxy"
+      "ntpServer"
       "routerServer"
     ];
     rootDisk = "/dev/disk/by-id/ata-TS64GMSA220S_K191160084";

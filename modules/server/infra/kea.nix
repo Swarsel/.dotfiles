@@ -17,7 +17,7 @@
         serviceDir
         serviceName
         ;
-      inherit (confLib.static) homeDnsServer;
+      inherit (confLib.static) homeDnsServer ntpServer;
       dhcpX =
         intX:
         let
@@ -50,6 +50,10 @@
                   ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
                     data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
                     name = if (intX == 4) then "domain-name-servers" else "dns-servers";
+                  }
+                  ++ lib.optional (globals.general ? ntpServer) {
+                    data = vlanCfg.hosts.${ntpServer}."ipv${x}";
+                    name = if (intX == 4) then "ntp-servers" else "sntp-servers";
                   }
                   ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
                     data = globals.domains.main;

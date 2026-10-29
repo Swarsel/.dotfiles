@@ -546,6 +546,7 @@
             homeWebProxy
             idmServer
             monitoringServer
+            ntpServer
             oauthServer
             routerServer
             webProxy

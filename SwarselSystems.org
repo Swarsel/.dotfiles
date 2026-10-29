@@ -7547,6 +7547,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
       networkKernelModules = [ "igb" ];
       nodeRoles = [
         "homeProxy"
+        "ntpServer"
         "routerServer"
       ];
       rootDisk = "/dev/disk/by-id/ata-TS64GMSA220S_K191160084";
@@ -14151,6 +14152,7 @@ I also take some precautions in how I get networking information during stage 1.
               homeWebProxy
               idmServer
               monitoringServer
+              ntpServer
               oauthServer
               routerServer
               webProxy
@@ -41444,7 +41446,7 @@ This is the DHCP config that runs on my router.
 
 IPv4 and v6 require slightly different configurations each, hence I keep the bulk of it as a function that can simply check the version for the few areas where it matters.
 
-Apart from that, the only interesting bit here is the advertised dns-server which makes sure [[#h:ecb66cb8-12b5-44e8-ad6b-7848711e1ffe][Adguardhome]] can route requests to home services efficiently.
+Apart from that, the only interesting bit here are the advertised dns- and ntp-servers (see [[#h:ecb66cb8-12b5-44e8-ad6b-7848711e1ffe][Adguardhome]] and [[#h:18361b32-0b98-49d5-b4f6-8f762b21c92c][Chrony]])
 
 #+begin_src nix-ts :tangle modules/server/infra/kea.nix
   {
@@ -41466,7 +41468,7 @@ Apart from that, the only interesting bit here is the advertised dns-server whic
           serviceDir
           serviceName
           ;
-        inherit (confLib.static) homeDnsServer;
+        inherit (confLib.static) homeDnsServer ntpServer;
         dhcpX =
           intX:
           let
@@ -41499,6 +41501,10 @@ Apart from that, the only interesting bit here is the advertised dns-server whic
                     ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
                       data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
                       name = if (intX == 4) then "domain-name-servers" else "dns-servers";
+                    }
+                    ++ lib.optional (globals.general ? ntpServer) {
+                      data = vlanCfg.hosts.${ntpServer}."ipv${x}";
+                      name = if (intX == 4) then "ntp-servers" else "sntp-servers";
                     }
                     ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
                       data = globals.domains.main;
@@ -41594,6 +41600,71 @@ Apart from that, the only interesting bit here is the advertised dns-server whic
             }
           ];
 
+        };
+      }
+
+    ;
+  }
+#+end_src
+**** Chrony
+:PROPERTIES:
+:CUSTOM_ID: h:18361b32-0b98-49d5-b4f6-8f762b21c92c
+:END:
+
+This serves NTP to all my VLANs.
+
+#+begin_src nix-ts :tangle modules/server/infra/chrony.nix
+  {
+    flake.modules.nixos.chrony =
+      {
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/chrony";
+            name = "chrony";
+            port = 123;
+          })
+          serviceDir
+          serviceGroup
+          serviceName
+          servicePort
+          serviceUser
+          ;
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName}.name = lib.swarselsystems.toCapitalized serviceName;
+          globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+            inherit serviceName;
+            unit = "chronyd.service";
+          };
+          services.${serviceName} = {
+            enable = true;
+            extraConfig = lib.concatMapStrings (vlan: ''
+              allow ${vlan.cidrv4}
+              allow ${vlan.cidrv6}
+            '') (builtins.attrValues globals.networks.home-lan.vlans);
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              group = serviceGroup;
+              mode = "0750";
+              user = serviceUser;
+            }
+          ];
+          networking.nftables.firewall.rules.ntp-to-local = {
+            allowedUDPPorts = [ servicePort ];
+            from = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+            to = [ "local" ];
+          };
         };
       }
 
@@ -48235,6 +48306,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
           self.modules.nixos.nftables-rules
           self.modules.nixos.router
           self.modules.nixos.kea
+          self.modules.nixos.chrony
         ];
       };
     };
