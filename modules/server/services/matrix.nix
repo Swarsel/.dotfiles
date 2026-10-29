@@ -113,6 +113,12 @@
                 inherit sopsFile;
                 owner = serviceUser;
               };
+              mautrix-meta-instagram-as-token = {
+                inherit sopsFile;
+              };
+              mautrix-meta-instagram-hs-token = {
+                inherit sopsFile;
+              };
               mautrix-meta-instagram-pickle-key = {
                 inherit sopsFile;
               };
@@ -193,6 +199,8 @@
             };
             mautrixmetainstagram = {
               content = ''
+                MAUTRIX_META_INSTAGRAM_AS_TOKEN=${config.sops.placeholder.mautrix-meta-instagram-as-token}
+                MAUTRIX_META_INSTAGRAM_HS_TOKEN=${config.sops.placeholder.mautrix-meta-instagram-hs-token}
                 MAUTRIX_META_INSTAGRAM_PICKLE_KEY=${config.sops.placeholder.mautrix-meta-instagram-pickle-key}
                 MAUTRIX_META_INSTAGRAM_DOUBLEPUPPET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
               '';
@@ -436,6 +444,10 @@
             enable = true;
             environmentFile = config.sops.templates.mautrixmetainstagram.path;
             settings = {
+              appservice = {
+                as_token = "$MAUTRIX_META_INSTAGRAM_AS_TOKEN";
+                hs_token = "$MAUTRIX_META_INSTAGRAM_HS_TOKEN";
+              };
               backfill.enabled = true;
               bridge.permissions = {
                 "*" = "relay";
