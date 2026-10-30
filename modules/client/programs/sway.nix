@@ -108,7 +108,7 @@
                     "${modifier}+Ctrl+f" = "workspace 16:F";
                     "${modifier}+Ctrl+l" = "workspace 15:L";
                     "${modifier}+Ctrl+m" = "workspace 11:M";
-                    "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
+                    "${modifier}+Ctrl+p" = "exec 1password --quick-access";
                     "${modifier}+Ctrl+s" = "workspace 12:S";
                     "${modifier}+Ctrl+t" = "workspace 14:T";
                     "${modifier}+Down" = "focus down";
