@@ -107,6 +107,13 @@
 
         (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
 
+        (define-advice org-src-font-lock-fontify-block (:before (lang _start _end) swarsel/quiet-fontification-buffer)
+          (when-let* ((lang-mode (org-src-get-lang-mode-if-bound lang)))
+            (with-current-buffer (get-buffer-create (format " *org-src-fontification:%s*" lang-mode))
+              (unless (eq major-mode lang-mode)
+                (delay-mode-hooks (funcall lang-mode))
+                (rainbow-delimiters-mode 1)))))
+
         (advice-add 'org-babel-tangle-single-block :around #'swarsel/org-babel-tangle-single-block-advice)
         (advice-add 'org-babel-tangle :around #'swarsel/org-babel-tangle-timing-advice)
 
@@ -278,7 +285,7 @@
       enable = true;
       hook = [
         "(org-mode . org-fragtog-mode)"
-        "(markdown-mode . org-fragtog-mode)"
+        "((markdown-mode markdown-ts-mode) . org-fragtog-mode)"
       ];
     };
     org-modern = {
@@ -288,6 +295,7 @@
                 ("src" "»" "∥")))
       '';
       enable = true;
+      custom.org-modern-block-fringe = false;
       hook = [ "(org-mode . org-modern-mode)" ];
     };
     org-present = {

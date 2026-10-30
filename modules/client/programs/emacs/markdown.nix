@@ -8,14 +8,17 @@
         "C-c C-x C-u" = "markdown-toggle-url-hiding";
       };
       hook = [
-        "(markdown-mode . swarsel/markdown-mode-keys)"
+        "((markdown-mode markdown-ts-mode) . swarsel/markdown-mode-keys)"
         "(markdown-mode . swarsel/markdown-block-local-font-lock)"
       ];
       init = ''
         (defun swarsel/markdown-mode-keys ()
           "Local markdown key customizations."
           (local-set-key (kbd "C-c C-x C-l") #'org-latex-preview)
-          (local-set-key (kbd "C-c C-x C-u") #'markdown-toggle-url-hiding))
+          (local-set-key (kbd "C-c C-x C-u")
+                         (if (derived-mode-p 'markdown-ts-mode)
+                             #'markdown-ts-toggle-hide-markup
+                           #'markdown-toggle-url-hiding)))
 
         (defun swarsel/markdown-block-local-font-lock ()
           "Stop font-lock from widening every jit-lock chunk to its whole block."
@@ -23,7 +26,7 @@
 
         (setq markdown-command "multimarkdown")
       '';
-      mode = lib.mkForce [ ''("README\\.md\\'" . gfm-mode)'' ];
+      mode = lib.mkForce [ ];
     };
   };
 }

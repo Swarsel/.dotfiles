@@ -56,7 +56,8 @@
       (global-so-long-mode)
       (setq fast-but-imprecise-scrolling t
             redisplay-skip-fontification-on-input t
-            inhibit-compacting-font-caches t)
+            inhibit-compacting-font-caches t
+            auto-window-vscroll nil)
       (setq idle-update-delay 1.0
             which-func-update-delay 1.0)
       (setq undo-limit 80000000

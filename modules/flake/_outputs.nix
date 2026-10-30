@@ -5,6 +5,7 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } {
     (inputs.import-tree ../.)
     ./_flake-file.nix
   ];
+  debug = true;
   systems = [
     "x86_64-linux"
     "aarch64-linux"

@@ -1,33 +1,34 @@
 {
   flake.modules.homeManager.emacs-init =
-    { lib, ... }:
-    let
-      lspNixdConfig = ''
-        (setq lsp-nix-nixd-server-path "nixd"
-              lsp-nix-nixd-formatting-command [ "pedantix" ]
-              lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-              lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
-              lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
-              )
-      '';
-    in
+    { lib, pkgs, ... }:
     {
       config.programs.emacs.init.usePackage = {
+        eglot = {
+          config = ''
+            (add-to-list 'eglot-server-programs
+                         '((nix-mode nix-ts-mode)
+                           . ("env" "NIX_CONFIG=plugin-files = ${
+                             pkgs.nix-plugins.override { nixComponents = pkgs.nixVersions.latest.libs; }
+                           }/lib/nix/plugins" "nixd")))
+          '';
+          init = ''
+            (setq-default eglot-workspace-configuration
+                          '(:nixd (:nixpkgs (:expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }")
+                                   :formatting (:command ["pedantix"])
+                                   :options (:nixos (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options")
+                                             :home-manager (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.valueMeta.attrs.swarsel.configuration.options")
+                                             :flake-parts (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").debug.options")))))
+          '';
+        };
+
         nix-mode = {
-          config = lspNixdConfig;
           enable = true;
-          after = [ "lsp-mode" ];
-          custom.lsp-disabled-clients = "'((nix-mode . nix-nil))";
-          hook = [ "(nix-mode . lsp-deferred)" ];
+          defer = true;
           mode = lib.mkForce [ ];
         };
 
         nix-ts-mode = {
-          config = lspNixdConfig;
           enable = true;
-          after = [ "lsp-mode" ];
-          custom.lsp-disabled-clients = "'((nix-ts-mode . nix-nil))";
-          hook = [ "(nix-ts-mode . lsp-deferred)" ];
           mode = [
             ''"\\.nix\\'"''
             ''"\\.nix\\.enc\\'"''

@@ -18,6 +18,7 @@
       k = "undo-tree-visualize-undo";
       l = "undo-tree-visualize-switch-branch-left";
     };
+    custom.undo-tree-auto-save-history = false;
     init = "(global-undo-tree-mode)";
   };
 }

@@ -1,7 +1,7 @@
 {
   flake.modules.homeManager.emacs-init.config.programs.emacs.init = {
     prelude = ''
-      (setq treesit-enabled-modes t)
+      (setopt treesit-enabled-modes t)
     '';
 
     usePackage = {

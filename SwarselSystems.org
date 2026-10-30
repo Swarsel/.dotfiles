@@ -4251,6 +4251,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
       (inputs.import-tree ../.)
       ./_flake-file.nix
     ];
+    debug = true;
     systems = [
       "x86_64-linux"
       "aarch64-linux"
@@ -48524,7 +48525,8 @@ In this section I define custom aspect sets. These are mostly used to combine co
         (global-so-long-mode)
         (setq fast-but-imprecise-scrolling t
               redisplay-skip-fontification-on-input t
-              inhibit-compacting-font-caches t)
+              inhibit-compacting-font-caches t
+              auto-window-vscroll nil)
         (setq idle-update-delay 1.0
               which-func-update-delay 1.0)
         (setq undo-limit 80000000
@@ -49031,7 +49033,13 @@ I have grown to love the =doom-citylights= theme and have modeled my whole syste
           (custom-set-faces '(gnus-group-news-low ((t (:weight bold)))))
         '';
         enable = true;
-        hook = [ "(server-after-make-frame . (lambda () (load-theme 'doom-city-lights t)))" ];
+        hook = [ "(server-after-make-frame . swarsel/load-theme-once)" ];
+        init = ''
+          (defun swarsel/load-theme-once ()
+            (when (display-graphic-p)
+              (load-theme 'doom-city-lights t)
+              (remove-hook 'server-after-make-frame-hook #'swarsel/load-theme-once)))
+        '';
       };
       solaire-mode = {
         enable = true;
@@ -49538,6 +49546,13 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
 
           (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
 
+          (define-advice org-src-font-lock-fontify-block (:before (lang _start _end) swarsel/quiet-fontification-buffer)
+            (when-let* ((lang-mode (org-src-get-lang-mode-if-bound lang)))
+              (with-current-buffer (get-buffer-create (format " *org-src-fontification:%s*" lang-mode))
+                (unless (eq major-mode lang-mode)
+                  (delay-mode-hooks (funcall lang-mode))
+                  (rainbow-delimiters-mode 1)))))
+
           (advice-add 'org-babel-tangle-single-block :around #'swarsel/org-babel-tangle-single-block-advice)
           (advice-add 'org-babel-tangle :around #'swarsel/org-babel-tangle-timing-advice)
 
@@ -49709,7 +49724,7 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
         enable = true;
         hook = [
           "(org-mode . org-fragtog-mode)"
-          "(markdown-mode . org-fragtog-mode)"
+          "((markdown-mode markdown-ts-mode) . org-fragtog-mode)"
         ];
       };
       org-modern = {
@@ -49719,6 +49734,7 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
                   ("src" "»" "∥")))
         '';
         enable = true;
+        custom.org-modern-block-fringe = false;
         hook = [ "(org-mode . org-modern-mode)" ];
       };
       org-present = {
@@ -49949,41 +49965,42 @@ Note that nearly all headings within the =Org-mode= heading are coded within the
 :CUSTOM_ID: h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b
 :END:
 
-This adds a nix mode to Emacs. This has become increasingly useful since I have added [[#h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75][lsp-mode in org-src blocks]], because since that time, I am now able to actually make use of major modes while I theoretically stay in org-mode.
+This adds a nix mode to Emacs. =nix-ts-mode= handles =.nix= files; =nixd= is wired into =eglot= here (with this flake's nixpkgs and option sets for completions) and is started on demand with =M-x eglot=, since evaluating the whole flake is not something I want on every file visit. =nixd= links its own libnix (=nixVersions.latest=), so it gets a =nix-plugins= build made for exactly that version; with the system's version-locked plugins its evaluation workers segfault on startup. The plugins matter because evaluating my home-manager configuration and the flake-parts module tree goes through the =sopsImportEncrypted= builtin. nixd ignores =initializationOptions= and pulls its settings through =workspace/configuration=, so they live in =eglot-workspace-configuration=: the flake's nixpkgs for package hints, and three option sets for hover and completion: the NixOS options of this host, the options of my evaluated home-manager configuration (=valueMeta=, which unlike the documented =getSubOptions= expression includes everything my per-user imports declare) and the flake-parts options exposed through the =debug= output. Hints only resolve in lambda-style modules (=flake.modules.x.y = { ... }: { ... }=); bare attribute paths like =flake.modules.homeManager.x.config.programs...= are looked up verbatim and find nothing.
 
 It supports all functions that I normally need. Note that getting completions for flake inputs is a bit finicky and I am not quite fond of it yet.
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/nix-mode.nix
   {
     flake.modules.homeManager.emacs-init =
-      { lib, ... }:
-      let
-        lspNixdConfig = ''
-          (setq lsp-nix-nixd-server-path "nixd"
-                lsp-nix-nixd-formatting-command [ "pedantix" ]
-                lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-                lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
-                lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
-                )
-        '';
-      in
+      { lib, pkgs, ... }:
       {
         config.programs.emacs.init.usePackage = {
+          eglot = {
+            config = ''
+              (add-to-list 'eglot-server-programs
+                           '((nix-mode nix-ts-mode)
+                             . ("env" "NIX_CONFIG=plugin-files = ${
+                               pkgs.nix-plugins.override { nixComponents = pkgs.nixVersions.latest.libs; }
+                             }/lib/nix/plugins" "nixd")))
+            '';
+            init = ''
+              (setq-default eglot-workspace-configuration
+                            '(:nixd (:nixpkgs (:expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }")
+                                     :formatting (:command ["pedantix"])
+                                     :options (:nixos (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options")
+                                               :home-manager (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.valueMeta.attrs.swarsel.configuration.options")
+                                               :flake-parts (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").debug.options")))))
+            '';
+          };
+
           nix-mode = {
-            config = lspNixdConfig;
             enable = true;
-            after = [ "lsp-mode" ];
-            custom.lsp-disabled-clients = "'((nix-mode . nix-nil))";
-            hook = [ "(nix-mode . lsp-deferred)" ];
+            defer = true;
             mode = lib.mkForce [ ];
           };
 
           nix-ts-mode = {
-            config = lspNixdConfig;
             enable = true;
-            after = [ "lsp-mode" ];
-            custom.lsp-disabled-clients = "'((nix-ts-mode . nix-nil))";
-            hook = [ "(nix-ts-mode . lsp-deferred)" ];
             mode = [
               ''"\\.nix\\'"''
               ''"\\.nix\\.enc\\'"''
@@ -50039,23 +50056,6 @@ This is supposed to provide auto-completion when turned on. Of course I cannot g
 #+begin_src nix-ts :tangle modules/client/programs/emacs/ansible.nix
   {
     flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.ansible.enable = true;
-  }
-#+end_src
-*** Dockerfile
-:PROPERTIES:
-:CUSTOM_ID: h:534d8729-4422-4f0c-9ae6-d3737d4a6dd3
-:END:
-
-This adds support for Dockerfiles in a similar way to [[#h:c9e3ffd7-4fb1-4a04-8563-92ceec4b4410][Jenkinsfile/Groovy]].
-
-#+begin_src nix-ts :tangle modules/client/programs/emacs/dockerfile.nix
-  {
-    flake.modules.homeManager.emacs-init = { lib, ... }: {
-      config.programs.emacs.init.usePackage.dockerfile-mode = {
-        enable = true;
-        mode = lib.mkForce [ ''"Dockerfile"'' ];
-      };
-    };
   }
 #+end_src
 *** Terraform Mode
@@ -50130,7 +50130,7 @@ Adds functions for formatting shell scripts. Similarly to [[#h:5ca7484b-b9d6-402
 :CUSTOM_ID: h:50327461-a11b-4e81-830a-90febc720cfa
 :END:
 
-Adds a mode for markdown, specifically MultiMarkdown, which allows me to render LaTeX and other nice things.
+Markdown files open in the built-in =markdown-ts-mode= (through =treesit-enabled-modes=); =markdown-mode= stays installed for its commands and for MultiMarkdown rendering, which allows me to render LaTeX and other nice things.
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/markdown.nix
   {
@@ -50143,14 +50143,17 @@ Adds a mode for markdown, specifically MultiMarkdown, which allows me to render 
           "C-c C-x C-u" = "markdown-toggle-url-hiding";
         };
         hook = [
-          "(markdown-mode . swarsel/markdown-mode-keys)"
+          "((markdown-mode markdown-ts-mode) . swarsel/markdown-mode-keys)"
           "(markdown-mode . swarsel/markdown-block-local-font-lock)"
         ];
         init = ''
           (defun swarsel/markdown-mode-keys ()
             "Local markdown key customizations."
             (local-set-key (kbd "C-c C-x C-l") #'org-latex-preview)
-            (local-set-key (kbd "C-c C-x C-u") #'markdown-toggle-url-hiding))
+            (local-set-key (kbd "C-c C-x C-u")
+                           (if (derived-mode-p 'markdown-ts-mode)
+                               #'markdown-ts-toggle-hide-markup
+                             #'markdown-toggle-url-hiding)))
 
           (defun swarsel/markdown-block-local-font-lock ()
             "Stop font-lock from widening every jit-lock chunk to its whole block."
@@ -50158,7 +50161,7 @@ Adds a mode for markdown, specifically MultiMarkdown, which allows me to render 
 
           (setq markdown-command "multimarkdown")
         '';
-        mode = lib.mkForce [ ''("README\\.md\\'" . gfm-mode)'' ];
+        mode = lib.mkForce [ ];
       };
     };
   }
@@ -50260,7 +50263,7 @@ In order to update the language grammars, run the next command below. NOTE: sinc
   {
     flake.modules.homeManager.emacs-init.config.programs.emacs.init = {
       prelude = ''
-        (setq treesit-enabled-modes t)
+        (setopt treesit-enabled-modes t)
       '';
 
       usePackage = {
@@ -50782,59 +50785,62 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
           };
       in
       {
-        config.programs.emacs.init.usePackage = {
-          eglot = {
-            config = "(fset #'jsonrpc--log-event #'ignore)";
-            enable = true;
-            bindLocal.eglot-mode-map = {
-              "C-c ," = "eglot-code-actions";
-              "M-(" = "flymake-goto-next-error";
-            };
-            custom = {
-              eglot-autoshutdown = true;
-              eglot-connect-timeout = false;
-              eglot-events-buffer-size = 0;
-              eglot-send-changes-idle-time = 3;
-              eglot-sync-connect = false;
-              eldoc-echo-area-prefer-doc-buffer = true;
-              eldoc-echo-area-use-multiline-p = false;
-              flymake-no-changes-timeout = 5;
-            };
-            hook = [
-              "((python-mode python-ts-mode c-mode c-ts-mode c++-mode c++-ts-mode go-mode go-ts-mode tex-mode LaTeX-mode) . swarsel/eglot-ensure-and-format)"
-            ];
-            init = ''
-              (defun swarsel/eglot-ensure-and-format ()
-                  "Ensure eglot is running and enable format-on-save for current buffer."
-                  (eglot-ensure)
-                  (add-hook 'before-save-hook #'eglot-format nil 'local))
+        config = {
+          programs.emacs.init.usePackage = {
+            eglot = {
+              config = "(fset #'jsonrpc--log-event #'ignore)";
+              enable = true;
+              bindLocal.eglot-mode-map = {
+                "C-c ," = "eglot-code-actions";
+                "M-(" = "flymake-goto-next-error";
+              };
+              custom = {
+                eglot-autoshutdown = true;
+                eglot-connect-timeout = false;
+                eglot-events-buffer-size = 0;
+                eglot-send-changes-idle-time = 3;
+                eglot-sync-connect = false;
+                eldoc-echo-area-prefer-doc-buffer = true;
+                eldoc-echo-area-use-multiline-p = false;
+                flymake-no-changes-timeout = 5;
+              };
+              hook = [
+                "((python-mode python-ts-mode c-mode c-ts-mode c++-mode c++-ts-mode go-mode go-ts-mode tex-mode LaTeX-mode) . swarsel/eglot-ensure-and-format)"
+              ];
+              init = ''
+                (defun swarsel/eglot-ensure-and-format ()
+                    "Ensure eglot is running and enable format-on-save for current buffer."
+                    (eglot-ensure)
+                    (add-hook 'before-save-hook #'eglot-format nil 'local))
 
-                (defalias 'start-lsp-server #'eglot)
-            '';
+                  (defalias 'start-lsp-server #'eglot)
+              '';
+            };
+            eglot-booster = {
+              config = "(eglot-booster-mode)";
+              enable = true;
+              package = eglot-booster;
+              after = [ "eglot" ];
+            };
+            eldoc-box = {
+              enable = true;
+              after = [ "eglot" ];
+              hook = [ "(eglot-managed-mode . eldoc-box-hover-at-point-mode)" ];
+            };
           };
-          eglot-booster = {
-            config = "(eglot-booster-mode)";
-            enable = true;
-            package = eglot-booster;
-            after = [ "eglot" ];
-          };
-          eldoc-box = {
-            enable = true;
-            after = [ "eglot" ];
-            hook = [ "(eglot-managed-mode . eldoc-box-hover-at-point-mode)" ];
-          };
+          home.packages = [ pkgs.emacs-lsp-booster ];
         };
       };
   }
 #+end_src
-*** lsp-mode & company & dape
+*** dape
 :PROPERTIES:
 :CUSTOM_ID: h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75
 :END:
 
-company is now disabled since it seems that corfu runs just fine with lsp-mode and I prefer it. Also I set the auto-guess-root option to true in order to stop excessive nag when editing within org-src blocks.
+=dape= is the debug adapter (DAP) client that pairs with =eglot=; it has no dependency on =lsp-mode=, which I have dropped entirely in favour of =eglot=. =sideline-flymake= shows the =flymake= diagnostics that =eglot= produces next to point.
 
-#+begin_src nix-ts :tangle modules/client/programs/emacs/lsp-mode.nix
+#+begin_src nix-ts :tangle modules/client/programs/emacs/dape.nix
   {
     flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
       dape = {
@@ -50843,54 +50849,6 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
           dape-buffer-window-arrangement = "'right";
           dape-inlay-hints = true;
         };
-      };
-      lsp-bridge = {
-        enable = true;
-        package = "lsp-bridge";
-      };
-      lsp-mode = {
-        config = ''
-          (lsp-register-client
-             (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
-                              :major-modes '(nix-mode nix-ts-mode)
-                              :priority 0
-                              :server-id 'nixd))
-        '';
-        enable = true;
-        command = [ "lsp" ];
-        init = ''
-          (setq lsp-keymap-prefix "C-c l")
-            (setq lsp-auto-guess-root "t")
-
-            (cl-defmacro lsp-org-babel-enable (lang)
-              "Support LANG in org source code block."
-              (setq centaur-lsp 'lsp-mode)
-              (cl-check-type lang string)
-              (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-                     (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-                `(progn
-                   (defun ,intern-pre (info)
-                     (let ((file-name (->> info caddr (alist-get :file))))
-                       (unless file-name
-                         (setq file-name (make-temp-file "babel-lsp-")))
-                       (setq buffer-file-name file-name)
-                       (lsp-deferred)))
-                   (put ',intern-pre 'function-documentation
-                        (format "Enable lsp-mode in the buffer of org source block (%s)."
-                                (upcase ,lang)))
-                   (if (fboundp ',edit-pre)
-                       (advice-add ',edit-pre :after ',intern-pre)
-                     (progn
-                       (defun ,edit-pre (info)
-                         (,intern-pre info))
-                       (put ',edit-pre 'function-documentation
-                            (format "Prepare local buffer environment for org source block (%s)."
-                                    (upcase ,lang))))))))
-            (defvar org-babel-lang-list
-              '( "nix" "nix-ts" "go" "python" "ipython" "bash" "sh" ))
-            (dolist (lang org-babel-lang-list)
-              (eval `(lsp-org-babel-enable ,lang)))
-        '';
       };
       sideline-flymake = {
         enable = true;
@@ -51002,6 +50960,7 @@ While we are at it, we are also setting up a persistent undo-file for every file
         k = "undo-tree-visualize-undo";
         l = "undo-tree-visualize-switch-branch-left";
       };
+      custom.undo-tree-auto-save-history = false;
       init = "(global-undo-tree-mode)";
     };
   }
