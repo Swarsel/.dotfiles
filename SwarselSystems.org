@@ -59351,35 +59351,6 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
           id: deployment
           uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e  # v4
 #+end_src
-** GitHub Workflow: Flake check
-:PROPERTIES:
-:CUSTOM_ID: h:c2b8c7a5-9aa6-42d5-a55a-67b2010d09c2
-:END:
-This is a crude workflow that performs some rudimentary checks on the repository. As long as [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks/pre-commit-hooks)]] are used, this should never fail.
-#+begin_src yaml :tangle .github/workflows/flake-checks.yaml :mkdirp yes
-  name: Flake check
-  on:
-    pull_request:
-    push:
-      branches: [main]
-  jobs:
-    build:
-      name: Check flake
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744  # v3
-        - name: Check Nix flake inputs
-          uses: DeterminateSystems/flake-checker-action@491a84a640191f0cf972bc81af69b0f6c96ed392  # v4
-        - name: Install Nix
-          uses: DeterminateSystems/nix-installer-action@129f07902485941992791c670de648dbe572a9ac  # v3
-        - uses: DeterminateSystems/magic-nix-cache-action@908b263ff629f4cc17666315b7fd3ec127c6244d  # v14
-        - name: Check for dead code in .nix files
-          run: git ls-files '*.nix' | nix run nixpkgs#deadnix
-        - name: Check for lints in .nix files
-          run: nix run nixpkgs#statix -- check
-        - name: Check formatting
-          run: nix build .#checks.x86_64-linux.treefmt
-#+end_src
 ** Private topology flake
 :PROPERTIES:
 :CUSTOM_ID: h:7967d45f-5b37-4580-8a4c-fa5ba0ce7a25
