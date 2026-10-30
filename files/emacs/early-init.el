@@ -16,7 +16,7 @@
 (setq frame-inhibit-implied-resize t)
 
 (defvar swarsel-file-name-handler-alist file-name-handler-alist)
-(defvar swarsel-vc-handled-backends vc-handled-backends)
+(defvar swarsel-vc-handled-backends '(Git))
 
 (defun swarsel/restore-startup-settings ()
   "Restore startup-tuned variables to their regular runtime values."
@@ -52,7 +52,7 @@
       inhibit-x-resources t
       inhibit-startup-buffer-menu t
       inhibit-startup-echo-area-message user-login-name
-      comp-deferred-compilation nil)
+      native-comp-jit-compilation nil)
 
 (setq-default left-margin-width 1
               right-margin-width 1)

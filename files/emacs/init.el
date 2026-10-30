@@ -156,7 +156,8 @@ Also see `prot-window-delete-popup-frame'." command)
 (setq fast-but-imprecise-scrolling t
   redisplay-skip-fontification-on-input t
   inhibit-compacting-font-caches t
-  auto-window-vscroll nil)
+  auto-window-vscroll nil
+  auto-revert-avoid-polling t)
 (setq idle-update-delay 1.0
   which-func-update-delay 1.0)
 (setq undo-limit 80000000
@@ -385,8 +386,8 @@ Also see `prot-window-delete-popup-frame'." command)
           )
   :custom
   (corfu-auto t)
-  (corfu-auto-delay 1)
-  (corfu-auto-prefix 3)
+  (corfu-auto-delay 0.200000)
+  (corfu-auto-prefix 2)
   (corfu-cycle t)
   (corfu-on-exact-match nil)
   (corfu-popupinfo-delay '(0.5 . 0.2))
@@ -571,11 +572,11 @@ Also see `prot-window-delete-popup-frame'." command)
   (eglot-autoshutdown t)
   (eglot-connect-timeout nil)
   (eglot-events-buffer-size 0)
-  (eglot-send-changes-idle-time 3)
+  (eglot-send-changes-idle-time 0.500000)
   (eglot-sync-connect nil)
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
-  (flymake-no-changes-timeout 5)
+  (flymake-no-changes-timeout 1)
   :init
   (defun swarsel/eglot-ensure-and-format ()
     "Ensure eglot is running and enable format-on-save for current buffer."
@@ -612,12 +613,26 @@ Also see `prot-window-delete-popup-frame'." command)
   (elfeed-db-directory "~/.elfeed/db/")
   (elfeed-set-timeout 36000)
   (elfeed-use-curl t)
+  :init
+  (defun bjm/elfeed-save-db-and-bury ()
+    (interactive)
+    (elfeed-db-save)
+    (quit-window))
+
+  (defun bjm/elfeed-load-db-and-open ()
+    (interactive)
+    (elfeed-db-load)
+    (elfeed)
+    (elfeed-search-update--force)
+    (elfeed-update))
+
   :config
   (define-key elfeed-show-mode-map (kbd ";") #'visual-fill-column-mode)
   (define-key elfeed-show-mode-map (kbd "j") #'elfeed-goodies/split-show-next)
   (define-key elfeed-show-mode-map (kbd "k") #'elfeed-goodies/split-show-prev)
   (define-key elfeed-search-mode-map (kbd "j") #'next-line)
   (define-key elfeed-search-mode-map (kbd "k") #'previous-line)
+  (define-key elfeed-search-mode-map (kbd "q") #'bjm/elfeed-save-db-and-bury)
   (define-key elfeed-show-mode-map (kbd "S-SPC") #'scroll-down-command)
   )
 
