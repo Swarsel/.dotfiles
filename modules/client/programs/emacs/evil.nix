@@ -27,7 +27,6 @@
         (evil-set-initial-state 'Custom-mode 'emacs)
         (evil-set-initial-state 'mu4e-headers-mode 'normal)
         (evil-set-initial-state 'python-inferior-mode 'normal)
-        (evil-set-initial-state 'claude-code-vterm-mode 'emacs)
         (evil-set-initial-state 'vterm-mode 'emacs)
         (add-hook 'org-capture-mode-hook 'evil-insert-state)
         (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert))

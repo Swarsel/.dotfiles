@@ -7,6 +7,7 @@
       lib,
       pkgs,
       confLib,
+      osConfig,
       vars,
       ...
     }:
@@ -17,40 +18,7 @@
     in
     {
       imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
-        inputs.vbc-nix.homeManagerModules.ontap-mcp
-        inputs.vbc-nix.homeManagerModules.claude
-        {
-          swarselsystems.homeSopsSecrets = {
-            claude-mcp-env.sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-            context7-mcp-env.sopsFile = workSopsFile;
-            ontap-mcp-config.sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-            openshift-kubeconfig = {
-              path = "${homeDir}/.config/openshift-mcp/kubeconfig";
-              sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-            };
-            vcenter-config = {
-              path = "${homeDir}/.config/vcenter-mcp/config.json";
-              sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-            };
-          };
-          services.ontap-mcp = {
-            enable = true;
-            configFile = confLib.getConfig.sops.secrets."ontap-mcp-config".path;
-          };
-          programs.claude = {
-            enable = true;
-            mcp = {
-              enable = true;
-              envFile = confLib.getConfig.sops.secrets."claude-mcp-env".path;
-              extraEnvFiles = [ confLib.getConfig.sops.secrets."context7-mcp-env".path ];
-              extraServers.context7 = {
-                headers.Authorization = "Bearer \${CONTEXT7_API_KEY}";
-                type = "http";
-                url = "https://mcp.context7.com/mcp";
-              };
-            };
-          };
-        }
+        osConfig.repo.secrets.work.default
       ];
       config = {
         swarselsystems.homeSopsSecrets = {
@@ -292,10 +260,8 @@
             tigervnc
             # openstackclient
             step-cli
-            vscode-fhs
             openshift
 
-            ontap-mcp
             rustdesk-vbc
           ];
           sessionVariables.AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;

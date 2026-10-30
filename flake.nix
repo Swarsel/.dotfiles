@@ -329,6 +329,7 @@
       inputs = {
         nixpkgs.follows = "nixpkgs-stable26_05";
         nixpkgs-2411.follows = "nixpkgs-stable24_11";
+        nixpkgs-unstable.follows = "nixpkgs";
         systems.follows = "systems";
       };
       url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";

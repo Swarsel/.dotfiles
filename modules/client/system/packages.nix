@@ -55,9 +55,6 @@
               nautilus
               tumbler
               libgsf
-
-              claude-code
-
             ]
             ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
               losslessaudiochecker

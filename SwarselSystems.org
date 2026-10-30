@@ -2092,6 +2092,7 @@ A short overview over each notable input and what it does:
         inputs = {
           nixpkgs.follows = "nixpkgs-stable26_05";
           nixpkgs-2411.follows = "nixpkgs-stable24_11";
+          nixpkgs-unstable.follows = "nixpkgs";
           systems.follows = "systems";
         };
         url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
@@ -21665,9 +21666,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
                 nautilus
                 tumbler
                 libgsf
-
-                claude-code
-
               ]
               ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
                 losslessaudiochecker
@@ -24875,6 +24873,7 @@ When setting up a new machine:
       inputs = {
         nixpkgs.follows = "nixpkgs-stable26_05";
         nixpkgs-2411.follows = "nixpkgs-stable24_11";
+        nixpkgs-unstable.follows = "nixpkgs";
         systems.follows = "systems";
       };
       url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
@@ -25077,29 +25076,9 @@ When setting up a new machine:
             nixpkgs.overlays = [
               (
                 final: prev:
-                lib.genAttrs [
-                  "aap-mcp-server"
-                  "aci-mcp-server"
-                  "artifactory-mcp"
-                  "crowdsec-mcp"
-                  "defender-mcp"
-                  "foreman-mcp-server"
-                  "infoblox-mcp-server"
-                  "intune-mcp"
-                  "ise-mcp"
-                  "jamf-mcp"
-                  "jenkins-mcp-server"
-                  "jfrog-mcp-server"
-                  "koppla"
-                  "netbox-mcp-server"
-                  "ontap-mcp"
-                  "openshift-mcp-server"
-                  "openstack-mcp-server"
-                  "palo-alto-mcp"
-                  "rustdesk-vbc"
-                  "snipeit-mcp"
-                  "vcenter-mcp"
-                ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
+                lib.genAttrs config.repo.secrets.work.overlayPackages (
+                  name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}
+                )
               )
             ];
             repo.secretFiles.work = ../../../secrets/work/pii.nix.enc;
@@ -25178,6 +25157,7 @@ When setting up a new machine:
         lib,
         pkgs,
         confLib,
+        osConfig,
         vars,
         ...
       }:
@@ -25188,40 +25168,7 @@ When setting up a new machine:
       in
       {
         imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
-          inputs.vbc-nix.homeManagerModules.ontap-mcp
-          inputs.vbc-nix.homeManagerModules.claude
-          {
-            swarselsystems.homeSopsSecrets = {
-              claude-mcp-env.sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-              context7-mcp-env.sopsFile = workSopsFile;
-              ontap-mcp-config.sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-              openshift-kubeconfig = {
-                path = "${homeDir}/.config/openshift-mcp/kubeconfig";
-                sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-              };
-              vcenter-config = {
-                path = "${homeDir}/.config/vcenter-mcp/config.json";
-                sopsFile = "${inputs.vbc-nix}/secrets/mcp.yaml";
-              };
-            };
-            services.ontap-mcp = {
-              enable = true;
-              configFile = confLib.getConfig.sops.secrets."ontap-mcp-config".path;
-            };
-            programs.claude = {
-              enable = true;
-              mcp = {
-                enable = true;
-                envFile = confLib.getConfig.sops.secrets."claude-mcp-env".path;
-                extraEnvFiles = [ confLib.getConfig.sops.secrets."context7-mcp-env".path ];
-                extraServers.context7 = {
-                  headers.Authorization = "Bearer \${CONTEXT7_API_KEY}";
-                  type = "http";
-                  url = "https://mcp.context7.com/mcp";
-                };
-              };
-            };
-          }
+          osConfig.repo.secrets.work.default
         ];
         config = {
           swarselsystems.homeSopsSecrets = {
@@ -25463,10 +25410,8 @@ When setting up a new machine:
               tigervnc
               # openstackclient
               step-cli
-              vscode-fhs
               openshift
 
-              ontap-mcp
               rustdesk-vbc
             ];
             sessionVariables.AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
@@ -48924,7 +48869,6 @@ Also, I setup initial modes for several major-modes depending on what I deem fit
           (evil-set-initial-state 'Custom-mode 'emacs)
           (evil-set-initial-state 'mu4e-headers-mode 'normal)
           (evil-set-initial-state 'python-inferior-mode 'normal)
-          (evil-set-initial-state 'claude-code-vterm-mode 'emacs)
           (evil-set-initial-state 'vterm-mode 'emacs)
           (add-hook 'org-capture-mode-hook 'evil-insert-state)
           (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert))
@@ -51387,62 +51331,6 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
     '';
   }
 #+end_src
-*** Claude
-:PROPERTIES:
-:CUSTOM_ID: h:11ea64ea-d221-44ff-abfe-d5421a9e222f
-:END:
-
-#+begin_src nix-ts :tangle modules/client/programs/emacs/claude.nix
-  {
-    flake.modules.homeManager.emacs-init =
-      { pkgs, ... }:
-      let
-        claude-code-ide =
-          epkgs:
-          epkgs.trivialBuild rec {
-            packageRequires = [
-              epkgs.websocket
-              epkgs.transient
-              epkgs.web-server
-              epkgs.vterm
-            ];
-            pname = "claude-code-ide";
-            src = pkgs.fetchFromGitHub {
-              hash = "sha256-qH1QnG5G+0UiH/v0KaS7oSpQZY+BkUMZvrjbx6kyFhg=";
-              owner = "manzaltu";
-              repo = "claude-code-ide.el";
-              rev = "56db02ee386d009ddb8b1482310f1f9beeefb810";
-            };
-            version = "20260402";
-          };
-      in
-      {
-        config.programs.emacs.init.usePackage.claude-code-ide = {
-          config = ''
-            (claude-code-ide-emacs-tools-setup)
-
-            (defun diego--vterm-font-setup ()
-              "Configure font settings specifically for vterm buffers, workaround claude-code."
-              (let ((tbl (or buffer-display-table (setq buffer-display-table (make-display-table)))))
-                (dolist (pair
-                         '((#x273B . ?*)
-                           (#x273D . ?*)
-                           (#x2722 . ?+)
-                           (#x2736 . ?+)
-                           (#x2733 . ?*)
-                           ))
-                  (aset tbl (car pair) (vector (cdr pair))))))
-
-            (add-hook 'vterm-mode-hook #'diego--vterm-font-setup)
-          '';
-          enable = true;
-          package = claude-code-ide;
-          bind."C-c c" = "claude-code-ide-menu";
-        };
-      };
-  }
-#+end_src
-
 *** Close pane when closing buffer
 :PROPERTIES:
 :CUSTOM_ID: h:c57d91b4-41e7-4749-bc0c-a941ce4b5d36

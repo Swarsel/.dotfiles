@@ -11,7 +11,7 @@
 
 
 
-(setq treesit-enabled-modes t)
+(setopt treesit-enabled-modes t)
 
 (setq mouse-wheel-scroll-amount
   '(1
@@ -155,7 +155,8 @@ Also see `prot-window-delete-popup-frame'." command)
 (global-so-long-mode)
 (setq fast-but-imprecise-scrolling t
   redisplay-skip-fontification-on-input t
-  inhibit-compacting-font-caches t)
+  inhibit-compacting-font-caches t
+  auto-window-vscroll nil)
 (setq idle-update-delay 1.0
   which-func-update-delay 1.0)
 (setq undo-limit 80000000
@@ -335,28 +336,6 @@ Also see `prot-window-delete-popup-frame'." command)
           ("C-z t" . complete-tag)
           ("C-z w" . cape-dict)
           ))
-
-(use-package claude-code-ide
-  :bind (
-          ("C-c c" . claude-code-ide-menu)
-          )
-  :config
-  (claude-code-ide-emacs-tools-setup)
-
-  (defun diego--vterm-font-setup ()
-    "Configure font settings specifically for vterm buffers, workaround claude-code."
-    (let ((tbl (or buffer-display-table (setq buffer-display-table (make-display-table)))))
-      (dolist (pair
-                '((#x273B . ?*)
-                   (#x273D . ?*)
-                   (#x2722 . ?+)
-                   (#x2736 . ?+)
-                   (#x2733 . ?*)
-                   ))
-        (aset tbl (car pair) (vector (cdr pair))))))
-
-  (add-hook 'vterm-mode-hook #'diego--vterm-font-setup)
-  )
 
 (use-package consult
   :bind (
@@ -567,11 +546,14 @@ Also see `prot-window-delete-popup-frame'." command)
   (dirvish-side-follow-mode)
   )
 
-(use-package dockerfile-mode
-  :mode "Dockerfile")
-
 (use-package doom-themes
-  :hook (server-after-make-frame . (lambda () (load-theme 'doom-city-lights t)))
+  :hook (server-after-make-frame . swarsel/load-theme-once)
+  :init
+  (defun swarsel/load-theme-once ()
+    (when (display-graphic-p)
+      (load-theme 'doom-city-lights t)
+      (remove-hook 'server-after-make-frame-hook #'swarsel/load-theme-once)))
+
   :config
   (load-theme 'doom-city-lights t)
   (doom-themes-treemacs-config)
@@ -602,8 +584,19 @@ Also see `prot-window-delete-popup-frame'." command)
 
   (defalias 'start-lsp-server #'eglot)
 
+  (setq-default eglot-workspace-configuration
+    '(:nixd (:nixpkgs (:expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }")
+              :formatting (:command ["pedantix"])
+              :options (:nixos (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options")
+                         :home-manager (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.valueMeta.attrs.swarsel.configuration.options")
+                         :flake-parts (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").debug.options")))))
+
   :config
-  (fset #'jsonrpc--log-event #'ignore))
+  (fset #'jsonrpc--log-event #'ignore)
+  (add-to-list 'eglot-server-programs
+    '((nix-mode nix-ts-mode)
+       . ("env" "NIX_CONFIG=plugin-files = /nix/store/fzh2wymry5s0z6qrzsn5fb13q3c7ahdy-nix-plugins-16.0.1/lib/nix/plugins" "nixd")))
+  )
 
 (use-package eglot-booster
   :after (eglot)
@@ -717,7 +710,6 @@ Also see `prot-window-delete-popup-frame'." command)
   (evil-set-initial-state 'Custom-mode 'emacs)
   (evil-set-initial-state 'mu4e-headers-mode 'normal)
   (evil-set-initial-state 'python-inferior-mode 'normal)
-  (evil-set-initial-state 'claude-code-vterm-mode 'emacs)
   (evil-set-initial-state 'vterm-mode 'emacs)
   (add-hook 'org-capture-mode-hook 'evil-insert-state)
   (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert))
@@ -1025,51 +1017,6 @@ there's a region, all lines that region covers will be duplicated."
        "://" ";;"))
   )
 
-(use-package lsp-bridge)
-
-(use-package lsp-mode
-  :commands (lsp)
-  :init
-  (setq lsp-keymap-prefix "C-c l")
-  (setq lsp-auto-guess-root "t")
-
-  (cl-defmacro lsp-org-babel-enable (lang)
-    "Support LANG in org source code block."
-    (setq centaur-lsp 'lsp-mode)
-    (cl-check-type lang string)
-    (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-            (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-      `(progn
-         (defun ,intern-pre (info)
-           (let ((file-name (->> info caddr (alist-get :file))))
-             (unless file-name
-               (setq file-name (make-temp-file "babel-lsp-")))
-             (setq buffer-file-name file-name)
-             (lsp-deferred)))
-         (put ',intern-pre 'function-documentation
-           (format "Enable lsp-mode in the buffer of org source block (%s)."
-             (upcase ,lang)))
-         (if (fboundp ',edit-pre)
-           (advice-add ',edit-pre :after ',intern-pre)
-           (progn
-             (defun ,edit-pre (info)
-               (,intern-pre info))
-             (put ',edit-pre 'function-documentation
-               (format "Prepare local buffer environment for org source block (%s)."
-                 (upcase ,lang))))))))
-  (defvar org-babel-lang-list
-    '( "nix" "nix-ts" "go" "python" "ipython" "bash" "sh" ))
-  (dolist (lang org-babel-lang-list)
-    (eval `(lsp-org-babel-enable ,lang)))
-
-  :config
-  (lsp-register-client
-    (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
-      :major-modes '(nix-mode nix-ts-mode)
-      :priority 0
-      :server-id 'nixd))
-  )
-
 (use-package magit
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
@@ -1126,14 +1073,16 @@ there's a region, all lines that region covers will be duplicated."
           ("C-c C-x C-l" . org-latex-preview)
           ("C-c C-x C-u" . markdown-toggle-url-hiding)
           )
-  :hook (markdown-mode . swarsel/markdown-mode-keys)
+  :hook ((markdown-mode markdown-ts-mode) . swarsel/markdown-mode-keys)
   :hook (markdown-mode . swarsel/markdown-block-local-font-lock)
-  :mode ("README\\.md\\'" . gfm-mode)
   :init
   (defun swarsel/markdown-mode-keys ()
     "Local markdown key customizations."
     (local-set-key (kbd "C-c C-x C-l") #'org-latex-preview)
-    (local-set-key (kbd "C-c C-x C-u") #'markdown-toggle-url-hiding))
+    (local-set-key (kbd "C-c C-x C-u")
+      (if (derived-mode-p 'markdown-ts-mode)
+        #'markdown-ts-toggle-hide-markup
+        #'markdown-toggle-url-hiding)))
 
   (defun swarsel/markdown-block-local-font-lock ()
     "Stop font-lock from widening every jit-lock chunk to its whole block."
@@ -1311,34 +1260,11 @@ there's a region, all lines that region covers will be duplicated."
   )
 
 (use-package nix-mode
-  :after (lsp-mode)
-  :hook (nix-mode . lsp-deferred)
-  :custom
-  (lsp-disabled-clients '((nix-mode . nix-nil)))
-  :config
-  (setq lsp-nix-nixd-server-path "nixd"
-    lsp-nix-nixd-formatting-command [ "pedantix" ]
-    lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-    lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
-    lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
-    )
-  )
+  :defer t)
 
 (use-package nix-ts-mode
-  :after (lsp-mode)
-  :hook (nix-ts-mode . lsp-deferred)
   :mode "\\.nix\\'"
-  :mode "\\.nix\\.enc\\'"
-  :custom
-  (lsp-disabled-clients '((nix-ts-mode . nix-nil)))
-  :config
-  (setq lsp-nix-nixd-server-path "nixd"
-    lsp-nix-nixd-formatting-command [ "pedantix" ]
-    lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-    lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
-    lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
-    )
-  )
+  :mode "\\.nix\\.enc\\'")
 
 (use-package no-littering
   :config
@@ -1570,6 +1496,13 @@ create a new one."
 
   (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
 
+  (define-advice org-src-font-lock-fontify-block (:before (lang _start _end) swarsel/quiet-fontification-buffer)
+    (when-let* ((lang-mode (org-src-get-lang-mode-if-bound lang)))
+      (with-current-buffer (get-buffer-create (format " *org-src-fontification:%s*" lang-mode))
+        (unless (eq major-mode lang-mode)
+          (delay-mode-hooks (funcall lang-mode))
+          (rainbow-delimiters-mode 1)))))
+
   (advice-add 'org-babel-tangle-single-block :around #'swarsel/org-babel-tangle-single-block-advice)
   (advice-add 'org-babel-tangle :around #'swarsel/org-babel-tangle-timing-advice)
 
@@ -1603,10 +1536,12 @@ create a new one."
 
 (use-package org-fragtog
   :hook (org-mode . org-fragtog-mode)
-  :hook (markdown-mode . org-fragtog-mode))
+  :hook ((markdown-mode markdown-ts-mode) . org-fragtog-mode))
 
 (use-package org-modern
   :hook (org-mode . org-modern-mode)
+  :custom
+  (org-modern-block-fringe nil)
   :config
   (setq org-modern-block-name
     '((t . t)
@@ -2013,6 +1948,8 @@ create a new one."
           ("k" . undo-tree-visualize-undo)
           ("l" . undo-tree-visualize-switch-branch-left)
           )
+  :custom
+  (undo-tree-auto-save-history nil)
   :init
   (global-undo-tree-mode)
   :config

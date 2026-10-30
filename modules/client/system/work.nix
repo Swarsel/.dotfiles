@@ -7,6 +7,7 @@ in
     inputs = {
       nixpkgs.follows = "nixpkgs-stable26_05";
       nixpkgs-2411.follows = "nixpkgs-stable24_11";
+      nixpkgs-unstable.follows = "nixpkgs";
       systems.follows = "systems";
     };
     url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
@@ -209,29 +210,9 @@ in
           nixpkgs.overlays = [
             (
               final: prev:
-              lib.genAttrs [
-                "aap-mcp-server"
-                "aci-mcp-server"
-                "artifactory-mcp"
-                "crowdsec-mcp"
-                "defender-mcp"
-                "foreman-mcp-server"
-                "infoblox-mcp-server"
-                "intune-mcp"
-                "ise-mcp"
-                "jamf-mcp"
-                "jenkins-mcp-server"
-                "jfrog-mcp-server"
-                "koppla"
-                "netbox-mcp-server"
-                "ontap-mcp"
-                "openshift-mcp-server"
-                "openstack-mcp-server"
-                "palo-alto-mcp"
-                "rustdesk-vbc"
-                "snipeit-mcp"
-                "vcenter-mcp"
-              ] (name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name})
+              lib.genAttrs config.repo.secrets.work.overlayPackages (
+                name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}
+              )
             )
           ];
           repo.secretFiles.work = ../../../secrets/work/pii.nix.enc;
