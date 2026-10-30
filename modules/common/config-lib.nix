@@ -551,6 +551,7 @@
             routerServer
             webProxy
             ;
+          clientsSopsFile = self + /secrets/general/clients.yaml;
           dmarcMailAddress = "dmarc@${globals.domains.main}";
           homeProxyIf = "home-wgHome";
           homeServiceAddress =

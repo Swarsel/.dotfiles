@@ -26,7 +26,6 @@
           defaultSopsFile = self + "/secrets/repo/common.yaml";
           secrets = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsSecrets;
           templates = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsTemplates;
-          validateSopsFiles = false;
         };
       };
     nixos.sops =
@@ -44,7 +43,6 @@
             "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key"
           ];
           defaultSopsFile = self + "/secrets/repo/common.yaml";
-          validateSopsFiles = false;
         };
       };
   };

@@ -18,6 +18,7 @@
     let
       inherit (config.swarselsystems) homeDir mainUser;
       inherit (confLib.getConfig.repo.secrets.common.emacs) radicaleUser;
+      inherit (confLib.static) clientsSopsFile;
     in
     {
       imports = [
@@ -29,9 +30,12 @@
           enabledHomeModules = [ "emacs" ];
 
           homeSopsSecrets = {
-            emacs-radicale-pw = { };
-            fever-pw.path = "${homeDir}/.emacs.d/.fever";
-            github-forge-token = { };
+            emacs-radicale-pw.sopsFile = clientsSopsFile;
+            fever-pw = {
+              path = "${homeDir}/.emacs.d/.fever";
+              sopsFile = clientsSopsFile;
+            };
+            github-forge-token.sopsFile = clientsSopsFile;
           };
 
           homeSopsTemplates.authinfo = {

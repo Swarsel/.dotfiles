@@ -13,7 +13,6 @@
     }:
     let
       inherit (config.swarselsystems) homeDir;
-      certsSopsFile = self + /secrets/repo/certs.yaml;
       workSopsFile = self + /secrets/work/secrets.yaml;
     in
     {
@@ -24,7 +23,7 @@
         swarselsystems.homeSopsSecrets = {
           harica-root-ca = {
             path = "${homeDir}/.aws/certs/harica-root.pem";
-            sopsFile = certsSopsFile;
+            sopsFile = confLib.static.clientsSopsFile;
           };
           ucKey.sopsFile = workSopsFile;
           yubikey-1.sopsFile = workSopsFile;

@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.kanidm =
     {
-      self,
       config,
       lib,
       pkgs,
@@ -10,7 +9,6 @@
       ...
     }:
     let
-      certsSopsFile = self + /secrets/repo/certs.yaml;
       inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
@@ -89,16 +87,16 @@
             };
             kanidm-mail-sender-token = lib.mkIf hasMailserver { inherit sopsFile; };
             kanidm-self-signed-crt = {
+              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = certsSopsFile;
             };
             kanidm-self-signed-key = {
+              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = certsSopsFile;
             };
             # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
             notification-mail-pw = lib.mkIf hasMailserver { inherit (notificationMail) sopsFile; };

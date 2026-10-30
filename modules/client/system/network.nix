@@ -7,7 +7,6 @@
     };
     nixos.network =
       {
-        self,
         config,
         lib,
         pkgs,
@@ -15,8 +14,8 @@
         ...
       }:
       let
-        certsSopsFile = self + /secrets/repo/certs.yaml;
-        clientSopsFile = config.node.secretsDir + "/secrets.yaml";
+        inherit (confLib.static) clientsSopsFile;
+        hostSopsFile = config.node.secretsDir + "/secrets.yaml";
       in
       {
         options.swarselsystems.firewall = lib.swarselsystems.mkTrueOption;
@@ -24,23 +23,23 @@
 
           sops = {
             secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-              eduroam-pw = { };
-              eduroam-user = { };
-              home-wireguard-client-private-key.sopsFile = clientSopsFile;
-              home-wireguard-endpoint = { };
-              home-wireguard-preshared-key.sopsFile = clientSopsFile;
-              home-wireguard-server-public-key = { };
-              laptop-hotspot-pw = { };
-              mobile-hotspot-pw = { };
-              pia-vpn-pw = { };
-              pia-vpn-user = { };
+              eduroam-pw.sopsFile = clientsSopsFile;
+              eduroam-user.sopsFile = clientsSopsFile;
+              home-wireguard-client-private-key.sopsFile = hostSopsFile;
+              home-wireguard-endpoint.sopsFile = clientsSopsFile;
+              home-wireguard-preshared-key.sopsFile = hostSopsFile;
+              home-wireguard-server-public-key.sopsFile = clientsSopsFile;
+              laptop-hotspot-pw.sopsFile = clientsSopsFile;
+              mobile-hotspot-pw.sopsFile = clientsSopsFile;
+              pia-vpn-pw.sopsFile = clientsSopsFile;
+              pia-vpn-user.sopsFile = clientsSopsFile;
               pia-vpn1-ca-pem = {
                 mode = "0444";
-                sopsFile = certsSopsFile;
+                sopsFile = clientsSopsFile;
               };
-              wlan1-pw = { };
-              wlan2-pw = { };
-              wlan3-pw = { };
+              wlan1-pw.sopsFile = clientsSopsFile;
+              wlan2-pw.sopsFile = clientsSopsFile;
+              wlan3-pw.sopsFile = clientsSopsFile;
             };
             templates = lib.mkIf (!config.swarselsystems.isPublic) {
               "network-manager.env".content = ''

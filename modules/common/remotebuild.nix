@@ -3,11 +3,13 @@
     {
       config,
       lib,
+      confLib,
       globals,
       ...
     }:
     let
       inherit (config.swarselsystems) homeDir isClient mainUser;
+      inherit (confLib.static) clientsSopsFile;
     in
     {
       config = {
@@ -17,11 +19,13 @@
             mode = "0600";
             owner = mainUser;
             path = "${homeDir}/.ssh/builder";
+            sopsFile = clientsSopsFile;
           };
           nixbuild-net-key = {
             mode = "0600";
             owner = mainUser;
             path = "${homeDir}/.ssh/nixbuild-net";
+            sopsFile = clientsSopsFile;
           };
         };
         programs.ssh = {

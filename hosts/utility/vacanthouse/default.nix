@@ -47,14 +47,10 @@
         sshKeyPaths = lib.mkForce [ ];
       };
 
-      secrets = {
-        kanidm-oauth2-proxy = {
-          group = lib.mkForce "kanidm";
-          mode = lib.mkForce "0440";
-          owner = lib.mkForce "kanidm";
-        };
-        kanidm-self-signed-crt.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
-        kanidm-self-signed-key.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
+      secrets.kanidm-oauth2-proxy = {
+        group = lib.mkForce "kanidm";
+        mode = lib.mkForce "0440";
+        owner = lib.mkForce "kanidm";
       };
 
       templates.motd = {

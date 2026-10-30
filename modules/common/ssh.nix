@@ -41,6 +41,7 @@
             builder-key = {
               mode = "0600";
               path = "${config.home.homeDirectory}/.ssh/builder";
+              sopsFile = confLib.static.clientsSopsFile;
             };
           };
         };

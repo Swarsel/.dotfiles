@@ -10725,14 +10725,10 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
           sshKeyPaths = lib.mkForce [ ];
         };
 
-        secrets = {
-          kanidm-oauth2-proxy = {
-            group = lib.mkForce "kanidm";
-            mode = lib.mkForce "0440";
-            owner = lib.mkForce "kanidm";
-          };
-          kanidm-self-signed-crt.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
-          kanidm-self-signed-key.sopsFile = lib.mkForce config.swarselsystems.sopsFile;
+        secrets.kanidm-oauth2-proxy = {
+          group = lib.mkForce "kanidm";
+          mode = lib.mkForce "0440";
+          owner = lib.mkForce "kanidm";
         };
 
         templates.motd = {
@@ -13311,11 +13307,13 @@ This defines all remote builds that I want to use on client machines. This inclu
       {
         config,
         lib,
+        confLib,
         globals,
         ...
       }:
       let
         inherit (config.swarselsystems) homeDir isClient mainUser;
+        inherit (confLib.static) clientsSopsFile;
       in
       {
         config = {
@@ -13325,11 +13323,13 @@ This defines all remote builds that I want to use on client machines. This inclu
               mode = "0600";
               owner = mainUser;
               path = "${homeDir}/.ssh/builder";
+              sopsFile = clientsSopsFile;
             };
             nixbuild-net-key = {
               mode = "0600";
               owner = mainUser;
               path = "${homeDir}/.ssh/nixbuild-net";
+              sopsFile = clientsSopsFile;
             };
           };
           programs.ssh = {
@@ -14170,6 +14170,7 @@ I also take some precautions in how I get networking information during stage 1.
               routerServer
               webProxy
               ;
+            clientsSopsFile = self + /secrets/general/clients.yaml;
             dmarcMailAddress = "dmarc@${globals.domains.main}";
             homeProxyIf = "home-wgHome";
             homeServiceAddress =
@@ -14384,6 +14385,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               builder-key = {
                 mode = "0600";
                 path = "${config.home.homeDirectory}/.ssh/builder";
+                sopsFile = confLib.static.clientsSopsFile;
               };
             };
           };
@@ -14481,7 +14483,6 @@ Do note that we have to account for impermanent file systems here, otherwise sys
             defaultSopsFile = self + "/secrets/repo/common.yaml";
             secrets = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsSecrets;
             templates = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsTemplates;
-            validateSopsFiles = false;
           };
         };
       nixos.sops =
@@ -14499,7 +14500,6 @@ Do note that we have to account for impermanent file systems here, otherwise sys
               "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key"
             ];
             defaultSopsFile = self + "/secrets/repo/common.yaml";
-            validateSopsFiles = false;
           };
         };
     };
@@ -16105,8 +16105,8 @@ Currently I only use it as before with =initExtra= though.
             swarselsystems = {
               enabledHomeModules = [ "zsh" ];
               homeSopsSecrets = {
-                croc-password = { };
-                github-nixpkgs-review-token = { };
+                croc-password.sopsFile = confLib.static.clientsSopsFile;
+                github-nixpkgs-review-token.sopsFile = confLib.static.clientsSopsFile;
               };
             };
             programs.zsh = {
@@ -17462,16 +17462,17 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
           address4
           ;
         inherit (confLib.getConfig.repo.secrets.common) fullName;
+        inherit (confLib.static) clientsSopsFile;
       in
       {
         config = {
           swarselsystems = {
             enabledHomeModules = [ "mail" ];
             homeSopsSecrets = {
-              address1-token = { };
-              address2-token = { };
-              address3-token = { };
-              address4-token = { };
+              address1-token.sopsFile = clientsSopsFile;
+              address2-token.sopsFile = clientsSopsFile;
+              address3-token.sopsFile = clientsSopsFile;
+              address4-token.sopsFile = clientsSopsFile;
             };
           };
           services.mbsync.enable = true;
@@ -17676,6 +17677,7 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
       let
         inherit (config.swarselsystems) homeDir mainUser;
         inherit (confLib.getConfig.repo.secrets.common.emacs) radicaleUser;
+        inherit (confLib.static) clientsSopsFile;
       in
       {
         imports = [
@@ -17687,9 +17689,12 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
             enabledHomeModules = [ "emacs" ];
 
             homeSopsSecrets = {
-              emacs-radicale-pw = { };
-              fever-pw.path = "${homeDir}/.emacs.d/.fever";
-              github-forge-token = { };
+              emacs-radicale-pw.sopsFile = clientsSopsFile;
+              fever-pw = {
+                path = "${homeDir}/.emacs.d/.fever";
+                sopsFile = clientsSopsFile;
+              };
+              github-forge-token.sopsFile = clientsSopsFile;
             };
 
             homeSopsTemplates.authinfo = {
@@ -17778,6 +17783,7 @@ The rest of the related configuration is found here:
         config,
         lib,
         pkgs,
+        confLib,
         ...
       }:
       let
@@ -17838,7 +17844,7 @@ The rest of the related configuration is found here:
         config = {
           swarselsystems = {
             enabledHomeModules = [ "waybar" ];
-            homeSopsSecrets.github-notifications-token = { };
+            homeSopsSecrets.github-notifications-token.sopsFile = confLib.static.clientsSopsFile;
             waybarModules = lib.mkIf config.swarselsystems.isLaptop (
               modulesLeft
               ++ [
@@ -21378,8 +21384,8 @@ This service changes the screen hue at night. I am not sure if that really does 
           swarselsystems = {
             enabledHomeModules = [ "anki" ];
             homeSopsSecrets = {
-              anki-pw = { };
-              anki-user = { };
+              anki-pw.sopsFile = confLib.static.clientsSopsFile;
+              anki-user.sopsFile = confLib.static.clientsSopsFile;
             };
           };
           programs.anki = {
@@ -22299,7 +22305,6 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
       };
       nixos.network =
         {
-          self,
           config,
           lib,
           pkgs,
@@ -22307,8 +22312,8 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
           ...
         }:
         let
-          certsSopsFile = self + /secrets/repo/certs.yaml;
-          clientSopsFile = config.node.secretsDir + "/secrets.yaml";
+          inherit (confLib.static) clientsSopsFile;
+          hostSopsFile = config.node.secretsDir + "/secrets.yaml";
         in
         {
           options.swarselsystems.firewall = lib.swarselsystems.mkTrueOption;
@@ -22316,23 +22321,23 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
             sops = {
               secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-                eduroam-pw = { };
-                eduroam-user = { };
-                home-wireguard-client-private-key.sopsFile = clientSopsFile;
-                home-wireguard-endpoint = { };
-                home-wireguard-preshared-key.sopsFile = clientSopsFile;
-                home-wireguard-server-public-key = { };
-                laptop-hotspot-pw = { };
-                mobile-hotspot-pw = { };
-                pia-vpn-pw = { };
-                pia-vpn-user = { };
+                eduroam-pw.sopsFile = clientsSopsFile;
+                eduroam-user.sopsFile = clientsSopsFile;
+                home-wireguard-client-private-key.sopsFile = hostSopsFile;
+                home-wireguard-endpoint.sopsFile = clientsSopsFile;
+                home-wireguard-preshared-key.sopsFile = hostSopsFile;
+                home-wireguard-server-public-key.sopsFile = clientsSopsFile;
+                laptop-hotspot-pw.sopsFile = clientsSopsFile;
+                mobile-hotspot-pw.sopsFile = clientsSopsFile;
+                pia-vpn-pw.sopsFile = clientsSopsFile;
+                pia-vpn-user.sopsFile = clientsSopsFile;
                 pia-vpn1-ca-pem = {
                   mode = "0444";
-                  sopsFile = certsSopsFile;
+                  sopsFile = clientsSopsFile;
                 };
-                wlan1-pw = { };
-                wlan2-pw = { };
-                wlan3-pw = { };
+                wlan1-pw.sopsFile = clientsSopsFile;
+                wlan2-pw.sopsFile = clientsSopsFile;
+                wlan3-pw.sopsFile = clientsSopsFile;
               };
               templates = lib.mkIf (!config.swarselsystems.isPublic) {
                 "network-manager.env".content = ''
@@ -23010,7 +23015,10 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
             }
             // lib.optionalAttrs (type != "nixos") {
               sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-                u2f-keys.path = "${homeDir}/.config/Yubico/u2f_keys";
+                u2f-keys = {
+                  path = "${homeDir}/.config/Yubico/u2f_keys";
+                  sopsFile = confLib.static.clientsSopsFile;
+                };
               };
             };
           };
@@ -25252,7 +25260,6 @@ When setting up a new machine:
       }:
       let
         inherit (config.swarselsystems) homeDir;
-        certsSopsFile = self + /secrets/repo/certs.yaml;
         workSopsFile = self + /secrets/work/secrets.yaml;
       in
       {
@@ -25263,7 +25270,7 @@ When setting up a new machine:
           swarselsystems.homeSopsSecrets = {
             harica-root-ca = {
               path = "${homeDir}/.aws/certs/harica-root.pem";
-              sopsFile = certsSopsFile;
+              sopsFile = confLib.static.clientsSopsFile;
             };
             ucKey.sopsFile = workSopsFile;
             yubikey-1.sopsFile = workSopsFile;
@@ -36074,7 +36081,6 @@ kanidm person credential create-reset-token <user>
   {
     flake.modules.nixos.kanidm =
       {
-        self,
         config,
         lib,
         pkgs,
@@ -36083,7 +36089,6 @@ kanidm person credential create-reset-token <user>
         ...
       }:
       let
-        certsSopsFile = self + /secrets/repo/certs.yaml;
         inherit (config.swarselsystems) sopsFile;
         inherit
           (confLib.gen {
@@ -36162,16 +36167,16 @@ kanidm person credential create-reset-token <user>
               };
               kanidm-mail-sender-token = lib.mkIf hasMailserver { inherit sopsFile; };
               kanidm-self-signed-crt = {
+                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
-                sopsFile = certsSopsFile;
               };
               kanidm-self-signed-key = {
+                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
-                sopsFile = certsSopsFile;
               };
               # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
               notification-mail-pw = lib.mkIf hasMailserver { inherit (notificationMail) sopsFile; };
@@ -51833,8 +51838,10 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       if !cfg.repo_access || !cfg.has_age_key
     ])
 
+    repo_host_age_names = [for name in keys(var.hosts) : name if !contains(local.repo_excluded, name)]
+
     all_repo_age_names = concat(
-      [for name in keys(var.hosts) : name if !contains(local.repo_excluded, name)],
+      local.repo_host_age_names,
       [for name in keys(var.guests) : name if !contains(local.repo_excluded, name)],
       )
 
@@ -51845,7 +51852,7 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       },
       {
         path_regex = "secrets/repo/[^/]+\\.enc$"
-        age_names  = concat(["buildbot"], local.all_repo_age_names)
+        age_names  = concat(["buildbot"], local.repo_host_age_names)
       },
     ]
 
@@ -52094,6 +52101,10 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     {
       path_regex = "secrets/general/parsedmarc.yaml$"
       age_keys   = ["eagleland", "summers-monitoring"]
+    },
+    {
+      path_regex = "secrets/general/clients.yaml$"
+      age_keys   = ["pyramid", "bakery"]
     },
     {
       path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"

@@ -29,7 +29,10 @@
           }
           // lib.optionalAttrs (type != "nixos") {
             sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-              u2f-keys.path = "${homeDir}/.config/Yubico/u2f_keys";
+              u2f-keys = {
+                path = "${homeDir}/.config/Yubico/u2f_keys";
+                sopsFile = confLib.static.clientsSopsFile;
+              };
             };
           };
         };

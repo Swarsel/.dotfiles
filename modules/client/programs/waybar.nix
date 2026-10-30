@@ -5,6 +5,7 @@
       config,
       lib,
       pkgs,
+      confLib,
       ...
     }:
     let
@@ -65,7 +66,7 @@
       config = {
         swarselsystems = {
           enabledHomeModules = [ "waybar" ];
-          homeSopsSecrets.github-notifications-token = { };
+          homeSopsSecrets.github-notifications-token.sopsFile = confLib.static.clientsSopsFile;
           waybarModules = lib.mkIf config.swarselsystems.isLaptop (
             modulesLeft
             ++ [

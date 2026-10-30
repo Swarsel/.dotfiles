@@ -19,8 +19,10 @@ locals {
     if !cfg.repo_access || !cfg.has_age_key
   ])
 
+  repo_host_age_names = [for name in keys(var.hosts) : name if !contains(local.repo_excluded, name)]
+
   all_repo_age_names = concat(
-    [for name in keys(var.hosts) : name if !contains(local.repo_excluded, name)],
+    local.repo_host_age_names,
     [for name in keys(var.guests) : name if !contains(local.repo_excluded, name)],
     )
 
@@ -31,7 +33,7 @@ locals {
     },
     {
       path_regex = "secrets/repo/[^/]+\\.enc$"
-      age_names  = concat(["buildbot"], local.all_repo_age_names)
+      age_names  = concat(["buildbot"], local.repo_host_age_names)
     },
   ]
 
