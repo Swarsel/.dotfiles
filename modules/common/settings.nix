@@ -82,12 +82,12 @@ in
 {
   flake.modules = {
     darwin.settings =
-      { outputs, ... }:
+      { config, outputs, ... }:
       {
         nix.settings.experimental-features = "nix-command flakes";
         nixpkgs = {
           config.allowUnfree = true;
-          hostPlatform = "x86_64-darwin";
+          hostPlatform = config.node.arch;
           overlays = baseOverlays outputs;
         };
         system.stateVersion = 4;

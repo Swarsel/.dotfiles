@@ -195,7 +195,7 @@ host_configs = {
   }
   machpizza = {
     type        = "darwin"
-    arch        = "x86_64-darwin"
+    arch        = "aarch64-darwin"
     guests      = []
     has_age_key = false
   }
