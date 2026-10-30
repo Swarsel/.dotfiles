@@ -14,8 +14,8 @@
       };
       custom = {
         corfu-auto = true;
-        corfu-auto-delay = 1;
-        corfu-auto-prefix = 3;
+        corfu-auto-delay = 0.2;
+        corfu-auto-prefix = 2;
         corfu-cycle = true;
         corfu-on-exact-match = false;
         corfu-popupinfo-delay = "'(0.5 . 0.2)";

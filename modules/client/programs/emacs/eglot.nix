@@ -33,11 +33,11 @@
               eglot-autoshutdown = true;
               eglot-connect-timeout = false;
               eglot-events-buffer-size = 0;
-              eglot-send-changes-idle-time = 3;
+              eglot-send-changes-idle-time = 0.5;
               eglot-sync-connect = false;
               eldoc-echo-area-prefer-doc-buffer = true;
               eldoc-echo-area-use-multiline-p = false;
-              flymake-no-changes-timeout = 5;
+              flymake-no-changes-timeout = 1;
             };
             hook = [
               "((python-mode python-ts-mode c-mode c-ts-mode c++-mode c++-ts-mode go-mode go-ts-mode tex-mode LaTeX-mode) . swarsel/eglot-ensure-and-format)"

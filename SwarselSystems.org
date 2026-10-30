@@ -24339,12 +24339,12 @@ Auto login for the initial session.
                     background_opacity = 0.5;
                     border_width = 0.0;
                     capsule = false;
-                    compositor_blur = false;
                     center = [
                       "active_window"
                       "recorder_2"
                     ];
                     color = "on_surface";
+                    compositor_blur = false;
                     end = [
                       "tray"
                       "volume"
@@ -48442,7 +48442,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
       {
         config.programs.emacs.init.earlyInit = ''
           (defvar swarsel-file-name-handler-alist file-name-handler-alist)
-          (defvar swarsel-vc-handled-backends vc-handled-backends)
+          (defvar swarsel-vc-handled-backends '(Git))
 
           (defun swarsel/restore-startup-settings ()
             "Restore startup-tuned variables to their regular runtime values."
@@ -48478,7 +48478,7 @@ In this section I define custom aspect sets. These are mostly used to combine co
                 inhibit-x-resources t
                 inhibit-startup-buffer-menu t
                 inhibit-startup-echo-area-message user-login-name
-                comp-deferred-compilation nil)
+                native-comp-jit-compilation nil)
 
           (setq-default left-margin-width 1
                         right-margin-width 1)
@@ -48575,7 +48575,8 @@ In this section I define custom aspect sets. These are mostly used to combine co
         (setq fast-but-imprecise-scrolling t
               redisplay-skip-fontification-on-input t
               inhibit-compacting-font-caches t
-              auto-window-vscroll nil)
+              auto-window-vscroll nil
+              auto-revert-avoid-polling t)
         (setq idle-update-delay 1.0
               which-func-update-delay 1.0)
         (setq undo-limit 80000000
@@ -50232,6 +50233,7 @@ This adds elfeed, a neat RSS reader for Emacs. I use this as a client for [[#h:9
           (define-key elfeed-show-mode-map (kbd "k") #'elfeed-goodies/split-show-prev)
           (define-key elfeed-search-mode-map (kbd "j") #'next-line)
           (define-key elfeed-search-mode-map (kbd "k") #'previous-line)
+          (define-key elfeed-search-mode-map (kbd "q") #'bjm/elfeed-save-db-and-bury)
           (define-key elfeed-show-mode-map (kbd "S-SPC") #'scroll-down-command)
         '';
         enable = true;
@@ -50240,6 +50242,19 @@ This adds elfeed, a neat RSS reader for Emacs. I use this as a client for [[#h:9
           elfeed-set-timeout = 36000;
           elfeed-use-curl = true;
         };
+        init = ''
+          (defun bjm/elfeed-save-db-and-bury ()
+            (interactive)
+            (elfeed-db-save)
+            (quit-window))
+
+          (defun bjm/elfeed-load-db-and-open ()
+            (interactive)
+            (elfeed-db-load)
+            (elfeed)
+            (elfeed-search-update--force)
+            (elfeed-update))
+        '';
       };
       elfeed-goodies = {
         config = "(elfeed-goodies/setup)";
@@ -50650,8 +50665,8 @@ Navigation functions defined here: [[#h:5653d693-ecca-4c95-9633-66b9e3241070][co
         };
         custom = {
           corfu-auto = true;
-          corfu-auto-delay = 1;
-          corfu-auto-prefix = 3;
+          corfu-auto-delay = 0.2;
+          corfu-auto-prefix = 2;
           corfu-cycle = true;
           corfu-on-exact-match = false;
           corfu-popupinfo-delay = "'(0.5 . 0.2)";
@@ -50846,11 +50861,11 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
                 eglot-autoshutdown = true;
                 eglot-connect-timeout = false;
                 eglot-events-buffer-size = 0;
-                eglot-send-changes-idle-time = 3;
+                eglot-send-changes-idle-time = 0.5;
                 eglot-sync-connect = false;
                 eldoc-echo-area-prefer-doc-buffer = true;
                 eldoc-echo-area-use-multiline-p = false;
-                flymake-no-changes-timeout = 5;
+                flymake-no-changes-timeout = 1;
               };
               hook = [
                 "((python-mode python-ts-mode c-mode c-ts-mode c++-mode c++-ts-mode go-mode go-ts-mode tex-mode LaTeX-mode) . swarsel/eglot-ensure-and-format)"

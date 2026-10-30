@@ -57,12 +57,12 @@ in
                   background_opacity = 0.5;
                   border_width = 0.0;
                   capsule = false;
-                  compositor_blur = false;
                   center = [
                     "active_window"
                     "recorder_2"
                   ];
                   color = "on_surface";
+                  compositor_blur = false;
                   end = [
                     "tray"
                     "volume"
