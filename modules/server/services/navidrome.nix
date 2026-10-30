@@ -106,7 +106,12 @@
             PlaylistsPath = "./Playlists";
             Port = servicePort;
             ReverseProxyUserHeader = "X-User";
-            ReverseProxyWhitelist = "0.0.0.0/0";
+            ReverseProxyWhitelist = lib.concatMapStringsSep "," (host: "${host.ipv4}/32,${host.ipv6}/128") (
+              [ globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${webProxy} ]
+              ++
+                lib.optional isHome
+                  globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${homeWebProxy}
+            );
             ScanSchedule = "@every 24h";
             Scanner.GroupAlbumReleases = true;
             Spotify = {
@@ -192,15 +197,19 @@
                         proxyWebsockets = true;
                       };
                       "/rest" = {
-                        inherit extraConfig;
                         bypassAuth = true;
+                        extraConfig = extraConfig + ''
+                          proxy_set_header X-User "";
+                        '';
                         proxyPass = "http://${serviceName}";
                         proxyWebsockets = true;
                         setOauth2Headers = false;
                       };
                       "/share" = {
-                        inherit extraConfig;
                         bypassAuth = true;
+                        extraConfig = extraConfig + ''
+                          proxy_set_header X-User "";
+                        '';
                         proxyPass = "http://${serviceName}";
                         proxyWebsockets = true;
                         setOauth2Headers = false;
