@@ -60,7 +60,6 @@
       enableDefaultConfig = false;
       settings = builtins.removeAttrs config.repo.secrets.work.sshConfig [ "*" ];
     };
-    tmux.shell = lib.mkForce (lib.getExe pkgs.bash);
     zellij.settings.default_shell = lib.mkForce "bash";
   };
 

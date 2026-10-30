@@ -195,6 +195,15 @@
                 ];
               };
             }
+            {
+              bind = {
+                _args = [ "x" ];
+                _children = [
+                  { CloseFocus = { }; }
+                  { SwitchToMode._args = [ "normal" ]; }
+                ];
+              };
+            }
           ];
           renamepane._children = [
             {
@@ -426,15 +435,10 @@
                 ];
               };
             }
-          ];
-          "shared_among \"pane\" \"tmux\""._children = [
             {
               bind = {
-                _args = [ "x" ];
-                _children = [
-                  { CloseFocus = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
+                _args = [ "d" ];
+                _children = [ { Detach = { }; } ];
               };
             }
           ];
@@ -544,14 +548,6 @@
               bind = {
                 _args = [ "u" ];
                 _children = [ { HalfPageScrollUp = { }; } ];
-              };
-            }
-          ];
-          "shared_among \"session\" \"tmux\""._children = [
-            {
-              bind = {
-                _args = [ "d" ];
-                _children = [ { Detach = { }; } ];
               };
             }
           ];
@@ -689,14 +685,6 @@
               bind = {
                 _args = [ "Ctrl s" ];
                 _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
-              };
-            }
-          ];
-          "shared_except \"locked\" \"scroll\" \"search\" \"tmux\""._children = [
-            {
-              bind = {
-                _args = [ "Ctrl a" ];
-                _children = [ { SwitchToMode._args = [ "tmux" ]; } ];
               };
             }
           ];
@@ -900,167 +888,6 @@
                 _args = [ "x" ];
                 _children = [
                   { CloseTab = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-          ];
-          tmux._children = [
-            {
-              bind = {
-                _args = [ "left" ];
-                _children = [
-                  { MoveFocus._args = [ "left" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "down" ];
-                _children = [
-                  { MoveFocus._args = [ "down" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "up" ];
-                _children = [
-                  { MoveFocus._args = [ "up" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "right" ];
-                _children = [
-                  { MoveFocus._args = [ "right" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "space" ];
-                _children = [ { NextSwapLayout = { }; } ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "\"" ];
-                _children = [
-                  { NewPane._args = [ "down" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "%" ];
-                _children = [
-                  { NewPane._args = [ "right" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "," ];
-                _children = [ { SwitchToMode._args = [ "renametab" ]; } ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "[" ];
-                _children = [ { SwitchToMode._args = [ "scroll" ]; } ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "Ctrl b" ];
-                _children = [
-                  { Write._args = [ 2 ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "c" ];
-                _children = [
-                  { NewTab = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "h" ];
-                _children = [
-                  { MoveFocus._args = [ "left" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "j" ];
-                _children = [
-                  { MoveFocus._args = [ "down" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "k" ];
-                _children = [
-                  { MoveFocus._args = [ "up" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "l" ];
-                _children = [
-                  { MoveFocus._args = [ "right" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "n" ];
-                _children = [
-                  { GoToNextTab = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "o" ];
-                _children = [ { FocusNextPane = { }; } ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "p" ];
-                _children = [
-                  { GoToPreviousTab = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "z" ];
-                _children = [
-                  { ToggleFocusFullscreen = { }; }
                   { SwitchToMode._args = [ "normal" ]; }
                 ];
               };

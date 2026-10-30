@@ -99,12 +99,15 @@ in
              children
              pane size=1 borderless=true {
                  plugin location="file://${config.xdg.dataHome}/zellij/plugins/zjstatus.wasm" {
-                     format_left   "{mode}#[bg=#${colors.base00}] {tabs}"
+                     format_left   "{mode}{pipe_kittysequence}#[bg=#${colors.base00}] {tabs}"
                      format_center ""
                      format_right  "#[bg=#${colors.base00},fg=#${colors.base02}]#[bg=#${colors.base02},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base01},bold] {session} #[bg=#${colors.base02},fg=#${colors.base01},bold]"
                      format_space  ""
                      format_hide_on_overlength "false"
                      format_precedence "lcr"
+
+                     pipe_kittysequence_format     "{output}"
+                     pipe_kittysequence_rendermode "dynamic"
 
                      border_enabled  "false"
                      border_char     "─"
@@ -124,7 +127,6 @@ in
                      mode_session       "#[bg=#${colors.base0E},fg=#${colors.base01},bold] SESSION#[bg=#${colors.base01},fg=#${colors.base0E}]█"
                      mode_move          "#[bg=#${colors.base0F},fg=#${colors.base01},bold] MOVE#[bg=#${colors.base01},fg=#${colors.base0F}]█"
                      mode_prompt        "#[bg=#${colors.base0D},fg=#${colors.base01},bold] PROMPT#[bg=#${colors.base01},fg=#${colors.base0D}]█"
-                     mode_tmux          "#[bg=#${colors.base09},fg=#${colors.base01},bold] TMUX#[bg=#${colors.base01},fg=#${colors.base09}]█"
 
                      // formatting for inactive tabs
                      tab_normal              "#[bg=#${colors.base01},fg=#${colors.base0C}]█#[bg=#${colors.base0C},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base0C},bold] {name}{floating_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
@@ -143,11 +145,6 @@ in
                      tab_sync_indicator       " "
                      tab_fullscreen_indicator " 󰊓"
                      tab_floating_indicator   " 󰹙"
-
-                     command_git_branch_command     "git rev-parse --abbrev-ref HEAD"
-                     command_git_branch_format      "#[fg=blue] {stdout} "
-                     command_git_branch_interval    "10"
-                     command_git_branch_rendermode  "static"
 
                      datetime        "#[fg=#6C7086,bold] {format} "
                      datetime_format "%A, %d %b %Y %H:%M"

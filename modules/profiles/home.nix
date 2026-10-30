@@ -24,7 +24,6 @@ in
       "network-manager-applet"
       "sops"
       "stylix"
-      "tmux"
       "zellij"
       "zellij-keybinds"
     ];
@@ -58,7 +57,6 @@ in
         "opkssh"
         "spotify-player"
         "swayosd"
-        "tmux"
         "vesktop"
         "shikane"
         "syncthing-tray"
