@@ -66,11 +66,64 @@
           ];
         };
       };
+      sessionNameDir = "$XDG_RUNTIME_DIR/zellij-session-names";
+      zellij-ssh-rename = pkgs.writeShellApplication {
+        name = "zellij-ssh-rename";
+        runtimeInputs = [
+          config.programs.zellij.finalPackage
+          pkgs.jq
+          pkgs.openssh
+        ];
+        text = ''
+          host=$(ssh -G "$@" 2>/dev/null | sed -n 's/^host //p')
+          if [ -z "$host" ]; then
+            exit 0
+          fi
+          zellij action rename-tab --tab-id "$(zellij action list-panes -tj | jq --argjson pane "$ZELLIJ_PANE_ID" '.[] | select((.is_plugin | not) and .id == $pane) | .tab_id')" "$host"
+          case "$ZELLIJ_SESSION_NAME" in
+            kittyterm | "$host" | "$host"-[0-9]*) exit 0 ;;
+          esac
+          name=$host
+          n=1
+          while zellij list-sessions -ns | grep -qxF "$name"; do
+            n=$((n + 1))
+            name="$host-$n"
+          done
+          zellij action rename-session "$name"
+          mkdir -p "${sessionNameDir}"
+          echo "$name" >"$ZELLIJ_SESSION_STATE"
+        '';
+      };
+      zellij-delete-if-idle = pkgs.writeShellApplication {
+        name = "zellij-delete-if-idle";
+        runtimeInputs = [
+          config.programs.zellij.finalPackage
+          pkgs.procps
+        ];
+        text = ''
+          server=$1
+          for child in $(pgrep -P "$server"); do
+            case "$(ps -o comm= -p "$child")" in
+              zsh | bash)
+                if pgrep -P "$child" | grep -vqxF "$$"; then
+                  exit 0
+                fi
+                ;;
+              *) exit 0 ;;
+            esac
+          done
+          state="${sessionNameDir}/$server-$(cut -d' ' -f22 "/proc/$server/stat")"
+          session=$(cat "$state" 2>/dev/null || basename "$(tr '\0' '\n' <"/proc/$server/cmdline" | sed -n 3p)")
+          rm -f "$state"
+          zellij delete-session --force "$session" || kill "$server"
+        '';
+      };
       zellij-kitty = pkgs.writeShellApplication {
         name = "zellij-kitty";
         runtimeInputs = [
           config.programs.zellij.finalPackage
           pkgs.procps
+          zellij-delete-if-idle
         ];
         text = ''
           tag="$$-$RANDOM"
@@ -83,18 +136,7 @@
           exec >/dev/null 2>&1
           for server in $(pgrep -f 'zellij --server'); do
             grep -qxzF "ZELLIJ_KITTY_TAG=$tag" "/proc/$server/environ" || continue
-            for child in $(pgrep -P "$server"); do
-              case "$(ps -o comm= -p "$child")" in
-                zsh | bash)
-                  if pgrep -P "$child" >/dev/null; then
-                    exit 0
-                  fi
-                  ;;
-                *) exit 0 ;;
-              esac
-            done
-            session=$(basename "$(tr '\0' '\n' <"/proc/$server/cmdline" | sed -n 3p)")
-            zellij delete-session --force "$session" || kill "$server"
+            zellij-delete-if-idle "$server"
           done
         '';
       };
@@ -142,6 +184,30 @@
               };
             };
           };
+          zsh.initContent = ''
+            if [[ -n $ZELLIJ ]]; then
+              export ZELLIJ_SERVER_PID=''${ZELLIJ_SERVER_PID:-$PPID}
+              export ZELLIJ_SESSION_STATE=''${ZELLIJ_SESSION_STATE:-${sessionNameDir}/$ZELLIJ_SERVER_PID-$(cut -d' ' -f22 /proc/$ZELLIJ_SERVER_PID/stat)}
+              zellij-session-refresh() {
+                if [[ -r $ZELLIJ_SESSION_STATE ]]; then
+                  export ZELLIJ_SESSION_NAME=$(<$ZELLIJ_SESSION_STATE)
+                fi
+              }
+              precmd_functions+=(zellij-session-refresh)
+              ssh() {
+                setopt local_options no_monitor
+                ${lib.getExe zellij-ssh-rename} "$@" &>/dev/null &
+                command ssh "$@"
+                local ret=$?
+                wait $!
+                zellij-session-refresh
+                if [[ -z $(zellij action list-clients | tail -n +2) ]]; then
+                  ${lib.getExe zellij-delete-if-idle} "$ZELLIJ_SERVER_PID"
+                fi
+                return $ret
+              }
+            fi
+          '';
         };
         home.activation.zellijPluginPermissions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           cache="${config.xdg.cacheHome}/zellij/permissions.kdl"

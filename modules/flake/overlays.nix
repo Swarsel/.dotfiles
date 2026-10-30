@@ -252,6 +252,7 @@ in
                 withSystemVencord = true;
               };
               zellij-unwrapped = prev.zellij-unwrapped.overrideAttrs (old: {
+                patches = [ (root "files/patches/zellij-rename-session-stale-name.patch") ];
                 postPatch =
                   (old.postPatch or "")
                   +

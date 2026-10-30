@@ -4122,6 +4122,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   withSystemVencord = true;
                 };
                 zellij-unwrapped = prev.zellij-unwrapped.overrideAttrs (old: {
+                  patches = [ (root "files/patches/zellij-rename-session-stale-name.patch") ];
                   postPatch =
                     (old.postPatch or "")
                     +
@@ -16364,11 +16365,64 @@ Currently I only use it as before with =initExtra= though.
             ];
           };
         };
+        sessionNameDir = "$XDG_RUNTIME_DIR/zellij-session-names";
+        zellij-ssh-rename = pkgs.writeShellApplication {
+          name = "zellij-ssh-rename";
+          runtimeInputs = [
+            config.programs.zellij.finalPackage
+            pkgs.jq
+            pkgs.openssh
+          ];
+          text = ''
+            host=$(ssh -G "$@" 2>/dev/null | sed -n 's/^host //p')
+            if [ -z "$host" ]; then
+              exit 0
+            fi
+            zellij action rename-tab --tab-id "$(zellij action list-panes -tj | jq --argjson pane "$ZELLIJ_PANE_ID" '.[] | select((.is_plugin | not) and .id == $pane) | .tab_id')" "$host"
+            case "$ZELLIJ_SESSION_NAME" in
+              kittyterm | "$host" | "$host"-[0-9]*) exit 0 ;;
+            esac
+            name=$host
+            n=1
+            while zellij list-sessions -ns | grep -qxF "$name"; do
+              n=$((n + 1))
+              name="$host-$n"
+            done
+            zellij action rename-session "$name"
+            mkdir -p "${sessionNameDir}"
+            echo "$name" >"$ZELLIJ_SESSION_STATE"
+          '';
+        };
+        zellij-delete-if-idle = pkgs.writeShellApplication {
+          name = "zellij-delete-if-idle";
+          runtimeInputs = [
+            config.programs.zellij.finalPackage
+            pkgs.procps
+          ];
+          text = ''
+            server=$1
+            for child in $(pgrep -P "$server"); do
+              case "$(ps -o comm= -p "$child")" in
+                zsh | bash)
+                  if pgrep -P "$child" | grep -vqxF "$$"; then
+                    exit 0
+                  fi
+                  ;;
+                *) exit 0 ;;
+              esac
+            done
+            state="${sessionNameDir}/$server-$(cut -d' ' -f22 "/proc/$server/stat")"
+            session=$(cat "$state" 2>/dev/null || basename "$(tr '\0' '\n' <"/proc/$server/cmdline" | sed -n 3p)")
+            rm -f "$state"
+            zellij delete-session --force "$session" || kill "$server"
+          '';
+        };
         zellij-kitty = pkgs.writeShellApplication {
           name = "zellij-kitty";
           runtimeInputs = [
             config.programs.zellij.finalPackage
             pkgs.procps
+            zellij-delete-if-idle
           ];
           text = ''
             tag="$$-$RANDOM"
@@ -16381,18 +16435,7 @@ Currently I only use it as before with =initExtra= though.
             exec >/dev/null 2>&1
             for server in $(pgrep -f 'zellij --server'); do
               grep -qxzF "ZELLIJ_KITTY_TAG=$tag" "/proc/$server/environ" || continue
-              for child in $(pgrep -P "$server"); do
-                case "$(ps -o comm= -p "$child")" in
-                  zsh | bash)
-                    if pgrep -P "$child" >/dev/null; then
-                      exit 0
-                    fi
-                    ;;
-                  *) exit 0 ;;
-                esac
-              done
-              session=$(basename "$(tr '\0' '\n' <"/proc/$server/cmdline" | sed -n 3p)")
-              zellij delete-session --force "$session" || kill "$server"
+              zellij-delete-if-idle "$server"
             done
           '';
         };
@@ -16440,6 +16483,30 @@ Currently I only use it as before with =initExtra= though.
                 };
               };
             };
+            zsh.initContent = ''
+              if [[ -n $ZELLIJ ]]; then
+                export ZELLIJ_SERVER_PID=''${ZELLIJ_SERVER_PID:-$PPID}
+                export ZELLIJ_SESSION_STATE=''${ZELLIJ_SESSION_STATE:-${sessionNameDir}/$ZELLIJ_SERVER_PID-$(cut -d' ' -f22 /proc/$ZELLIJ_SERVER_PID/stat)}
+                zellij-session-refresh() {
+                  if [[ -r $ZELLIJ_SESSION_STATE ]]; then
+                    export ZELLIJ_SESSION_NAME=$(<$ZELLIJ_SESSION_STATE)
+                  fi
+                }
+                precmd_functions+=(zellij-session-refresh)
+                ssh() {
+                  setopt local_options no_monitor
+                  ${lib.getExe zellij-ssh-rename} "$@" &>/dev/null &
+                  command ssh "$@"
+                  local ret=$?
+                  wait $!
+                  zellij-session-refresh
+                  if [[ -z $(zellij action list-clients | tail -n +2) ]]; then
+                    ${lib.getExe zellij-delete-if-idle} "$ZELLIJ_SERVER_PID"
+                  fi
+                  return $ret
+                }
+              fi
+            '';
           };
           home.activation.zellijPluginPermissions = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             cache="${config.xdg.cacheHome}/zellij/permissions.kdl"
@@ -54376,6 +54443,9 @@ This file defines a few workflows that I often need to run when working on my co
        }
 #+end_src
 ** Niri patch to support hidden workspaces
+:PROPERTIES:
+:CUSTOM_ID: h:dbbac5bb-a859-48e0-937c-8040e4e9a0d4
+:END:
 
 #+begin_src diff :tangle files/patches/niri-hidden-workspaces.patch :mkdirp yes
   diff --git a/docs/wiki/Getting-Started.md b/docs/wiki/Getting-Started.md
@@ -56760,6 +56830,9 @@ This file defines a few workflows that I often need to run when working on my co
                let on_current_workspace = on_current_output && mon.active_workspace_idx() == ws_idx;
 #+end_src
 ** Niri patch to get events for hidden workspaces
+:PROPERTIES:
+:CUSTOM_ID: h:745833e5-a095-493b-9c53-e8219740738c
+:END:
 
 #+begin_src diff :tangle files/patches/niri-hidden-workspaces-event-stream.patch :mkdirp yes
   diff --git a/niri-ipc/src/state.rs b/niri-ipc/src/state.rs
@@ -56782,6 +56855,9 @@ This file defines a few workflows that I often need to run when working on my co
 #+end_src
 
 ** Niri patch to allow actions to target workspaces under the cursor
+:PROPERTIES:
+:CUSTOM_ID: h:ca66b061-3ca9-4a74-aaa4-30b4837fbf1a
+:END:
 
 #+begin_src diff :tangle files/patches/niri-workspace-under-mouse-binds.patch :mkdirp yes
   diff --git a/niri-config/src/binds.rs b/niri-config/src/binds.rs
@@ -56800,6 +56876,24 @@ This file defines a few workflows that I often need to run when working on my co
        FocusWorkspace(#[knuffel(argument)] WorkspaceReference),
        FocusWorkspacePrevious,
 #+end_src
+** Zellij patch for consistent session renaming
+:PROPERTIES:
+:CUSTOM_ID: h:5af7d8d4-917c-499b-bc0f-1c2282929b4c
+:END:
+
+#+begin_src diff :tangle files/patches/zellij-rename-session-stale-name.patch :mkdirp yes
+  --- a/zellij-server/src/screen.rs
+  +++ b/zellij-server/src/screen.rs
+  @@ -11505,6 +11505,7 @@
+                   } else {
+                       let err_context = || format!("Failed to rename session");
+                       let old_session_name = screen.session_name.clone();
+  +                    screen.peer_sessions_cache.remove(&old_session_name);
+
+                       // update state
+                       screen.session_name = name.clone();
+#+end_src
+
 ** Firezone-GUI patch to fix state loop
 :PROPERTIES:
 :CUSTOM_ID: h:5db43214-e185-41b3-a656-a305e0dace44

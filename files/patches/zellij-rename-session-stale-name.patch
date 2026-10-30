@@ -1,0 +1,10 @@
+--- a/zellij-server/src/screen.rs
++++ b/zellij-server/src/screen.rs
+@@ -11505,6 +11505,7 @@
+                 } else {
+                     let err_context = || format!("Failed to rename session");
+                     let old_session_name = screen.session_name.clone();
++                    screen.peer_sessions_cache.remove(&old_session_name);
+
+                     // update state
+                     screen.session_name = name.clone();
