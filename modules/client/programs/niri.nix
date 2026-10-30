@@ -4,8 +4,14 @@ let
 in
 {
   flake-file.inputs = {
+    niri = {
+      flake = false;
+      url = "github:niri-wm/niri/v26.04";
+    };
+
     niri-flake = {
       inputs = {
+        niri-unstable.follows = "niri";
         nixpkgs.follows = "nixpkgs";
         nixpkgs-stable.follows = "nixpkgs-stable";
       };
@@ -30,6 +36,7 @@ in
         config,
         lib,
         pkgs,
+        options,
         type,
         vars,
         ...
@@ -44,7 +51,12 @@ in
         config = {
           swarselsystems.enabledHomeModules = [ "optional-niri" ];
           programs.niri = {
-            package = pkgs.niri-stable; # which package to use for niri validation
+            config = options.programs.niri.config.default ++ [
+              (inputs.niri-flake.lib.kdl.node "workspace" "stash" [
+                (inputs.niri-flake.lib.kdl.leaf "hidden" true)
+              ])
+            ];
+            package = pkgs.niri-unstable; # which package to use for niri validation
             settings = {
               binds =
                 with config.lib.niri.actions;
@@ -410,7 +422,7 @@ in
           };
           programs.niri = {
             enable = true;
-            package = pkgs.niri-stable;
+            package = pkgs.niri-unstable;
           };
           environment.systemPackages = with pkgs; [
             wl-clipboard

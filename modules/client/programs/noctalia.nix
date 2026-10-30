@@ -57,6 +57,7 @@ in
                   background_opacity = 0.5;
                   border_width = 0.0;
                   capsule = false;
+                  compositor_blur = false;
                   center = [
                     "active_window"
                     "recorder_2"
@@ -211,9 +212,11 @@ in
                   temperature_night = 3700;
                 };
                 notification = {
-                  background_opacity = 0.5;
+                  background_opacity = lib.mkForce 0.8;
                   enable_daemon = true;
+                  follow_focused_output = true;
                   layer = "overlay";
+                  max_visible = 3;
                   position = "top_right";
                 };
                 osd = {
@@ -231,10 +234,10 @@ in
                   filename_pattern = "recording_%Y%m%d_%H%M%S";
                   frame_rate = 60;
                   hide_inactive = true;
-                  quality = "very_high";
                   resolution = "original";
                   show_cursor = true;
                   video_codec = "h264";
+                  video_quality = "very_high";
                   video_source = "portal";
                 };
                 plugins.enabled = [
@@ -252,14 +255,18 @@ in
                   clipboard_enabled = true;
                   external_ip_enabled = true;
                   launch_apps_as_systemd_services = true;
+                  launcher = {
+                    categories = false;
+                    compact = true;
+                    show_icons = true;
+                  };
                   panel = {
                     control_center_placement = "attached";
-                    launcher_categories = false;
-                    launcher_compact = true;
-                    launcher_placement = "centered";
-                    launcher_show_icons = true;
+                    launcher_placement = "floating";
+                    launcher_position = "center";
                     open_near_click_control_center = true;
-                    session_placement = "centered";
+                    session_placement = "floating";
+                    session_position = "center";
                     transparency_mode = "solid";
                   };
                   screen_corners.enabled = false;
@@ -310,9 +317,9 @@ in
                   cpu_temp_critical_threshold = 90.0;
                   cpu_usage_activity_threshold = 80.0;
                   cpu_usage_critical_threshold = 90.0;
-                  disk_pct_activity_threshold = 80.0;
-                  disk_pct_critical_threshold = 90.0;
                   disk_poll_seconds = 30.0;
+                  disk_used_pct_activity_threshold = 80.0;
+                  disk_used_pct_critical_threshold = 90.0;
                   enabled = true;
                   gpu_poll_seconds = 3.0;
                   gpu_temp_activity_threshold = 80.0;
@@ -365,7 +372,7 @@ in
                   active_window = {
                     display = "icon_and_text";
                     max_length = 300;
-                    title_scroll = "hover";
+                    title_scroll = "on_hover";
                   };
                   battery = {
                     device = "auto";
@@ -395,14 +402,13 @@ in
                   };
                   volume = {
                     device = "output";
-                    scroll_step = 5;
                     show_label = true;
                   };
                   workspaces = {
-                    display = "name";
                     empty_color = "primary";
                     focused_color = "primary";
                     hide_when_empty = true;
+                    label_source = "name";
                     labels_only_when_occupied = false;
                     max_label_chars = 4;
                     occupied_color = "primary";

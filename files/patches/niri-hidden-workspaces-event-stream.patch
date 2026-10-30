@@ -1,0 +1,17 @@
+diff --git a/niri-ipc/src/state.rs b/niri-ipc/src/state.rs
+index b603dfc6..230a24cc 100644
+--- a/niri-ipc/src/state.rs
++++ b/niri-ipc/src/state.rs
+@@ -118,7 +118,12 @@ impl EventStreamStatePart for EventStreamState {
+
+ impl EventStreamStatePart for WorkspacesState {
+     fn replicate(&self) -> Vec<Event> {
+-        let workspaces = self.workspaces.values().cloned().collect();
++        let workspaces = self
++            .workspaces
++            .values()
++            .filter(|ws| !ws.is_hidden)
++            .cloned()
++            .collect();
+         vec![Event::WorkspacesChanged { workspaces }]
+     }

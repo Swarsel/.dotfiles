@@ -209,8 +209,12 @@ in
                 python3 = prev.python313;
               };
               mgba = final.swarsel-mgba;
-              niri-stable = prev.niri-stable.override {
-                patches = [ (root "files/patches/niri-workspace-under-mouse-binds.patch") ];
+              niri-unstable = prev.niri-unstable.override {
+                patches = [
+                  (root "files/patches/niri-workspace-under-mouse-binds.patch")
+                  (root "files/patches/niri-hidden-workspaces.patch")
+                  (root "files/patches/niri-hidden-workspaces-event-stream.patch")
+                ];
               };
               retroarch = prev.retroarch.withCores (
                 cores: with cores; [

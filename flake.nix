@@ -113,8 +113,14 @@
       url = "github:astro/microvm.nix";
     };
 
+    niri = {
+      flake = false;
+      url = "github:niri-wm/niri/v26.04";
+    };
+
     niri-flake = {
       inputs = {
+        niri-unstable.follows = "niri";
         nixpkgs.follows = "nixpkgs";
         nixpkgs-stable.follows = "nixpkgs-stable";
       };

@@ -4,6 +4,7 @@
   element-desktop,
   jq,
   kitty,
+  socat,
   spotify-player,
   vesktop,
   writeShellApplication,
@@ -17,6 +18,7 @@ writeShellApplication {
     vesktop
     spotify-player
     jq
+    socat
   ];
   text = ''
     while :; do
@@ -37,7 +39,7 @@ writeShellApplication {
             searchelement="app_id"
             ;;
         -s | --spotifyplayer)
-            cmd=(sh -c 'kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&')
+            cmd=(sh -c 'kitty --app-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&')
             searchapp="spotifytui"
             searchelement="app_id"
             ;;
@@ -46,14 +48,17 @@ writeShellApplication {
         shift
     done
 
-    WIN_INFO=$(niri msg -j windows | jq --arg element "$searchelement" --arg search "$searchapp" '.[] | select (.[$element] | test($search)) | { id, is_focused, workspace_id }')
+    WIN_INFO=$(niri msg -j windows | jq -c --arg element "$searchelement" --arg search "$searchapp" 'first(.[] | select (.[$element] | test($search))) | { id, is_focused }')
     ID=$(echo "$WIN_INFO" | jq -r '.id // empty')
 
     if [ -z "$ID" ]; then
         niri msg action spawn -- "''${cmd[@]}"
+    elif [ "$(echo "$WIN_INFO" | jq -r '.is_focused')" = true ]; then
+        niri msg action move-window-to-workspace --window-id "$ID" --focus false stash
     else
-        niri msg action close-window --id "$ID"
+        FOCUSED_WS=$(niri msg -j workspaces | jq -r '.[] | select(.is_focused) | .id')
+        jq -cn --argjson window "$ID" --argjson workspace "$FOCUSED_WS" '{ Action: { MoveWindowToWorkspace: { window_id: $window, reference: { Id: $workspace }, focus: true } } }' | socat - "UNIX-CONNECT:$NIRI_SOCKET" >/dev/null
+        niri msg action focus-window --id "$ID"
     fi
-
   '';
 }

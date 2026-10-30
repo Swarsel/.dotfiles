@@ -72,7 +72,7 @@ in
 
   nixpkgs.overlays = lib.mkAfter [
     (_: prev: {
-      niri-stable = prev.niri.overrideAttrs { inherit (prev.niri-stable) patches; };
+      niri-unstable = prev.niri.overrideAttrs { inherit (prev.niri-unstable) patches; };
     })
   ];
 
