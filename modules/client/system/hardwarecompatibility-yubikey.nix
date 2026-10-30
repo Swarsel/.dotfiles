@@ -177,13 +177,17 @@
                 yubikey-touch-detector = {
                   Install = {
                     Also = [ "yubikey-touch-detector.socket" ];
-                    WantedBy = [ "default.target" ];
+                    WantedBy = [ "graphical-session.target" ];
                   };
                   Service = {
                     EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
                     ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector";
                   };
-                  Unit.Requires = [ "yubikey-touch-detector.socket" ];
+                  Unit = {
+                    After = [ "graphical-session.target" ];
+                    PartOf = [ "graphical-session.target" ];
+                    Requires = [ "yubikey-touch-detector.socket" ];
+                  };
                 };
                 yubikey-touch-notifier = {
                   Install.WantedBy = [ "graphical-session.target" ];
