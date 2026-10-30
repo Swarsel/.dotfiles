@@ -213,7 +213,7 @@
                   type = types.str;
                 };
                 reverse6 = mkOption {
-                  description = "ip6.arpa zone of the delegated IPv6 prefix, served by nsd";
+                  description = "ip6.arpa zone of the delegated IPv6 prefix, served by knot";
                   type = types.str;
                 };
               };

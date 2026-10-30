@@ -394,7 +394,7 @@ This is a comprehensive list of the services/components ran by my server machine
   | 🎼 **Music Downloader**       | [Yubal](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/yubal.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
   | 🐙 **Nix Build farm**        | [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/buildbot.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
   | 🐽 **Threat Detection**      | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/crowdsec.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-  | 👀 **DNS Records**           | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/nsd.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+  | 👀 **DNS Records**           | [Knot](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/knot.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
   | 👁️ **Monitoring**            | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/alloy.nix) + [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/gotify.nix) |
   | 💸 **Finance**               | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefly-iii.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
   | 💾 **Backups**               | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/restic.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -1718,7 +1718,7 @@ A short overview over each notable input and what it does:
 
   At the moment I am not using the full range of modules, but my usage keeps increasing steadily. Using this module forced me to make some adjustments in my config, namely exposing the =nodes= output in [[#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02][Hosts]].
 - [[https://github.com/nix-community/dns.nix][dns.nix]]
-  This adds a module that helps with creating zone files (like [[#h:dc1dbc54-46f7-406d-a551-527e97439614][nsd (dns) - site1]]). This flake was competing with [[https://github.com/Janik-Haag/nixos-dns/][NixOS-DNS]] for my favor - while the latter adds many nice utilities that generate records straight from a host configuration, I prefer to do this myself using the [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] + [[#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5][Share sconfiguration between nodes (automatically active)]] systems. In the end, I just tried out =dns.nix= without giving NixOS-DNS a chance and it has been working great, but I believe NixOS-DNS still deserves a mention here, as it would have been a great fit as well, most likely.
+  This adds a module that helps with creating zone files (like [[#h:dc1dbc54-46f7-406d-a551-527e97439614][DNS zone - site1]]). This flake was competing with [[https://github.com/Janik-Haag/nixos-dns/][NixOS-DNS]] for my favor - while the latter adds many nice utilities that generate records straight from a host configuration, I prefer to do this myself using the [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] + [[#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5][Share sconfiguration between nodes (automatically active)]] systems. In the end, I just tried out =dns.nix= without giving NixOS-DNS a chance and it has been working great, but I believe NixOS-DNS still deserves a mention here, as it would have been a great fit as well, most likely.
 - [[https://github.com/Infinidoge/nix-minecraft][nix-minecraft]]
   This adds a module that makes it easier to manage (modded) Minecraft servers. At the moment, it does not really work with Forge 1.20.1 (which is what my server is running), so I am not making full use of it right now, but I keep close watch on it every day.
 - [[https://gitlab.com/simple-nixos-mailserver/nixos-mailserver][nixos-mailserver]]
@@ -8676,7 +8676,7 @@ This machine is the authoritative DNS server for my domain and is responsible fo
     ++ lib.optionals (!minimal) [
       self.modules.nixos.profile-localserver
       self.modules.nixos.wireguard
-      self.modules.nixos.nsd
+      self.modules.nixos.knot
       self.modules.nixos.acme-dns
     ];
     swarselsystems = {
@@ -11274,7 +11274,7 @@ Do note that the below does not achieve anything on its own - as is, these would
                     type = types.str;
                   };
                   reverse6 = mkOption {
-                    description = "ip6.arpa zone of the delegated IPv6 prefix, served by nsd";
+                    description = "ip6.arpa zone of the delegated IPv6 prefix, served by knot";
                     type = types.str;
                   };
                 };
@@ -27044,7 +27044,7 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
 :CUSTOM_ID: h:86daedd7-8121-40cd-bccb-759ea8c644bf
 :END:
 
-This is my self-hosted acme-dns instance, which replaces the previous =auth.acme-dns.io= service. It runs on the same host as [[#h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a][NSD (dns)]], so the dns part listens on a dedicated secondary IPv6 address (port 53 on the primary addresses belongs to nsd) and can only do IPv6 due to its nature. The http api is never exposed publicly: acme clients reach it as plain http over the wgProxy network, and each acme host registers its own firewall opening on the =acmeDnsServer= node.
+This is my self-hosted acme-dns instance, which replaces the previous =auth.acme-dns.io= service. It runs on the same host as [[#h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a][Knot (dns)]], so the dns part listens on a dedicated secondary IPv6 address (port 53 on the primary addresses belongs to knot) and can only do IPv6 due to its nature. The http api is never exposed publicly: acme clients reach it as plain http over the wgProxy network, and each acme host registers its own firewall opening on the =acmeDnsServer= node.
 
 #+begin_src nix-ts :tangle modules/server/infra/acme-dns.nix
   {
@@ -40388,13 +40388,370 @@ Now, I have a separate setting for this (=nodeRoles=) in which I can define ALL 
   }
 #+end_src
 
-**** NSD (dns)
+**** Knot (dns)
 :PROPERTIES:
 :CUSTOM_ID: h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a
 :END:
 
-This is the setup of my authoritative dns server. This here is the general configuration that handles setup as well as zone transfers to Hetzner and Hurricane Electric. Domain specific config at:
-- [[#h:dc1dbc54-46f7-406d-a551-527e97439614][nsd (dns) - site1]]
+This is the setup of my authoritative dns server.
+
+Restoring the keys:
+
+pass show infra/<dnsServer>/knot-dnssec-backup | base64 -d | ssh root@<dnsServer> '
+  rm -rf /var/lib/knot/backup &&
+  tar -C /var/lib/knot -xzf - &&
+  chown -R knot:knot /var/lib/knot/backup &&
+  knotc -b zone-restore swarsel.win +backupdir /var/lib/knot/backup +nozonefile &&
+  rm -rf /var/lib/knot/backup'
+
+
+Domain specific config at:
+- [[#h:dc1dbc54-46f7-406d-a551-527e97439614][DNS zone - site1]]
+- [[#h:2285f506-9053-4beb-91e3-60d45b74a6b6][DNS zone - reverse6]]
+
+#+begin_src nix-ts :tangle modules/server/infra/knot.nix
+  {
+    flake.modules.nixos.knot =
+      {
+        root,
+        config,
+        lib,
+        pkgs,
+        confLib,
+        dns,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/knot";
+            name = "knot";
+            port = 53;
+            proxy = config.node.name;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceDir
+          serviceName
+          servicePort
+          ;
+        inherit (config.swarselsystems) sopsFile;
+        listenAddress4 = "10.1.2.157";
+        listenAddress6 = "2603:c020:801f:a0cc::9d";
+        keyName = globals.domains.main;
+        keyName4 = "${keyName}.${proxyAddress4}";
+        keyName6 = "${keyName}.${
+          lib.concatMapStringsSep "-" (lib.fixedWidthString 4 "0") (
+            lib.splitString ":" (lib.network.ipv6.fromString proxyAddress6).address
+          )
+        }";
+        mkRemotes =
+          key:
+          map (address: {
+            inherit address key;
+          });
+        hetzner =
+          mkRemotes keyName4 [
+            "213.239.242.238"
+            "213.133.100.103"
+            "193.47.99.3"
+          ]
+          ++ mkRemotes keyName6 [
+            "2a01:4f8:0:a101::a:1"
+            "2a01:4f8:0:1::5ddc:2"
+            "2001:67c:192c::add:a3"
+          ];
+        heNotify = mkRemotes keyName [ "216.218.130.2" ];
+        heTransfer = mkRemotes keyName [
+          "216.218.133.2"
+          "2001:470:600::2"
+        ];
+        remoteIds = map (remote: remote.address);
+        mkZoneFile = name: data: pkgs.writeText "${name}.zone" (dns.lib.toString name data);
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
+            name = "Knot DNS";
+          };
+          globals.monitoring.dns = confLib.mkDnsMonitoring {
+            inherit serviceName;
+            address = "${listenAddress4}:${toString servicePort}";
+            queryName = globals.domains.main;
+          };
+          sops = {
+            secrets.tsig-key = { inherit sopsFile; };
+            templates."knot-tsig.conf" = {
+              content =
+                "key:\n"
+                +
+                  lib.concatMapStrings
+                    (id: ''
+                      - id: ${id}
+                        algorithm: hmac-sha256
+                        secret: ${config.sops.placeholder.tsig-key}
+                    '')
+                    [
+                      keyName
+                      keyName4
+                      keyName6
+                    ];
+              owner = "knot";
+            };
+          };
+          users.persistentIds.knot = confLib.mkIds 931;
+          services.knot = {
+            enable = true;
+            keyFiles = [ config.sops.templates."knot-tsig.conf".path ];
+            settings = {
+              acl.secondaries = {
+                action = "transfer";
+                remote = remoteIds (hetzner ++ heTransfer);
+              };
+              remote = lib.listToAttrs (
+                map (
+                  remote:
+                  lib.nameValuePair remote.address (
+                    remote
+                    // {
+                      via = [
+                        listenAddress4
+                        listenAddress6
+                      ];
+                    }
+                  )
+                ) (hetzner ++ heNotify ++ heTransfer)
+              );
+              server.listen = [
+                "${listenAddress4}@${toString servicePort}"
+                "${listenAddress6}@${toString servicePort}"
+              ];
+              template.default = {
+                journal-content = "all";
+                serial-policy = "dateserial";
+                zonefile-load = "difference-no-serial";
+                zonefile-sync = -1;
+              };
+              zone = {
+                "${globals.domains.main}" = {
+                  acl = [ "secondaries" ];
+                  dnssec-signing = true;
+                  file = mkZoneFile globals.domains.main (
+                    import ./_dns-site1.nix {
+                      inherit (confLib.static) dmarcMailAddress;
+                      inherit
+                        config
+                        dns
+                        globals
+                        proxyAddress4
+                        proxyAddress6
+                        ;
+                    }
+                  );
+                  notify = remoteIds (hetzner ++ heNotify);
+                };
+                "${globals.domains.reverse6}".file = mkZoneFile globals.domains.reverse6 (
+                  import ./_dns-reverse6.nix { inherit globals; }
+                );
+              };
+            };
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              group = "knot";
+              mode = "0700";
+              user = "knot";
+            }
+          ];
+          networking.firewall = {
+            allowedTCPPorts = [ servicePort ];
+            allowedUDPPorts = [ servicePort ];
+          };
+        };
+      };
+  }
+#+end_src
+***** DNS zone - site1
+:PROPERTIES:
+:CUSTOM_ID: h:dc1dbc54-46f7-406d-a551-527e97439614
+:END:
+
+These are the specific records in use for my main domain.
+
+The =serial= here is only used on the very first load: Knot ignores it afterwards (=difference-no-serial=) and bumps the serial itself in =<YEAR:4><MONTH:2><DAY:2><ITERATION:2>= format whenever the records or signatures change.
+
+The options for A/AAAA records themselves should usually be defined in the respective service modules, using =globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords=. The Knot host will then merge these and create the corresponding records.
+
+#+begin_src nix-ts :tangle modules/server/infra/_dns-site1.nix
+  {
+    config,
+    dmarcMailAddress,
+    dns,
+    globals,
+    proxyAddress4,
+    proxyAddress6,
+    ...
+  }:
+  with dns.lib.combinators;
+  {
+    A = [ config.repo.secrets.local.dns.homepage-ip ];
+
+    CAA = [
+      {
+        issuerCritical = false;
+        tag = "issue";
+        value = "letsencrypt.org";
+      }
+      {
+        issuerCritical = false;
+        tag = "issuewild";
+        value = "letsencrypt.org";
+      }
+      {
+        issuerCritical = false;
+        tag = "iodef";
+        value = "mailto:${config.repo.secrets.common.dnsMail}";
+      }
+    ];
+
+    DKIM = [
+      {
+        k = "rsa";
+        p = config.repo.secrets.local.dns.mailserver.dkim-public;
+        selector = "mail";
+        ttl = 10800;
+      }
+    ];
+
+    DMARC = [
+      {
+        p = "none";
+        rua = "mailto:${dmarcMailAddress}";
+        ttl = 10800;
+      }
+    ];
+
+    MX = [
+      {
+        exchange = "${globals.services.mailserver.subDomain}";
+        preference = 10;
+      }
+    ];
+
+    NS = [
+      "soa"
+      "srv"
+    ]
+    ++ globals.domains.externalDns;
+
+    SOA = {
+      adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
+      nameServer = "soa";
+      serial = 2026102901;
+    };
+
+    SRV = [
+      {
+        port = 443;
+        priority = 10;
+        proto = "_tcp";
+        service = "_matrix";
+        target = "${globals.services.matrix.subDomain}";
+        weight = 5;
+      }
+      {
+        port = 465;
+        priority = 5;
+        proto = "_tcp";
+        service = "_submissions";
+        target = "${globals.services.mailserver.subDomain}";
+        ttl = 3600;
+        weight = 0;
+      }
+      {
+        port = 587;
+        priority = 5;
+        proto = "_tcp";
+        service = "_submission";
+        target = "${globals.services.mailserver.subDomain}";
+        ttl = 3600;
+        weight = 0;
+      }
+      {
+        port = 143;
+        priority = 5;
+        proto = "_tcp";
+        service = "_imap";
+        target = "${globals.services.mailserver.subDomain}";
+        ttl = 3600;
+        weight = 0;
+      }
+      {
+        port = 993;
+        priority = 5;
+        proto = "_tcp";
+        service = "_imaps";
+        target = "${globals.services.mailserver.subDomain}";
+        ttl = 3600;
+        weight = 0;
+      }
+    ];
+
+    TXT = [
+      (with spf; strict [ "a:${globals.services.mailserver.subDomain}.${globals.domains.main}" ])
+      "google-site-verification=${config.repo.secrets.local.dns.google-site-verification}"
+    ];
+
+    subdomains =
+      globals.dns.${globals.domains.main}.subdomainRecords
+      // {
+        _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
+        soa = host proxyAddress4 proxyAddress6;
+        srv = host proxyAddress4 proxyAddress6;
+        www.CNAME = [ "${globals.domains.main}." ];
+      }
+      // config.repo.secrets.local.dns.extra-records;
+
+    useOrigin = false;
+  }
+#+end_src
+
+***** DNS zone - reverse6
+:PROPERTIES:
+:CUSTOM_ID: h:2285f506-9053-4beb-91e3-60d45b74a6b6
+:END:
+
+
+This is the reverse zone by Hurricane Electric using a trick I learned in https://hawksley.dev/blog/get-free-arpa-domain. It is delegated to =soa= and =srv= in the tunnel-broker rDNS settings and delegates the [[#h:86daedd7-8121-40cd-bccb-759ea8c644bf][acme-dns]] subdomain.
+
+#+begin_src nix-ts :tangle modules/server/infra/_dns-reverse6.nix
+  { globals, ... }:
+  {
+    NS = [
+      "soa.${globals.domains.main}."
+      "srv.${globals.domains.main}."
+    ];
+
+    SOA = {
+      adminEmail = "admin@${globals.domains.main}";
+      nameServer = "soa.${globals.domains.main}.";
+      serial = 2026090903;
+    };
+
+    subdomains = globals.dns.${globals.domains.reverse6}.subdomainRecords;
+    useOrigin = false;
+  }
+#+end_src
+**** NSD (dns)
+:PROPERTIES:
+:CUSTOM_ID: h:224baf78-7cf5-48fb-9f26-2af4606e2ba2
+:END:
+
+This is the authoritative dns setup I used before switching to [[#h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a][Knot (dns)]], because the =dnssec= option of the nsd module is broken as of writing. A nice side effect is that Knot does not require bumping the serial myself :)
 
 #+begin_src nix-ts :tangle modules/server/infra/nsd.nix
   {
@@ -40468,7 +40825,7 @@ This is the setup of my authoritative dns server. This here is the general confi
                 {
                   # dnssec = true;
                   data = dns.lib.toString "${globals.domains.main}" (
-                    import ./_nsd-site1.nix {
+                    import ./_dns-site1.nix {
                       inherit (confLib.static) dmarcMailAddress;
                       inherit
                         config
@@ -40489,7 +40846,7 @@ This is the setup of my authoritative dns server. This here is the general confi
                   ];
                 };
               "${globals.domains.reverse6}".data = dns.lib.toString "${globals.domains.reverse6}" (
-                import ./_nsd-reverse6.nix { inherit globals; }
+                import ./_dns-reverse6.nix { inherit globals; }
               );
             };
           };
@@ -40506,177 +40863,7 @@ This is the setup of my authoritative dns server. This here is the general confi
       };
   }
 #+end_src
-***** NSD (dns) - site1
-:PROPERTIES:
-:CUSTOM_ID: h:dc1dbc54-46f7-406d-a551-527e97439614
-:END:
 
-These are the specific records in use for my main domain.
-
-IMPORTANT: In order for any changes here to take effect, the =serial= MUST be updated to a greater number. The format that should be followed it =<YEAR:4><MONTH:2><DAY:2><ITERATION:2>=, which allows for 99 iterations on a single day.
-
-The options for A/AAAA records themselves should usually be defined in the respective service modules, using =globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords=. The NSD host will then merge these and create the corresponding records.
-
-#+begin_src nix-ts :tangle modules/server/infra/_nsd-site1.nix
-  {
-    config,
-    dmarcMailAddress,
-    dns,
-    globals,
-    proxyAddress4,
-    proxyAddress6,
-    ...
-  }:
-  with dns.lib.combinators;
-  {
-    A = [ config.repo.secrets.local.dns.homepage-ip ];
-
-    CAA = [
-      {
-        issuerCritical = false;
-        tag = "issue";
-        value = "letsencrypt.org";
-      }
-      {
-        issuerCritical = false;
-        tag = "issuewild";
-        value = "letsencrypt.org";
-      }
-      {
-        issuerCritical = false;
-        tag = "iodef";
-        value = "mailto:${config.repo.secrets.common.dnsMail}";
-      }
-    ];
-
-    DKIM = [
-      {
-        k = "rsa";
-        p = config.repo.secrets.local.dns.mailserver.dkim-public;
-        selector = "mail";
-        ttl = 10800;
-      }
-    ];
-
-    DMARC = [
-      {
-        p = "none";
-        rua = "mailto:${dmarcMailAddress}";
-        ttl = 10800;
-      }
-    ];
-
-    MX = [
-      {
-        exchange = "${globals.services.mailserver.subDomain}";
-        preference = 10;
-      }
-    ];
-
-    NS = [
-      "soa"
-      "srv"
-    ]
-    ++ globals.domains.externalDns;
-
-    SOA = {
-      adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      nameServer = "soa";
-      serial = 2026102901; # update this on changes for secondary dns
-    };
-
-    SRV = [
-      {
-        port = 443;
-        priority = 10;
-        proto = "_tcp";
-        service = "_matrix";
-        target = "${globals.services.matrix.subDomain}";
-        weight = 5;
-      }
-      {
-        port = 465;
-        priority = 5;
-        proto = "_tcp";
-        service = "_submissions";
-        target = "${globals.services.mailserver.subDomain}";
-        ttl = 3600;
-        weight = 0;
-      }
-      {
-        port = 587;
-        priority = 5;
-        proto = "_tcp";
-        service = "_submission";
-        target = "${globals.services.mailserver.subDomain}";
-        ttl = 3600;
-        weight = 0;
-      }
-      {
-        port = 143;
-        priority = 5;
-        proto = "_tcp";
-        service = "_imap";
-        target = "${globals.services.mailserver.subDomain}";
-        ttl = 3600;
-        weight = 0;
-      }
-      {
-        port = 993;
-        priority = 5;
-        proto = "_tcp";
-        service = "_imaps";
-        target = "${globals.services.mailserver.subDomain}";
-        ttl = 3600;
-        weight = 0;
-      }
-    ];
-
-    TXT = [
-      (with spf; strict [ "a:${globals.services.mailserver.subDomain}.${globals.domains.main}" ])
-      "google-site-verification=${config.repo.secrets.local.dns.google-site-verification}"
-    ];
-
-    subdomains =
-      globals.dns.${globals.domains.main}.subdomainRecords
-      // {
-        _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
-        soa = host proxyAddress4 proxyAddress6;
-        srv = host proxyAddress4 proxyAddress6;
-        www.CNAME = [ "${globals.domains.main}." ];
-      }
-      // config.repo.secrets.local.dns.extra-records;
-
-    useOrigin = false;
-  }
-#+end_src
-
-***** NSD (dns) - reverse6
-:PROPERTIES:
-:CUSTOM_ID: h:2285f506-9053-4beb-91e3-60d45b74a6b6
-:END:
-
-
-This is the reverse zone by Hurricane Electric using a trick I learned in https://hawksley.dev/blog/get-free-arpa-domain. It is delegated to =soa= and =srv= in the tunnel-broker rDNS settings and delegates the [[#h:86daedd7-8121-40cd-bccb-759ea8c644bf][acme-dns]] subdomain.
-
-#+begin_src nix-ts :tangle modules/server/infra/_nsd-reverse6.nix
-  { globals, ... }:
-  {
-    NS = [
-      "soa.${globals.domains.main}."
-      "srv.${globals.domains.main}."
-    ];
-
-    SOA = {
-      adminEmail = "admin@${globals.domains.main}";
-      nameServer = "soa.${globals.domains.main}.";
-      serial = 2026090903;
-    };
-
-    subdomains = globals.dns.${globals.domains.reverse6}.subdomainRecords;
-    useOrigin = false;
-  }
-#+end_src
 **** Minecraft
 :PROPERTIES:
 :CUSTOM_ID: h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6

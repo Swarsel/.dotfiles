@@ -15,7 +15,7 @@
   ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.wireguard
-    self.modules.nixos.nsd
+    self.modules.nixos.knot
     self.modules.nixos.acme-dns
   ];
   swarselsystems = {

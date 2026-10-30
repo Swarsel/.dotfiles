@@ -69,7 +69,7 @@
               {
                 # dnssec = true;
                 data = dns.lib.toString "${globals.domains.main}" (
-                  import ./_nsd-site1.nix {
+                  import ./_dns-site1.nix {
                     inherit (confLib.static) dmarcMailAddress;
                     inherit
                       config
@@ -90,7 +90,7 @@
                 ];
               };
             "${globals.domains.reverse6}".data = dns.lib.toString "${globals.domains.reverse6}" (
-              import ./_nsd-reverse6.nix { inherit globals; }
+              import ./_dns-reverse6.nix { inherit globals; }
             );
           };
         };

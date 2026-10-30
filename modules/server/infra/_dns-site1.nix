@@ -62,7 +62,7 @@ with dns.lib.combinators;
   SOA = {
     adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
     nameServer = "soa";
-    serial = 2026102901; # update this on changes for secondary dns
+    serial = 2026102901;
   };
 
   SRV = [
