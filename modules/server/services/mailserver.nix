@@ -119,7 +119,7 @@
                   "v=STSv1; id=${builtins.substring 0 32 (builtins.hashString "sha256" mtaStsPolicy)}"
                 ];
                 "_smtp._tls".TXT = [ "v=TLSRPTv1; rua=mailto:${dmarcMailAddress}" ];
-                mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+                mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6; # it MUST be this subdomain
               };
               monitoring = {
                 http = confLib.mkHttpMonitoring {
@@ -183,6 +183,10 @@
                 owner = serviceUser;
               })
               // {
+                mail-tls-key = {
+                  inherit sopsFile;
+                  owner = "acme";
+                };
                 parsedmarc-imap-hashed-password = {
                   owner = serviceUser;
                   sopsFile = self + /secrets/general/parsedmarc.yaml;
@@ -303,6 +307,13 @@
               80
               443
             ];
+            security.acme.certs.${globals.domains.main} = {
+              extraLegoFlags = [
+                "--private-key"
+                config.sops.secrets.mail-tls-key.path
+              ];
+              extraLegoRenewFlags = [ "--reuse-key" ];
+            };
             nodes =
               let
                 extraConfigLoc = ''

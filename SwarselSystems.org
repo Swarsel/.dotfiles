@@ -40586,6 +40586,8 @@ The =serial= here is only used on the very first load: Knot ignores it afterward
 
 The options for A/AAAA records themselves should usually be defined in the respective service modules, using =globals.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords=. The Knot host will then merge these and create the corresponding records.
 
+The exception is the DANE =TLSA= record of the [[#h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2][Mail server]]: dns.nix converts its =certUsage=, =selector= and =matchingType= names to numbers, and records from =globals.dns= get type-checked twice (once in =globals=, once when the zone is built), which fails on the already-converted numbers. (#TODO: check for upstream fix)
+
 #+begin_src nix-ts :tangle modules/server/infra/_dns-site1.nix
   {
     config,
@@ -40709,6 +40711,14 @@ The options for A/AAAA records themselves should usually be defined in the respe
     subdomains =
       globals.dns.${globals.domains.main}.subdomainRecords
       // {
+        "_25._tcp.${globals.services.mailserver.subDomain}".TLSA = [
+          {
+            certUsage = "dane-ee";
+            certificate = "c012bcab175ceadb422f964fdeb1c5aa778f8efae9d46f37f7717456cbc61467";
+            matchingType = "sha256";
+            selector = "spki";
+          }
+        ];
         _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
         soa = host proxyAddress4 proxyAddress6;
         srv = host proxyAddress4 proxyAddress6;
@@ -41082,7 +41092,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                     "v=STSv1; id=${builtins.substring 0 32 (builtins.hashString "sha256" mtaStsPolicy)}"
                   ];
                   "_smtp._tls".TXT = [ "v=TLSRPTv1; rua=mailto:${dmarcMailAddress}" ];
-                  mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+                  mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6; # it MUST be this subdomain
                 };
                 monitoring = {
                   http = confLib.mkHttpMonitoring {
@@ -41146,6 +41156,10 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                   owner = serviceUser;
                 })
                 // {
+                  mail-tls-key = {
+                    inherit sopsFile;
+                    owner = "acme";
+                  };
                   parsedmarc-imap-hashed-password = {
                     owner = serviceUser;
                     sopsFile = self + /secrets/general/parsedmarc.yaml;
@@ -41266,6 +41280,13 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 80
                 443
               ];
+              security.acme.certs.${globals.domains.main} = {
+                extraLegoFlags = [
+                  "--private-key"
+                  config.sops.secrets.mail-tls-key.path
+                ];
+                extraLegoRenewFlags = [ "--reuse-key" ];
+              };
               nodes =
                 let
                   extraConfigLoc = ''
