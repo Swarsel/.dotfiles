@@ -15,10 +15,14 @@
         })
         serviceName
         ;
-      postgresVersion = 14;
+      postgresVersion = config.swarselsystems.server.postgresql.version;
       postgresDirPrefix = "/var/lib";
     in
     {
+      options.swarselsystems.server.postgresql.version = lib.mkOption {
+        default = 18;
+        type = lib.types.int;
+      };
       config = {
         swarselsystems.enabledServerModules = [ "postgresql" ];
         globals.monitoring.tcp = confLib.mkTcpMonitoring {

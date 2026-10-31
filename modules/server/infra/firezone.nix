@@ -102,11 +102,17 @@
       disabledFirezoneModule = name: "services/networking/firezone/${name}";
     in
     {
-      imports = map (
+      imports = [
+        self.modules.nixos.postgresql
+      ]
+      ++ map (
         name: "${inputs.nixpkgsFirezoneProvisioned}/nixos/modules/${disabledFirezoneModule name}"
       ) disabledFirezoneModules;
       config = {
-        swarselsystems.enabledServerModules = [ "firezone" ];
+        swarselsystems = {
+          enabledServerModules = [ "firezone" ];
+          server.postgresql.version = 17;
+        };
         topology.self.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
@@ -529,8 +535,8 @@
               {
                 ${idmServer} =
                   let
-                    accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
-                    externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
+                    accountId = "33464cc5-ccc5-4565-b842-1cc323c2df5f";
+                    externalId = "2322e386-689f-4035-a64b-ce932c2d3c61";
                   in
                   confLib.mkKanidmOidcSystem {
                     inherit kanidmSopsFile serviceDomain serviceName;

@@ -29363,10 +29363,14 @@ Many services require a database, and I like to go with full postgres when givin
           })
           serviceName
           ;
-        postgresVersion = 14;
+        postgresVersion = config.swarselsystems.server.postgresql.version;
         postgresDirPrefix = "/var/lib";
       in
       {
+        options.swarselsystems.server.postgresql.version = lib.mkOption {
+          default = 18;
+          type = lib.types.int;
+        };
         config = {
           swarselsystems.enabledServerModules = [ "postgresql" ];
           globals.monitoring.tcp = confLib.mkTcpMonitoring {
@@ -42120,11 +42124,17 @@ Sometimes the GUI login fails:
         disabledFirezoneModule = name: "services/networking/firezone/${name}";
       in
       {
-        imports = map (
+        imports = [
+          self.modules.nixos.postgresql
+        ]
+        ++ map (
           name: "${inputs.nixpkgsFirezoneProvisioned}/nixos/modules/${disabledFirezoneModule name}"
         ) disabledFirezoneModules;
         config = {
-          swarselsystems.enabledServerModules = [ "firezone" ];
+          swarselsystems = {
+            enabledServerModules = [ "firezone" ];
+            server.postgresql.version = 17;
+          };
           topology.self.services.${serviceName} = {
             icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
@@ -42547,8 +42557,8 @@ Sometimes the GUI login fails:
                 {
                   ${idmServer} =
                     let
-                      accountId = "7bc9f5a9-02b2-48f7-86f4-ff270b83c816";
-                      externalId = "492fc5fe-8769-4c49-8a25-d02cda243d67";
+                      accountId = "33464cc5-ccc5-4565-b842-1cc323c2df5f";
+                      externalId = "2322e386-689f-4035-a64b-ce932c2d3c61";
                     in
                     confLib.mkKanidmOidcSystem {
                       inherit kanidmSopsFile serviceDomain serviceName;
