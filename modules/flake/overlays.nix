@@ -10,12 +10,14 @@ let
 
   stablePins = {
     dev = [
-      "firezone-relay"
-      "firezone-server-web"
-      "firezone-server-api"
-      "firezone-server-domain"
       # "_1password-gui"
       # "_1password-gui-beta"
+    ];
+    firezone = [
+      "firezone-gateway"
+      "firezone-headless-client"
+      "firezone-relay"
+      "firezone-server"
     ];
     stable = [
       # "moonlight-qt"

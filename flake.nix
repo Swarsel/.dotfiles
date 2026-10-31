@@ -203,13 +203,13 @@
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
+    nixpkgs-firezone.url = "github:Swarsel/nixpkgs/1fef1eb69b3f8f9a778441b386eadbb1fa3fa436?narHash=sha256-HY1UfmtZOuk7Y+9cTIF8Kx5TV7qOTtRqk7A+W6lyMm8%3D";
     nixpkgs-kernelpin.url = "github:nixos/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010?narHash=sha256-dhoW6VgFWlaodSY5jrBn%2BCF2FLmaUvDVgM7%2BC7T2%2BNM%3D";
     nixpkgs-sandbox.url = "github:r-ryantm/nixpkgs/4800f20ae2dc52cc7422118d28d427ef412f0841";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-stable26_05.url = "github:NixOS/nixpkgs/nixos-26.05";
-    nixpkgsFirezoneProvisioned.url = "github:nixos/nixpkgs/a799d3e3886da994fa307f817a6bc705ae538eeb?narHash=sha256-3av0pIjlOWQ6rDbNOmpUSvbNnJkGORQKKjb4LtCZsIY%3D";
 
     noctalia = {
       inputs.nixpkgs.follows = "nixpkgs";
