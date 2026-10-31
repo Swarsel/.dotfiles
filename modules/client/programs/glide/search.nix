@@ -24,7 +24,7 @@
     {
       programs.glide-browser.config = ''
         const engine_keywords = new Map<string, string>(
-          ${builtins.toJSON keywordEntries}.flatMap(([kw, name]) => [[kw, name], ["@" + kw, name]]),
+          (${builtins.toJSON keywordEntries} as [string, string][]).flatMap(([kw, name]): [string, string][] => [[kw, name], ["@" + kw, name]]),
         );
         const search_engine_list: { name: string; keyword: string }[] = ${builtins.toJSON engineList};
 

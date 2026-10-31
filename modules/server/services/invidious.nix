@@ -108,7 +108,6 @@
               ];
               popular_enabled = false;
             };
-            sig-helper.enable = true;
           };
           nginx.virtualHosts.${serviceDomain} = {
             enableACME = false;

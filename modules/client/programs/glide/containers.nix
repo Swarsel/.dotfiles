@@ -62,8 +62,6 @@
       }
     }
 
-    browser.tabs.onRemoved.addListener((tab_id) => placed.delete(tab_id));
-
     async function container_catchup() {
       try {
         for (const tab of await browser.tabs.query({})) {
@@ -85,6 +83,7 @@
           { urls: ["<all_urls>"], types: ["main_frame"] },
         );
       } catch {}
+      browser.tabs.onRemoved.addListener((tab_id) => placed.delete(tab_id));
       browser.contextualIdentities.onCreated.addListener(() => void refresh_container_stores());
       await refresh_container_stores();
       await container_catchup();
@@ -121,9 +120,5 @@
         flash_message("containers unavailable");
       }
     }, { description: "Open the current page in a container tab" });
-
-    glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
-      description: "Toggle the full toolbar",
-    });
   '';
 }

@@ -42,5 +42,9 @@
 
     glide.keymaps.set("normal", "<leader>b", () => set_toolbar(toolbar_state === "urlbar" ? "hidden" : "urlbar"), {
       description: "Toggle the URL bar",
+    });
+
+    glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
+      description: "Toggle the full toolbar",
     });'';
 }

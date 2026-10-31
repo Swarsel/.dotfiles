@@ -18376,8 +18376,6 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         }
       }
 
-      browser.tabs.onRemoved.addListener((tab_id) => placed.delete(tab_id));
-
       async function container_catchup() {
         try {
           for (const tab of await browser.tabs.query({})) {
@@ -18399,6 +18397,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
             { urls: ["<all_urls>"], types: ["main_frame"] },
           );
         } catch {}
+        browser.tabs.onRemoved.addListener((tab_id) => placed.delete(tab_id));
         browser.contextualIdentities.onCreated.addListener(() => void refresh_container_stores());
         await refresh_container_stores();
         await container_catchup();
@@ -18435,10 +18434,6 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           flash_message("containers unavailable");
         }
       }, { description: "Open the current page in a container tab" });
-
-      glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
-        description: "Toggle the full toolbar",
-      });
     '';
   }
 #+end_src
@@ -18613,7 +18608,10 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         find_el.classList.toggle("nomatch", hint_session && no_match);
       }
 
-      function follow_hint(index: number) {
+      function follow_hint(index: number | undefined) {
+        if (index == null) {
+          return;
+        }
         hint_session = false;
         const label = String(index + 1);
         void glide.keys
@@ -18705,8 +18703,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         if (!hint_session) {
           return;
         }
-        const key = (await glide.keys.next()) as any;
-        const ch = typeof key === "string" ? key : String(key?.key ?? "");
+        const ch = await glide.keys.next_str();
         if (ch.length === 1) {
           hint_filter += ch.toLowerCase();
           apply_hint_filter();
@@ -18765,11 +18762,18 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         /https?:\/\/vc-impimba-1\.m\.imp\.ac\.at\/ui\/webconsole/,
       ];
 
-      for (const pattern of ignore_mode_sites) {
-        glide.autocmds.create("UrlEnter", pattern, () => {
-          glide.excmds.execute("mode_change ignore");
-        });
-      }
+      let ignore_mode_auto = false;
+      glide.autocmds.create("UrlEnter", /^/, ({ url }) => {
+        if (ignore_mode_sites.some((pattern) => pattern.test(url))) {
+          ignore_mode_auto = true;
+          void glide.excmds.execute("mode_change ignore");
+        } else if (ignore_mode_auto) {
+          ignore_mode_auto = false;
+          if (glide.ctx.mode === "ignore") {
+            void glide.excmds.execute("mode_change normal");
+          }
+        }
+      });
     '';
   }
 #+end_src
@@ -18884,7 +18888,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
       {
         programs.glide-browser.config = ''
           const engine_keywords = new Map<string, string>(
-            ${builtins.toJSON keywordEntries}.flatMap(([kw, name]) => [[kw, name], ["@" + kw, name]]),
+            (${builtins.toJSON keywordEntries} as [string, string][]).flatMap(([kw, name]): [string, string][] => [[kw, name], ["@" + kw, name]]),
           );
           const search_engine_list: { name: string; keyword: string }[] = ${builtins.toJSON engineList};
 
@@ -19023,10 +19027,6 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
   {
     flake.modules.homeManager.glide.programs.glide-browser.config = ''
       function ensure_statusline() {
-        const stale = document.getElementById("glide-statusline");
-        if (stale && !document.getElementById("glide-statusline-container")) {
-          stale.remove();
-        }
         if (!document.getElementById("glide-statusline")) {
           const profile_name = (glide.path.profile_dir.split("/").pop() ?? "").replace(/^[^.]+\./, "");
           (document.body ?? document.documentElement)?.appendChild(
@@ -19219,9 +19219,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         }
         try {
           const at_root = await glide.content.execute(() => {
-            const nav = (window as unknown as { navigation?: { currentEntry?: { index: number } } }).navigation;
+            const nav = (window as unknown as { navigation?: { currentEntry?: { index: number }; entries(): unknown[] } }).navigation;
             if (nav?.currentEntry != null) {
-              return nav.currentEntry.index <= 0;
+              return nav.currentEntry.index <= 0 && nav.entries().length >= history.length;
             }
             return history.length <= 1;
           }, { tab_id });
@@ -19242,43 +19242,25 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           } catch {}
         }
       }
-      const tab_containers: Record<number, string> = {};
-      function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
-        if (tab?.id != null && tab.cookieStoreId != null) {
-          tab_containers[tab.id] = tab.cookieStoreId;
-        }
-      }
       glide.autocmds.create("ConfigLoaded", () => {
         browser.tabs.onCreated.addListener(() => void update_tab_count());
         browser.tabs.onRemoved.addListener(() => void update_tab_count());
-        browser.tabs.onCreated.addListener(cache_tab);
-        browser.tabs.onRemoved.addListener((tab_id) => {
-          delete tab_containers[tab_id];
-        });
         browser.tabs.onActivated.addListener(async (info) => {
           update_root_indicator(info.tabId);
-          const cached = tab_containers[info.tabId];
-          if (cached != null) {
-            update_container_indicator(cached);
-            return;
-          }
           const tab = await browser.tabs.get(info.tabId).catch(() => null);
-          cache_tab(tab);
           update_container_indicator(tab?.cookieStoreId);
         });
         browser.tabs.onUpdated.addListener((tab_id, change, tab) => {
-          cache_tab(tab);
-          if (tab.active) {
-            update_container_indicator(tab.cookieStoreId);
-            if (change.url != null || change.status === "complete") {
-              update_root_indicator(tab_id);
-            }
+          if (!tab.active || (change.url == null && change.status !== "complete")) {
+            return;
           }
+          update_container_indicator(tab.cookieStoreId);
+          update_root_indicator(tab_id);
         });
         browser.windows.onFocusChanged.addListener(() => {
           void refresh_active_indicators();
         });
-        const on_navigation = async (details: { tabId: number; frameId: number }) => {
+        browser.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
           if (details.frameId !== 0) {
             return;
           }
@@ -19286,9 +19268,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           if (tab?.active) {
             update_root_indicator(details.tabId);
           }
-        };
-        browser.webNavigation.onCommitted.addListener(on_navigation);
-        browser.webNavigation.onHistoryStateUpdated.addListener(on_navigation);
+        });
       });
     '';
   }
@@ -19625,6 +19605,10 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 
       glide.keymaps.set("normal", "<leader>b", () => set_toolbar(toolbar_state === "urlbar" ? "hidden" : "urlbar"), {
         description: "Toggle the URL bar",
+      });
+
+      glide.keymaps.set("normal", "<leader>B", () => set_toolbar(toolbar_state === "full" ? "hidden" : "full"), {
+        description: "Toggle the full toolbar",
       });'';
   }
 #+end_src
@@ -19791,9 +19775,9 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         }];
 
         function query_without_keyword(input: string): string {
-          const parts = input.trim().split(" ").filter(Boolean);
-          if (parts.length >= 1 && engine_keywords.has(parts[0])) {
-            return parts.slice(1).join(" ");
+          const [first, ...rest] = input.trim().split(" ").filter(Boolean);
+          if (first != null && engine_keywords.has(first)) {
+            return rest.join(" ");
           }
           return input.trim();
         }
@@ -19909,10 +19893,10 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
             }
             schedule_fetch_live(tokens.join(" "));
           }
-          for (let i = 0; i < slot_items.length; i++) {
-            slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
-            slot_urls[i].textContent = slot_items[i].url;
-          }
+          slot_items.forEach((item, i) => {
+            slot_titles[i]!.textContent = (item.star ? "★ " : "") + (item.title || item.url);
+            slot_urls[i]!.textContent = item.url;
+          });
         }
 
         for (let i = 0; i < SLOTS; i++) {
@@ -43959,7 +43943,6 @@ For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
                 ];
                 popular_enabled = false;
               };
-              sig-helper.enable = true;
             };
             nginx.virtualHosts.${serviceDomain} = {
               enableACME = false;

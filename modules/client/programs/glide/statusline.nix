@@ -1,10 +1,6 @@
 {
   flake.modules.homeManager.glide.programs.glide-browser.config = ''
     function ensure_statusline() {
-      const stale = document.getElementById("glide-statusline");
-      if (stale && !document.getElementById("glide-statusline-container")) {
-        stale.remove();
-      }
       if (!document.getElementById("glide-statusline")) {
         const profile_name = (glide.path.profile_dir.split("/").pop() ?? "").replace(/^[^.]+\./, "");
         (document.body ?? document.documentElement)?.appendChild(
@@ -197,9 +193,9 @@
       }
       try {
         const at_root = await glide.content.execute(() => {
-          const nav = (window as unknown as { navigation?: { currentEntry?: { index: number } } }).navigation;
+          const nav = (window as unknown as { navigation?: { currentEntry?: { index: number }; entries(): unknown[] } }).navigation;
           if (nav?.currentEntry != null) {
-            return nav.currentEntry.index <= 0;
+            return nav.currentEntry.index <= 0 && nav.entries().length >= history.length;
           }
           return history.length <= 1;
         }, { tab_id });
@@ -220,43 +216,25 @@
         } catch {}
       }
     }
-    const tab_containers: Record<number, string> = {};
-    function cache_tab(tab: { id?: number; cookieStoreId?: string } | null | undefined) {
-      if (tab?.id != null && tab.cookieStoreId != null) {
-        tab_containers[tab.id] = tab.cookieStoreId;
-      }
-    }
     glide.autocmds.create("ConfigLoaded", () => {
       browser.tabs.onCreated.addListener(() => void update_tab_count());
       browser.tabs.onRemoved.addListener(() => void update_tab_count());
-      browser.tabs.onCreated.addListener(cache_tab);
-      browser.tabs.onRemoved.addListener((tab_id) => {
-        delete tab_containers[tab_id];
-      });
       browser.tabs.onActivated.addListener(async (info) => {
         update_root_indicator(info.tabId);
-        const cached = tab_containers[info.tabId];
-        if (cached != null) {
-          update_container_indicator(cached);
-          return;
-        }
         const tab = await browser.tabs.get(info.tabId).catch(() => null);
-        cache_tab(tab);
         update_container_indicator(tab?.cookieStoreId);
       });
       browser.tabs.onUpdated.addListener((tab_id, change, tab) => {
-        cache_tab(tab);
-        if (tab.active) {
-          update_container_indicator(tab.cookieStoreId);
-          if (change.url != null || change.status === "complete") {
-            update_root_indicator(tab_id);
-          }
+        if (!tab.active || (change.url == null && change.status !== "complete")) {
+          return;
         }
+        update_container_indicator(tab.cookieStoreId);
+        update_root_indicator(tab_id);
       });
       browser.windows.onFocusChanged.addListener(() => {
         void refresh_active_indicators();
       });
-      const on_navigation = async (details: { tabId: number; frameId: number }) => {
+      browser.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
         if (details.frameId !== 0) {
           return;
         }
@@ -264,9 +242,7 @@
         if (tab?.active) {
           update_root_indicator(details.tabId);
         }
-      };
-      browser.webNavigation.onCommitted.addListener(on_navigation);
-      browser.webNavigation.onHistoryStateUpdated.addListener(on_navigation);
+      });
     });
   '';
 }

@@ -47,7 +47,10 @@
       find_el.classList.toggle("nomatch", hint_session && no_match);
     }
 
-    function follow_hint(index: number) {
+    function follow_hint(index: number | undefined) {
+      if (index == null) {
+        return;
+      }
       hint_session = false;
       const label = String(index + 1);
       void glide.keys
@@ -139,8 +142,7 @@
       if (!hint_session) {
         return;
       }
-      const key = (await glide.keys.next()) as any;
-      const ch = typeof key === "string" ? key : String(key?.key ?? "");
+      const ch = await glide.keys.next_str();
       if (ch.length === 1) {
         hint_filter += ch.toLowerCase();
         apply_hint_filter();

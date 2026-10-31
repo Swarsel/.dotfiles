@@ -155,9 +155,9 @@
       }];
 
       function query_without_keyword(input: string): string {
-        const parts = input.trim().split(" ").filter(Boolean);
-        if (parts.length >= 1 && engine_keywords.has(parts[0])) {
-          return parts.slice(1).join(" ");
+        const [first, ...rest] = input.trim().split(" ").filter(Boolean);
+        if (first != null && engine_keywords.has(first)) {
+          return rest.join(" ");
         }
         return input.trim();
       }
@@ -273,10 +273,10 @@
           }
           schedule_fetch_live(tokens.join(" "));
         }
-        for (let i = 0; i < slot_items.length; i++) {
-          slot_titles[i].textContent = (slot_items[i].star ? "★ " : "") + (slot_items[i].title || slot_items[i].url);
-          slot_urls[i].textContent = slot_items[i].url;
-        }
+        slot_items.forEach((item, i) => {
+          slot_titles[i]!.textContent = (item.star ? "★ " : "") + (item.title || item.url);
+          slot_urls[i]!.textContent = item.url;
+        });
       }
 
       for (let i = 0; i < SLOTS; i++) {
