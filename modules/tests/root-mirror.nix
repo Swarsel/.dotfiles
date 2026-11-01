@@ -7,7 +7,7 @@
       system,
       ...
     }:
-    lib.optionalAttrs (system == "x86_64-linux") {
+    lib.optionalAttrs (lib.hasSuffix "-linux" system) {
       packages.root-mirror-test =
         let
           mirror = inputs.nixpkgs.lib.nixosSystem {
@@ -65,6 +65,13 @@
               minimal = true;
             };
           };
+          inherit
+            (import "${inputs.nixpkgs}/nixos/lib/qemu-common.nix" {
+              inherit lib;
+              inherit (pkgs) stdenv;
+            })
+            qemuSerialDevice
+            ;
           testKey = pkgs.runCommand "root-mirror-test-key" { nativeBuildInputs = [ pkgs.openssh ]; } ''
             mkdir $out
             ssh-keygen -q -t ed25519 -N "" -C root-mirror-test -f $out/key
@@ -83,7 +90,7 @@
                 options = [
                   "-kernel ${toplevel}/kernel"
                   "-initrd ${toplevel}/initrd"
-                  ''-append "$(cat ${toplevel}/kernel-params) init=${toplevel}/init console=ttyS0"''
+                  ''-append "$(cat ${toplevel}/kernel-params) init=${toplevel}/init console=${qemuSerialDevice}"''
                 ];
                 drives = map (disk: {
                   deviceExtraOpts.serial = "mirror-${disk}";
