@@ -10,11 +10,23 @@
           description = "Timer for battery check that alerts at 10% or less";
           partOf = [ target ];
           serviceConfig = {
-            ExecStart = pkgs.writeShellScript "battery-low-notification" ''
-              if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") && $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") > 0 ));
-              then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
-              fi;
-            '';
+            ExecStart = lib.getExe (
+              pkgs.writeShellApplication {
+                name = "battery-low-notification";
+                runtimeInputs = [
+                  pkgs.acpi
+                  pkgs.coreutils
+                  pkgs.libnotify
+                  pkgs.ripgrep
+                ];
+                text = ''
+                  level=$(acpi -b | head -n 1 | rg -o "\d+%" | rg -o "\d+") || exit 0
+                  if (( level <= 10 && level > 0 )); then
+                    notify-send --urgency=critical "low battery" "$level%"
+                  fi
+                '';
+              }
+            );
             Type = "simple";
           };
           wantedBy = [ target ];

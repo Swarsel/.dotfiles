@@ -11,12 +11,15 @@
       label = "nixos";
       rootLuks = "cryptroot";
       mirrorLuks = "cryptroot-mirror";
-      initrdSshCommand = pkgs.writeShellScript "initrd-ssh-command" ''
-        if [ "''${SSH_ORIGINAL_COMMAND:-}" = degraded ]; then
-          exec ${lib.getExe pkgs.swarsel-degraded}
-        fi
-        exec /bin/systemctl default
-      '';
+      initrdSshCommand = pkgs.writeShellApplication {
+        name = "initrd-ssh-command";
+        text = ''
+          if [ "''${SSH_ORIGINAL_COMMAND:-}" = degraded ]; then
+            exec ${lib.getExe pkgs.swarsel-degraded}
+          fi
+          exec /bin/systemctl default
+        '';
+      };
       degradedFlag = "/run/root-mirror-degraded";
       efiVariable = "/sys/firmware/efi/efivars/${pkgs.swarsel-degraded.efiVariable}";
       mkDisk =
@@ -90,7 +93,7 @@
         type = lib.types.str;
       };
       config = {
-        swarselsystems.initrdSshCommand = "${initrdSshCommand}";
+        swarselsystems.initrdSshCommand = lib.getExe initrdSshCommand;
         boot = {
           initrd = {
             services.udev.rules = ''TEST=="${degradedFlag}", SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="btrfs", ENV{ID_FS_LABEL}=="${label}", ENV{SYSTEMD_READY}="1"'';

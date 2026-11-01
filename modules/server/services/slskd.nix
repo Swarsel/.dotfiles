@@ -128,12 +128,17 @@
                     );
                   in
                   lib.mkForce (
-                    pkgs.writeShellScript "${serviceName}-start" ''
-                      exec ${cfg.package}/bin/slskd \
-                        --app-dir ${serviceDir} \
-                        --config ${configurationYaml} \
-                        --slsk-listen-port "$(cat "$CREDENTIALS_DIRECTORY/listen-port")"
-                    ''
+                    lib.getExe (
+                      pkgs.writeShellApplication {
+                        name = "${serviceName}-start";
+                        text = ''
+                          exec ${cfg.package}/bin/slskd \
+                            --app-dir ${serviceDir} \
+                            --config ${configurationYaml} \
+                            --slsk-listen-port "$(cat "$CREDENTIALS_DIRECTORY/listen-port")"
+                        '';
+                      }
+                    )
                   );
                 LoadCredential = [ "listen-port:${piaTunnel.portForwarding.portFile}" ];
                 NetworkNamespacePath = piaTunnel.netnsPath;
@@ -144,10 +149,13 @@
             };
             "${serviceName}-web-forward" =
               let
-                inner = pkgs.writeShellScript "${serviceName}-web-into-netns" ''
-                  exec ${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} \
-                    ${pkgs.socat}/bin/socat - TCP:127.0.0.1:${toString servicePort}
-                '';
+                inner = pkgs.writeShellApplication {
+                  name = "${serviceName}-web-into-netns";
+                  text = ''
+                    exec ${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} \
+                      ${pkgs.socat}/bin/socat - TCP:127.0.0.1:${toString servicePort}
+                  '';
+                };
               in
               {
                 after = [ "${serviceName}.service" ];
@@ -155,11 +163,16 @@
                 description = "Forward 0.0.0.0:${toString servicePort} into the ${piaNamespace} netns";
                 partOf = [ "${serviceName}.service" ];
                 serviceConfig = {
-                  ExecStart = pkgs.writeShellScript "${serviceName}-web-forward" ''
-                    exec ${pkgs.socat}/bin/socat \
-                      TCP-LISTEN:${toString servicePort},reuseaddr,fork \
-                      EXEC:${inner}
-                  '';
+                  ExecStart = lib.getExe (
+                    pkgs.writeShellApplication {
+                      name = "${serviceName}-web-forward";
+                      text = ''
+                        exec ${pkgs.socat}/bin/socat \
+                          TCP-LISTEN:${toString servicePort},reuseaddr,fork \
+                          EXEC:${lib.getExe inner}
+                      '';
+                    }
+                  );
                   Restart = "on-failure";
                   RestartSec = "5s";
                   Type = "simple";
