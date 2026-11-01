@@ -170,6 +170,7 @@
             inherit pkgs extraSpecialArgs;
             modules = [
               "${self}/hosts/${type}/${arch}/${configName}"
+              self.modules.nixOnDroid.profile-base
               {
                 home-manager = {
                   config.imports = homeModules ++ [

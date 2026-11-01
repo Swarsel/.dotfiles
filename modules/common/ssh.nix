@@ -4,11 +4,17 @@
       {
         config,
         lib,
+        options,
         confLib,
         nixosConfig ? null,
         ...
       }:
       {
+        options.swarselsystems.sshHosts = lib.mkOption {
+          default = null;
+          description = "Names of the hosts from the personal ssh host list to configure; null configures all of them.";
+          type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        };
         config = {
           swarselsystems.enabledHomeModules = [ "ssh" ];
           programs.ssh = {
@@ -33,10 +39,18 @@
                 userKnownHostsFile = "~/.ssh/known_hosts";
               };
             }
-            // confLib.getConfig.repo.secrets.common.ssh.hosts;
+            // (
+              let
+                inherit (confLib.getConfig.repo.secrets.common.ssh) hosts;
+              in
+              if config.swarselsystems.sshHosts == null then
+                hosts
+              else
+                lib.getAttrs config.swarselsystems.sshHosts hosts
+            );
           };
         }
-        // lib.optionalAttrs (nixosConfig == null) {
+        // lib.optionalAttrs (nixosConfig == null && options ? sops) {
           sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
             builder-key = {
               mode = "0600";
