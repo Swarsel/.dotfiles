@@ -7633,10 +7633,19 @@ A Mac notebook that I have received from work. I use this machine for getting ac
 :CUSTOM_ID: h:729af373-37e7-4379-9a3d-b09792219415
 :END:
 
-My phone. I use only a minimal config for remote debugging here.
+My phone. The flake is never evaluated on the device: =just droid= builds the activation package here and stages it on belchsfactory, [[#h:87a6eea6-3a30-4169-ae0e-ddfa40ae7185][droid-switch]] pulls and activates it on the phone. The config therefore keeps the ssh route to belchsfactory, pins the =nixpkgs= registry entry to the generation's nixpkgs so ad-hoc =nix shell= calls reuse it instead of unpacking a fresh tree under proot, and carries the CLI tools and shell setup I use everywhere else.
 
 #+begin_src nix-ts :tangle hosts/android/aarch64-linux/magicant/default.nix
-  { pkgs, ... }: {
+  {
+    self,
+    inputs,
+    lib,
+    pkgs,
+    configName,
+    globals,
+    ...
+  }:
+  {
     android-integration = {
       termux-open.enable = true;
       termux-open-url.enable = true;
@@ -7654,26 +7663,94 @@ My phone. I use only a minimal config for remote debugging here.
       ];
       motd = null;
       packages = with pkgs; [
-        vim
-        git
-        openssh
-        # toybox
-        dig
-        man
-        gnupg
+        age
+        bottom
+        croc
         curl
         deadnix
-        statix
+        dig
+        droid-switch
+        fd
+        file
+        git
+        gnupg
+        gnutar
+        iproute2
+        iputils
+        jq
+        just
+        less
+        man
+        ncdu
+        nix-output-monitor
+        nix-tree
         nixfmt
         nvd
+        openssh
+        openssl
+        ripgrep
+        rsync
+        sops
+        ssh-to-age
+        statix
+        tree
+        unzip
+        vim
+        wget
+        yq-go
       ];
     };
 
-    nix.extraOptions = ''
-      experimental-features = nix-command flakes
-    '';
+    home-manager = {
+      config = {
+        imports = builtins.attrValues (
+          lib.getAttrs [
+            "eza"
+            "git"
+            "nix-index"
+            "nix-your-shell"
+            "starship"
+            "zsh"
+          ] self.modules.homeManager
+        );
+        swarselsystems.isPublic = true;
+        programs.ssh = {
+          enable = true;
+          enableDefaultConfig = false;
+          settings = {
+            belchsfactory = {
+              HostName = globals.hosts.belchsfactory.wanAddress4;
+              ProxyJump = "liliputsteps";
+              StrictHostKeyChecking = "accept-new";
+              User = "root";
+            };
+            liliputsteps = {
+              HostName = globals.hosts.liliputsteps.wanAddress4;
+              StrictHostKeyChecking = "accept-new";
+              User = "jump";
+            };
+          };
+        };
+        home.sessionVariables.DROID_PROFILE = "droid-${configName}";
+        systemd.user.tmpfiles.rules = lib.mkForce [ ];
+      };
+      backupFileExtension = "hm-bak";
+    };
+
+    nix = {
+      extraOptions = ''
+        experimental-features = nix-command flakes
+      '';
+      registry.nixpkgs.flake = inputs.nixpkgs;
+    };
 
     system.stateVersion = "23.05";
+
+    user = {
+      gid = 10418;
+      shell = "${pkgs.zsh}/bin/zsh";
+      uid = 10418;
+    };
   }
 #+end_src
 
@@ -46272,6 +46349,59 @@ This programs simply runs =ssh-keygen= on the last host that I tried to ssh into
     '';
   }
 #+end_src
+***** droid-switch
+:PROPERTIES:
+:CUSTOM_ID: h:87a6eea6-3a30-4169-ae0e-ddfa40ae7185
+:END:
+
+Second half of the phone deployment: =just droid= builds the Nix-on-Droid activation package on the workstation, pushes the closure to belchsfactory and records it there as the profile =droid-<host>= (which doubles as GC root and keeps older generations for rollback). This script runs on the phone, resolves that profile (or takes an explicit store path), pulls the closure over ssh (the phone can reach belchsfactory through the jump host, but nothing can reach the phone) and activates it. Nix inside the proot cannot allocate a pseudoterminal, so any derivation the activation needs to build locally (the =nix profile= user environment) fails; the script catches that, builds the derivation on belchsfactory instead, copies the output back and retries.
+
+#+begin_src nix-ts :tangle pkgs/flake/droid-switch/default.nix
+  {
+    name,
+    coreutils,
+    gnugrep,
+    openssh,
+    writeShellApplication,
+    ...
+  }:
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [
+      coreutils
+      gnugrep
+      openssh
+    ];
+    text = ''
+      builder=''${DROID_BUILDER:-belchsfactory}
+      if [[ $# -ge 1 ]]; then
+          path=$1
+      elif [[ -n ''${DROID_PROFILE:-} ]]; then
+          path=$(ssh "$builder" readlink -f "/nix/var/nix/profiles/$DROID_PROFILE")
+          echo "latest staged generation: $path" >&2
+      else
+          echo "usage: ${name} [activation package]  (or set DROID_PROFILE)" >&2
+          exit 1
+      fi
+      nix copy --no-check-sigs --from "ssh://$builder" "$path"
+      for _ in 1 2 3; do
+          if log=$("$path/activate" 2>&1 | tee /dev/stderr); then
+              exit 0
+          fi
+          drv=$(grep -oE '/nix/store/[a-z0-9]{32}-[a-zA-Z0-9+._?=-]+\.drv' <<< "$log" | head -n 1 || true)
+          if [[ -z $drv ]]; then
+              exit 1
+          fi
+          echo "building $drv on $builder" >&2
+          nix copy --no-check-sigs --to "ssh://$builder" "$drv"
+          mapfile -t outputs < <(ssh "$builder" nix-store --realise "$drv")
+          nix copy --no-check-sigs --from "ssh://$builder" "''${outputs[@]}"
+      done
+      exit 1
+    '';
+  }
+#+end_src
+
 ***** git-replace
 :PROPERTIES:
 :CUSTOM_ID: h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2
@@ -53340,6 +53470,20 @@ This file defines a few workflows that I often need to run when working on my co
 
   home HOST USER="swarsel":
     nix build --no-link --print-out-paths .#nixosConfigurations.{{HOST}}.config.home-manager.users.{{USER}}.home.activationPackage
+
+  droid HOST="magicant" BUILDER="belchsfactory":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    path=$(nix build --impure --no-link --print-out-paths \
+      --option extra-substituters https://nix-on-droid.cachix.org \
+      --option extra-trusted-public-keys nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU= \
+      .#nixOnDroidConfigurations.{{HOST}}.activationPackage)
+    target=$(nix eval --raw .#globals --apply 'g: (builtins.head (builtins.attrValues g)).hosts.{{BUILDER}}.wanAddress4')
+    SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+    export SSH_AUTH_SOCK
+    nix copy --to "ssh://root@$target" "$path"
+    ssh "root@$target" nix-env --profile /nix/var/nix/profiles/droid-{{HOST}} --set "$path"
+    echo "staged $path; run droid-switch on {{HOST}}"
 
   pii MODE="files":
     nix eval --json .#pii.{{MODE}}

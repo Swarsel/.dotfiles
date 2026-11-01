@@ -135,5 +135,19 @@ build HOST:
 home HOST USER="swarsel":
   nix build --no-link --print-out-paths .#nixosConfigurations.{{HOST}}.config.home-manager.users.{{USER}}.home.activationPackage
 
+droid HOST="magicant" BUILDER="belchsfactory":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  path=$(nix build --impure --no-link --print-out-paths \
+    --option extra-substituters https://nix-on-droid.cachix.org \
+    --option extra-trusted-public-keys nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU= \
+    .#nixOnDroidConfigurations.{{HOST}}.activationPackage)
+  target=$(nix eval --raw .#globals --apply 'g: (builtins.head (builtins.attrValues g)).hosts.{{BUILDER}}.wanAddress4')
+  SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  export SSH_AUTH_SOCK
+  nix copy --to "ssh://root@$target" "$path"
+  ssh "root@$target" nix-env --profile /nix/var/nix/profiles/droid-{{HOST}} --set "$path"
+  echo "staged $path; run droid-switch on {{HOST}}"
+
 pii MODE="files":
   nix eval --json .#pii.{{MODE}}
