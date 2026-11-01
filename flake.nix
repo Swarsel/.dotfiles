@@ -89,7 +89,10 @@
     };
 
     impermanence = {
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        home-manager.follows = "home-manager";
+        nixpkgs.follows = "nixpkgs";
+      };
       url = "github:nix-community/impermanence";
     };
 
@@ -164,8 +167,9 @@
       inputs = {
         home-manager.follows = "home-manager";
         nixpkgs.follows = "nixpkgs";
+        nixpkgs-docs.follows = "nixpkgs";
       };
-      url = "github:nix-community/nix-on-droid/release-24.05";
+      url = "github:nix-community/nix-on-droid";
     };
 
     nix-topology = {
@@ -206,7 +210,7 @@
     nixpkgs-firezone.url = "github:Swarsel/nixpkgs/1fef1eb69b3f8f9a778441b386eadbb1fa3fa436?narHash=sha256-HY1UfmtZOuk7Y+9cTIF8Kx5TV7qOTtRqk7A+W6lyMm8%3D";
     nixpkgs-kernelpin.url = "github:nixos/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010?narHash=sha256-dhoW6VgFWlaodSY5jrBn%2BCF2FLmaUvDVgM7%2BC7T2%2BNM%3D";
     nixpkgs-sandbox.url = "github:r-ryantm/nixpkgs/4800f20ae2dc52cc7422118d28d427ef412f0841";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs-stable.follows = "nixpkgs-stable26_05";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-stable26_05.url = "github:NixOS/nixpkgs/nixos-26.05";
@@ -335,6 +339,8 @@
       inputs = {
         nixpkgs.follows = "nixpkgs-stable26_05";
         nixpkgs-2411.follows = "nixpkgs-stable24_11";
+        nixpkgs-mcp.follows = "nixpkgs-stable26_05";
+        nixpkgs-mcp-unstable.follows = "nixpkgs";
         nixpkgs-unstable.follows = "nixpkgs";
         systems.follows = "systems";
       };

@@ -1,6 +1,9 @@
 {
   flake-file.inputs.impermanence = {
-    inputs.nixpkgs.follows = "nixpkgs";
+    inputs = {
+      home-manager.follows = "home-manager";
+      nixpkgs.follows = "nixpkgs";
+    };
     url = "github:nix-community/impermanence";
   };
 

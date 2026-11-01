@@ -7,6 +7,8 @@ in
     inputs = {
       nixpkgs.follows = "nixpkgs-stable26_05";
       nixpkgs-2411.follows = "nixpkgs-stable24_11";
+      nixpkgs-mcp.follows = "nixpkgs-stable26_05";
+      nixpkgs-mcp-unstable.follows = "nixpkgs";
       nixpkgs-unstable.follows = "nixpkgs";
       systems.follows = "systems";
     };
