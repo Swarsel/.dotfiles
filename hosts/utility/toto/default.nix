@@ -3,13 +3,14 @@
   inputs,
   config,
   lib,
+  pkgs,
   minimal,
   ...
 }:
 {
 
   imports = [
-    ./disk-config.nix
+    inputs.self.modules.nixos.disk-single-root
     ./hardware-configuration.nix
   ]
   ++ lib.optionals (!minimal) [
@@ -32,6 +33,7 @@
 
   topology.self.interfaces.bootstrapper = { };
   sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
+  environment.systemPackages = [ pkgs.yubikey-manager ];
 
   networking = {
     firewall.enable = false;

@@ -3,6 +3,7 @@
   inputs,
   config,
   lib,
+  pkgs,
   minimal,
   ...
 }:
@@ -14,7 +15,7 @@ in
   imports = [
     inputs.nixos-hardware.nixosModules.common-cpu-intel
 
-    ./disk-config.nix
+    inputs.self.modules.nixos.disk-single-root
     ./hardware-configuration.nix
 
   ]
@@ -54,6 +55,7 @@ in
     eth1.network = lib.mkForce "home";
     wifi = { };
   };
+  environment.systemPackages = [ pkgs.yubikey-manager ];
   home-manager.users."${primaryUser}" = {
     # home.stateVersion = lib.mkForce "23.05";
     swarselsystems.monitors.main = {

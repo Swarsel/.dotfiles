@@ -11,7 +11,7 @@
 
     inputs.nixos-hardware.nixosModules.common-cpu-intel
 
-    self.modules.nixos.disk-setup
+    self.modules.nixos.disk-mirrored-root
     self.modules.nixos.systemd-networkd-server-home
     self.modules.nixos.nix-topology-self
   ]

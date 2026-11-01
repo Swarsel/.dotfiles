@@ -1,7 +1,6 @@
 {
   root,
   inputs,
-  config,
   lib,
   pkgs,
   arch,
@@ -15,10 +14,7 @@ in
 
   imports = [
     ./hardware-configuration.nix
-    ./disk-config.nix
-    {
-      _module.args.diskDevice = config.swarselsystems.rootDisk;
-    }
+    inputs.self.modules.nixos.disk-single-root
   ]
   ++ lib.optionals (!minimal) [
     inputs.self.modules.nixos.profile-public
@@ -62,7 +58,11 @@ in
     };
   };
 
-  environment.variables.WLR_RENDERER_ALLOW_SOFTWARE = 1;
+  environment = {
+    systemPackages = [ pkgs.yubikey-manager ];
+    variables.WLR_RENDERER_ALLOW_SOFTWARE = 1;
+  };
+
   hardware.graphics.enable32Bit = lib.mkIf (arch != "x86_64-linux") (lib.mkForce false);
 
   networking = {

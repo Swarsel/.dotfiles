@@ -282,7 +282,7 @@
       "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
       darwinConfigurations = configurationsPerArch "darwin" false;
       darwinConfigurationsMinimal = configurationsPerArch "darwin" true;
-      diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
+      diskoConfigurations.default = config.modules.nixos.disk-single-root;
       guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
         _: node:
         lib.flip lib.mapAttrs' (node.config.guests or { }) (

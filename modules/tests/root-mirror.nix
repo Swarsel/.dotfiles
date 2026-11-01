@@ -17,7 +17,7 @@
               self.modules.generic.options
               self.modules.nixos.disk-encrypt
               self.modules.nixos.impermanence
-              self.modules.nixos.disk-setup
+              self.modules.nixos.disk-mirrored-root
               "${inputs.nixpkgs}/nixos/modules/profiles/qemu-guest.nix"
               (
                 { config, pkgs, ... }:

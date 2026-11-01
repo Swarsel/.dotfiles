@@ -1,11 +1,16 @@
-{ lib, minimal, ... }: # adapt as needed
+{
+  self,
+  lib,
+  minimal,
+  ...
+}: # adapt as needed
 {
 
   imports = [
     #   inputs.nixos-hardware.nixosModules.<your-hardware>
 
     ./hardware-configuration.nix
-    ./disk-config.nix
+    self.modules.nixos.disk-single-root
 
     # ---- SERVER-ONLY ----
     # self.modules.nixos.systemd-networkd-server      # cloud / single-NIC

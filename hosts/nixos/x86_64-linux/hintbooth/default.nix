@@ -11,7 +11,7 @@
 
   imports = [
     ./hardware-configuration.nix
-    ./disk-config.nix
+    self.modules.nixos.disk-single-root
 
     self.modules.nixos.systemd-networkd-server-home
     self.modules.nixos.microvm-host

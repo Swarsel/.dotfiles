@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.disk-setup =
+  flake.modules.nixos.disk-mirrored-root =
     {
       config,
       lib,

@@ -230,7 +230,7 @@ The structure of this flake as seen many revisions, however lately I have settle
     - hardware-config.nix:
       It is not clearly defined what I hold in this file. Mostly it is just the attributes that nix originally sets when setting up the system for the first time (although at this time modified by me!), bar any filesystem configuration. This makes my deployment in [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] a little bit simpler.
     - disk-config.nix
-      Holds the aforementioned filesystem configuration and is applied using [[https://github.com/nix-community/disko][disko]].
+      Only present for hosts whose filesystem layout differs from the shared [[#h:40247c25-4062-474e-babe-787a9622e9ef][Disk layout (single root)]] module (currently =moonside= and =pyramid=); either way the layout is applied using [[https://github.com/nix-community/disko][disko]].
 
     - The hosts/<host type>/<hostname> folders may also have a =secrets= folder, under which files of the ending =.nix.enc= may be stored. As the name suggests, these files should be encrypted. Specifically, they need to be [[https://github.com/getsops/sops][sops]]-encrypted files (sops does not seem to suggest a file ending other than =.yml= or others, which is not verbose enough for me, so I went with =.enc=).  This should have the structure of a nix expression, e.g.:
 
@@ -2941,7 +2941,7 @@ The rest of the functions are used to build full NixOS systems as well as halfCo
         "@" = lib.mapAttrs (_: v: v.config.system.build.toplevel) config.nodes;
         darwinConfigurations = configurationsPerArch "darwin" false;
         darwinConfigurationsMinimal = configurationsPerArch "darwin" true;
-        diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
+        diskoConfigurations.default = config.modules.nixos.disk-single-root;
         guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
           _: node:
           lib.flip lib.mapAttrs' (node.config.guests or { }) (
@@ -5127,7 +5127,7 @@ Makes sure that both =swarsel-degraded= and =ssh … degraded= lead to a degrade
                 self.modules.generic.options
                 self.modules.nixos.disk-encrypt
                 self.modules.nixos.impermanence
-                self.modules.nixos.disk-setup
+                self.modules.nixos.disk-mirrored-root
                 "${inputs.nixpkgs}/nixos/modules/profiles/qemu-guest.nix"
                 (
                   { config, pkgs, ... }:
@@ -5543,14 +5543,19 @@ This is the template that I use for new deployments of personal machines. Server
 :END:
 
 #+begin_src nix-ts :tangle files/templates/hosts/nixos/default.nix
-  { lib, minimal, ... }: # adapt as needed
+  {
+    self,
+    lib,
+    minimal,
+    ...
+  }: # adapt as needed
   {
 
     imports = [
       #   inputs.nixos-hardware.nixosModules.<your-hardware>
 
       ./hardware-configuration.nix
-      ./disk-config.nix
+      self.modules.nixos.disk-single-root
 
       # ---- SERVER-ONLY ----
       # self.modules.nixos.systemd-networkd-server      # cloud / single-NIC
@@ -5609,144 +5614,6 @@ This is the template that I use for new deployments of personal machines. Server
     #   hetzner:              [ "wan" ]
     # networking.nftables.firewall.zones.untrusted.interfaces = [ ];
 
-  }
-#+end_src
-**** disko
-:PROPERTIES:
-:CUSTOM_ID: h:24757d1e-6e88-4843-ab20-5e0c1b7ae29e
-:END:
-
-Acceptance of arbitrary arguments is here needed because =disko= passes =diskoFile= to this file.
-
-#+begin_src nix-ts :tangle files/templates/hosts/nixos/disk-config.nix
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko.devices.disk.disk0 = {
-      content = {
-        partitions = {
-          ESP = {
-            content = {
-              format = "vfat";
-              mountOptions = [ "defaults" ];
-              mountpoint = "/boot";
-              type = "filesystem";
-            };
-            name = "ESP";
-            priority = 1;
-            size = "512M";
-            type = "EF00";
-          };
-          luks = lib.mkIf config.swarselsystems.isCrypted {
-            content = {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              name = "cryptroot";
-              passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-              settings = {
-                allowDiscards = true;
-                # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                crypttabExtraOpts = [
-                  "fido2-device=auto"
-                  "token-timeout=10"
-                ];
-              };
-              type = "luks";
-            };
-            size = "100%";
-          };
-          root = lib.mkIf (!config.swarselsystems.isCrypted) {
-            content = {
-              inherit extraArgs subvolumes type;
-              postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                MNTPOINT=$(mktemp -d)
-                mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-              '';
-            };
-            size = "100%";
-          };
-        };
-        type = "gpt";
-      };
-      device = config.swarselsystems.rootDisk;
-      type = "disk";
-    };
-
-    environment.systemPackages = [
-      pkgs.yubikey-manager
-    ];
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
   }
 #+end_src
 *** Physical hosts
@@ -6094,6 +5961,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
     inputs,
     config,
     lib,
+    pkgs,
     minimal,
     ...
   }:
@@ -6105,7 +5973,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
     imports = [
       inputs.nixos-hardware.nixosModules.common-cpu-intel
 
-      ./disk-config.nix
+      inputs.self.modules.nixos.disk-single-root
       ./hardware-configuration.nix
 
     ]
@@ -6145,6 +6013,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
       eth1.network = lib.mkForce "home";
       wifi = { };
     };
+    environment.systemPackages = [ pkgs.yubikey-manager ];
     home-manager.users."${primaryUser}" = {
       # home.stateVersion = lib.mkForce "23.05";
       swarselsystems.monitors.main = {
@@ -6207,142 +6076,6 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
     ];
   }
 #+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:72444f85-7951-47c0-858f-b51d8299de8c
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/bakery/disk-config.nix
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko.devices.disk.disk0 = {
-      content = {
-        partitions = {
-          ESP = {
-            content = {
-              format = "vfat";
-              mountOptions = [ "defaults" ];
-              mountpoint = "/boot";
-              type = "filesystem";
-            };
-            name = "ESP";
-            priority = 1;
-            size = "512M";
-            type = "EF00";
-          };
-          luks = lib.mkIf config.swarselsystems.isCrypted {
-            content = {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              name = "cryptroot";
-              passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-              settings = {
-                allowDiscards = true;
-                # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                crypttabExtraOpts = [
-                  "fido2-device=auto"
-                  "token-timeout=10"
-                ];
-              };
-              type = "luks";
-            };
-            size = "100%";
-          };
-          root = lib.mkIf (!config.swarselsystems.isCrypted) {
-            content = {
-              inherit extraArgs subvolumes type;
-              postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                MNTPOINT=$(mktemp -d)
-                mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-              '';
-            };
-            size = "100%";
-          };
-        };
-        type = "gpt";
-      };
-      device = config.swarselsystems.rootDisk;
-      type = "disk";
-    };
-
-    environment.systemPackages = [
-      pkgs.yubikey-manager
-    ];
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
-  }
-#+end_src
 **** Winters (Server: ASRock J4105-ITX)
 :PROPERTIES:
 :CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
@@ -6368,7 +6101,7 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
 
       inputs.nixos-hardware.nixosModules.common-cpu-intel
 
-      self.modules.nixos.disk-setup
+      self.modules.nixos.disk-mirrored-root
       self.modules.nixos.systemd-networkd-server-home
       self.modules.nixos.nix-topology-self
     ]
@@ -6476,7 +6209,7 @@ This is my current main server at home; all services except filesystem backups r
 
       inputs.nixos-hardware.nixosModules.common-cpu-intel
 
-      self.modules.nixos.disk-setup
+      self.modules.nixos.disk-mirrored-root
       self.modules.nixos.systemd-networkd-server-home
       self.modules.nixos.microvm-host
     ]
@@ -7534,7 +7267,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
 
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
+      self.modules.nixos.disk-single-root
 
       self.modules.nixos.systemd-networkd-server-home
       self.modules.nixos.microvm-host
@@ -7683,133 +7416,6 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
     networking.useDHCP = lib.mkDefault true;
     # networking.interfaces.enp3s0.useDHCP = lib.mkDefault true;
     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  }
-#+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:1500fb57-334b-4f1b-92de-566ea07924d1
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/disk-config.nix
-  { config, lib, ... }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko.devices.disk.disk0 = {
-      content = {
-        partitions = {
-          ESP = {
-            content = {
-              format = "vfat";
-              mountOptions = [ "defaults" ];
-              mountpoint = "/boot";
-              type = "filesystem";
-            };
-            name = "ESP";
-            priority = 1;
-            size = "512M";
-            type = "EF00";
-          };
-          luks = lib.mkIf config.swarselsystems.isCrypted {
-            content = {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              name = "cryptroot";
-              passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-              settings = {
-                allowDiscards = true;
-                # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                crypttabExtraOpts = [
-                  "fido2-device=auto"
-                  "token-timeout=10"
-                ];
-              };
-              type = "luks";
-            };
-            size = "100%";
-          };
-          root = lib.mkIf (!config.swarselsystems.isCrypted) {
-            content = {
-              inherit extraArgs subvolumes type;
-              postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                MNTPOINT=$(mktemp -d)
-                mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-              '';
-            };
-            size = "100%";
-          };
-        };
-        type = "gpt";
-      };
-      device = config.swarselsystems.rootDisk;
-      type = "disk";
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
   }
 #+end_src
 ***** Guests
@@ -8428,7 +8034,7 @@ This machine acts as my build farm and nix binary cache. It also provides an S3 
   {
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
+      self.modules.nixos.disk-single-root
 
       self.modules.nixos.systemd-networkd-server
       self.modules.nixos.nix-topology-self
@@ -8512,141 +8118,6 @@ This machine acts as my build farm and nix binary cache. It also provides an S3 
     nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";
   }
 #+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:19a83f57-9e7a-44b9-ae7f-2f021f21abf7
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/belchsfactory/disk-config.nix
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko = {
-      devices.disk.disk0 = {
-        content = {
-          partitions = {
-            ESP = {
-              content = {
-                format = "vfat";
-                mountOptions = [ "defaults" ];
-                mountpoint = "/boot";
-                type = "filesystem";
-              };
-              name = "ESP";
-              priority = 1;
-              size = "512M";
-              type = "EF00";
-            };
-            luks = lib.mkIf config.swarselsystems.isCrypted {
-              content = {
-                content = {
-                  inherit extraArgs subvolumes type;
-                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                  '';
-                };
-                name = "cryptroot";
-                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-                settings = {
-                  allowDiscards = true;
-                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                  crypttabExtraOpts = [
-                    "fido2-device=auto"
-                    "token-timeout=10"
-                  ];
-                };
-                type = "luks";
-              };
-              size = "100%";
-            };
-            root = lib.mkIf (!config.swarselsystems.isCrypted) {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              size = "100%";
-            };
-          };
-          type = "gpt";
-        };
-        device = config.swarselsystems.rootDisk;
-        type = "disk";
-      };
-      imageBuilder.extraDependencies = [ pkgs.kmod ];
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
-  }
-#+end_src
 **** Stoicclub (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:1888ded8-69dc-431f-bb39-5089a8e8b1f4
@@ -8669,7 +8140,7 @@ This machine is the authoritative DNS server for my domain and is responsible fo
   {
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
+      self.modules.nixos.disk-single-root
 
       self.modules.nixos.systemd-networkd-server
       self.modules.nixos.nix-topology-self
@@ -8733,141 +8204,6 @@ This machine is the authoritative DNS server for my domain and is responsible fo
     nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";
   }
 #+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:1638acbc-b651-4ddb-8498-f85aa67762f0
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/disk-config.nix
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko = {
-      devices.disk.disk0 = {
-        content = {
-          partitions = {
-            ESP = {
-              content = {
-                format = "vfat";
-                mountOptions = [ "defaults" ];
-                mountpoint = "/boot";
-                type = "filesystem";
-              };
-              name = "ESP";
-              priority = 1;
-              size = "512M";
-              type = "EF00";
-            };
-            luks = lib.mkIf config.swarselsystems.isCrypted {
-              content = {
-                content = {
-                  inherit extraArgs subvolumes type;
-                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                  '';
-                };
-                name = "cryptroot";
-                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-                settings = {
-                  allowDiscards = true;
-                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                  crypttabExtraOpts = [
-                    "fido2-device=auto"
-                    "token-timeout=10"
-                  ];
-                };
-                type = "luks";
-              };
-              size = "100%";
-            };
-            root = lib.mkIf (!config.swarselsystems.isCrypted) {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              size = "100%";
-            };
-          };
-          type = "gpt";
-        };
-        device = config.swarselsystems.rootDisk;
-        type = "disk";
-      };
-      imageBuilder.extraDependencies = [ pkgs.kmod ];
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
-  }
-#+end_src
 **** Liliputsteps (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:a6baab45-b608-4289-bc92-4454bb0856c6
@@ -8891,7 +8227,7 @@ This servers is an SSH bastion responsible for shielding my others cloud instanc
   {
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
+      self.modules.nixos.disk-single-root
 
       self.modules.nixos.systemd-networkd-server
       self.modules.nixos.nix-topology-self
@@ -8961,141 +8297,6 @@ This servers is an SSH bastion responsible for shielding my others cloud instanc
     nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";
   }
 #+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:496fc493-219e-4916-a66f-6345eea95917
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/liliputsteps/disk-config.nix
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko = {
-      devices.disk.disk0 = {
-        content = {
-          partitions = {
-            ESP = {
-              content = {
-                format = "vfat";
-                mountOptions = [ "defaults" ];
-                mountpoint = "/boot";
-                type = "filesystem";
-              };
-              name = "ESP";
-              priority = 1;
-              size = "512M";
-              type = "EF00";
-            };
-            luks = lib.mkIf config.swarselsystems.isCrypted {
-              content = {
-                content = {
-                  inherit extraArgs subvolumes type;
-                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                  '';
-                };
-                name = "cryptroot";
-                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-                settings = {
-                  allowDiscards = true;
-                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                  crypttabExtraOpts = [
-                    "fido2-device=auto"
-                    "token-timeout=10"
-                  ];
-                };
-                type = "luks";
-              };
-              size = "100%";
-            };
-            root = lib.mkIf (!config.swarselsystems.isCrypted) {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              size = "100%";
-            };
-          };
-          type = "gpt";
-        };
-        device = config.swarselsystems.rootDisk;
-        type = "disk";
-      };
-      imageBuilder.extraDependencies = [ pkgs.kmod ];
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
-  }
-#+end_src
 **** Twothreetunnel (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:19300583-322b-4e0b-b657-857fbf23dfa1
@@ -9119,7 +8320,7 @@ This host acts as my main HTTP proxy for external access.
   {
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
+      self.modules.nixos.disk-single-root
 
       self.modules.nixos.systemd-networkd-server
       self.modules.nixos.nix-topology-self
@@ -9227,141 +8428,6 @@ This host acts as my main HTTP proxy for external access.
     nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";
   }
 #+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:cf827191-9a24-46a3-b4a5-e4225412a2c7
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/twothreetunnel/disk-config.nix
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko = {
-      devices.disk.disk0 = {
-        content = {
-          partitions = {
-            ESP = {
-              content = {
-                format = "vfat";
-                mountOptions = [ "defaults" ];
-                mountpoint = "/boot";
-                type = "filesystem";
-              };
-              name = "ESP";
-              priority = 1;
-              size = "512M";
-              type = "EF00";
-            };
-            luks = lib.mkIf config.swarselsystems.isCrypted {
-              content = {
-                content = {
-                  inherit extraArgs subvolumes type;
-                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                  '';
-                };
-                name = "cryptroot";
-                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-                settings = {
-                  allowDiscards = true;
-                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                  crypttabExtraOpts = [
-                    "fido2-device=auto"
-                    "token-timeout=10"
-                  ];
-                };
-                type = "luks";
-              };
-              size = "100%";
-            };
-            root = lib.mkIf (!config.swarselsystems.isCrypted) {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              size = "100%";
-            };
-          };
-          type = "gpt";
-        };
-        device = config.swarselsystems.rootDisk;
-        type = "disk";
-      };
-      imageBuilder.extraDependencies = [ pkgs.kmod ];
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
-  }
-#+end_src
 **** Eagleland (Hetzner)
 :PROPERTIES:
 :CUSTOM_ID: h:81bc8746-b46b-4d29-87de-ddbd77788b43
@@ -9389,7 +8455,7 @@ This is my mail server. Since I do not really want to trust Oracle Cloud with an
   {
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
+      self.modules.nixos.disk-single-root
 
       self.modules.nixos.systemd-networkd-server
       self.modules.nixos.nix-topology-self
@@ -9464,141 +8530,6 @@ This is my mail server. Since I do not really want to trust Oracle Cloud with an
     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   }
 #+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:5c77e384-fdae-4994-bce3-ca736722529c
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/eagleland/disk-config.nix
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko = {
-      devices.disk.disk0 = {
-        content = {
-          partitions = {
-            ESP = {
-              content = {
-                format = "vfat";
-                mountOptions = [ "defaults" ];
-                mountpoint = "/boot";
-                type = "filesystem";
-              };
-              name = "ESP";
-              priority = 1;
-              size = "512M";
-              type = "EF00";
-            };
-            luks = lib.mkIf config.swarselsystems.isCrypted {
-              content = {
-                content = {
-                  inherit extraArgs subvolumes type;
-                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                  '';
-                };
-                name = "cryptroot";
-                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-                settings = {
-                  allowDiscards = true;
-                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                  crypttabExtraOpts = [
-                    "fido2-device=auto"
-                    "token-timeout=10"
-                  ];
-                };
-                type = "luks";
-              };
-              size = "100%";
-            };
-            root = lib.mkIf (!config.swarselsystems.isCrypted) {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              size = "100%";
-            };
-          };
-          type = "gpt";
-        };
-        device = config.swarselsystems.rootDisk;
-        type = "disk";
-      };
-      imageBuilder.extraDependencies = [ pkgs.kmod ];
-    };
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
-  }
-#+end_src
 *** Utility hosts
 :PROPERTIES:
 :CUSTOM_ID: h:89ce533d-4856-4988-b456-0951d4453db8
@@ -9623,13 +8554,14 @@ This is a slim setup for developing base configuration. I do not track the hardw
     inputs,
     config,
     lib,
+    pkgs,
     minimal,
     ...
   }:
   {
 
     imports = [
-      ./disk-config.nix
+      inputs.self.modules.nixos.disk-single-root
       ./hardware-configuration.nix
     ]
     ++ lib.optionals (!minimal) [
@@ -9652,6 +8584,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
     topology.self.interfaces.bootstrapper = { };
     sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
+    environment.systemPackages = [ pkgs.yubikey-manager ];
 
     networking = {
       firewall.enable = false;
@@ -9701,143 +8634,6 @@ This is a slim setup for developing base configuration. I do not track the hardw
     networking.useDHCP = lib.mkDefault true;
     # networking.interfaces.enp1s0.useDHCP = lib.mkDefault true;
     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  }
-#+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
-:END:
-
-#+begin_src nix-ts :tangle hosts/utility/toto/disk-config.nix
-  # NOTE: ... is needed because dikso passes diskoFile
-  {
-    config,
-    lib,
-    pkgs,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko.devices.disk.disk0 = {
-      content = {
-        partitions = {
-          ESP = {
-            content = {
-              format = "vfat";
-              mountOptions = [ "defaults" ];
-              mountpoint = "/boot";
-              type = "filesystem";
-            };
-            name = "ESP";
-            priority = 1;
-            size = "512M";
-            type = "EF00";
-          };
-          luks = lib.mkIf config.swarselsystems.isCrypted {
-            content = {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              name = "cryptroot";
-              passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-              settings = {
-                allowDiscards = true;
-                # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                crypttabExtraOpts = [
-                  "fido2-device=auto"
-                  "token-timeout=10"
-                ];
-              };
-              type = "luks";
-            };
-            size = "100%";
-          };
-          root = lib.mkIf (!config.swarselsystems.isCrypted) {
-            content = {
-              inherit extraArgs subvolumes type;
-              postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                MNTPOINT=$(mktemp -d)
-                mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-              '';
-            };
-            size = "100%";
-          };
-        };
-        type = "gpt";
-      };
-      device = config.swarselsystems.rootDisk;
-      type = "disk";
-    };
-
-    environment.systemPackages = [
-      pkgs.yubikey-manager
-    ];
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
   }
 #+end_src
 **** Drugstore (live ISO installer config)
@@ -10319,7 +9115,6 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
   {
     root,
     inputs,
-    config,
     lib,
     pkgs,
     arch,
@@ -10333,10 +9128,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
     imports = [
       ./hardware-configuration.nix
-      ./disk-config.nix
-      {
-        _module.args.diskDevice = config.swarselsystems.rootDisk;
-      }
+      inputs.self.modules.nixos.disk-single-root
     ]
     ++ lib.optionals (!minimal) [
       inputs.self.modules.nixos.profile-public
@@ -10380,7 +9172,11 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       };
     };
 
-    environment.variables.WLR_RENDERER_ALLOW_SOFTWARE = 1;
+    environment = {
+      systemPackages = [ pkgs.yubikey-manager ];
+      variables.WLR_RENDERER_ALLOW_SOFTWARE = 1;
+    };
+
     hardware.graphics.enable32Bit = lib.mkIf (arch != "x86_64-linux") (lib.mkForce false);
 
     networking = {
@@ -10394,145 +9190,6 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       })
     ];
 
-  }
-#+end_src
-
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:849e4233-ba40-4fec-acfe-0d76e1e4371b
-:END:
-
-#+begin_src nix-ts :tangle hosts/utility/hotel/disk-config.nix
-  # NOTE: ... is needed because dikso passes diskoFile
-  {
-    config,
-    lib,
-    pkgs,
-    diskDevice ? config.swarselsystem.rootDisk,
-    ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [
-      "-L"
-      "nixos"
-      "-f"
-    ]; # force overwrite
-    subvolumes = {
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/home";
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/var/log";
-      };
-      "/nix" = {
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/nix";
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/persist";
-      };
-      "/root" = {
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-        mountpoint = "/";
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko.devices.disk.disk0 = {
-      content = {
-        partitions = {
-          ESP = {
-            content = {
-              format = "vfat";
-              mountOptions = [ "defaults" ];
-              mountpoint = "/boot";
-              type = "filesystem";
-            };
-            name = "ESP";
-            priority = 1;
-            size = "512M";
-            type = "EF00";
-          };
-          luks = lib.mkIf config.swarselsystems.isCrypted {
-            content = {
-              content = {
-                inherit extraArgs subvolumes type;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                  mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-              name = "cryptroot";
-              passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-              settings = {
-                allowDiscards = true;
-                # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                crypttabExtraOpts = [
-                  "fido2-device=auto"
-                  "token-timeout=10"
-                ];
-              };
-              type = "luks";
-            };
-            size = "100%";
-          };
-          root = lib.mkIf (!config.swarselsystems.isCrypted) {
-            content = {
-              inherit extraArgs subvolumes type;
-              postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-              '';
-            };
-            size = "100%";
-          };
-        };
-        type = "gpt";
-      };
-      device = diskDevice;
-      type = "disk";
-    };
-
-    environment.systemPackages = [
-      pkgs.yubikey-manager
-    ];
-
-    fileSystems = {
-      "/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-      "/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    };
   }
 #+end_src
 
@@ -14627,7 +13284,132 @@ Normally, doing that also resets the lecture that happens on the first use of =s
   }
 #+end_src
 
-**** Disk setup (with mirrored root)
+**** Disk layout (single root)
+:PROPERTIES:
+:CUSTOM_ID: h:40247c25-4062-474e-babe-787a9622e9ef
+:END:
+
+The disk layout shared by every host with a single root disk: an ESP followed by either a LUKS container (passphrase or FIDO2) or a plain partition, both holding a btrfs filesystem with the subvolumes that [[#h:e7668594-fa8b-4d36-a695-a58222478988][impermanence]] expects. Everything host-specific comes from =swarselsystems= options (=rootDisk=, =isCrypted=, =isImpermanence=, =isSwap=, =swapSize=), and encrypted cloud hosts additionally get =kmod= into the disko image builder. Hosts with a mirrored root use [[#h:3820668d-821b-4901-863a-53dc6b7f24b6][Disk layout (mirrored root)]] instead; =moonside= and =pyramid= keep their own layout.
+
+#+begin_src nix-ts :tangle modules/common/disk-single-root.nix
+  {
+    flake.modules.nixos.disk-single-root =
+      {
+        config,
+        lib,
+        pkgs,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems)
+          isCloud
+          isCrypted
+          isImpermanence
+          isSwap
+          rootDisk
+          swapSize
+          ;
+        mountOptions = subvol: [
+          "subvol=${subvol}"
+          "compress=zstd"
+          "noatime"
+        ];
+        btrfs = device: {
+          extraArgs = [
+            "-L"
+            "nixos"
+            "-f"
+          ];
+          postCreateHook = lib.mkIf isImpermanence ''
+            MNTPOINT=$(mktemp -d)
+            mount "${device}" "$MNTPOINT" -o subvolid=5
+            trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+            btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+          '';
+          subvolumes = {
+            "/home" = lib.mkIf isImpermanence {
+              mountOptions = mountOptions "home";
+              mountpoint = "/home";
+            };
+            "/log" = lib.mkIf isImpermanence {
+              mountOptions = mountOptions "log";
+              mountpoint = "/var/log";
+            };
+            "/nix" = {
+              mountOptions = mountOptions "nix";
+              mountpoint = "/nix";
+            };
+            "/persist" = lib.mkIf isImpermanence {
+              mountOptions = mountOptions "persist";
+              mountpoint = "/persist";
+            };
+            "/root" = {
+              mountOptions = mountOptions "root";
+              mountpoint = "/";
+            };
+            "/swap" = lib.mkIf isSwap {
+              mountpoint = "/.swapvol";
+              swap.swapfile.size = swapSize;
+            };
+          };
+          type = "btrfs";
+        };
+      in
+      {
+        disko = {
+          devices.disk.disk0 = {
+            content = {
+              partitions = {
+                ESP = {
+                  content = {
+                    format = "vfat";
+                    mountOptions = [ "defaults" ];
+                    mountpoint = "/boot";
+                    type = "filesystem";
+                  };
+                  name = "ESP";
+                  priority = 1;
+                  size = "512M";
+                  type = "EF00";
+                };
+                luks = lib.mkIf isCrypted {
+                  content = {
+                    content = btrfs "/dev/mapper/cryptroot";
+                    name = "cryptroot";
+                    passwordFile = "/tmp/disko-password";
+                    settings = {
+                      allowDiscards = true;
+                      crypttabExtraOpts = [
+                        "fido2-device=auto"
+                        "token-timeout=10"
+                      ];
+                    };
+                    type = "luks";
+                  };
+                  size = "100%";
+                };
+                root = lib.mkIf (!isCrypted) {
+                  content = btrfs "/dev/disk/by-label/nixos";
+                  size = "100%";
+                };
+              };
+              type = "gpt";
+            };
+            device = rootDisk;
+            type = "disk";
+          };
+          imageBuilder.extraDependencies = lib.mkIf (isCloud && isCrypted) [ pkgs.kmod ];
+        };
+
+        fileSystems = {
+          "/home".neededForBoot = lib.mkIf isImpermanence true;
+          "/persist".neededForBoot = lib.mkIf isImpermanence true;
+        };
+      };
+  }
+#+end_src
+
+**** Disk layout (mirrored root)
 :PROPERTIES:
 :CUSTOM_ID: h:3820668d-821b-4901-863a-53dc6b7f24b6
 :END:
@@ -14640,9 +13422,9 @@ If a disk dies, do either:
 
   both set according EFI variables for the next boot and then reboot the system.
 
-#+begin_src nix-ts :tangle modules/common/disk-setup.nix
+#+begin_src nix-ts :tangle modules/common/disk-mirrored-root.nix
   {
-    flake.modules.nixos.disk-setup =
+    flake.modules.nixos.disk-mirrored-root =
       {
         config,
         lib,
@@ -45889,7 +44671,7 @@ This utility is used to compare the current state of the root directory with the
 :CUSTOM_ID: h:56b0e717-1aa1-4618-acbf-a85fab6cdce8
 :END:
 
-On hosts with a mirrored root, this sets a (non-volatile due to =0x07=) EFI variable called  =SwarselDegraded= and reboots. The variable is used and unset in [[#h:3820668d-821b-4901-863a-53dc6b7f24b6][Disk setup (with mirrored root)]]. The same is done by =ssh -p 2222 <host> degraded=.
+On hosts with a mirrored root, this sets a (non-volatile due to =0x07=) EFI variable called  =SwarselDegraded= and reboots. The variable is used and unset in [[#h:3820668d-821b-4901-863a-53dc6b7f24b6][Disk layout (mirrored root)]]. The same is done by =ssh -p 2222 <host> degraded=.
 
 #+begin_src nix-ts :tangle pkgs/flake/swarsel-degraded/default.nix
   {
