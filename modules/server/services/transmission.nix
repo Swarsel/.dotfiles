@@ -58,7 +58,11 @@
       config = {
         swarselsystems.enabledServerModules = [ "transmission" ];
         topology.self.services = {
-          bazarr.info = "https://${serviceDomain}/bazarr";
+          bazarr = {
+            icon = root "files/topology-images/bazarr.png";
+            info = "https://${serviceDomain}/bazarr";
+            name = "Bazarr";
+          };
           lidarr.info = "https://${serviceDomain}/lidarr";
           prowlarr.info = "https://${serviceDomain}/prowlarr";
           radarr.info = "https://${serviceDomain}/radarr";

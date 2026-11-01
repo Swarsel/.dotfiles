@@ -57,6 +57,7 @@
         "services"
         "home"
         "devices"
+        "iot"
       ];
       firezoneTargetZones = map (v: "vlan-${v}") firezoneTargetVLANs;
 

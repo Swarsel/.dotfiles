@@ -299,6 +299,7 @@
                   };
                 };
                 zigbee-coordinator = mkDevice "Zigbee Coordinator" {
+                  image = root "files/topology-images/SLZB-06M.png";
                   info = "SMLIGHT SLZB-06M";
                   interfaces.eth1 = { };
                 };

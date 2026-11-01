@@ -20,7 +20,10 @@
   ]
   ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
+    self.modules.nixos.wireguard
     self.modules.nixos.smartctl-exporter
+    self.modules.nixos.zigbee2mqtt
+    self.modules.nixos.home-assistant
   ];
 
   swarselsystems = {

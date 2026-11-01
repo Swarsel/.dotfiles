@@ -203,6 +203,17 @@
       url = "github:NixOS/nixos-hardware/master";
     };
 
+    nixos-home-assistant = {
+      inputs = {
+        flake-parts.follows = "flake-parts";
+        git-hooks-nix.follows = "pre-commit-hooks";
+        nixpkgs.follows = "nixpkgs";
+        pedantix.follows = "pedantix";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+      url = "github:Swarsel/nixos-home-assistant";
+    };
+
     nixos-images.url = "github:Swarsel/nixos-images/main";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

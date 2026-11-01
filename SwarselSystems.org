@@ -393,6 +393,7 @@ This is a comprehensive list of the services/components ran by my server machine
   | 🎵 **Music**                 | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mpd.nix)                                                                                                                                                                                                                                                                                                                                                               |
   | 🎼 **Music Downloader**       | [Yubal](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/yubal.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
   | 🐙 **Nix Build farm**        | [Buildbot](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/buildbot.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+  | 🐝 **Home Automation**       | [Home Assistant](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/home-assistant.nix) + [Zigbee2MQTT](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/zigbee2mqtt.nix) + [Mosquitto](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/mosquitto.nix)                                                                                                                                                                                                                                                                                                                                     |
   | 🐽 **Threat Detection**      | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/crowdsec.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
   | 👀 **DNS Records**           | [Knot](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/knot.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
   | 👁️ **Monitoring**            | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/alloy.nix) + [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/gotify.nix) |
@@ -1966,6 +1967,17 @@ A short overview over each notable input and what it does:
         url = "github:NixOS/nixos-hardware/master";
       };
 
+      nixos-home-assistant = {
+        inputs = {
+          flake-parts.follows = "flake-parts";
+          git-hooks-nix.follows = "pre-commit-hooks";
+          nixpkgs.follows = "nixpkgs";
+          pedantix.follows = "pedantix";
+          treefmt-nix.follows = "treefmt-nix";
+        };
+        url = "github:Swarsel/nixos-home-assistant";
+      };
+
       nixos-images.url = "github:Swarsel/nixos-images/main";
       nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
       nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -3288,6 +3300,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     };
                   };
                   zigbee-coordinator = mkDevice "Zigbee Coordinator" {
+                    image = root "files/topology-images/SLZB-06M.png";
                     info = "SMLIGHT SLZB-06M";
                     interfaces.eth1 = { };
                   };
@@ -6167,7 +6180,10 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
     ]
     ++ lib.optionals (!minimal) [
       self.modules.nixos.profile-localserver
+      self.modules.nixos.wireguard
       self.modules.nixos.smartctl-exporter
+      self.modules.nixos.zigbee2mqtt
+      self.modules.nixos.home-assistant
     ];
 
     swarselsystems = {
@@ -30280,7 +30296,11 @@ I use this configuration for sailing.
         config = {
           swarselsystems.enabledServerModules = [ "transmission" ];
           topology.self.services = {
-            bazarr.info = "https://${serviceDomain}/bazarr";
+            bazarr = {
+              icon = root "files/topology-images/bazarr.png";
+              info = "https://${serviceDomain}/bazarr";
+              name = "Bazarr";
+            };
             lidarr.info = "https://${serviceDomain}/lidarr";
             prowlarr.info = "https://${serviceDomain}/prowlarr";
             radarr.info = "https://${serviceDomain}/radarr";
@@ -39793,7 +39813,7 @@ This is the reverse zone by Hurricane Electric using a trick I learned in https:
     useOrigin = false;
   }
 #+end_src
-**** NSD (dns)
+**** [CURRENTLY UNUSED] NSD (dns)
 :PROPERTIES:
 :CUSTOM_ID: h:224baf78-7cf5-48fb-9f26-2af4606e2ba2
 :END:
@@ -40964,6 +40984,411 @@ Apart from that, the only interesting bit here are the advertised dns- and ntp-s
     ;
   }
 #+end_src
+**** Mosquitto
+:PROPERTIES:
+:CUSTOM_ID: h:e8758794-90ab-49e1-a0eb-ab77bd649a41
+:END:
+
+MQTT broker for [[#h:f54305f9-9b73-48a1-9c0f-e2720ac379aa][Home Assistant]].
+
+#+begin_src nix-ts :tangle modules/server/services/mosquitto.nix
+  {
+    flake.modules.nixos.mosquitto =
+      {
+        config,
+        lib,
+        confLib,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/mosquitto";
+            name = "mosquitto";
+            port = 1883;
+          })
+          serviceDir
+          serviceGroup
+          serviceName
+          servicePort
+          serviceUser
+          ;
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName}.info = "mqtt://127.0.0.1:${toString servicePort}";
+          globals.monitoring = {
+            tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
+            systemd = confLib.mkSystemdMonitoring {
+              inherit serviceName;
+              unit = "${serviceName}.service";
+            };
+          };
+          services.${serviceName} = {
+            enable = true;
+            listeners = [
+              {
+                acl = [ "topic readwrite #" ];
+                address = "127.0.0.1";
+                omitPasswordAuth = true;
+                port = servicePort;
+                settings.allow_anonymous = true;
+              }
+            ];
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+        };
+        key = "swarsel/server/mosquitto";
+      }
+
+    ;
+  }
+#+end_src
+
+**** Zigbee2MQTT
+:PROPERTIES:
+:CUSTOM_ID: h:253d0416-5b00-4f82-befc-640de5d333c9
+:END:
+
+This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90ab-49e1-a0eb-ab77bd649a41][Mosquitto]].
+
+#+begin_src nix-ts :tangle modules/server/services/zigbee2mqtt.nix
+  {
+    flake.modules.nixos.zigbee2mqtt =
+      {
+        self,
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems) sopsFile;
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/zigbee2mqtt";
+            name = "zigbee2mqtt";
+            port = 8080;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDir
+          serviceDomain
+          serviceGroup
+          serviceName
+          servicePort
+          serviceUser
+          ;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          idmServer
+          isHome
+          nginxAccessRules
+          webProxy
+          ;
+        coordinator = globals.networks.home-lan.vlans.iot.hosts.slzb-06m;
+        mqttListener = lib.head config.services.mosquitto.listeners;
+      in
+      {
+        imports = [ self.modules.nixos.mosquitto ];
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring = {
+              http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
+              systemd = confLib.mkSystemdMonitoring {
+                inherit serviceName;
+                unit = "${serviceName}.service";
+              };
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          sops.secrets.zigbee2mqtt-env = {
+            inherit sopsFile;
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+          };
+          services.${serviceName} = {
+            enable = true;
+            settings = {
+              advanced.channel = 20;
+              frontend = {
+                enabled = true;
+                port = servicePort;
+                url = "https://${serviceDomain}";
+              };
+              mqtt.server = "mqtt://${mqttListener.address}:${toString mqttListener.port}";
+              serial = {
+                adapter = "ember";
+                baudrate = 115200;
+                port = "tcp://${coordinator.ipv4}:6638";
+                rtscts = false;
+              };
+            };
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+          systemd.services.${serviceName} = {
+            after = [ "mosquitto.service" ];
+            serviceConfig.EnvironmentFile = config.sops.secrets.zigbee2mqtt-env.path;
+            wants = [ "mosquitto.service" ];
+          };
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+            }
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  servicePort
+                  ;
+                oauth2 = true;
+                oauth2Groups = [ "${serviceName}_access" ];
+                proxyWebsockets = true;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit serviceDomain serviceName servicePort;
+                  extraConfig = nginxAccessRules;
+                  oauth2 = true;
+                  oauth2Groups = [ "${serviceName}_access" ];
+                  proxyWebsockets = true;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
+        };
+      }
+
+    ;
+  }
+#+end_src
+
+**** Home Assistant
+:PROPERTIES:
+:CUSTOM_ID: h:f54305f9-9b73-48a1-9c0f-e2720ac379aa
+:END:
+
+#+begin_src nix-ts :tangle modules/server/services/home-assistant.nix
+  {
+    flake-file.inputs.nixos-home-assistant = {
+      inputs = {
+        flake-parts.follows = "flake-parts";
+        git-hooks-nix.follows = "pre-commit-hooks";
+        nixpkgs.follows = "nixpkgs";
+        pedantix.follows = "pedantix";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+      url = "github:Swarsel/nixos-home-assistant";
+    };
+
+    flake.modules.nixos.home-assistant =
+      {
+        self,
+        inputs,
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            dir = "/var/lib/hass";
+            name = "home-assistant";
+            port = 8123;
+            user = "hass";
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDir
+          serviceDomain
+          serviceGroup
+          serviceName
+          servicePort
+          serviceUser
+          ;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          isHome
+          nginxAccessRules
+          webProxy
+          ;
+        inherit (config.repo.secrets.common) location;
+        inherit (config.swarselsystems) sopsFile;
+        proxyNetworks = [
+          globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome"
+          globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy"
+        ];
+      in
+      {
+        imports = [
+          inputs.nixos-home-assistant.nixosModules.default
+          self.modules.nixos.mosquitto
+        ];
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring = {
+              http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
+              systemd = confLib.mkSystemdMonitoring {
+                inherit serviceName;
+                unit = "${serviceName}.service";
+              };
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          sops.secrets.home-assistant-admin-pw = { inherit sopsFile; };
+          services.${serviceName} = {
+            config = {
+              default_config = { };
+              homeassistant = {
+                inherit (location) latitude longitude;
+                external_url = "https://${serviceDomain}";
+                name = "Home";
+                time_zone = location.timezone;
+                unit_system = "metric";
+              };
+              http = {
+                server_port = servicePort;
+                trusted_proxies = [
+                  "127.0.0.1"
+                  "::1"
+                ]
+                ++ lib.concatMap (net: [
+                  net.cidrv4
+                  net.cidrv6
+                ]) proxyNetworks;
+                use_x_forwarded_for = true;
+              };
+            };
+            enable = true;
+            extraComponents = [
+              "default_config"
+              "isal"
+              "met"
+              "mqtt"
+              "radio_browser"
+            ];
+            provision = {
+              enable = true;
+              areas = {
+                bedroom.name = "Bedroom";
+                kitchen.name = "Kitchen";
+                living_room.name = "Living Room";
+              };
+              entries = {
+                met = {
+                  domain = "met";
+                  steps = [ { } ];
+                };
+                mqtt = {
+                  domain = "mqtt";
+                  steps = [
+                    {
+                      broker = "127.0.0.1";
+                      port = 1883;
+                    }
+                  ];
+                };
+              };
+              owner = {
+                name = config.repo.secrets.common.fullName;
+                passwordFile = config.sops.secrets.home-assistant-admin-pw.path;
+                username = config.swarselsystems.mainUser;
+              };
+              removeOnboardingIntegrations = true;
+              url = "http://127.0.0.1:${toString servicePort}";
+            };
+          };
+          environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+            {
+              directory = serviceDir;
+              group = serviceGroup;
+              user = serviceUser;
+            }
+          ];
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  servicePort
+                  ;
+                proxyWebsockets = true;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit serviceDomain serviceName servicePort;
+                  extraConfig = nginxAccessRules;
+                  proxyWebsockets = true;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
+        };
+      }
+
+    ;
+  }
+#+end_src
+
 **** Chrony
 :PROPERTIES:
 :CUSTOM_ID: h:18361b32-0b98-49d5-b4f6-8f762b21c92c
@@ -41114,6 +41539,7 @@ Sometimes the GUI login fails:
           "services"
           "home"
           "devices"
+          "iot"
         ];
         firezoneTargetZones = map (v: "vlan-${v}") firezoneTargetVLANs;
 
