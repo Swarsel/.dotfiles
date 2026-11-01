@@ -28,6 +28,13 @@ bootstrap-test:
 sandbox:
   #!/usr/bin/env bash
   set -euo pipefail
+  key=/run/secrets/sandbox-wildcard-key
+  if ! sudo test -r "$key"; then
+    echo "sandbox TLS key not found at $key; it is provided by the sandbox-access module from secrets/general/sandbox.yaml" >&2
+    exit 1
+  fi
+  sudo install -d -m 0700 -o "$USER" /run/sandbox-tls
+  sudo install -m 0400 -o "$USER" "$key" /run/sandbox-tls/wildcard.key
   vm=$(nix build --no-link --print-out-paths .#nixosConfigurations.vacanthouse.config.system.build.vm)
   sudo systemd-run --collect --pty --same-dir --wait --uid="$USER" \
     -p AmbientCapabilities=CAP_NET_BIND_SERVICE \

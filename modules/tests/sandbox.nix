@@ -74,6 +74,24 @@ let
     ];
     specialArgs = mkSpecialArgs { ${configName} = vacanthouse; };
   };
+
+  testCerts =
+    let
+      domains = vacanthouse.config.sandbox.tlsDomains;
+      baseDomain = self.outputs.swarselsystemsLib.getBaseDomain (builtins.head domains);
+    in
+    sandboxPkgs.runCommand "sandbox-test-certs" { nativeBuildInputs = [ sandboxPkgs.openssl ]; } ''
+      mkdir -p "$out"
+      openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+        -keyout "$out/ca.key" -out "$out/ca.crt" -days 3650 -subj "/CN=${configName} test CA" \
+        -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" \
+        -addext "nameConstraints=critical,permitted;DNS:${baseDomain}"
+      openssl req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+        -keyout "$out/wildcard.key" -out wildcard.csr -subj "/CN=*.${baseDomain}" \
+        -addext "subjectAltName=${lib.concatMapStringsSep "," (d: "DNS:${d}") domains}"
+      openssl x509 -req -in wildcard.csr -CA "$out/ca.crt" -CAkey "$out/ca.key" -CAcreateserial \
+        -out "$out/wildcard.crt" -days 3650 -copy_extensions copy
+    '';
 in
 {
   flake-file.inputs.nixpkgs-sandbox.url = "github:r-ryantm/nixpkgs/4800f20ae2dc52cc7422118d28d427ef412f0841";
@@ -106,6 +124,11 @@ in
               nodeModule
             ];
             users.users.root.hashedPassword = lib.mkForce null;
+            sandbox.tls = {
+              ca = "${testCerts}/ca.crt";
+              certificate = "${testCerts}/wildcard.crt";
+              keyFile = "${testCerts}/wildcard.key";
+            };
             virtualisation = {
               cores = 2;
               memorySize = 4096;

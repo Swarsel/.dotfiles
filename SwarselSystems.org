@@ -3354,10 +3354,7 @@ This file defines a number of checks that can either be run by calling =nix flak
               };
               detect-private-keys = {
                 enable = true;
-                excludes = [
-                  "files/public/certs"
-                  "files/public/age"
-                ];
+                excludes = [ "files/public/age" ];
               };
               end-of-file-fixer.enable = true;
               fix-byte-order-marker.enable = true;
@@ -5057,6 +5054,24 @@ This library file defines a few commonly used functions for the tests.
       ];
       specialArgs = mkSpecialArgs { ${configName} = vacanthouse; };
     };
+
+    testCerts =
+      let
+        domains = vacanthouse.config.sandbox.tlsDomains;
+        baseDomain = self.outputs.swarselsystemsLib.getBaseDomain (builtins.head domains);
+      in
+      sandboxPkgs.runCommand "sandbox-test-certs" { nativeBuildInputs = [ sandboxPkgs.openssl ]; } ''
+        mkdir -p "$out"
+        openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+          -keyout "$out/ca.key" -out "$out/ca.crt" -days 3650 -subj "/CN=${configName} test CA" \
+          -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign,cRLSign" \
+          -addext "nameConstraints=critical,permitted;DNS:${baseDomain}"
+        openssl req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
+          -keyout "$out/wildcard.key" -out wildcard.csr -subj "/CN=*.${baseDomain}" \
+          -addext "subjectAltName=${lib.concatMapStringsSep "," (d: "DNS:${d}") domains}"
+        openssl x509 -req -in wildcard.csr -CA "$out/ca.crt" -CAkey "$out/ca.key" -CAcreateserial \
+          -out "$out/wildcard.crt" -days 3650 -copy_extensions copy
+      '';
   in
   {
     flake-file.inputs.nixpkgs-sandbox.url = "github:r-ryantm/nixpkgs/4800f20ae2dc52cc7422118d28d427ef412f0841";
@@ -5089,6 +5104,11 @@ This library file defines a few commonly used functions for the tests.
                 nodeModule
               ];
               users.users.root.hashedPassword = lib.mkForce null;
+              sandbox.tls = {
+                ca = "${testCerts}/ca.crt";
+                certificate = "${testCerts}/wildcard.crt";
+                keyFile = "${testCerts}/wildcard.key";
+              };
               virtualisation = {
                 cores = 2;
                 memorySize = 4096;
@@ -9363,9 +9383,26 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
       ./sandbox.nix
     ];
 
-    options.sandbox.tlsDomains = lib.mkOption {
-      default = [ ];
-      type = lib.types.listOf lib.types.str;
+    options.sandbox = {
+      tls = {
+        ca = lib.mkOption {
+          default = ../../../files/public/certs/ca.crt;
+          type = lib.types.path;
+        };
+        certificate = lib.mkOption {
+          default = ../../../files/public/certs/wildcard.crt;
+          type = lib.types.path;
+        };
+        keyFile = lib.mkOption {
+          default = "/mnt/sandbox-tls/wildcard.key";
+          description = "Path inside the VM from which the private key for the wildcard certificate is read at boot; the vm variant mounts the host's /run/sandbox-tls there.";
+          type = lib.types.str;
+        };
+      };
+      tlsDomains = lib.mkOption {
+        default = [ ];
+        type = lib.types.listOf lib.types.str;
+      };
     };
 
     config = {
@@ -9418,8 +9455,8 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
           };
         };
         nginx.virtualHosts = lib.genAttrs config.sandbox.tlsDomains (_: {
-          sslCertificate = "${../../../files/public/certs/wildcard.crt}";
-          sslCertificateKey = "${../../../files/public/certs/wildcard.key}";
+          sslCertificate = "${config.sandbox.tls.certificate}";
+          sslCertificateKey = "/run/sandbox-tls/nginx.key";
           useACMEHost = lib.mkForce null;
         });
       };
@@ -9440,7 +9477,7 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
         globals.services.kanidm.domain
         globals.services.oauth2-proxy.domain
       ];
-      security.pki.certificateFiles = [ ../../../files/public/certs/ca.crt ];
+      security.pki.certificateFiles = [ config.sandbox.tls.ca ];
       system = {
         activationScripts = {
           sandboxAgeKey.text = ''
@@ -9472,17 +9509,41 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
         ];
         graphics = false;
         memorySize = 4096;
+        sharedDirectories.sandbox-tls = {
+          source = "/run/sandbox-tls";
+          target = "/mnt/sandbox-tls";
+        };
       };
-      systemd.tmpfiles.rules = [
-        "d /etc/ssl/private 0755 root root -"
-        "C+ /etc/ssl/certs/kanidm.crt 0644 kanidm kanidm - ${../../../files/public/certs/wildcard.crt}"
-        "C+ /etc/ssl/private/kanidm.key 0600 kanidm kanidm - ${../../../files/public/certs/wildcard.key}"
-        "C /root/.bash_history 0600 root root - ${pkgs.writeText "sandbox-seed-history" ''
-          cat /run/secrets/kanidm-idm-admin-pw
-          kanidm login -D idm_admin
-          kanidm person credential create-reset-token sandbox
-        ''}"
-      ];
+      systemd = {
+        services.sandbox-tls = {
+          before = [
+            "kanidm.service"
+            "nginx.service"
+          ];
+          requiredBy = [
+            "kanidm.service"
+            "nginx.service"
+          ];
+          script = ''
+            install -d -m 0755 /run/sandbox-tls /etc/ssl/private
+            install -m 0400 -o nginx -g nginx ${config.sandbox.tls.keyFile} /run/sandbox-tls/nginx.key
+            install -m 0600 -o kanidm -g kanidm ${config.sandbox.tls.keyFile} /etc/ssl/private/kanidm.key
+          '';
+          serviceConfig = {
+            RemainAfterExit = true;
+            Type = "oneshot";
+          };
+          unitConfig.RequiresMountsFor = [ config.sandbox.tls.keyFile ];
+        };
+        tmpfiles.rules = [
+          "C+ /etc/ssl/certs/kanidm.crt 0644 kanidm kanidm - ${config.sandbox.tls.certificate}"
+          "C /root/.bash_history 0600 root root - ${pkgs.writeText "sandbox-seed-history" ''
+            cat /run/secrets/kanidm-idm-admin-pw
+            kanidm login -D idm_admin
+            kanidm person credential create-reset-token sandbox
+          ''}"
+        ];
+      };
     };
   }
 #+end_src
@@ -24987,9 +25048,9 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
     flake.modules.nixos.sandbox-access =
       { self, root, ... }:
       {
+        sops.secrets.sandbox-wildcard-key.sopsFile = self + /secrets/general/sandbox.yaml;
         networking.hosts."127.0.0.1" =
           builtins.attrValues (import "${self}/hosts/utility/vacanthouse/secrets/pii.nix").services.domains;
-
         security.pki.certificateFiles = [
           (root "files/public/certs/ca.crt")
         ];
@@ -50829,6 +50890,10 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       age_keys   = ["pyramid", "bakery"]
     },
     {
+      path_regex = "secrets/general/sandbox.yaml$"
+      age_keys   = ["pyramid", "bakery"]
+    },
+    {
       path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
       age_keys = [
         "moonside",
@@ -53123,6 +53188,13 @@ This file defines a few workflows that I often need to run when working on my co
   sandbox:
     #!/usr/bin/env bash
     set -euo pipefail
+    key=/run/secrets/sandbox-wildcard-key
+    if ! sudo test -r "$key"; then
+      echo "sandbox TLS key not found at $key; it is provided by the sandbox-access module from secrets/general/sandbox.yaml" >&2
+      exit 1
+    fi
+    sudo install -d -m 0700 -o "$USER" /run/sandbox-tls
+    sudo install -m 0400 -o "$USER" "$key" /run/sandbox-tls/wildcard.key
     vm=$(nix build --no-link --print-out-paths .#nixosConfigurations.vacanthouse.config.system.build.vm)
     sudo systemd-run --collect --pty --same-dir --wait --uid="$USER" \
       -p AmbientCapabilities=CAP_NET_BIND_SERVICE \

@@ -91,6 +91,10 @@ extra_rules = [
     age_keys   = ["pyramid", "bakery"]
   },
   {
+    path_regex = "secrets/general/sandbox.yaml$"
+    age_keys   = ["pyramid", "bakery"]
+  },
+  {
     path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
     age_keys = [
       "moonside",

@@ -39,10 +39,7 @@
             };
             detect-private-keys = {
               enable = true;
-              excludes = [
-                "files/public/certs"
-                "files/public/age"
-              ];
+              excludes = [ "files/public/age" ];
             };
             end-of-file-fixer.enable = true;
             fix-byte-order-marker.enable = true;

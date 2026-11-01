@@ -27,9 +27,26 @@
     ./sandbox.nix
   ];
 
-  options.sandbox.tlsDomains = lib.mkOption {
-    default = [ ];
-    type = lib.types.listOf lib.types.str;
+  options.sandbox = {
+    tls = {
+      ca = lib.mkOption {
+        default = ../../../files/public/certs/ca.crt;
+        type = lib.types.path;
+      };
+      certificate = lib.mkOption {
+        default = ../../../files/public/certs/wildcard.crt;
+        type = lib.types.path;
+      };
+      keyFile = lib.mkOption {
+        default = "/mnt/sandbox-tls/wildcard.key";
+        description = "Path inside the VM from which the private key for the wildcard certificate is read at boot; the vm variant mounts the host's /run/sandbox-tls there.";
+        type = lib.types.str;
+      };
+    };
+    tlsDomains = lib.mkOption {
+      default = [ ];
+      type = lib.types.listOf lib.types.str;
+    };
   };
 
   config = {
@@ -82,8 +99,8 @@
         };
       };
       nginx.virtualHosts = lib.genAttrs config.sandbox.tlsDomains (_: {
-        sslCertificate = "${../../../files/public/certs/wildcard.crt}";
-        sslCertificateKey = "${../../../files/public/certs/wildcard.key}";
+        sslCertificate = "${config.sandbox.tls.certificate}";
+        sslCertificateKey = "/run/sandbox-tls/nginx.key";
         useACMEHost = lib.mkForce null;
       });
     };
@@ -104,7 +121,7 @@
       globals.services.kanidm.domain
       globals.services.oauth2-proxy.domain
     ];
-    security.pki.certificateFiles = [ ../../../files/public/certs/ca.crt ];
+    security.pki.certificateFiles = [ config.sandbox.tls.ca ];
     system = {
       activationScripts = {
         sandboxAgeKey.text = ''
@@ -136,16 +153,40 @@
       ];
       graphics = false;
       memorySize = 4096;
+      sharedDirectories.sandbox-tls = {
+        source = "/run/sandbox-tls";
+        target = "/mnt/sandbox-tls";
+      };
     };
-    systemd.tmpfiles.rules = [
-      "d /etc/ssl/private 0755 root root -"
-      "C+ /etc/ssl/certs/kanidm.crt 0644 kanidm kanidm - ${../../../files/public/certs/wildcard.crt}"
-      "C+ /etc/ssl/private/kanidm.key 0600 kanidm kanidm - ${../../../files/public/certs/wildcard.key}"
-      "C /root/.bash_history 0600 root root - ${pkgs.writeText "sandbox-seed-history" ''
-        cat /run/secrets/kanidm-idm-admin-pw
-        kanidm login -D idm_admin
-        kanidm person credential create-reset-token sandbox
-      ''}"
-    ];
+    systemd = {
+      services.sandbox-tls = {
+        before = [
+          "kanidm.service"
+          "nginx.service"
+        ];
+        requiredBy = [
+          "kanidm.service"
+          "nginx.service"
+        ];
+        script = ''
+          install -d -m 0755 /run/sandbox-tls /etc/ssl/private
+          install -m 0400 -o nginx -g nginx ${config.sandbox.tls.keyFile} /run/sandbox-tls/nginx.key
+          install -m 0600 -o kanidm -g kanidm ${config.sandbox.tls.keyFile} /etc/ssl/private/kanidm.key
+        '';
+        serviceConfig = {
+          RemainAfterExit = true;
+          Type = "oneshot";
+        };
+        unitConfig.RequiresMountsFor = [ config.sandbox.tls.keyFile ];
+      };
+      tmpfiles.rules = [
+        "C+ /etc/ssl/certs/kanidm.crt 0644 kanidm kanidm - ${config.sandbox.tls.certificate}"
+        "C /root/.bash_history 0600 root root - ${pkgs.writeText "sandbox-seed-history" ''
+          cat /run/secrets/kanidm-idm-admin-pw
+          kanidm login -D idm_admin
+          kanidm person credential create-reset-token sandbox
+        ''}"
+      ];
+    };
   };
 }
