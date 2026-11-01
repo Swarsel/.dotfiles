@@ -1,8 +1,71 @@
 {
   flake.modules = {
-    homeManager.programs = { pkgs, ... }: {
-      config = {
-        swarselsystems.enabledHomeModules = [ "programs" ];
+    homeManager = {
+      programs = { self, ... }: {
+        imports = [ self.modules.homeManager.cli-programs ];
+        config = {
+          swarselsystems.enabledHomeModules = [ "programs" ];
+          programs = {
+            imv.enable = true;
+            mpv.enable = true;
+            pandoc.enable = true;
+            rclone.enable = true;
+            sioyek.enable = true;
+            swayr.enable = true;
+            timidity.enable = true;
+            wlogout = {
+              enable = true;
+              layout = [
+                {
+                  action = "loginctl lock-session";
+                  circular = true;
+                  keybind = "l";
+                  label = "lock";
+                  text = "Lock";
+                }
+                {
+                  action = "systemctl hibernate";
+                  circular = true;
+                  keybind = "h";
+                  label = "hibernate";
+                  text = "Hibernate";
+                }
+                {
+                  action = "loginctl terminate-user $USER";
+                  circular = true;
+                  keybind = "u";
+                  label = "logout";
+                  text = "Logout";
+                }
+                {
+                  action = "systemctl poweroff";
+                  circular = true;
+                  keybind = "p";
+                  label = "shutdown";
+                  text = "Shutdown";
+                }
+                {
+                  action = "systemctl suspend";
+                  circular = true;
+                  keybind = "s";
+                  label = "suspend";
+                  text = "Suspend";
+                }
+                {
+                  action = "systemctl reboot";
+                  circular = true;
+                  keybind = "r";
+                  label = "reboot";
+                  text = "Reboot";
+                }
+              ];
+            };
+            yt-dlp.enable = true;
+          };
+        };
+      };
+      cli-programs = { pkgs, ... }: {
+        swarselsystems.enabledHomeModules = [ "cli-programs" ];
         programs = {
           bat = {
             enable = true;
@@ -20,65 +83,10 @@
             enableBashIntegration = false;
             enableZshIntegration = false;
           };
-          imv.enable = true;
           jq.enable = true;
           less.enable = true;
           lesspipe.enable = true;
-          mpv.enable = true;
-          pandoc.enable = true;
-          rclone.enable = true;
           ripgrep.enable = true;
-          sioyek.enable = true;
-          swayr.enable = true;
-          timidity.enable = true;
-          wlogout = {
-            enable = true;
-            layout = [
-              {
-                action = "loginctl lock-session";
-                circular = true;
-                keybind = "l";
-                label = "lock";
-                text = "Lock";
-              }
-              {
-                action = "systemctl hibernate";
-                circular = true;
-                keybind = "h";
-                label = "hibernate";
-                text = "Hibernate";
-              }
-              {
-                action = "loginctl terminate-user $USER";
-                circular = true;
-                keybind = "u";
-                label = "logout";
-                text = "Logout";
-              }
-              {
-                action = "systemctl poweroff";
-                circular = true;
-                keybind = "p";
-                label = "shutdown";
-                text = "Shutdown";
-              }
-              {
-                action = "systemctl suspend";
-                circular = true;
-                keybind = "s";
-                label = "suspend";
-                text = "Suspend";
-              }
-              {
-                action = "systemctl reboot";
-                circular = true;
-                keybind = "r";
-                label = "reboot";
-                text = "Reboot";
-              }
-            ];
-          };
-          yt-dlp.enable = true;
           zoxide = {
             options = [
               "--cmd cd"
