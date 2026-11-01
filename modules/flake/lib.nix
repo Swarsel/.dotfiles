@@ -45,13 +45,6 @@ let
       mkIfElse =
         p: yes: no:
         if p then yes else no;
-      mkIfElseList =
-        p: yes: no:
-        lib.mkMerge [
-          (lib.mkIf p yes)
-          (lib.mkIf (!p) no)
-        ];
-      mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
       mkStrong = lib.mkOverride 60;
       mkTrueOption = lib.mkOption {
         default = true;
@@ -69,7 +62,6 @@ let
           ];
         }
       );
-      readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
       readNix =
         type:
         lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
