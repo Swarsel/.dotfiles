@@ -284,6 +284,10 @@
             user = serviceUser;
           }
         ];
+        systemd.services.${serviceName} = {
+          partOf = [ "redis-${serviceName}.service" ];
+          requires = [ "redis-${serviceName}.service" ];
+        };
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };

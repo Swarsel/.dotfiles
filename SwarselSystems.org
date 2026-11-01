@@ -4055,9 +4055,12 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
                 grafanaPlugins = prev.grafanaPlugins // {
                   grafana-pyroscope-datasource = prev.grafanaPlugins.grafanaPlugin {
+                    packages.any = {
+                      hash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
+                      url = "https://grafana.com/api/plugins/grafana-pyroscope-datasource/versions/13.0.9/download";
+                    };
                     pname = "grafana-pyroscope-datasource";
                     version = "13.0.9";
-                    zipHash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
                   };
                 };
                 isync = prev.isync.override {
@@ -13374,6 +13377,11 @@ Normally, doing that also resets the lecture that happens on the first use of =s
           # rollback results in sudo lectures after each reboot
           Defaults lecture = never
         '';
+        systemd.tmpfiles.settings."10-impermanence-private" =
+          lib.mkIf (config.environment.persistence != { })
+            {
+              "/var/lib/private".d.mode = "0700";
+            };
       };
   }
 #+end_src
@@ -38047,7 +38055,10 @@ To make the waters even friendlier, I run this behind its own PIA namespace, of 
               ${serviceName} = {
                 after = [ piaTunnel.unit ];
                 bindsTo = [ piaTunnel.unit ];
-                environment.SQLITE_TMPDIR = "/tmp";
+                environment = {
+                  SQLITE_TMPDIR = "/tmp";
+                  XDG_RUNTIME_DIR = "/run/${serviceName}";
+                };
                 partOf = [ piaTunnel.unit ];
                 requires = [ piaTunnel.unit ];
                 serviceConfig = {
@@ -38077,6 +38088,8 @@ To make the waters even friendlier, I run this behind its own PIA namespace, of 
                   LoadCredential = [ "listen-port:${piaTunnel.portForwarding.portFile}" ];
                   NetworkNamespacePath = piaTunnel.netnsPath;
                   PrivateUsers = lib.mkForce false;
+                  RuntimeDirectory = serviceName;
+                  RuntimeDirectoryMode = "0700";
                   UMask = "0002";
                 };
                 wantedBy = [ piaTunnel.unit ];
@@ -42714,6 +42727,10 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
               user = serviceUser;
             }
           ];
+          systemd.services.${serviceName} = {
+            partOf = [ "redis-${serviceName}.service" ];
+            requires = [ "redis-${serviceName}.service" ];
+          };
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };

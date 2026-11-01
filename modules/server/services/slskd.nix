@@ -113,7 +113,10 @@
             ${serviceName} = {
               after = [ piaTunnel.unit ];
               bindsTo = [ piaTunnel.unit ];
-              environment.SQLITE_TMPDIR = "/tmp";
+              environment = {
+                SQLITE_TMPDIR = "/tmp";
+                XDG_RUNTIME_DIR = "/run/${serviceName}";
+              };
               partOf = [ piaTunnel.unit ];
               requires = [ piaTunnel.unit ];
               serviceConfig = {
@@ -143,6 +146,8 @@
                 LoadCredential = [ "listen-port:${piaTunnel.portForwarding.portFile}" ];
                 NetworkNamespacePath = piaTunnel.netnsPath;
                 PrivateUsers = lib.mkForce false;
+                RuntimeDirectory = serviceName;
+                RuntimeDirectoryMode = "0700";
                 UMask = "0002";
               };
               wantedBy = [ piaTunnel.unit ];

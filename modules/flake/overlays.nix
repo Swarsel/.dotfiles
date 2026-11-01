@@ -188,9 +188,12 @@ in
               go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
               grafanaPlugins = prev.grafanaPlugins // {
                 grafana-pyroscope-datasource = prev.grafanaPlugins.grafanaPlugin {
+                  packages.any = {
+                    hash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
+                    url = "https://grafana.com/api/plugins/grafana-pyroscope-datasource/versions/13.0.9/download";
+                  };
                   pname = "grafana-pyroscope-datasource";
                   version = "13.0.9";
-                  zipHash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
                 };
               };
               isync = prev.isync.override {
