@@ -121,6 +121,7 @@
               trusted_proxies = [ "0.0.0.0" ];
             };
           };
+          phpfpm.pools.${serviceName}.phpEnv.SQLITE_TMPDIR = "/tmp";
         };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
@@ -136,6 +137,11 @@
             }
           ];
         };
+        systemd.services =
+          lib.genAttrs [ "${serviceName}-setup" "${serviceName}-update-db" "${serviceName}-cron" ]
+            (_: {
+              environment.SQLITE_TMPDIR = "/tmp";
+            });
         nodes =
           let
             extraConfigLoc = ''
