@@ -143,7 +143,7 @@
 | 🏠 **treehouse**      | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference             |
 | 🖥️ **hintbooth**      | HUNSN RM02, 8GB RAM                                 | Router, DNS Resolver, home NGINX endpoint                     |
 | 🖥️ **summers**        | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, data storage           |
-| 🖥️ **winters**        | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                                |
+| 🖥️ **winters**        | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT) + Wi-Fi(6) access point                                 |
 | ☁️ **belchsfactory**  | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binary cache                            |
 | ☁️ **eagleland**      | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                                    |
 | ☁️ **liliputsteps**   | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                                   |

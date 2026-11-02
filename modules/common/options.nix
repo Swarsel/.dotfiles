@@ -8,6 +8,11 @@
     }:
     {
       options.swarselsystems = {
+        bridgedVLANs = lib.mkOption {
+          default = [ ];
+          description = "Home VLANs that get a bridge `br-<name>` on this host, so that further interfaces (e.g. hostapd's per-VLAN wifi interfaces) can be attached to them.";
+          type = lib.types.listOf lib.types.str;
+        };
         enabledHomeModules = lib.mkOption {
           default = [ ];
           description = "List of enabled home module names, populated automatically by each module when imported. Used for cross-module checks.";

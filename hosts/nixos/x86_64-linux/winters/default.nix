@@ -24,6 +24,7 @@
     self.modules.nixos.smartctl-exporter
     self.modules.nixos.zigbee2mqtt
     self.modules.nixos.home-assistant
+    self.modules.nixos.hostapd
   ];
 
   swarselsystems = {

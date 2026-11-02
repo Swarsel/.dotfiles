@@ -110,6 +110,11 @@
                   ];
                   verdict = "accept";
                 };
+                guests-to-fritzbox-lan = {
+                  from = [ "vlan-guests" ];
+                  to = [ "fritzbox-lan" ];
+                  verdict = "reject";
+                };
                 masquerade-internet = {
                   from = map (name: "vlan-${name}") globals.general.internetVLANs;
                   # masquerade = true; NOTE: custom rule above for ip4 + ip6
@@ -174,6 +179,11 @@
                   ipv6Addresses = [
                     globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
                   ];
+                };
+                fritzbox-lan = {
+                  ipv4Addresses = [ globals.networks.home-lan.cidrv4 ];
+                  ipv6Addresses = [ globals.networks.home-lan.cidrv6 ];
+                  parent = "untrusted";
                 };
                 printer.ipv4Addresses = [
                   globals.networks.home-lan.vlans.devices.hosts.dell-C2665dnf-F49D60.ipv4

@@ -327,7 +327,7 @@ Here I give a brief overview over the host machines that I am using. This is hel
   | 🏠 **treehouse**      | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference             |
   | 🖥️ **hintbooth**      | HUNSN RM02, 8GB RAM                                 | Router, DNS Resolver, home NGINX endpoint                     |
   | 🖥️ **summers**        | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, data storage           |
-  | 🖥️ **winters**        | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                                |
+  | 🖥️ **winters**        | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT) + Wi-Fi(6) access point                                 |
   | ☁️ **belchsfactory**  | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binary cache                            |
   | ☁️ **eagleland**      | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                                    |
   | ☁️ **liliputsteps**   | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                                   |
@@ -6184,6 +6184,7 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
       self.modules.nixos.smartctl-exporter
       self.modules.nixos.zigbee2mqtt
       self.modules.nixos.home-assistant
+      self.modules.nixos.hostapd
     ];
 
     swarselsystems = {
@@ -10340,6 +10341,11 @@ These are my own configuration options that are used in multiple places througho
       }:
       {
         options.swarselsystems = {
+          bridgedVLANs = lib.mkOption {
+            default = [ ];
+            description = "Home VLANs that get a bridge `br-<name>` on this host, so that further interfaces (e.g. hostapd's per-VLAN wifi interfaces) can be attached to them.";
+            type = lib.types.listOf lib.types.str;
+          };
           enabledHomeModules = lib.mkOption {
             default = [ ];
             description = "List of enabled home module names, populated automatically by each module when imported. Used for cross-module checks.";
@@ -25684,11 +25690,19 @@ A VLAN can also be used as the initrd network - this is however disabled for the
       }:
       let
         inherit (globals.general) routerServer;
-        inherit (config.swarselsystems) initrdVLAN isCrypted withMicroVMs;
+        inherit (config.swarselsystems)
+          bridgedVLANs
+          initrdVLAN
+          isCrypted
+          withMicroVMs
+          ;
 
         isRouter = config.node.name == routerServer;
         localVLANsList = config.swarselsystems.localVLANs;
         localVLANs = lib.genAttrs localVLANsList (x: globals.networks.home-lan.vlans.${x});
+        attachedVLANs = lib.genAttrs (lib.unique (localVLANsList ++ bridgedVLANs)) (
+          x: globals.networks.home-lan.vlans.${x}
+        );
       in
       {
         imports = [
@@ -25713,6 +25727,10 @@ A VLAN can also be used as the initrd network - this is however disabled for the
               assertion =
                 ((localVLANsList != [ ]) && (initrdVLAN != null)) || (localVLANsList == [ ]) || (!isCrypted);
               message = "This host uses VLANs and disk encryption, thus a VLAN must be specified for initrd or disk encryption must be removed.";
+            }
+            {
+              assertion = (bridgedVLANs == [ ]) || (!withMicroVMs);
+              message = "Bridged VLANs cannot be combined with the MicroVM macvlan setup.";
             }
           ];
           boot.initrd = lib.mkIf (isCrypted && (localVLANsList != [ ]) && (!isRouter)) {
@@ -25750,7 +25768,7 @@ A VLAN can also be used as the initrd network - this is however disabled for the
             };
           };
           systemd.network = {
-            netdevs = lib.flip lib.concatMapAttrs localVLANs (
+            netdevs = lib.flip lib.concatMapAttrs attachedVLANs (
               vlanName: vlanCfg: {
                 "30-vlan-${vlanName}" = {
                   netdevConfig = {
@@ -25771,6 +25789,14 @@ A VLAN can also be used as the initrd network - this is however disabled for the
                     Name = "me-${vlanName}";
                   };
                 };
+                "50-br-${vlanName}" = lib.mkIf (lib.elem vlanName bridgedVLANs) {
+                  bridgeConfig.MulticastSnooping = false;
+                  netdevConfig = {
+                    Kind = "bridge";
+                    MACAddress = config.repo.secrets.local.networking.networks.lan.mac;
+                    Name = "br-${vlanName}";
+                  };
+                };
               }
             );
             networks = {
@@ -25781,7 +25807,7 @@ A VLAN can also be used as the initrd network - this is however disabled for the
                 # So don't acquire a link local address and only wait for
                 # this interface to gain a carrier.
                 networkConfig.LinkLocalAddressing = "no";
-                vlan = map (name: "vlan-${name}") (builtins.attrNames localVLANs);
+                vlan = map (name: "vlan-${name}") (builtins.attrNames attachedVLANs);
               };
               # Remaining macvtap interfaces should not be touched.
               "90-macvtap-ignore" = lib.mkIf withMicroVMs {
@@ -25792,9 +25818,10 @@ A VLAN can also be used as the initrd network - this is however disabled for the
                 matchConfig.Kind = "macvtap";
               };
             }
-            // lib.flip lib.concatMapAttrs localVLANs (
+            // lib.flip lib.concatMapAttrs attachedVLANs (
               vlanName: vlanCfg:
               let
+                isBridged = lib.elem vlanName bridgedVLANs;
                 me = {
                   address = [
                     vlanCfg.hosts.${config.node.name}.cidrv4
@@ -25805,14 +25832,30 @@ A VLAN can also be used as the initrd network - this is however disabled for the
                     vlanCfg.hosts.${routerServer}.ipv6
                   ];
                   linkConfig.RequiredForOnline = "routable";
-                  matchConfig.Name = "${if withMicroVMs then "me" else "vlan"}-${vlanName}";
+                  matchConfig.Name = "${
+                    if isBridged then
+                      "br"
+                    else if withMicroVMs then
+                      "me"
+                    else
+                      "vlan"
+                  }-${vlanName}";
                   networkConfig.IPv6PrivacyExtensions = "yes";
                 };
 
               in
               {
                 "30-vlan-${vlanName}" =
-                  if (!withMicroVMs) then
+                  if isBridged then
+                    {
+                      linkConfig.RequiredForOnline = "enslaved";
+                      matchConfig.Name = "vlan-${vlanName}";
+                      networkConfig = {
+                        Bridge = "br-${vlanName}";
+                        LinkLocalAddressing = "no";
+                      };
+                    }
+                  else if (!withMicroVMs) then
                     me
                   else
                     {
@@ -25827,6 +25870,19 @@ A VLAN can also be used as the initrd network - this is however disabled for the
                       };
                     };
                 "40-me-${vlanName}" = lib.mkIf withMicroVMs (lib.mkDefault me);
+                "50-br-${vlanName}" = lib.mkIf isBridged (
+                  if lib.elem vlanName localVLANsList then
+                    me
+                  else
+                    {
+                      linkConfig.RequiredForOnline = "no";
+                      matchConfig.Name = "br-${vlanName}";
+                      networkConfig = {
+                        ConfigureWithoutCarrier = true;
+                        LinkLocalAddressing = "no";
+                      };
+                    }
+                );
               }
             );
           };
@@ -27109,6 +27165,11 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                     ];
                     verdict = "accept";
                   };
+                  guests-to-fritzbox-lan = {
+                    from = [ "vlan-guests" ];
+                    to = [ "fritzbox-lan" ];
+                    verdict = "reject";
+                  };
                   masquerade-internet = {
                     from = map (name: "vlan-${name}") globals.general.internetVLANs;
                     # masquerade = true; NOTE: custom rule above for ip4 + ip6
@@ -27173,6 +27234,11 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                     ipv6Addresses = [
                       globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}.ipv6
                     ];
+                  };
+                  fritzbox-lan = {
+                    ipv4Addresses = [ globals.networks.home-lan.cidrv4 ];
+                    ipv6Addresses = [ globals.networks.home-lan.cidrv6 ];
+                    parent = "untrusted";
                   };
                   printer.ipv4Addresses = [
                     globals.networks.home-lan.vlans.devices.hosts.dell-C2665dnf-F49D60.ipv4
@@ -40982,6 +41048,206 @@ Apart from that, the only interesting bit here are the advertised dns- and ntp-s
       }
 
     ;
+  }
+#+end_src
+**** Hostapd
+:PROPERTIES:
+:CUSTOM_ID: h:7eac7707-a3aa-4b88-9f45-c82d82667964
+:END:
+
+The wifi access point. This uses a single SSID for both bands and different VLANs, depending on the password provided. Channels 1 and 36 should not collide with [[#h:253d0416-5b00-4f82-befc-640de5d333c9][Zigbee2MQTT]]
+
+#+begin_src nix-ts :tangle modules/server/infra/hostapd.nix
+  {
+    flake.modules.nixos.hostapd =
+      {
+        config,
+        lib,
+        pkgs,
+        confLib,
+        globals,
+        utils,
+        ...
+      }:
+      let
+        inherit (config.swarselsystems) sopsFile;
+        inherit (config.repo.secrets.local.networking) wifi;
+        wifiVLANs = [
+          "home"
+          "guests"
+          "iot"
+        ];
+        vlanId = vlanName: toString globals.networks.home-lan.vlans.${vlanName}.id;
+        pskSecret = vlanName: "wifi-psk-${vlanName}";
+        bridgeDevices = map (
+          vlanName: "sys-subsystem-net-devices-${utils.escapeSystemdPath "br-${vlanName}"}.device"
+        ) wifiVLANs;
+        mkNetwork = radio: {
+          inherit (wifi) ssid;
+          authentication = {
+            mode = "wpa2-sha1";
+            wpaPskFile = config.sops.templates."hostapd.psk".path;
+          };
+          settings = {
+            dynamic_vlan = 1;
+            vlan_file = toString (
+              pkgs.writeText "${radio}.vlan" (
+                lib.concatMapStrings (
+                  vlanName: "${vlanId vlanName} ${radio}.${vlanId vlanName} br-${vlanName}\n"
+                ) wifiVLANs
+              )
+            );
+          };
+        };
+        wifi6 = {
+          enable = true;
+          multiUserBeamformer = true;
+          singleUserBeamformee = true;
+          singleUserBeamformer = true;
+        };
+      in
+      {
+        config = {
+          swarselsystems = {
+            bridgedVLANs = wifiVLANs;
+            enabledServerModules = [ "hostapd" ];
+          };
+          topology.self = {
+            services.hostapd = {
+              details = lib.mapAttrs (_: radio: {
+                text = "${radio.band}, channel ${toString radio.channel}";
+              }) config.services.hostapd.radios;
+              icon = "interfaces.wifi";
+              info = "VLANs: ${lib.concatStringsSep ", " wifiVLANs}";
+              name = lib.swarselsystems.toCapitalized "hostapd";
+            };
+            interfaces = lib.mapAttrs (_: _: { }) config.services.hostapd.radios;
+          };
+          globals.monitoring.systemd = confLib.mkSystemdMonitoring {
+            serviceName = "hostapd-${config.node.name}";
+            unit = "hostapd.service";
+          };
+          sops = {
+            secrets = lib.genAttrs (map pskSecret wifiVLANs) (_: {
+              inherit sopsFile;
+            });
+            templates."hostapd.psk" = {
+              content = lib.concatMapStrings (
+                vlanName:
+                "keyid=${vlanName} vlanid=${vlanId vlanName} 00:00:00:00:00:00 ${
+                  config.sops.placeholder.${pskSecret vlanName}
+                }\n"
+              ) wifiVLANs;
+              reloadUnits = [ "hostapd.service" ];
+            };
+          };
+          services.hostapd = {
+            enable = true;
+            radios = {
+              wlan2g = {
+                inherit wifi6;
+                band = "2g";
+                channel = 1;
+                countryCode = "AT";
+                networks.wlan2g = mkNetwork "wlan2g";
+                wifi4.capabilities = [
+                  "LDPC"
+                  "SHORT-GI-20"
+                  "TX-STBC"
+                  "RX-STBC1"
+                ];
+                wifi5.enable = false;
+              };
+              wlan5g = {
+                band = "5g";
+                channel = 36;
+                countryCode = "AT";
+                networks.wlan5g = mkNetwork "wlan5g";
+                settings = {
+                  he_oper_centr_freq_seg0_idx = 42;
+                  vht_oper_centr_freq_seg0_idx = 42;
+                };
+                wifi4.capabilities = [
+                  "HT40+"
+                  "LDPC"
+                  "SHORT-GI-20"
+                  "SHORT-GI-40"
+                  "TX-STBC"
+                  "RX-STBC1"
+                ];
+                wifi5 = {
+                  capabilities = [
+                    "RXLDPC"
+                    "SHORT-GI-80"
+                    "TX-STBC-2BY1"
+                    "RX-STBC-1"
+                    "MAX-A-MPDU-LEN-EXP7"
+                    "RX-ANTENNA-PATTERN"
+                    "TX-ANTENNA-PATTERN"
+                  ];
+                  operatingChannelWidth = "80";
+                };
+                wifi6 = wifi6 // {
+                  operatingChannelWidth = "80";
+                };
+              };
+            };
+          };
+          environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
+            lib.mkAfter ''
+              prometheus.exporter.unix "hostapd" {
+                set_collectors = ["wifi"]
+              }
+
+              prometheus.scrape "hostapd" {
+                targets    = prometheus.exporter.unix.hostapd.targets
+                forward_to = [prometheus.remote_write.mimir.receiver]
+                job_name   = "hostapd"
+              }
+            ''
+          );
+          systemd = {
+            services.hostapd = {
+              after = bridgeDevices;
+              bindsTo = bridgeDevices;
+            };
+            network.links = lib.mapAttrs' (
+              radio: mac:
+              lib.nameValuePair "10-${radio}" {
+                linkConfig = {
+                  Name = radio;
+                  NamePolicy = "keep";
+                };
+                matchConfig = {
+                  PermanentMACAddress = mac;
+                  Type = "wlan";
+                };
+              }
+            ) wifi.radios;
+          };
+          nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
+            let
+              radios = lib.attrNames config.services.hostapd.radios;
+            in
+            [
+              {
+                folder = "Infrastructure";
+                interval = "1m";
+                name = "hostapd-${config.node.name}";
+                orgId = 1;
+                rules = [
+                  (confLib.mkGrafanaAlertRule {
+                    expr = ''count(node_wifi_interface_frequency_hertz{host="${config.node.name}",device=~"${lib.concatStringsSep "|" radios}"} > 0) or vector(0)'';
+                    summary = "fewer than ${toString (lib.length radios)} wifi radios on ${config.node.name} are operating on a channel";
+                    threshold = lib.length radios;
+                    title = "hostapd radio down (${config.node.name})";
+                    uid = "hostapd_radio_down_${config.node.name}";
+                  })
+                ];
+              }
+            ];
+        };
+      };
   }
 #+end_src
 **** Mosquitto

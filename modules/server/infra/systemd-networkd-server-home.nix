@@ -9,11 +9,19 @@
     }:
     let
       inherit (globals.general) routerServer;
-      inherit (config.swarselsystems) initrdVLAN isCrypted withMicroVMs;
+      inherit (config.swarselsystems)
+        bridgedVLANs
+        initrdVLAN
+        isCrypted
+        withMicroVMs
+        ;
 
       isRouter = config.node.name == routerServer;
       localVLANsList = config.swarselsystems.localVLANs;
       localVLANs = lib.genAttrs localVLANsList (x: globals.networks.home-lan.vlans.${x});
+      attachedVLANs = lib.genAttrs (lib.unique (localVLANsList ++ bridgedVLANs)) (
+        x: globals.networks.home-lan.vlans.${x}
+      );
     in
     {
       imports = [
@@ -38,6 +46,10 @@
             assertion =
               ((localVLANsList != [ ]) && (initrdVLAN != null)) || (localVLANsList == [ ]) || (!isCrypted);
             message = "This host uses VLANs and disk encryption, thus a VLAN must be specified for initrd or disk encryption must be removed.";
+          }
+          {
+            assertion = (bridgedVLANs == [ ]) || (!withMicroVMs);
+            message = "Bridged VLANs cannot be combined with the MicroVM macvlan setup.";
           }
         ];
         boot.initrd = lib.mkIf (isCrypted && (localVLANsList != [ ]) && (!isRouter)) {
@@ -75,7 +87,7 @@
           };
         };
         systemd.network = {
-          netdevs = lib.flip lib.concatMapAttrs localVLANs (
+          netdevs = lib.flip lib.concatMapAttrs attachedVLANs (
             vlanName: vlanCfg: {
               "30-vlan-${vlanName}" = {
                 netdevConfig = {
@@ -96,6 +108,14 @@
                   Name = "me-${vlanName}";
                 };
               };
+              "50-br-${vlanName}" = lib.mkIf (lib.elem vlanName bridgedVLANs) {
+                bridgeConfig.MulticastSnooping = false;
+                netdevConfig = {
+                  Kind = "bridge";
+                  MACAddress = config.repo.secrets.local.networking.networks.lan.mac;
+                  Name = "br-${vlanName}";
+                };
+              };
             }
           );
           networks = {
@@ -106,7 +126,7 @@
               # So don't acquire a link local address and only wait for
               # this interface to gain a carrier.
               networkConfig.LinkLocalAddressing = "no";
-              vlan = map (name: "vlan-${name}") (builtins.attrNames localVLANs);
+              vlan = map (name: "vlan-${name}") (builtins.attrNames attachedVLANs);
             };
             # Remaining macvtap interfaces should not be touched.
             "90-macvtap-ignore" = lib.mkIf withMicroVMs {
@@ -117,9 +137,10 @@
               matchConfig.Kind = "macvtap";
             };
           }
-          // lib.flip lib.concatMapAttrs localVLANs (
+          // lib.flip lib.concatMapAttrs attachedVLANs (
             vlanName: vlanCfg:
             let
+              isBridged = lib.elem vlanName bridgedVLANs;
               me = {
                 address = [
                   vlanCfg.hosts.${config.node.name}.cidrv4
@@ -130,14 +151,30 @@
                   vlanCfg.hosts.${routerServer}.ipv6
                 ];
                 linkConfig.RequiredForOnline = "routable";
-                matchConfig.Name = "${if withMicroVMs then "me" else "vlan"}-${vlanName}";
+                matchConfig.Name = "${
+                  if isBridged then
+                    "br"
+                  else if withMicroVMs then
+                    "me"
+                  else
+                    "vlan"
+                }-${vlanName}";
                 networkConfig.IPv6PrivacyExtensions = "yes";
               };
 
             in
             {
               "30-vlan-${vlanName}" =
-                if (!withMicroVMs) then
+                if isBridged then
+                  {
+                    linkConfig.RequiredForOnline = "enslaved";
+                    matchConfig.Name = "vlan-${vlanName}";
+                    networkConfig = {
+                      Bridge = "br-${vlanName}";
+                      LinkLocalAddressing = "no";
+                    };
+                  }
+                else if (!withMicroVMs) then
                   me
                 else
                   {
@@ -152,6 +189,19 @@
                     };
                   };
               "40-me-${vlanName}" = lib.mkIf withMicroVMs (lib.mkDefault me);
+              "50-br-${vlanName}" = lib.mkIf isBridged (
+                if lib.elem vlanName localVLANsList then
+                  me
+                else
+                  {
+                    linkConfig.RequiredForOnline = "no";
+                    matchConfig.Name = "br-${vlanName}";
+                    networkConfig = {
+                      ConfigureWithoutCarrier = true;
+                      LinkLocalAddressing = "no";
+                    };
+                  }
+              );
             }
           );
         };
