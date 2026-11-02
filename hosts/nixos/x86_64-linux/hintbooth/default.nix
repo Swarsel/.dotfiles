@@ -11,7 +11,7 @@
 
   imports = [
     ./hardware-configuration.nix
-    self.modules.nixos.disk-single-root
+    self.modules.nixos.disk-mirrored-root
 
     self.modules.nixos.systemd-networkd-server-home
     self.modules.nixos.microvm-host
@@ -43,6 +43,7 @@
       "routerServer"
     ];
     rootDisk = "/dev/disk/by-id/ata-TS64GMSA220S_K191160084";
+    rootMirrorDisk = "/dev/disk/by-id/ata-Fanxiang_S101_256GB_AA000000000000001538";
     withMicroVMs = true;
   };
   topology.self.interfaces = {
