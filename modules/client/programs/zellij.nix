@@ -129,6 +129,12 @@
           tag="$$-$RANDOM"
           hup=0
           trap 'hup=1' HUP
+          (
+            for delay in 0.3 1; do
+              sleep "$delay"
+              pkill -WINCH -P "$$" -x zellij || true
+            done
+          ) &
           ZELLIJ_KITTY_TAG="$tag" zellij "$@" || true
           if [ "$hup" = 0 ]; then
             exit 0
