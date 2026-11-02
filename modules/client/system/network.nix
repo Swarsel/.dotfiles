@@ -82,6 +82,7 @@
             };
             hostName = config.node.name;
             hosts = { };
+            modemmanager.enable = false;
             networkmanager = {
               enable = true;
               dns = "systemd-resolved";

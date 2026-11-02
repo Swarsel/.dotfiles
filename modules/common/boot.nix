@@ -9,6 +9,7 @@
     {
       config = {
         boot = {
+          bcache.enable = false;
           initrd.systemd = {
             users.root.shell = "${pkgs.bashInteractive}/bin/bash";
             emergencyAccess = globals.root.hashedPassword;
@@ -21,6 +22,7 @@
           };
           kernelParams = [ "log_buf_len=16M" ];
           loader.timeout = lib.mkDefault 2;
+          swraid.enable = false;
           tmp.useTmpfs = true;
         };
 

@@ -101,7 +101,7 @@ in
                   "Mod+Shift+Space".action = toggle-window-floating;
                   "Mod+Shift+Up".action = move-window-up-or-to-workspace-up;
                   "Mod+Shift+a".action = sh "exec emacsclient -ce '(swarsel/open-calendar)'";
-                  "Mod+Shift+c".action = spawn "qalculate-gtk";
+                  "Mod+Shift+c".action = spawn "${lib.getExe pkgs.qalculate-gtk}";
                   "Mod+Shift+f".action = fullscreen-window;
                   "Mod+Shift+m".action = sh "exec emacsclient -ce '(mu4e)'";
                   "Mod+Shift+o".action = spawn "pass-fuzzel" "--otp" "--type";
@@ -131,7 +131,7 @@ in
                   "Mod+d".action = spawn "swarselcheck-niri" "-d";
                   "Mod+e".action = sh "exec emacsclient -nquc -a emacs -e '(dashboard-open)'";
                   "Mod+f".action = sh "exec glide";
-                  "Mod+h".action = sh "hyprpicker | wl-copy";
+                  "Mod+h".action = sh "${lib.getExe pkgs.hyprpicker} | wl-copy";
                   "Mod+i".action = spawn "noctalia" "msg" "panel-toggle" "launcher" "/emo";
                   "Mod+m".action = focus-workspace-previous;
                   "Mod+o".action = spawn "pass-fuzzel" "--otp";
@@ -425,10 +425,7 @@ in
             package = pkgs.niri-unstable;
           };
           environment.systemPackages = with pkgs; [
-            wl-clipboard
             wayland-utils
-            libsecret
-            cage
             gamescope
             xwayland-satellite-unstable
           ];

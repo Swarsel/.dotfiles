@@ -47,7 +47,6 @@
             FLAKE = "${config.home.homeDirectory}/.dotfiles";
           }
           // lib.optionalAttrs (!isPublic) {
-            GITHUB_NOTIFICATION_TOKEN_PATH = confLib.getConfig.sops.secrets.github-notifications-token.path;
             HF_TOKEN = hfApi;
             OPENROUTER_API_KEY = openrouterApi;
             SWARSEL_CAL1 = source1;

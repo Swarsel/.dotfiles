@@ -167,7 +167,9 @@
             let
               workRight = confLib.mkShikaneOutput monitors.work_middle_middle_main { };
               workLeft = confLib.mkShikaneOutput monitors.work_middle_middle_side { };
-              exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
+              exec = [
+                "${lib.getExe' pkgs.libnotify "notify-send"} shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\""
+              ];
             in
             {
               profile = [

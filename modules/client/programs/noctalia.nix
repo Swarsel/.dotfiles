@@ -42,381 +42,378 @@ in
         options.swarselsystems.noctalia-systemd = lib.swarselsystems.mkTrueOption;
         config = {
           swarselsystems.enabledHomeModules = [ "optional-noctalia" ];
-          programs = {
-            fastfetch.enable = true;
-            noctalia = {
-              enable = true;
-              package = pkgs.noctalia;
-              settings = {
-                audio = {
-                  enable_overdrive = false;
-                  enable_sounds = false;
-                };
-                bar.main = {
-                  auto_hide = false;
-                  background_opacity = 0.5;
-                  border_width = 0.0;
-                  capsule = false;
-                  center = [
-                    "active_window"
-                    "recorder_2"
-                  ];
-                  color = "on_surface";
-                  compositor_blur = false;
-                  end = [
-                    "tray"
-                    "volume"
-                    "network"
-                    "bluetooth"
-                    "battery"
-                    "spacer_1"
-                    "clock"
-                    "control-center"
-                  ];
-                  font_weight = 500;
-                  margin_edge = 0;
-                  margin_ends = 0;
-                  position = "top";
-                  radius = 12;
-                  reserve_space = false;
-                  scale = 1.1;
-                  start = [ "workspaces" ];
-                  thickness = 40;
-                  widget_spacing = 10;
-                };
-                battery = {
-                  device."/org/freedesktop/UPower/devices/battery_hidpp_battery_3".warning_threshold = 15;
-                  warning_threshold = 20;
-                };
-                brightness.enable_ddcutil = false;
-                calendar = {
-                  account.caldav = {
-                    name = "CalDAV";
-                    provider = "custom";
-                    server_url = caldavTasksEndpoint;
-                    type = "caldav";
-                    username = config.swarselsystems.mainUser;
-                  };
-                  enabled = true;
-                };
-                control_center = {
-                  shortcuts = [
-                    { type = "wifi"; }
-                    { type = "bluetooth"; }
-                    { type = "notification"; }
-                    { type = "caffeine"; }
-                    { type = "clipboard"; }
-                    { type = "power_profile"; }
-                  ];
-                  sidebar = "compact";
-                  sidebar_section = "compact";
-                };
-                desktop_widgets.enabled = false;
-                dock = {
-                  background_opacity = 1.0;
-                  enabled = false;
-                };
-                idle = {
-                  behavior = {
-                    dim = {
-                      action = "command";
-                      command = "${brightnessctl} -s; ${brightnessctl} set 80%-";
-                      enabled = true;
-                      resume_command = "${brightnessctl} -r";
-                      timeout = 60;
-                    };
-                    lock = {
-                      action = "lock";
-                      enabled = true;
-                      timeout = 300;
-                    };
-                    suspend = {
-                      action = "lock_and_suspend";
-                      enabled = true;
-                      timeout = 600;
-                    };
-                  };
-                  behavior_order = [
-                    "dim"
-                    "lock"
-                    "suspend"
-                  ];
-                  pre_action_fade_seconds = 0.0;
-                };
-                location = {
-                  address = confLib.getConfig.repo.secrets.common.location.timezoneSpecific;
-                  auto_locate = false;
-                };
-                lockscreen = {
-                  blurred_desktop = true;
-                  monitors = [ "eDP-2" ];
-                };
-                lockscreen_widgets = {
-                  enabled = true;
-                  grid = {
-                    cell_size = 64;
-                    major_interval = 4;
-                    visible = true;
-                  };
-                  schema_version = 2;
-                  widget = {
-                    "lockscreen-login-box@eDP-2" = {
-                      box_height = 0.0;
-                      box_width = 0.0;
-                      cx = 853.5;
-                      cy = 981.5;
-                      enabled = true;
-                      output = "eDP-2";
-                      rotation = 0.0;
-                      type = "login_box";
-                    };
-                    lockscreen-widget-0000000000000001 = {
-                      box_height = 192.0;
-                      box_width = 192.0;
-                      cx = 853.5;
-                      cy = 789.5;
-                      enabled = true;
-                      output = "eDP-2";
-                      rotation = 0.0;
-                      settings.background = false;
-                      type = "fancy_audio_visualizer";
-                    };
-                    lockscreen-widget-0000000000000002 = {
-                      box_height = 0.0;
-                      box_width = 0.0;
-                      cx = 853.5;
-                      cy = 533.5;
-                      enabled = true;
-                      output = "eDP-2";
-                      rotation = 0.0;
-                      settings = {
-                        background = false;
-                        image_path = root "files/icons/swarsel.png";
-                        opacity = 1.0;
-                      };
-                      type = "sticker";
-                    };
-                  };
-                  widget_order = [
-                    "lockscreen-login-box@DP-9"
-                    "lockscreen-login-box@DP-8"
-                    "lockscreen-login-box@eDP-2"
-                    "lockscreen-widget-0000000000000001"
-                    "lockscreen-widget-0000000000000002"
-                  ];
-                };
-                nightlight = {
-                  enabled = true;
-                  force = false;
-                  temperature_day = 5500;
-                  temperature_night = 3700;
-                };
-                notification = {
-                  background_opacity = lib.mkForce 0.8;
-                  enable_daemon = true;
-                  follow_focused_output = true;
-                  layer = "overlay";
-                  max_visible = 3;
-                  position = "top_right";
-                };
-                osd = {
-                  background_opacity = 0.5;
-                  orientation = "vertical";
-                  position = "center_right";
-                  position_vertical = "center_right";
-
-                };
-                plugin_settings."noctalia/screen_recorder" = {
-                  audio_codec = "opus";
-                  audio_source = "default_output";
-                  color_range = "limited";
-                  copy_to_clipboard = true;
-                  filename_pattern = "recording_%Y%m%d_%H%M%S";
-                  frame_rate = 60;
-                  hide_inactive = true;
-                  resolution = "original";
-                  show_cursor = true;
-                  video_codec = "h264";
-                  video_quality = "very_high";
-                  video_source = "portal";
-                };
-                plugins.enabled = [
-                  "noctalia/screen_recorder"
-                  "noctalia/kaomoji"
-                  "whyoolw/sharednd"
+          programs.noctalia = {
+            enable = true;
+            package = pkgs.noctalia;
+            settings = {
+              audio = {
+                enable_overdrive = false;
+                enable_sounds = false;
+              };
+              bar.main = {
+                auto_hide = false;
+                background_opacity = 0.5;
+                border_width = 0.0;
+                capsule = false;
+                center = [
+                  "active_window"
+                  "recorder_2"
                 ];
-                shell = {
-                  animation = {
+                color = "on_surface";
+                compositor_blur = false;
+                end = [
+                  "tray"
+                  "volume"
+                  "network"
+                  "bluetooth"
+                  "battery"
+                  "spacer_1"
+                  "clock"
+                  "control-center"
+                ];
+                font_weight = 500;
+                margin_edge = 0;
+                margin_ends = 0;
+                position = "top";
+                radius = 12;
+                reserve_space = false;
+                scale = 1.1;
+                start = [ "workspaces" ];
+                thickness = 40;
+                widget_spacing = 10;
+              };
+              battery = {
+                device."/org/freedesktop/UPower/devices/battery_hidpp_battery_3".warning_threshold = 15;
+                warning_threshold = 20;
+              };
+              brightness.enable_ddcutil = false;
+              calendar = {
+                account.caldav = {
+                  name = "CalDAV";
+                  provider = "custom";
+                  server_url = caldavTasksEndpoint;
+                  type = "caldav";
+                  username = config.swarselsystems.mainUser;
+                };
+                enabled = true;
+              };
+              control_center = {
+                shortcuts = [
+                  { type = "wifi"; }
+                  { type = "bluetooth"; }
+                  { type = "notification"; }
+                  { type = "caffeine"; }
+                  { type = "clipboard"; }
+                  { type = "power_profile"; }
+                ];
+                sidebar = "compact";
+                sidebar_section = "compact";
+              };
+              desktop_widgets.enabled = false;
+              dock = {
+                background_opacity = 1.0;
+                enabled = false;
+              };
+              idle = {
+                behavior = {
+                  dim = {
+                    action = "command";
+                    command = "${brightnessctl} -s; ${brightnessctl} set 80%-";
                     enabled = true;
-                    speed = 4.0;
+                    resume_command = "${brightnessctl} -r";
+                    timeout = 60;
                   };
-                  avatar_path = root "files/icons/swarsel.png";
-                  clipboard_auto_paste = "off";
-                  clipboard_enabled = true;
-                  external_ip_enabled = true;
-                  launch_apps_as_systemd_services = true;
-                  launcher = {
-                    categories = false;
-                    compact = true;
-                    show_icons = true;
-                  };
-                  panel = {
-                    control_center_placement = "attached";
-                    launcher_placement = "floating";
-                    launcher_position = "center";
-                    open_near_click_control_center = true;
-                    session_placement = "floating";
-                    session_position = "center";
-                    transparency_mode = "solid";
-                  };
-                  screen_corners.enabled = false;
-                  session.actions = [
-                    {
-                      action = "lock";
-                      shortcut = "l";
-                    }
-                    {
-                      action = "suspend";
-                      shortcut = "s";
-                    }
-                    {
-                      action = "command";
-                      command = "systemctl hibernate";
-                      glyph = "suspend";
-                      label = "Hibernate";
-                      shortcut = "h";
-                    }
-                    {
-                      action = "reboot";
-                      shortcut = "r";
-                    }
-                    {
-                      action = "logout";
-                      shortcut = "u";
-                    }
-                    {
-                      action = "shutdown";
-                      shortcut = "p";
-                    }
-                    {
-                      action = "command";
-                      command = "systemctl reboot --firmware-setup";
-                      glyph = "reboot";
-                      label = "Reboot to UEFI";
-                      shortcut = "b";
-                    }
-                  ];
-                  settings_show_advanced = true;
-                  shadow.direction = "center";
-                  telemetry_enabled = false;
-                  time_format = "{:%H:%M}";
-                };
-                system.monitor = {
-                  cpu_poll_seconds = 1.0;
-                  cpu_temp_activity_threshold = 80.0;
-                  cpu_temp_critical_threshold = 90.0;
-                  cpu_usage_activity_threshold = 80.0;
-                  cpu_usage_critical_threshold = 90.0;
-                  disk_poll_seconds = 30.0;
-                  disk_used_pct_activity_threshold = 80.0;
-                  disk_used_pct_critical_threshold = 90.0;
-                  enabled = true;
-                  gpu_poll_seconds = 3.0;
-                  gpu_temp_activity_threshold = 80.0;
-                  gpu_temp_critical_threshold = 90.0;
-                  gpu_usage_activity_threshold = 80.0;
-                  gpu_usage_critical_threshold = 90.0;
-                  memory_poll_seconds = 1.0;
-                  network_poll_seconds = 1.0;
-                  ram_pct_activity_threshold = 80.0;
-                  ram_pct_critical_threshold = 90.0;
-                  swap_pct_activity_threshold = 80.0;
-                  swap_pct_critical_threshold = 90.0;
-                };
-                theme = {
-                  custom_palette = "stylix";
-                  mode = "dark";
-                  source = "custom";
-                  templates = {
-                    enable_builtin_templates = false;
-                    enable_community_templates = false;
-                  };
-                };
-                wallpaper = {
-                  automation = {
+                  lock = {
+                    action = "lock";
                     enabled = true;
-                    interval_seconds = 300;
-                    order = "random";
-                    recursive = true;
+                    timeout = 300;
                   };
-                  directory = root "files/wallpaper/landscape";
-                  edge_smoothness = 0.05;
-                  enabled = true;
-                  fill_mode = "crop";
-                  transition = [
-                    "fade"
-                    "wipe"
-                    "disc"
-                    "stripes"
-                    "zoom"
-                    "honeycomb"
-                  ];
-                  transition_duration = 500.0;
+                  suspend = {
+                    action = "lock_and_suspend";
+                    enabled = true;
+                    timeout = 600;
+                  };
                 };
-                weather = {
-                  effects = false;
-                  enabled = true;
-                  unit = "celsius";
+                behavior_order = [
+                  "dim"
+                  "lock"
+                  "suspend"
+                ];
+                pre_action_fade_seconds = 0.0;
+              };
+              location = {
+                address = confLib.getConfig.repo.secrets.common.location.timezoneSpecific;
+                auto_locate = false;
+              };
+              lockscreen = {
+                blurred_desktop = true;
+                monitors = [ "eDP-2" ];
+              };
+              lockscreen_widgets = {
+                enabled = true;
+                grid = {
+                  cell_size = 64;
+                  major_interval = 4;
+                  visible = true;
                 };
+                schema_version = 2;
                 widget = {
-                  active_window = {
-                    display = "icon_and_text";
-                    max_length = 300;
-                    title_scroll = "on_hover";
+                  "lockscreen-login-box@eDP-2" = {
+                    box_height = 0.0;
+                    box_width = 0.0;
+                    cx = 853.5;
+                    cy = 981.5;
+                    enabled = true;
+                    output = "eDP-2";
+                    rotation = 0.0;
+                    type = "login_box";
                   };
-                  battery = {
-                    device = "auto";
-                    display_mode = "graphic";
-                    hide_when_full = true;
-                    show_label = true;
+                  lockscreen-widget-0000000000000001 = {
+                    box_height = 192.0;
+                    box_width = 192.0;
+                    cx = 853.5;
+                    cy = 789.5;
+                    enabled = true;
+                    output = "eDP-2";
+                    rotation = 0.0;
+                    settings.background = false;
+                    type = "fancy_audio_visualizer";
                   };
-                  bluetooth = {
-                    hide_when_no_connected_device = true;
-                    show_label = true;
+                  lockscreen-widget-0000000000000002 = {
+                    box_height = 0.0;
+                    box_width = 0.0;
+                    cx = 853.5;
+                    cy = 533.5;
+                    enabled = true;
+                    output = "eDP-2";
+                    rotation = 0.0;
+                    settings = {
+                      background = false;
+                      image_path = root "files/icons/swarsel.png";
+                      opacity = 1.0;
+                    };
+                    type = "sticker";
                   };
-                  clock = {
-                    format = "{:%a %d. %b %H:%M:%S}";
-                    tooltip_format = "{:%a %d. %b %H:%M:%S}";
-                  };
-                  control-center = {
-                    custom_image = root "files/icons/swarsel.png";
-                    custom_image_colorize = true;
-                    glyph = "noctalia";
-                  };
-                  network.show_label = false;
-                  notifications.hide_when_no_unread = false;
-                  spacer_1.type = "spacer";
-                  tray = {
-                    drawer = true;
-                    hidden = [ "bluetooth" ];
-                  };
-                  volume = {
-                    device = "output";
-                    show_label = true;
-                  };
-                  workspaces = {
-                    empty_color = "primary";
-                    focused_color = "primary";
-                    hide_when_empty = true;
-                    label_source = "name";
-                    labels_only_when_occupied = false;
-                    max_label_chars = 4;
-                    occupied_color = "primary";
-                  };
+                };
+                widget_order = [
+                  "lockscreen-login-box@DP-9"
+                  "lockscreen-login-box@DP-8"
+                  "lockscreen-login-box@eDP-2"
+                  "lockscreen-widget-0000000000000001"
+                  "lockscreen-widget-0000000000000002"
+                ];
+              };
+              nightlight = {
+                enabled = true;
+                force = false;
+                temperature_day = 5500;
+                temperature_night = 3700;
+              };
+              notification = {
+                background_opacity = lib.mkForce 0.8;
+                enable_daemon = true;
+                follow_focused_output = true;
+                layer = "overlay";
+                max_visible = 3;
+                position = "top_right";
+              };
+              osd = {
+                background_opacity = 0.5;
+                orientation = "vertical";
+                position = "center_right";
+                position_vertical = "center_right";
+
+              };
+              plugin_settings."noctalia/screen_recorder" = {
+                audio_codec = "opus";
+                audio_source = "default_output";
+                color_range = "limited";
+                copy_to_clipboard = true;
+                filename_pattern = "recording_%Y%m%d_%H%M%S";
+                frame_rate = 60;
+                hide_inactive = true;
+                resolution = "original";
+                show_cursor = true;
+                video_codec = "h264";
+                video_quality = "very_high";
+                video_source = "portal";
+              };
+              plugins.enabled = [
+                "noctalia/screen_recorder"
+                "noctalia/kaomoji"
+                "whyoolw/sharednd"
+              ];
+              shell = {
+                animation = {
+                  enabled = true;
+                  speed = 4.0;
+                };
+                avatar_path = root "files/icons/swarsel.png";
+                clipboard_auto_paste = "off";
+                clipboard_enabled = true;
+                external_ip_enabled = true;
+                launch_apps_as_systemd_services = true;
+                launcher = {
+                  categories = false;
+                  compact = true;
+                  show_icons = true;
+                };
+                panel = {
+                  control_center_placement = "attached";
+                  launcher_placement = "floating";
+                  launcher_position = "center";
+                  open_near_click_control_center = true;
+                  session_placement = "floating";
+                  session_position = "center";
+                  transparency_mode = "solid";
+                };
+                screen_corners.enabled = false;
+                session.actions = [
+                  {
+                    action = "lock";
+                    shortcut = "l";
+                  }
+                  {
+                    action = "suspend";
+                    shortcut = "s";
+                  }
+                  {
+                    action = "command";
+                    command = "systemctl hibernate";
+                    glyph = "suspend";
+                    label = "Hibernate";
+                    shortcut = "h";
+                  }
+                  {
+                    action = "reboot";
+                    shortcut = "r";
+                  }
+                  {
+                    action = "logout";
+                    shortcut = "u";
+                  }
+                  {
+                    action = "shutdown";
+                    shortcut = "p";
+                  }
+                  {
+                    action = "command";
+                    command = "systemctl reboot --firmware-setup";
+                    glyph = "reboot";
+                    label = "Reboot to UEFI";
+                    shortcut = "b";
+                  }
+                ];
+                settings_show_advanced = true;
+                shadow.direction = "center";
+                telemetry_enabled = false;
+                time_format = "{:%H:%M}";
+              };
+              system.monitor = {
+                cpu_poll_seconds = 1.0;
+                cpu_temp_activity_threshold = 80.0;
+                cpu_temp_critical_threshold = 90.0;
+                cpu_usage_activity_threshold = 80.0;
+                cpu_usage_critical_threshold = 90.0;
+                disk_poll_seconds = 30.0;
+                disk_used_pct_activity_threshold = 80.0;
+                disk_used_pct_critical_threshold = 90.0;
+                enabled = true;
+                gpu_poll_seconds = 3.0;
+                gpu_temp_activity_threshold = 80.0;
+                gpu_temp_critical_threshold = 90.0;
+                gpu_usage_activity_threshold = 80.0;
+                gpu_usage_critical_threshold = 90.0;
+                memory_poll_seconds = 1.0;
+                network_poll_seconds = 1.0;
+                ram_pct_activity_threshold = 80.0;
+                ram_pct_critical_threshold = 90.0;
+                swap_pct_activity_threshold = 80.0;
+                swap_pct_critical_threshold = 90.0;
+              };
+              theme = {
+                custom_palette = "stylix";
+                mode = "dark";
+                source = "custom";
+                templates = {
+                  enable_builtin_templates = false;
+                  enable_community_templates = false;
                 };
               };
-              systemd.enable = config.swarselsystems.noctalia-systemd;
+              wallpaper = {
+                automation = {
+                  enabled = true;
+                  interval_seconds = 300;
+                  order = "random";
+                  recursive = true;
+                };
+                directory = root "files/wallpaper/landscape";
+                edge_smoothness = 0.05;
+                enabled = true;
+                fill_mode = "crop";
+                transition = [
+                  "fade"
+                  "wipe"
+                  "disc"
+                  "stripes"
+                  "zoom"
+                  "honeycomb"
+                ];
+                transition_duration = 500.0;
+              };
+              weather = {
+                effects = false;
+                enabled = true;
+                unit = "celsius";
+              };
+              widget = {
+                active_window = {
+                  display = "icon_and_text";
+                  max_length = 300;
+                  title_scroll = "on_hover";
+                };
+                battery = {
+                  device = "auto";
+                  display_mode = "graphic";
+                  hide_when_full = true;
+                  show_label = true;
+                };
+                bluetooth = {
+                  hide_when_no_connected_device = true;
+                  show_label = true;
+                };
+                clock = {
+                  format = "{:%a %d. %b %H:%M:%S}";
+                  tooltip_format = "{:%a %d. %b %H:%M:%S}";
+                };
+                control-center = {
+                  custom_image = root "files/icons/swarsel.png";
+                  custom_image_colorize = true;
+                  glyph = "noctalia";
+                };
+                network.show_label = false;
+                notifications.hide_when_no_unread = false;
+                spacer_1.type = "spacer";
+                tray = {
+                  drawer = true;
+                  hidden = [ "bluetooth" ];
+                };
+                volume = {
+                  device = "output";
+                  show_label = true;
+                };
+                workspaces = {
+                  empty_color = "primary";
+                  focused_color = "primary";
+                  hide_when_empty = true;
+                  label_source = "name";
+                  labels_only_when_occupied = false;
+                  max_label_chars = 4;
+                  occupied_color = "primary";
+                };
+              };
             };
+            systemd.enable = config.swarselsystems.noctalia-systemd;
           };
           systemd.user = lib.mkMerge [
             { sessionVariables.TERMINAL = "kitty"; }

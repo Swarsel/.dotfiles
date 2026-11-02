@@ -1844,7 +1844,9 @@ create a new one."
 
 (use-package python
   :custom
-  (python-indent-guess-indent-offset-verbose nil))
+  (org-babel-python-command "/nix/store/xahxrjs30p3mw0a42bqg9ikgkikskw8m-python3-3.14.8/bin/python3.14")
+  (python-indent-guess-indent-offset-verbose nil)
+  (python-shell-interpreter "/nix/store/xahxrjs30p3mw0a42bqg9ikgkikskw8m-python3-3.14.8/bin/python3.14"))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))

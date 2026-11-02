@@ -3,6 +3,7 @@
     {
       config,
       lib,
+      pkgs,
       confLib,
       ...
     }:
@@ -27,7 +28,9 @@
           settings =
             let
               homeMonitor = confLib.mkShikaneOutput config.swarselsystems.monitors.homedesktop { };
-              exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
+              exec = [
+                "${lib.getExe' pkgs.libnotify "notify-send"} shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\""
+              ];
             in
             {
               profile = [

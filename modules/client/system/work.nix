@@ -90,7 +90,6 @@ in
               enable = true;
               extraConfig = "";
             };
-            spice-vdagentd.enable = true;
             syncthing.settings = {
               folders.Documents = {
                 devices = [ "moonside@oracle" ];
@@ -127,31 +126,15 @@ in
               '';
             };
             systemPackages = with pkgs; [
-              remmina
-              python39
               qemu
-              packer
-              gnumake
-              libisoburn
-              govc
-              terraform
-              opentofu
-              terragrunt
-              graphviz
-              azure-cli
 
               # vm
               virt-manager
-              virt-viewer
               virtiofsd
               spice
               spice-gtk
-              spice-protocol
               virtio-win
               win-spice
-
-              powershell
-              gh
             ];
           };
           networking = {

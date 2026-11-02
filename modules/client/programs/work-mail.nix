@@ -10,6 +10,7 @@
     let
       inherit (config.swarselsystems) homeDir;
       inherit (confLib.getConfig.repo.secrets.work) mailAddress;
+      notifySend = lib.getExe' pkgs.libnotify "notify-send";
     in
     {
       config = {
@@ -28,8 +29,8 @@
             tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
           };
           extraConfig = ''
-              auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
-            error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+              auth_notify_cmd = "if [[ \"$(${notifySend} -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+            error_notify_cmd = "${notifySend} -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
             token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
           '';
         };

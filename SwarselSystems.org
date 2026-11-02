@@ -3905,10 +3905,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
         "dwarfs"
         "wayprompt"
       ];
-      stable24_11 = [
-        "python39"
-        "vieb"
-      ];
       stable25_05 = [
         "steam-fhsenv-without-steam"
         "transmission_3"
@@ -5769,7 +5765,6 @@ My work machine. Built for more security, this is the gold standard of my config
     };
     home-manager.users."${primaryUser}".swarselsystems = {
       SecondaryGpuCard = "pci-0000_03_00_0";
-      cpuCount = 16;
       isSecondaryGpu = true;
       monitors.main = {
         mode = "2560x1600";
@@ -5779,11 +5774,6 @@ My work machine. Built for more security, this is the gold standard of my config
         position = "2560,0";
         scale = "1";
         workspace = "15:L";
-      };
-      temperatureHwmon = {
-        input-filename = "temp4_input";
-        isAbsolutePath = true;
-        path = "/sys/devices/virtual/thermal/thermal_zone0/";
       };
     };
   }
@@ -13075,6 +13065,7 @@ Here I set some general boot options, mostly enabling an emergency shell and som
       {
         config = {
           boot = {
+            bcache.enable = false;
             initrd.systemd = {
               users.root.shell = "${pkgs.bashInteractive}/bin/bash";
               emergencyAccess = globals.root.hashedPassword;
@@ -13087,6 +13078,7 @@ Here I set some general boot options, mostly enabling an emergency shell and som
             };
             kernelParams = [ "log_buf_len=16M" ];
             loader.timeout = lib.mkDefault 2;
+            swraid.enable = false;
             tmp.useTmpfs = true;
           };
 
@@ -14152,10 +14144,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
                 cdb
                 cdr
                 bak
-                waybarupdate
-                opacitytoggle
                 fs-diff
-                github-notifications
                 t2ts
                 ts2t
                 vershell
@@ -16676,7 +16665,7 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
   }
 #+end_src
 
-**** Waybar
+**** [CURRENTLY UNUSED] Waybar
 :PROPERTIES:
 :CUSTOM_ID: h:0bf51f63-01c0-4053-a591-7f0c5697c690
 :END:
@@ -17022,7 +17011,7 @@ The rest of the related configuration is found here:
   }
 #+end_src
 
-**** Firefox
+**** [CURRENLTY UNUSED] Firefox
 :PROPERTIES:
 :CUSTOM_ID: h:fbec0bd4-690b-4f79-8b2b-a40263760a96
 :END:
@@ -19195,6 +19184,7 @@ Nowadays, all of the Sway stack is kept as a reference.
           {
             config,
             lib,
+            pkgs,
             confLib,
             vars,
             nixosConfig ? null,
@@ -19326,7 +19316,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                       "${modifier}+Shift+Up" = "move up 40px";
                       "${modifier}+Shift+a" =
                         "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
-                      "${modifier}+Shift+c" = "exec qalculate-gtk";
+                      "${modifier}+Shift+c" = "exec ${lib.getExe pkgs.qalculate-gtk}";
                       "${modifier}+Shift+e" =
                         "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
                       "${modifier}+Shift+f" = "exec swaymsg fullscreen";
@@ -19347,7 +19337,7 @@ Nowadays, all of the Sway stack is kept as a reference.
                       "${modifier}+d" = "exec swarselcheck -d";
                       "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
                       "${modifier}+f" = "exec glide";
-                      "${modifier}+h" = "exec hyprpicker | wl-copy";
+                      "${modifier}+h" = "exec ${lib.getExe pkgs.hyprpicker} | wl-copy";
                       "${modifier}+m" = "exec swaymsg workspace back_and_forth";
                       "${modifier}+o" = "exec pass-fuzzel --otp";
                       "${modifier}+p" = "exec pass-fuzzel";
@@ -19713,6 +19703,7 @@ Nowadays, all of the Sway stack is kept as a reference.
       {
         config,
         lib,
+        pkgs,
         confLib,
         ...
       }:
@@ -19737,7 +19728,9 @@ Nowadays, all of the Sway stack is kept as a reference.
             settings =
               let
                 homeMonitor = confLib.mkShikaneOutput config.swarselsystems.monitors.homedesktop { };
-                exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
+                exec = [
+                  "${lib.getExe' pkgs.libnotify "notify-send"} shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\""
+                ];
               in
               {
                 profile = [
@@ -20632,164 +20625,38 @@ Mostly used to install some compilers and lsp's that I want to have available wh
               home.packages =
                 with pkgs;
                 [
-                  hyprpicker # color picker
-                  wl-mirror
-
-                  # cache
-                  attic-client
-
-                  # mail related packages
-                  mu
-
-                  # nix
-                  alejandra
-                  nix-visualize
-                  nix-init
-                  nix-inspect
                   (nixpkgs-review.override { nix = config.nix.package; })
-                  manix
-
-                  #nautilus
-                  nautilus
-                  tumbler
                   libgsf
+                  nautilus
+                  wl-clipboard
+                  wl-mirror
                 ]
                 ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
-                  losslessaudiochecker
                   cura-appimage
                   zoom-us
                 ]
                 ++ lib.optionals config.swarselsystems.isFullBuild [
-
-                  # audio stuff
-                  spek # spectrum analyzer
-                  ffmpeg_7-full
-                  flac
-                  mediainfo
-                  picard-tools
-                  audacity
-                  sox
                   calibre
-
-                  # printing
-                  cups
                   simple-scan
-
-                  # ssh login using idm
-                  opkssh
-
-                  # dict
-                  (aspellWithDicts (
-                    dicts: with dicts; [
-                      de
-                      en
-                    ]
-                  ))
-
-                  # browser
-                  vieb
                   mgba
-
-                  # utilities
-                  nmap
-                  units
-                  sshfs
-                  fuse
-                  # ventoy
-                  poppler-utils
-
-                  # shellscripts
-                  shfmt
-
-                  # local file sharing
-                  wormhole-rs
+                  uv
                   croc
-
-                  # b2 backup @backblaze
-                  restic
-
-                  # "big" programs
-                  # obs-studio
                   gimp
-                  stable.inkscape
-                  # nomacs
+                  inkscape
                   libreoffice-qt
                   xournalpp
-                  # obsidian
-                  # spotify
-                  # vesktop # discord client
-                  # nextcloud-client # enables a systemd service that I do not want
-                  # spotify-player
-                  # element-desktop
-
-                  nicotine-plus
-                  transmission_3
-                  mktorrent
                   hugo
 
-                  # kyria
-                  qmk
-                  qmk-udev-rules
-
-                  # firefox related
-                  tridactyl-native
-
-                  # mako related
-                  # mako
-                  libnotify
-
-                  # general utilities
-                  unrar
-                  # samba
-                  cifs-utils
-                  zbar # qr codes
-                  readline
-                  autotiling
-                  brightnessctl
-                  libappindicator-gtk3
-                  sqlite
-                  speechd
-                  networkmanagerapplet
-                  lm_sensors
-                  # jq # used for searching the i3 tree in check<xxx>.sh files
-
-                  # specifically needed for anki
-                  # mpv
-                  # anki-bin
-
-                  # dirvish file previews
-                  imagemagick
-                  # poppler
-                  ffmpegthumbnailer
-
-                  # wayland stuff
-                  wtype
-                  wl-clipboard
-                  wf-recorder
-                  kanshi
-
-                  # screenshotting tools
-                  grim
-                  slurp
-
-                  # the following packages are used (in some way) by waybar
-                  pavucontrol
-
-                  #keychain
-                  qalculate-gtk
-                  # gcr # needed for gnome-secrets to work
-                  seahorse
-
-                  # latex and related packages
+                  ffmpeg_7-full
                   texliveFull
+                  unrar
+                  zbar # qr codes
 
-                  # font stuff
+                  wf-recorder
+
+                  adwaita-icon-theme
                   cantarell-fonts
-                  nerd-fonts.fira-code
-                  (iosevka-bin.override { variant = "Aile"; })
                   nerd-fonts.symbols-only
-                  noto-fonts-color-emoji
-                  font-awesome_5
                 ];
             };
           };
@@ -20807,79 +20674,18 @@ Mostly used to install some compilers and lsp's that I want to have available wh
             with pkgs;
             lib.optionals (!minimal) (
               [
-                gnupg
-                yubikey-manager
-
-                # secure boot
-                sbctl
-
-                # better make for general tasks
                 just
-
-                # sops
-                ssh-to-age
-                sops
-
-                # theme related
-                adwaita-icon-theme
-
-                # bluetooth
-                bluez
-                wireguard-tools
+                yubikey-manager
               ]
               ++ lib.optionals (config.swarselsystems.isFullBuild && pkgs.stdenv.hostPlatform.isx86_64) [
                 # ledger packages
                 ledger-live-desktop
-
-                # keyboards
-                vial
-                via
               ]
               ++ lib.optionals config.swarselsystems.isFullBuild [
-                # yubikey packages
-                yubikey-personalization
-                yubico-pam
-                yubioath-flutter
-                yubikey-touch-detector
-                yubico-piv-tool
-                cfssl
-                pcsc-tools
-                pcscliteWithPolkit.out
-
-                # pinentry
-                dbus
-                # swaylock-effects
-                syncthingtray-minimal
-                swayosd
-
-                qt5.qtwayland
-
-                nixos-generators
-
-                # commit hooks
-                pre-commit
-
-                # proc info
-                acpi
-
-                # pci info
                 pciutils
-                usbutils
-
-                # keyboards
+                pre-commit
                 qmk
-
-                # kde-connect
-                xdg-desktop-portal
-                xdg-desktop-portal-gtk
-                xdg-desktop-portal-wlr
-
-                ghostscript_headless
-                nixd
-                zig
-                zls
-
-                elk-to-svg
+                usbutils
               ]
             )
             ++ lib.optionals minimal [
@@ -20956,7 +20762,6 @@ Next, we will setup some environment variables that need to be set on the system
               FLAKE = "${config.home.homeDirectory}/.dotfiles";
             }
             // lib.optionalAttrs (!isPublic) {
-              GITHUB_NOTIFICATION_TOKEN_PATH = confLib.getConfig.sops.secrets.github-notifications-token.path;
               HF_TOKEN = hfApi;
               OPENROUTER_API_KEY = openrouterApi;
               SWARSEL_CAL1 = source1;
@@ -21285,6 +21090,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
               };
               hostName = config.node.name;
               hosts = { };
+              modemmanager.enable = false;
               networkmanager = {
                 enable = true;
                 dns = "systemd-resolved";
@@ -21342,72 +21148,14 @@ Some programs profit from being installed through dedicated NixOS settings on sy
               mpv.enable = true;
               pandoc.enable = true;
               rclone.enable = true;
-              sioyek.enable = true;
-              swayr.enable = true;
-              timidity.enable = true;
-              wlogout = {
-                enable = true;
-                layout = [
-                  {
-                    action = "loginctl lock-session";
-                    circular = true;
-                    keybind = "l";
-                    label = "lock";
-                    text = "Lock";
-                  }
-                  {
-                    action = "systemctl hibernate";
-                    circular = true;
-                    keybind = "h";
-                    label = "hibernate";
-                    text = "Hibernate";
-                  }
-                  {
-                    action = "loginctl terminate-user $USER";
-                    circular = true;
-                    keybind = "u";
-                    label = "logout";
-                    text = "Logout";
-                  }
-                  {
-                    action = "systemctl poweroff";
-                    circular = true;
-                    keybind = "p";
-                    label = "shutdown";
-                    text = "Shutdown";
-                  }
-                  {
-                    action = "systemctl suspend";
-                    circular = true;
-                    keybind = "s";
-                    label = "suspend";
-                    text = "Suspend";
-                  }
-                  {
-                    action = "systemctl reboot";
-                    circular = true;
-                    keybind = "r";
-                    label = "reboot";
-                    text = "Reboot";
-                  }
-                ];
-              };
               yt-dlp.enable = true;
             };
           };
         };
-        cli-programs = { pkgs, ... }: {
+        cli-programs = {
           swarselsystems.enabledHomeModules = [ "cli-programs" ];
           programs = {
-            bat = {
-              enable = true;
-              extraPackages = [
-                pkgs.bat-extras.batdiff
-                pkgs.bat-extras.batman
-                pkgs.bat-extras.batwatch
-                pkgs.bat-extras.batgrep
-              ];
-            };
+            bat.enable = true;
             bottom.enable = true;
             carapace.enable = true;
             fzf = {
@@ -22184,14 +21932,7 @@ This performs the necessary configuration to support this hardware.
 
 #+begin_src nix-ts :tangle modules/client/system/hardwarecompatibility-ledger.nix
   {
-    flake.modules.nixos.hardwarecompatibility-ledger = { pkgs, ... }: {
-      config = {
-        services.udev.packages = with pkgs; [
-          ledger-udev-rules
-        ];
-        hardware.ledger.enable = true;
-      };
-    };
+    flake.modules.nixos.hardwarecompatibility-ledger.config.hardware.ledger.enable = true;
   }
 #+end_src
 
@@ -22496,10 +22237,7 @@ I am using distrobox to quickly circumvent issues that I cannot immediately solv
       config = {
 
         users.persistentIds.podman = confLib.mkIds 969;
-        environment.systemPackages = with pkgs; [
-          distrobox
-          boxbuddy
-        ];
+        environment.systemPackages = [ pkgs.distrobox ];
         virtualisation.podman = {
           enable = true;
           package = pkgs.podman;
@@ -22792,17 +22530,10 @@ UWSM is a helper tool meant to help with chaining systemd services correctly. Wh
             );
           programs.uwsm = {
             enable = true;
-            waylandCompositors = {
-              niri = lib.mkIf (config.programs ? niri) {
-                binPath = "/run/current-system/sw/bin/niri-session";
-                comment = "Niri compositor managed by UWSM";
-                prettyName = "Niri";
-              };
-              sway = {
-                binPath = "/run/current-system/sw/bin/sway";
-                comment = "Sway compositor managed by UWSM";
-                prettyName = "Sway";
-              };
+            waylandCompositors.niri = lib.mkIf (config.programs ? niri) {
+              binPath = "/run/current-system/sw/bin/niri-session";
+              comment = "Niri compositor managed by UWSM";
+              prettyName = "Niri";
             };
           };
         };
@@ -22949,7 +22680,7 @@ Auto login for the initial session.
                     "Mod+Shift+Space".action = toggle-window-floating;
                     "Mod+Shift+Up".action = move-window-up-or-to-workspace-up;
                     "Mod+Shift+a".action = sh "exec emacsclient -ce '(swarsel/open-calendar)'";
-                    "Mod+Shift+c".action = spawn "qalculate-gtk";
+                    "Mod+Shift+c".action = spawn "${lib.getExe pkgs.qalculate-gtk}";
                     "Mod+Shift+f".action = fullscreen-window;
                     "Mod+Shift+m".action = sh "exec emacsclient -ce '(mu4e)'";
                     "Mod+Shift+o".action = spawn "pass-fuzzel" "--otp" "--type";
@@ -22979,7 +22710,7 @@ Auto login for the initial session.
                     "Mod+d".action = spawn "swarselcheck-niri" "-d";
                     "Mod+e".action = sh "exec emacsclient -nquc -a emacs -e '(dashboard-open)'";
                     "Mod+f".action = sh "exec glide";
-                    "Mod+h".action = sh "hyprpicker | wl-copy";
+                    "Mod+h".action = sh "${lib.getExe pkgs.hyprpicker} | wl-copy";
                     "Mod+i".action = spawn "noctalia" "msg" "panel-toggle" "launcher" "/emo";
                     "Mod+m".action = focus-workspace-previous;
                     "Mod+o".action = spawn "pass-fuzzel" "--otp";
@@ -23273,10 +23004,7 @@ Auto login for the initial session.
               package = pkgs.niri-unstable;
             };
             environment.systemPackages = with pkgs; [
-              wl-clipboard
               wayland-utils
-              libsecret
-              cage
               gamescope
               xwayland-satellite-unstable
             ];
@@ -23342,381 +23070,378 @@ Auto login for the initial session.
           options.swarselsystems.noctalia-systemd = lib.swarselsystems.mkTrueOption;
           config = {
             swarselsystems.enabledHomeModules = [ "optional-noctalia" ];
-            programs = {
-              fastfetch.enable = true;
-              noctalia = {
-                enable = true;
-                package = pkgs.noctalia;
-                settings = {
-                  audio = {
-                    enable_overdrive = false;
-                    enable_sounds = false;
-                  };
-                  bar.main = {
-                    auto_hide = false;
-                    background_opacity = 0.5;
-                    border_width = 0.0;
-                    capsule = false;
-                    center = [
-                      "active_window"
-                      "recorder_2"
-                    ];
-                    color = "on_surface";
-                    compositor_blur = false;
-                    end = [
-                      "tray"
-                      "volume"
-                      "network"
-                      "bluetooth"
-                      "battery"
-                      "spacer_1"
-                      "clock"
-                      "control-center"
-                    ];
-                    font_weight = 500;
-                    margin_edge = 0;
-                    margin_ends = 0;
-                    position = "top";
-                    radius = 12;
-                    reserve_space = false;
-                    scale = 1.1;
-                    start = [ "workspaces" ];
-                    thickness = 40;
-                    widget_spacing = 10;
-                  };
-                  battery = {
-                    device."/org/freedesktop/UPower/devices/battery_hidpp_battery_3".warning_threshold = 15;
-                    warning_threshold = 20;
-                  };
-                  brightness.enable_ddcutil = false;
-                  calendar = {
-                    account.caldav = {
-                      name = "CalDAV";
-                      provider = "custom";
-                      server_url = caldavTasksEndpoint;
-                      type = "caldav";
-                      username = config.swarselsystems.mainUser;
-                    };
-                    enabled = true;
-                  };
-                  control_center = {
-                    shortcuts = [
-                      { type = "wifi"; }
-                      { type = "bluetooth"; }
-                      { type = "notification"; }
-                      { type = "caffeine"; }
-                      { type = "clipboard"; }
-                      { type = "power_profile"; }
-                    ];
-                    sidebar = "compact";
-                    sidebar_section = "compact";
-                  };
-                  desktop_widgets.enabled = false;
-                  dock = {
-                    background_opacity = 1.0;
-                    enabled = false;
-                  };
-                  idle = {
-                    behavior = {
-                      dim = {
-                        action = "command";
-                        command = "${brightnessctl} -s; ${brightnessctl} set 80%-";
-                        enabled = true;
-                        resume_command = "${brightnessctl} -r";
-                        timeout = 60;
-                      };
-                      lock = {
-                        action = "lock";
-                        enabled = true;
-                        timeout = 300;
-                      };
-                      suspend = {
-                        action = "lock_and_suspend";
-                        enabled = true;
-                        timeout = 600;
-                      };
-                    };
-                    behavior_order = [
-                      "dim"
-                      "lock"
-                      "suspend"
-                    ];
-                    pre_action_fade_seconds = 0.0;
-                  };
-                  location = {
-                    address = confLib.getConfig.repo.secrets.common.location.timezoneSpecific;
-                    auto_locate = false;
-                  };
-                  lockscreen = {
-                    blurred_desktop = true;
-                    monitors = [ "eDP-2" ];
-                  };
-                  lockscreen_widgets = {
-                    enabled = true;
-                    grid = {
-                      cell_size = 64;
-                      major_interval = 4;
-                      visible = true;
-                    };
-                    schema_version = 2;
-                    widget = {
-                      "lockscreen-login-box@eDP-2" = {
-                        box_height = 0.0;
-                        box_width = 0.0;
-                        cx = 853.5;
-                        cy = 981.5;
-                        enabled = true;
-                        output = "eDP-2";
-                        rotation = 0.0;
-                        type = "login_box";
-                      };
-                      lockscreen-widget-0000000000000001 = {
-                        box_height = 192.0;
-                        box_width = 192.0;
-                        cx = 853.5;
-                        cy = 789.5;
-                        enabled = true;
-                        output = "eDP-2";
-                        rotation = 0.0;
-                        settings.background = false;
-                        type = "fancy_audio_visualizer";
-                      };
-                      lockscreen-widget-0000000000000002 = {
-                        box_height = 0.0;
-                        box_width = 0.0;
-                        cx = 853.5;
-                        cy = 533.5;
-                        enabled = true;
-                        output = "eDP-2";
-                        rotation = 0.0;
-                        settings = {
-                          background = false;
-                          image_path = root "files/icons/swarsel.png";
-                          opacity = 1.0;
-                        };
-                        type = "sticker";
-                      };
-                    };
-                    widget_order = [
-                      "lockscreen-login-box@DP-9"
-                      "lockscreen-login-box@DP-8"
-                      "lockscreen-login-box@eDP-2"
-                      "lockscreen-widget-0000000000000001"
-                      "lockscreen-widget-0000000000000002"
-                    ];
-                  };
-                  nightlight = {
-                    enabled = true;
-                    force = false;
-                    temperature_day = 5500;
-                    temperature_night = 3700;
-                  };
-                  notification = {
-                    background_opacity = lib.mkForce 0.8;
-                    enable_daemon = true;
-                    follow_focused_output = true;
-                    layer = "overlay";
-                    max_visible = 3;
-                    position = "top_right";
-                  };
-                  osd = {
-                    background_opacity = 0.5;
-                    orientation = "vertical";
-                    position = "center_right";
-                    position_vertical = "center_right";
-
-                  };
-                  plugin_settings."noctalia/screen_recorder" = {
-                    audio_codec = "opus";
-                    audio_source = "default_output";
-                    color_range = "limited";
-                    copy_to_clipboard = true;
-                    filename_pattern = "recording_%Y%m%d_%H%M%S";
-                    frame_rate = 60;
-                    hide_inactive = true;
-                    resolution = "original";
-                    show_cursor = true;
-                    video_codec = "h264";
-                    video_quality = "very_high";
-                    video_source = "portal";
-                  };
-                  plugins.enabled = [
-                    "noctalia/screen_recorder"
-                    "noctalia/kaomoji"
-                    "whyoolw/sharednd"
+            programs.noctalia = {
+              enable = true;
+              package = pkgs.noctalia;
+              settings = {
+                audio = {
+                  enable_overdrive = false;
+                  enable_sounds = false;
+                };
+                bar.main = {
+                  auto_hide = false;
+                  background_opacity = 0.5;
+                  border_width = 0.0;
+                  capsule = false;
+                  center = [
+                    "active_window"
+                    "recorder_2"
                   ];
-                  shell = {
-                    animation = {
+                  color = "on_surface";
+                  compositor_blur = false;
+                  end = [
+                    "tray"
+                    "volume"
+                    "network"
+                    "bluetooth"
+                    "battery"
+                    "spacer_1"
+                    "clock"
+                    "control-center"
+                  ];
+                  font_weight = 500;
+                  margin_edge = 0;
+                  margin_ends = 0;
+                  position = "top";
+                  radius = 12;
+                  reserve_space = false;
+                  scale = 1.1;
+                  start = [ "workspaces" ];
+                  thickness = 40;
+                  widget_spacing = 10;
+                };
+                battery = {
+                  device."/org/freedesktop/UPower/devices/battery_hidpp_battery_3".warning_threshold = 15;
+                  warning_threshold = 20;
+                };
+                brightness.enable_ddcutil = false;
+                calendar = {
+                  account.caldav = {
+                    name = "CalDAV";
+                    provider = "custom";
+                    server_url = caldavTasksEndpoint;
+                    type = "caldav";
+                    username = config.swarselsystems.mainUser;
+                  };
+                  enabled = true;
+                };
+                control_center = {
+                  shortcuts = [
+                    { type = "wifi"; }
+                    { type = "bluetooth"; }
+                    { type = "notification"; }
+                    { type = "caffeine"; }
+                    { type = "clipboard"; }
+                    { type = "power_profile"; }
+                  ];
+                  sidebar = "compact";
+                  sidebar_section = "compact";
+                };
+                desktop_widgets.enabled = false;
+                dock = {
+                  background_opacity = 1.0;
+                  enabled = false;
+                };
+                idle = {
+                  behavior = {
+                    dim = {
+                      action = "command";
+                      command = "${brightnessctl} -s; ${brightnessctl} set 80%-";
                       enabled = true;
-                      speed = 4.0;
+                      resume_command = "${brightnessctl} -r";
+                      timeout = 60;
                     };
-                    avatar_path = root "files/icons/swarsel.png";
-                    clipboard_auto_paste = "off";
-                    clipboard_enabled = true;
-                    external_ip_enabled = true;
-                    launch_apps_as_systemd_services = true;
-                    launcher = {
-                      categories = false;
-                      compact = true;
-                      show_icons = true;
-                    };
-                    panel = {
-                      control_center_placement = "attached";
-                      launcher_placement = "floating";
-                      launcher_position = "center";
-                      open_near_click_control_center = true;
-                      session_placement = "floating";
-                      session_position = "center";
-                      transparency_mode = "solid";
-                    };
-                    screen_corners.enabled = false;
-                    session.actions = [
-                      {
-                        action = "lock";
-                        shortcut = "l";
-                      }
-                      {
-                        action = "suspend";
-                        shortcut = "s";
-                      }
-                      {
-                        action = "command";
-                        command = "systemctl hibernate";
-                        glyph = "suspend";
-                        label = "Hibernate";
-                        shortcut = "h";
-                      }
-                      {
-                        action = "reboot";
-                        shortcut = "r";
-                      }
-                      {
-                        action = "logout";
-                        shortcut = "u";
-                      }
-                      {
-                        action = "shutdown";
-                        shortcut = "p";
-                      }
-                      {
-                        action = "command";
-                        command = "systemctl reboot --firmware-setup";
-                        glyph = "reboot";
-                        label = "Reboot to UEFI";
-                        shortcut = "b";
-                      }
-                    ];
-                    settings_show_advanced = true;
-                    shadow.direction = "center";
-                    telemetry_enabled = false;
-                    time_format = "{:%H:%M}";
-                  };
-                  system.monitor = {
-                    cpu_poll_seconds = 1.0;
-                    cpu_temp_activity_threshold = 80.0;
-                    cpu_temp_critical_threshold = 90.0;
-                    cpu_usage_activity_threshold = 80.0;
-                    cpu_usage_critical_threshold = 90.0;
-                    disk_poll_seconds = 30.0;
-                    disk_used_pct_activity_threshold = 80.0;
-                    disk_used_pct_critical_threshold = 90.0;
-                    enabled = true;
-                    gpu_poll_seconds = 3.0;
-                    gpu_temp_activity_threshold = 80.0;
-                    gpu_temp_critical_threshold = 90.0;
-                    gpu_usage_activity_threshold = 80.0;
-                    gpu_usage_critical_threshold = 90.0;
-                    memory_poll_seconds = 1.0;
-                    network_poll_seconds = 1.0;
-                    ram_pct_activity_threshold = 80.0;
-                    ram_pct_critical_threshold = 90.0;
-                    swap_pct_activity_threshold = 80.0;
-                    swap_pct_critical_threshold = 90.0;
-                  };
-                  theme = {
-                    custom_palette = "stylix";
-                    mode = "dark";
-                    source = "custom";
-                    templates = {
-                      enable_builtin_templates = false;
-                      enable_community_templates = false;
-                    };
-                  };
-                  wallpaper = {
-                    automation = {
+                    lock = {
+                      action = "lock";
                       enabled = true;
-                      interval_seconds = 300;
-                      order = "random";
-                      recursive = true;
+                      timeout = 300;
                     };
-                    directory = root "files/wallpaper/landscape";
-                    edge_smoothness = 0.05;
-                    enabled = true;
-                    fill_mode = "crop";
-                    transition = [
-                      "fade"
-                      "wipe"
-                      "disc"
-                      "stripes"
-                      "zoom"
-                      "honeycomb"
-                    ];
-                    transition_duration = 500.0;
+                    suspend = {
+                      action = "lock_and_suspend";
+                      enabled = true;
+                      timeout = 600;
+                    };
                   };
-                  weather = {
-                    effects = false;
-                    enabled = true;
-                    unit = "celsius";
+                  behavior_order = [
+                    "dim"
+                    "lock"
+                    "suspend"
+                  ];
+                  pre_action_fade_seconds = 0.0;
+                };
+                location = {
+                  address = confLib.getConfig.repo.secrets.common.location.timezoneSpecific;
+                  auto_locate = false;
+                };
+                lockscreen = {
+                  blurred_desktop = true;
+                  monitors = [ "eDP-2" ];
+                };
+                lockscreen_widgets = {
+                  enabled = true;
+                  grid = {
+                    cell_size = 64;
+                    major_interval = 4;
+                    visible = true;
                   };
+                  schema_version = 2;
                   widget = {
-                    active_window = {
-                      display = "icon_and_text";
-                      max_length = 300;
-                      title_scroll = "on_hover";
+                    "lockscreen-login-box@eDP-2" = {
+                      box_height = 0.0;
+                      box_width = 0.0;
+                      cx = 853.5;
+                      cy = 981.5;
+                      enabled = true;
+                      output = "eDP-2";
+                      rotation = 0.0;
+                      type = "login_box";
                     };
-                    battery = {
-                      device = "auto";
-                      display_mode = "graphic";
-                      hide_when_full = true;
-                      show_label = true;
+                    lockscreen-widget-0000000000000001 = {
+                      box_height = 192.0;
+                      box_width = 192.0;
+                      cx = 853.5;
+                      cy = 789.5;
+                      enabled = true;
+                      output = "eDP-2";
+                      rotation = 0.0;
+                      settings.background = false;
+                      type = "fancy_audio_visualizer";
                     };
-                    bluetooth = {
-                      hide_when_no_connected_device = true;
-                      show_label = true;
+                    lockscreen-widget-0000000000000002 = {
+                      box_height = 0.0;
+                      box_width = 0.0;
+                      cx = 853.5;
+                      cy = 533.5;
+                      enabled = true;
+                      output = "eDP-2";
+                      rotation = 0.0;
+                      settings = {
+                        background = false;
+                        image_path = root "files/icons/swarsel.png";
+                        opacity = 1.0;
+                      };
+                      type = "sticker";
                     };
-                    clock = {
-                      format = "{:%a %d. %b %H:%M:%S}";
-                      tooltip_format = "{:%a %d. %b %H:%M:%S}";
-                    };
-                    control-center = {
-                      custom_image = root "files/icons/swarsel.png";
-                      custom_image_colorize = true;
-                      glyph = "noctalia";
-                    };
-                    network.show_label = false;
-                    notifications.hide_when_no_unread = false;
-                    spacer_1.type = "spacer";
-                    tray = {
-                      drawer = true;
-                      hidden = [ "bluetooth" ];
-                    };
-                    volume = {
-                      device = "output";
-                      show_label = true;
-                    };
-                    workspaces = {
-                      empty_color = "primary";
-                      focused_color = "primary";
-                      hide_when_empty = true;
-                      label_source = "name";
-                      labels_only_when_occupied = false;
-                      max_label_chars = 4;
-                      occupied_color = "primary";
-                    };
+                  };
+                  widget_order = [
+                    "lockscreen-login-box@DP-9"
+                    "lockscreen-login-box@DP-8"
+                    "lockscreen-login-box@eDP-2"
+                    "lockscreen-widget-0000000000000001"
+                    "lockscreen-widget-0000000000000002"
+                  ];
+                };
+                nightlight = {
+                  enabled = true;
+                  force = false;
+                  temperature_day = 5500;
+                  temperature_night = 3700;
+                };
+                notification = {
+                  background_opacity = lib.mkForce 0.8;
+                  enable_daemon = true;
+                  follow_focused_output = true;
+                  layer = "overlay";
+                  max_visible = 3;
+                  position = "top_right";
+                };
+                osd = {
+                  background_opacity = 0.5;
+                  orientation = "vertical";
+                  position = "center_right";
+                  position_vertical = "center_right";
+
+                };
+                plugin_settings."noctalia/screen_recorder" = {
+                  audio_codec = "opus";
+                  audio_source = "default_output";
+                  color_range = "limited";
+                  copy_to_clipboard = true;
+                  filename_pattern = "recording_%Y%m%d_%H%M%S";
+                  frame_rate = 60;
+                  hide_inactive = true;
+                  resolution = "original";
+                  show_cursor = true;
+                  video_codec = "h264";
+                  video_quality = "very_high";
+                  video_source = "portal";
+                };
+                plugins.enabled = [
+                  "noctalia/screen_recorder"
+                  "noctalia/kaomoji"
+                  "whyoolw/sharednd"
+                ];
+                shell = {
+                  animation = {
+                    enabled = true;
+                    speed = 4.0;
+                  };
+                  avatar_path = root "files/icons/swarsel.png";
+                  clipboard_auto_paste = "off";
+                  clipboard_enabled = true;
+                  external_ip_enabled = true;
+                  launch_apps_as_systemd_services = true;
+                  launcher = {
+                    categories = false;
+                    compact = true;
+                    show_icons = true;
+                  };
+                  panel = {
+                    control_center_placement = "attached";
+                    launcher_placement = "floating";
+                    launcher_position = "center";
+                    open_near_click_control_center = true;
+                    session_placement = "floating";
+                    session_position = "center";
+                    transparency_mode = "solid";
+                  };
+                  screen_corners.enabled = false;
+                  session.actions = [
+                    {
+                      action = "lock";
+                      shortcut = "l";
+                    }
+                    {
+                      action = "suspend";
+                      shortcut = "s";
+                    }
+                    {
+                      action = "command";
+                      command = "systemctl hibernate";
+                      glyph = "suspend";
+                      label = "Hibernate";
+                      shortcut = "h";
+                    }
+                    {
+                      action = "reboot";
+                      shortcut = "r";
+                    }
+                    {
+                      action = "logout";
+                      shortcut = "u";
+                    }
+                    {
+                      action = "shutdown";
+                      shortcut = "p";
+                    }
+                    {
+                      action = "command";
+                      command = "systemctl reboot --firmware-setup";
+                      glyph = "reboot";
+                      label = "Reboot to UEFI";
+                      shortcut = "b";
+                    }
+                  ];
+                  settings_show_advanced = true;
+                  shadow.direction = "center";
+                  telemetry_enabled = false;
+                  time_format = "{:%H:%M}";
+                };
+                system.monitor = {
+                  cpu_poll_seconds = 1.0;
+                  cpu_temp_activity_threshold = 80.0;
+                  cpu_temp_critical_threshold = 90.0;
+                  cpu_usage_activity_threshold = 80.0;
+                  cpu_usage_critical_threshold = 90.0;
+                  disk_poll_seconds = 30.0;
+                  disk_used_pct_activity_threshold = 80.0;
+                  disk_used_pct_critical_threshold = 90.0;
+                  enabled = true;
+                  gpu_poll_seconds = 3.0;
+                  gpu_temp_activity_threshold = 80.0;
+                  gpu_temp_critical_threshold = 90.0;
+                  gpu_usage_activity_threshold = 80.0;
+                  gpu_usage_critical_threshold = 90.0;
+                  memory_poll_seconds = 1.0;
+                  network_poll_seconds = 1.0;
+                  ram_pct_activity_threshold = 80.0;
+                  ram_pct_critical_threshold = 90.0;
+                  swap_pct_activity_threshold = 80.0;
+                  swap_pct_critical_threshold = 90.0;
+                };
+                theme = {
+                  custom_palette = "stylix";
+                  mode = "dark";
+                  source = "custom";
+                  templates = {
+                    enable_builtin_templates = false;
+                    enable_community_templates = false;
                   };
                 };
-                systemd.enable = config.swarselsystems.noctalia-systemd;
+                wallpaper = {
+                  automation = {
+                    enabled = true;
+                    interval_seconds = 300;
+                    order = "random";
+                    recursive = true;
+                  };
+                  directory = root "files/wallpaper/landscape";
+                  edge_smoothness = 0.05;
+                  enabled = true;
+                  fill_mode = "crop";
+                  transition = [
+                    "fade"
+                    "wipe"
+                    "disc"
+                    "stripes"
+                    "zoom"
+                    "honeycomb"
+                  ];
+                  transition_duration = 500.0;
+                };
+                weather = {
+                  effects = false;
+                  enabled = true;
+                  unit = "celsius";
+                };
+                widget = {
+                  active_window = {
+                    display = "icon_and_text";
+                    max_length = 300;
+                    title_scroll = "on_hover";
+                  };
+                  battery = {
+                    device = "auto";
+                    display_mode = "graphic";
+                    hide_when_full = true;
+                    show_label = true;
+                  };
+                  bluetooth = {
+                    hide_when_no_connected_device = true;
+                    show_label = true;
+                  };
+                  clock = {
+                    format = "{:%a %d. %b %H:%M:%S}";
+                    tooltip_format = "{:%a %d. %b %H:%M:%S}";
+                  };
+                  control-center = {
+                    custom_image = root "files/icons/swarsel.png";
+                    custom_image_colorize = true;
+                    glyph = "noctalia";
+                  };
+                  network.show_label = false;
+                  notifications.hide_when_no_unread = false;
+                  spacer_1.type = "spacer";
+                  tray = {
+                    drawer = true;
+                    hidden = [ "bluetooth" ];
+                  };
+                  volume = {
+                    device = "output";
+                    show_label = true;
+                  };
+                  workspaces = {
+                    empty_color = "primary";
+                    focused_color = "primary";
+                    hide_when_empty = true;
+                    label_source = "name";
+                    labels_only_when_occupied = false;
+                    max_label_chars = 4;
+                    occupied_color = "primary";
+                  };
+                };
               };
+              systemd.enable = config.swarselsystems.noctalia-systemd;
             };
             systemd.user = lib.mkMerge [
               { sessionVariables.TERMINAL = "kitty"; }
@@ -23856,7 +23581,6 @@ This opens a few gaming ports and installs the steam configuration suite for gam
               wine
               protonplus
               winetricks
-              libudev-zero
               dwarfs
               fuse-overlayfs
               # steam
@@ -23876,9 +23600,7 @@ This opens a few gaming ports and installs the steam configuration suite for gam
               prismlauncher # has overrides
               temurin-bin-17
 
-              pokefinder
               retroarch
-              flips
             ];
             #   };
             # };
@@ -24069,7 +23791,6 @@ When setting up a new machine:
                 enable = true;
                 extraConfig = "";
               };
-              spice-vdagentd.enable = true;
               syncthing.settings = {
                 folders.Documents = {
                   devices = [ "moonside@oracle" ];
@@ -24106,31 +23827,15 @@ When setting up a new machine:
                 '';
               };
               systemPackages = with pkgs; [
-                remmina
-                python39
                 qemu
-                packer
-                gnumake
-                libisoburn
-                govc
-                terraform
-                opentofu
-                terragrunt
-                graphviz
-                azure-cli
 
                 # vm
                 virt-manager
-                virt-viewer
                 virtiofsd
                 spice
                 spice-gtk
-                spice-protocol
                 virtio-win
                 win-spice
-
-                powershell
-                gh
               ];
             };
             networking = {
@@ -24527,6 +24232,17 @@ When setting up a new machine:
               openshift
 
               rustdesk-vbc
+
+              remmina
+              packer
+              gnumake
+              libisoburn
+              govc
+              opentofu
+              terragrunt
+              graphviz
+              azure-cli
+              gh
             ];
             sessionVariables.AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
           };
@@ -24615,6 +24331,7 @@ When setting up a new machine:
       let
         inherit (config.swarselsystems) homeDir;
         inherit (confLib.getConfig.repo.secrets.work) mailAddress;
+        notifySend = lib.getExe' pkgs.libnotify "notify-send";
       in
       {
         config = {
@@ -24633,8 +24350,8 @@ When setting up a new machine:
               tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
             };
             extraConfig = ''
-                auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
-              error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+                auth_notify_cmd = "if [[ \"$(${notifySend} -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+              error_notify_cmd = "${notifySend} -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
               token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
             '';
           };
@@ -24881,7 +24598,9 @@ When setting up a new machine:
               let
                 workRight = confLib.mkShikaneOutput monitors.work_middle_middle_main { };
                 workLeft = confLib.mkShikaneOutput monitors.work_middle_middle_side { };
-                exec = [ "notify-send shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\"" ];
+                exec = [
+                  "${lib.getExe' pkgs.libnotify "notify-send"} shikane \"Profile $SHIKANE_PROFILE_NAME has been applied\""
+                ];
               in
               {
                 profile = [
@@ -48150,11 +47869,9 @@ In this section I define custom aspect sets. These are mostly used to combine co
           "obs-studio"
           "opkssh"
           "spotify-player"
-          "swayosd"
           "vesktop"
           "shikane"
           "syncthing-tray"
-          "waybar"
         ];
 
         swarselsystems.trayApplets.obsidian.enable = false;
@@ -48610,10 +48327,21 @@ Profiles for Nix-on-Droid hosts, mirroring the NixOS ones: =profile-base= is add
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/python.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.python = {
-      enable = true;
-      custom.python-indent-guess-indent-offset-verbose = false;
-    };
+    flake.modules.homeManager.emacs-init =
+      { lib, pkgs, ... }:
+      let
+        python = ''"${lib.getExe pkgs.python3}"'';
+      in
+      {
+        config.programs.emacs.init.usePackage.python = {
+          enable = true;
+          custom = {
+            org-babel-python-command = python;
+            python-indent-guess-indent-offset-verbose = false;
+            python-shell-interpreter = python;
+          };
+        };
+      };
   }
 #+end_src
 
@@ -49970,7 +49698,7 @@ It supports all functions that I normally need. Note that getting completions fo
                            '((nix-mode nix-ts-mode)
                              . ("env" "NIX_CONFIG=plugin-files = ${
                                pkgs.nix-plugins.override { nixComponents = pkgs.nixVersions.latest.libs; }
-                             }/lib/nix/plugins" "nixd")))
+                             }/lib/nix/plugins" "${lib.getExe pkgs.nixd}")))
             '';
             init = ''
               (setq-default eglot-workspace-configuration
@@ -50104,13 +49832,24 @@ Adds functions for formatting shell scripts. Similarly to [[#h:5ca7484b-b9d6-402
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/shfmt.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage.shfmt = {
-      enable = true;
-      custom = {
-        shfmt-arguments = '''("-i" "4" "-s" "-sr")'';
-        shfmt-command = ''"shfmt"'';
+    flake.modules.homeManager.emacs-init =
+      { lib, pkgs, ... }:
+      let
+        shfmt = ''"${lib.getExe pkgs.shfmt}"'';
+      in
+      {
+        config.programs.emacs.init.usePackage.shfmt = {
+          config = ''
+            (with-eval-after-load 'apheleia
+              (setf (car (alist-get 'shfmt apheleia-formatters)) ${shfmt}))
+          '';
+          enable = true;
+          custom = {
+            shfmt-arguments = '''("-i" "4" "-s" "-sr")'';
+            shfmt-command = shfmt;
+          };
+        };
       };
-    };
   }
 #+end_src
 
@@ -50874,59 +50613,72 @@ Dirvish is an improvement upon the dired-framework and has more features like fi
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/dirvish.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-      dirvish = {
-        config = ''
-          (dirvish-peek-mode)
-          (dirvish-side-follow-mode)
-        '';
-        enable = true;
-        bind = {
-          "<DUMMY-i> d" = "'dirvish";
-          "C-=" = "'dirvish-side";
+    flake.modules.homeManager.emacs-init =
+      { lib, pkgs, ... }:
+      {
+        config.programs.emacs.init.usePackage = {
+          dirvish = {
+            config = ''
+              (dirvish-peek-mode)
+              (dirvish-side-follow-mode)
+            '';
+            enable = true;
+            bind = {
+              "<DUMMY-i> d" = "'dirvish";
+              "C-=" = "'dirvish-side";
+            };
+            bindLocal.dirvish-mode-map = {
+              "/" = "dirvish-narrow";
+              "<left>" = "dired-up-directory";
+              "<right>" = "dired-find-file";
+              J = "dirvish-history-jump";
+              M-b = "dirvish-history-go-backward";
+              M-e = "dirvish-emerge-menu";
+              M-f = "dirvish-history-go-forward";
+              M-j = "dirvish-fd-jump";
+              M-l = "dirvish-ls-switches-menu";
+              M-m = "dirvish-mark-menu";
+              M-s = "dirvish-setup-menu";
+              M-t = "dirvish-layout-toggle";
+              TAB = "dirvish-subtree-toggle";
+              a = "dirvish-quick-access";
+              f = "dirvish-file-info-menu";
+              h = "dired-up-directory";
+              j = "evil-next-visual-line";
+              k = "evil-previous-visual-line";
+              l = "dired-find-file";
+              y = "dirvish-yank-menu";
+              z = "dirvish-history-last";
+            };
+            custom = {
+              delete-by-moving-to-trash = true;
+              dired-listing-switches = ''"-l --almost-all --human-readable --group-directories-first --no-group"'';
+              dirvish-7z-program = ''"${lib.getExe pkgs._7zz}"'';
+              dirvish-attributes = "'(vc-state subtree-state nerd-icons collapse file-time file-size)";
+              dirvish-epub-thumbnailer-program = ''"${lib.getExe pkgs.epub-thumbnailer}"'';
+              dirvish-fc-query-program = ''"${lib.getExe' pkgs.fontconfig "fc-query"}"'';
+              dirvish-ffmpegthumbnailer-program = ''"${lib.getExe pkgs.ffmpegthumbnailer}"'';
+              dirvish-magick-program = ''"${lib.getExe' pkgs.imagemagick "magick"}"'';
+              dirvish-mediainfo-program = ''"${lib.getExe pkgs.mediainfo}"'';
+              dirvish-pdfinfo-program = ''"${lib.getExe' pkgs.poppler-utils "pdfinfo"}"'';
+              dirvish-pdftoppm-program = ''"${lib.getExe' pkgs.poppler-utils "pdftoppm"}"'';
+              dirvish-quick-access-entries = ''
+                '(("h" "~/"              "Home")
+                  ("c" "~/.dotfiles/"    "Config")
+                  ("d" "~/Downloads/"    "Downloads")
+                  ("D" "~/Documents/"    "Documents")
+                  ("p" "~/Documents/GitHub/"  "Projects")
+                  ("/" "/"               "Root"))'';
+              dirvish-vipsthumbnail-program = ''"${lib.getExe' pkgs.vips "vipsthumbnail"}"'';
+            };
+            init = "(dirvish-override-dired-mode)";
+          };
+          general.config = ''
+            (swarsel/leader-keys
+              "md" '(dirvish :which-key "dirvish"))
+          '';
         };
-        bindLocal.dirvish-mode-map = {
-          "/" = "dirvish-narrow";
-          "<left>" = "dired-up-directory";
-          "<right>" = "dired-find-file";
-          J = "dirvish-history-jump";
-          M-b = "dirvish-history-go-backward";
-          M-e = "dirvish-emerge-menu";
-          M-f = "dirvish-history-go-forward";
-          M-j = "dirvish-fd-jump";
-          M-l = "dirvish-ls-switches-menu";
-          M-m = "dirvish-mark-menu";
-          M-s = "dirvish-setup-menu";
-          M-t = "dirvish-layout-toggle";
-          TAB = "dirvish-subtree-toggle";
-          a = "dirvish-quick-access";
-          f = "dirvish-file-info-menu";
-          h = "dired-up-directory";
-          j = "evil-next-visual-line";
-          k = "evil-previous-visual-line";
-          l = "dired-find-file";
-          y = "dirvish-yank-menu";
-          z = "dirvish-history-last";
-        };
-        custom = {
-          delete-by-moving-to-trash = true;
-          dired-listing-switches = ''"-l --almost-all --human-readable --group-directories-first --no-group"'';
-          dirvish-attributes = "'(vc-state subtree-state nerd-icons collapse file-time file-size)";
-          dirvish-quick-access-entries = ''
-            '(("h" "~/"              "Home")
-              ("c" "~/.dotfiles/"    "Config")
-              ("d" "~/Downloads/"    "Downloads")
-              ("D" "~/Documents/"    "Documents")
-              ("p" "~/Documents/GitHub/"  "Projects")
-              ("/" "/"               "Root"))'';
-        };
-        init = "(dirvish-override-dired-mode)";
       };
-      general.config = ''
-        (swarsel/leader-keys
-          "md" '(dirvish :which-key "dirvish"))
-      '';
-    };
   }
 #+end_src
 *** undo-tree
@@ -51007,146 +50759,151 @@ The hook functions are defined here: [[#h:b92a18cf-eec3-4605-a8c2-37133ade3574][
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/mail.nix
   {
-    flake.modules.homeManager.emacs-init.config.programs.emacs.init.usePackage = {
-      general.config = ''
-        (swarsel/leader-keys
-          "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e"))
-      '';
+    flake.modules.homeManager.emacs-init =
+      { lib, pkgs, ... }:
+      {
+        config.programs.emacs.init.usePackage = {
+          general.config = ''
+            (swarsel/leader-keys
+              "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e"))
+          '';
 
-      mu4e = {
-        config = ''
-          (advice-add 'mu4e--server-filter :around #'suppress-messages)
+          mu4e = {
+            config = ''
+              (advice-add 'mu4e--server-filter :around #'suppress-messages)
 
-          (setq send-mail-function 'sendmail-send-it)
-          (setq mu4e-change-filenames-when-moving t)
-          (setq mu4e-mu-binary (executable-find "mu"))
-          (setq mu4e-hide-index-messages t)
+              (setq send-mail-function 'sendmail-send-it)
+              (setq mu4e-change-filenames-when-moving t)
+              (setq mu4e-mu-binary (executable-find "mu"))
+              (setq mu4e-hide-index-messages t)
 
-          (setq mu4e-search-skip-duplicates nil)
+              (setq mu4e-search-skip-duplicates nil)
 
-          (setq mu4e-update-interval 60)
-          (setq mu4e-get-mail-command "systemctl --user start mbsync.service")
-          (setq mu4e-maildir "~/Mail")
+              (setq mu4e-update-interval 60)
+              (setq mu4e-get-mail-command "systemctl --user start mbsync.service")
+              (setq mu4e-maildir "~/Mail")
 
-          (setq mu4e-view-show-images t)
-          (when (fboundp 'imagemagick-register-types)
-            (imagemagick-register-types))
+              (setq mu4e-view-show-images t)
+              (when (fboundp 'imagemagick-register-types)
+                (imagemagick-register-types))
 
-          (setq mu4e-drafts-folder "/Drafts")
-          (setq mu4e-sent-folder   "/Sent Mail")
-          (setq mu4e-refile-folder "/All Mail")
-          (setq mu4e-trash-folder  "/Trash")
+              (setq mu4e-drafts-folder "/Drafts")
+              (setq mu4e-sent-folder   "/Sent Mail")
+              (setq mu4e-refile-folder "/All Mail")
+              (setq mu4e-trash-folder  "/Trash")
 
-          (setq mu4e-maildir-shortcuts
-                '((:maildir "/leon/Inbox"    :key ?1)
-                  (:maildir "/nautilus/Inbox" :key ?2)
-                  (:maildir "/mrswarsel/Inbox"     :key ?3)
-                  (:maildir "/work/Inbox"     :key ?4)
-                  (:maildir "/Sent Mail"     :key ?s)
-                  (:maildir "/Trash"     :key ?t)
-                  (:maildir "/Drafts"     :key ?d)
-                  (:maildir "/All Mail"     :key ?a)))
+              (setq mu4e-maildir-shortcuts
+                    '((:maildir "/leon/Inbox"    :key ?1)
+                      (:maildir "/nautilus/Inbox" :key ?2)
+                      (:maildir "/mrswarsel/Inbox"     :key ?3)
+                      (:maildir "/work/Inbox"     :key ?4)
+                      (:maildir "/Sent Mail"     :key ?s)
+                      (:maildir "/Trash"     :key ?t)
+                      (:maildir "/Drafts"     :key ?d)
+                      (:maildir "/All Mail"     :key ?a)))
 
-          (setq user-mail-address (getenv "SWARSEL_MAIL4")
-                user-full-name (getenv "SWARSEL_FULLNAME"))
+              (setq user-mail-address (getenv "SWARSEL_MAIL4")
+                    user-full-name (getenv "SWARSEL_FULLNAME"))
 
-          (setq mu4e-user-mail-address-list
-                (mapcar #'intern (split-string (or (getenv "SWARSEL_MAIL_ALL") "") "[ ,]+" t)))
+              (setq mu4e-user-mail-address-list
+                    (mapcar #'intern (split-string (or (getenv "SWARSEL_MAIL_ALL") "") "[ ,]+" t)))
 
-          (setq mu4e--log-max-size 1000)
+              (setq mu4e--log-max-size 1000)
 
-          (mu4e t)
+              (mu4e t)
 
-          (let ((work (getenv "SWARSEL_MAIL_WORK")))
-            (when (and work (not (string-empty-p work)))
-              (setq swarsel-smime-cert-path "~/.Certificates/$SWARSEL_MAIL_WORK.pem")
-              (setq swarsel-smime-cert-path (substitute-env-vars swarsel-smime-cert-path))
-              (setq mml-secure-prefer-scheme 'smime)
-              (setq mml-secure-smime-sign-with-sender t)
-              (add-hook 'mu4e-compose-mode-hook
-                        (lambda ()
-                          (when (and (boundp 'user-mail-address)
-                                     (stringp user-mail-address)
-                                     (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
-                            (mml-secure-message-sign-smime))))
-              (setq smime-keys
-                    `((,(getenv "SWARSEL_MAIL_WORK")
-                       ,swarsel-smime-cert-path
-                       ("~/Certificates/harica-root.pem"
-                        "~/Certificates/harica-intermediate.pem"))))
-              ))
+              (let ((work (getenv "SWARSEL_MAIL_WORK")))
+                (when (and work (not (string-empty-p work)))
+                  (setq swarsel-smime-cert-path "~/.Certificates/$SWARSEL_MAIL_WORK.pem")
+                  (setq swarsel-smime-cert-path (substitute-env-vars swarsel-smime-cert-path))
+                  (setq mml-secure-prefer-scheme 'smime)
+                  (setq mml-secure-smime-sign-with-sender t)
+                  (add-hook 'mu4e-compose-mode-hook
+                            (lambda ()
+                              (when (and (boundp 'user-mail-address)
+                                         (stringp user-mail-address)
+                                         (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+                                (mml-secure-message-sign-smime))))
+                  (setq smime-keys
+                        `((,(getenv "SWARSEL_MAIL_WORK")
+                           ,swarsel-smime-cert-path
+                           ("~/Certificates/harica-root.pem"
+                            "~/Certificates/harica-intermediate.pem"))))
+                  ))
 
-          (setq mu4e-bookmarks
-                `((:name "Unread messages" :query "flag:unread AND NOT flag:trashed" :key 117)
-                  (:name "Undeleted messages" :query "NOT flag:trashed" :key 103)
-                  (:name "Today's messages" :query "date:today..now" :key 116)
-                  (:name "Today's undeleted messages" :query "date:today..now AND NOT flag:trashed" :key 100)
-                  (:name "Last 7 days" :query "date:7d..now" :hide-unread t :key 119)
-                  (:name "Messages with images" :query "mime:image/*" :key 112))
-                )
-        '';
-        enable = true;
-        package = "mu4e";
-        hook = [
-          "(mu4e-compose-mode . swarsel/mu4e-send-from-correct-address)"
-          "(mu4e-compose-post . swarsel/mu4e-restore-default)"
-        ];
-        init = ''
-          (defun swarsel/mu4e-switch-account ()
-            (interactive)
-            (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
-              (setq user-mail-address account)))
+              (setq mu4e-bookmarks
+                    `((:name "Unread messages" :query "flag:unread AND NOT flag:trashed" :key 117)
+                      (:name "Undeleted messages" :query "NOT flag:trashed" :key 103)
+                      (:name "Today's messages" :query "date:today..now" :key 116)
+                      (:name "Today's undeleted messages" :query "date:today..now AND NOT flag:trashed" :key 100)
+                      (:name "Last 7 days" :query "date:7d..now" :hide-unread t :key 119)
+                      (:name "Messages with images" :query "mime:image/*" :key 112))
+                    )
+            '';
+            enable = true;
+            package = "mu4e";
+            hook = [
+              "(mu4e-compose-mode . swarsel/mu4e-send-from-correct-address)"
+              "(mu4e-compose-post . swarsel/mu4e-restore-default)"
+            ];
+            init = ''
+              (defun swarsel/mu4e-switch-account ()
+                (interactive)
+                (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
+                  (setq user-mail-address account)))
 
-          (defun swarsel/mu4e-rfs--matching-address ()
-            (cl-loop for to-data in (mu4e-message-field mu4e-compose-parent-message :to)
-                     for to-email = (pcase to-data
-                                      (`(_ . email) email)
-                                      (x (mu4e-contact-email x)))
-                     for to-name =  (pcase to-data
-                                      (`(_ . name) name)
-                                      (x (mu4e-contact-name x)))
-                     when (mu4e-user-mail-address-p to-email)
-                     return (list to-name to-email)))
+              (defun swarsel/mu4e-rfs--matching-address ()
+                (cl-loop for to-data in (mu4e-message-field mu4e-compose-parent-message :to)
+                         for to-email = (pcase to-data
+                                          (`(_ . email) email)
+                                          (x (mu4e-contact-email x)))
+                         for to-name =  (pcase to-data
+                                          (`(_ . name) name)
+                                          (x (mu4e-contact-name x)))
+                         when (mu4e-user-mail-address-p to-email)
+                         return (list to-name to-email)))
 
-          (defun swarsel/mu4e-send-from-correct-address ()
-            (when mu4e-compose-parent-message
-              (save-excursion
-                (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
-                  (cl-destructuring-bind (from-user from-addr) dest
-                    (setq user-mail-address from-addr)
-                    (when (and (boundp 'user-mail-address)
-                               (stringp user-mail-address)
-                               (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
-                      (mml-secure-message-sign-smime))
-                    (message-position-on-field "From")
-                    (message-beginning-of-line)
-                    (delete-region (point) (line-end-position))
-                    (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
+              (defun swarsel/mu4e-send-from-correct-address ()
+                (when mu4e-compose-parent-message
+                  (save-excursion
+                    (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
+                      (cl-destructuring-bind (from-user from-addr) dest
+                        (setq user-mail-address from-addr)
+                        (when (and (boundp 'user-mail-address)
+                                   (stringp user-mail-address)
+                                   (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+                          (mml-secure-message-sign-smime))
+                        (message-position-on-field "From")
+                        (message-beginning-of-line)
+                        (delete-region (point) (line-end-position))
+                        (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
 
-          (defun swarsel/mu4e-restore-default ()
-            (setq user-mail-address (getenv "SWARSEL_MAIL4")
-                  user-full-name (getenv "SWARSEL_FULLNAME")))
-        '';
+              (defun swarsel/mu4e-restore-default ()
+                (setq user-mail-address (getenv "SWARSEL_MAIL4")
+                      user-full-name (getenv "SWARSEL_FULLNAME")))
+            '';
+          };
+
+          mu4e-alert = {
+            config = ''
+              (mu4e-alert-enable-notifications)
+              (mu4e-alert-set-default-style 'libnotify)
+              (setq mu4e-alert-interesting-mail-query
+                    (concat "(maildir:/leon/Inbox AND date:today..now"
+                            " OR maildir:/work/Inbox AND date:today..now)"
+                            " AND flag:unread"))
+              (alert-add-rule
+               :category "mu4e-alert"
+               :predicate (lambda (_) (string-match-p "^mu4e-" (symbol-name major-mode)))
+               :continue t)
+
+              (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+            '';
+            enable = true;
+            custom.alert-libnotify-command = ''"${lib.getExe' pkgs.libnotify "notify-send"}"'';
+          };
+        };
       };
-
-      mu4e-alert = {
-        config = ''
-          (mu4e-alert-enable-notifications)
-          (mu4e-alert-set-default-style 'libnotify)
-          (setq mu4e-alert-interesting-mail-query
-                (concat "(maildir:/leon/Inbox AND date:today..now"
-                        " OR maildir:/work/Inbox AND date:today..now)"
-                        " AND flag:unread"))
-          (alert-add-rule
-           :category "mu4e-alert"
-           :predicate (lambda (_) (string-match-p "^mu4e-" (symbol-name major-mode)))
-           :continue t)
-
-          (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
-        '';
-        enable = true;
-      };
-    };
   }
 #+end_src
 
@@ -51462,27 +51219,42 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 
 #+begin_src nix-ts :tangle modules/client/programs/emacs/jinx.nix
   {
-    flake.modules.homeManager.emacs-init = { pkgs, ... }: {
-      config = {
-        programs.emacs.init.usePackage.jinx = {
-          enable = true;
-          bind = {
-            "C-M-$" = "jinx-languages";
-            "M-$" = "jinx-correct";
-          };
-          custom.jinx-languages = ''"en_US"'';
-          hook = [
-            "(text-mode . jinx-mode)"
-            "(prog-mode . jinx-mode)"
-            "(conf-mode . jinx-mode)"
-          ];
-        };
-        home.packages = [
-          pkgs.enchant
-          pkgs.hunspellDicts.en_US
+    flake.modules.homeManager.emacs-init =
+      { lib, pkgs, ... }:
+      let
+        dictionaries = with pkgs.hunspellDicts; [
+          de_AT
+          de_CH
+          de_DE
+          en_GB-large
+          en_US-large
         ];
+      in
+      {
+        config = {
+          programs.emacs.init.usePackage = {
+            ispell = {
+              enable = true;
+              custom.ispell-program-name = ''"${lib.getExe (pkgs.hunspell.withDicts (_: dictionaries))}"'';
+            };
+            jinx = {
+              enable = true;
+              bind = {
+                "C-M-$" = "jinx-languages";
+                "M-$" = "jinx-correct";
+              };
+              custom.jinx-languages = ''"en_US"'';
+              hook = [
+                "(text-mode . jinx-mode)"
+                "(prog-mode . jinx-mode)"
+                "(conf-mode . jinx-mode)"
+              ];
+            };
+          };
+          home.packages = dictionaries;
+          systemd.user.sessionVariables.DICPATH = lib.makeSearchPath "share/hunspell" dictionaries;
+        };
       };
-    };
   }
 #+end_src
 *** pulsar

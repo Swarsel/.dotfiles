@@ -18,10 +18,7 @@
               cdb
               cdr
               bak
-              waybarupdate
-              opacitytoggle
               fs-diff
-              github-notifications
               t2ts
               ts2t
               vershell

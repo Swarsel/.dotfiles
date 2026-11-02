@@ -1,10 +1,3 @@
 {
-  flake.modules.nixos.hardwarecompatibility-ledger = { pkgs, ... }: {
-    config = {
-      services.udev.packages = with pkgs; [
-        ledger-udev-rules
-      ];
-      hardware.ledger.enable = true;
-    };
-  };
+  flake.modules.nixos.hardwarecompatibility-ledger.config.hardware.ledger.enable = true;
 }

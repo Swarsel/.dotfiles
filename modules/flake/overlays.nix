@@ -25,10 +25,6 @@ let
       "dwarfs"
       "wayprompt"
     ];
-    stable24_11 = [
-      "python39"
-      "vieb"
-    ];
     stable25_05 = [
       "steam-fhsenv-without-steam"
       "transmission_3"

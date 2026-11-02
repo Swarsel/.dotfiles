@@ -38,7 +38,6 @@ in
             wine
             protonplus
             winetricks
-            libudev-zero
             dwarfs
             fuse-overlayfs
             # steam
@@ -58,9 +57,7 @@ in
             prismlauncher # has overrides
             temurin-bin-17
 
-            pokefinder
             retroarch
-            flips
           ];
           #   };
           # };

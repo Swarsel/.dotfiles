@@ -56,11 +56,9 @@ in
         "obs-studio"
         "opkssh"
         "spotify-player"
-        "swayosd"
         "vesktop"
         "shikane"
         "syncthing-tray"
-        "waybar"
       ];
 
       swarselsystems.trayApplets.obsidian.enable = false;

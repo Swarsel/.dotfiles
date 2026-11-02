@@ -62,7 +62,6 @@ in
   };
   home-manager.users."${primaryUser}".swarselsystems = {
     SecondaryGpuCard = "pci-0000_03_00_0";
-    cpuCount = 16;
     isSecondaryGpu = true;
     monitors.main = {
       mode = "2560x1600";
@@ -72,11 +71,6 @@ in
       position = "2560,0";
       scale = "1";
       workspace = "15:L";
-    };
-    temperatureHwmon = {
-      input-filename = "temp4_input";
-      isAbsolutePath = true;
-      path = "/sys/devices/virtual/thermal/thermal_zone0/";
     };
   };
 }

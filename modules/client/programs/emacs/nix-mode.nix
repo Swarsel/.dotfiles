@@ -9,7 +9,7 @@
                          '((nix-mode nix-ts-mode)
                            . ("env" "NIX_CONFIG=plugin-files = ${
                              pkgs.nix-plugins.override { nixComponents = pkgs.nixVersions.latest.libs; }
-                           }/lib/nix/plugins" "nixd")))
+                           }/lib/nix/plugins" "${lib.getExe pkgs.nixd}")))
           '';
           init = ''
             (setq-default eglot-workspace-configuration

@@ -262,6 +262,17 @@
             openshift
 
             rustdesk-vbc
+
+            remmina
+            packer
+            gnumake
+            libisoburn
+            govc
+            opentofu
+            terragrunt
+            graphviz
+            azure-cli
+            gh
           ];
           sessionVariables.AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
         };

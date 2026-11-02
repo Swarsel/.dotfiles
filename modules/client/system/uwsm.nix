@@ -44,17 +44,10 @@
           );
         programs.uwsm = {
           enable = true;
-          waylandCompositors = {
-            niri = lib.mkIf (config.programs ? niri) {
-              binPath = "/run/current-system/sw/bin/niri-session";
-              comment = "Niri compositor managed by UWSM";
-              prettyName = "Niri";
-            };
-            sway = {
-              binPath = "/run/current-system/sw/bin/sway";
-              comment = "Sway compositor managed by UWSM";
-              prettyName = "Sway";
-            };
+          waylandCompositors.niri = lib.mkIf (config.programs ? niri) {
+            binPath = "/run/current-system/sw/bin/niri-session";
+            comment = "Niri compositor managed by UWSM";
+            prettyName = "Niri";
           };
         };
       };

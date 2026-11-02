@@ -5,6 +5,7 @@
         {
           config,
           lib,
+          pkgs,
           confLib,
           vars,
           nixosConfig ? null,
@@ -136,7 +137,7 @@
                     "${modifier}+Shift+Up" = "move up 40px";
                     "${modifier}+Shift+a" =
                       "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
-                    "${modifier}+Shift+c" = "exec qalculate-gtk";
+                    "${modifier}+Shift+c" = "exec ${lib.getExe pkgs.qalculate-gtk}";
                     "${modifier}+Shift+e" =
                       "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
                     "${modifier}+Shift+f" = "exec swaymsg fullscreen";
@@ -157,7 +158,7 @@
                     "${modifier}+d" = "exec swarselcheck -d";
                     "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
                     "${modifier}+f" = "exec glide";
-                    "${modifier}+h" = "exec hyprpicker | wl-copy";
+                    "${modifier}+h" = "exec ${lib.getExe pkgs.hyprpicker} | wl-copy";
                     "${modifier}+m" = "exec swaymsg workspace back_and_forth";
                     "${modifier}+o" = "exec pass-fuzzel --otp";
                     "${modifier}+p" = "exec pass-fuzzel";
