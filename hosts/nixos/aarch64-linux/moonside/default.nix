@@ -41,6 +41,7 @@ in
     self.modules.nixos.metube
     self.modules.nixos.collabora-online
     self.modules.nixos.filestash
+    self.modules.nixos.spliit
     self.modules.nixos.gatus
   ];
   swarselsystems = {
@@ -60,6 +61,7 @@ in
       paths = [
         "/persist/opt/minecraft"
       ];
+      postgresDatabases = [ "spliit" ];
       repository = config.repo.secrets.local.resticRepo;
     };
   };

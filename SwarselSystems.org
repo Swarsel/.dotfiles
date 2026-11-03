@@ -397,7 +397,7 @@ This is a comprehensive list of the services/components ran by my server machine
   | 🐽 **Threat Detection**      | [CrowdSec](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/crowdsec.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
   | 👀 **DNS Records**           | [Knot](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/knot.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
   | 👁️ **Monitoring**            | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/grafana.nix) + [Mimir](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/mimir.nix) + [Loki](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/loki.nix) + [Tempo](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/tempo.nix) + [Alloy](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/alloy.nix) + [Pyroscope](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/pyroscope.nix) + [Gotify](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/gotify.nix) |
-  | 💸 **Finance**               | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefly-iii.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+  | 💸 **Finance**               | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/firefly-iii.nix) + [Spliit](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/spliit.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
   | 💾 **Backups**               | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/restic.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
   | 📁 **Filesharing**           | [Nextcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/nextcloud.nix) +  [CopyParty](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/copyparty.nix) +  [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/croc.nix). Also [slskd](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/slskd.nix), [transmission + friends](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/transmission.nix)                                                                                                                                                                                                                                                                                                                                                           |
   | 📄 **Documents**             | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/paperless.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -7826,6 +7826,7 @@ This machine used to be my proxy server, a functionality that is now provided by
       self.modules.nixos.metube
       self.modules.nixos.collabora-online
       self.modules.nixos.filestash
+      self.modules.nixos.spliit
       self.modules.nixos.gatus
     ];
     swarselsystems = {
@@ -7845,6 +7846,7 @@ This machine used to be my proxy server, a functionality that is now provided by
         paths = [
           "/persist/opt/minecraft"
         ];
+        postgresDatabases = [ "spliit" ];
         repository = config.repo.secrets.local.resticRepo;
       };
     };
@@ -38299,6 +38301,183 @@ For many years I depended on the plentiful options of services to download YouTu
   }
 #+end_src
 
+**** Spliit
+:PROPERTIES:
+:CUSTOM_ID: h:c4d3ed37-cbc5-473f-abe4-5d9a9073b3a8
+:END:
+
+Interim podman implementation of spliit until (if?) https://github.com/NixOS/nixpkgs/pull/394621 is merged.
+
+Replaces cospend in [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextcloud]]
+
+#+begin_src nix-ts :tangle modules/server/services/spliit.nix
+  {
+    flake.modules.nixos.spliit =
+      {
+        self,
+        root,
+        config,
+        lib,
+        confLib,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            name = "spliit";
+            port = 8089;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDomain
+          serviceName
+          servicePort
+          topologyContainerName
+          ;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          idmServer
+          isHome
+          nginxAccessRules
+          webProxy
+          ;
+
+        inherit (config.swarselsystems) sopsFile;
+
+        containerRev = "sha256:cfaf0f84ef4f11cd3e4c46329039a0f1f51a7d7bf8cc218bf7c1b366e58a99f1";
+        containerPort = 3000;
+        postgresSocketDir = "/run/postgresql";
+      in
+      {
+        imports = [
+          self.modules.nixos.podman
+          self.modules.nixos.postgresql
+        ];
+        config = {
+          swarselsystems = {
+            enabledServerModules = [ serviceName ];
+            server.postgresql.rolePasswordFiles.${serviceName} =
+              config.sops.secrets."${serviceName}-db-password".path;
+          };
+          topology.nodes.${topologyContainerName}.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
+            info = "https://${serviceDomain}";
+            name = lib.swarselsystems.toCapitalized serviceName;
+          };
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              expectedBodyRegex = ''"status":\s*"healthy"'';
+              path = "/api/health";
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          sops = {
+            secrets."${serviceName}-db-password" = {
+              inherit sopsFile;
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+            };
+            templates."${serviceName}-env".content =
+              let
+                databaseUrl = "postgresql://${serviceName}:${
+                  config.sops.placeholder."${serviceName}-db-password"
+                }@localhost/${serviceName}?host=${postgresSocketDir}";
+              in
+              ''
+                POSTGRES_PRISMA_URL=${databaseUrl}
+                POSTGRES_URL_NON_POOLING=${databaseUrl}
+              '';
+          };
+          services.postgresql = {
+            authentication = ''
+              local ${serviceName} ${serviceName} scram-sha-256
+            '';
+            ensureDatabases = [ serviceName ];
+            ensureUsers = [
+              {
+                ensureDBOwnership = true;
+                name = serviceName;
+              }
+            ];
+          };
+          virtualisation.oci-containers.containers.${serviceName} = {
+            environment = {
+              BASE_URL = "https://${serviceDomain}";
+              DEFAULT_CURRENCY_CODE = "EUR";
+              NEXT_TELEMETRY_DISABLED = "1";
+            };
+            environmentFiles = [ config.sops.templates."${serviceName}-env".path ];
+            image = "ghcr.io/spliit-app/spliit@${containerRev}";
+            ports = [ "${builtins.toString servicePort}:${builtins.toString containerPort}" ];
+            volumes = [ "${postgresSocketDir}:${postgresSocketDir}" ];
+          };
+          systemd.services."podman-${serviceName}" = {
+            after = [ "postgresql-setup.service" ];
+            requires = [ "postgresql-setup.service" ];
+          };
+          nodes =
+            let
+              genNginx =
+                args:
+                lib.mkMerge [
+                  (confLib.genNginx (
+                    {
+                      inherit serviceDomain serviceName servicePort;
+                      oauth2 = true;
+                      oauth2Groups = [ "${serviceName}_access" ];
+                    }
+                    // args
+                  ))
+                  {
+                    virtualHosts.${serviceDomain}.locations =
+                      lib.genAttrs
+                        [
+                          "/api/trpc/"
+                          "~ ^/(?:_next/|logo/|[^/]+\\.\\w+$)"
+                          "~ ^/groups/(?!create(?:/|$))[^/]+"
+                        ]
+                        (_: {
+                          bypassAuth = true;
+                          proxyPass = "http://${serviceName}";
+                          setOauth2Headers = false;
+                        })
+                      // {
+                        "~ ^/api/trpc/(?:[^/]*,)?groups\\.create(?:,|$)".proxyPass = "http://${serviceName}";
+                      };
+                  }
+                ];
+            in
+            lib.mkMerge [
+              { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+              { ${webProxy}.services.nginx = genNginx { inherit serviceAddress; }; }
+              {
+                ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx {
+                  extraConfig = nginxAccessRules;
+                  serviceAddress = homeServiceAddress;
+                });
+              }
+            ];
+
+        };
+      }
+
+    ;
+  }
+#+end_src
 **** [CURRENTLY UNUSED] Snipe-IT
 :PROPERTIES:
 :CUSTOM_ID: h:470f7ee3-3307-4949-b0fa-403171e3859a
