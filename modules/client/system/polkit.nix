@@ -5,7 +5,10 @@
       #   config.sops.secrets.harica-root-ca.path
       # ];
       pam.services = lib.mkIf (!minimal) {
-        login.u2fAuth = true;
+        login = {
+          enableGnomeKeyring = lib.mkForce false;
+          u2fAuth = true;
+        };
         sshd.u2fAuth = false;
         sudo.u2fAuth = true;
         swaylock = {
