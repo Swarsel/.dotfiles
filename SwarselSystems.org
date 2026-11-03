@@ -411,6 +411,7 @@ This is a comprehensive list of the services/components ran by my server machine
   | 📺 **Video Streaming**       | [Invidious](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious.nix) + [Invidious Companion](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/invidious-companion.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
   | 📼 **Videos**                | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/jellyfin.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
   | 🔄 **File Sync**             | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/syncthing.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+  | 🚀 **Speedtest**             | [LibreSpeed](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/librespeed.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
   | 🔎 **Search Engine**         | [SearXNG](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/searx.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
   | 🔑 **Cert-based SSH**        | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/infra/opkssh.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
   | 🔗 **Link Shortener**        | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/server/services/shlink.nix)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -7827,6 +7828,7 @@ This machine used to be my proxy server, a functionality that is now provided by
       self.modules.nixos.metube
       self.modules.nixos.collabora-online
       self.modules.nixos.filestash
+      self.modules.nixos.librespeed
       self.modules.nixos.opnform
       self.modules.nixos.spliit
       self.modules.nixos.gatus
@@ -38841,6 +38843,131 @@ Replaces Forms and Polls from [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextclo
     ;
   }
 #+end_src
+
+**** LibreSpeed
+:PROPERTIES:
+:CUSTOM_ID: h:83f14379-fe2e-48e8-848b-12f6c70bcb71
+:END:
+
+A simple speedtest, using the NixOS module with the bundled frontend. Proxy buffering is disabled on the reverse proxy so the measured speeds are not skewed by nginx.
+
+#+begin_src nix-ts :tangle modules/server/services/librespeed.nix
+  {
+    flake.modules.nixos.librespeed =
+      {
+        root,
+        lib,
+        confLib,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            name = "librespeed";
+            port = 8092;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDomain
+          serviceName
+          servicePort
+          ;
+        inherit (confLib.static)
+          homeServiceAddress
+          homeWebProxy
+          isHome
+          nginxAccessRules
+          notificationMail
+          webProxy
+          ;
+
+        extraConfigLoc = ''
+          gzip off;
+          proxy_buffering off;
+          proxy_request_buffering off;
+        '';
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName} = {
+            icon = root "files/topology-images/${serviceName}.png";
+            info = "https://${serviceDomain}";
+            name = "LibreSpeed";
+          };
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+            };
+            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+            monitoring.http = confLib.mkHttpMonitoring {
+              inherit serviceName servicePort;
+              expectedBodyRegex = "LibreSpeed";
+            };
+            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          };
+          services.${serviceName} = {
+            enable = true;
+            downloadIPDB = false;
+            frontend = {
+              enable = true;
+              contactEmail = notificationMail.address;
+              servers = [
+                {
+                  name = serviceDomain;
+                  server = "//${serviceDomain}";
+                }
+              ];
+              settings.telemetry_level = "disabled";
+            };
+            settings.listen_port = servicePort;
+          };
+          nodes = lib.mkMerge [
+            {
+              ${webProxy}.services.nginx = confLib.genNginx {
+                inherit
+                  extraConfigLoc
+                  serviceAddress
+                  serviceDomain
+                  serviceName
+                  servicePort
+                  ;
+                maxBody = 0;
+              };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit
+                    extraConfigLoc
+                    serviceDomain
+                    serviceName
+                    servicePort
+                    ;
+                  extraConfig = nginxAccessRules;
+                  maxBody = 0;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
+
+        };
+      }
+
+    ;
+  }
+#+end_src
+
 **** [CURRENTLY UNUSED] Snipe-IT
 :PROPERTIES:
 :CUSTOM_ID: h:470f7ee3-3307-4949-b0fa-403171e3859a

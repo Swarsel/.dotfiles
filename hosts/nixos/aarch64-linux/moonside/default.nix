@@ -41,6 +41,7 @@ in
     self.modules.nixos.metube
     self.modules.nixos.collabora-online
     self.modules.nixos.filestash
+    self.modules.nixos.librespeed
     self.modules.nixos.opnform
     self.modules.nixos.spliit
     self.modules.nixos.gatus
