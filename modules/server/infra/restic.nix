@@ -27,6 +27,10 @@
                 paths = lib.mkOption {
                   type = lib.types.listOf lib.types.str;
                 };
+                postgresDatabases = lib.mkOption {
+                  default = [ ];
+                  type = lib.types.listOf lib.types.str;
+                };
                 repository = lib.mkOption {
                   type = lib.types.str;
                 };
@@ -63,22 +67,33 @@
           name: target:
           let
             postgresDumpDir = "/var/backup/restic-${name}";
+            postgresDumps =
+              lib.optional target.withPostgres {
+                command = "pg_dumpall --clean --if-exists";
+                file = "dumpall.sql";
+              }
+              ++ map (database: {
+                command = "pg_dump --clean --create --if-exists ${database}";
+                file = "${database}.sql";
+              }) target.postgresDatabases;
           in
           lib.nameValuePair target.bucketName {
             inherit (target) repository;
             backupPrepareCommand = ''
               set -euo pipefail
             ''
-            + lib.optionalString target.withPostgres ''
+            + lib.optionalString (postgresDumps != [ ]) ''
               ${pkgs.coreutils}/bin/install -d -m 0700 -o root -g root ${postgresDumpDir}
-              ${pkgs.util-linux}/bin/runuser -u postgres -- ${config.services.postgresql.package}/bin/pg_dumpall --clean --if-exists > ${postgresDumpDir}/dumpall.sql
-              ${pkgs.coreutils}/bin/chmod 0600 ${postgresDumpDir}/dumpall.sql
-            '';
+            ''
+            + lib.concatMapStrings (dump: ''
+              ${pkgs.util-linux}/bin/runuser -u postgres -- ${config.services.postgresql.package}/bin/${dump.command} > ${postgresDumpDir}/${dump.file}
+              ${pkgs.coreutils}/bin/chmod 0600 ${postgresDumpDir}/${dump.file}
+            '') postgresDumps;
             environmentFile = config.sops.templates."restic-env-${name}".path;
             extraBackupArgs = [ "--group-by host" ];
             initialize = true;
             passwordFile = config.sops.secrets."resticpw-${name}".path;
-            paths = target.paths ++ lib.optional target.withPostgres postgresDumpDir;
+            paths = target.paths ++ lib.optional (postgresDumps != [ ]) postgresDumpDir;
             pruneOpts = [
               "--group-by host"
               "--keep-daily 3"

@@ -19,9 +19,15 @@
       postgresDirPrefix = "/var/lib";
     in
     {
-      options.swarselsystems.server.postgresql.version = lib.mkOption {
-        default = 18;
-        type = lib.types.int;
+      options.swarselsystems.server.postgresql = {
+        rolePasswordFiles = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf lib.types.path;
+        };
+        version = lib.mkOption {
+          default = 18;
+          type = lib.types.int;
+        };
       };
       config = {
         swarselsystems.enabledServerModules = [ "postgresql" ];
@@ -68,8 +74,19 @@
             }
           ];
         };
+        systemd.services."${serviceName}-setup".postStart =
+          lib.mkIf (config.swarselsystems.server.postgresql.rolePasswordFiles != { })
+            (
+              lib.concatMapAttrsStringSep "\n" (role: passwordFile: ''
+                psql -tA -v ON_ERROR_STOP=1 <<'EOF'
+                \set password `cat ${passwordFile}`
+                ALTER ROLE "${role}" WITH PASSWORD :'password';
+                EOF
+              '') config.swarselsystems.server.postgresql.rolePasswordFiles
+            );
 
       };
+      key = "swarsel/server/postgresql";
     }
 
   ;
