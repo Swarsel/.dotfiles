@@ -16,17 +16,28 @@
           ]) aliases
         ) engineAliases
       );
-      engineList = lib.mapAttrsToList (name: aliases: {
-        inherit name;
-        keyword = lib.head aliases;
-      }) engineAliases;
+      searchUrls = lib.concatLists (
+        lib.mapAttrsToList (
+          _: engine:
+          let
+            url = lib.head engine.urls;
+            query = lib.concatMapStringsSep "&" (param: "${param.name}=${param.value}") (url.params or [ ]);
+          in
+          map (alias: [
+            (lib.removePrefix "@" alias)
+            (lib.replaceStrings [ "{searchTerms}" ] [ "%s" ] (
+              url.template + lib.optionalString (query != "") "?${query}"
+            ))
+          ]) (engine.definedAliases or [ ])
+        ) vars.glide.search.engines
+      );
     in
     {
       programs.glide-browser.config = ''
         const engine_keywords = new Map<string, string>(
           (${builtins.toJSON keywordEntries} as [string, string][]).flatMap(([kw, name]): [string, string][] => [[kw, name], ["@" + kw, name]]),
         );
-        const search_engine_list: { name: string; keyword: string }[] = ${builtins.toJSON engineList};
+        const search_urls = ${builtins.toJSON searchUrls} as [string, string][];
 
         function parse_search(args_arr: string[]): { query: string; engine?: string } {
           const [first, ...rest] = args_arr;
@@ -78,12 +89,21 @@
           }
         }
 
-        async function do_open(target: "current" | "tab" | "window", input: string) {
+        function resolve_open(input: string): { url: string } | { search: { query: string; engine?: string } } {
+          const words = input.trim().split(" ").filter(Boolean);
+          if (words[0] === "search") {
+            return { search: { query: words.slice(1).join(" ") } };
+          }
           const url = to_url(input.trim());
-          if (url) {
-            await do_navigate(target, url);
+          return url ? { url } : { search: parse_search(words) };
+        }
+
+        async function do_open(target: "current" | "tab" | "window", input: string) {
+          const resolved = resolve_open(input);
+          if ("url" in resolved) {
+            await do_navigate(target, resolved.url);
           } else {
-            await do_search(target, parse_search(input.split(" ").filter(Boolean)));
+            await do_search(target, resolved.search);
           }
         }
 

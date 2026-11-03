@@ -20,12 +20,15 @@
     }, { description: "Yank the URL of the current tab" });
 
     glide.keymaps.set("normal", "yf", () =>
-      start_hints("a[href]", async ({ content }) => {
-        const href = await content.execute((target) => (target as HTMLAnchorElement).href);
-        if (href) {
-          await navigator.clipboard.writeText(href);
-          flash_message("yanked " + href);
-        }
+      start_hints({
+        selector: "a[href]",
+        action: async ({ content }) => {
+          const href = await content.execute((target) => (target as HTMLAnchorElement).href);
+          if (href) {
+            await navigator.clipboard.writeText(href);
+            flash_message("yanked " + href);
+          }
+        },
       }), { description: "Yank a link URL using find hints" });
 
     glide.keymaps.set(["normal", "insert", "visual"], "<A-d>", () => {}, {

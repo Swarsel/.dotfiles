@@ -1,134 +1,223 @@
 {
   flake.modules.homeManager.glide.programs.glide-browser.config = ''
-    let url_entries: { star: boolean; title: string; url: string }[] = [];
-    let url_entry_set = new Set<string>();
-    const live_history = new Map<string, { star: boolean; title: string; url: string }>();
-    let url_entries_timer: ReturnType<typeof setTimeout> | null = null;
+    type HistoryEntry = { url: string; title: string; visits: number; last_visit: number; match_title: string; match_url: string };
+    type BookmarkEntry = { url: string; title: string; date_added: number; match_title: string; match_url: string };
+    type UrlCandidate = { title: string; url: string; bmark: boolean; search: boolean; visits: number };
 
-    async function refresh_url_entries() {
-      const [bookmarks, history] = await Promise.all([
-        browser.bookmarks.search({}),
-        browser.history.search({ text: "", startTime: 0, maxResults: 1000 }),
-      ]);
-      history.sort((a, b) => (b.lastVisitTime ?? 0) - (a.lastVisitTime ?? 0));
-      const seen = new Set<string>();
-      const entries: typeof url_entries = [];
-      for (const item of [...history.map((h) => ({ ...h, star: false })), ...bookmarks.map((b) => ({ ...b, star: true }))]) {
-        if (!item.url || seen.has(item.url)) continue;
-        seen.add(item.url);
-        entries.push({ star: item.star, title: item.title ?? "", url: item.url });
-      }
-      url_entries = entries;
-      url_entry_set = seen;
+    const HISTORY_RESULTS = 50;
+    const BOOKMARK_WEIGHT = 100;
+    const SEARCH_URL_WEIGHT = 150;
+
+    let history_list: HistoryEntry[] = [];
+    let history_by_url = new Map<string, HistoryEntry>();
+    let bookmark_list: BookmarkEntry[] = [];
+    let top_sites: UrlCandidate[] = [];
+
+    function places_fold(text: string): string {
+      return text.slice(0, 255).toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
     }
 
-    function schedule_url_entries_refresh() {
+    function places_unescape(url: string): string {
       try {
-        if (url_entries_timer != null) {
-          clearTimeout(url_entries_timer);
-        }
-        url_entries_timer = setTimeout(() => {
-          url_entries_timer = null;
-          void refresh_url_entries();
-        }, 1000);
+        return decodeURIComponent(url);
       } catch {
-        return;
+        return url;
       }
     }
 
-    function upsert_history_entry(item: { url?: string; title?: string }) {
+    function places_match(tokens: string[], entry: { match_title: string; match_url: string }): boolean {
+      return tokens.every((token) => entry.match_title.includes(token) || entry.match_url.includes(token));
+    }
+
+    function history_entry(item: Browser.History.HistoryItem & { url: string }): HistoryEntry {
+      const title = item.title ?? "";
+      return {
+        url: item.url,
+        title,
+        visits: item.visitCount ?? 0,
+        last_visit: item.lastVisitTime ?? 0,
+        match_title: places_fold(title),
+        match_url: places_fold(places_unescape(item.url)),
+      };
+    }
+
+    async function refresh_history() {
+      const items = await browser.history.search({ text: "", startTime: 0, maxResults: 2 ** 31 - 1 });
+      history_list = items
+        .filter((item): item is typeof item & { url: string } => item.url != null)
+        .map(history_entry)
+        .sort((a, b) => b.last_visit - a.last_visit);
+      history_by_url = new Map(history_list.map((entry) => [entry.url, entry]));
+    }
+
+    async function refresh_bookmarks() {
+      const items = await browser.bookmarks.search({});
+      bookmark_list = items
+        .filter((item): item is typeof item & { url: string } => {
+          try {
+            return !!new URL(item.url ?? "");
+          } catch {
+            return false;
+          }
+        })
+        .map((item) => ({
+          url: item.url,
+          title: item.title,
+          date_added: item.dateAdded ?? 0,
+          match_title: places_fold(item.title),
+          match_url: places_fold(places_unescape(item.url)),
+        }))
+        .sort((a, b) => b.date_added - a.date_added);
+    }
+
+    async function refresh_top_sites() {
+      top_sites = (await browser.topSites.get())
+        .slice(0, HISTORY_RESULTS)
+        .map((site) => ({ title: site.title ?? "", url: site.url, bmark: false, search: false, visits: 0 }));
+    }
+
+    function debounced(ms: number, fn: () => Promise<void>): () => void {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      return () => {
+        try {
+          if (timer != null) {
+            clearTimeout(timer);
+          }
+          timer = setTimeout(() => {
+            timer = null;
+            void fn();
+          }, ms);
+        } catch {
+          return;
+        }
+      };
+    }
+
+    const schedule_history_refresh = debounced(1000, async () => {
+      await Promise.all([refresh_history(), refresh_top_sites()]);
+    });
+    const schedule_bookmarks_refresh = debounced(1000, refresh_bookmarks);
+    const schedule_top_sites_refresh = debounced(2000, refresh_top_sites);
+
+    function record_visit(item: Browser.History.HistoryItem) {
       if (!item.url) {
         return;
       }
-      if (url_entry_set.has(item.url)) {
-        const idx = url_entries.findIndex((e) => e.url === item.url);
-        if (idx !== -1) {
-          const entry = url_entries[idx];
-          if (entry != null) {
-            url_entries.splice(idx, 1);
-            if (item.title) {
-              entry.title = item.title;
-            }
-            url_entries.unshift(entry);
-          }
-        }
-      } else {
-        url_entries.unshift({ star: false, title: item.title ?? "", url: item.url });
-        url_entry_set.add(item.url);
+      const existing = history_by_url.get(item.url);
+      if (existing != null) {
+        history_list.splice(history_list.indexOf(existing), 1);
+      }
+      const entry = history_entry({ ...item, url: item.url, title: item.title || existing?.title });
+      history_list.unshift(entry);
+      history_by_url.set(entry.url, entry);
+      schedule_top_sites_refresh();
+    }
+
+    function record_title(item: { url?: string; title?: string }) {
+      const entry = item.url != null ? history_by_url.get(item.url) : undefined;
+      if (entry != null && item.title != null) {
+        entry.title = item.title;
+        entry.match_title = places_fold(item.title);
       }
     }
 
     glide.autocmds.create("ConfigLoaded", () => {
-      browser.bookmarks.onCreated.addListener(schedule_url_entries_refresh);
-      browser.bookmarks.onRemoved.addListener(schedule_url_entries_refresh);
-      browser.bookmarks.onChanged.addListener(schedule_url_entries_refresh);
-      browser.bookmarks.onMoved.addListener(schedule_url_entries_refresh);
-      browser.history.onVisited.addListener(upsert_history_entry);
-      browser.history.onTitleChanged.addListener(upsert_history_entry);
-      void refresh_url_entries();
+      browser.bookmarks.onCreated.addListener(schedule_bookmarks_refresh);
+      browser.bookmarks.onRemoved.addListener(schedule_bookmarks_refresh);
+      browser.bookmarks.onChanged.addListener(schedule_bookmarks_refresh);
+      browser.bookmarks.onMoved.addListener(schedule_bookmarks_refresh);
+      browser.history.onVisited.addListener(record_visit);
+      browser.history.onTitleChanged.addListener(record_title);
+      browser.history.onVisitRemoved.addListener(schedule_history_refresh);
+      void refresh_history();
+      void refresh_bookmarks();
+      void refresh_top_sites();
     });
+
+    function search_history(tokens: string[]): HistoryEntry[] {
+      const found: HistoryEntry[] = [];
+      for (const entry of history_list) {
+        if (found.length >= HISTORY_RESULTS) break;
+        if (places_match(tokens, entry)) {
+          found.push(entry);
+        }
+      }
+      return found.sort((a, b) => b.visits - a.visits);
+    }
+
+    function search_bookmarks(tokens: string[]): BookmarkEntry[] {
+      const seen = new Map<string, string>();
+      return bookmark_list.filter((entry) => {
+        if (!places_match(tokens, entry) || seen.get(entry.title) === entry.url) {
+          return false;
+        }
+        seen.set(entry.title, entry.url);
+        return true;
+      });
+    }
+
+    function rewrite_search_url_query(query: string): { query: string; keyword: string | null } {
+      const tokens = query.split(" ");
+      const match = tokens.length > 1 || query.endsWith(" ") ? search_urls.find(([keyword]) => keyword === tokens[0]?.replace(/^@/, "")) : undefined;
+      if (match == null) {
+        return { query, keyword: null };
+      }
+      return { query: match[1].split("%s").join(" ") + " " + tokens.slice(1).join(" "), keyword: match[0] };
+    }
+
+    function combined_history_bookmarks(query: string): UrlCandidate[] {
+      const tokens = places_fold(query).split(/\s+/).filter(Boolean);
+      const combined = new Map<string, UrlCandidate>(
+        search_bookmarks(tokens).map((b) => [b.url, { title: b.title, url: b.url, bmark: true, search: false, visits: 0 }]),
+      );
+      for (const page of search_history(tokens)) {
+        const existing = combined.get(page.url);
+        if (existing != null) {
+          existing.visits = page.visits;
+        } else {
+          combined.set(page.url, { title: page.title, url: page.url, bmark: false, search: false, visits: page.visits });
+        }
+      }
+      for (const [keyword, url] of search_urls) {
+        if (keyword.startsWith(query.replace(/^@/, ""))) {
+          combined.set(url, { title: keyword, url, bmark: false, search: true, visits: 0 });
+        }
+      }
+      const score = (c: UrlCandidate) => -c.visits - (c.bmark ? BOOKMARK_WEIGHT : 0) - (c.search ? SEARCH_URL_WEIGHT : 0);
+      return [...combined.values()].sort((a, b) => score(a) - score(b));
+    }
+
+    function decode_url_for_display(url: string): string {
+      return url.replace(/(?:%[89a-f][0-9a-f])+/gi, (encoded) => {
+        try {
+          const decoded = decodeURIComponent(encoded);
+          return /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(decoded) ? encoded : decoded;
+        } catch {
+          return encoded;
+        }
+      });
+    }
 
     let active_fill_focused: ((focused_text: string) => string | null) | null = null;
     let active_reshow: ((url: string) => void) | null = null;
     let cmdline_input = "";
 
-    function normalize_query(input: string): string {
-      return input.trim().toLowerCase().split(/\s+/).filter(Boolean).join(" ");
-    }
-
-    function score_token(haystack: string, token: string): number {
-      const at = haystack.indexOf(token);
-      if (at === -1) {
-        return 0;
-      }
-      const before = at === 0 ? "" : haystack[at - 1];
-      const boundary = at === 0 || before === "." || before === "/" || before === "-" || before === "_" || before === " ";
-      return 10 + (boundary ? 6 : 0) + Math.max(0, 4 - Math.floor(at / 16));
-    }
-
-    function score_entry(
-      entry: { star: boolean; title: string; url: string },
-      tokens: string[],
-      rank: number,
-    ): number {
-      const title = entry.title.toLowerCase();
-      let url = entry.url.toLowerCase();
-      const scheme = url.indexOf("://");
-      if (scheme !== -1) {
-        url = url.slice(scheme + 3);
-      }
-      let total = 0;
-      for (const token of tokens) {
-        const best = Math.max(score_token(url, token), score_token(title, token));
-        if (best === 0) {
-          return 0;
-        }
-        total += best;
-      }
-      if (entry.star) {
-        total += 8;
-      }
-      return total + Math.max(0, 20 - rank / 40);
-    }
-
-    async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string; search_only?: boolean } = {}) {
-      if (url_entries.length === 0) {
-        await refresh_url_entries();
-      }
+    async function url_commandline(target: "current" | "tab" | "window", opts: { prefill?: string } = {}) {
+      await Promise.all([
+        history_list.length === 0 ? refresh_history() : null,
+        bookmark_list.length === 0 ? refresh_bookmarks() : null,
+        top_sites.length === 0 ? refresh_top_sites() : null,
+      ]);
 
       function describe_action(input: string): string {
-        const trimmed = input.trim();
-        if (trimmed === "") {
+        if (input.trim() === "") {
           return "Search with the default engine";
         }
-        if (!opts.search_only) {
-          const url = to_url(trimmed);
-          if (url) {
-            return "Open " + url;
-          }
+        const resolved = resolve_open(input);
+        if ("url" in resolved) {
+          return "Open " + resolved.url;
         }
-        const search = parse_search(trimmed.split(" ").filter(Boolean));
-        return search.engine ? "Search " + search.engine + ": " + search.query : "Search: " + search.query;
+        return resolved.search.engine ? "Search " + resolved.search.engine + ": " + resolved.search.query : "Search: " + resolved.search.query;
       }
 
       cmdline_input = opts.prefill ?? "";
@@ -146,95 +235,28 @@
           return true;
         },
         execute: ({ input }) => {
-          if (opts.search_only) {
-            do_search(target, parse_search(input.split(" ").filter(Boolean)));
-          } else {
-            do_open(target, input);
-          }
+          void do_open(target, input);
         },
       }];
 
-      function query_without_keyword(input: string): string {
-        const [first, ...rest] = input.trim().split(" ").filter(Boolean);
-        if (first != null && engine_keywords.has(first)) {
-          return rest.join(" ");
-        }
-        return input.trim();
-      }
-
-      for (const engine of search_engine_list) {
-        const kw_el = DOM.create_element("span", { style: { color: "var(--base0A)", whiteSpace: "nowrap" }, children: [engine.keyword] });
-        const name_el = DOM.create_element("span", { style: { color: "var(--base05)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: ["Search using " + engine.name] });
-        options.push({
-          label: "engine-" + engine.keyword,
-          render: () => DOM.create_element("td", {
-            attributes: { colspan: "2" },
-            children: [
-              DOM.create_element("div", {
-                style: { display: "flex", width: "100%", minWidth: "0", gap: "1.5em", overflow: "hidden" },
-                children: [kw_el, name_el],
-              }),
-            ],
-          }),
-          matches: ({ input }) => {
-            const first = input.trim().split(" ").filter(Boolean)[0];
-            const keyword_match = first != null && engine_keywords.get(first) === engine.name;
-            if (!opts.search_only && !keyword_match) {
-              return false;
-            }
-            const q = query_without_keyword(input);
-            name_el.textContent = q === "" ? "Search using " + engine.name : "Search using " + engine.name + ": " + q;
-            return true;
-          },
-          execute: ({ input }) => {
-            void do_search(target, { query: query_without_keyword(input), engine: engine.name });
-          },
-        });
-      }
-
-      const SLOTS = 30;
-      const slot_items: (typeof url_entries)[number][] = [];
+      const HEADER = "History and bookmarks";
+      const slot_items: UrlCandidate[] = [];
       const slot_titles: HTMLElement[] = [];
       const slot_urls: HTMLElement[] = [];
       let slot_query: string | null = null;
-      let live_query: string | null = null;
 
       active_fill_focused = (focused_text) => {
-        for (const item of slot_items) {
-          if (item != null && focused_text.includes(item.url)) {
-            return item.url;
-          }
+        const focused = slot_items.find((_, i) => focused_text === slot_titles[i]!.textContent + slot_urls[i]!.textContent);
+        if (focused == null) {
+          return null;
         }
-        return null;
+        return focused.search ? focused.title : focused.url;
       };
 
-      let live_fetch_timer: ReturnType<typeof setTimeout> | null = null;
-      function schedule_fetch_live(q: string) {
-        if (live_fetch_timer != null) {
-          clearTimeout(live_fetch_timer);
-        }
-        live_fetch_timer = setTimeout(() => {
-          live_fetch_timer = null;
-          void fetch_live(q);
-        }, 200);
-      }
-
-      async function fetch_live(q: string) {
-        if (live_query === q) {
-          return;
-        }
-        live_query = q;
-        const results = await browser.history.search({ text: q, startTime: 0, maxResults: 100 });
-        let added = false;
-        for (const item of results) {
-          if (!item.url || url_entry_set.has(item.url) || live_history.has(item.url)) continue;
-          live_history.set(item.url, { star: false, title: item.title ?? "", url: item.url });
-          added = true;
-        }
-        if (added && slot_query != null && normalize_query(slot_query) === q) {
-          const current = slot_query;
-          slot_query = null;
-          recompute_slots(current);
+      function set_header(text: string) {
+        const header = document.querySelector('glide-commandline [anonid="glide-commandline-completions-custom-options"] .section-header');
+        if (header != null && header.textContent !== text) {
+          header.textContent = text;
         }
       }
 
@@ -243,43 +265,22 @@
           return;
         }
         slot_query = input;
-        const tokens = input.trim().toLowerCase().split(/\s+/).filter(Boolean);
         slot_items.length = 0;
-        if (tokens.length === 0) {
-          for (const entry of url_entries) {
-            if (slot_items.length >= SLOTS) break;
-            slot_items.push(entry);
-          }
+        if (input === "") {
+          set_header(HEADER);
+          slot_items.push(...top_sites);
         } else {
-          const scored: { entry: (typeof url_entries)[number]; score: number }[] = [];
-          let rank = 0;
-          for (const entry of url_entries) {
-            const score = score_entry(entry, tokens, rank++);
-            if (score > 0) {
-              scored.push({ entry, score });
-            }
-          }
-          for (const entry of live_history.values()) {
-            if (url_entry_set.has(entry.url)) continue;
-            const score = score_entry(entry, tokens, rank++);
-            if (score > 0) {
-              scored.push({ entry, score });
-            }
-          }
-          scored.sort((a, b) => b.score - a.score);
-          for (const item of scored) {
-            if (slot_items.length >= SLOTS) break;
-            slot_items.push(item.entry);
-          }
-          schedule_fetch_live(tokens.join(" "));
+          const rewritten = rewrite_search_url_query(input);
+          set_header(rewritten.keyword != null ? "Search " + rewritten.keyword : HEADER);
+          slot_items.push(...combined_history_bookmarks(rewritten.query).slice(0, HISTORY_RESULTS));
         }
         slot_items.forEach((item, i) => {
-          slot_titles[i]!.textContent = (item.star ? "★ " : "") + (item.title || item.url);
-          slot_urls[i]!.textContent = item.url;
+          slot_titles[i]!.textContent = (item.bmark ? "★ " : "") + (item.title || new URL(item.url).host);
+          slot_urls[i]!.textContent = (item.search ? "Search " : "") + decode_url_for_display(item.url);
         });
       }
 
-      for (let i = 0; i < SLOTS; i++) {
+      for (let i = 0; i < HISTORY_RESULTS; i++) {
         const title_el = DOM.create_element("span", { style: { flex: "1 1 50%", minWidth: "0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
         const url_el = DOM.create_element("span", { style: { flex: "1 1 50%", minWidth: "0", textAlign: "right", color: "var(--base0B)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } });
         slot_titles.push(title_el);
@@ -302,14 +303,14 @@
           execute: () => {
             const entry = slot_items[i];
             if (entry) {
-              void do_navigate(target, entry.url);
+              void do_navigate(target, entry.search ? entry.url.split("%s").join("") : entry.url);
             }
           },
         });
       }
 
       recompute_slots(opts.prefill ?? "");
-      await glide.commandline.show({ input: opts.prefill ?? "", title: "History and bookmarks", options });
+      await glide.commandline.show({ input: opts.prefill ?? "", title: HEADER, options });
     }
 
     glide.autocmds.create("CommandLineExit", () => {
@@ -319,9 +320,9 @@
 
     glide.keymaps.set("command", "<Right>", () => {
       const focused = document.querySelector("glide-commandline .gcl-option.focused");
-      const url = focused != null ? active_fill_focused?.(focused.textContent ?? "") : null;
-      if (url != null && url !== cmdline_input && active_reshow != null) {
-        active_reshow(url);
+      const value = focused != null ? active_fill_focused?.(focused.textContent ?? "") : null;
+      if (value != null && value !== cmdline_input && active_reshow != null) {
+        active_reshow(value);
       } else {
         void glide.keys.send("<Right>", { skip_mappings: true });
       }
@@ -341,12 +342,18 @@
       const tab = await glide.tabs.active();
       await url_commandline("tab", { prefill: tab.url });
     }, { description: "Open the current URL in a new tab" });
-    glide.keymaps.set("normal", "s", () => url_commandline("current", { search_only: true }), {
+    glide.keymaps.set("normal", "s", () => url_commandline("current", { prefill: "search " }), {
       description: "Search with the default engine",
     });
-    glide.keymaps.set("normal", "S", () => url_commandline("tab", { search_only: true }), {
+    glide.keymaps.set("normal", "S", () => url_commandline("tab", { prefill: "search " }), {
       description: "Search with the default engine in a new tab",
     });
+    for (const [key, target] of [["s", "current"], ["S", "tab"]] as const) {
+      glide.keymaps.set("visual", key, async () => {
+        const selection = await glide.content.execute(() => window.getSelection()?.toString() ?? "", { tab_id: await glide.tabs.active() });
+        await url_commandline(target, { prefill: "search " + selection });
+      }, { description: "Search the selection with the default engine" + (target === "tab" ? " in a new tab" : "") });
+    }
     glide.keymaps.set("normal", "w", () => url_commandline("window"), {
       description: "Open a URL or search in a new window",
     });'';
