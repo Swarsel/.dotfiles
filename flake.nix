@@ -68,6 +68,17 @@
       url = "github:glide-browser/glide.nix";
     };
 
+    hint-selectors = {
+      inputs = {
+        flake-parts.follows = "flake-parts";
+        nixpkgs.follows = "nixpkgs";
+        pedantix.follows = "pedantix";
+        systems.follows = "systems";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+      url = "github:Swarsel/hint-selectors";
+    };
+
     home-manager = {
       inputs.nixpkgs.follows = "nixpkgs";
       url = "github:nix-community/home-manager";

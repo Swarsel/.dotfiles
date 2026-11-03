@@ -102,7 +102,11 @@
       }
     }
 
-    function start_hints(selector?: string, action?: glide.HintAction) {
+    function start_hints({
+      selector,
+      include,
+      action,
+    }: { selector?: string; include?: string; action?: glide.HintAction } = {}) {
       hint_session = true;
       hint_filter = "";
       hint_texts = [];
@@ -111,6 +115,7 @@
       update_find_display();
       glide.hints.show({
         selector,
+        include,
         action,
         async pick({ hints, content }) {
           hint_texts = await content.map((target) => (target.textContent ?? "").toLowerCase());
@@ -122,7 +127,7 @@
 
     glide.keymaps.set("normal", "c", () => start_hints());
     glide.keymaps.set("normal", "f", () => start_hints());
-    glide.keymaps.set("normal", "F", () => start_hints(undefined, "newtab-click"));
+    glide.keymaps.set("normal", "F", () => start_hints({ action: "newtab-click" }));
 
     for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-:./_,;!?@#%^&*()+=[]{}~'\"$") {
       glide.keymaps.set("hint", ch, () => {
