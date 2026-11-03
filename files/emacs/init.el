@@ -533,13 +533,22 @@ Also see `prot-window-delete-popup-frame'." command)
   :custom
   (delete-by-moving-to-trash t)
   (dired-listing-switches "-l --almost-all --human-readable --group-directories-first --no-group")
+  (dirvish-7z-program "/nix/store/90s57svwlkmix0pyd5wmz21ml95pzy2r-7zz-26.04/bin/7zz")
   (dirvish-attributes '(vc-state subtree-state nerd-icons collapse file-time file-size))
+  (dirvish-epub-thumbnailer-program "/nix/store/1kap5r15zvqb8nqa9qja3l457w07bwyz-epub-thumbnailer-0-unstable-2024-03-26/bin/epub-thumbnailer")
+  (dirvish-fc-query-program "/nix/store/a8hfazxxb69rgvlgbl2mn3zn6khvrb8r-fontconfig-2.18.3-bin/bin/fc-query")
+  (dirvish-ffmpegthumbnailer-program "/nix/store/hh79q3hy6wpfhiiyr22sjckqxrpkv3mx-ffmpegthumbnailer-2.3.1/bin/ffmpegthumbnailer")
+  (dirvish-magick-program "/nix/store/c4drsidxxnycsp2ymzh0vw38h2q8a20d-imagemagick-7.1.2-34/bin/magick")
+  (dirvish-mediainfo-program "/nix/store/6ma6kr8dzw7n4wrg62b2imbjij35ymbf-mediainfo-26.05/bin/mediainfo")
+  (dirvish-pdfinfo-program "/nix/store/q0ld5mmjh89nar306jb0izrcf8phy5v9-poppler-utils-26.10.0/bin/pdfinfo")
+  (dirvish-pdftoppm-program "/nix/store/q0ld5mmjh89nar306jb0izrcf8phy5v9-poppler-utils-26.10.0/bin/pdftoppm")
   (dirvish-quick-access-entries '(("h" "~/"              "Home")
                                    ("c" "~/.dotfiles/"    "Config")
                                    ("d" "~/Downloads/"    "Downloads")
                                    ("D" "~/Documents/"    "Documents")
                                    ("p" "~/Documents/GitHub/"  "Projects")
                                    ("/" "/"               "Root")))
+  (dirvish-vipsthumbnail-program "/nix/store/wlkigfrk8xhbaw7692ycb9s8bvr3aj52-vips-8.18.7-bin/bin/vipsthumbnail")
   :init
   (dirvish-override-dired-mode)
   :config
@@ -596,7 +605,7 @@ Also see `prot-window-delete-popup-frame'." command)
   (fset #'jsonrpc--log-event #'ignore)
   (add-to-list 'eglot-server-programs
     '((nix-mode nix-ts-mode)
-       . ("env" "NIX_CONFIG=plugin-files = /nix/store/fzh2wymry5s0z6qrzsn5fb13q3c7ahdy-nix-plugins-16.0.1/lib/nix/plugins" "nixd")))
+       . ("env" "NIX_CONFIG=plugin-files = /nix/store/fzh2wymry5s0z6qrzsn5fb13q3c7ahdy-nix-plugins-16.0.1/lib/nix/plugins" "/nix/store/17jq053j7kd5lw7rjn5c6ra4jwmhb3hx-nixd-2.9.3/bin/nixd")))
   )
 
 (use-package eglot-booster
@@ -998,6 +1007,10 @@ there's a region, all lines that region covers will be duplicated."
 (use-package indent-bars
   :hook (prog-mode . indent-bars-mode))
 
+(use-package ispell
+  :custom
+  (ispell-program-name "/nix/store/kyr2hbgg4z5ll9az5ywqn0z5pdb6w0b0-hunspell-with-dicts-1.7.3/bin/hunspell"))
+
 (use-package jenkinsfile-mode
   :mode "Jenkinsfile")
 
@@ -1241,6 +1254,8 @@ there's a region, all lines that region covers will be duplicated."
   )
 
 (use-package mu4e-alert
+  :custom
+  (alert-libnotify-command "/nix/store/hf9wcn7jhcynf4ihndzbscbknx97in30-libnotify-0.8.8/bin/notify-send")
   :config
   (mu4e-alert-enable-notifications)
   (mu4e-alert-set-default-style 'libnotify)
@@ -1894,7 +1909,11 @@ create a new one."
 (use-package shfmt
   :custom
   (shfmt-arguments '("-i" "4" "-s" "-sr"))
-  (shfmt-command "shfmt"))
+  (shfmt-command "/nix/store/pdxx3s5asvdh2lwjkz9zrwgqm9pnd1dg-shfmt-3.14.1/bin/shfmt")
+  :config
+  (with-eval-after-load 'apheleia
+    (setf (car (alist-get 'shfmt apheleia-formatters)) "/nix/store/pdxx3s5asvdh2lwjkz9zrwgqm9pnd1dg-shfmt-3.14.1/bin/shfmt"))
+  )
 
 (use-package sideline-flymake
   :hook (flymake-mode . sideline-mode)
