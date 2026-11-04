@@ -61951,6 +61951,22 @@ Note that the string cannot be preceded by 0 - =lib.toInt "01"= would yield ==> 
 
 In this section I try to add commits whenever they feel like they changed something about this repository (but often also other commits around the same time are important). I wanted to do this for a while already and always was too lazy. I will need to do another run through the history at another point, but for now here are some interesting states:
 
+** [[https://github.com/Swarsel/.dotfiles/tree/bb0d4ad4c61d3881c2ed8087f9434b25dbac0b2f][bb0d4ad — feat: adopt sops-rekey (2026-11-04)]]
+:PROPERTIES:
+:CUSTOM_ID: h:686eb84c-5cc9-4471-bd43-de877426f708
+:END:
+
+So for years I had always been a little sad because [[https://github.com/oddlama/agenix-rekey][agenix-rekey]] is a thing. Basically that is an extension to [[https://github.com/ryantm/agenix][agenix]] that gives some cool features. The mean thing is something called "rekey" - basically reusing an existing secret and encrypting it for another receiver. That is nice and all, but the main feature I was jealous about was that it provided a slew of neat "generators" that could be used to define a secret of a certain structure right at the secret definition. Similar to [[#h:a51e166a-dbdb-40c6-b9b1-1523537426f0][flake-file]], you then need to call a tool to generate the actual secret, but I still think this is very convenient.
+
+Well, so finally I ported =agenix-rekey= as far as I could and the result is [[https://github.com/Swarsel/sops-rekey][sops-rekey]]. And here i migrated to it :)
+** [[https://github.com/Swarsel/.dotfiles/tree/bfb70b708a1f0c11eb9b04b00b2f76c72c2c2084][bfb70b7 — refactor[client]: move magicant to dendritic (2026-11-01)]]
+:PROPERTIES:
+:CUSTOM_ID: h:20fa8da0-bb61-4cdd-98ae-8e810719e2bf
+:END:
+
+This commit is simply a little cool because it marks the point where the last of my machines was migrated to the dendritic pattern. Also I made the whole android tooling a lot nicer, including some helpers that allow for remote building and fetching of nix-on-droid configurations.
+
+Also, I noticed that for years I had pinned some 2024 revision for nixpkgs regarding nix-on-droid and thought it was the last release they ever had. Welp, that was not the case :p
 ** [[https://github.com/Swarsel/.dotfiles/tree/78edb33][78edb33 — feat[client]: migrate to emacs-init (2026-06-10)]]
 :PROPERTIES:
 :CUSTOM_ID: h:29e01484-3316-4248-8153-83a9be864db3
