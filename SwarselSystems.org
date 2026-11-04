@@ -267,7 +267,7 @@ It is also possible to pass it as a function:
         6) add the MicroVM name to the clients of =wgHome= / =wgProxy= in the respective main host config
         7) rebuild once so that the guest gets created and its ssh hostkey deployed
         8) write the guest's age key (=ssh-to-age= of its =ssh_host_ed25519_key.pub=) to =files/public/age/hosts/<host>-<guestName>.pub=, =git add= it and apply the tofu config again
-        9) =just rekey= generates the missing WireGuard private key and preshared keys (the public key lands in =secrets/root/hosts/<host>-<guestName>/=) and encrypts the guest's secrets for it
+        9) =just rekey= generates the missing WireGuard private key and preshared keys (the public key lands in =files/public/wg/<host>-<guestName>.pub=) and encrypts the guest's secrets for it
         10) fill in whatever other secrets the guest needs with =just secret-set hosts/<host>-<guestName>/<name>=, then =just rekey= again
         13) rebuild the hypervisor
 
@@ -13321,6 +13321,7 @@ Do note that we have to account for impermanent file systems here, otherwise sys
                 in
                 lib.mkIf (builtins.pathExists pubFile) pubFile;
               keyPrefix = "hosts/${config.node.name}/";
+              rekeyAllSecrets = true;
               storageDir = self + "/secrets/rekeyed";
             };
           };
@@ -21295,6 +21296,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
       };
       nixos.network =
         {
+          self,
           config,
           lib,
           pkgs,
@@ -21312,7 +21314,10 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
               secrets = lib.mkIf (!config.swarselsystems.isPublic) {
                 eduroam-pw.rekey.keyPrefix = clientsSecrets;
                 eduroam-user.rekey.keyPrefix = clientsSecrets;
-                home-wireguard-client-private-key.rekey.generator.script = "wireguard";
+                home-wireguard-client-private-key.rekey = {
+                  generator.script = "wireguard";
+                  pubFile = self + "/files/public/wg/${config.node.name}-home.pub";
+                };
                 home-wireguard-endpoint.rekey.keyPrefix = clientsSecrets;
                 home-wireguard-preshared-key.rekey.generator.script = "wireguard-psk";
                 home-wireguard-server-public-key.rekey.keyPrefix = clientsSecrets;
@@ -26717,6 +26722,7 @@ In order to define a new Wireguard interface, I have to:
   {
     flake.modules.nixos.wireguard =
       {
+        self,
         config,
         lib,
         pkgs,
@@ -26809,7 +26815,10 @@ In order to define a new Wireguard interface, I have to:
                   group = serviceGroup;
                   mode = "0600";
                   owner = serviceUser;
-                  rekey.generator.script = "wireguard";
+                  rekey = {
+                    generator.script = "wireguard";
+                    pubFile = self + "/files/public/wg/${config.node.name}.pub";
+                  };
                 };
               }
             ]

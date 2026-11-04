@@ -1,6 +1,7 @@
 {
   flake.modules.nixos.wireguard =
     {
+      self,
       config,
       lib,
       pkgs,
@@ -93,7 +94,10 @@
                 group = serviceGroup;
                 mode = "0600";
                 owner = serviceUser;
-                rekey.generator.script = "wireguard";
+                rekey = {
+                  generator.script = "wireguard";
+                  pubFile = self + "/files/public/wg/${config.node.name}.pub";
+                };
               };
             }
           ]

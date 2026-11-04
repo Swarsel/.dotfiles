@@ -7,6 +7,7 @@
     };
     nixos.network =
       {
+        self,
         config,
         lib,
         pkgs,
@@ -24,7 +25,10 @@
             secrets = lib.mkIf (!config.swarselsystems.isPublic) {
               eduroam-pw.rekey.keyPrefix = clientsSecrets;
               eduroam-user.rekey.keyPrefix = clientsSecrets;
-              home-wireguard-client-private-key.rekey.generator.script = "wireguard";
+              home-wireguard-client-private-key.rekey = {
+                generator.script = "wireguard";
+                pubFile = self + "/files/public/wg/${config.node.name}-home.pub";
+              };
               home-wireguard-endpoint.rekey.keyPrefix = clientsSecrets;
               home-wireguard-preshared-key.rekey.generator.script = "wireguard-psk";
               home-wireguard-server-public-key.rekey.keyPrefix = clientsSecrets;

@@ -45,6 +45,7 @@
               in
               lib.mkIf (builtins.pathExists pubFile) pubFile;
             keyPrefix = "hosts/${config.node.name}/";
+            rekeyAllSecrets = true;
             storageDir = self + "/secrets/rekeyed";
           };
         };
