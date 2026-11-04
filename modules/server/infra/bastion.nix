@@ -4,25 +4,60 @@
       root,
       config,
       lib,
+      pkgs,
       confLib,
-      withHomeManager,
+      globals,
+      nodes,
       ...
     }:
+    let
+      homeWan = globals.networks.home-wan;
+      jumpTargets = lib.filterAttrs (
+        name: host: name != config.node.name && !host.isHome && host.wanAddress4 != null
+      ) globals.hosts;
+      permitOpen = lib.concatLists (
+        lib.mapAttrsToList (
+          name: host:
+          let
+            port = toString (lib.head nodes.${name}.config.services.openssh.ports);
+          in
+          [ "${host.wanAddress4}:${port}" ]
+          ++ lib.optional (host.wanAddress6 != null) "[${host.wanAddress6}]:${port}"
+        ) jumpTargets
+      );
+      journalSelector = unit: ''{host="${config.node.name}",unit="${unit}"}'';
+      mkJournalAlertRule =
+        args:
+        confLib.mkGrafanaAlertRule (
+          {
+            datasourceUid = "loki";
+            forDuration = "0s";
+            noDataState = "OK";
+            op = "gt";
+            queryType = "instant";
+            threshold = 0;
+          }
+          // args
+        );
+    in
     {
       config = {
         swarselsystems.enabledServerModules = [ "bastion" ];
         users = {
-          users.jump = {
-            autoSubUidGidRange = false;
-            createHome = lib.mkForce true;
-            group = lib.mkForce "jump";
-            isNormalUser = true;
-            openssh.authorizedKeys.keyFiles = [
-              (root "files/public/ssh/yubikey.pub")
-              (root "files/public/ssh/magicant.pub")
-              (root "files/public/ssh/builder.pub")
-            ];
-            useDefaultShell = true;
+          users = {
+            ${config.swarselsystems.mainUser}.enable = false;
+            jump = {
+              autoSubUidGidRange = false;
+              createHome = lib.mkForce true;
+              group = lib.mkForce "jump";
+              isNormalUser = true;
+              openssh.authorizedKeys.keyFiles = [
+                (root "files/public/ssh/yubikey.pub")
+                (root "files/public/ssh/magicant.pub")
+                (root "files/public/ssh/builder.pub")
+              ];
+              useDefaultShell = true;
+            };
           };
           groups.jump = { };
           persistentIds.jump = confLib.mkIds 1001;
@@ -32,11 +67,15 @@
           authorizedKeysInHomedir = false;
           extraConfig = ''
             Match User jump
+              ForceCommand ${lib.getExe' pkgs.coreutils "false"}
               PermitTTY no
               X11Forwarding no
               PermitTunnel no
               GatewayPorts no
               AllowAgentForwarding no
+              AllowStreamLocalForwarding no
+              AllowTcpForwarding local
+              PermitOpen ${lib.concatStringsSep " " permitOpen}
           '';
           hostKeys = lib.mkIf (!(builtins.elem "ssh" config.swarselsystems.enabledServerModules)) [
             {
@@ -45,31 +84,54 @@
             }
           ];
           settings = {
-            AllowUsers = [
-              "jump"
-            ];
+            AllowUsers = lib.mkForce (
+              [ "jump" ]
+              ++ map (cidr: "root@${cidr}") (
+                lib.filter (cidr: cidr != null) [
+                  homeWan.cidrv4
+                  homeWan.cidrv6
+                ]
+              )
+            );
             KbdInteractiveAuthentication = false;
+            LogLevel = "VERBOSE";
+            LoginGraceTime = 20;
+            MaxAuthTries = 3;
+            MaxStartups = "10:30:60";
             PasswordAuthentication = false;
-            PermitRootLogin = lib.mkDefault "no";
           };
           startWhenNeeded = lib.mkForce false;
         };
-      }
-      // lib.optionalAttrs withHomeManager {
-
-        home-manager.users.jump.config = {
-          programs.ssh = {
-            enable = true;
-            enableDefaultConfig = false;
-            settings = {
-              "*".forwardAgent = false;
+        nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
+          [
+            {
+              folder = "Infrastructure";
+              interval = "1m";
+              name = "bastion-${config.node.name}";
+              orgId = 1;
+              rules = [
+                (mkJournalAlertRule {
+                  expr = ''sum(count_over_time(${journalSelector "sshd.service"} |= "Accepted publickey for root" [10m]))'';
+                  severity = "warning";
+                  summary = "root logged in on ${config.node.name} over ssh";
+                  title = "bastion root login (${config.node.name})";
+                  uid = "bastion_root_login_${config.node.name}";
+                })
+                (mkJournalAlertRule {
+                  expr = ''sum(count_over_time(${journalSelector "sshd.service"} |= "but the request was denied" [10m]))'';
+                  summary = "a jump session on ${config.node.name} requested a forward to a target outside the permitted list";
+                  title = "bastion forward denied (${config.node.name})";
+                  uid = "bastion_forward_denied_${config.node.name}";
+                })
+                (mkJournalAlertRule {
+                  expr = ''sum(count_over_time(${journalSelector "sshd.service"} |= "Server listening on" [10m])) unless sum(count_over_time(${journalSelector "init.scope"} |= "Reloading..." [20m]))'';
+                  summary = "sshd on ${config.node.name} started without a preceding configuration switch";
+                  title = "bastion sshd restart outside deploy (${config.node.name})";
+                  uid = "bastion_sshd_restart_${config.node.name}";
+                })
+              ];
             }
-            // config.repo.secrets.local.ssh.hosts;
-          };
-          home.stateVersion = lib.mkDefault "23.05";
-        };
+          ];
       };
-    }
-
-  ;
+    };
 }

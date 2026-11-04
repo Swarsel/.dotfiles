@@ -17,6 +17,7 @@
     self.modules.nixos.profile-localserver
     self.modules.nixos.bastion
   ];
+
   swarselsystems = {
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 1 vCPUs, 8GB RAM";
@@ -27,10 +28,10 @@
     isLinux = true;
     isSecureBoot = false;
     isSwap = false;
-    mainUser = "jump";
     nodeRoles = [ "jumphost" ];
     rootDisk = "/dev/disk/by-id/scsi-360fb180663ec4f2793a763a087d46885";
   };
+
   topology.self = {
     icon = "devices.cloud-server";
     interfaces.ProxyJump = {
@@ -44,9 +45,4 @@
       virtual = true;
     };
   };
-}
-// lib.optionalAttrs (!minimal) {
-
-  # users.users.swarsel.enable = lib.mkForce false;
-  # home-manager.users.swarsel.enable = lib.mkForce false
 }

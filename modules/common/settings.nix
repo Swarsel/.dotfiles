@@ -214,6 +214,7 @@ in
       let
         inherit (config.swarselsystems) mainUser;
         inherit (config.repo.secrets.common) atticPublicKey;
+        secretsOwner = lib.mkIf config.users.users.${mainUser}.enable mainUser;
         settings =
           if minimal then
             { }
@@ -263,13 +264,13 @@ in
           sops = lib.mkIf (!minimal) {
             secrets = {
               attic-cache-key = {
-                owner = mainUser;
+                owner = secretsOwner;
                 rekey.keyPrefix = confLib.static.sharedSecrets.common;
               };
               github-api-token = {
                 group = "builder";
                 mode = "0440";
-                owner = mainUser;
+                owner = secretsOwner;
                 rekey.keyPrefix = confLib.static.sharedSecrets.common;
               };
             };
@@ -279,7 +280,7 @@ in
                 password ${config.sops.placeholder.attic-cache-key}
               '';
               group = "builder";
-              owner = mainUser;
+              owner = secretsOwner;
             };
           };
           users = {
