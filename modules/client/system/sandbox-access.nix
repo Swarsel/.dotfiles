@@ -1,8 +1,13 @@
 {
   flake.modules.nixos.sandbox-access =
-    { self, root, ... }:
     {
-      sops.secrets.sandbox-wildcard-key.sopsFile = self + /secrets/general/sandbox.yaml;
+      self,
+      root,
+      confLib,
+      ...
+    }:
+    {
+      sops.secrets.sandbox-wildcard-key.rekey.keyPrefix = confLib.static.sharedSecrets.sandbox;
       networking.hosts."127.0.0.1" =
         builtins.attrValues (import "${self}/hosts/utility/vacanthouse/secrets/pii.nix").services.domains;
       security.pki.certificateFiles = [

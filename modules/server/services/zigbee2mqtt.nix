@@ -9,7 +9,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
           dir = "/var/lib/zigbee2mqtt";
@@ -65,7 +64,6 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops.secrets.zigbee2mqtt-env = {
-          inherit sopsFile;
           group = serviceGroup;
           mode = "0440";
           owner = serviceUser;

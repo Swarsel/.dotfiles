@@ -9,7 +9,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit (config.swarselsystems.server.restic) targets;
       metricsDir = "/var/lib/restic-metrics";
     in
@@ -48,9 +47,9 @@
         sops = {
           secrets = lib.mkMerge (
             lib.mapAttrsToList (name: _: {
-              "resticaccesskey-${name}" = { inherit sopsFile; };
-              "resticpw-${name}" = { inherit sopsFile; };
-              "resticsecretaccesskey-${name}" = { inherit sopsFile; };
+              "resticaccesskey-${name}" = { };
+              "resticpw-${name}" = { };
+              "resticsecretaccesskey-${name}" = { };
             }) targets
           );
 

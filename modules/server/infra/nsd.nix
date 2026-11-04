@@ -21,7 +21,6 @@
         serviceName
         servicePort
         ;
-      inherit (config.swarselsystems) sopsFile;
       keyName = globals.domains.main;
       keyName4 = "${keyName}.${proxyAddress4}";
       keyName6 = "${keyName}.${
@@ -42,7 +41,7 @@
           address = "${lib.head config.services.nsd.interfaces}:${toString servicePort}";
           queryName = globals.domains.main;
         };
-        sops.secrets.tsig-key = { inherit sopsFile; };
+        sops.secrets.tsig-key = { };
         services.nsd = {
           enable = true;
           interfaces = [

@@ -32,6 +32,8 @@ if [[ ! -e $out ]]; then
         agekey="$SOPS_AGE_KEY"
     elif [[ -f ${SOPS_AGE_KEY_FILE:-} ]]; then
         agekey=$(cat "$SOPS_AGE_KEY_FILE")
+    elif [[ -f ${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt ]]; then
+        agekey=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt")
     else
         agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key || sudo ssh-to-age -private-key -i ~/.ssh/sops)
     fi

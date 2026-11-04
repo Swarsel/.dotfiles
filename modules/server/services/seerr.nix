@@ -10,7 +10,6 @@
       imports = lib.optionals (inputs ? seerr-oidc) [
         (
           {
-            self,
             inputs,
             config,
             lib,
@@ -41,7 +40,6 @@
               nginxAccessRules
               webProxy
               ;
-            kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
           in
           {
             swarselsystems.enabledServerModules = [ "seerr" ];
@@ -68,7 +66,7 @@
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             };
 
-            sops.secrets.kanidm-seerr.sopsFile = kanidmSopsFile;
+            sops.secrets.kanidm-seerr.rekey.keyPrefix = confLib.kanidmSecrets;
             services.${serviceName} = {
               enable = true;
               package = pkgs.seerr.overrideAttrs (old: {
@@ -91,7 +89,7 @@
             nodes = lib.mkMerge [
               {
                 ${idmServer} = confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   originUrl = [
                     "https://${serviceDomain}/login"
                     "https://${serviceDomain}/profile/settings/linked-accounts"

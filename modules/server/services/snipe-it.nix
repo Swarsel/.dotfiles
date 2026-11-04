@@ -28,8 +28,7 @@
         nginxAccessRules
         webProxy
         ;
-      # sopsFile = config.node.secretsDir + "/secrets2.yaml";
-      inherit (config.swarselsystems) sopsFile;
+      # rekey.file = config.node.secretsDir + "/secrets2.yaml";
 
       serviceDB = "snipeit";
 
@@ -59,10 +58,10 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops.secrets.snipe-it-appkey = {
-          inherit sopsFile;
           group = serviceGroup;
           mode = "0440";
           owner = serviceUser;
+          rekey.generator.script = "laravel-key";
         };
         services.snipe-it = {
           enable = true;

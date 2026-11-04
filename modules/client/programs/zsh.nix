@@ -27,8 +27,8 @@
           swarselsystems = {
             enabledHomeModules = [ "zsh" ];
             homeSopsSecrets = {
-              croc-password.sopsFile = confLib.static.clientsSopsFile;
-              github-nixpkgs-review-token.sopsFile = confLib.static.clientsSopsFile;
+              croc-password.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
+              github-nixpkgs-review-token.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
             };
           };
           programs.zsh = {

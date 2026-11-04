@@ -46,10 +46,7 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
       piaNamespace = "pia";
       piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
@@ -95,29 +92,25 @@
               group = serviceName;
               mode = "0440";
               owner = serviceName;
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
-            pia = { inherit sopsFile; };
+            pia = { };
             shopservatory-ebay-client-id = {
-              inherit sopsFile;
               group = serviceName;
               mode = "0440";
               owner = serviceName;
             };
             shopservatory-ebay-client-secret = {
-              inherit sopsFile;
               group = serviceName;
               mode = "0440";
               owner = serviceName;
             };
             shopservatory-telegram-token = {
-              inherit sopsFile;
               group = serviceName;
               mode = "0440";
               owner = serviceName;
             };
             shopservatory-user-admin-password = {
-              inherit sopsFile;
               group = serviceName;
               mode = "0440";
               owner = serviceName;
@@ -235,7 +228,7 @@
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit kanidmSopsFile serviceDomain serviceName;
+              inherit serviceDomain serviceName;
               originUrl = "https://${serviceDomain}/auth/callback";
             };
           }

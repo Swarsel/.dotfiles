@@ -1,12 +1,12 @@
 {
   flake.modules.nixos.wireguard =
     {
-      self,
       config,
       lib,
       pkgs,
       confLib,
       globals,
+      nodes,
       ...
     }:
     let
@@ -22,8 +22,17 @@
         serviceUser
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-      wgSopsFilePrefix = self + "/secrets/wireguard";
+      peerPublicKey =
+        peer: builtins.readFile nodes.${peer}.config.sops.secrets.wireguard-private-key.rekey.pubFile;
+      presharedKeySecret = server: client: {
+        group = serviceGroup;
+        mode = "0600";
+        owner = serviceUser;
+        rekey = {
+          generator.script = "wireguard-psk";
+          keyPrefix = "wireguard/${server}-${client}/";
+        };
+      };
 
       # Derive interfaces from globals.wireguard based on this node's name
       interfaces =
@@ -81,10 +90,10 @@
           [
             {
               wireguard-private-key = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0600";
                 owner = serviceUser;
+                rekey.generator.script = "wireguard";
               };
             }
           ]
@@ -92,24 +101,15 @@
             i:
             let
               clientSecrets = lib.optionalAttrs i.isClient {
-                "wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey" = {
-                  group = serviceGroup;
-                  mode = "0600";
-                  owner = serviceUser;
-                  sopsFile = wgSopsFilePrefix + "/${i.serverName}-${config.node.name}.yaml";
-                };
+                "wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey" =
+                  presharedKeySecret i.serverName config.node.name;
               };
 
               serverSecrets = lib.optionalAttrs i.isServer (
                 builtins.listToAttrs (
                   map (clientName: {
                     name = "wireguard-${config.node.name}-${clientName}-${i.ifName}-presharedKey";
-                    value = {
-                      group = serviceGroup;
-                      mode = "0600";
-                      owner = serviceUser;
-                      sopsFile = wgSopsFilePrefix + "/${config.node.name}-${clientName}.yaml";
-                    };
+                    value = presharedKeySecret config.node.name clientName;
                   }) i.peers
                 )
               );
@@ -256,7 +256,7 @@
                         PersistentKeepalive = 25;
                         PresharedKeyFile =
                           config.sops.secrets."wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey".path;
-                        PublicKey = builtins.readFile "${self}/files/public/wg/${i.serverName}.pub";
+                        PublicKey = peerPublicKey i.serverName;
                       }
                     ]
                     ++ lib.optionals i.isServer (
@@ -269,7 +269,7 @@
                           ++ (lib.optional (clientInWgNetwork.ipv6 != null) (lib.net.cidr.make 128 clientInWgNetwork.ipv6));
                         PresharedKeyFile =
                           config.sops.secrets."wireguard-${i.serverName}-${clientName}-${i.ifName}-presharedKey".path;
-                        PublicKey = builtins.readFile "${self}/files/public/wg/${clientName}.pub";
+                        PublicKey = peerPublicKey clientName;
                       }) i.peers
                     );
                 };

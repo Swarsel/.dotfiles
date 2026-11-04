@@ -8,7 +8,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       bootstrap = config.swarselsystems.crowdsecBootstrap;
       jumphost = globals.general.jumphost or null;
       jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
@@ -40,19 +39,16 @@
         };
         sops.secrets = lib.mkIf (!bootstrap) {
           crowdsec-bouncer-key = {
-            inherit sopsFile;
             group = "crowdsec";
             mode = "0400";
             owner = "crowdsec";
           };
           crowdsec-capi = {
-            inherit sopsFile;
             group = "crowdsec";
             mode = "0400";
             owner = "crowdsec";
           };
           crowdsec-lapi = {
-            inherit sopsFile;
             group = "crowdsec";
             mode = "0400";
             owner = "crowdsec";

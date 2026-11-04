@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.kavita =
     {
-      self,
       config,
       lib,
       confLib,
@@ -9,7 +8,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
 
       inherit
         (confLib.gen {
@@ -35,7 +33,6 @@
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       config = {
@@ -66,11 +63,11 @@
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+            rekey.keyPrefix = confLib.kanidmSecrets;
           };
           kavita-token = {
-            inherit sopsFile;
             owner = serviceUser;
+            rekey.generator.script = "base64";
           };
         };
         users = {
@@ -107,7 +104,7 @@
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit kanidmSopsFile serviceDomain serviceName;
+              inherit serviceDomain serviceName;
               originUrl = "https://${serviceDomain}/signin-oidc";
             };
           }

@@ -16,7 +16,6 @@
 
       acmeDns = globals.services.acme-dns;
 
-      sopsFile = self + "/secrets/nginx/acme.json";
       probeDomain = "ssl.${globals.domains.main}";
     in
     {
@@ -35,11 +34,9 @@
         };
         sops = {
           secrets.acme-creds = {
-            inherit sopsFile;
-            format = "json";
             group = "acme";
-            key = "";
             mode = "0660";
+            rekey.file = self + "/secrets/nginx/acme.json.enc";
           };
           templates."certs.secret".content = ''
             ACME_DNS_API_BASE = http://${acmeDns.serviceAddress}:${toString acmeDns.extraConfig.port}

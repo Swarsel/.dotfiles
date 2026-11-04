@@ -35,7 +35,6 @@
 
       containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
-      inherit (config.swarselsystems) sopsFile;
     in
     {
       imports = [
@@ -69,7 +68,7 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets.shlink-api = { inherit sopsFile; };
+          secrets.shlink-api = { };
 
           templates.shlink-env.content = ''
             INITIAL_API_KEY=${config.sops.placeholder.shlink-api}

@@ -31,7 +31,6 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
     in
     {
       config = {
@@ -59,10 +58,10 @@
         };
         sops = {
           secrets.searx-secret = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
+            rekey.generator.script = "alnum";
           };
 
           templates.searx-env = {

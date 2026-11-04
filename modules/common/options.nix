@@ -113,11 +113,6 @@
           default = "";
           type = lib.types.str;
         };
-        sopsFile = lib.mkOption {
-          # default = (if config.swarselsystems.isImpermanence then "/persist" else "") + config.node.secretsDir + "/secrets.yaml";
-          default = config.node.secretsDir + "/secrets.yaml";
-          type = lib.types.either lib.types.str lib.types.path;
-        };
         storagePool = lib.mkOption {
           description = "ZFS pool holding the storage datasets that are shared into MicroVM guests.";
           type = lib.types.str;

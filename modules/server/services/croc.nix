@@ -28,8 +28,6 @@
         9013
       ];
 
-      inherit (config.swarselsystems) sopsFile;
-
       cfg = config.services.croc;
     in
     {
@@ -52,7 +50,7 @@
           };
         };
         sops = {
-          secrets.croc-password = { inherit sopsFile; };
+          secrets.croc-password = { };
 
           templates.croc-env.content = ''
             CROC_PASS="${config.sops.placeholder.croc-password}"

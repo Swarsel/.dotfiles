@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.parsedmarc =
     {
-      self,
       config,
       lib,
       confLib,
@@ -34,7 +33,10 @@
             unit = "parsedmarc.service";
           };
         };
-        sops.secrets.parsedmarc-imap-password.sopsFile = self + /secrets/general/parsedmarc.yaml;
+        sops.secrets.parsedmarc-imap-password.rekey = {
+          generator.script = "alnum";
+          keyPrefix = confLib.static.sharedSecrets.parsedmarc;
+        };
         services = {
           ${serviceName} = {
             enable = true;

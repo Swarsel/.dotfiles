@@ -1,7 +1,6 @@
 {
   flake.modules.homeManager.work-dev =
     {
-      self,
       inputs,
       config,
       lib,
@@ -13,7 +12,7 @@
     }:
     let
       inherit (config.swarselsystems) homeDir;
-      workSopsFile = self + /secrets/work/secrets.yaml;
+      workSecrets = confLib.static.sharedSecrets.work;
     in
     {
       imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
@@ -23,12 +22,12 @@
         swarselsystems.homeSopsSecrets = {
           harica-root-ca = {
             path = "${homeDir}/.aws/certs/harica-root.pem";
-            sopsFile = confLib.static.clientsSopsFile;
+            rekey.keyPrefix = confLib.static.sharedSecrets.clients;
           };
-          ucKey.sopsFile = workSopsFile;
-          yubikey-1.sopsFile = workSopsFile;
-          yubikey-2.sopsFile = workSopsFile;
-          yubikey-3.sopsFile = workSopsFile;
+          ucKey.rekey.keyPrefix = workSecrets;
+          yubikey-1.rekey.keyPrefix = workSecrets;
+          yubikey-2.rekey.keyPrefix = workSecrets;
+          yubikey-3.rekey.keyPrefix = workSecrets;
         };
         programs =
           let

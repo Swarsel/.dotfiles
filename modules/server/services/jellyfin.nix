@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.jellyfin =
     {
-      self,
       config,
       lib,
       pkgs,
@@ -31,7 +30,6 @@
         nginxAccessRules
         webProxy
         ;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       config = {
@@ -61,7 +59,7 @@
           group = serviceGroup;
           mode = "0440";
           owner = serviceUser;
-          sopsFile = kanidmSopsFile;
+          rekey.keyPrefix = confLib.kanidmSecrets;
         };
         users = {
           users.${serviceUser}.extraGroups = [
@@ -105,7 +103,7 @@
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit kanidmSopsFile serviceDomain serviceName;
+              inherit serviceDomain serviceName;
               originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
             };
           }

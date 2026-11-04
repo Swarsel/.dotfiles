@@ -30,13 +30,19 @@
         nginxAccessRules
         webProxy
         ;
+
+      postgresRole = "gotify-server";
     in
     {
       imports = [
         self.modules.nixos.postgresql
       ];
       config = {
-        swarselsystems.enabledServerModules = [ serviceName ];
+        swarselsystems = {
+          enabledServerModules = [ serviceName ];
+          server.postgresql.rolePasswordFiles.${postgresRole} =
+            config.sops.secrets."${postgresRole}-db-password".path;
+        };
         topology.self.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
@@ -63,11 +69,21 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
+        sops = {
+          secrets."${postgresRole}-db-password" = {
+            owner = config.systemd.services.postgresql.serviceConfig.User;
+            rekey.generator.script = "alnum";
+          };
+          templates."${serviceName}-env".content = ''
+            GOTIFY_DATABASE_CONNECTION="host=/run/postgresql user=${postgresRole} dbname=${postgresRole} password=${
+              config.sops.placeholder."${postgresRole}-db-password"
+            } sslmode=disable"
+          '';
+        };
         services = {
           ${serviceName} = {
             enable = true;
             environment = {
-              GOTIFY_DATABASE_CONNECTION = "host=/run/postgresql user=gotify-server dbname=gotify-server sslmode=disable";
               GOTIFY_DATABASE_DIALECT = "postgres";
               GOTIFY_PASSSTRENGTH = 12;
               GOTIFY_PLUGINSDIR = "${serviceDir}/plugins";
@@ -75,13 +91,14 @@
               GOTIFY_SERVER_PORT = servicePort;
               GOTIFY_UPLOADEDIMAGESDIR = "${serviceDir}/images";
             };
+            environmentFiles = [ config.sops.templates."${serviceName}-env".path ];
           };
           postgresql = {
-            ensureDatabases = [ "gotify-server" ];
+            ensureDatabases = [ postgresRole ];
             ensureUsers = [
               {
                 ensureDBOwnership = true;
-                name = "gotify-server";
+                name = postgresRole;
               }
             ];
           };

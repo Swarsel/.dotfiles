@@ -42,7 +42,6 @@
         webProxy
         webProxyIf
         ;
-      inherit (config.swarselsystems) sopsFile;
 
       apiSubDomain = "${subDomain}-api";
       apiDomain = "${apiSubDomain}.${baseDomain}";
@@ -93,8 +92,6 @@
         };
       };
 
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
-
       firezoneRpc = pkgs.writeShellApplication {
         name = "firezone-rpc";
         text = ''
@@ -123,7 +120,10 @@
         name: "${inputs.nixpkgs-firezone}/nixos/modules/${disabledFirezoneModule name}"
       ) disabledFirezoneModules;
       config = {
-        swarselsystems.enabledServerModules = [ "firezone" ];
+        swarselsystems = {
+          enabledServerModules = [ "firezone" ];
+          server.postgresql.rolePasswordFiles.firezone = config.sops.secrets.firezone-db-password.path;
+        };
         topology.self.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
@@ -195,17 +195,18 @@
           };
         };
         sops.secrets = {
-          firezone-relay-token = {
-            inherit sopsFile;
-            mode = "0400";
+          firezone-db-password = {
+            owner = config.systemd.services.postgresql.serviceConfig.User;
+            rekey.generator.script = "alnum";
           };
+          firezone-relay-token.mode = "0400";
           kanidm-firezone = {
             mode = "0400";
-            sopsFile = kanidmSopsFile;
+            rekey.keyPrefix = confLib.kanidmSecrets;
           };
           notification-mail-pw = {
-            inherit (notificationMail) sopsFile;
             mode = "0440";
+            rekey.keyPrefix = notificationMail.keyPrefix;
           };
         };
         services.firezone = {
@@ -312,6 +313,7 @@
               };
             };
             settings.ERLANG_DISTRIBUTION_PORT = distributionPort;
+            settingsSecret.DATABASE_PASSWORD = config.sops.secrets.firezone-db-password.path;
             smtp = {
               inherit (config.repo.secrets.local.firezone.mail) from username;
               inherit (notificationMail) host;
@@ -370,10 +372,7 @@
                     icon = root "files/topology-images/${serviceName}.png";
                     name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
                   };
-                  sops.secrets.firezone-gateway-token = {
-                    inherit (nodeCfg.swarselsystems) sopsFile;
-                    mode = "0400";
-                  };
+                  sops.secrets.firezone-gateway-token.mode = "0400";
                   services.firezone.gateway = {
                     inherit (nodeCfg.node) name;
                     enable = true;
@@ -438,7 +437,7 @@
                   externalId = "2322e386-689f-4035-a64b-ce932c2d3c61";
                 in
                 confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   displayName = "Firezone VPN";
                   originUrl = [
                     "https://${serviceDomain}/auth/oidc/callback"

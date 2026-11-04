@@ -1,7 +1,6 @@
 {
   self,
   inputs,
-  config,
   lib,
   minimal,
   ...
@@ -54,7 +53,6 @@
 
   # use SSH key with own limits for nixbuild.net instead of the general one in remotebuild.nix
   sops.secrets.nixbuild-net-key = lib.mkForce {
-    inherit (config.swarselsystems) sopsFile;
     mode = "0400";
   };
 

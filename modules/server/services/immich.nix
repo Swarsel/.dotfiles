@@ -35,14 +35,17 @@
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       imports = [
         self.modules.nixos.postgresql
       ];
       config = {
-        swarselsystems.enabledServerModules = [ "immich" ];
+        swarselsystems = {
+          enabledServerModules = [ "immich" ];
+          server.postgresql.rolePasswordFiles.${serviceName} =
+            config.sops.secrets."${serviceName}-db-password".path;
+        };
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         globals = {
@@ -65,19 +68,34 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        sops.secrets = {
-          kanidm-immich = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+        sops = {
+          secrets = {
+            "${serviceName}-db-password" = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            };
+            kanidm-immich = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              rekey.keyPrefix = confLib.kanidmSecrets;
+            };
+            notification-mail-pw = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              rekey.keyPrefix = notificationMail.keyPrefix;
+            };
           };
-          notification-mail-pw = {
-            inherit (notificationMail) sopsFile;
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-          };
+          templates."${serviceName}-db-env".content =
+            let
+              inherit (config.services.${serviceName}) database;
+            in
+            ''
+              DB_URL=postgresql://${database.user}:${
+                config.sops.placeholder."${serviceName}-db-password"
+              }@/${database.name}?host=${database.host}&port=${builtins.toString database.port}
+            '';
         };
         users = {
           users.${serviceUser}.extraGroups = [
@@ -98,6 +116,7 @@
           # openFirewall = true;
           mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
           port = servicePort;
+          secretsFile = config.sops.templates."${serviceName}-db-env".path;
           settings = {
             backup.database = {
               cronExpression = "0 02 * * *";
@@ -327,7 +346,7 @@
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     originUrl = [
                       "https://${serviceDomain}/auth/login"
                       "https://${serviceDomain}/user-settings"

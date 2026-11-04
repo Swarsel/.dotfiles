@@ -106,6 +106,7 @@
             };
           };
         getConfig = if nixosConfig == null then config else nixosConfig;
+        kanidmSecrets = "kanidm/${config.node.name}/";
         mkAlloyPushUrl =
           {
             domain,
@@ -309,7 +310,6 @@
           };
         mkKanidmOidcSystem =
           {
-            kanidmSopsFile,
             originUrl,
             serviceDomain,
             serviceName,
@@ -321,7 +321,10 @@
               group = "kanidm";
               mode = "0440";
               owner = "kanidm";
-              sopsFile = kanidmSopsFile;
+              rekey = {
+                generator.script = "alnum";
+                keyPrefix = kanidmSecrets;
+              };
             };
             services.kanidm.provision = {
               groups = lib.genAttrs ([ "${serviceName}.access" ] ++ extraGroups) (_: { });
@@ -551,7 +554,6 @@
             routerServer
             webProxy
             ;
-          clientsSopsFile = self + /secrets/general/clients.yaml;
           dmarcMailAddress = "dmarc@${globals.domains.main}";
           homeProxyIf = "home-wgHome";
           homeServiceAddress =
@@ -577,8 +579,8 @@
             address = "${localPart}@${domain}";
             domain = globals.domains.main;
             host = globals.services.mailserver.domain;
+            keyPrefix = sharedSecrets.mail;
             localPart = "notification";
-            sopsFile = self + /secrets/mail/secrets.yaml;
           };
           scannerDropRules = ''
             location ~* "\.(php|aspx?|env|jsp|cgi|bak|sql|old)(\?|$|/)" {
@@ -590,6 +592,16 @@
               return 444;
             }
           '';
+          sharedSecrets = {
+            clients = "general/clients/";
+            common = "common/";
+            gatus = "general/gatus/";
+            invidiousCompanion = "general/invidious-companion/";
+            mail = "mail/";
+            parsedmarc = "general/parsedmarc/";
+            sandbox = "general/sandbox/";
+            work = "work/";
+          };
           webProxyIf = "${webProxy}-wgProxy";
           wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (
             globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]

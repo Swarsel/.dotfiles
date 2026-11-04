@@ -31,8 +31,6 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-
       containerRev = "sha256:cfaf0f84ef4f11cd3e4c46329039a0f1f51a7d7bf8cc218bf7c1b366e58a99f1";
       containerPort = 3000;
       postgresSocketDir = "/run/postgresql";
@@ -75,8 +73,8 @@
         };
         sops = {
           secrets."${serviceName}-db-password" = {
-            inherit sopsFile;
             owner = config.systemd.services.postgresql.serviceConfig.User;
+            rekey.generator.script = "alnum";
           };
           templates."${serviceName}-env".content =
             let
@@ -90,9 +88,6 @@
             '';
         };
         services.postgresql = {
-          authentication = ''
-            local ${serviceName} ${serviceName} scram-sha-256
-          '';
           ensureDatabases = [ serviceName ];
           ensureUsers = [
             {

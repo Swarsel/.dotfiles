@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.forgejo =
     {
-      self,
       config,
       lib,
       pkgs,
@@ -35,7 +34,6 @@
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       sshProxyPort = 2222;
       sshListenPort = 2222;
     in
@@ -73,9 +71,9 @@
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+            rekey.keyPrefix = confLib.kanidmSecrets;
           };
-          notification-mail-pw.sopsFile = notificationMail.sopsFile;
+          notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
         };
         # networking.firewall.allowedTCPPorts = [ servicePort ];
         users = {
@@ -213,7 +211,7 @@
             ${idmServer} =
               lib.recursiveUpdate
                 (confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   extraGroups = [ "forgejo.admins" ];
                   originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
                 })

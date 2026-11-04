@@ -59,7 +59,29 @@ bootstrap DEST CONFIG ARCH="x86_64-linux" NODISKODEPS="":
   nix develop .#deploy --command zsh -c "SSH_AUTH_SOCK=\$(gpgconf --list-dirs agent-ssh-socket) swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
 
 updatekeys:
-  find . -path ./files/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}
+  find . -path ./files/public -prune -o -path './.github' -prune -o -path ./secrets/rekeyed -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}
+
+rekey *ARGS:
+  nix run --builders '' .#sops-rekey -- --add-to-git rekey {{ARGS}}
+
+rekey-check:
+  nix run --builders '' .#sops-rekey -- check
+
+secret-generate *ARGS:
+  nix run --builders '' .#sops-rekey -- --add-to-git generate {{ARGS}}
+
+secret-new FILE:
+  nix run --builders '' .#sops-rekey -- --add-to-git edit {{FILE}}
+
+secret-set PATH:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  value=$(cat)
+  sops set secrets/root.yaml "$(sed 's|^|["|; s|/|"]["|g; s|$|"]|' <<< '{{PATH}}')" "$(printf '%s' "$value" | jq -Rs .)"
+  git add secrets/root.yaml
+
+secret-get PATH:
+  sops decrypt --extract "$(sed 's|^|["|; s|/|"]["|g; s|$|"]|' <<< '{{PATH}}')" secrets/root.yaml
 
 decrypt:
   #!/usr/bin/env bash

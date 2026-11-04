@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.gatus =
     {
-      self,
       config,
       lib,
       confLib,
@@ -75,8 +74,11 @@
         };
         sops = {
           secrets = {
-            gatus-smtp-password = { inherit (config.swarselsystems) sopsFile; };
-            gatus-watchdog-token.sopsFile = self + /secrets/general/gatus.yaml;
+            gatus-smtp-password = { };
+            gatus-watchdog-token.rekey = {
+              generator.script = "alnum";
+              keyPrefix = confLib.static.sharedSecrets.gatus;
+            };
           };
           templates.gatus-env.content = ''
             GATUS_SMTP_PASSWORD=${config.sops.placeholder.gatus-smtp-password}

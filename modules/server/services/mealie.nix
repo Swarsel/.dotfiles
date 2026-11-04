@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.mealie =
     {
-      self,
       config,
       lib,
       confLib,
@@ -32,7 +31,6 @@
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       config = {
@@ -62,9 +60,9 @@
           secrets = {
             kanidm-mealie = {
               mode = "0400";
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
           };
           templates.mealie-env.content = ''
             OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-mealie}
@@ -108,7 +106,7 @@
             ${idmServer} =
               lib.recursiveUpdate
                 (confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   extraGroups = [ "${serviceName}.admins" ];
                   originUrl = "https://${serviceDomain}/login";
                 })

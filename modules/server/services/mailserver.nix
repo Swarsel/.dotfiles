@@ -28,10 +28,10 @@
             confLib,
             dns,
             globals,
+            nodes,
             ...
           }:
           let
-            inherit (config.swarselsystems) sopsFile;
             inherit
               (confLib.gen {
                 dir = "/var/lib/dovecot";
@@ -59,6 +59,7 @@
               webProxy
               ;
             baseDomain = globals.domains.main;
+            roundcubeDB = config.services.roundcube.database;
 
             roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
             endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
@@ -72,7 +73,11 @@
             ];
           in
           {
-            swarselsystems.enabledServerModules = [ "mailserver" ];
+            swarselsystems = {
+              enabledServerModules = [ "mailserver" ];
+              server.postgresql.rolePasswordFiles.${roundcubeDB.username} =
+                config.sops.secrets."${roundcubeDB.username}-db-password".path;
+            };
             topology.self.services = lib.listToAttrs (
               map
                 (
@@ -177,21 +182,36 @@
                 );
               };
             };
-            sops.secrets =
-              lib.genAttrs config.repo.secrets.local.mailserver.passwordSecrets (_: {
-                inherit sopsFile;
-                owner = serviceUser;
-              })
-              // {
-                mail-tls-key = {
-                  inherit sopsFile;
-                  owner = "acme";
-                };
-                parsedmarc-imap-hashed-password = {
+            sops = {
+              secrets =
+                lib.genAttrs config.repo.secrets.local.mailserver.passwordSecrets (_: {
                   owner = serviceUser;
-                  sopsFile = self + /secrets/general/parsedmarc.yaml;
+                })
+                // {
+                  "${roundcubeDB.username}-db-password" = {
+                    group = roundcubeDB.username;
+                    mode = "0440";
+                    owner = config.systemd.services.postgresql.serviceConfig.User;
+                    rekey.generator.script = "alnum";
+                  };
+                  mail-tls-key.owner = "acme";
+                  parsedmarc-imap-hashed-password = {
+                    owner = serviceUser;
+                    rekey = {
+                      generator = {
+                        dependencies = [
+                          nodes.${confLib.static.monitoringServer}.config.sops.secrets.parsedmarc-imap-password
+                        ];
+                        script = "bcrypt";
+                      };
+                      keyPrefix = confLib.static.sharedSecrets.parsedmarc;
+                    };
+                  };
                 };
-              };
+              templates.roundcube-setup-env.content = ''
+                PGPASSWORD=${config.sops.placeholder."${roundcubeDB.username}-db-password"}
+              '';
+            };
             users.persistentIds = {
               knot-resolver = confLib.mkIds 963;
               postfix-tlspol = confLib.mkIds 962;
@@ -218,6 +238,9 @@
                 enable = true;
                 configureNginx = true;
                 extraConfig = ''
+                  $config['db_dsnw'] = 'pgsql://${roundcubeDB.username}:' . rawurlencode(trim(file_get_contents('${
+                    config.sops.secrets."${roundcubeDB.username}-db-password".path
+                  }'))) . '@unix(/run/postgresql)/${roundcubeDB.dbname}';
                   $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
                   $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
                   $config['smtp_user'] = "%u";
@@ -314,6 +337,8 @@
               ];
               extraLegoRenewFlags = [ "--reuse-key" ];
             };
+            systemd.services.roundcube-setup.serviceConfig.EnvironmentFile =
+              config.sops.templates.roundcube-setup-env.path;
             nodes =
               let
                 extraConfigLoc = ''

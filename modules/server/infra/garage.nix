@@ -39,7 +39,7 @@
       cfg =
         lib.recursiveUpdate config.services.${serviceName}
           config.swarselsystems.server.${serviceName};
-      inherit (config.swarselsystems) mainUser sopsFile;
+      inherit (config.swarselsystems) mainUser;
 
       # needs SSD
       metadata_dir = "/var/lib/garage/meta";
@@ -130,8 +130,11 @@
           };
         };
         sops.secrets = {
-          garage-admin-token = { inherit sopsFile; };
-          garage-rpc-secret = { inherit sopsFile; };
+          garage-admin-token.rekey.generator.script = "base64";
+          garage-rpc-secret.rekey.generator = {
+            args.length = 32;
+            script = "hex";
+          };
         };
         services.${serviceName} = {
           enable = true;

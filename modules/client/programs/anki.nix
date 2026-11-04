@@ -11,8 +11,8 @@
         swarselsystems = {
           enabledHomeModules = [ "anki" ];
           homeSopsSecrets = {
-            anki-pw.sopsFile = confLib.static.clientsSopsFile;
-            anki-user.sopsFile = confLib.static.clientsSopsFile;
+            anki-pw.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
+            anki-user.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
           };
         };
         programs.anki = {

@@ -38,7 +38,6 @@
       postgresPort = config.services.postgresql.settings.port; # 5432
       containerRev = "sha256:bb8ad2b6891441d8ec5c3169b684b71574f3bb3e9afb345bad2f91d833d60340";
 
-      inherit (config.swarselsystems) sopsFile;
     in
     {
       imports = [
@@ -46,7 +45,10 @@
         self.modules.nixos.podman
       ];
       config = {
-        swarselsystems.enabledServerModules = [ "koillection" ];
+        swarselsystems = {
+          enabledServerModules = [ "koillection" ];
+          server.postgresql.rolePasswordFiles.${serviceDB} = config.sops.secrets.koillection-db-password.path;
+        };
         topology.nodes.${topologyContainerName}.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
@@ -78,12 +80,12 @@
         };
         sops.secrets = {
           koillection-db-password = {
-            inherit sopsFile;
             group = postgresUser;
             mode = "0440";
             owner = postgresUser;
+            rekey.generator.script = "alnum";
           };
-          koillection-env-file = { inherit sopsFile; };
+          koillection-env-file = { };
         };
         services.postgresql = {
           enable = true;
@@ -134,20 +136,6 @@
           ];
         };
         # networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
-        systemd.services.postgresql.postStart =
-          let
-            passwordPath = config.sops.secrets.koillection-db-password.path;
-          in
-          ''
-            ${config.services.postgresql.package}/bin/psql -tA <<'EOF'
-              DO $$
-              DECLARE password TEXT;
-              BEGIN
-                password := trim(both from replace(pg_read_file('${passwordPath}'), E'\n', '''));
-                EXECUTE format('ALTER ROLE ${serviceDB} WITH PASSWORD '''%s''';', password);
-              END $$;
-            EOF
-          '';
         nodes =
           let
             extraConfigLoc = ''

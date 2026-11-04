@@ -23,6 +23,7 @@
     nixos.atuin =
       {
         self,
+        config,
         lib,
         confLib,
         ...
@@ -47,13 +48,18 @@
           nginxAccessRules
           webProxy
           ;
+
       in
       {
         imports = [
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ "atuin" ];
+          swarselsystems = {
+            enabledServerModules = [ "atuin" ];
+            server.postgresql.rolePasswordFiles.${serviceName} =
+              config.sops.secrets."${serviceName}-db-password".path;
+          };
           topology.self.services.${serviceName}.info = "https://${serviceDomain}";
           globals = {
             services = confLib.mkServiceGlobal {
@@ -74,8 +80,21 @@
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
+          sops = {
+            secrets."${serviceName}-db-password" = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            };
+            templates."${serviceName}-env".content = ''
+              ATUIN_DB_URI=postgresql://${serviceName}:${
+                config.sops.placeholder."${serviceName}-db-password"
+              }@localhost/${serviceName}?host=/run/postgresql
+            '';
+          };
           services.${serviceName} = {
             enable = true;
+            database.uri = null;
+            environmentFile = config.sops.templates."${serviceName}-env".path;
             host = "0.0.0.0";
             # openFirewall = true;
             openRegistration = false;

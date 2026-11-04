@@ -1,7 +1,6 @@
 {
   root,
   inputs,
-  config,
   lib,
   pkgs,
   minimal,
@@ -32,7 +31,7 @@
   };
 
   topology.self.interfaces.bootstrapper = { };
-  sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
+  sops.secrets.toto-deploy-test = { };
   environment.systemPackages = [ pkgs.yubikey-manager ];
 
   networking = {

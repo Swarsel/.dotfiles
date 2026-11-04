@@ -29,7 +29,6 @@
         nginxAccessRules
         webProxy
         ;
-      inherit (config.swarselsystems) sopsFile;
 
       cfg = config.services.${serviceName};
     in
@@ -58,7 +57,6 @@
         };
         sops = {
           secrets.radicale-user = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;

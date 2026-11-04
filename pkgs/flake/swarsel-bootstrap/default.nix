@@ -98,19 +98,14 @@ writeShellApplication {
       yes_or_no "$@"
     }
 
-    function update_sops_file() {
+    function register_host_key() {
       key_name=$1
       key=$2
 
-      tfvars="''${git_root}/tofu/sops/terraform.tfvars"
-      if ! grep -qE "^[[:space:]]*''${key_name}[[:space:]]*=[[:space:]]*\"placeholder\"" "$tfvars"; then
-        red "No placeholder entry for '$key_name' found in tofu/sops/terraform.tfvars."
-        yellow "Add '$key_name = \"placeholder\"' to the hosts map (and a host_configs entry) before bootstrapping."
-        exit 1
-      fi
-
-      green "Writing age key for $key_name into tofu/sops/terraform.tfvars"
-      sed -E -i "s|^([[:space:]]*''${key_name}[[:space:]]*=[[:space:]]*)\"placeholder\"|\1\"''${key}\"|" "$tfvars"
+      pub_file="''${git_root}/files/public/age/hosts/''${key_name}.pub"
+      green "Writing age key for $key_name to files/public/age/hosts"
+      printf '%s\n' "$key" > "$pub_file"
+      git -C "''${git_root}" add "$pub_file"
 
       green "Regenerating .sops.yaml via OpenTofu"
       tofu -chdir="''${git_root}/tofu/sops" init -upgrade -input=false > /dev/null
@@ -352,9 +347,11 @@ writeShellApplication {
     fi
 
     green "Registering $target_hostname in the sops configuration"
-    update_sops_file "$target_hostname" "$host_age_key"
-    green "Updating all secrets files to reflect updated .sops.yaml"
-    sops updatekeys --yes --enable-local-keyservice "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/* || true
+    register_host_key "$target_hostname" "$host_age_key"
+    green "Updating eval-time secrets to reflect updated .sops.yaml"
+    sops updatekeys --yes --enable-local-keyservice "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/*.enc || true
+    green "Rekeying the secrets of $target_hostname"
+    nix run "''${git_root}#sops-rekey" -- --add-to-git rekey
     if [[ $non_interactive != "true" ]]; then
       green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
       sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -411,7 +408,7 @@ writeShellApplication {
       (pre-commit run --all-files 2> /dev/null || true) || true
       git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/hardware-configuration.nix"
       git add "$git_root/.sops.yaml"
-      git add "$git_root/tofu/sops/terraform.tfvars"
+      git add "$git_root/files/public/age/hosts/$target_hostname.pub"
       git add "$git_root/secrets" 2> /dev/null || true
       git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/secrets" 2> /dev/null || true
       git commit -m "feat: deployed $target_hostname" || true

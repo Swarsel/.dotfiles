@@ -9,7 +9,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
           name = "kanidm";
@@ -74,32 +73,28 @@
         sops = {
           secrets = {
             kanidm-admin-pw = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
             kanidm-idm-admin-pw = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
-            kanidm-mail-sender-token = lib.mkIf hasMailserver { inherit sopsFile; };
+            kanidm-mail-sender-token = lib.mkIf hasMailserver { };
             kanidm-self-signed-crt = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
             kanidm-self-signed-key = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
-            # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            notification-mail-pw = lib.mkIf hasMailserver { inherit (notificationMail) sopsFile; };
+            # "kanidm-freshrss" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            notification-mail-pw = lib.mkIf hasMailserver { rekey.keyPrefix = notificationMail.keyPrefix; };
           };
           templates."${mailSenderUnit}.toml" = lib.mkIf hasMailserver {
             content = ''

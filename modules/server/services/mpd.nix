@@ -9,7 +9,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
           name = "mpd";
@@ -33,7 +32,6 @@
           expectedRegex = "^OK MPD";
         };
         sops.secrets.mpd-pw = {
-          inherit sopsFile;
           group = serviceGroup;
           mode = "0440";
           owner = serviceUser;

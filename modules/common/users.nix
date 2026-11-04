@@ -4,6 +4,7 @@
       config,
       lib,
       pkgs,
+      confLib,
       globals,
       minimal,
       ...
@@ -12,6 +13,7 @@
       config = {
         sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) {
           neededForUsers = true;
+          rekey.keyPrefix = confLib.static.sharedSecrets.common;
         };
 
         users = {

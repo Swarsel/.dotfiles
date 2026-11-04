@@ -13,7 +13,7 @@
       config = {
         swarselsystems = {
           enabledHomeModules = [ "attic-client" ];
-          homeSopsSecrets.attic-cache-key = { };
+          homeSopsSecrets.attic-cache-key.rekey.keyPrefix = confLib.static.sharedSecrets.common;
         };
         programs.attic-client = {
           enable = true;

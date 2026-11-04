@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.readeck =
     {
-      self,
       root,
       config,
       lib,
@@ -35,10 +34,7 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       config = {
@@ -69,9 +65,9 @@
         };
         sops = {
           secrets = {
-            kanidm-readeck.sopsFile = kanidmSopsFile;
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
-            readeck-secret-key = { inherit sopsFile; };
+            kanidm-readeck.rekey.keyPrefix = confLib.kanidmSecrets;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
+            readeck-secret-key.rekey.generator.script = "alnum";
           };
           templates.readeck-env.content = ''
             READECK_AUTH_OIDC_PROVIDERS_0_CLIENT_SECRET=${config.sops.placeholder.kanidm-readeck}
@@ -131,7 +127,7 @@
             ${idmServer} =
               lib.recursiveUpdate
                 (confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   extraGroups = [ "readeck.admins" ];
                   originUrl = "https://${serviceDomain}/login/oidc";
                 })

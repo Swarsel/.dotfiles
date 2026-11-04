@@ -36,14 +36,11 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-
       apiRev = "sha256:e0d23f380432191871025152afff74f0dd708fe6b8b79810b46a2f24893e6f79";
       clientRev = "sha256:c1aea2ba43a07c83373f4331acdaf68ce084d5f1361bc80969ebdff86dac5ea3";
       nginxRev = "sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949";
       redisRev = "sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537";
 
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       maxBodySize = "64M";
       podName = serviceName;
       podUnit = "podman-${podName}-pod.service";
@@ -181,15 +178,15 @@
         };
         sops = {
           secrets = {
-            "${serviceName}-app-key" = { inherit sopsFile; };
+            "${serviceName}-app-key".rekey.generator.script = "laravel-key";
             "${serviceName}-db-password" = {
-              inherit sopsFile;
               owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
             };
-            "${serviceName}-front-api-secret" = { inherit sopsFile; };
-            "${serviceName}-jwt-secret" = { inherit sopsFile; };
-            "kanidm-${serviceName}".sopsFile = kanidmSopsFile;
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
+            "${serviceName}-front-api-secret".rekey.generator.script = "alnum";
+            "${serviceName}-jwt-secret".rekey.generator.script = "alnum";
+            "kanidm-${serviceName}".rekey.keyPrefix = confLib.kanidmSecrets;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
           };
           templates = {
             "${serviceName}-api-env".content = ''
@@ -205,9 +202,6 @@
           };
         };
         services.postgresql = {
-          authentication = ''
-            local ${serviceName} ${serviceName} scram-sha-256
-          '';
           ensureDatabases = [ serviceName ];
           ensureUsers = [
             {
@@ -313,7 +307,7 @@
             ${idmServer} =
               lib.recursiveUpdate
                 (confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   displayName = "OpnForm";
                   originUrl = "${serviceUrl}/auth/kanidm/callback";
                 })

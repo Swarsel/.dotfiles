@@ -36,7 +36,6 @@
 
       nextcloudVersion = "35";
 
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       imports = [
@@ -70,9 +69,9 @@
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
           };
           templates."nextcloud-secrets.json".content = builtins.toJSON {
             mail_smtppassword = config.sops.placeholder.notification-mail-pw;
@@ -162,7 +161,7 @@
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     extraGroups = [ "nextcloud.admins" ];
                     originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
                   })

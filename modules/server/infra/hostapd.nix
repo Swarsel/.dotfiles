@@ -10,7 +10,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit (config.repo.secrets.local.networking) wifi;
       wifiVLANs = [
         "home"
@@ -69,7 +68,6 @@
         };
         sops = {
           secrets = lib.genAttrs (map pskSecret wifiVLANs) (_: {
-            inherit sopsFile;
           });
           templates."hostapd.psk" = {
             content = lib.concatMapStrings (

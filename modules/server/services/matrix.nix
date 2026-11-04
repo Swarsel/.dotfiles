@@ -10,7 +10,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
           name = "matrix";
@@ -39,7 +38,6 @@
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
       federationPort = 8448;
       whatsappPort = 29318;
@@ -47,6 +45,16 @@
       signalPort = 29328;
       ircPort = 8009;
       ircMediaPort = 11111;
+      postgresRoles = [
+        "matrix-synapse"
+        "matrix-appservice-irc"
+        "mautrix-discord"
+        "mautrix-meta-instagram"
+        "mautrix-telegram"
+        "mautrix-whatsapp"
+        "mautrix-signal"
+      ];
+      mkPostgresUri = role: password: "postgresql://${role}:${password}@/${role}?host=/run/postgresql";
       baseUrl = "https://${serviceDomain}";
       clientConfig."m.homeserver".base_url = baseUrl;
       serverConfig."m.server" = "${serviceDomain}:443";
@@ -61,7 +69,12 @@
         self.modules.nixos.postgresql
       ];
       config = {
-        swarselsystems.enabledServerModules = [ "matrix" ];
+        swarselsystems = {
+          enabledServerModules = [ "matrix" ];
+          server.postgresql.rolePasswordFiles = lib.genAttrs postgresRoles (
+            role: config.sops.secrets."${role}-db-password".path
+          );
+        };
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
@@ -96,7 +109,7 @@
         };
         sops = {
           secrets =
-            lib.mapAttrs' (id: _: lib.nameValuePair "matrix-irc-${id}-key" { inherit sopsFile; }) (
+            lib.mapAttrs' (id: _: lib.nameValuePair "matrix-irc-${id}-key" { }) (
               lib.filterAttrs (_: server: server ? onConnectCommands) config.repo.secrets.local.irc.servers
             )
             // {
@@ -104,48 +117,34 @@
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
-                sopsFile = kanidmSopsFile;
+                rekey.keyPrefix = confLib.kanidmSecrets;
               };
-              matrix-doublepuppet-token = {
-                inherit sopsFile;
-              };
+              matrix-doublepuppet-token.rekey.generator.script = "hex";
               matrix-shared-secret = {
-                inherit sopsFile;
                 owner = serviceUser;
+                rekey.generator.script = "alnum";
               };
-              mautrix-meta-instagram-as-token = {
-                inherit sopsFile;
-              };
-              mautrix-meta-instagram-hs-token = {
-                inherit sopsFile;
-              };
-              mautrix-meta-instagram-pickle-key = {
-                inherit sopsFile;
-              };
-              mautrix-signal-pickle-key = {
-                inherit sopsFile;
-              };
-              mautrix-telegram-api-hash = {
-                inherit sopsFile;
-                owner = serviceUser;
-              };
-              mautrix-telegram-api-id = {
-                inherit sopsFile;
-                owner = serviceUser;
-              };
+              mautrix-meta-instagram-as-token.rekey.generator.script = "hex";
+              mautrix-meta-instagram-hs-token.rekey.generator.script = "hex";
+              mautrix-meta-instagram-pickle-key.rekey.generator.script = "alnum";
+              mautrix-signal-pickle-key.rekey.generator.script = "alnum";
+              mautrix-telegram-api-hash.owner = serviceUser;
+              mautrix-telegram-api-id.owner = serviceUser;
               mautrix-telegram-as-token = {
-                inherit sopsFile;
                 owner = serviceUser;
+                rekey.generator.script = "hex";
               };
               mautrix-telegram-hs-token = {
-                inherit sopsFile;
                 owner = serviceUser;
+                rekey.generator.script = "hex";
               };
-              mautrix-whatsapp-pickle-key = {
-                inherit sopsFile;
-              };
-              notification-mail-pw.sopsFile = notificationMail.sopsFile;
-            };
+              mautrix-whatsapp-pickle-key.rekey.generator.script = "alnum";
+              notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
+            }
+            // lib.genAttrs (map (role: "${role}-db-password") postgresRoles) (_: {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            });
           templates = {
             "doublepuppet.yaml" = {
               content = ''
@@ -166,6 +165,14 @@
               content = builtins.toJSON config.services.matrix-appservice-irc.settings;
               owner = "matrix-appservice-irc";
               restartUnits = [ "matrix-appservice-irc.service" ];
+            };
+            "matrix-database.yaml" = {
+              content = builtins.toJSON {
+                database = lib.recursiveUpdate config.services.matrix-synapse.settings.database {
+                  args.password = config.sops.placeholder."matrix-synapse-db-password";
+                };
+              };
+              owner = serviceUser;
             };
             "matrix-email.yaml" = {
               content = builtins.toJSON {
@@ -193,12 +200,14 @@
             };
             mautrixdiscord = {
               content = ''
+                MAUTRIX_DISCORD_DB_PASSWORD=${config.sops.placeholder."mautrix-discord-db-password"}
                 MAUTRIX_DISCORD_DOUBLEPUPPET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
               '';
               owner = serviceUser;
             };
             mautrixmetainstagram = {
               content = ''
+                MAUTRIX_META_INSTAGRAM_DB_PASSWORD=${config.sops.placeholder."mautrix-meta-instagram-db-password"}
                 MAUTRIX_META_INSTAGRAM_AS_TOKEN=${config.sops.placeholder.mautrix-meta-instagram-as-token}
                 MAUTRIX_META_INSTAGRAM_HS_TOKEN=${config.sops.placeholder.mautrix-meta-instagram-hs-token}
                 MAUTRIX_META_INSTAGRAM_PICKLE_KEY=${config.sops.placeholder.mautrix-meta-instagram-pickle-key}
@@ -208,6 +217,7 @@
             };
             mautrixsignal = {
               content = ''
+                MAUTRIX_SIGNAL_DB_PASSWORD=${config.sops.placeholder."mautrix-signal-db-password"}
                 MAUTRIX_SIGNAL_PICKLE_KEY=${config.sops.placeholder.mautrix-signal-pickle-key}
                 MAUTRIX_SIGNAL_BRIDGE_LOGIN_SHARED_SECRET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
               '';
@@ -215,6 +225,7 @@
             };
             mautrixtelegram = {
               content = ''
+                MAUTRIX_TELEGRAM_DB_PASSWORD=${config.sops.placeholder."mautrix-telegram-db-password"}
                 MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrix-telegram-as-token}
                 MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrix-telegram-hs-token}
                 MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrix-telegram-api-id}
@@ -225,6 +236,7 @@
             };
             mautrixwhatsapp = {
               content = ''
+                MAUTRIX_WHATSAPP_DB_PASSWORD=${config.sops.placeholder."mautrix-whatsapp-db-password"}
                 MAUTRIX_WHATSAPP_PICKLE_KEY=${config.sops.placeholder.mautrix-whatsapp-pickle-key}
                 MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
               '';
@@ -251,7 +263,9 @@
             registrationUrl = "http://localhost:${builtins.toString ircPort}";
             settings = {
               database = {
-                connectionString = "postgres://matrix-appservice-irc@/matrix-appservice-irc?host=/run/postgresql";
+                connectionString =
+                  mkPostgresUri "matrix-appservice-irc"
+                    config.sops.placeholder."matrix-appservice-irc-db-password";
                 engine = "postgres";
               };
               homeserver = {
@@ -342,6 +356,7 @@
             enable = true;
             dataDir = "/var/lib/matrix-synapse";
             extraConfigFiles = [
+              config.sops.templates."matrix-database.yaml".path
               config.sops.templates."matrix-email.yaml".path
               config.sops.templates.matrixshared.path
             ];
@@ -409,7 +424,7 @@
             settings = {
               appservice.database = {
                 type = "postgres";
-                uri = "postgresql:///mautrix-discord?host=/run/postgresql";
+                uri = mkPostgresUri "mautrix-discord" "$MAUTRIX_DISCORD_DB_PASSWORD";
               };
               bridge = {
                 backfill.forward_limits = {
@@ -455,7 +470,7 @@
               };
               database = {
                 type = "postgres";
-                uri = "postgresql:///mautrix-meta-instagram?host=/run/postgresql";
+                uri = mkPostgresUri "mautrix-meta-instagram" "$MAUTRIX_META_INSTAGRAM_DB_PASSWORD";
               };
               double_puppet.secrets.${serviceDomain} = "$MAUTRIX_META_INSTAGRAM_DOUBLEPUPPET";
               encryption.pickle_key = "$MAUTRIX_META_INSTAGRAM_PICKLE_KEY";
@@ -481,7 +496,7 @@
               };
               database = {
                 type = "postgres";
-                uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+                uri = mkPostgresUri "mautrix-signal" "$MAUTRIX_SIGNAL_DB_PASSWORD";
               };
               encryption = {
                 allow = true;
@@ -502,7 +517,7 @@
             settings = {
               appservice = {
                 address = "http://localhost:${builtins.toString telegramPort}";
-                database = "postgresql:///mautrix-telegram?host=/run/postgresql";
+                database = mkPostgresUri "mautrix-telegram" "$MAUTRIX_TELEGRAM_DB_PASSWORD";
                 hostname = "0.0.0.0";
                 id = "telegram";
                 port = telegramPort;
@@ -563,7 +578,7 @@
               };
               database = {
                 type = "postgres";
-                uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+                uri = mkPostgresUri "mautrix-whatsapp" "$MAUTRIX_WHATSAPP_DB_PASSWORD";
               };
               encryption = {
                 allow = true;
@@ -592,45 +607,11 @@
             };
           };
           postgresql = {
-            ensureDatabases = [
-              "matrix-synapse"
-              "matrix-appservice-irc"
-              "mautrix-discord"
-              "mautrix-meta-instagram"
-              "mautrix-telegram"
-              "mautrix-whatsapp"
-              "mautrix-signal"
-            ];
-            ensureUsers = [
-              {
-                ensureDBOwnership = true;
-                name = "matrix-synapse";
-              }
-              {
-                ensureDBOwnership = true;
-                name = "matrix-appservice-irc";
-              }
-              {
-                ensureDBOwnership = true;
-                name = "mautrix-discord";
-              }
-              {
-                ensureDBOwnership = true;
-                name = "mautrix-meta-instagram";
-              }
-              {
-                ensureDBOwnership = true;
-                name = "mautrix-telegram";
-              }
-              {
-                ensureDBOwnership = true;
-                name = "mautrix-whatsapp";
-              }
-              {
-                ensureDBOwnership = true;
-                name = "mautrix-signal";
-              }
-            ];
+            ensureDatabases = postgresRoles;
+            ensureUsers = map (name: {
+              inherit name;
+              ensureDBOwnership = true;
+            }) postgresRoles;
             initialScript = pkgs.writeText "synapse-init.sql" ''
               CREATE DATABASE "matrix-synapse"
                 TEMPLATE template0
@@ -786,7 +767,7 @@
           lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
               };
             }

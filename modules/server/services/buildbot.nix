@@ -30,7 +30,7 @@
         nginxAccessRules
         webProxy
         ;
-      inherit (config.swarselsystems) mainUser sopsFile;
+      inherit (config.swarselsystems) mainUser;
 
       nixosHostsForArch =
         arch:
@@ -574,19 +574,16 @@
         };
         sops.secrets = {
           buildbot-age-key = {
-            inherit sopsFile;
             group = "buildbot";
             mode = "0400";
             owner = "buildbot";
           };
           buildbot-github-key = {
-            inherit sopsFile;
             group = "buildbot";
             mode = "0400";
             owner = "buildbot";
           };
           buildbot-github-token = {
-            inherit sopsFile;
             group = "buildbot";
             mode = "0400";
             owner = "buildbot";

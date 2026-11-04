@@ -46,7 +46,6 @@
               nginxAccessRules
               webProxy
               ;
-            inherit (config.swarselsystems) sopsFile;
           in
           {
             swarselsystems.enabledServerModules = [ "hydra" ];
@@ -70,7 +69,6 @@
             sops = {
               secrets = {
                 hydra-pw = {
-                  inherit sopsFile;
                   group = serviceGroup;
                   mode = "0440";
                   owner = serviceUser;

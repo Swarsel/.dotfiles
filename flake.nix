@@ -322,6 +322,14 @@
       url = "github:Mic92/sops-nix";
     };
 
+    sops-rekey = {
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        sops-nix.follows = "sops";
+      };
+      url = "github:Swarsel/sops-rekey";
+    };
+
     spicetify-nix = {
       inputs = {
         nixpkgs.follows = "nixpkgs";

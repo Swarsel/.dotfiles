@@ -1,36 +1,28 @@
 locals {
-  placeholder_value = "placeholder"
+  key_dir = "${path.module}/../../files/public/age"
 
-  placeholder_names = toset(concat(
-    [for name, key in var.hosts : name if key == local.placeholder_value],
-    [for name, key in var.guests : name if key == local.placeholder_value],
-  ))
-
-  hosts_with_keys = {
-    for name, key in var.hosts : name => key if key != local.placeholder_value
+  nodes = {
+    for f in fileset("${local.key_dir}/hosts", "*.pub") :
+    trimsuffix(f, ".pub") => trimspace(file("${local.key_dir}/hosts/${f}"))
   }
 
-  guests_with_keys = {
-    for name, key in var.guests : name => key if key != local.placeholder_value
+  users = {
+    for f in fileset("${local.key_dir}/users", "*.pub") :
+    trimsuffix(f, ".pub") => trimspace(file("${local.key_dir}/users/${f}"))
   }
 
-  repo_excluded = toset([
-    for name, cfg in var.host_configs : coalesce(cfg.age_key_name, name)
-    if !cfg.repo_access || !cfg.has_age_key
-  ])
+  host_key_names = {
+    for name, cfg in var.host_configs : name => coalesce(cfg.age_key_name, name)
+  }
 
-  repo_host_age_names = [for name in keys(var.hosts) : name if !contains(local.repo_excluded, name)]
+  with_key = [for name in keys(local.nodes) : name]
 
-  all_repo_age_names = concat(
-    local.repo_host_age_names,
-    [for name in keys(var.guests) : name if !contains(local.repo_excluded, name)],
-    )
+  repo_host_age_names = [
+    for name, cfg in var.host_configs : local.host_key_names[name]
+    if cfg.repo_access && contains(local.with_key, local.host_key_names[name])
+  ]
 
   repo_rules = [
-    {
-      path_regex = "secrets/repo/[^/]+\\.(yaml|json|env|ini)$"
-      age_names  = local.all_repo_age_names
-    },
     {
       path_regex = "secrets/repo/[^/]+\\.enc$"
       age_names  = concat(["buildbot"], local.repo_host_age_names)
@@ -44,77 +36,45 @@ locals {
     }
   ]
 
-  kanidm_rules = [
-    for client in var.kanidm_clients : {
-      path_regex = "secrets/kanidm/${client}.yaml"
-      age_names  = [var.kanidm_host, client]
-    }
-  ]
-
   host_paths = {
     for name, cfg in var.host_configs : name => coalesce(cfg.path, "hosts/${cfg.type}/${cfg.arch}/${name}")
   }
 
-  host_rules = flatten([
-    for name, cfg in var.host_configs : [
-      {
-        path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.(yaml|json|env|ini)$"
-        age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name)] : []
-      },
-      {
-        path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.enc$"
-        age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name), "buildbot"] : ["buildbot"]
-      },
-    ]
-  ])
+  host_rules = [
+    for name, cfg in var.host_configs : {
+      path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.enc$"
+      age_names  = [local.host_key_names[name], "buildbot"]
+    }
+  ]
 
   guest_rules = flatten([
     for name, cfg in var.host_configs : [
-      for guest in cfg.guests : [
-        {
-          path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.(yaml|json|env|ini)$"
-          age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}"]
-        },
-        {
-          path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.enc$"
-          age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}", "buildbot"]
-        },
-      ]
-    ]
-  ])
-
-  guest_parent = merge([
-    for host, cfg in var.host_configs : {
-      for guest in cfg.guests : "${host}-${guest}" => coalesce(cfg.age_key_name, host)
-    }
-  ]...)
-
-  wireguard_rules = flatten([
-    for server, net in var.wireguard_networks : [
-      for client in net.clients : {
-        path_regex = "secrets/wireguard/${server}-${client}.yaml$"
-        age_names = distinct(compact([
-          server,
-          client,
-          lookup(local.guest_parent, client, ""),
-        ]))
+      for guest in cfg.guests : {
+        path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.enc$"
+        age_names  = [local.host_key_names[name], "${name}-${guest}", "buildbot"]
       }
     ]
   ])
 
+  master_rules = [
+    {
+      path_regex = "\\.(yaml|json|env|ini|enc)$"
+      age_names  = []
+    },
+  ]
+
   all_rules_raw = concat(
     local.repo_rules,
     local.extra_rules,
-    local.kanidm_rules,
     local.host_rules,
     local.guest_rules,
-    local.wireguard_rules,
-    )
+    local.master_rules,
+  )
 
   all_rules = [
     for rule in local.all_rules_raw : {
       path_regex = rule.path_regex
-      age_names  = [for n in rule.age_names : n if !contains(local.placeholder_names, n)]
+      age_names  = [for n in rule.age_names : n if n == "buildbot" || contains(local.with_key, n)]
     }
   ]
 }

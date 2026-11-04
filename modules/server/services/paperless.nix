@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.paperless =
     {
-      self,
       config,
       lib,
       pkgs,
@@ -10,7 +9,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
           name = "paperless";
@@ -38,7 +36,6 @@
       tikaPort = 9998;
       gotenbergPort = 3002;
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       config = {
@@ -66,12 +63,9 @@
         };
         sops = {
           secrets = {
-            kanidm-paperless.sopsFile = kanidmSopsFile;
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
-            paperless-admin-pw = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
+            kanidm-paperless.rekey.keyPrefix = confLib.kanidmSecrets;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
+            paperless-admin-pw.owner = serviceUser;
           };
           templates = {
             "paperless-mail.env" = {
@@ -190,7 +184,7 @@
           lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
               };
             }

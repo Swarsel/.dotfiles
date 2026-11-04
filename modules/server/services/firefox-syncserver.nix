@@ -30,7 +30,6 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
     in
     {
       config = {
@@ -57,10 +56,10 @@
         };
         sops = {
           secrets.firefox-syncserver-secret = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0400";
             owner = serviceUser;
+            rekey.generator.script = "hex";
           };
 
           templates."firefox-syncserver.env" = {

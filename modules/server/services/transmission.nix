@@ -26,7 +26,6 @@
         isHome
         nginxAccessRules
         ;
-      inherit (config.swarselsystems) sopsFile;
 
       piaNamespace = "pia";
       piaPortFile = "/run/pia/forwarded-port";
@@ -140,9 +139,9 @@
         };
         sops = {
           secrets = {
-            mam-id = { inherit sopsFile; };
-            pia = { inherit sopsFile; };
-            transmission-rpc-password = { inherit sopsFile; };
+            mam-id = { };
+            pia = { };
+            transmission-rpc-password = { };
           };
           templates."transmission-credentials.json" = {
             content = ''

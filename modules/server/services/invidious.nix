@@ -31,14 +31,22 @@
         webProxy
         ;
 
-      sopsFile = self + /secrets/general/invidious-companion.yaml;
+      extraSettingsCredential = "extra-settings";
+      notificationStream = proxyPass: {
+        inherit proxyPass;
+        extraConfig = "proxy_buffering off;";
+      };
     in
     {
       imports = [
         self.modules.nixos.postgresql
       ];
       config = {
-        swarselsystems.enabledServerModules = [ "invidious" ];
+        swarselsystems = {
+          enabledServerModules = [ "invidious" ];
+          server.postgresql.rolePasswordFiles.${serviceUser} =
+            config.sops.secrets."${serviceUser}-db-password".path;
+        };
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
         globals = {
           services = confLib.mkServiceGlobal {
@@ -61,23 +69,27 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets.invidious-companion-key = {
-            inherit sopsFile;
-            mode = "0444";
+          secrets = {
+            "${serviceUser}-db-password" = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            };
+            invidious-companion-key = {
+              mode = "0444";
+              rekey.keyPrefix = confLib.static.sharedSecrets.invidiousCompanion;
+            };
           };
 
-          templates.invidiousExtraSettings = {
-            content = ''
-              {"invidious_companion_key": "${config.sops.placeholder.invidious-companion-key}"}
-            '';
-            mode = "0444";
+          templates.invidiousExtraSettings.content = builtins.toJSON {
+            db.password = config.sops.placeholder."${serviceUser}-db-password";
+            invidious_companion_key = config.sops.placeholder.invidious-companion-key;
           };
         };
         services = {
           ${serviceName} = {
             enable = true;
             domain = serviceDomain;
-            extraSettingsFile = config.sops.templates.invidiousExtraSettings.path;
+            extraSettingsFile = "/run/credentials/${serviceName}.service/${extraSettingsCredential}";
             http3-ytproxy.enable = true;
             nginx.enable = true;
             port = 3001;
@@ -112,10 +124,15 @@
           nginx.virtualHosts.${serviceDomain} = {
             enableACME = false;
             forceSSL = false;
+            locations."/api/v1/auth/notifications" =
+              notificationStream "http://127.0.0.1:${builtins.toString servicePort}";
           };
         };
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           { directory = "/var/lib/private/invidious"; }
+        ];
+        systemd.services.${serviceName}.serviceConfig.LoadCredential = [
+          "${extraSettingsCredential}:${config.sops.templates.invidiousExtraSettings.path}"
         ];
         nodes =
           let
@@ -130,7 +147,10 @@
                   inherit extraConfig;
                   acmeRoot = null;
                   forceSSL = true;
-                  locations."/".proxyPass = "http://${serviceName}";
+                  locations = {
+                    "/".proxyPass = "http://${serviceName}";
+                    "/api/v1/auth/notifications" = notificationStream "http://${serviceName}";
+                  };
                   oauth2 = {
                     enable = true;
                     allowedGroups = [ "invidious_access" ];

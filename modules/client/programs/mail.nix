@@ -18,17 +18,17 @@
         address4
         ;
       inherit (confLib.getConfig.repo.secrets.common) fullName;
-      inherit (confLib.static) clientsSopsFile;
+      clientsSecrets = confLib.static.sharedSecrets.clients;
     in
     {
       config = {
         swarselsystems = {
           enabledHomeModules = [ "mail" ];
           homeSopsSecrets = {
-            address1-token.sopsFile = clientsSopsFile;
-            address2-token.sopsFile = clientsSopsFile;
-            address3-token.sopsFile = clientsSopsFile;
-            address4-token.sopsFile = clientsSopsFile;
+            address1-token.rekey.keyPrefix = clientsSecrets;
+            address2-token.rekey.keyPrefix = clientsSecrets;
+            address3-token.rekey.keyPrefix = clientsSecrets;
+            address4-token.rekey.keyPrefix = clientsSecrets;
           };
         };
         services.mbsync.enable = true;

@@ -1,7 +1,6 @@
 {
   flake.modules.nixos.oauth2-proxy =
     {
-      self,
       config,
       lib,
       pkgs,
@@ -37,10 +36,7 @@
 
       mainDomain = globals.domains.main;
 
-      inherit (config.swarselsystems) sopsFile;
-
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
       homeProxyWan4 = globals.hosts.${homeProxy}.wanAddress4 or null;
       homeProxyWan6 = globals.hosts.${homeProxy}.wanAddress6 or null;
@@ -196,13 +192,13 @@
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
             oauth2-cookie-secret = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
+              rekey.generator.script = "base64url";
             };
           };
 
@@ -286,7 +282,10 @@
                   group = "kanidm";
                   mode = "0440";
                   owner = "kanidm";
-                  sopsFile = kanidmSopsFile;
+                  rekey = {
+                    generator.script = "alnum";
+                    keyPrefix = confLib.kanidmSecrets;
+                  };
                 };
                 services.kanidm.provision.systems.oauth2.oauth2-proxy = {
                   basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation

@@ -36,10 +36,7 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       config = {
@@ -70,16 +67,14 @@
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
-            sopsFile = self + /secrets/general/gatus.yaml;
+            rekey.keyPrefix = confLib.static.sharedSecrets.gatus;
           };
           grafana-admin-pw = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
           };
           grafana-gotify-token = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
@@ -88,13 +83,13 @@
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+            rekey.keyPrefix = confLib.kanidmSecrets;
           };
           notification-mail-pw = {
-            inherit (notificationMail) sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
+            rekey.keyPrefix = notificationMail.keyPrefix;
           };
         };
         users = {
@@ -301,7 +296,7 @@
             ${idmServer} =
               lib.recursiveUpdate
                 (confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   extraGroups = [
                     "grafana.editors"
                     "grafana.admins"

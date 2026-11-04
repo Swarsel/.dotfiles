@@ -154,8 +154,8 @@
           done
           SOPS_AGE_KEY=$(ssh-to-age -private-key -i "$tmp/hostkey")
           export SOPS_AGE_KEY
-          got=$(sops decrypt --extract "[\"$secret_key\"]" \
-              "$work/hosts/nixos/$target_arch/$target_config/secrets/secret.yaml")
+          got=$(sops decrypt --extract "[\"secrets__root.yaml\"][\"hosts\"][\"$target_config\"][\"$secret_key\"]" \
+              "$work/secrets/rekeyed/$target_config.yaml")
 
           if [[ $got == "$secret_plaintext" ]]; then
               echo "[+] PASS: secret deployment verified ($secret_key decrypts on the deployed host)"

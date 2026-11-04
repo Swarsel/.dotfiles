@@ -29,7 +29,7 @@
         nginxAccessRules
         webProxy
         ;
-      inherit (config.swarselsystems) isPublic mainUser sopsFile;
+      inherit (config.swarselsystems) isPublic mainUser;
       serviceDB = "atticd";
     in
     {
@@ -37,7 +37,12 @@
         self.modules.nixos.postgresql
       ];
       config = {
-        swarselsystems.enabledServerModules = [ "attic" ];
+        swarselsystems = {
+          enabledServerModules = [ "attic" ];
+          server.postgresql.rolePasswordFiles = lib.mkIf (!isPublic) {
+            ${serviceDB} = config.sops.secrets."${serviceDB}-db-password".path;
+          };
+        };
         topology.self.services.${serviceName} = {
           icon = "services.not-available";
           info = "https://${serviceDomain}";
@@ -65,14 +70,50 @@
         };
         sops = lib.mkIf (!isPublic) {
           secrets = {
-            attic-garage-access-key = { inherit sopsFile; };
-            attic-garage-secret-key = { inherit sopsFile; };
-            attic-server-token = { inherit sopsFile; };
+            "${serviceDB}-db-password" = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            };
+            attic-cache-key.rekey.generator = {
+              dependencies = [ config.sops.secrets.attic-server-token ];
+              script =
+                {
+                  lib,
+                  pkgs,
+                  decrypt,
+                  deps,
+                  ...
+                }:
+                ''
+                  ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=$(${decrypt} ${lib.escapeShellArg (builtins.head deps).rekey.id}) \
+                    ${pkgs.attic-server}/bin/atticadm make-token \
+                    --config ${(pkgs.formats.toml { }).generate "atticd.toml" config.services.atticd.settings} \
+                    --sub ${mainUser} --validity 100y \
+                    ${
+                      lib.concatMapStringsSep " " (flag: "--${flag} ${mainUser}") [
+                        "pull"
+                        "push"
+                        "delete"
+                        "configure-cache"
+                        "configure-cache-retention"
+                      ]
+                    } \
+                    | ${pkgs.coreutils}/bin/tr -d '\n'
+                '';
+            };
+            attic-garage-access-key = { };
+            attic-garage-secret-key = { };
+            attic-server-token.rekey.generator.script =
+              { pkgs, ... }:
+              ''
+                ${pkgs.openssl}/bin/openssl genrsa -traditional 4096 2>/dev/null | ${pkgs.coreutils}/bin/base64 -w0
+              '';
           };
           templates."attic.env".content = ''
             ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=${config.sops.placeholder.attic-server-token}
             AWS_ACCESS_KEY_ID=${config.sops.placeholder.attic-garage-access-key}
             AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.attic-garage-secret-key}
+            PGPASSWORD=${config.sops.placeholder."${serviceDB}-db-password"}
           '';
         };
         services = {

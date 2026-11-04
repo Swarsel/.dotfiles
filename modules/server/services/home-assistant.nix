@@ -46,7 +46,6 @@
         webProxy
         ;
       inherit (config.repo.secrets.common) location;
-      inherit (config.swarselsystems) sopsFile;
       proxyNetworks = [
         globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome"
         globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy"
@@ -82,7 +81,7 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        sops.secrets.home-assistant-admin-pw = { inherit sopsFile; };
+        sops.secrets.home-assistant-admin-pw = { };
         services.${serviceName} = {
           config = {
             default_config = { };

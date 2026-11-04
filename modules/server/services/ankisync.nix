@@ -9,7 +9,6 @@
       ...
     }:
     let
-      inherit (config.swarselsystems) sopsFile;
       inherit
         (confLib.gen {
           name = "ankisync";
@@ -60,10 +59,7 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         # networking.firewall.allowedTCPPorts = [ servicePort ];
-        sops.secrets.anki-pw = {
-          inherit sopsFile;
-          owner = "root";
-        };
+        sops.secrets.anki-pw.owner = "root";
         services.anki-sync-server = {
           # openFirewall = true;
           users = [

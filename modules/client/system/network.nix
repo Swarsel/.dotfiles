@@ -14,8 +14,7 @@
         ...
       }:
       let
-        inherit (confLib.static) clientsSopsFile;
-        hostSopsFile = config.node.secretsDir + "/secrets.yaml";
+        clientsSecrets = confLib.static.sharedSecrets.clients;
       in
       {
         options.swarselsystems.firewall = lib.swarselsystems.mkTrueOption;
@@ -23,23 +22,23 @@
 
           sops = {
             secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-              eduroam-pw.sopsFile = clientsSopsFile;
-              eduroam-user.sopsFile = clientsSopsFile;
-              home-wireguard-client-private-key.sopsFile = hostSopsFile;
-              home-wireguard-endpoint.sopsFile = clientsSopsFile;
-              home-wireguard-preshared-key.sopsFile = hostSopsFile;
-              home-wireguard-server-public-key.sopsFile = clientsSopsFile;
-              laptop-hotspot-pw.sopsFile = clientsSopsFile;
-              mobile-hotspot-pw.sopsFile = clientsSopsFile;
-              pia-vpn-pw.sopsFile = clientsSopsFile;
-              pia-vpn-user.sopsFile = clientsSopsFile;
+              eduroam-pw.rekey.keyPrefix = clientsSecrets;
+              eduroam-user.rekey.keyPrefix = clientsSecrets;
+              home-wireguard-client-private-key.rekey.generator.script = "wireguard";
+              home-wireguard-endpoint.rekey.keyPrefix = clientsSecrets;
+              home-wireguard-preshared-key.rekey.generator.script = "wireguard-psk";
+              home-wireguard-server-public-key.rekey.keyPrefix = clientsSecrets;
+              laptop-hotspot-pw.rekey.keyPrefix = clientsSecrets;
+              mobile-hotspot-pw.rekey.keyPrefix = clientsSecrets;
+              pia-vpn-pw.rekey.keyPrefix = clientsSecrets;
+              pia-vpn-user.rekey.keyPrefix = clientsSecrets;
               pia-vpn1-ca-pem = {
                 mode = "0444";
-                sopsFile = clientsSopsFile;
+                rekey.keyPrefix = clientsSecrets;
               };
-              wlan1-pw.sopsFile = clientsSopsFile;
-              wlan2-pw.sopsFile = clientsSopsFile;
-              wlan3-pw.sopsFile = clientsSopsFile;
+              wlan1-pw.rekey.keyPrefix = clientsSecrets;
+              wlan2-pw.rekey.keyPrefix = clientsSecrets;
+              wlan3-pw.rekey.keyPrefix = clientsSecrets;
             };
             templates = lib.mkIf (!config.swarselsystems.isPublic) {
               "network-manager.env".content = ''

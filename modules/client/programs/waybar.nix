@@ -66,7 +66,7 @@
       config = {
         swarselsystems = {
           enabledHomeModules = [ "waybar" ];
-          homeSopsSecrets.github-notifications-token.sopsFile = confLib.static.clientsSopsFile;
+          homeSopsSecrets.github-notifications-token.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
           waybarModules = lib.mkIf config.swarselsystems.isLaptop (
             modulesLeft
             ++ [

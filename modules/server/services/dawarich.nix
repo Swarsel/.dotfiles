@@ -37,14 +37,17 @@
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       imports = [
         self.modules.nixos.postgresql
       ];
       config = {
-        swarselsystems.enabledServerModules = [ serviceName ];
+        swarselsystems = {
+          enabledServerModules = [ serviceName ];
+          server.postgresql.rolePasswordFiles.${serviceName} =
+            config.sops.secrets."${serviceName}-db-password".path;
+        };
         topology.self.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
@@ -73,8 +76,12 @@
         };
         sops = {
           secrets = {
-            kanidm-dawarich.sopsFile = kanidmSopsFile;
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
+            "${serviceName}-db-password" = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            };
+            kanidm-dawarich.rekey.keyPrefix = confLib.kanidmSecrets;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
           };
           templates.dawarich-oidc-env.content = ''
             OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-dawarich}
@@ -87,6 +94,7 @@
         services.${serviceName} = {
           enable = true;
           configureNginx = false;
+          database.passwordFile = config.sops.secrets."${serviceName}-db-password".path;
           environment = {
             ALLOW_EMAIL_PASSWORD_REGISTRATION = "false";
             OIDC_CLIENT_ID = serviceName;
@@ -125,7 +133,7 @@
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit kanidmSopsFile serviceDomain serviceName;
+              inherit serviceDomain serviceName;
               originUrl = "https://${serviceDomain}/users/auth/openid_connect/callback";
             };
           }

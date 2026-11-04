@@ -4,6 +4,7 @@
   config,
   lib,
   pkgs,
+  confLib,
   ...
 }:
 {
@@ -22,16 +23,28 @@
 
   swarselsystems = {
     homeSopsSecrets = {
-      automationhubtoken.sopsFile = inputs.self + /secrets/work/secrets.yaml;
-      ucKey.sopsFile = inputs.self + /secrets/work/secrets.yaml;
+      automationhubtoken.rekey.keyPrefix = confLib.static.sharedSecrets.work;
+      ucKey.rekey.keyPrefix = confLib.static.sharedSecrets.work;
       vpn-cert = {
         path = "${config.home.homeDirectory}/.config/vpn/vbc.pem";
-        sopsFile = inputs.self + /secrets/work/secrets.yaml;
+        rekey.keyPrefix = confLib.static.sharedSecrets.work;
       };
     };
     isLaptop = false;
     wallpaper = root "files/wallpaper/landscape/surfacewp.png";
   };
+
+  sops.secrets =
+    lib.genAttrs
+      [
+        "claude-mcp-env"
+        "ontap-mcp-config"
+        "openshift-kubeconfig"
+        "vcenter-config"
+      ]
+      (_: {
+        rekey.enable = false;
+      });
 
   services.xcape = {
     enable = true;

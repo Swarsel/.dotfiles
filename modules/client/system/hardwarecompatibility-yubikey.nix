@@ -31,7 +31,7 @@
             sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
               u2f-keys = {
                 path = "${homeDir}/.config/Yubico/u2f_keys";
-                sopsFile = confLib.static.clientsSopsFile;
+                rekey.keyPrefix = confLib.static.sharedSecrets.clients;
               };
             };
           };

@@ -36,7 +36,7 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) mainUser sopsFile;
+      inherit (config.swarselsystems) mainUser;
 
       containerRev = "sha256:f595b7e8cffdad7105ad7a2fc5edad51b4de3f2b0ecf80d64d58bec3c246aab1";
       containerUid = 1000;
@@ -79,8 +79,8 @@
         };
         sops = {
           secrets = {
-            filestash-admin-hash = { inherit sopsFile; };
-            filestash-secret-key = { inherit sopsFile; };
+            filestash-admin-hash = { };
+            filestash-secret-key.rekey.generator.script = "alnum";
           };
           templates.filestash-config.content = builtins.toJSON {
             auth.admin = config.sops.placeholder.filestash-admin-hash;

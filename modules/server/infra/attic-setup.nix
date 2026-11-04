@@ -4,6 +4,7 @@
       config,
       lib,
       pkgs,
+      confLib,
       globals,
       ...
     }:
@@ -12,7 +13,7 @@
       config = {
         swarselsystems.enabledServerModules = [ "attic-setup" ];
         sops = {
-          secrets.attic-cache-key = { };
+          secrets.attic-cache-key.rekey.keyPrefix = confLib.static.sharedSecrets.common;
           templates.attic-env.content = ''
             DOMAIN=https://${globals.services.attic.domain}
             TOKEN=${config.sops.placeholder.attic-cache-key}

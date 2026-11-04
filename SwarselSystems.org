@@ -262,17 +262,13 @@ It is also possible to pass it as a function:
         1) update =secrets/repo/globals.nix.enc=, adding interface information to the new host (virtual MAC address as well as WireGuard interfaces mostly)
         2) add a new entry under =guests= in the hypervisors main configuration
         3) add a guest =default.nix= in =guests/<guestName>=
-        4) Add an entry to  =tofu/sops/terraform.tfvars=, using =placeholder= as the age key; add it to the main guests and to the hypervisor guests. Also, If the guest makes use of e.g. kanidm or is in a WireGuard connection, add those as well to =tofu/sops/terraform.tfvars=
-        5) apply the tofu config
-        6) create the =secrets.yaml= file at =secrets/<guestName>=, using any secret just so that the file is created
-        6) Now rebuild once so that the host gets created and its ssh hostkey deployed
-        7) Add the age key to =tofu/sops/terraform.tfvars=
-        8) apply the tofu config
-        9) =just updatekeys=
-        9) update the guests' =secrets.yaml= with the WireGuard private key
-        10) update secrets in =secrets/wireguard= / =secrets/kanidm= / whatever needed
-        11) add MicroVM name to peers of =wgHome= / =wgProxy= in the respective main host config
-        12) add WireGuard public key to =secrets/public/wg=
+        4) add the guest to the =guests= list of the hypervisor in =tofu/sops/terraform.tfvars= and apply the tofu config (this only matters for the eval-time =.enc= files)
+        5) the guest's secrets live under =hosts/<host>-<guestName>/= in =secrets/root.yaml=; nothing needs to be created by hand
+        6) add the MicroVM name to the clients of =wgHome= / =wgProxy= in the respective main host config
+        7) rebuild once so that the guest gets created and its ssh hostkey deployed
+        8) write the guest's age key (=ssh-to-age= of its =ssh_host_ed25519_key.pub=) to =files/public/age/hosts/<host>-<guestName>.pub=, =git add= it and apply the tofu config again
+        9) =just rekey= generates the missing WireGuard private key and preshared keys (the public key lands in =secrets/root/hosts/<host>-<guestName>/=) and encrypts the guest's secrets for it
+        10) fill in whatever other secrets the guest needs with =just secret-set hosts/<host>-<guestName>/<name>=, then =just rekey= again
         13) rebuild the hypervisor
 
   - =modules=
@@ -2088,6 +2084,14 @@ A short overview over each notable input and what it does:
         url = "github:Mic92/sops-nix";
       };
 
+      sops-rekey = {
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          sops-nix.follows = "sops";
+        };
+        url = "github:Swarsel/sops-rekey";
+      };
+
       spicetify-nix = {
         inputs = {
           nixpkgs.follows = "nixpkgs";
@@ -2238,6 +2242,8 @@ This is the file that manages the actual decryption of the files mentioned in [[
           agekey="$SOPS_AGE_KEY"
       elif [[ -f ${SOPS_AGE_KEY_FILE:-} ]]; then
           agekey=$(cat "$SOPS_AGE_KEY_FILE")
+      elif [[ -f ${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt ]]; then
+          agekey=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/sops/age/keys.txt")
       else
           agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key || sudo ssh-to-age -private-key -i ~/.ssh/sops)
       fi
@@ -4983,8 +4989,8 @@ This library file defines a few commonly used functions for the tests.
             done
             SOPS_AGE_KEY=$(ssh-to-age -private-key -i "$tmp/hostkey")
             export SOPS_AGE_KEY
-            got=$(sops decrypt --extract "[\"$secret_key\"]" \
-                "$work/hosts/nixos/$target_arch/$target_config/secrets/secret.yaml")
+            got=$(sops decrypt --extract "[\"secrets__root.yaml\"][\"hosts\"][\"$target_config\"][\"$secret_key\"]" \
+                "$work/secrets/rekeyed/$target_config.yaml")
 
             if [[ $got == "$secret_plaintext" ]]; then
                 echo "[+] PASS: secret deployment verified ($secret_key decrypts on the deployed host)"
@@ -7701,6 +7707,7 @@ This is my workstation located at my workplace - I use it as a remote builder an
     config,
     lib,
     pkgs,
+    confLib,
     ...
   }:
   {
@@ -7719,16 +7726,28 @@ This is my workstation located at my workplace - I use it as a remote builder an
 
     swarselsystems = {
       homeSopsSecrets = {
-        automationhubtoken.sopsFile = inputs.self + /secrets/work/secrets.yaml;
-        ucKey.sopsFile = inputs.self + /secrets/work/secrets.yaml;
+        automationhubtoken.rekey.keyPrefix = confLib.static.sharedSecrets.work;
+        ucKey.rekey.keyPrefix = confLib.static.sharedSecrets.work;
         vpn-cert = {
           path = "${config.home.homeDirectory}/.config/vpn/vbc.pem";
-          sopsFile = inputs.self + /secrets/work/secrets.yaml;
+          rekey.keyPrefix = confLib.static.sharedSecrets.work;
         };
       };
       isLaptop = false;
       wallpaper = root "files/wallpaper/landscape/surfacewp.png";
     };
+
+    sops.secrets =
+      lib.genAttrs
+        [
+          "claude-mcp-env"
+          "ontap-mcp-config"
+          "openshift-kubeconfig"
+          "vcenter-config"
+        ]
+        (_: {
+          rekey.enable = false;
+        });
 
     services.xcape = {
       enable = true;
@@ -8093,7 +8112,6 @@ This machine acts as my build farm and nix binary cache. It also provides an S3 
   {
     self,
     inputs,
-    config,
     lib,
     minimal,
     ...
@@ -8146,7 +8164,6 @@ This machine acts as my build farm and nix binary cache. It also provides an S3 
 
     # use SSH key with own limits for nixbuild.net instead of the general one in remotebuild.nix
     sops.secrets.nixbuild-net-key = lib.mkForce {
-      inherit (config.swarselsystems) sopsFile;
       mode = "0400";
     };
 
@@ -8619,7 +8636,6 @@ This is a slim setup for developing base configuration. I do not track the hardw
   {
     root,
     inputs,
-    config,
     lib,
     pkgs,
     minimal,
@@ -8650,7 +8666,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
     };
 
     topology.self.interfaces.bootstrapper = { };
-    sops.secrets.toto-deploy-test.sopsFile = config.node.secretsDir + "/secret.yaml";
+    sops.secrets.toto-deploy-test = { };
     environment.systemPackages = [ pkgs.yubikey-manager ];
 
     networking = {
@@ -9529,7 +9545,7 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
         activationScripts = {
           sandboxAgeKey.text = ''
             install -d -m 700 /var/lib/sops-nix
-            install -m 600 ${../../../files/public/age/vacanthouse.key} /var/lib/sops-nix/key.txt
+            install -m 600 ${../../../files/public/age/hosts/vacanthouse.key} /var/lib/sops-nix/key.txt
           '';
           setupSecrets.deps = [ "sandboxAgeKey" ];
         };
@@ -10454,11 +10470,6 @@ These are my own configuration options that are used in multiple places througho
             default = "";
             type = lib.types.str;
           };
-          sopsFile = lib.mkOption {
-            # default = (if config.swarselsystems.isImpermanence then "/persist" else "") + config.node.secretsDir + "/secrets.yaml";
-            default = config.node.secretsDir + "/secrets.yaml";
-            type = lib.types.either lib.types.str lib.types.path;
-          };
           storagePool = lib.mkOption {
             description = "ZFS pool holding the storage datasets that are shared into MicroVM guests.";
             type = lib.types.str;
@@ -10740,8 +10751,11 @@ A breakdown of the flags being set:
           // lib.optionalAttrs isStandaloneLinux {
             sops = lib.mkIf (!config.swarselsystems.isPublic) {
               secrets = {
-                attic-cache-key = { };
-                github-api-token.mode = "0440";
+                attic-cache-key.rekey.keyPrefix = confLib.static.sharedSecrets.common;
+                github-api-token = {
+                  mode = "0440";
+                  rekey.keyPrefix = confLib.static.sharedSecrets.common;
+                };
               };
               templates.netrc.content = ''
                     machine ${globals.services.attic.domain}
@@ -10815,11 +10829,15 @@ A breakdown of the flags being set:
           config = lib.recursiveUpdate {
             sops = lib.mkIf (!minimal) {
               secrets = {
-                attic-cache-key.owner = mainUser;
+                attic-cache-key = {
+                  owner = mainUser;
+                  rekey.keyPrefix = confLib.static.sharedSecrets.common;
+                };
                 github-api-token = {
                   group = "builder";
                   mode = "0440";
                   owner = mainUser;
+                  rekey.keyPrefix = confLib.static.sharedSecrets.common;
                 };
               };
               templates.netrc = {
@@ -11022,6 +11040,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
         config,
         lib,
         pkgs,
+        confLib,
         globals,
         minimal,
         ...
@@ -11030,6 +11049,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
         config = {
           sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) {
             neededForUsers = true;
+            rekey.keyPrefix = confLib.static.sharedSecrets.common;
           };
 
           users = {
@@ -12084,7 +12104,7 @@ This defines all remote builds that I want to use on client machines. This inclu
       }:
       let
         inherit (config.swarselsystems) homeDir isClient mainUser;
-        inherit (confLib.static) clientsSopsFile;
+        clientsSecrets = confLib.static.sharedSecrets.clients;
       in
       {
         config = {
@@ -12094,13 +12114,13 @@ This defines all remote builds that I want to use on client machines. This inclu
               mode = "0600";
               owner = mainUser;
               path = "${homeDir}/.ssh/builder";
-              sopsFile = clientsSopsFile;
+              rekey.keyPrefix = clientsSecrets;
             };
             nixbuild-net-key = {
               mode = "0600";
               owner = mainUser;
               path = "${homeDir}/.ssh/nixbuild-net";
-              sopsFile = clientsSopsFile;
+              rekey.keyPrefix = clientsSecrets;
             };
           };
           programs.ssh = {
@@ -12496,6 +12516,7 @@ I also take some precautions in how I get networking information during stage 1.
               };
             };
           getConfig = if nixosConfig == null then config else nixosConfig;
+          kanidmSecrets = "kanidm/${config.node.name}/";
           mkAlloyPushUrl =
             {
               domain,
@@ -12699,7 +12720,6 @@ I also take some precautions in how I get networking information during stage 1.
             };
           mkKanidmOidcSystem =
             {
-              kanidmSopsFile,
               originUrl,
               serviceDomain,
               serviceName,
@@ -12711,7 +12731,10 @@ I also take some precautions in how I get networking information during stage 1.
                 group = "kanidm";
                 mode = "0440";
                 owner = "kanidm";
-                sopsFile = kanidmSopsFile;
+                rekey = {
+                  generator.script = "alnum";
+                  keyPrefix = kanidmSecrets;
+                };
               };
               services.kanidm.provision = {
                 groups = lib.genAttrs ([ "${serviceName}.access" ] ++ extraGroups) (_: { });
@@ -12941,7 +12964,6 @@ I also take some precautions in how I get networking information during stage 1.
               routerServer
               webProxy
               ;
-            clientsSopsFile = self + /secrets/general/clients.yaml;
             dmarcMailAddress = "dmarc@${globals.domains.main}";
             homeProxyIf = "home-wgHome";
             homeServiceAddress =
@@ -12967,8 +12989,8 @@ I also take some precautions in how I get networking information during stage 1.
               address = "${localPart}@${domain}";
               domain = globals.domains.main;
               host = globals.services.mailserver.domain;
+              keyPrefix = sharedSecrets.mail;
               localPart = "notification";
-              sopsFile = self + /secrets/mail/secrets.yaml;
             };
             scannerDropRules = ''
               location ~* "\.(php|aspx?|env|jsp|cgi|bak|sql|old)(\?|$|/)" {
@@ -12980,6 +13002,16 @@ I also take some precautions in how I get networking information during stage 1.
                 return 444;
               }
             '';
+            sharedSecrets = {
+              clients = "general/clients/";
+              common = "common/";
+              gatus = "general/gatus/";
+              invidiousCompanion = "general/invidious-companion/";
+              mail = "mail/";
+              parsedmarc = "general/parsedmarc/";
+              sandbox = "general/sandbox/";
+              work = "work/";
+            };
             webProxyIf = "${webProxy}-wgProxy";
             wgHomeMembers = lib.optionals (globals.wireguard ? wgHome) (
               globals.wireguard.wgHome.clients ++ [ globals.wireguard.wgHome.server ]
@@ -13172,7 +13204,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               builder-key = {
                 mode = "0600";
                 path = "${config.home.homeDirectory}/.ssh/builder";
-                sopsFile = confLib.static.clientsSopsFile;
+                rekey.keyPrefix = confLib.static.sharedSecrets.clients;
               };
             };
           };
@@ -13243,12 +13275,56 @@ Do note that we have to account for impermanent file systems here, otherwise sys
 
 #+begin_src nix-ts :tangle modules/common/sops.nix
   {
-    flake-file.inputs.sops = {
-      inputs.nixpkgs.follows = "nixpkgs";
-      url = "github:Mic92/sops-nix";
+    inputs,
+    config,
+    lib,
+    ...
+  }:
+  {
+    flake-file.inputs = {
+      sops = {
+        inputs.nixpkgs.follows = "nixpkgs";
+        url = "github:Mic92/sops-nix";
+      };
+
+      sops-rekey = {
+        inputs = {
+          nixpkgs.follows = "nixpkgs";
+          sops-nix.follows = "sops";
+        };
+        url = "github:Swarsel/sops-rekey";
+      };
     };
 
     flake.modules = {
+      generic.sops-rekey =
+        {
+          self,
+          inputs,
+          config,
+          lib,
+          ...
+        }:
+        {
+          imports = [ inputs.sops-rekey.nixosModules.default ];
+          sops = {
+            defaultSopsFile = self + /secrets/root.yaml;
+            rekey = {
+              generators.laravel-key =
+                { pkgs, ... }:
+                ''
+                  printf 'base64:%s' "$(${pkgs.openssl}/bin/openssl rand -base64 32)"
+                '';
+              hostPubkey =
+                let
+                  pubFile = self + "/files/public/age/hosts/${config.node.name}.pub";
+                in
+                lib.mkIf (builtins.pathExists pubFile) pubFile;
+              keyPrefix = "hosts/${config.node.name}/";
+              storageDir = self + "/secrets/rekeyed";
+            };
+          };
+        };
       homeManager.sops =
         {
           self,
@@ -13259,7 +13335,10 @@ Do note that we have to account for impermanent file systems here, otherwise sys
           ...
         }:
         {
-          imports = [ inputs.sops.homeManagerModules.sops ];
+          imports = [
+            inputs.sops.homeManagerModules.sops
+            self.modules.generic.sops-rekey
+          ];
           swarselsystems.enabledHomeModules = [ "sops" ];
           sops = lib.mkIf (nixosConfig == null) {
             age.sshKeyPaths = [
@@ -13267,7 +13346,6 @@ Do note that we have to account for impermanent file systems here, otherwise sys
                 if config.swarselsystems.isImpermanence then "/persist" else ""
               }${config.swarselsystems.homeDir}/.ssh/sops"
             ];
-            defaultSopsFile = self + "/secrets/repo/common.yaml";
             secrets = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsSecrets;
             templates = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsTemplates;
           };
@@ -13280,15 +13358,48 @@ Do note that we have to account for impermanent file systems here, otherwise sys
           ...
         }:
         {
-          imports = [ inputs.sops.nixosModules.sops ];
+          imports = [
+            inputs.sops.nixosModules.sops
+            self.modules.generic.sops-rekey
+          ];
 
-          sops = {
-            age.sshKeyPaths = [
-              "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key"
-            ];
-            defaultSopsFile = self + "/secrets/repo/common.yaml";
-          };
+          sops.age.sshKeyPaths = [
+            "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key"
+          ];
         };
+    };
+
+    imports = [ inputs.sops-rekey.flakeModule ];
+
+    perSystem =
+      { config, pkgs, ... }:
+      {
+        checks.sops-rekey =
+          pkgs.runCommand "sops-rekey-check" { nativeBuildInputs = [ config.packages.sops-rekey ]; }
+            ''
+              cd ${inputs.self}
+              sops-rekey check
+              touch $out
+            '';
+      };
+
+    sops-rekey = {
+      masterRecipients = {
+        age =
+          let
+            dir = ../../files/public/age/users;
+          in
+          lib.optionals (builtins.pathExists dir) (
+            map (name: builtins.readFile (dir + "/${name}")) (builtins.attrNames (builtins.readDir dir))
+          );
+        pgp = [ "4BE7925262289B476DBBC17B76FD3810215AE097" ];
+      };
+      nodes =
+        config.flake.nixosConfigurations
+        // config.flake.guestConfigurations
+        // lib.mapAttrs (
+          _: home: home.extendModules { modules = [ { assertions = lib.mkForce [ ]; } ]; }
+        ) config.flake.homeConfigurations;
     };
   }
 #+end_src
@@ -15028,8 +15139,8 @@ Currently I only use it as before with =initExtra= though.
             swarselsystems = {
               enabledHomeModules = [ "zsh" ];
               homeSopsSecrets = {
-                croc-password.sopsFile = confLib.static.clientsSopsFile;
-                github-nixpkgs-review-token.sopsFile = confLib.static.clientsSopsFile;
+                croc-password.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
+                github-nixpkgs-review-token.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
               };
             };
             programs.zsh = {
@@ -16391,17 +16502,17 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
           address4
           ;
         inherit (confLib.getConfig.repo.secrets.common) fullName;
-        inherit (confLib.static) clientsSopsFile;
+        clientsSecrets = confLib.static.sharedSecrets.clients;
       in
       {
         config = {
           swarselsystems = {
             enabledHomeModules = [ "mail" ];
             homeSopsSecrets = {
-              address1-token.sopsFile = clientsSopsFile;
-              address2-token.sopsFile = clientsSopsFile;
-              address3-token.sopsFile = clientsSopsFile;
-              address4-token.sopsFile = clientsSopsFile;
+              address1-token.rekey.keyPrefix = clientsSecrets;
+              address2-token.rekey.keyPrefix = clientsSecrets;
+              address3-token.rekey.keyPrefix = clientsSecrets;
+              address4-token.rekey.keyPrefix = clientsSecrets;
             };
           };
           services.mbsync.enable = true;
@@ -16606,7 +16717,7 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
       let
         inherit (config.swarselsystems) homeDir mainUser;
         inherit (confLib.getConfig.repo.secrets.common.emacs) radicaleUser;
-        inherit (confLib.static) clientsSopsFile;
+        clientsSecrets = confLib.static.sharedSecrets.clients;
       in
       {
         imports = [
@@ -16618,12 +16729,12 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
             enabledHomeModules = [ "emacs" ];
 
             homeSopsSecrets = {
-              emacs-radicale-pw.sopsFile = clientsSopsFile;
+              emacs-radicale-pw.rekey.keyPrefix = clientsSecrets;
               fever-pw = {
                 path = "${homeDir}/.emacs.d/.fever";
-                sopsFile = clientsSopsFile;
+                rekey.keyPrefix = clientsSecrets;
               };
-              github-forge-token.sopsFile = clientsSopsFile;
+              github-forge-token.rekey.keyPrefix = clientsSecrets;
             };
 
             homeSopsTemplates.authinfo = {
@@ -16773,7 +16884,7 @@ The rest of the related configuration is found here:
         config = {
           swarselsystems = {
             enabledHomeModules = [ "waybar" ];
-            homeSopsSecrets.github-notifications-token.sopsFile = confLib.static.clientsSopsFile;
+            homeSopsSecrets.github-notifications-token.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
             waybarModules = lib.mkIf config.swarselsystems.isLaptop (
               modulesLeft
               ++ [
@@ -19206,7 +19317,7 @@ Normally, I want to push all nix build artifacts to my main cache automatically,
         config = {
           swarselsystems = {
             enabledHomeModules = [ "attic-client" ];
-            homeSopsSecrets.attic-cache-key = { };
+            homeSopsSecrets.attic-cache-key.rekey.keyPrefix = confLib.static.sharedSecrets.common;
           };
           programs.attic-client = {
             enable = true;
@@ -20443,8 +20554,8 @@ This service changes the screen hue at night. I am not sure if that really does 
           swarselsystems = {
             enabledHomeModules = [ "anki" ];
             homeSopsSecrets = {
-              anki-pw.sopsFile = confLib.static.clientsSopsFile;
-              anki-user.sopsFile = confLib.static.clientsSopsFile;
+              anki-pw.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
+              anki-user.rekey.keyPrefix = confLib.static.sharedSecrets.clients;
             };
           };
           programs.anki = {
@@ -21191,8 +21302,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
           ...
         }:
         let
-          inherit (confLib.static) clientsSopsFile;
-          hostSopsFile = config.node.secretsDir + "/secrets.yaml";
+          clientsSecrets = confLib.static.sharedSecrets.clients;
         in
         {
           options.swarselsystems.firewall = lib.swarselsystems.mkTrueOption;
@@ -21200,23 +21310,23 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
             sops = {
               secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-                eduroam-pw.sopsFile = clientsSopsFile;
-                eduroam-user.sopsFile = clientsSopsFile;
-                home-wireguard-client-private-key.sopsFile = hostSopsFile;
-                home-wireguard-endpoint.sopsFile = clientsSopsFile;
-                home-wireguard-preshared-key.sopsFile = hostSopsFile;
-                home-wireguard-server-public-key.sopsFile = clientsSopsFile;
-                laptop-hotspot-pw.sopsFile = clientsSopsFile;
-                mobile-hotspot-pw.sopsFile = clientsSopsFile;
-                pia-vpn-pw.sopsFile = clientsSopsFile;
-                pia-vpn-user.sopsFile = clientsSopsFile;
+                eduroam-pw.rekey.keyPrefix = clientsSecrets;
+                eduroam-user.rekey.keyPrefix = clientsSecrets;
+                home-wireguard-client-private-key.rekey.generator.script = "wireguard";
+                home-wireguard-endpoint.rekey.keyPrefix = clientsSecrets;
+                home-wireguard-preshared-key.rekey.generator.script = "wireguard-psk";
+                home-wireguard-server-public-key.rekey.keyPrefix = clientsSecrets;
+                laptop-hotspot-pw.rekey.keyPrefix = clientsSecrets;
+                mobile-hotspot-pw.rekey.keyPrefix = clientsSecrets;
+                pia-vpn-pw.rekey.keyPrefix = clientsSecrets;
+                pia-vpn-user.rekey.keyPrefix = clientsSecrets;
                 pia-vpn1-ca-pem = {
                   mode = "0444";
-                  sopsFile = clientsSopsFile;
+                  rekey.keyPrefix = clientsSecrets;
                 };
-                wlan1-pw.sopsFile = clientsSopsFile;
-                wlan2-pw.sopsFile = clientsSopsFile;
-                wlan3-pw.sopsFile = clientsSopsFile;
+                wlan1-pw.rekey.keyPrefix = clientsSecrets;
+                wlan2-pw.rekey.keyPrefix = clientsSecrets;
+                wlan3-pw.rekey.keyPrefix = clientsSecrets;
               };
               templates = lib.mkIf (!config.swarselsystems.isPublic) {
                 "network-manager.env".content = ''
@@ -21847,7 +21957,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
               sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
                 u2f-keys = {
                   path = "${homeDir}/.config/Yubico/u2f_keys";
-                  sopsFile = confLib.static.clientsSopsFile;
+                  rekey.keyPrefix = confLib.static.sharedSecrets.clients;
                 };
               };
             };
@@ -23896,18 +24006,17 @@ When setting up a new machine:
       };
       nixos.work =
         {
-          self,
           inputs,
           config,
           lib,
           pkgs,
+          confLib,
           withHomeManager,
           ...
         }:
         let
           inherit (config.swarselsystems) homeDir mainUser;
           owner = mainUser;
-          sopsFile = self + /secrets/work/secrets.yaml;
         in
         {
           options.swarselsystems = {
@@ -23946,7 +24055,10 @@ When setting up a new machine:
                 secrets = builtins.listToAttrs (
                   map (name: {
                     inherit name;
-                    value = { inherit owner sopsFile; };
+                    value = {
+                      inherit owner;
+                      rekey.keyPrefix = confLib.static.sharedSecrets.work;
+                    };
                   }) secretNames
                 );
                 templates."network-manager-work.env".content = ''
@@ -24140,7 +24252,6 @@ When setting up a new machine:
   {
     flake.modules.homeManager.work-dev =
       {
-        self,
         inputs,
         config,
         lib,
@@ -24152,7 +24263,7 @@ When setting up a new machine:
       }:
       let
         inherit (config.swarselsystems) homeDir;
-        workSopsFile = self + /secrets/work/secrets.yaml;
+        workSecrets = confLib.static.sharedSecrets.work;
       in
       {
         imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
@@ -24162,12 +24273,12 @@ When setting up a new machine:
           swarselsystems.homeSopsSecrets = {
             harica-root-ca = {
               path = "${homeDir}/.aws/certs/harica-root.pem";
-              sopsFile = confLib.static.clientsSopsFile;
+              rekey.keyPrefix = confLib.static.sharedSecrets.clients;
             };
-            ucKey.sopsFile = workSopsFile;
-            yubikey-1.sopsFile = workSopsFile;
-            yubikey-2.sopsFile = workSopsFile;
-            yubikey-3.sopsFile = workSopsFile;
+            ucKey.rekey.keyPrefix = workSecrets;
+            yubikey-1.rekey.keyPrefix = workSecrets;
+            yubikey-2.rekey.keyPrefix = workSecrets;
+            yubikey-3.rekey.keyPrefix = workSecrets;
           };
           programs =
             let
@@ -25101,9 +25212,14 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 #+begin_src nix-ts :tangle modules/client/system/sandbox-access.nix
   {
     flake.modules.nixos.sandbox-access =
-      { self, root, ... }:
       {
-        sops.secrets.sandbox-wildcard-key.sopsFile = self + /secrets/general/sandbox.yaml;
+        self,
+        root,
+        confLib,
+        ...
+      }:
+      {
+        sops.secrets.sandbox-wildcard-key.rekey.keyPrefix = confLib.static.sharedSecrets.sandbox;
         networking.hosts."127.0.0.1" =
           builtins.attrValues (import "${self}/hosts/utility/vacanthouse/secrets/pii.nix").services.domains;
         security.pki.certificateFiles = [
@@ -25804,7 +25920,6 @@ Handles my main NFS share. User password setup is currently not declarative, I n
       }:
       let
         nfsUser = globals.user.name;
-        inherit (config.swarselsystems) sopsFile;
       in
       {
         config = {
@@ -25825,10 +25940,7 @@ Handles my main NFS share. User password setup is currently not declarative, I n
               })
             ];
           };
-          sops.secrets.samba-user-pw = {
-            inherit sopsFile;
-            mode = "0400";
-          };
+          sops.secrets.samba-user-pw.mode = "0400";
           users.persistentIds.avahi = confLib.mkIds 978;
           services = {
             avahi = {
@@ -25925,7 +26037,6 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
 
         acmeDns = globals.services.acme-dns;
 
-        sopsFile = self + "/secrets/nginx/acme.json";
         probeDomain = "ssl.${globals.domains.main}";
       in
       {
@@ -25944,11 +26055,9 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
           };
           sops = {
             secrets.acme-creds = {
-              inherit sopsFile;
-              format = "json";
               group = "acme";
-              key = "";
               mode = "0660";
+              rekey.file = self + "/secrets/nginx/acme.json.enc";
             };
             templates."certs.secret".content = ''
               ACME_DNS_API_BASE = http://${acmeDns.serviceAddress}:${toString acmeDns.extraConfig.port}
@@ -26488,6 +26597,7 @@ By default, attic only provides a CLI client to authenticate to caches. I want a
         config,
         lib,
         pkgs,
+        confLib,
         globals,
         ...
       }:
@@ -26496,7 +26606,7 @@ By default, attic only provides a CLI client to authenticate to caches. I want a
         config = {
           swarselsystems.enabledServerModules = [ "attic-setup" ];
           sops = {
-            secrets.attic-cache-key = { };
+            secrets.attic-cache-key.rekey.keyPrefix = confLib.static.sharedSecrets.common;
             templates.attic-env.content = ''
               DOMAIN=https://${globals.services.attic.domain}
               TOKEN=${config.sops.placeholder.attic-cache-key}
@@ -26607,12 +26717,12 @@ In order to define a new Wireguard interface, I have to:
   {
     flake.modules.nixos.wireguard =
       {
-        self,
         config,
         lib,
         pkgs,
         confLib,
         globals,
+        nodes,
         ...
       }:
       let
@@ -26628,8 +26738,17 @@ In order to define a new Wireguard interface, I have to:
           serviceUser
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-        wgSopsFilePrefix = self + "/secrets/wireguard";
+        peerPublicKey =
+          peer: builtins.readFile nodes.${peer}.config.sops.secrets.wireguard-private-key.rekey.pubFile;
+        presharedKeySecret = server: client: {
+          group = serviceGroup;
+          mode = "0600";
+          owner = serviceUser;
+          rekey = {
+            generator.script = "wireguard-psk";
+            keyPrefix = "wireguard/${server}-${client}/";
+          };
+        };
 
         # Derive interfaces from globals.wireguard based on this node's name
         interfaces =
@@ -26687,10 +26806,10 @@ In order to define a new Wireguard interface, I have to:
             [
               {
                 wireguard-private-key = {
-                  inherit sopsFile;
                   group = serviceGroup;
                   mode = "0600";
                   owner = serviceUser;
+                  rekey.generator.script = "wireguard";
                 };
               }
             ]
@@ -26698,24 +26817,15 @@ In order to define a new Wireguard interface, I have to:
               i:
               let
                 clientSecrets = lib.optionalAttrs i.isClient {
-                  "wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey" = {
-                    group = serviceGroup;
-                    mode = "0600";
-                    owner = serviceUser;
-                    sopsFile = wgSopsFilePrefix + "/${i.serverName}-${config.node.name}.yaml";
-                  };
+                  "wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey" =
+                    presharedKeySecret i.serverName config.node.name;
                 };
 
                 serverSecrets = lib.optionalAttrs i.isServer (
                   builtins.listToAttrs (
                     map (clientName: {
                       name = "wireguard-${config.node.name}-${clientName}-${i.ifName}-presharedKey";
-                      value = {
-                        group = serviceGroup;
-                        mode = "0600";
-                        owner = serviceUser;
-                        sopsFile = wgSopsFilePrefix + "/${config.node.name}-${clientName}.yaml";
-                      };
+                      value = presharedKeySecret config.node.name clientName;
                     }) i.peers
                   )
                 );
@@ -26862,7 +26972,7 @@ In order to define a new Wireguard interface, I have to:
                           PersistentKeepalive = 25;
                           PresharedKeyFile =
                             config.sops.secrets."wireguard-${i.serverName}-${config.node.name}-${i.ifName}-presharedKey".path;
-                          PublicKey = builtins.readFile "${self}/files/public/wg/${i.serverName}.pub";
+                          PublicKey = peerPublicKey i.serverName;
                         }
                       ]
                       ++ lib.optionals i.isServer (
@@ -26875,7 +26985,7 @@ In order to define a new Wireguard interface, I have to:
                             ++ (lib.optional (clientInWgNetwork.ipv6 != null) (lib.net.cidr.make 128 clientInWgNetwork.ipv6));
                           PresharedKeyFile =
                             config.sops.secrets."wireguard-${i.serverName}-${clientName}-${i.ifName}-presharedKey".path;
-                          PublicKey = builtins.readFile "${self}/files/public/wg/${clientName}.pub";
+                          PublicKey = peerPublicKey clientName;
                         }) i.peers
                       );
                   };
@@ -27290,7 +27400,6 @@ Kavita is the service I use for my library management. It seems more tailored to
   {
     flake.modules.nixos.kavita =
       {
-        self,
         config,
         lib,
         confLib,
@@ -27298,7 +27407,6 @@ Kavita is the service I use for my library management. It seems more tailored to
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
 
         inherit
           (confLib.gen {
@@ -27324,7 +27432,6 @@ Kavita is the service I use for my library management. It seems more tailored to
           ;
 
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         config = {
@@ -27355,11 +27462,11 @@ Kavita is the service I use for my library management. It seems more tailored to
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
             kavita-token = {
-              inherit sopsFile;
               owner = serviceUser;
+              rekey.generator.script = "base64";
             };
           };
           users = {
@@ -27396,7 +27503,7 @@ Kavita is the service I use for my library management. It seems more tailored to
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/signin-oidc";
               };
             }
@@ -27496,7 +27603,6 @@ Using the SSO Plugin and Jellyfin Enhanced are sadly not declarative:
   {
     flake.modules.nixos.jellyfin =
       {
-        self,
         config,
         lib,
         pkgs,
@@ -27526,7 +27632,6 @@ Using the SSO Plugin and Jellyfin Enhanced are sadly not declarative:
           nginxAccessRules
           webProxy
           ;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         config = {
@@ -27556,7 +27661,7 @@ Using the SSO Plugin and Jellyfin Enhanced are sadly not declarative:
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+            rekey.keyPrefix = confLib.kanidmSecrets;
           };
           users = {
             users.${serviceUser}.extraGroups = [
@@ -27600,7 +27705,7 @@ Using the SSO Plugin and Jellyfin Enhanced are sadly not declarative:
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/sso/OID/redirect/kanidm";
               };
             }
@@ -27661,7 +27766,6 @@ The first setup must be done manually:
         imports = lib.optionals (inputs ? seerr-oidc) [
           (
             {
-              self,
               inputs,
               config,
               lib,
@@ -27692,7 +27796,6 @@ The first setup must be done manually:
                 nginxAccessRules
                 webProxy
                 ;
-              kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
             in
             {
               swarselsystems.enabledServerModules = [ "seerr" ];
@@ -27719,7 +27822,7 @@ The first setup must be done manually:
                 networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
               };
 
-              sops.secrets.kanidm-seerr.sopsFile = kanidmSopsFile;
+              sops.secrets.kanidm-seerr.rekey.keyPrefix = confLib.kanidmSecrets;
               services.${serviceName} = {
                 enable = true;
                 package = pkgs.seerr.overrideAttrs (old: {
@@ -27742,7 +27845,7 @@ The first setup must be done manually:
               nodes = lib.mkMerge [
                 {
                   ${idmServer} = confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     originUrl = [
                       "https://${serviceDomain}/login"
                       "https://${serviceDomain}/profile/settings/linked-accounts"
@@ -28165,7 +28268,6 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit
           (confLib.gen {
             name = "mpd";
@@ -28189,7 +28291,6 @@ My jukebox replacement since the native one in [[#h:f347f3ad-5100-4c4f-8616-cfd7
             expectedRegex = "^OK MPD";
           };
           sops.secrets.mpd-pw = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
@@ -28372,6 +28473,9 @@ Many services require a database, and I like to go with full postgres when givin
             ${serviceName} = {
               enable = true;
               package = pkgs."postgresql_${builtins.toString postgresVersion}";
+              authentication = lib.concatMapStrings (role: ''
+                local all "${role}" scram-sha-256
+              '') (lib.attrNames config.swarselsystems.server.postgresql.rolePasswordFiles);
               dataDir = "${postgresDirPrefix}/${serviceName}/${builtins.toString postgresVersion}";
               settings = {
                 synchronous_commit = "off";
@@ -28536,7 +28640,6 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit
           (confLib.gen {
             name = "matrix";
@@ -28565,7 +28668,6 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
           ;
 
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
         federationPort = 8448;
         whatsappPort = 29318;
@@ -28573,6 +28675,16 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
         signalPort = 29328;
         ircPort = 8009;
         ircMediaPort = 11111;
+        postgresRoles = [
+          "matrix-synapse"
+          "matrix-appservice-irc"
+          "mautrix-discord"
+          "mautrix-meta-instagram"
+          "mautrix-telegram"
+          "mautrix-whatsapp"
+          "mautrix-signal"
+        ];
+        mkPostgresUri = role: password: "postgresql://${role}:${password}@/${role}?host=/run/postgresql";
         baseUrl = "https://${serviceDomain}";
         clientConfig."m.homeserver".base_url = baseUrl;
         serverConfig."m.server" = "${serviceDomain}:443";
@@ -28587,7 +28699,12 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ "matrix" ];
+          swarselsystems = {
+            enabledServerModules = [ "matrix" ];
+            server.postgresql.rolePasswordFiles = lib.genAttrs postgresRoles (
+              role: config.sops.secrets."${role}-db-password".path
+            );
+          };
           globals = {
             services = confLib.mkServiceGlobal {
               inherit
@@ -28622,7 +28739,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
           };
           sops = {
             secrets =
-              lib.mapAttrs' (id: _: lib.nameValuePair "matrix-irc-${id}-key" { inherit sopsFile; }) (
+              lib.mapAttrs' (id: _: lib.nameValuePair "matrix-irc-${id}-key" { }) (
                 lib.filterAttrs (_: server: server ? onConnectCommands) config.repo.secrets.local.irc.servers
               )
               // {
@@ -28630,48 +28747,34 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                   group = serviceGroup;
                   mode = "0440";
                   owner = serviceUser;
-                  sopsFile = kanidmSopsFile;
+                  rekey.keyPrefix = confLib.kanidmSecrets;
                 };
-                matrix-doublepuppet-token = {
-                  inherit sopsFile;
-                };
+                matrix-doublepuppet-token.rekey.generator.script = "hex";
                 matrix-shared-secret = {
-                  inherit sopsFile;
                   owner = serviceUser;
+                  rekey.generator.script = "alnum";
                 };
-                mautrix-meta-instagram-as-token = {
-                  inherit sopsFile;
-                };
-                mautrix-meta-instagram-hs-token = {
-                  inherit sopsFile;
-                };
-                mautrix-meta-instagram-pickle-key = {
-                  inherit sopsFile;
-                };
-                mautrix-signal-pickle-key = {
-                  inherit sopsFile;
-                };
-                mautrix-telegram-api-hash = {
-                  inherit sopsFile;
-                  owner = serviceUser;
-                };
-                mautrix-telegram-api-id = {
-                  inherit sopsFile;
-                  owner = serviceUser;
-                };
+                mautrix-meta-instagram-as-token.rekey.generator.script = "hex";
+                mautrix-meta-instagram-hs-token.rekey.generator.script = "hex";
+                mautrix-meta-instagram-pickle-key.rekey.generator.script = "alnum";
+                mautrix-signal-pickle-key.rekey.generator.script = "alnum";
+                mautrix-telegram-api-hash.owner = serviceUser;
+                mautrix-telegram-api-id.owner = serviceUser;
                 mautrix-telegram-as-token = {
-                  inherit sopsFile;
                   owner = serviceUser;
+                  rekey.generator.script = "hex";
                 };
                 mautrix-telegram-hs-token = {
-                  inherit sopsFile;
                   owner = serviceUser;
+                  rekey.generator.script = "hex";
                 };
-                mautrix-whatsapp-pickle-key = {
-                  inherit sopsFile;
-                };
-                notification-mail-pw.sopsFile = notificationMail.sopsFile;
-              };
+                mautrix-whatsapp-pickle-key.rekey.generator.script = "alnum";
+                notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
+              }
+              // lib.genAttrs (map (role: "${role}-db-password") postgresRoles) (_: {
+                owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
+              });
             templates = {
               "doublepuppet.yaml" = {
                 content = ''
@@ -28692,6 +28795,14 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 content = builtins.toJSON config.services.matrix-appservice-irc.settings;
                 owner = "matrix-appservice-irc";
                 restartUnits = [ "matrix-appservice-irc.service" ];
+              };
+              "matrix-database.yaml" = {
+                content = builtins.toJSON {
+                  database = lib.recursiveUpdate config.services.matrix-synapse.settings.database {
+                    args.password = config.sops.placeholder."matrix-synapse-db-password";
+                  };
+                };
+                owner = serviceUser;
               };
               "matrix-email.yaml" = {
                 content = builtins.toJSON {
@@ -28719,12 +28830,14 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               };
               mautrixdiscord = {
                 content = ''
+                  MAUTRIX_DISCORD_DB_PASSWORD=${config.sops.placeholder."mautrix-discord-db-password"}
                   MAUTRIX_DISCORD_DOUBLEPUPPET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
                 '';
                 owner = serviceUser;
               };
               mautrixmetainstagram = {
                 content = ''
+                  MAUTRIX_META_INSTAGRAM_DB_PASSWORD=${config.sops.placeholder."mautrix-meta-instagram-db-password"}
                   MAUTRIX_META_INSTAGRAM_AS_TOKEN=${config.sops.placeholder.mautrix-meta-instagram-as-token}
                   MAUTRIX_META_INSTAGRAM_HS_TOKEN=${config.sops.placeholder.mautrix-meta-instagram-hs-token}
                   MAUTRIX_META_INSTAGRAM_PICKLE_KEY=${config.sops.placeholder.mautrix-meta-instagram-pickle-key}
@@ -28734,6 +28847,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               };
               mautrixsignal = {
                 content = ''
+                  MAUTRIX_SIGNAL_DB_PASSWORD=${config.sops.placeholder."mautrix-signal-db-password"}
                   MAUTRIX_SIGNAL_PICKLE_KEY=${config.sops.placeholder.mautrix-signal-pickle-key}
                   MAUTRIX_SIGNAL_BRIDGE_LOGIN_SHARED_SECRET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
                 '';
@@ -28741,6 +28855,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               };
               mautrixtelegram = {
                 content = ''
+                  MAUTRIX_TELEGRAM_DB_PASSWORD=${config.sops.placeholder."mautrix-telegram-db-password"}
                   MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrix-telegram-as-token}
                   MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrix-telegram-hs-token}
                   MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrix-telegram-api-id}
@@ -28751,6 +28866,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               };
               mautrixwhatsapp = {
                 content = ''
+                  MAUTRIX_WHATSAPP_DB_PASSWORD=${config.sops.placeholder."mautrix-whatsapp-db-password"}
                   MAUTRIX_WHATSAPP_PICKLE_KEY=${config.sops.placeholder.mautrix-whatsapp-pickle-key}
                   MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=as_token:${config.sops.placeholder.matrix-doublepuppet-token}
                 '';
@@ -28777,7 +28893,9 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               registrationUrl = "http://localhost:${builtins.toString ircPort}";
               settings = {
                 database = {
-                  connectionString = "postgres://matrix-appservice-irc@/matrix-appservice-irc?host=/run/postgresql";
+                  connectionString =
+                    mkPostgresUri "matrix-appservice-irc"
+                      config.sops.placeholder."matrix-appservice-irc-db-password";
                   engine = "postgres";
                 };
                 homeserver = {
@@ -28868,6 +28986,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               enable = true;
               dataDir = "/var/lib/matrix-synapse";
               extraConfigFiles = [
+                config.sops.templates."matrix-database.yaml".path
                 config.sops.templates."matrix-email.yaml".path
                 config.sops.templates.matrixshared.path
               ];
@@ -28935,7 +29054,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               settings = {
                 appservice.database = {
                   type = "postgres";
-                  uri = "postgresql:///mautrix-discord?host=/run/postgresql";
+                  uri = mkPostgresUri "mautrix-discord" "$MAUTRIX_DISCORD_DB_PASSWORD";
                 };
                 bridge = {
                   backfill.forward_limits = {
@@ -28981,7 +29100,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 };
                 database = {
                   type = "postgres";
-                  uri = "postgresql:///mautrix-meta-instagram?host=/run/postgresql";
+                  uri = mkPostgresUri "mautrix-meta-instagram" "$MAUTRIX_META_INSTAGRAM_DB_PASSWORD";
                 };
                 double_puppet.secrets.${serviceDomain} = "$MAUTRIX_META_INSTAGRAM_DOUBLEPUPPET";
                 encryption.pickle_key = "$MAUTRIX_META_INSTAGRAM_PICKLE_KEY";
@@ -29007,7 +29126,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 };
                 database = {
                   type = "postgres";
-                  uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+                  uri = mkPostgresUri "mautrix-signal" "$MAUTRIX_SIGNAL_DB_PASSWORD";
                 };
                 encryption = {
                   allow = true;
@@ -29028,7 +29147,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               settings = {
                 appservice = {
                   address = "http://localhost:${builtins.toString telegramPort}";
-                  database = "postgresql:///mautrix-telegram?host=/run/postgresql";
+                  database = mkPostgresUri "mautrix-telegram" "$MAUTRIX_TELEGRAM_DB_PASSWORD";
                   hostname = "0.0.0.0";
                   id = "telegram";
                   port = telegramPort;
@@ -29089,7 +29208,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
                 };
                 database = {
                   type = "postgres";
-                  uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+                  uri = mkPostgresUri "mautrix-whatsapp" "$MAUTRIX_WHATSAPP_DB_PASSWORD";
                 };
                 encryption = {
                   allow = true;
@@ -29118,45 +29237,11 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
               };
             };
             postgresql = {
-              ensureDatabases = [
-                "matrix-synapse"
-                "matrix-appservice-irc"
-                "mautrix-discord"
-                "mautrix-meta-instagram"
-                "mautrix-telegram"
-                "mautrix-whatsapp"
-                "mautrix-signal"
-              ];
-              ensureUsers = [
-                {
-                  ensureDBOwnership = true;
-                  name = "matrix-synapse";
-                }
-                {
-                  ensureDBOwnership = true;
-                  name = "matrix-appservice-irc";
-                }
-                {
-                  ensureDBOwnership = true;
-                  name = "mautrix-discord";
-                }
-                {
-                  ensureDBOwnership = true;
-                  name = "mautrix-meta-instagram";
-                }
-                {
-                  ensureDBOwnership = true;
-                  name = "mautrix-telegram";
-                }
-                {
-                  ensureDBOwnership = true;
-                  name = "mautrix-whatsapp";
-                }
-                {
-                  ensureDBOwnership = true;
-                  name = "mautrix-signal";
-                }
-              ];
+              ensureDatabases = postgresRoles;
+              ensureUsers = map (name: {
+                inherit name;
+                ensureDBOwnership = true;
+              }) postgresRoles;
               initialScript = pkgs.writeText "synapse-init.sql" ''
                 CREATE DATABASE "matrix-synapse"
                   TEMPLATE template0
@@ -29312,7 +29397,7 @@ My messenger of choice. I use this mainly to bridge messages of WhatsApp/telegra
             lib.mkMerge [
               {
                 ${idmServer} = confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   originUrl = "https://${serviceDomain}/_synapse/client/oidc/callback";
                 };
               }
@@ -29402,7 +29487,6 @@ Social Login (OIDC) setup:
 
         nextcloudVersion = "35";
 
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         imports = [
@@ -29436,9 +29520,9 @@ Social Login (OIDC) setup:
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
-                sopsFile = kanidmSopsFile;
+                rekey.keyPrefix = confLib.kanidmSecrets;
               };
-              notification-mail-pw.sopsFile = notificationMail.sopsFile;
+              notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
             };
             templates."nextcloud-secrets.json".content = builtins.toJSON {
               mail_smtppassword = config.sops.placeholder.notification-mail-pw;
@@ -29528,7 +29612,7 @@ Social Login (OIDC) setup:
                 ${idmServer} =
                   lib.recursiveUpdate
                     (confLib.mkKanidmOidcSystem {
-                      inherit kanidmSopsFile serviceDomain serviceName;
+                      inherit serviceDomain serviceName;
                       extraGroups = [ "nextcloud.admins" ];
                       originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
                     })
@@ -29623,14 +29707,17 @@ My photo service. It does some cool things like face recognition automatically (
           ;
 
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         imports = [
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ "immich" ];
+          swarselsystems = {
+            enabledServerModules = [ "immich" ];
+            server.postgresql.rolePasswordFiles.${serviceName} =
+              config.sops.secrets."${serviceName}-db-password".path;
+          };
           topology.self.services.${serviceName}.info = "https://${serviceDomain}";
           # networking.firewall.allowedTCPPorts = [ servicePort ];
           globals = {
@@ -29653,19 +29740,34 @@ My photo service. It does some cool things like face recognition automatically (
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
-          sops.secrets = {
-            kanidm-immich = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+          sops = {
+            secrets = {
+              "${serviceName}-db-password" = {
+                owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
+              };
+              kanidm-immich = {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+                rekey.keyPrefix = confLib.kanidmSecrets;
+              };
+              notification-mail-pw = {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+                rekey.keyPrefix = notificationMail.keyPrefix;
+              };
             };
-            notification-mail-pw = {
-              inherit (notificationMail) sopsFile;
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
+            templates."${serviceName}-db-env".content =
+              let
+                inherit (config.services.${serviceName}) database;
+              in
+              ''
+                DB_URL=postgresql://${database.user}:${
+                  config.sops.placeholder."${serviceName}-db-password"
+                }@/${database.name}?host=${database.host}&port=${builtins.toString database.port}
+              '';
           };
           users = {
             users.${serviceUser}.extraGroups = [
@@ -29686,6 +29788,7 @@ My photo service. It does some cool things like face recognition automatically (
             # openFirewall = true;
             mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
             port = servicePort;
+            secretsFile = config.sops.templates."${serviceName}-db-env".path;
             settings = {
               backup.database = {
                 cronExpression = "0 02 * * *";
@@ -29915,7 +30018,7 @@ My photo service. It does some cool things like face recognition automatically (
                 ${idmServer} =
                   lib.recursiveUpdate
                     (confLib.mkKanidmOidcSystem {
-                      inherit kanidmSopsFile serviceDomain serviceName;
+                      inherit serviceDomain serviceName;
                       originUrl = [
                         "https://${serviceDomain}/auth/login"
                         "https://${serviceDomain}/user-settings"
@@ -29976,7 +30079,6 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   {
     flake.modules.nixos.paperless =
       {
-        self,
         config,
         lib,
         pkgs,
@@ -29985,7 +30087,6 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit
           (confLib.gen {
             name = "paperless";
@@ -30013,7 +30114,6 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         tikaPort = 9998;
         gotenbergPort = 3002;
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         config = {
@@ -30041,12 +30141,9 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           };
           sops = {
             secrets = {
-              kanidm-paperless.sopsFile = kanidmSopsFile;
-              notification-mail-pw.sopsFile = notificationMail.sopsFile;
-              paperless-admin-pw = {
-                inherit sopsFile;
-                owner = serviceUser;
-              };
+              kanidm-paperless.rekey.keyPrefix = confLib.kanidmSecrets;
+              notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
+              paperless-admin-pw.owner = serviceUser;
             };
             templates = {
               "paperless-mail.env" = {
@@ -30165,7 +30262,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             lib.mkMerge [
               {
                 ${idmServer} = confLib.mkKanidmOidcSystem {
-                  inherit kanidmSopsFile serviceDomain serviceName;
+                  inherit serviceDomain serviceName;
                   originUrl = "https://${serviceDomain}/accounts/oidc/kanidm/login/callback/";
                 };
               }
@@ -30241,7 +30338,6 @@ I use this configuration for sailing.
           isHome
           nginxAccessRules
           ;
-        inherit (config.swarselsystems) sopsFile;
 
         piaNamespace = "pia";
         piaPortFile = "/run/pia/forwarded-port";
@@ -30355,9 +30451,9 @@ I use this configuration for sailing.
           };
           sops = {
             secrets = {
-              mam-id = { inherit sopsFile; };
-              pia = { inherit sopsFile; };
-              transmission-rpc-password = { inherit sopsFile; };
+              mam-id = { };
+              pia = { };
+              transmission-rpc-password = { };
             };
             templates."transmission-credentials.json" = {
               content = ''
@@ -31360,7 +31456,6 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit (config.swarselsystems.server.restic) targets;
         metricsDir = "/var/lib/restic-metrics";
       in
@@ -31399,9 +31494,9 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
           sops = {
             secrets = lib.mkMerge (
               lib.mapAttrsToList (name: _: {
-                "resticaccesskey-${name}" = { inherit sopsFile; };
-                "resticpw-${name}" = { inherit sopsFile; };
-                "resticsecretaccesskey-${name}" = { inherit sopsFile; };
+                "resticaccesskey-${name}" = { };
+                "resticpw-${name}" = { };
+                "resticsecretaccesskey-${name}" = { };
               }) targets
             );
 
@@ -31730,10 +31825,7 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         config = {
@@ -31764,16 +31856,14 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = self + /secrets/general/gatus.yaml;
+              rekey.keyPrefix = confLib.static.sharedSecrets.gatus;
             };
             grafana-admin-pw = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
             grafana-gotify-token = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
@@ -31782,13 +31872,13 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
             notification-mail-pw = {
-              inherit (notificationMail) sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
+              rekey.keyPrefix = notificationMail.keyPrefix;
             };
           };
           users = {
@@ -31995,7 +32085,7 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     extraGroups = [
                       "grafana.editors"
                       "grafana.admins"
@@ -32374,13 +32464,19 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
           nginxAccessRules
           webProxy
           ;
+
+        postgresRole = "gotify-server";
       in
       {
         imports = [
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ serviceName ];
+          swarselsystems = {
+            enabledServerModules = [ serviceName ];
+            server.postgresql.rolePasswordFiles.${postgresRole} =
+              config.sops.secrets."${postgresRole}-db-password".path;
+          };
           topology.self.services.${serviceName} = {
             icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
@@ -32407,11 +32503,21 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
+          sops = {
+            secrets."${postgresRole}-db-password" = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            };
+            templates."${serviceName}-env".content = ''
+              GOTIFY_DATABASE_CONNECTION="host=/run/postgresql user=${postgresRole} dbname=${postgresRole} password=${
+                config.sops.placeholder."${postgresRole}-db-password"
+              } sslmode=disable"
+            '';
+          };
           services = {
             ${serviceName} = {
               enable = true;
               environment = {
-                GOTIFY_DATABASE_CONNECTION = "host=/run/postgresql user=gotify-server dbname=gotify-server sslmode=disable";
                 GOTIFY_DATABASE_DIALECT = "postgres";
                 GOTIFY_PASSSTRENGTH = 12;
                 GOTIFY_PLUGINSDIR = "${serviceDir}/plugins";
@@ -32419,13 +32525,14 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                 GOTIFY_SERVER_PORT = servicePort;
                 GOTIFY_UPLOADEDIMAGESDIR = "${serviceDir}/images";
               };
+              environmentFiles = [ config.sops.templates."${serviceName}-env".path ];
             };
             postgresql = {
-              ensureDatabases = [ "gotify-server" ];
+              ensureDatabases = [ postgresRole ];
               ensureUsers = [
                 {
                   ensureDBOwnership = true;
-                  name = "gotify-server";
+                  name = postgresRole;
                 }
               ];
             };
@@ -33382,7 +33489,6 @@ This is just a lite probing that runs from the outside to make sure my most impo
   {
     flake.modules.nixos.gatus =
       {
-        self,
         config,
         lib,
         confLib,
@@ -33456,8 +33562,11 @@ This is just a lite probing that runs from the outside to make sure my most impo
           };
           sops = {
             secrets = {
-              gatus-smtp-password = { inherit (config.swarselsystems) sopsFile; };
-              gatus-watchdog-token.sopsFile = self + /secrets/general/gatus.yaml;
+              gatus-smtp-password = { };
+              gatus-watchdog-token.rekey = {
+                generator.script = "alnum";
+                keyPrefix = confLib.static.sharedSecrets.gatus;
+              };
             };
             templates.gatus-env.content = ''
               GATUS_SMTP_PASSWORD=${config.sops.placeholder.gatus-smtp-password}
@@ -33621,7 +33730,6 @@ Reads the reports that arrive and makes them available to [[#h:a31c7192-e11d-4a2
   {
     flake.modules.nixos.parsedmarc =
       {
-        self,
         config,
         lib,
         confLib,
@@ -33654,7 +33762,10 @@ Reads the reports that arrive and makes them available to [[#h:a31c7192-e11d-4a2
               unit = "parsedmarc.service";
             };
           };
-          sops.secrets.parsedmarc-imap-password.sopsFile = self + /secrets/general/parsedmarc.yaml;
+          sops.secrets.parsedmarc-imap-password.rekey = {
+            generator.script = "alnum";
+            keyPrefix = confLib.static.sharedSecrets.parsedmarc;
+          };
           services = {
             ${serviceName} = {
               enable = true;
@@ -34530,7 +34641,6 @@ FreshRSS claims to support HTTP header Auth, but at least it does not work with 
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
       in
       {
         imports = [
@@ -34565,11 +34675,8 @@ FreshRSS claims to support HTTP header Auth, but at least it does not work with 
           };
           sops = {
             secrets = {
-              freshrss-pw = {
-                inherit sopsFile;
-                owner = serviceUser;
-              };
-              # kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+              freshrss-pw.owner = serviceUser;
+              # kanidm-freshrss-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
               # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
             };
 
@@ -34687,7 +34794,6 @@ My self-hosted git solution.
   {
     flake.modules.nixos.forgejo =
       {
-        self,
         config,
         lib,
         pkgs,
@@ -34721,7 +34827,6 @@ My self-hosted git solution.
           ;
 
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
         sshProxyPort = 2222;
         sshListenPort = 2222;
       in
@@ -34759,9 +34864,9 @@ My self-hosted git solution.
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
-            notification-mail-pw.sopsFile = notificationMail.sopsFile;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
           };
           # networking.firewall.allowedTCPPorts = [ servicePort ];
           users = {
@@ -34899,7 +35004,7 @@ My self-hosted git solution.
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     extraGroups = [ "forgejo.admins" ];
                     originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
                   })
@@ -34981,7 +35086,6 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit
           (confLib.gen {
             name = "ankisync";
@@ -35032,10 +35136,7 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           # networking.firewall.allowedTCPPorts = [ servicePort ];
-          sops.secrets.anki-pw = {
-            inherit sopsFile;
-            owner = "root";
-          };
+          sops.secrets.anki-pw.owner = "root";
           services.anki-sync-server = {
             # openFirewall = true;
             users = [
@@ -35112,7 +35213,6 @@ kanidm person credential create-reset-token <user>
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit
           (confLib.gen {
             name = "kanidm";
@@ -35177,32 +35277,28 @@ kanidm person credential create-reset-token <user>
           sops = {
             secrets = {
               kanidm-admin-pw = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
               };
               kanidm-idm-admin-pw = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
               };
-              kanidm-mail-sender-token = lib.mkIf hasMailserver { inherit sopsFile; };
+              kanidm-mail-sender-token = lib.mkIf hasMailserver { };
               kanidm-self-signed-crt = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
               };
               kanidm-self-signed-key = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
               };
-              # "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-              notification-mail-pw = lib.mkIf hasMailserver { inherit (notificationMail) sopsFile; };
+              # "kanidm-freshrss" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+              notification-mail-pw = lib.mkIf hasMailserver { rekey.keyPrefix = notificationMail.keyPrefix; };
             };
             templates."${mailSenderUnit}.toml" = lib.mkIf hasMailserver {
               content = ''
@@ -35409,7 +35505,6 @@ This can be used to add OIDC in a way to services that do not support it nativel
   {
     flake.modules.nixos.oauth2-proxy =
       {
-        self,
         config,
         lib,
         pkgs,
@@ -35445,10 +35540,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
 
         mainDomain = globals.domains.main;
 
-        inherit (config.swarselsystems) sopsFile;
-
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
         homeProxyWan4 = globals.hosts.${homeProxy}.wanAddress4 or null;
         homeProxyWan6 = globals.hosts.${homeProxy}.wanAddress6 or null;
@@ -35604,13 +35696,13 @@ This can be used to add OIDC in a way to services that do not support it nativel
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
-                sopsFile = kanidmSopsFile;
+                rekey.keyPrefix = confLib.kanidmSecrets;
               };
               oauth2-cookie-secret = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
+                rekey.generator.script = "base64url";
               };
             };
 
@@ -35694,7 +35786,10 @@ This can be used to add OIDC in a way to services that do not support it nativel
                     group = "kanidm";
                     mode = "0440";
                     owner = "kanidm";
-                    sopsFile = kanidmSopsFile;
+                    rekey = {
+                      generator.script = "alnum";
+                      keyPrefix = confLib.kanidmSecrets;
+                    };
                   };
                   services.kanidm.provision.systems.oauth2.oauth2-proxy = {
                     basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path; # dirty but saves a cross-evaluation
@@ -35777,7 +35872,6 @@ My expenses tracker.
 
         nginxGroup = "nginx";
 
-        inherit (config.swarselsystems) sopsFile;
         cfg = config.services.firefly-iii;
       in
       {
@@ -35813,16 +35907,19 @@ My expenses tracker.
           };
           sops.secrets = {
             firefly-iii-app-key = {
-              inherit sopsFile;
               group = if cfg.enableNginx then nginxGroup else serviceGroup;
               mode = "0440";
               owner = serviceUser;
+              rekey.generator = {
+                args.length = 32;
+                script = "alnum";
+              };
             };
             notification-mail-pw = {
-              inherit (notificationMail) sopsFile;
               group = if cfg.enableNginx then nginxGroup else serviceGroup;
               mode = "0440";
               owner = serviceUser;
+              rekey.keyPrefix = notificationMail.keyPrefix;
             };
           };
           users = {
@@ -35978,7 +36075,6 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
         postgresPort = config.services.postgresql.settings.port; # 5432
         containerRev = "sha256:bb8ad2b6891441d8ec5c3169b684b71574f3bb3e9afb345bad2f91d833d60340";
 
-        inherit (config.swarselsystems) sopsFile;
       in
       {
         imports = [
@@ -35986,7 +36082,10 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
           self.modules.nixos.podman
         ];
         config = {
-          swarselsystems.enabledServerModules = [ "koillection" ];
+          swarselsystems = {
+            enabledServerModules = [ "koillection" ];
+            server.postgresql.rolePasswordFiles.${serviceDB} = config.sops.secrets.koillection-db-password.path;
+          };
           topology.nodes.${topologyContainerName}.services.${serviceName} = {
             icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
@@ -36018,12 +36117,12 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
           };
           sops.secrets = {
             koillection-db-password = {
-              inherit sopsFile;
               group = postgresUser;
               mode = "0440";
               owner = postgresUser;
+              rekey.generator.script = "alnum";
             };
-            koillection-env-file = { inherit sopsFile; };
+            koillection-env-file = { };
           };
           services.postgresql = {
             enable = true;
@@ -36074,20 +36173,6 @@ My collection tracker. I am not too happy with its GUI, but the API is good, and
             ];
           };
           # networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
-          systemd.services.postgresql.postStart =
-            let
-              passwordPath = config.sops.secrets.koillection-db-password.path;
-            in
-            ''
-              ${config.services.postgresql.package}/bin/psql -tA <<'EOF'
-                DO $$
-                DECLARE password TEXT;
-                BEGIN
-                  password := trim(both from replace(pg_read_file('${passwordPath}'), E'\n', '''));
-                  EXECUTE format('ALTER ROLE ${serviceDB} WITH PASSWORD '''%s''';', password);
-                END $$;
-              EOF
-            '';
           nodes =
             let
               extraConfigLoc = ''
@@ -36166,6 +36251,7 @@ Used to sync shell history across machines and have it backed up somewhere.
       nixos.atuin =
         {
           self,
+          config,
           lib,
           confLib,
           ...
@@ -36190,13 +36276,18 @@ Used to sync shell history across machines and have it backed up somewhere.
             nginxAccessRules
             webProxy
             ;
+
         in
         {
           imports = [
             self.modules.nixos.postgresql
           ];
           config = {
-            swarselsystems.enabledServerModules = [ "atuin" ];
+            swarselsystems = {
+              enabledServerModules = [ "atuin" ];
+              server.postgresql.rolePasswordFiles.${serviceName} =
+                config.sops.secrets."${serviceName}-db-password".path;
+            };
             topology.self.services.${serviceName}.info = "https://${serviceDomain}";
             globals = {
               services = confLib.mkServiceGlobal {
@@ -36217,8 +36308,21 @@ Used to sync shell history across machines and have it backed up somewhere.
               };
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             };
+            sops = {
+              secrets."${serviceName}-db-password" = {
+                owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
+              };
+              templates."${serviceName}-env".content = ''
+                ATUIN_DB_URI=postgresql://${serviceName}:${
+                  config.sops.placeholder."${serviceName}-db-password"
+                }@localhost/${serviceName}?host=/run/postgresql
+              '';
+            };
             services.${serviceName} = {
               enable = true;
+              database.uri = null;
+              environmentFile = config.sops.templates."${serviceName}-env".path;
               host = "0.0.0.0";
               # openFirewall = true;
               openRegistration = false;
@@ -36293,7 +36397,6 @@ Self-hosted calendar and contacts.
           nginxAccessRules
           webProxy
           ;
-        inherit (config.swarselsystems) sopsFile;
 
         cfg = config.services.${serviceName};
       in
@@ -36322,7 +36425,6 @@ Self-hosted calendar and contacts.
           };
           sops = {
             secrets.radicale-user = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
@@ -36468,8 +36570,6 @@ P2P file-sharing similar to what you might know from wormhole(/-rs), but fully s
           9013
         ];
 
-        inherit (config.swarselsystems) sopsFile;
-
         cfg = config.services.croc;
       in
       {
@@ -36492,7 +36592,7 @@ P2P file-sharing similar to what you might know from wormhole(/-rs), but fully s
             };
           };
           sops = {
-            secrets.croc-password = { inherit sopsFile; };
+            secrets.croc-password = { };
 
             templates.croc-env.content = ''
               CROC_PASS="${config.sops.placeholder.croc-password}"
@@ -36564,8 +36664,6 @@ Basically a self-hosted Pastebin that also offers syntax highlighting.
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-
         cfg = config.services.${serviceName};
       in
       {
@@ -36598,19 +36696,16 @@ Basically a self-hosted Pastebin that also offers syntax highlighting.
           sops = {
             secrets = {
               microbin-admin-password = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
               };
               microbin-admin-username = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
               };
               microbin-uploader-password = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0440";
                 owner = serviceUser;
@@ -36764,7 +36859,6 @@ Self-hosted link shortener.
 
         containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
-        inherit (config.swarselsystems) sopsFile;
       in
       {
         imports = [
@@ -36798,7 +36892,7 @@ Self-hosted link shortener.
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops = {
-            secrets.shlink-api = { inherit sopsFile; };
+            secrets.shlink-api = { };
 
             templates.shlink-env.content = ''
               INITIAL_API_KEY=${config.sops.placeholder.shlink-api}
@@ -37068,7 +37162,6 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
   {
     flake.modules.nixos.readeck =
       {
-        self,
         root,
         config,
         lib,
@@ -37102,10 +37195,7 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         config = {
@@ -37136,9 +37226,9 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
           };
           sops = {
             secrets = {
-              kanidm-readeck.sopsFile = kanidmSopsFile;
-              notification-mail-pw.sopsFile = notificationMail.sopsFile;
-              readeck-secret-key = { inherit sopsFile; };
+              kanidm-readeck.rekey.keyPrefix = confLib.kanidmSecrets;
+              notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
+              readeck-secret-key.rekey.generator.script = "alnum";
             };
             templates.readeck-env.content = ''
               READECK_AUTH_OIDC_PROVIDERS_0_CLIENT_SECRET=${config.sops.placeholder.kanidm-readeck}
@@ -37198,7 +37288,7 @@ I tried this and karakeep. Seems to me karakeep is more focused on forcing AI in
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     extraGroups = [ "readeck.admins" ];
                     originUrl = "https://${serviceDomain}/login/oidc";
                   })
@@ -37446,8 +37536,6 @@ Online office suite (WOPI server) using the native NixOS module, terminated behi
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-
         extraConfigLoc = ''
           proxy_read_timeout 36000s;
         '';
@@ -37485,7 +37573,7 @@ Online office suite (WOPI server) using the native NixOS module, terminated behi
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops = {
-            secrets.collabora-admin-password = { inherit sopsFile; };
+            secrets.collabora-admin-password = { };
             templates.collabora-env.content = ''
               username=admin
               password=${config.sops.placeholder.collabora-admin-password}
@@ -37592,7 +37680,7 @@ Collaborative editing of =.odt= files is a bit weird, as it requires creating th
           webProxy
           ;
 
-        inherit (config.swarselsystems) mainUser sopsFile;
+        inherit (config.swarselsystems) mainUser;
 
         containerRev = "sha256:f595b7e8cffdad7105ad7a2fc5edad51b4de3f2b0ecf80d64d58bec3c246aab1";
         containerUid = 1000;
@@ -37635,8 +37723,8 @@ Collaborative editing of =.odt= files is a bit weird, as it requires creating th
           };
           sops = {
             secrets = {
-              filestash-admin-hash = { inherit sopsFile; };
-              filestash-secret-key = { inherit sopsFile; };
+              filestash-admin-hash = { };
+              filestash-secret-key.rekey.generator.script = "alnum";
             };
             templates.filestash-config.content = builtins.toJSON {
               auth.admin = config.sops.placeholder.filestash-admin-hash;
@@ -37814,7 +37902,6 @@ This one needs manual OIDC setup in the admin UI (TODO?)
   {
     flake.modules.nixos.audiobookshelf =
       {
-        self,
         root,
         config,
         lib,
@@ -37847,7 +37934,6 @@ This one needs manual OIDC setup in the admin UI (TODO?)
           webProxy
           ;
 
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         config = {
@@ -37880,7 +37966,7 @@ This one needs manual OIDC setup in the admin UI (TODO?)
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+            rekey.keyPrefix = confLib.kanidmSecrets;
           };
           users = {
             users.${serviceUser}.extraGroups = [ "users" ];
@@ -37903,7 +37989,7 @@ This one needs manual OIDC setup in the admin UI (TODO?)
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = [
                   "https://${serviceDomain}/auth/openid/callback"
                   "https://${serviceDomain}/auth/openid/mobile-redirect"
@@ -37981,7 +38067,6 @@ To make the waters even friendlier, I run this behind its own PIA namespace, of 
           homeWebProxy
           isHome
           ;
-        inherit (config.swarselsystems) sopsFile;
 
         piaNamespace = "pia-slsk";
         piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
@@ -38008,9 +38093,9 @@ To make the waters even friendlier, I run this behind its own PIA namespace, of 
           };
           sops = {
             secrets = {
-              slskd-soulseek-password = { inherit sopsFile; };
-              slskd-soulseek-username = { inherit sopsFile; };
-              slskd-web-password = { inherit sopsFile; };
+              slskd-soulseek-password = { };
+              slskd-soulseek-username = { };
+              slskd-web-password = { };
             };
             templates."slskd.env".content = ''
               SLSKD_SLSK_USERNAME=${config.sops.placeholder.slskd-soulseek-username}
@@ -38213,14 +38298,17 @@ Self-hosted location history tracker. After my father paid for one month of subs
           ;
 
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         imports = [
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ serviceName ];
+          swarselsystems = {
+            enabledServerModules = [ serviceName ];
+            server.postgresql.rolePasswordFiles.${serviceName} =
+              config.sops.secrets."${serviceName}-db-password".path;
+          };
           topology.self.services.${serviceName} = {
             icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
@@ -38249,8 +38337,12 @@ Self-hosted location history tracker. After my father paid for one month of subs
           };
           sops = {
             secrets = {
-              kanidm-dawarich.sopsFile = kanidmSopsFile;
-              notification-mail-pw.sopsFile = notificationMail.sopsFile;
+              "${serviceName}-db-password" = {
+                owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
+              };
+              kanidm-dawarich.rekey.keyPrefix = confLib.kanidmSecrets;
+              notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
             };
             templates.dawarich-oidc-env.content = ''
               OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-dawarich}
@@ -38263,6 +38355,7 @@ Self-hosted location history tracker. After my father paid for one month of subs
           services.${serviceName} = {
             enable = true;
             configureNginx = false;
+            database.passwordFile = config.sops.secrets."${serviceName}-db-password".path;
             environment = {
               ALLOW_EMAIL_PASSWORD_REGISTRATION = "false";
               OIDC_CLIENT_ID = serviceName;
@@ -38301,7 +38394,7 @@ Self-hosted location history tracker. After my father paid for one month of subs
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/users/auth/openid_connect/callback";
               };
             }
@@ -38536,8 +38629,6 @@ Replaces cospend in [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextcloud]]
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-
         containerRev = "sha256:cfaf0f84ef4f11cd3e4c46329039a0f1f51a7d7bf8cc218bf7c1b366e58a99f1";
         containerPort = 3000;
         postgresSocketDir = "/run/postgresql";
@@ -38580,8 +38671,8 @@ Replaces cospend in [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextcloud]]
           };
           sops = {
             secrets."${serviceName}-db-password" = {
-              inherit sopsFile;
               owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
             };
             templates."${serviceName}-env".content =
               let
@@ -38595,9 +38686,6 @@ Replaces cospend in [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextcloud]]
               '';
           };
           services.postgresql = {
-            authentication = ''
-              local ${serviceName} ${serviceName} scram-sha-256
-            '';
             ensureDatabases = [ serviceName ];
             ensureUsers = [
               {
@@ -38717,14 +38805,11 @@ Replaces Forms and Polls from [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextclo
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-
         apiRev = "sha256:e0d23f380432191871025152afff74f0dd708fe6b8b79810b46a2f24893e6f79";
         clientRev = "sha256:c1aea2ba43a07c83373f4331acdaf68ce084d5f1361bc80969ebdff86dac5ea3";
         nginxRev = "sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949";
         redisRev = "sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537";
 
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
         maxBodySize = "64M";
         podName = serviceName;
         podUnit = "podman-${podName}-pod.service";
@@ -38862,15 +38947,15 @@ Replaces Forms and Polls from [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextclo
           };
           sops = {
             secrets = {
-              "${serviceName}-app-key" = { inherit sopsFile; };
+              "${serviceName}-app-key".rekey.generator.script = "laravel-key";
               "${serviceName}-db-password" = {
-                inherit sopsFile;
                 owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
               };
-              "${serviceName}-front-api-secret" = { inherit sopsFile; };
-              "${serviceName}-jwt-secret" = { inherit sopsFile; };
-              "kanidm-${serviceName}".sopsFile = kanidmSopsFile;
-              notification-mail-pw.sopsFile = notificationMail.sopsFile;
+              "${serviceName}-front-api-secret".rekey.generator.script = "alnum";
+              "${serviceName}-jwt-secret".rekey.generator.script = "alnum";
+              "kanidm-${serviceName}".rekey.keyPrefix = confLib.kanidmSecrets;
+              notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
             };
             templates = {
               "${serviceName}-api-env".content = ''
@@ -38886,9 +38971,6 @@ Replaces Forms and Polls from [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextclo
             };
           };
           services.postgresql = {
-            authentication = ''
-              local ${serviceName} ${serviceName} scram-sha-256
-            '';
             ensureDatabases = [ serviceName ];
             ensureUsers = [
               {
@@ -38994,7 +39076,7 @@ Replaces Forms and Polls from [[#h:d11ad8d5-25d7-4691-b319-61c16ccef715][Nextclo
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     displayName = "OpnForm";
                     originUrl = "${serviceUrl}/auth/kanidm/callback";
                   })
@@ -39194,8 +39276,7 @@ This is an asset management system. However, for my needs it is a bit too convol
           nginxAccessRules
           webProxy
           ;
-        # sopsFile = config.node.secretsDir + "/secrets2.yaml";
-        inherit (config.swarselsystems) sopsFile;
+        # rekey.file = config.node.secretsDir + "/secrets2.yaml";
 
         serviceDB = "snipeit";
 
@@ -39225,10 +39306,10 @@ This is an asset management system. However, for my needs it is a bit too convol
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops.secrets.snipe-it-appkey = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
+            rekey.generator.script = "laravel-key";
           };
           services.snipe-it = {
             enable = true;
@@ -39321,14 +39402,17 @@ My asset manager. I use it to track tools, cables and board games mostly.
           ;
 
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         imports = [
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ "homebox" ];
+          swarselsystems = {
+            enabledServerModules = [ "homebox" ];
+            server.postgresql.rolePasswordFiles.${serviceName} =
+              config.sops.secrets."${serviceName}-db-password".path;
+          };
           topology.self.services.${serviceName} = {
             icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
@@ -39355,11 +39439,17 @@ My asset manager. I use it to track tools, cables and board games mostly.
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops = {
-            secrets.kanidm-homebox = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-              sopsFile = kanidmSopsFile;
+            secrets = {
+              "${serviceName}-db-password" = {
+                owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
+              };
+              kanidm-homebox = {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+                rekey.keyPrefix = confLib.kanidmSecrets;
+              };
             };
             templates.homebox-oidc-env = {
               content = ''
@@ -39373,6 +39463,7 @@ My asset manager. I use it to track tools, cables and board games mostly.
             enable = true;
             package = pkgs.homebox;
             database.createLocally = true;
+            secrets.HBOX_DATABASE_PASSWORD = config.sops.secrets."${serviceName}-db-password".path;
             settings = {
               HBOX_OIDC_BUTTON_TEXT = "Sign in with Kanidm";
               HBOX_OIDC_CLIENT_ID = serviceName;
@@ -39400,7 +39491,7 @@ My asset manager. I use it to track tools, cables and board games mostly.
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
               };
             }
@@ -39609,7 +39700,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         cfg =
           lib.recursiveUpdate config.services.${serviceName}
             config.swarselsystems.server.${serviceName};
-        inherit (config.swarselsystems) mainUser sopsFile;
+        inherit (config.swarselsystems) mainUser;
 
         # needs SSD
         metadata_dir = "/var/lib/garage/meta";
@@ -39700,8 +39791,11 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
             };
           };
           sops.secrets = {
-            garage-admin-token = { inherit sopsFile; };
-            garage-rpc-secret = { inherit sopsFile; };
+            garage-admin-token.rekey.generator.script = "base64";
+            garage-rpc-secret.rekey.generator = {
+              args.length = 32;
+              script = "hex";
+            };
           };
           services.${serviceName} = {
             enable = true;
@@ -40148,7 +40242,6 @@ Domain specific config at:
           serviceName
           servicePort
           ;
-        inherit (config.swarselsystems) sopsFile;
         listenAddress4 = "10.1.2.157";
         listenAddress6 = "2603:c020:801f:a0cc::9d";
         keyName = globals.domains.main;
@@ -40195,7 +40288,7 @@ Domain specific config at:
             queryName = globals.domains.main;
           };
           sops = {
-            secrets.tsig-key = { inherit sopsFile; };
+            secrets.tsig-key = { };
             templates."knot-tsig.conf" = {
               content =
                 "key:\n"
@@ -40499,7 +40592,6 @@ This is the authoritative dns setup I used before switching to [[#h:ef5b7ace-487
           serviceName
           servicePort
           ;
-        inherit (config.swarselsystems) sopsFile;
         keyName = globals.domains.main;
         keyName4 = "${keyName}.${proxyAddress4}";
         keyName6 = "${keyName}.${
@@ -40520,7 +40612,7 @@ This is the authoritative dns setup I used before switching to [[#h:ef5b7ace-487
             address = "${lib.head config.services.nsd.interfaces}:${toString servicePort}";
             queryName = globals.domains.main;
           };
-          sops.secrets.tsig-key = { inherit sopsFile; };
+          sops.secrets.tsig-key = { };
           services.nsd = {
             enable = true;
             interfaces = [
@@ -40713,10 +40805,10 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
               confLib,
               dns,
               globals,
+              nodes,
               ...
             }:
             let
-              inherit (config.swarselsystems) sopsFile;
               inherit
                 (confLib.gen {
                   dir = "/var/lib/dovecot";
@@ -40744,6 +40836,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 webProxy
                 ;
               baseDomain = globals.domains.main;
+              roundcubeDB = config.services.roundcube.database;
 
               roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
               endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
@@ -40757,7 +40850,11 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
               ];
             in
             {
-              swarselsystems.enabledServerModules = [ "mailserver" ];
+              swarselsystems = {
+                enabledServerModules = [ "mailserver" ];
+                server.postgresql.rolePasswordFiles.${roundcubeDB.username} =
+                  config.sops.secrets."${roundcubeDB.username}-db-password".path;
+              };
               topology.self.services = lib.listToAttrs (
                 map
                   (
@@ -40862,21 +40959,36 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                   );
                 };
               };
-              sops.secrets =
-                lib.genAttrs config.repo.secrets.local.mailserver.passwordSecrets (_: {
-                  inherit sopsFile;
-                  owner = serviceUser;
-                })
-                // {
-                  mail-tls-key = {
-                    inherit sopsFile;
-                    owner = "acme";
-                  };
-                  parsedmarc-imap-hashed-password = {
+              sops = {
+                secrets =
+                  lib.genAttrs config.repo.secrets.local.mailserver.passwordSecrets (_: {
                     owner = serviceUser;
-                    sopsFile = self + /secrets/general/parsedmarc.yaml;
+                  })
+                  // {
+                    "${roundcubeDB.username}-db-password" = {
+                      group = roundcubeDB.username;
+                      mode = "0440";
+                      owner = config.systemd.services.postgresql.serviceConfig.User;
+                      rekey.generator.script = "alnum";
+                    };
+                    mail-tls-key.owner = "acme";
+                    parsedmarc-imap-hashed-password = {
+                      owner = serviceUser;
+                      rekey = {
+                        generator = {
+                          dependencies = [
+                            nodes.${confLib.static.monitoringServer}.config.sops.secrets.parsedmarc-imap-password
+                          ];
+                          script = "bcrypt";
+                        };
+                        keyPrefix = confLib.static.sharedSecrets.parsedmarc;
+                      };
+                    };
                   };
-                };
+                templates.roundcube-setup-env.content = ''
+                  PGPASSWORD=${config.sops.placeholder."${roundcubeDB.username}-db-password"}
+                '';
+              };
               users.persistentIds = {
                 knot-resolver = confLib.mkIds 963;
                 postfix-tlspol = confLib.mkIds 962;
@@ -40903,6 +41015,9 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                   enable = true;
                   configureNginx = true;
                   extraConfig = ''
+                    $config['db_dsnw'] = 'pgsql://${roundcubeDB.username}:' . rawurlencode(trim(file_get_contents('${
+                      config.sops.secrets."${roundcubeDB.username}-db-password".path
+                    }'))) . '@unix(/run/postgresql)/${roundcubeDB.dbname}';
                     $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
                     $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
                     $config['smtp_user'] = "%u";
@@ -40999,6 +41114,8 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 ];
                 extraLegoRenewFlags = [ "--reuse-key" ];
               };
+              systemd.services.roundcube-setup.serviceConfig.EnvironmentFile =
+                config.sops.templates.roundcube-setup-env.path;
               nodes =
                 let
                   extraConfigLoc = ''
@@ -41100,7 +41217,7 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
           nginxAccessRules
           webProxy
           ;
-        inherit (config.swarselsystems) isPublic mainUser sopsFile;
+        inherit (config.swarselsystems) isPublic mainUser;
         serviceDB = "atticd";
       in
       {
@@ -41108,7 +41225,12 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ "attic" ];
+          swarselsystems = {
+            enabledServerModules = [ "attic" ];
+            server.postgresql.rolePasswordFiles = lib.mkIf (!isPublic) {
+              ${serviceDB} = config.sops.secrets."${serviceDB}-db-password".path;
+            };
+          };
           topology.self.services.${serviceName} = {
             icon = "services.not-available";
             info = "https://${serviceDomain}";
@@ -41136,14 +41258,50 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
           };
           sops = lib.mkIf (!isPublic) {
             secrets = {
-              attic-garage-access-key = { inherit sopsFile; };
-              attic-garage-secret-key = { inherit sopsFile; };
-              attic-server-token = { inherit sopsFile; };
+              "${serviceDB}-db-password" = {
+                owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
+              };
+              attic-cache-key.rekey.generator = {
+                dependencies = [ config.sops.secrets.attic-server-token ];
+                script =
+                  {
+                    lib,
+                    pkgs,
+                    decrypt,
+                    deps,
+                    ...
+                  }:
+                  ''
+                    ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=$(${decrypt} ${lib.escapeShellArg (builtins.head deps).rekey.id}) \
+                      ${pkgs.attic-server}/bin/atticadm make-token \
+                      --config ${(pkgs.formats.toml { }).generate "atticd.toml" config.services.atticd.settings} \
+                      --sub ${mainUser} --validity 100y \
+                      ${
+                        lib.concatMapStringsSep " " (flag: "--${flag} ${mainUser}") [
+                          "pull"
+                          "push"
+                          "delete"
+                          "configure-cache"
+                          "configure-cache-retention"
+                        ]
+                      } \
+                      | ${pkgs.coreutils}/bin/tr -d '\n'
+                  '';
+              };
+              attic-garage-access-key = { };
+              attic-garage-secret-key = { };
+              attic-server-token.rekey.generator.script =
+                { pkgs, ... }:
+                ''
+                  ${pkgs.openssl}/bin/openssl genrsa -traditional 4096 2>/dev/null | ${pkgs.coreutils}/bin/base64 -w0
+                '';
             };
             templates."attic.env".content = ''
               ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=${config.sops.placeholder.attic-server-token}
               AWS_ACCESS_KEY_ID=${config.sops.placeholder.attic-garage-access-key}
               AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.attic-garage-secret-key}
+              PGPASSWORD=${config.sops.placeholder."${serviceDB}-db-password"}
             '';
           };
           services = {
@@ -41325,7 +41483,6 @@ I used this for the short time-frame before I started using nix-plugins for [[#h
                 nginxAccessRules
                 webProxy
                 ;
-              inherit (config.swarselsystems) sopsFile;
             in
             {
               swarselsystems.enabledServerModules = [ "hydra" ];
@@ -41349,7 +41506,6 @@ I used this for the short time-frame before I started using nix-plugins for [[#h
               sops = {
                 secrets = {
                   hydra-pw = {
-                    inherit sopsFile;
                     group = serviceGroup;
                     mode = "0440";
                     owner = serviceUser;
@@ -41659,7 +41815,6 @@ The wifi access point. This uses a single SSID for both bands and different VLAN
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit (config.repo.secrets.local.networking) wifi;
         wifiVLANs = [
           "home"
@@ -41718,7 +41873,6 @@ The wifi access point. This uses a single SSID for both bands and different VLAN
           };
           sops = {
             secrets = lib.genAttrs (map pskSecret wifiVLANs) (_: {
-              inherit sopsFile;
             });
             templates."hostapd.psk" = {
               content = lib.concatMapStrings (
@@ -41926,7 +42080,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         inherit
           (confLib.gen {
             dir = "/var/lib/zigbee2mqtt";
@@ -41982,7 +42135,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops.secrets.zigbee2mqtt-env = {
-            inherit sopsFile;
             group = serviceGroup;
             mode = "0440";
             owner = serviceUser;
@@ -42108,7 +42260,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
           webProxy
           ;
         inherit (config.repo.secrets.common) location;
-        inherit (config.swarselsystems) sopsFile;
         proxyNetworks = [
           globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome"
           globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy"
@@ -42144,7 +42295,7 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
-          sops.secrets.home-assistant-admin-pw = { inherit sopsFile; };
+          sops.secrets.home-assistant-admin-pw = { };
           services.${serviceName} = {
             config = {
               default_config = { };
@@ -42379,7 +42530,6 @@ Sometimes the GUI login fails:
           webProxy
           webProxyIf
           ;
-        inherit (config.swarselsystems) sopsFile;
 
         apiSubDomain = "${subDomain}-api";
         apiDomain = "${apiSubDomain}.${baseDomain}";
@@ -42430,8 +42580,6 @@ Sometimes the GUI login fails:
           };
         };
 
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
-
         firezoneRpc = pkgs.writeShellApplication {
           name = "firezone-rpc";
           text = ''
@@ -42460,7 +42608,10 @@ Sometimes the GUI login fails:
           name: "${inputs.nixpkgs-firezone}/nixos/modules/${disabledFirezoneModule name}"
         ) disabledFirezoneModules;
         config = {
-          swarselsystems.enabledServerModules = [ "firezone" ];
+          swarselsystems = {
+            enabledServerModules = [ "firezone" ];
+            server.postgresql.rolePasswordFiles.firezone = config.sops.secrets.firezone-db-password.path;
+          };
           topology.self.services.${serviceName} = {
             icon = root "files/topology-images/${serviceName}.png";
             info = "https://${serviceDomain}";
@@ -42532,17 +42683,18 @@ Sometimes the GUI login fails:
             };
           };
           sops.secrets = {
-            firezone-relay-token = {
-              inherit sopsFile;
-              mode = "0400";
+            firezone-db-password = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
             };
+            firezone-relay-token.mode = "0400";
             kanidm-firezone = {
               mode = "0400";
-              sopsFile = kanidmSopsFile;
+              rekey.keyPrefix = confLib.kanidmSecrets;
             };
             notification-mail-pw = {
-              inherit (notificationMail) sopsFile;
               mode = "0440";
+              rekey.keyPrefix = notificationMail.keyPrefix;
             };
           };
           services.firezone = {
@@ -42649,6 +42801,7 @@ Sometimes the GUI login fails:
                 };
               };
               settings.ERLANG_DISTRIBUTION_PORT = distributionPort;
+              settingsSecret.DATABASE_PASSWORD = config.sops.secrets.firezone-db-password.path;
               smtp = {
                 inherit (config.repo.secrets.local.firezone.mail) from username;
                 inherit (notificationMail) host;
@@ -42707,10 +42860,7 @@ Sometimes the GUI login fails:
                       icon = root "files/topology-images/${serviceName}.png";
                       name = lib.swarselsystems.toCapitalized "${serviceName} Gateway";
                     };
-                    sops.secrets.firezone-gateway-token = {
-                      inherit (nodeCfg.swarselsystems) sopsFile;
-                      mode = "0400";
-                    };
+                    sops.secrets.firezone-gateway-token.mode = "0400";
                     services.firezone.gateway = {
                       inherit (nodeCfg.node) name;
                       enable = true;
@@ -42775,7 +42925,7 @@ Sometimes the GUI login fails:
                     externalId = "2322e386-689f-4035-a64b-ce932c2d3c61";
                   in
                   confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     displayName = "Firezone VPN";
                     originUrl = [
                       "https://${serviceDomain}/auth/oidc/callback"
@@ -43016,7 +43166,7 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           nginxAccessRules
           webProxy
           ;
-        inherit (config.swarselsystems) mainUser sopsFile;
+        inherit (config.swarselsystems) mainUser;
 
         nixosHostsForArch =
           arch:
@@ -43560,19 +43710,16 @@ Previously I was using [[#h:59f9ba07-8f63-4317-8def-83855a2a2ac1][Hydra]] to bui
           };
           sops.secrets = {
             buildbot-age-key = {
-              inherit sopsFile;
               group = "buildbot";
               mode = "0400";
               owner = "buildbot";
             };
             buildbot-github-key = {
-              inherit sopsFile;
               group = "buildbot";
               mode = "0400";
               owner = "buildbot";
             };
             buildbot-github-token = {
-              inherit sopsFile;
               group = "buildbot";
               mode = "0400";
               owner = "buildbot";
@@ -43755,7 +43902,6 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
       in
       {
         config = {
@@ -43783,10 +43929,10 @@ However, I was not ready to pay 10€ per month just for that; using SearXNG, Th
           };
           sops = {
             secrets.searx-secret = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
+              rekey.generator.script = "alnum";
             };
 
             templates.searx-env = {
@@ -44096,14 +44242,22 @@ For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
           webProxy
           ;
 
-        sopsFile = self + /secrets/general/invidious-companion.yaml;
+        extraSettingsCredential = "extra-settings";
+        notificationStream = proxyPass: {
+          inherit proxyPass;
+          extraConfig = "proxy_buffering off;";
+        };
       in
       {
         imports = [
           self.modules.nixos.postgresql
         ];
         config = {
-          swarselsystems.enabledServerModules = [ "invidious" ];
+          swarselsystems = {
+            enabledServerModules = [ "invidious" ];
+            server.postgresql.rolePasswordFiles.${serviceUser} =
+              config.sops.secrets."${serviceUser}-db-password".path;
+          };
           topology.self.services.${serviceName}.info = "https://${serviceDomain}";
           globals = {
             services = confLib.mkServiceGlobal {
@@ -44126,23 +44280,27 @@ For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
           };
           sops = {
-            secrets.invidious-companion-key = {
-              inherit sopsFile;
-              mode = "0444";
+            secrets = {
+              "${serviceUser}-db-password" = {
+                owner = config.systemd.services.postgresql.serviceConfig.User;
+                rekey.generator.script = "alnum";
+              };
+              invidious-companion-key = {
+                mode = "0444";
+                rekey.keyPrefix = confLib.static.sharedSecrets.invidiousCompanion;
+              };
             };
 
-            templates.invidiousExtraSettings = {
-              content = ''
-                {"invidious_companion_key": "${config.sops.placeholder.invidious-companion-key}"}
-              '';
-              mode = "0444";
+            templates.invidiousExtraSettings.content = builtins.toJSON {
+              db.password = config.sops.placeholder."${serviceUser}-db-password";
+              invidious_companion_key = config.sops.placeholder.invidious-companion-key;
             };
           };
           services = {
             ${serviceName} = {
               enable = true;
               domain = serviceDomain;
-              extraSettingsFile = config.sops.templates.invidiousExtraSettings.path;
+              extraSettingsFile = "/run/credentials/${serviceName}.service/${extraSettingsCredential}";
               http3-ytproxy.enable = true;
               nginx.enable = true;
               port = 3001;
@@ -44177,10 +44335,15 @@ For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
             nginx.virtualHosts.${serviceDomain} = {
               enableACME = false;
               forceSSL = false;
+              locations."/api/v1/auth/notifications" =
+                notificationStream "http://127.0.0.1:${builtins.toString servicePort}";
             };
           };
           environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
             { directory = "/var/lib/private/invidious"; }
+          ];
+          systemd.services.${serviceName}.serviceConfig.LoadCredential = [
+            "${extraSettingsCredential}:${config.sops.templates.invidiousExtraSettings.path}"
           ];
           nodes =
             let
@@ -44195,7 +44358,10 @@ For SponsorBlock, configure the SponsorBlock extension in [[#h:fbec0bd4-690b-4f7
                     inherit extraConfig;
                     acmeRoot = null;
                     forceSSL = true;
-                    locations."/".proxyPass = "http://${serviceName}";
+                    locations = {
+                      "/".proxyPass = "http://${serviceName}";
+                      "/api/v1/auth/notifications" = notificationStream "http://${serviceName}";
+                    };
                     oauth2 = {
                       enable = true;
                       allowedGroups = [ "invidious_access" ];
@@ -44243,7 +44409,6 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
         imports = lib.optionals (inputs ? invidious-companion) [
           (
             {
-              self,
               inputs,
               config,
               lib,
@@ -44273,7 +44438,6 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
                 webProxy
                 ;
 
-              sopsFile = self + /secrets/general/invidious-companion.yaml;
               companion = pkgs.stdenv.mkDerivation {
                 buildInputs = [
                   pkgs.stdenv.cc.cc.lib
@@ -44322,8 +44486,14 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
               };
               sops = {
                 secrets.invidious-companion-key = {
-                  inherit sopsFile;
                   mode = "0444";
+                  rekey = {
+                    generator = {
+                      args.length = 16;
+                      script = "alnum";
+                    };
+                    keyPrefix = confLib.static.sharedSecrets.invidiousCompanion;
+                  };
                 };
 
                 templates."invidious-companion.env" = {
@@ -44368,13 +44538,21 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
                     };
                   };
                   homeInvidiousFallback = lib.optionalAttrs (!globals.services.invidious.isHome) {
-                    virtualHosts.${serviceDomain}.locations."/" = {
-                      extraConfig = ''
-                        proxy_ssl_server_name on;
-                        proxy_ssl_name ${serviceDomain};
-                      '';
-                      proxyPass = "https://${globals.services.invidious.proxyAddress4}";
-                    };
+                    virtualHosts.${serviceDomain}.locations =
+                      let
+                        fallback = extraConfig: {
+                          extraConfig = ''
+                            proxy_ssl_server_name on;
+                            proxy_ssl_name ${serviceDomain};
+                            ${extraConfig}
+                          '';
+                          proxyPass = "https://${globals.services.invidious.proxyAddress4}";
+                        };
+                      in
+                      {
+                        "/" = fallback "";
+                        "/api/v1/auth/notifications" = fallback "proxy_buffering off;";
+                      };
                   };
                 in
                 lib.mkMerge [
@@ -44440,7 +44618,6 @@ Setting it up on android:
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
       in
       {
         config = {
@@ -44467,10 +44644,10 @@ Setting it up on android:
           };
           sops = {
             secrets.firefox-syncserver-secret = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0400";
               owner = serviceUser;
+              rekey.generator.script = "hex";
             };
 
             templates."firefox-syncserver.env" = {
@@ -44563,7 +44740,6 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
         ...
       }:
       let
-        inherit (config.swarselsystems) sopsFile;
         bootstrap = config.swarselsystems.crowdsecBootstrap;
         jumphost = globals.general.jumphost or null;
         jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
@@ -44595,19 +44771,16 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           };
           sops.secrets = lib.mkIf (!bootstrap) {
             crowdsec-bouncer-key = {
-              inherit sopsFile;
               group = "crowdsec";
               mode = "0400";
               owner = "crowdsec";
             };
             crowdsec-capi = {
-              inherit sopsFile;
               group = "crowdsec";
               mode = "0400";
               owner = "crowdsec";
             };
             crowdsec-lapi = {
-              inherit sopsFile;
               group = "crowdsec";
               mode = "0400";
               owner = "crowdsec";
@@ -44863,7 +45036,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                 webProxy
                 ;
 
-              inherit (config.swarselsystems) mainUser sopsFile;
+              inherit (config.swarselsystems) mainUser;
 
               dataDir = "/sync/copyparty";
               cacheDir = "/var/cache/copyparty";
@@ -44899,13 +45072,11 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               };
               sops.secrets = {
                 copyparty-guest-password = {
-                  inherit sopsFile;
                   group = serviceGroup;
                   mode = "0400";
                   owner = serviceUser;
                 };
                 copyparty-password = {
-                  inherit sopsFile;
                   group = serviceGroup;
                   mode = "0400";
                   owner = serviceUser;
@@ -45014,7 +45185,6 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
   {
     flake.modules.nixos.mealie =
       {
-        self,
         config,
         lib,
         confLib,
@@ -45045,7 +45215,6 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           ;
 
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
       in
       {
         config = {
@@ -45075,9 +45244,9 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             secrets = {
               kanidm-mealie = {
                 mode = "0400";
-                sopsFile = kanidmSopsFile;
+                rekey.keyPrefix = confLib.kanidmSecrets;
               };
-              notification-mail-pw.sopsFile = notificationMail.sopsFile;
+              notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
             };
             templates.mealie-env.content = ''
               OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-mealie}
@@ -45121,7 +45290,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
               ${idmServer} =
                 lib.recursiveUpdate
                   (confLib.mkKanidmOidcSystem {
-                    inherit kanidmSopsFile serviceDomain serviceName;
+                    inherit serviceDomain serviceName;
                     extraGroups = [ "${serviceName}.admins" ];
                     originUrl = "https://${serviceDomain}/login";
                   })
@@ -45219,10 +45388,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           webProxy
           ;
 
-        inherit (config.swarselsystems) sopsFile;
-
         kanidmDomain = globals.services.kanidm.domain;
-        kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
 
         piaNamespace = "pia";
         piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
@@ -45268,29 +45434,25 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                 group = serviceName;
                 mode = "0440";
                 owner = serviceName;
-                sopsFile = kanidmSopsFile;
+                rekey.keyPrefix = confLib.kanidmSecrets;
               };
-              pia = { inherit sopsFile; };
+              pia = { };
               shopservatory-ebay-client-id = {
-                inherit sopsFile;
                 group = serviceName;
                 mode = "0440";
                 owner = serviceName;
               };
               shopservatory-ebay-client-secret = {
-                inherit sopsFile;
                 group = serviceName;
                 mode = "0440";
                 owner = serviceName;
               };
               shopservatory-telegram-token = {
-                inherit sopsFile;
                 group = serviceName;
                 mode = "0440";
                 owner = serviceName;
               };
               shopservatory-user-admin-password = {
-                inherit sopsFile;
                 group = serviceName;
                 mode = "0440";
                 owner = serviceName;
@@ -45408,7 +45570,7 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOidcSystem {
-                inherit kanidmSopsFile serviceDomain serviceName;
+                inherit serviceDomain serviceName;
                 originUrl = "https://${serviceDomain}/auth/callback";
               };
             }
@@ -46410,19 +46572,14 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         yes_or_no "$@"
       }
 
-      function update_sops_file() {
+      function register_host_key() {
         key_name=$1
         key=$2
 
-        tfvars="''${git_root}/tofu/sops/terraform.tfvars"
-        if ! grep -qE "^[[:space:]]*''${key_name}[[:space:]]*=[[:space:]]*\"placeholder\"" "$tfvars"; then
-          red "No placeholder entry for '$key_name' found in tofu/sops/terraform.tfvars."
-          yellow "Add '$key_name = \"placeholder\"' to the hosts map (and a host_configs entry) before bootstrapping."
-          exit 1
-        fi
-
-        green "Writing age key for $key_name into tofu/sops/terraform.tfvars"
-        sed -E -i "s|^([[:space:]]*''${key_name}[[:space:]]*=[[:space:]]*)\"placeholder\"|\1\"''${key}\"|" "$tfvars"
+        pub_file="''${git_root}/files/public/age/hosts/''${key_name}.pub"
+        green "Writing age key for $key_name to files/public/age/hosts"
+        printf '%s\n' "$key" > "$pub_file"
+        git -C "''${git_root}" add "$pub_file"
 
         green "Regenerating .sops.yaml via OpenTofu"
         tofu -chdir="''${git_root}/tofu/sops" init -upgrade -input=false > /dev/null
@@ -46664,9 +46821,11 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       fi
 
       green "Registering $target_hostname in the sops configuration"
-      update_sops_file "$target_hostname" "$host_age_key"
-      green "Updating all secrets files to reflect updated .sops.yaml"
-      sops updatekeys --yes --enable-local-keyservice "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/* || true
+      register_host_key "$target_hostname" "$host_age_key"
+      green "Updating eval-time secrets to reflect updated .sops.yaml"
+      sops updatekeys --yes --enable-local-keyservice "''${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/*.enc || true
+      green "Rekeying the secrets of $target_hostname"
+      nix run "''${git_root}#sops-rekey" -- --add-to-git rekey
       if [[ $non_interactive != "true" ]]; then
         green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
         sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -46723,7 +46882,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
         (pre-commit run --all-files 2> /dev/null || true) || true
         git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/hardware-configuration.nix"
         git add "$git_root/.sops.yaml"
-        git add "$git_root/tofu/sops/terraform.tfvars"
+        git add "$git_root/files/public/age/hosts/$target_hostname.pub"
         git add "$git_root/secrets" 2> /dev/null || true
         git add "$(realpath "$git_root/hosts/nixos/$target_arch/$target_hostname")/secrets" 2> /dev/null || true
         git commit -m "feat: deployed $target_hostname" || true
@@ -48548,10 +48707,12 @@ This script quickly switches to another nix generation.
     inherit name;
     runtimeInputs = [ sops ];
     text = ''
-      sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/repo/*
-      sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/nginx/*
-      sops updatekeys ${homeConfig.swarselsystems.flakePath}/secrets/work/*
-      sops updatekeys ${homeConfig.swarselsystems.flakePath}/hosts/*/*/*/secrets/*/secrets.yaml
+      cd ${homeConfig.swarselsystems.flakePath}
+      find . -path ./files/public -prune -o -path ./.github -prune -o -path ./secrets/rekeyed -prune -o \
+        \( -name '*.yaml' -o -name '*.json' -o -name '*.enc' \) \
+        -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 |
+        xargs --null -I{} sops updatekeys --yes {}
+      nix run --builders "" .#sops-rekey -- --add-to-git rekey
     '';
   }
 #+end_src
@@ -52184,38 +52345,30 @@ I have 5 main blocks of rules in my =.sops.yaml=:
 
 #+begin_src terraform :tangle tofu/sops/main.tf
   locals {
-    placeholder_value = "placeholder"
+    key_dir = "${path.module}/../../files/public/age"
 
-    placeholder_names = toset(concat(
-      [for name, key in var.hosts : name if key == local.placeholder_value],
-      [for name, key in var.guests : name if key == local.placeholder_value],
-    ))
-
-    hosts_with_keys = {
-      for name, key in var.hosts : name => key if key != local.placeholder_value
+    nodes = {
+      for f in fileset("${local.key_dir}/hosts", "*.pub") :
+      trimsuffix(f, ".pub") => trimspace(file("${local.key_dir}/hosts/${f}"))
     }
 
-    guests_with_keys = {
-      for name, key in var.guests : name => key if key != local.placeholder_value
+    users = {
+      for f in fileset("${local.key_dir}/users", "*.pub") :
+      trimsuffix(f, ".pub") => trimspace(file("${local.key_dir}/users/${f}"))
     }
 
-    repo_excluded = toset([
-      for name, cfg in var.host_configs : coalesce(cfg.age_key_name, name)
-      if !cfg.repo_access || !cfg.has_age_key
-    ])
+    host_key_names = {
+      for name, cfg in var.host_configs : name => coalesce(cfg.age_key_name, name)
+    }
 
-    repo_host_age_names = [for name in keys(var.hosts) : name if !contains(local.repo_excluded, name)]
+    with_key = [for name in keys(local.nodes) : name]
 
-    all_repo_age_names = concat(
-      local.repo_host_age_names,
-      [for name in keys(var.guests) : name if !contains(local.repo_excluded, name)],
-      )
+    repo_host_age_names = [
+      for name, cfg in var.host_configs : local.host_key_names[name]
+      if cfg.repo_access && contains(local.with_key, local.host_key_names[name])
+    ]
 
     repo_rules = [
-      {
-        path_regex = "secrets/repo/[^/]+\\.(yaml|json|env|ini)$"
-        age_names  = local.all_repo_age_names
-      },
       {
         path_regex = "secrets/repo/[^/]+\\.enc$"
         age_names  = concat(["buildbot"], local.repo_host_age_names)
@@ -52229,77 +52382,45 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       }
     ]
 
-    kanidm_rules = [
-      for client in var.kanidm_clients : {
-        path_regex = "secrets/kanidm/${client}.yaml"
-        age_names  = [var.kanidm_host, client]
-      }
-    ]
-
     host_paths = {
       for name, cfg in var.host_configs : name => coalesce(cfg.path, "hosts/${cfg.type}/${cfg.arch}/${name}")
     }
 
-    host_rules = flatten([
-      for name, cfg in var.host_configs : [
-        {
-          path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.(yaml|json|env|ini)$"
-          age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name)] : []
-        },
-        {
-          path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.enc$"
-          age_names  = cfg.has_age_key ? [coalesce(cfg.age_key_name, name), "buildbot"] : ["buildbot"]
-        },
-      ]
-    ])
+    host_rules = [
+      for name, cfg in var.host_configs : {
+        path_regex = "${local.host_paths[name]}/secrets/[^/]+\\.enc$"
+        age_names  = [local.host_key_names[name], "buildbot"]
+      }
+    ]
 
     guest_rules = flatten([
       for name, cfg in var.host_configs : [
-        for guest in cfg.guests : [
-          {
-            path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.(yaml|json|env|ini)$"
-            age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}"]
-          },
-          {
-            path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.enc$"
-            age_names  = [coalesce(cfg.age_key_name, name), "${name}-${guest}", "buildbot"]
-          },
-        ]
-      ]
-    ])
-
-    guest_parent = merge([
-      for host, cfg in var.host_configs : {
-        for guest in cfg.guests : "${host}-${guest}" => coalesce(cfg.age_key_name, host)
-      }
-    ]...)
-
-    wireguard_rules = flatten([
-      for server, net in var.wireguard_networks : [
-        for client in net.clients : {
-          path_regex = "secrets/wireguard/${server}-${client}.yaml$"
-          age_names = distinct(compact([
-            server,
-            client,
-            lookup(local.guest_parent, client, ""),
-          ]))
+        for guest in cfg.guests : {
+          path_regex = "${local.host_paths[name]}/secrets/${guest}/[^/]+\\.enc$"
+          age_names  = [local.host_key_names[name], "${name}-${guest}", "buildbot"]
         }
       ]
     ])
 
+    master_rules = [
+      {
+        path_regex = "\\.(yaml|json|env|ini|enc)$"
+        age_names  = []
+      },
+    ]
+
     all_rules_raw = concat(
       local.repo_rules,
       local.extra_rules,
-      local.kanidm_rules,
       local.host_rules,
       local.guest_rules,
-      local.wireguard_rules,
-      )
+      local.master_rules,
+    )
 
     all_rules = [
       for rule in local.all_rules_raw : {
         path_regex = rule.path_regex
-        age_names  = [for n in rule.age_names : n if !contains(local.placeholder_names, n)]
+        age_names  = [for n in rule.age_names : n if n == "buildbot" || contains(local.with_key, n)]
       }
     ]
   }
@@ -52321,24 +52442,8 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     type        = string
   }
 
-  variable "kanidm_host" {
-    description = "Name of the host/guest running kanidm (used for kanidm secret rules)"
-    type        = string
-    default     = "summers-kanidm"
-  }
-
-  variable "hosts" {
-    description = "Map of host name to age key"
-    type        = map(string)
-  }
-
-  variable "guests" {
-    description = "Map of full guest name (e.g. summers-audio) to age key"
-    type        = map(string)
-  }
-
   variable "host_configs" {
-    description = "Host configurations with type, arch, and optional guest list"
+    description = "Host configurations with type, arch, and optional guest list; age keys are read from files/public/age/hosts/<name>.pub"
     type = map(object({
       type         = string
       arch         = string
@@ -52346,31 +52451,16 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       path         = optional(string)
       guests       = optional(list(string), [])
       repo_access  = optional(bool, true)
-      has_age_key  = optional(bool, true)
     }))
   }
 
-  variable "kanidm_clients" {
-    description = "List of guest/host names that have kanidm secret files"
-    type        = list(string)
-  }
-
   variable "extra_rules" {
-    description = "Additional creation rules for other paths (e.g. secrets/work, secrets/nginx)"
+    description = "Additional creation rules for eval-time encrypted files outside the host directories (e.g. secrets/work)"
     type = list(object({
       path_regex = string
       age_keys   = list(string)
     }))
     default = []
-  }
-
-  variable "wireguard_networks" {
-    description = "Wireguard networks: server name -> network name + client list"
-    type = map(object({
-      name    = string
-      clients = list(string)
-    }))
-    default = {}
   }
 #+end_src
 
@@ -52382,120 +52472,11 @@ I have 5 main blocks of rules in my =.sops.yaml=:
 #+begin_src terraform :tangle tofu/sops/terraform.tfvars
   pgp_key          = "4BE7925262289B476DBBC17B76FD3810215AE097"
   buildbot_age_key = "age15dewhja45kljg3ehd6anzwlxmavaf8wpqqj0gf6u859kd5v70ves6zkxr7"
-  kanidm_host      = "summers-kanidm"
-
-  hosts = {
-    bakery         = "age1mjgw3nxlnqdj04mgjz3wn7fj2nl2nxla4p2r2fn4nkvayfgp09pqllxzyh"
-    belchsfactory  = "age1k73gy5em3js9zklnnkzp5hme9k04lny32fgahmzddknjw5c295asdyr4x6"
-    dgx            = "age1ax5hqk6e2ekgfx5u7pl8ayc3vvhrehyvtvf07llaxhs5azpnny0qpltrns"
-    eagleland      = "age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8"
-    hintbooth      = "age1wmx8y2hs83j2u5srdnfxljrzxm8jtxl6fr0mq7xf2ldxyglpzf2qq89rpx"
-    liliputsteps   = "age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx"
-    machpizza      = "placeholder"
-    moonside       = "age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh"
-    pyramid        = "age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m"
-    stoicclub      = "age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm"
-    summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
-    toto           = "placeholder"
-    twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
-    vacanthouse    = "age1qt0aw537kymdx6eaje5447vmfp9yeskpzxgcte325p4zd0h0kcsshjsseu"
-    winters        = "age14lxzqrjgmart7e2ckl9cr9nkq4fwyrj3qx6l4gg5y0ad655dfg0sz2evqq"
-  }
-
-  guests = {
-    hintbooth-adguardhome = "age1c2enwel9un28dcs4wg0vcyamx9a4a6g3walkhu8w5lqhmd804paq9d24as"
-    hintbooth-nginx       = "age1nanlervuderw4qskcuessycqy2yfmptl6nym9scgp9ky2265ssmq3u73r0"
-    summers-ankisync      = "age1kyue7mfvzuxprjz2g6ulz2mxlr57rgzg6lfpnrqedkelehley5ls3enwsd"
-    summers-atuin         = "age1qpgj3ell93rzkpjq0ezs6t669ds3nyxx67pj50smx597pspz6fqs4jc6pt"
-    summers-dawarich      = "age1ue04t2d29t0awmv6rja9nu5n5e2ry7t6r9jmu068y50dz5zk44xspesevy"
-    summers-audio         = "age1f63r2klnpfxmntswz5xydpa75ckgjqcs2yzkm0msqwqgz9aqgu0qwzr659"
-    summers-firefly       = "age17328xwk0z3znalpmma5rvp0lt5ghn5p8xfvnrtdxwsw80dqysacqj9j37q"
-    summers-forgejo       = "age1qdzkn6v3xhrfjwe8jxz3945dhyyhevwal0narjtr8whf9y7nh3wsn524u5"
-    summers-freshrss      = "age1etgfym5m8hn3hxs6cgg757zcv5zg5n22wq38fuq59n7qk7nef5uqyg6vvs"
-    summers-homebox       = "age17mugmkdw0y768a3huuf37r45eff9apyknxvwk3agg6xzsjmqp96q57tcty"
-    summers-immich        = "age16gf76uustmyyksm3t56zcq9g6j8avy0wrngh8laknfq733s5welqedeg4x"
-    summers-jellyfin      = "age1fnvlmhzju0yq908xtgags0sy85q3tacl2sc3w3vdd3yfp27xv5aq06v948"
-    summers-kanidm        = "age1s5gcxtatd9frwctzwg54fqycsx2sa73ll36k7qrpm9wwyknkldtst90gn4"
-    summers-kavita        = "age1d89878cvt7wsa07ydwtexspku5gppwstrpnpph4ufx5pcd4fadyqgf6lvl"
-    summers-koillection   = "age1ayupuxlrkepyvjk7xwgrd0pvcj3tfcha688mcuc8ees2hg3g2ersd0q3nc"
-    summers-matrix        = "age1cq7wxnugpfvjk6dgqpfmc8vemzhkg75drkgeaqjd9fuylz5qh40slazr4u"
-    summers-mealie        = "age1pxgecpe9fpsecdhjhv3cyct8z68t74kwl7qav0menlql9q5ev3wq8ffnda"
-    summers-monitoring    = "age1vn6ya0japzpgc256jg57fldsqe4udmq50sj5hmkywn7rxfnskevsx2q96u"
-    summers-nextcloud     = "age1t7zagjfddns4yltupk7nx8xps4gh7mupyz85uuys0wd22cxj5qsq2hw0p7"
-    summers-paperless     = "age1rn0pxluh7m8dyeshek06d7scejqlrcewlk8xmyrwt5e5nev2dc2s3s78vq"
-    summers-radicale      = "age1gxg2peektn8x36kk3nsgmeawl73e54kaadqd649ygwrv43kkvejq2cw64z"
-    summers-storage       = "age1kn34ny229gm0rg7wlcvxmcyjtz4gka6f2vd958fde6vmuzrxcvcsufra90"
-    summers-transmission  = "age1y69f2elvmq39lc3t3ucq9y7wt675520n7rvug88qg368qsmmk47qvwrtny"
-    summers-utility       = "age13gu8hndaqxtxwzm0ede5lt0hcrspvl2dfehffk3qtchky24qmy2s2qscjw"
-  }
-
-  kanidm_clients = [
-    "summers-dawarich",
-    "summers-forgejo",
-    "summers-freshrss",
-    "summers-homebox",
-    "summers-immich",
-    "summers-jellyfin",
-    "summers-kavita",
-    "summers-matrix",
-    "summers-mealie",
-    "summers-monitoring",
-    "summers-nextcloud",
-    "summers-paperless",
-    "twothreetunnel",
-    "moonside",
-    "vacanthouse",
-  ]
 
   extra_rules = [
     {
-      path_regex = "secrets/work/[^/]+\\.(yaml|json|env|ini)$"
-      age_keys   = ["pyramid", "dgx"]
-    },
-    {
       path_regex = "secrets/work/[^/]+\\.enc$"
-      age_keys   = ["pyramid", "dgx", "buildbot"]
-    },
-    {
-      path_regex = "secrets/general/invidious-companion.yaml$"
-      age_keys   = ["moonside", "summers-utility"]
-    },
-    {
-      path_regex = "secrets/general/gatus.yaml$"
-      age_keys   = ["moonside", "summers-monitoring"]
-    },
-    {
-      path_regex = "secrets/general/parsedmarc.yaml$"
-      age_keys   = ["eagleland", "summers-monitoring"]
-    },
-    {
-      path_regex = "secrets/general/clients.yaml$"
-      age_keys   = ["pyramid", "bakery"]
-    },
-    {
-      path_regex = "secrets/general/sandbox.yaml$"
-      age_keys   = ["pyramid", "bakery"]
-    },
-    {
-      path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
-      age_keys = [
-        "moonside",
-        "twothreetunnel",
-        "summers-dawarich",
-        "summers-firefly",
-        "summers-forgejo",
-        "summers-immich",
-        "summers-kanidm",
-        "summers-matrix",
-        "summers-mealie",
-        "summers-monitoring",
-        "summers-nextcloud",
-        "summers-paperless",
-      ]
-    },
-    {
-      path_regex = "secrets/nginx/acme.json"
-      age_keys   = ["twothreetunnel", "summers", "eagleland", "hintbooth-nginx", "belchsfactory"]
+      age_keys   = ["pyramid", "treehouse", "buildbot"]
     },
   ]
 
@@ -52584,10 +52565,9 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       guests = []
     }
     machpizza = {
-      type        = "darwin"
-      arch        = "aarch64-darwin"
-      guests      = []
-      has_age_key = false
+      type   = "darwin"
+      arch   = "aarch64-darwin"
+      guests = []
     }
     vacanthouse = {
       type        = "utility"
@@ -52595,75 +52575,6 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       path        = "hosts/utility/vacanthouse"
       guests      = []
       repo_access = false
-    }
-  }
-
-  wireguard_networks = {
-    hintbooth = {
-      name = "wgHome"
-      clients = [
-        "hintbooth-adguardhome",
-        "hintbooth-nginx",
-        "summers-ankisync",
-        "summers-atuin",
-        "summers-audio",
-        "summers-dawarich",
-        "summers-firefly",
-        "summers-forgejo",
-        "summers-freshrss",
-        "summers-homebox",
-        "summers-immich",
-        "summers-jellyfin",
-        "summers-kanidm",
-        "summers-kavita",
-        "summers-koillection",
-        "summers-matrix",
-        "summers-mealie",
-        "summers-monitoring",
-        "summers-nextcloud",
-        "summers-paperless",
-        "summers-radicale",
-        "summers-storage",
-        "summers-transmission",
-        "summers-utility",
-        "summers",
-        "winters",
-      ]
-    }
-    twothreetunnel = {
-      name = "wgProxy"
-      clients = [
-        "belchsfactory",
-        "eagleland",
-        "hintbooth-adguardhome",
-        "hintbooth-nginx",
-        "moonside",
-        "stoicclub",
-        "summers-ankisync",
-        "summers-atuin",
-        "summers-audio",
-        "summers-dawarich",
-        "summers-firefly",
-        "summers-forgejo",
-        "summers-freshrss",
-        "summers-homebox",
-        "summers-immich",
-        "summers-jellyfin",
-        "summers-kanidm",
-        "summers-kavita",
-        "summers-koillection",
-        "summers-matrix",
-        "summers-mealie",
-        "summers-monitoring",
-        "summers-nextcloud",
-        "summers-paperless",
-        "summers-radicale",
-        "summers-storage",
-        "summers-transmission",
-        "summers-utility",
-        "summers",
-        "winters",
-      ]
     }
   }
 #+end_src
@@ -52675,14 +52586,15 @@ I have 5 main blocks of rules in my =.sops.yaml=:
 
 #+begin_src yaml :tangle tofu/sops/templates/sops.yaml.tftpl
   # This file is generated by OpenTofu. Do not edit manually.
+  # Since switching to sops-rekey, only PII files are managed here.
   keys:
     - &users
       - &swarsel ${pgp_key}
-    - &hosts
-  %{ for name, key in hosts ~}
+  %{ for name, key in users ~}
       - &${name} ${key}
   %{ endfor ~}
-  %{ for name, key in guests ~}
+    - &hosts
+  %{ for name, key in nodes ~}
       - &${name} ${key}
   %{ endfor ~}
       - &buildbot ${buildbot_age_key}
@@ -52693,8 +52605,11 @@ I have 5 main blocks of rules in my =.sops.yaml=:
       key_groups:
       - pgp:
         - *swarsel
-  %{ if length(rule.age_names) > 0 ~}
+  %{ if length(rule.age_names) > 0 || length(users) > 0 ~}
         age:
+  %{ for name, _ in users ~}
+        - *${name}
+  %{ endfor ~}
   %{ for name in rule.age_names ~}
         - *${name}
   %{ endfor ~}
@@ -52714,8 +52629,8 @@ I have 5 main blocks of rules in my =.sops.yaml=:
     content  = templatefile("${path.module}/templates/sops.yaml.tftpl", {
       pgp_key          = var.pgp_key
       buildbot_age_key = var.buildbot_age_key
-      hosts            = local.hosts_with_keys
-      guests           = local.guests_with_keys
+      users            = local.users
+      nodes            = local.nodes
       rules            = local.all_rules
     })
   }
@@ -54802,7 +54717,29 @@ This file defines a few workflows that I often need to run when working on my co
     nix develop .#deploy --command zsh -c "SSH_AUTH_SOCK=\$(gpgconf --list-dirs agent-ssh-socket) swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
 
   updatekeys:
-    find . -path ./files/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}
+    find . -path ./files/public -prune -o -path './.github' -prune -o -path ./secrets/rekeyed -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}
+
+  rekey *ARGS:
+    nix run --builders '' .#sops-rekey -- --add-to-git rekey {{ARGS}}
+
+  rekey-check:
+    nix run --builders '' .#sops-rekey -- check
+
+  secret-generate *ARGS:
+    nix run --builders '' .#sops-rekey -- --add-to-git generate {{ARGS}}
+
+  secret-new FILE:
+    nix run --builders '' .#sops-rekey -- --add-to-git edit {{FILE}}
+
+  secret-set PATH:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    value=$(cat)
+    sops set secrets/root.yaml "$(sed 's|^|["|; s|/|"]["|g; s|$|"]|' <<< '{{PATH}}')" "$(printf '%s' "$value" | jq -Rs .)"
+    git add secrets/root.yaml
+
+  secret-get PATH:
+    sops decrypt --extract "$(sed 's|^|["|; s|/|"]["|g; s|$|"]|' <<< '{{PATH}}')" secrets/root.yaml
 
   decrypt:
     #!/usr/bin/env bash

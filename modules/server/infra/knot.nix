@@ -24,7 +24,6 @@
         serviceName
         servicePort
         ;
-      inherit (config.swarselsystems) sopsFile;
       listenAddress4 = "10.1.2.157";
       listenAddress6 = "2603:c020:801f:a0cc::9d";
       keyName = globals.domains.main;
@@ -71,7 +70,7 @@
           queryName = globals.domains.main;
         };
         sops = {
-          secrets.tsig-key = { inherit sopsFile; };
+          secrets.tsig-key = { };
           templates."knot-tsig.conf" = {
             content =
               "key:\n"

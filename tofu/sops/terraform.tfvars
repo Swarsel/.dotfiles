@@ -1,119 +1,10 @@
 pgp_key          = "4BE7925262289B476DBBC17B76FD3810215AE097"
 buildbot_age_key = "age15dewhja45kljg3ehd6anzwlxmavaf8wpqqj0gf6u859kd5v70ves6zkxr7"
-kanidm_host      = "summers-kanidm"
-
-hosts = {
-  bakery         = "age1mjgw3nxlnqdj04mgjz3wn7fj2nl2nxla4p2r2fn4nkvayfgp09pqllxzyh"
-  belchsfactory  = "age1k73gy5em3js9zklnnkzp5hme9k04lny32fgahmzddknjw5c295asdyr4x6"
-  dgx            = "age1ax5hqk6e2ekgfx5u7pl8ayc3vvhrehyvtvf07llaxhs5azpnny0qpltrns"
-  eagleland      = "age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8"
-  hintbooth      = "age1wmx8y2hs83j2u5srdnfxljrzxm8jtxl6fr0mq7xf2ldxyglpzf2qq89rpx"
-  liliputsteps   = "age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx"
-  machpizza      = "placeholder"
-  moonside       = "age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh"
-  pyramid        = "age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m"
-  stoicclub      = "age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm"
-  summers        = "age14sjyqch8tzqexk2gv0qgrrg09f0s6hvwhsgjac3vs6sc5rzgpcxsyqda6u"
-  toto           = "placeholder"
-  twothreetunnel = "age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d"
-  vacanthouse    = "age1qt0aw537kymdx6eaje5447vmfp9yeskpzxgcte325p4zd0h0kcsshjsseu"
-  winters        = "age14lxzqrjgmart7e2ckl9cr9nkq4fwyrj3qx6l4gg5y0ad655dfg0sz2evqq"
-}
-
-guests = {
-  hintbooth-adguardhome = "age1c2enwel9un28dcs4wg0vcyamx9a4a6g3walkhu8w5lqhmd804paq9d24as"
-  hintbooth-nginx       = "age1nanlervuderw4qskcuessycqy2yfmptl6nym9scgp9ky2265ssmq3u73r0"
-  summers-ankisync      = "age1kyue7mfvzuxprjz2g6ulz2mxlr57rgzg6lfpnrqedkelehley5ls3enwsd"
-  summers-atuin         = "age1qpgj3ell93rzkpjq0ezs6t669ds3nyxx67pj50smx597pspz6fqs4jc6pt"
-  summers-dawarich      = "age1ue04t2d29t0awmv6rja9nu5n5e2ry7t6r9jmu068y50dz5zk44xspesevy"
-  summers-audio         = "age1f63r2klnpfxmntswz5xydpa75ckgjqcs2yzkm0msqwqgz9aqgu0qwzr659"
-  summers-firefly       = "age17328xwk0z3znalpmma5rvp0lt5ghn5p8xfvnrtdxwsw80dqysacqj9j37q"
-  summers-forgejo       = "age1qdzkn6v3xhrfjwe8jxz3945dhyyhevwal0narjtr8whf9y7nh3wsn524u5"
-  summers-freshrss      = "age1etgfym5m8hn3hxs6cgg757zcv5zg5n22wq38fuq59n7qk7nef5uqyg6vvs"
-  summers-homebox       = "age17mugmkdw0y768a3huuf37r45eff9apyknxvwk3agg6xzsjmqp96q57tcty"
-  summers-immich        = "age16gf76uustmyyksm3t56zcq9g6j8avy0wrngh8laknfq733s5welqedeg4x"
-  summers-jellyfin      = "age1fnvlmhzju0yq908xtgags0sy85q3tacl2sc3w3vdd3yfp27xv5aq06v948"
-  summers-kanidm        = "age1s5gcxtatd9frwctzwg54fqycsx2sa73ll36k7qrpm9wwyknkldtst90gn4"
-  summers-kavita        = "age1d89878cvt7wsa07ydwtexspku5gppwstrpnpph4ufx5pcd4fadyqgf6lvl"
-  summers-koillection   = "age1ayupuxlrkepyvjk7xwgrd0pvcj3tfcha688mcuc8ees2hg3g2ersd0q3nc"
-  summers-matrix        = "age1cq7wxnugpfvjk6dgqpfmc8vemzhkg75drkgeaqjd9fuylz5qh40slazr4u"
-  summers-mealie        = "age1pxgecpe9fpsecdhjhv3cyct8z68t74kwl7qav0menlql9q5ev3wq8ffnda"
-  summers-monitoring    = "age1vn6ya0japzpgc256jg57fldsqe4udmq50sj5hmkywn7rxfnskevsx2q96u"
-  summers-nextcloud     = "age1t7zagjfddns4yltupk7nx8xps4gh7mupyz85uuys0wd22cxj5qsq2hw0p7"
-  summers-paperless     = "age1rn0pxluh7m8dyeshek06d7scejqlrcewlk8xmyrwt5e5nev2dc2s3s78vq"
-  summers-radicale      = "age1gxg2peektn8x36kk3nsgmeawl73e54kaadqd649ygwrv43kkvejq2cw64z"
-  summers-storage       = "age1kn34ny229gm0rg7wlcvxmcyjtz4gka6f2vd958fde6vmuzrxcvcsufra90"
-  summers-transmission  = "age1y69f2elvmq39lc3t3ucq9y7wt675520n7rvug88qg368qsmmk47qvwrtny"
-  summers-utility       = "age13gu8hndaqxtxwzm0ede5lt0hcrspvl2dfehffk3qtchky24qmy2s2qscjw"
-}
-
-kanidm_clients = [
-  "summers-dawarich",
-  "summers-forgejo",
-  "summers-freshrss",
-  "summers-homebox",
-  "summers-immich",
-  "summers-jellyfin",
-  "summers-kavita",
-  "summers-matrix",
-  "summers-mealie",
-  "summers-monitoring",
-  "summers-nextcloud",
-  "summers-paperless",
-  "twothreetunnel",
-  "moonside",
-  "vacanthouse",
-]
 
 extra_rules = [
   {
-    path_regex = "secrets/work/[^/]+\\.(yaml|json|env|ini)$"
-    age_keys   = ["pyramid", "dgx"]
-  },
-  {
     path_regex = "secrets/work/[^/]+\\.enc$"
-    age_keys   = ["pyramid", "dgx", "buildbot"]
-  },
-  {
-    path_regex = "secrets/general/invidious-companion.yaml$"
-    age_keys   = ["moonside", "summers-utility"]
-  },
-  {
-    path_regex = "secrets/general/gatus.yaml$"
-    age_keys   = ["moonside", "summers-monitoring"]
-  },
-  {
-    path_regex = "secrets/general/parsedmarc.yaml$"
-    age_keys   = ["eagleland", "summers-monitoring"]
-  },
-  {
-    path_regex = "secrets/general/clients.yaml$"
-    age_keys   = ["pyramid", "bakery"]
-  },
-  {
-    path_regex = "secrets/general/sandbox.yaml$"
-    age_keys   = ["pyramid", "bakery"]
-  },
-  {
-    path_regex = "secrets/mail/[^/]+\\.(yaml|json|env|ini)$"
-    age_keys = [
-      "moonside",
-      "twothreetunnel",
-      "summers-dawarich",
-      "summers-firefly",
-      "summers-forgejo",
-      "summers-immich",
-      "summers-kanidm",
-      "summers-matrix",
-      "summers-mealie",
-      "summers-monitoring",
-      "summers-nextcloud",
-      "summers-paperless",
-    ]
-  },
-  {
-    path_regex = "secrets/nginx/acme.json"
-    age_keys   = ["twothreetunnel", "summers", "eagleland", "hintbooth-nginx", "belchsfactory"]
+    age_keys   = ["pyramid", "treehouse", "buildbot"]
   },
 ]
 
@@ -202,10 +93,9 @@ host_configs = {
     guests = []
   }
   machpizza = {
-    type        = "darwin"
-    arch        = "aarch64-darwin"
-    guests      = []
-    has_age_key = false
+    type   = "darwin"
+    arch   = "aarch64-darwin"
+    guests = []
   }
   vacanthouse = {
     type        = "utility"
@@ -213,74 +103,5 @@ host_configs = {
     path        = "hosts/utility/vacanthouse"
     guests      = []
     repo_access = false
-  }
-}
-
-wireguard_networks = {
-  hintbooth = {
-    name = "wgHome"
-    clients = [
-      "hintbooth-adguardhome",
-      "hintbooth-nginx",
-      "summers-ankisync",
-      "summers-atuin",
-      "summers-audio",
-      "summers-dawarich",
-      "summers-firefly",
-      "summers-forgejo",
-      "summers-freshrss",
-      "summers-homebox",
-      "summers-immich",
-      "summers-jellyfin",
-      "summers-kanidm",
-      "summers-kavita",
-      "summers-koillection",
-      "summers-matrix",
-      "summers-mealie",
-      "summers-monitoring",
-      "summers-nextcloud",
-      "summers-paperless",
-      "summers-radicale",
-      "summers-storage",
-      "summers-transmission",
-      "summers-utility",
-      "summers",
-      "winters",
-    ]
-  }
-  twothreetunnel = {
-    name = "wgProxy"
-    clients = [
-      "belchsfactory",
-      "eagleland",
-      "hintbooth-adguardhome",
-      "hintbooth-nginx",
-      "moonside",
-      "stoicclub",
-      "summers-ankisync",
-      "summers-atuin",
-      "summers-audio",
-      "summers-dawarich",
-      "summers-firefly",
-      "summers-forgejo",
-      "summers-freshrss",
-      "summers-homebox",
-      "summers-immich",
-      "summers-jellyfin",
-      "summers-kanidm",
-      "summers-kavita",
-      "summers-koillection",
-      "summers-matrix",
-      "summers-mealie",
-      "summers-monitoring",
-      "summers-nextcloud",
-      "summers-paperless",
-      "summers-radicale",
-      "summers-storage",
-      "summers-transmission",
-      "summers-utility",
-      "summers",
-      "winters",
-    ]
   }
 }

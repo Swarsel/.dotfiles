@@ -9,7 +9,7 @@
     }:
     let
       inherit (config.swarselsystems) homeDir isClient mainUser;
-      inherit (confLib.static) clientsSopsFile;
+      clientsSecrets = confLib.static.sharedSecrets.clients;
     in
     {
       config = {
@@ -19,13 +19,13 @@
             mode = "0600";
             owner = mainUser;
             path = "${homeDir}/.ssh/builder";
-            sopsFile = clientsSopsFile;
+            rekey.keyPrefix = clientsSecrets;
           };
           nixbuild-net-key = {
             mode = "0600";
             owner = mainUser;
             path = "${homeDir}/.ssh/nixbuild-net";
-            sopsFile = clientsSopsFile;
+            rekey.keyPrefix = clientsSecrets;
           };
         };
         programs.ssh = {

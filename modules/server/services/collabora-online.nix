@@ -31,8 +31,6 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-
       extraConfigLoc = ''
         proxy_read_timeout 36000s;
       '';
@@ -70,7 +68,7 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets.collabora-admin-password = { inherit sopsFile; };
+          secrets.collabora-admin-password = { };
           templates.collabora-env.content = ''
             username=admin
             password=${config.sops.placeholder.collabora-admin-password}

@@ -184,8 +184,11 @@ in
         // lib.optionalAttrs isStandaloneLinux {
           sops = lib.mkIf (!config.swarselsystems.isPublic) {
             secrets = {
-              attic-cache-key = { };
-              github-api-token.mode = "0440";
+              attic-cache-key.rekey.keyPrefix = confLib.static.sharedSecrets.common;
+              github-api-token = {
+                mode = "0440";
+                rekey.keyPrefix = confLib.static.sharedSecrets.common;
+              };
             };
             templates.netrc.content = ''
                   machine ${globals.services.attic.domain}
@@ -259,11 +262,15 @@ in
         config = lib.recursiveUpdate {
           sops = lib.mkIf (!minimal) {
             secrets = {
-              attic-cache-key.owner = mainUser;
+              attic-cache-key = {
+                owner = mainUser;
+                rekey.keyPrefix = confLib.static.sharedSecrets.common;
+              };
               github-api-token = {
                 group = "builder";
                 mode = "0440";
                 owner = mainUser;
+                rekey.keyPrefix = confLib.static.sharedSecrets.common;
               };
             };
             templates.netrc = {

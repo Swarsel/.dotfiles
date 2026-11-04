@@ -126,7 +126,7 @@
       activationScripts = {
         sandboxAgeKey.text = ''
           install -d -m 700 /var/lib/sops-nix
-          install -m 600 ${../../../files/public/age/vacanthouse.key} /var/lib/sops-nix/key.txt
+          install -m 600 ${../../../files/public/age/hosts/vacanthouse.key} /var/lib/sops-nix/key.txt
         '';
         setupSecrets.deps = [ "sandboxAgeKey" ];
       };

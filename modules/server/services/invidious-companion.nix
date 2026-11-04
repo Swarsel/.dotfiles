@@ -10,7 +10,6 @@
       imports = lib.optionals (inputs ? invidious-companion) [
         (
           {
-            self,
             inputs,
             config,
             lib,
@@ -40,7 +39,6 @@
               webProxy
               ;
 
-            sopsFile = self + /secrets/general/invidious-companion.yaml;
             companion = pkgs.stdenv.mkDerivation {
               buildInputs = [
                 pkgs.stdenv.cc.cc.lib
@@ -89,8 +87,14 @@
             };
             sops = {
               secrets.invidious-companion-key = {
-                inherit sopsFile;
                 mode = "0444";
+                rekey = {
+                  generator = {
+                    args.length = 16;
+                    script = "alnum";
+                  };
+                  keyPrefix = confLib.static.sharedSecrets.invidiousCompanion;
+                };
               };
 
               templates."invidious-companion.env" = {
@@ -135,13 +139,21 @@
                   };
                 };
                 homeInvidiousFallback = lib.optionalAttrs (!globals.services.invidious.isHome) {
-                  virtualHosts.${serviceDomain}.locations."/" = {
-                    extraConfig = ''
-                      proxy_ssl_server_name on;
-                      proxy_ssl_name ${serviceDomain};
-                    '';
-                    proxyPass = "https://${globals.services.invidious.proxyAddress4}";
-                  };
+                  virtualHosts.${serviceDomain}.locations =
+                    let
+                      fallback = extraConfig: {
+                        extraConfig = ''
+                          proxy_ssl_server_name on;
+                          proxy_ssl_name ${serviceDomain};
+                          ${extraConfig}
+                        '';
+                        proxyPass = "https://${globals.services.invidious.proxyAddress4}";
+                      };
+                    in
+                    {
+                      "/" = fallback "";
+                      "/api/v1/auth/notifications" = fallback "proxy_buffering off;";
+                    };
                 };
               in
               lib.mkMerge [

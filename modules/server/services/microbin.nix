@@ -30,8 +30,6 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
-
       cfg = config.services.${serviceName};
     in
     {
@@ -64,19 +62,16 @@
         sops = {
           secrets = {
             microbin-admin-password = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
             microbin-admin-username = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;
             };
             microbin-uploader-password = {
-              inherit sopsFile;
               group = serviceGroup;
               mode = "0440";
               owner = serviceUser;

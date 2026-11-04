@@ -10,7 +10,6 @@
     }:
     let
       nfsUser = globals.user.name;
-      inherit (config.swarselsystems) sopsFile;
     in
     {
       config = {
@@ -31,10 +30,7 @@
             })
           ];
         };
-        sops.secrets.samba-user-pw = {
-          inherit sopsFile;
-          mode = "0400";
-        };
+        sops.secrets.samba-user-pw.mode = "0400";
         users.persistentIds.avahi = confLib.mkIds 978;
         services = {
           avahi = {

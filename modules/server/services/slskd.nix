@@ -27,7 +27,6 @@
         homeWebProxy
         isHome
         ;
-      inherit (config.swarselsystems) sopsFile;
 
       piaNamespace = "pia-slsk";
       piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
@@ -54,9 +53,9 @@
         };
         sops = {
           secrets = {
-            slskd-soulseek-password = { inherit sopsFile; };
-            slskd-soulseek-username = { inherit sopsFile; };
-            slskd-web-password = { inherit sopsFile; };
+            slskd-soulseek-password = { };
+            slskd-soulseek-username = { };
+            slskd-web-password = { };
           };
           templates."slskd.env".content = ''
             SLSKD_SLSK_USERNAME=${config.sops.placeholder.slskd-soulseek-username}

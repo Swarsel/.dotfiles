@@ -35,14 +35,17 @@
         ;
 
       kanidmDomain = globals.services.kanidm.domain;
-      kanidmSopsFile = self + "/secrets/kanidm/${config.node.name}.yaml";
     in
     {
       imports = [
         self.modules.nixos.postgresql
       ];
       config = {
-        swarselsystems.enabledServerModules = [ "homebox" ];
+        swarselsystems = {
+          enabledServerModules = [ "homebox" ];
+          server.postgresql.rolePasswordFiles.${serviceName} =
+            config.sops.secrets."${serviceName}-db-password".path;
+        };
         topology.self.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
           info = "https://${serviceDomain}";
@@ -69,11 +72,17 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets.kanidm-homebox = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            sopsFile = kanidmSopsFile;
+          secrets = {
+            "${serviceName}-db-password" = {
+              owner = config.systemd.services.postgresql.serviceConfig.User;
+              rekey.generator.script = "alnum";
+            };
+            kanidm-homebox = {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+              rekey.keyPrefix = confLib.kanidmSecrets;
+            };
           };
           templates.homebox-oidc-env = {
             content = ''
@@ -87,6 +96,7 @@
           enable = true;
           package = pkgs.homebox;
           database.createLocally = true;
+          secrets.HBOX_DATABASE_PASSWORD = config.sops.secrets."${serviceName}-db-password".path;
           settings = {
             HBOX_OIDC_BUTTON_TEXT = "Sign in with Kanidm";
             HBOX_OIDC_CLIENT_ID = serviceName;
@@ -114,7 +124,7 @@
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
-              inherit kanidmSopsFile serviceDomain serviceName;
+              inherit serviceDomain serviceName;
               originUrl = "https://${serviceDomain}/api/v1/users/login/oidc/callback";
             };
           }

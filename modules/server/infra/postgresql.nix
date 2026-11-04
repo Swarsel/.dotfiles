@@ -39,6 +39,9 @@
           ${serviceName} = {
             enable = true;
             package = pkgs."postgresql_${builtins.toString postgresVersion}";
+            authentication = lib.concatMapStrings (role: ''
+              local all "${role}" scram-sha-256
+            '') (lib.attrNames config.swarselsystems.server.postgresql.rolePasswordFiles);
             dataDir = "${postgresDirPrefix}/${serviceName}/${builtins.toString postgresVersion}";
             settings = {
               synchronous_commit = "off";

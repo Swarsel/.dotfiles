@@ -35,7 +35,6 @@
 
       nginxGroup = "nginx";
 
-      inherit (config.swarselsystems) sopsFile;
       cfg = config.services.firefly-iii;
     in
     {
@@ -71,16 +70,19 @@
         };
         sops.secrets = {
           firefly-iii-app-key = {
-            inherit sopsFile;
             group = if cfg.enableNginx then nginxGroup else serviceGroup;
             mode = "0440";
             owner = serviceUser;
+            rekey.generator = {
+              args.length = 32;
+              script = "alnum";
+            };
           };
           notification-mail-pw = {
-            inherit (notificationMail) sopsFile;
             group = if cfg.enableNginx then nginxGroup else serviceGroup;
             mode = "0440";
             owner = serviceUser;
+            rekey.keyPrefix = notificationMail.keyPrefix;
           };
         };
         users = {

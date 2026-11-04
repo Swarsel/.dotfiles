@@ -26,18 +26,17 @@ in
     };
     nixos.work =
       {
-        self,
         inputs,
         config,
         lib,
         pkgs,
+        confLib,
         withHomeManager,
         ...
       }:
       let
         inherit (config.swarselsystems) homeDir mainUser;
         owner = mainUser;
-        sopsFile = self + /secrets/work/secrets.yaml;
       in
       {
         options.swarselsystems = {
@@ -76,7 +75,10 @@ in
               secrets = builtins.listToAttrs (
                 map (name: {
                   inherit name;
-                  value = { inherit owner sopsFile; };
+                  value = {
+                    inherit owner;
+                    rekey.keyPrefix = confLib.static.sharedSecrets.work;
+                  };
                 }) secretNames
               );
               templates."network-manager-work.env".content = ''

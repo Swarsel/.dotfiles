@@ -44,7 +44,7 @@
               webProxy
               ;
 
-            inherit (config.swarselsystems) mainUser sopsFile;
+            inherit (config.swarselsystems) mainUser;
 
             dataDir = "/sync/copyparty";
             cacheDir = "/var/cache/copyparty";
@@ -80,13 +80,11 @@
             };
             sops.secrets = {
               copyparty-guest-password = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0400";
                 owner = serviceUser;
               };
               copyparty-password = {
-                inherit sopsFile;
                 group = serviceGroup;
                 mode = "0400";
                 owner = serviceUser;

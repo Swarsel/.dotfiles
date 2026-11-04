@@ -32,7 +32,6 @@
         webProxy
         ;
 
-      inherit (config.swarselsystems) sopsFile;
     in
     {
       imports = [
@@ -67,11 +66,8 @@
         };
         sops = {
           secrets = {
-            freshrss-pw = {
-              inherit sopsFile;
-              owner = serviceUser;
-            };
-            # kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+            freshrss-pw.owner = serviceUser;
+            # kanidm-freshrss-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
             # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
           };
 

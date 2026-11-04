@@ -55,7 +55,7 @@
             builder-key = {
               mode = "0600";
               path = "${config.home.homeDirectory}/.ssh/builder";
-              sopsFile = confLib.static.clientsSopsFile;
+              rekey.keyPrefix = confLib.static.sharedSecrets.clients;
             };
           };
         };
