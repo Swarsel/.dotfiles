@@ -325,11 +325,6 @@
               stateVersion = 3;
               x509.useACMEHost = globals.domains.main;
             };
-            # the rest of the ports are managed by snm
-            networking.firewall.allowedTCPPorts = [
-              80
-              443
-            ];
             security.acme.certs.${globals.domains.main} = {
               extraLegoFlags = [
                 "--private-key"

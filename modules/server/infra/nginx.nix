@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.nginx =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      confLib,
+      ...
+    }:
     let
       serviceUser = "nginx";
       serviceGroup = serviceUser;
@@ -83,10 +88,12 @@
             }
           ];
         };
-        networking.firewall.allowedTCPPorts = [
-          80
-          443
-        ];
+        networking.firewall.allowedTCPPorts =
+          lib.mkIf (!config.swarselsystems.isCloud || config.node.name == confLib.static.webProxy)
+            [
+              80
+              443
+            ];
       };
     }
 

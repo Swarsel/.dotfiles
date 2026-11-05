@@ -26306,7 +26306,12 @@ This is the general NGINX config using on [[#h:19300583-322b-4e0b-b657-857fbf23d
 #+begin_src nix-ts :tangle modules/server/infra/nginx.nix
   {
     flake.modules.nixos.nginx =
-      { config, lib, ... }:
+      {
+        config,
+        lib,
+        confLib,
+        ...
+      }:
       let
         serviceUser = "nginx";
         serviceGroup = serviceUser;
@@ -26389,10 +26394,12 @@ This is the general NGINX config using on [[#h:19300583-322b-4e0b-b657-857fbf23d
               }
             ];
           };
-          networking.firewall.allowedTCPPorts = [
-            80
-            443
-          ];
+          networking.firewall.allowedTCPPorts =
+            lib.mkIf (!config.swarselsystems.isCloud || config.node.name == confLib.static.webProxy)
+              [
+                80
+                443
+              ];
         };
       }
 
@@ -41239,11 +41246,6 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 stateVersion = 3;
                 x509.useACMEHost = globals.domains.main;
               };
-              # the rest of the ports are managed by snm
-              networking.firewall.allowedTCPPorts = [
-                80
-                443
-              ];
               security.acme.certs.${globals.domains.main} = {
                 extraLegoFlags = [
                   "--private-key"
