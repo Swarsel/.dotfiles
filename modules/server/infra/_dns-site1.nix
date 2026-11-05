@@ -119,15 +119,27 @@ with dns.lib.combinators;
 
   subdomains =
     globals.dns.${globals.domains.main}.subdomainRecords
+    // builtins.listToAttrs (
+      map
+        (port: {
+          name = "_${toString port}._tcp.${globals.services.mailserver.subDomain}";
+          value.TLSA = [
+            {
+              certUsage = "dane-ee";
+              certificate = "c012bcab175ceadb422f964fdeb1c5aa778f8efae9d46f37f7717456cbc61467";
+              matchingType = "sha256";
+              selector = "spki";
+            }
+          ];
+        })
+        [
+          25
+          465
+          587
+          993
+        ]
+    )
     // {
-      "_25._tcp.${globals.services.mailserver.subDomain}".TLSA = [
-        {
-          certUsage = "dane-ee";
-          certificate = "c012bcab175ceadb422f964fdeb1c5aa778f8efae9d46f37f7717456cbc61467";
-          matchingType = "sha256";
-          selector = "spki";
-        }
-      ];
       _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
       soa = host proxyAddress4 proxyAddress6;
       srv = host proxyAddress4 proxyAddress6;

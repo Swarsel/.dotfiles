@@ -25,6 +25,7 @@
             root,
             config,
             lib,
+            pkgs,
             confLib,
             dns,
             globals,
@@ -54,6 +55,7 @@
               dmarcMailAddress
               homeServiceAddress
               homeWebProxy
+              idmServer
               isHome
               nginxAccessRules
               webProxy
@@ -178,6 +180,11 @@
                       serviceName = "rspamd-dmarc-reporter";
                       unit = "rspamd-dmarc-reporter.service";
                     })
+                    (confLib.mkSystemdMonitoring {
+                      oneshot = true;
+                      serviceName = "dane-check";
+                      unit = "dane-check.service";
+                    })
                   ]
                 );
               };
@@ -234,6 +241,7 @@
                   useACMEHost = globals.domains.main;
                 };
               };
+              postfix.settings.main.smtpd_client_auth_rate_limit = 10;
               roundcube = {
                 enable = true;
                 configureNginx = true;
@@ -332,8 +340,39 @@
               ];
               extraLegoRenewFlags = [ "--reuse-key" ];
             };
-            systemd.services.roundcube-setup.serviceConfig.EnvironmentFile =
-              config.sops.templates.roundcube-setup-env.path;
+            systemd = {
+              services = {
+                dane-check = {
+                  script = ''
+                    for port in 25 465 587 993; do
+                      case "$port" in
+                        25 | 587) starttls="-starttls smtp" ;;
+                        *) starttls="" ;;
+                      esac
+                      served=$(${lib.getExe pkgs.openssl} s_client -connect "127.0.0.1:$port" -servername ${serviceDomain} $starttls </dev/null 2>/dev/null | ${lib.getExe pkgs.openssl} x509 -pubkey -noout | ${lib.getExe pkgs.openssl} pkey -pubin -outform DER | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -d" " -f1)
+                      published=$(${pkgs.knot-dns}/bin/kdig +short TLSA "_$port._tcp.${serviceDomain}" | ${pkgs.gnused}/bin/sed -E "s/^3 1 1 //; s/ //g" | ${pkgs.coreutils}/bin/tr "A-F" "a-f")
+                      if [ -z "$served" ] || [ "$served" != "$published" ]; then
+                        echo "TLSA record for port $port does not match the served certificate key"
+                        exit 1
+                      fi
+                    done
+                  '';
+                  serviceConfig = {
+                    DynamicUser = true;
+                    Type = "oneshot";
+                  };
+                };
+                roundcube-setup.serviceConfig.EnvironmentFile = config.sops.templates.roundcube-setup-env.path;
+              };
+              timers.dane-check = {
+                timerConfig = {
+                  OnCalendar = "daily";
+                  Persistent = true;
+                  RandomizedDelaySec = "1h";
+                };
+                wantedBy = [ "timers.target" ];
+              };
+            };
             nodes =
               let
                 extraConfigLoc = ''
@@ -342,6 +381,7 @@
                 '';
               in
               lib.mkMerge [
+                { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { serviceName = "roundcube"; }; }
                 {
                   ${webProxy}.services.nginx.virtualHosts.${mtaStsDomain} = {
                     acmeRoot = null;
@@ -362,6 +402,8 @@
                       servicePort
                       ;
                     maxBody = 0;
+                    oauth2 = true;
+                    oauth2Groups = [ "roundcube_access" ];
                     protocol = "https";
                     serviceDomain = roundcubeDomain;
                   };

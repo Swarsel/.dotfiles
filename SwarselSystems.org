@@ -40659,15 +40659,27 @@ The exception is the DANE =TLSA= record of the [[#h:64cbeb7e-0773-4eb5-8e52-6b97
 
     subdomains =
       globals.dns.${globals.domains.main}.subdomainRecords
+      // builtins.listToAttrs (
+        map
+          (port: {
+            name = "_${toString port}._tcp.${globals.services.mailserver.subDomain}";
+            value.TLSA = [
+              {
+                certUsage = "dane-ee";
+                certificate = "c012bcab175ceadb422f964fdeb1c5aa778f8efae9d46f37f7717456cbc61467";
+                matchingType = "sha256";
+                selector = "spki";
+              }
+            ];
+          })
+          [
+            25
+            465
+            587
+            993
+          ]
+      )
       // {
-        "_25._tcp.${globals.services.mailserver.subDomain}".TLSA = [
-          {
-            certUsage = "dane-ee";
-            certificate = "c012bcab175ceadb422f964fdeb1c5aa778f8efae9d46f37f7717456cbc61467";
-            matchingType = "sha256";
-            selector = "spki";
-          }
-        ];
         _acme-challenge.CNAME = [ "${config.repo.secrets.local.dns.acme-challenge-domain}." ];
         soa = host proxyAddress4 proxyAddress6;
         srv = host proxyAddress4 proxyAddress6;
@@ -40946,6 +40958,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
               root,
               config,
               lib,
+              pkgs,
               confLib,
               dns,
               globals,
@@ -40975,6 +40988,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 dmarcMailAddress
                 homeServiceAddress
                 homeWebProxy
+                idmServer
                 isHome
                 nginxAccessRules
                 webProxy
@@ -41099,6 +41113,11 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                         serviceName = "rspamd-dmarc-reporter";
                         unit = "rspamd-dmarc-reporter.service";
                       })
+                      (confLib.mkSystemdMonitoring {
+                        oneshot = true;
+                        serviceName = "dane-check";
+                        unit = "dane-check.service";
+                      })
                     ]
                   );
                 };
@@ -41155,6 +41174,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                     useACMEHost = globals.domains.main;
                   };
                 };
+                postfix.settings.main.smtpd_client_auth_rate_limit = 10;
                 roundcube = {
                   enable = true;
                   configureNginx = true;
@@ -41253,8 +41273,39 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 ];
                 extraLegoRenewFlags = [ "--reuse-key" ];
               };
-              systemd.services.roundcube-setup.serviceConfig.EnvironmentFile =
-                config.sops.templates.roundcube-setup-env.path;
+              systemd = {
+                services = {
+                  dane-check = {
+                    script = ''
+                      for port in 25 465 587 993; do
+                        case "$port" in
+                          25 | 587) starttls="-starttls smtp" ;;
+                          *) starttls="" ;;
+                        esac
+                        served=$(${lib.getExe pkgs.openssl} s_client -connect "127.0.0.1:$port" -servername ${serviceDomain} $starttls </dev/null 2>/dev/null | ${lib.getExe pkgs.openssl} x509 -pubkey -noout | ${lib.getExe pkgs.openssl} pkey -pubin -outform DER | ${pkgs.coreutils}/bin/sha256sum | ${pkgs.coreutils}/bin/cut -d" " -f1)
+                        published=$(${pkgs.knot-dns}/bin/kdig +short TLSA "_$port._tcp.${serviceDomain}" | ${pkgs.gnused}/bin/sed -E "s/^3 1 1 //; s/ //g" | ${pkgs.coreutils}/bin/tr "A-F" "a-f")
+                        if [ -z "$served" ] || [ "$served" != "$published" ]; then
+                          echo "TLSA record for port $port does not match the served certificate key"
+                          exit 1
+                        fi
+                      done
+                    '';
+                    serviceConfig = {
+                      DynamicUser = true;
+                      Type = "oneshot";
+                    };
+                  };
+                  roundcube-setup.serviceConfig.EnvironmentFile = config.sops.templates.roundcube-setup-env.path;
+                };
+                timers.dane-check = {
+                  timerConfig = {
+                    OnCalendar = "daily";
+                    Persistent = true;
+                    RandomizedDelaySec = "1h";
+                  };
+                  wantedBy = [ "timers.target" ];
+                };
+              };
               nodes =
                 let
                   extraConfigLoc = ''
@@ -41263,6 +41314,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                   '';
                 in
                 lib.mkMerge [
+                  { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { serviceName = "roundcube"; }; }
                   {
                     ${webProxy}.services.nginx.virtualHosts.${mtaStsDomain} = {
                       acmeRoot = null;
@@ -41283,6 +41335,8 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                         servicePort
                         ;
                       maxBody = 0;
+                      oauth2 = true;
+                      oauth2Groups = [ "roundcube_access" ];
                       protocol = "https";
                       serviceDomain = roundcubeDomain;
                     };
