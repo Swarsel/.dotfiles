@@ -206,66 +206,85 @@
             '';
           serviceConfig.RestartSec = "60"; # Retry every minute
         };
-        nodes = lib.mkMerge [
-          {
-            ${idmServer} =
-              lib.recursiveUpdate
-                (confLib.mkKanidmOidcSystem {
-                  inherit serviceDomain serviceName;
-                  extraGroups = [ "forgejo.admins" ];
-                  originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
-                })
-                {
-                  services.kanidm.provision.systems.oauth2.forgejo = {
-                    # XXX: PKCE is currently not supported by gitea/forgejo,
-                    # see https://github.com/go-gitea/gitea/issues/21376.
-                    allowInsecureClientDisablePkce = true;
-                    claimMaps.groups = {
-                      joinType = "array";
-                      valuesByGroup."forgejo.admins" = [ "admin" ];
+        nodes =
+          let
+            mkSshProxy =
+              {
+                address,
+                extraConfig ? "",
+              }:
+              {
+                services.nginx.streamConfig = ''
+                  server {
+                    listen ${toString sshProxyPort};
+                    listen [::]:${toString sshProxyPort};
+                    proxy_pass ${address}:${toString sshListenPort};
+                    ${extraConfig}
+                  }
+                '';
+                networking.nftables.firewall.rules.forgejo-ssh-to-local = {
+                  allowedTCPPorts = [ sshProxyPort ];
+                  from = [ "untrusted" ];
+                  to = [ "local" ];
+                };
+              };
+          in
+          lib.mkMerge [
+            {
+              ${idmServer} =
+                lib.recursiveUpdate
+                  (confLib.mkKanidmOidcSystem {
+                    inherit serviceDomain serviceName;
+                    extraGroups = [ "forgejo.admins" ];
+                    originUrl = "https://${serviceDomain}/user/oauth2/kanidm/callback";
+                  })
+                  {
+                    services.kanidm.provision.systems.oauth2.forgejo = {
+                      # XXX: PKCE is currently not supported by gitea/forgejo,
+                      # see https://github.com/go-gitea/gitea/issues/21376.
+                      allowInsecureClientDisablePkce = true;
+                      claimMaps.groups = {
+                        joinType = "array";
+                        valuesByGroup."forgejo.admins" = [ "admin" ];
+                      };
                     };
                   };
-                };
-          }
-          {
-            ${webProxy} = {
-              services.nginx =
-                confLib.genNginx {
-                  inherit
-                    serviceAddress
-                    serviceDomain
-                    serviceName
-                    servicePort
-                    ;
-                  maxBody = 0;
+            }
+            {
+              ${webProxy} = lib.mkMerge [
+                {
+                  services.nginx = confLib.genNginx {
+                    inherit
+                      serviceAddress
+                      serviceDomain
+                      serviceName
+                      servicePort
+                      ;
+                    maxBody = 0;
+                  };
                 }
-                // {
-                  streamConfig = ''
-                    server {
-                      listen ${toString sshProxyPort};
-                      listen [::]:${toString sshProxyPort};
-                      proxy_pass ${serviceAddress}:${toString sshListenPort};
-                    }
-                  '';
-                };
-              networking.nftables.firewall.rules.forgejo-ssh-to-local = {
-                allowedTCPPorts = [ sshProxyPort ];
-                from = [ "untrusted" ];
-                to = [ "local" ];
-              };
-            };
-          }
-          {
-            ${homeWebProxy}.services.nginx = lib.mkIf isHome (
-              confLib.genNginx {
-                inherit serviceDomain serviceName servicePort;
-                extraConfig = nginxAccessRules;
-                maxBody = 0;
-                serviceAddress = homeServiceAddress;
-              }
-            );
-          }
-        ];
+                (mkSshProxy { address = serviceAddress; })
+              ];
+            }
+            {
+              ${homeWebProxy} = lib.mkIf isHome (
+                lib.mkMerge [
+                  {
+                    services.nginx = confLib.genNginx {
+                      inherit serviceDomain serviceName servicePort;
+                      extraConfig = nginxAccessRules;
+                      maxBody = 0;
+                      serviceAddress = homeServiceAddress;
+                    };
+                  }
+                  (mkSshProxy {
+                    address = homeServiceAddress;
+                    extraConfig = nginxAccessRules;
+                  })
+                ]
+              );
+            }
+          ];
 
       };
     }
