@@ -9,10 +9,27 @@
       };
 
     nftables-rules =
-      { config, lib, ... }:
+      {
+        config,
+        lib,
+        globals,
+        ...
+      }:
+      let
+        jumphost = globals.general.jumphost or null;
+        restrictSsh = config.swarselsystems.isCloud && config.node.name != jumphost;
+        homeWan = globals.networks.home-wan or { };
+        sshSources =
+          family:
+          lib.filter (a: a != null) [
+            (if jumphost != null then globals.hosts.${jumphost}."wanAddress${family}" or null else null)
+            (homeWan."cidrv${family}" or null)
+          ];
+      in
       {
         config = {
           swarselsystems.enabledServerModules = [ "nftables" ];
+          services.openssh.openFirewall = lib.mkIf restrictSsh false;
           networking.nftables = {
             firewall = {
               enable = true;
@@ -31,6 +48,18 @@
                   from = "all";
                   to = [ "local" ];
                 };
+                ssh = lib.mkIf restrictSsh {
+                  allowedTCPPorts = config.services.openssh.ports;
+                  from = [
+                    "trusted-ssh"
+                  ]
+                  ++ lib.attrNames (
+                    lib.filterAttrs (
+                      name: zone: zone.parent == null && !zone.localZone && name != "untrusted"
+                    ) config.networking.nftables.firewall.zones
+                  );
+                  to = [ "local" ];
+                };
                 untrusted-to-local = {
                   inherit (config.networking.firewall)
                     allowedTCPPortRanges
@@ -39,6 +68,7 @@
                     allowedUDPPorts
                     ;
                   from = [ "untrusted" ];
+                  ignoreEmptyRule = true;
                   to = [ "local" ];
                 };
               };
@@ -48,7 +78,12 @@
                 nnf-dhcpv6.enable = true;
                 nnf-drop.enable = true;
                 nnf-loopback.enable = true;
-                nnf-ssh.enable = true;
+                nnf-ssh.enable = !restrictSsh;
+              };
+              zones.trusted-ssh = lib.mkIf restrictSsh {
+                ipv4Addresses = sshSources "4";
+                ipv6Addresses = sshSources "6";
+                parent = lib.mkIf (config.networking.nftables.firewall.zones ? untrusted) "untrusted";
               };
             };
             stopRuleset = lib.mkDefault ''
@@ -73,7 +108,6 @@
               }
             '';
           };
-
         };
         key = "swarsel/nftables-rules";
       };
