@@ -453,8 +453,15 @@
                   })
                 );
               };
-              root.hashedPassword = mkOption {
-                type = types.str;
+              root = {
+                emergencyHashedPassword = mkOption {
+                  default = null;
+                  type = types.nullOr types.str;
+                };
+                hashedPassword = mkOption {
+                  default = null;
+                  type = types.nullOr types.str;
+                };
               };
               user = {
                 name = mkOption {

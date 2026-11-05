@@ -9,16 +9,29 @@
       minimal,
       ...
     }:
+    let
+      mainUserEnabled = config.users.users.${config.swarselsystems.mainUser}.enable;
+    in
     {
       config = {
-        sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) {
-          neededForUsers = true;
-          rekey.keyPrefix = confLib.static.sharedSecrets.common;
+        sops.secrets = {
+          main-user-hashed-pw = lib.mkIf (mainUserEnabled && !config.swarselsystems.isPublic) {
+            neededForUsers = true;
+            rekey.keyPrefix = confLib.static.sharedSecrets.common;
+          };
+          root-hashed-pw = lib.mkIf (!minimal && !config.swarselsystems.isPublic) {
+            neededForUsers = true;
+            rekey.keyPrefix = confLib.static.sharedSecrets.common;
+          };
         };
-
         users = {
           users = {
             "${config.swarselsystems.mainUser}" = {
+              enable = lib.mkDefault (
+                minimal
+                || config.swarselsystems.isPublic
+                || (config.home-manager.users or { }) ? ${config.swarselsystems.mainUser}
+              );
               autoSubUidGidRange = false;
               description = config.repo.secrets.common.fullName or "User";
               extraGroups = [
@@ -38,7 +51,7 @@
                 "scanner"
               ];
               hashedPasswordFile = lib.mkIf (
-                !minimal && !config.swarselsystems.isPublic
+                mainUserEnabled && !minimal && !config.swarselsystems.isPublic
               ) config.sops.secrets.main-user-hashed-pw.path;
               isNormalUser = true;
               packages = with pkgs; [ ];
@@ -58,12 +71,16 @@
               uid = 1000;
             };
             root = {
-              inherit (globals.root) hashedPassword;
+              hashedPassword = lib.mkIf config.swarselsystems.isPublic globals.root.hashedPassword;
+              hashedPasswordFile = lib.mkIf (
+                !minimal && !config.swarselsystems.isPublic
+              ) config.sops.secrets.root-hashed-pw.path;
               # shell = pkgs.zsh;
             };
           };
           mutableUsers = lib.mkIf (!minimal) false;
         };
+        security.pam.services.su.requireWheel = true;
       };
     };
 }

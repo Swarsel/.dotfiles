@@ -9389,7 +9389,10 @@ The demo replacement exposes plain text example files instead and sets =isDemo=,
         routerServer = "shim";
         webProxy = "shim";
       };
-      root.hashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0"; # setup
+      root = {
+        emergencyHashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0";
+        hashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0";
+      };
     };
   }
 #+end_src
@@ -9690,7 +9693,10 @@ The stub flake used to replace =vbc-nix= (and any future private input that is n
         cidrv6 = "fd00:5a4d:10::/64";
         id = 10;
       };
-      root.hashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0";
+      root = {
+        emergencyHashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0";
+        hashedPassword = "$6$Hkbhj1DujcKvZP9t$hQEyYT11m/4/UjR6kq8NqINQk3PD5cKTvuyWTz5SstW2IbLDB/rgPs59MrVTbMzEPhimRp90HrxVbDvNG16Ny0";
+      };
     };
   }
 #+end_src
@@ -10289,8 +10295,15 @@ Do note that the below does not achieve anything on its own - as is, these would
                     })
                   );
                 };
-                root.hashedPassword = mkOption {
-                  type = types.str;
+                root = {
+                  emergencyHashedPassword = mkOption {
+                    default = null;
+                    type = types.nullOr types.str;
+                  };
+                  hashedPassword = mkOption {
+                    default = null;
+                    type = types.nullOr types.str;
+                  };
                 };
                 user = {
                   name = mkOption {
@@ -10876,7 +10889,7 @@ A breakdown of the flags being set:
                 trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
                 trusted-users = [
                   "@wheel"
-                  "${config.swarselsystems.mainUser}"
+                  (lib.mkIf config.users.users.${mainUser}.enable mainUser)
                   (lib.mkIf (builtins.elem "ssh-builder" config.swarselsystems.enabledServerModules) "builder")
                 ];
               };
@@ -11043,16 +11056,29 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
         minimal,
         ...
       }:
+      let
+        mainUserEnabled = config.users.users.${config.swarselsystems.mainUser}.enable;
+      in
       {
         config = {
-          sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) {
-            neededForUsers = true;
-            rekey.keyPrefix = confLib.static.sharedSecrets.common;
+          sops.secrets = {
+            main-user-hashed-pw = lib.mkIf (mainUserEnabled && !config.swarselsystems.isPublic) {
+              neededForUsers = true;
+              rekey.keyPrefix = confLib.static.sharedSecrets.common;
+            };
+            root-hashed-pw = lib.mkIf (!minimal && !config.swarselsystems.isPublic) {
+              neededForUsers = true;
+              rekey.keyPrefix = confLib.static.sharedSecrets.common;
+            };
           };
-
           users = {
             users = {
               "${config.swarselsystems.mainUser}" = {
+                enable = lib.mkDefault (
+                  minimal
+                  || config.swarselsystems.isPublic
+                  || (config.home-manager.users or { }) ? ${config.swarselsystems.mainUser}
+                );
                 autoSubUidGidRange = false;
                 description = config.repo.secrets.common.fullName or "User";
                 extraGroups = [
@@ -11072,7 +11098,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
                   "scanner"
                 ];
                 hashedPasswordFile = lib.mkIf (
-                  !minimal && !config.swarselsystems.isPublic
+                  mainUserEnabled && !minimal && !config.swarselsystems.isPublic
                 ) config.sops.secrets.main-user-hashed-pw.path;
                 isNormalUser = true;
                 packages = with pkgs; [ ];
@@ -11092,12 +11118,16 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
                 uid = 1000;
               };
               root = {
-                inherit (globals.root) hashedPassword;
+                hashedPassword = lib.mkIf config.swarselsystems.isPublic globals.root.hashedPassword;
+                hashedPasswordFile = lib.mkIf (
+                  !minimal && !config.swarselsystems.isPublic
+                ) config.sops.secrets.root-hashed-pw.path;
                 # shell = pkgs.zsh;
               };
             };
             mutableUsers = lib.mkIf (!minimal) false;
           };
+          security.pam.services.su.requireWheel = true;
         };
       };
   }
@@ -13116,7 +13146,11 @@ Here I set some general boot options, mostly enabling an emergency shell and som
             bcache.enable = false;
             initrd.systemd = {
               users.root.shell = "${pkgs.bashInteractive}/bin/bash";
-              emergencyAccess = globals.root.hashedPassword;
+              emergencyAccess =
+                if globals.root.emergencyHashedPassword == null then
+                  false
+                else
+                  globals.root.emergencyHashedPassword;
               extraBin = {
                 cryptsetup = "${pkgs.cryptsetup}/bin/cryptsetup";
                 ip = "${pkgs.iproute2}/bin/ip";
@@ -13245,8 +13279,10 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               settings = {
                 AllowUsers = [
                   "root"
-                  config.swarselsystems.mainUser
-                ];
+                ]
+                ++
+                  lib.optional config.users.users.${config.swarselsystems.mainUser}.enable
+                    config.swarselsystems.mainUser;
                 KbdInteractiveAuthentication = false;
                 PasswordAuthentication = false;
                 PermitRootLogin = "prohibit-password";
@@ -39654,8 +39690,6 @@ Allows certificate based SSH logins easily. I use this to be able to quickly giv
           inherit (confLib.static) idmServer;
 
           kanidmDomain = globals.services.kanidm.domain;
-
-          inherit (config.swarselsystems) mainUser;
           mailAddress = config.repo.secrets.common.mail.address4;
         in
         {
@@ -39668,7 +39702,7 @@ Allows certificate based SSH logins easily. I use this to be able to quickly giv
                 {
                   inherit (config.services.opkssh.providers.kanidm) issuer;
                   principal = mailAddress;
-                  user = mainUser;
+                  user = "root";
                 }
               ];
               group = serviceGroup;

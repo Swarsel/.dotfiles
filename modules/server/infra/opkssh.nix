@@ -51,8 +51,6 @@
         inherit (confLib.static) idmServer;
 
         kanidmDomain = globals.services.kanidm.domain;
-
-        inherit (config.swarselsystems) mainUser;
         mailAddress = config.repo.secrets.common.mail.address4;
       in
       {
@@ -65,7 +63,7 @@
               {
                 inherit (config.services.opkssh.providers.kanidm) issuer;
                 principal = mailAddress;
-                user = mainUser;
+                user = "root";
               }
             ];
             group = serviceGroup;

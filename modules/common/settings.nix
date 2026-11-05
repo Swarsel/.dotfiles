@@ -312,7 +312,7 @@ in
               trusted-substituters = mkSubstituter config.swarselsystems.isPublic globals mainUser;
               trusted-users = [
                 "@wheel"
-                "${config.swarselsystems.mainUser}"
+                (lib.mkIf config.users.users.${mainUser}.enable mainUser)
                 (lib.mkIf (builtins.elem "ssh-builder" config.swarselsystems.enabledServerModules) "builder")
               ];
             };

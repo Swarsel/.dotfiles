@@ -12,7 +12,11 @@
           bcache.enable = false;
           initrd.systemd = {
             users.root.shell = "${pkgs.bashInteractive}/bin/bash";
-            emergencyAccess = globals.root.hashedPassword;
+            emergencyAccess =
+              if globals.root.emergencyHashedPassword == null then
+                false
+              else
+                globals.root.emergencyHashedPassword;
             extraBin = {
               cryptsetup = "${pkgs.cryptsetup}/bin/cryptsetup";
               ip = "${pkgs.iproute2}/bin/ip";

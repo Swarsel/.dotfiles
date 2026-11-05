@@ -98,8 +98,10 @@
             settings = {
               AllowUsers = [
                 "root"
-                config.swarselsystems.mainUser
-              ];
+              ]
+              ++
+                lib.optional config.users.users.${config.swarselsystems.mainUser}.enable
+                  config.swarselsystems.mainUser;
               KbdInteractiveAuthentication = false;
               PasswordAuthentication = false;
               PermitRootLogin = "prohibit-password";
