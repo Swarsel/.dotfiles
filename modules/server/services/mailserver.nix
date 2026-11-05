@@ -69,7 +69,7 @@
             mtaStsDomain = "mta-sts.${baseDomain}";
             mtaStsPolicy = lib.concatMapStrings (line: "${line}\\r\\n") [
               "version: STSv1"
-              "mode: testing"
+              "mode: enforce"
               "mx: ${serviceDomain}"
               "max_age: 86400"
             ];
