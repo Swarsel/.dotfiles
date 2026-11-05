@@ -16,6 +16,7 @@
   ++ lib.optionals (!minimal) [
     self.modules.nixos.profile-localserver
     self.modules.nixos.bastion
+    self.modules.nixos.crowdsec
   ];
 
   swarselsystems = {

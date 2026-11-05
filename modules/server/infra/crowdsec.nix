@@ -9,9 +9,21 @@
     }:
     let
       bootstrap = config.swarselsystems.crowdsecBootstrap;
+      withNginx = config.services.nginx.enable;
       jumphost = globals.general.jumphost or null;
-      jumphostWan4 = if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null;
-      jumphostWan6 = if jumphost != null then globals.hosts.${jumphost}.wanAddress6 or null else null;
+      homeWan = globals.networks.home-wan or { };
+      sshSources4 = lib.filter (a: a != null) [
+        (if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null)
+        (homeWan.cidrv4 or null)
+      ];
+      sshSources6 = lib.filter (a: a != null) [
+        (if jumphost != null then globals.hosts.${jumphost}.wanAddress6 or null else null)
+        (homeWan.cidrv6 or null)
+      ];
+      homeWanCidrs = lib.filter (a: a != null) [
+        (homeWan.cidrv4 or null)
+        (homeWan.cidrv6 or null)
+      ];
       trustedWanAddresses = lib.filter (a: a != null) (
         lib.concatMap (h: [
           (h.wanAddress4 or null)
@@ -34,7 +46,7 @@
         globals.monitoring.http = confLib.mkHttpMonitoring {
           expectedStatus = 403;
           path = "/v1/decisions";
-          serviceName = "crowdsec";
+          serviceName = "crowdsec-${config.node.name}";
           servicePort = lapiPort;
         };
         sops.secrets = lib.mkIf (!bootstrap) {
@@ -55,7 +67,7 @@
           };
         };
         users = {
-          users.crowdsec.extraGroups = [ "nginx" ];
+          users.crowdsec.extraGroups = lib.optional withNginx "nginx";
           persistentIds.crowdsec = confLib.mkIds 946;
         };
         services = {
@@ -64,10 +76,12 @@
             autoUpdateService = true;
             hub.collections = [
               "crowdsecurity/linux"
+              "crowdsecurity/sshd"
+            ]
+            ++ lib.optionals withNginx [
               "crowdsecurity/nginx"
               "crowdsecurity/base-http-scenarios"
               "crowdsecurity/http-cve"
-              "crowdsecurity/sshd"
             ];
             settings = {
               config = {
@@ -85,19 +99,19 @@
               };
               acquisitions = [
                 {
-                  filenames = [
-                    "/var/log/nginx/access.log"
-                    "/var/log/nginx/error.log"
-                  ];
-                  labels.type = "nginx";
-                  source = "file";
-                }
-                {
                   journalctl_filter = [ "_SYSTEMD_UNIT=sshd.service" ];
                   labels.type = "syslog";
                   source = "journalctl";
                 }
-              ];
+              ]
+              ++ lib.optional withNginx {
+                filenames = [
+                  "/var/log/nginx/access.log"
+                  "/var/log/nginx/error.log"
+                ];
+                labels.type = "nginx";
+                source = "file";
+              };
               parsers.s02Enrich = [
                 {
                   description = "Fallback in case base allowlist ever changes";
@@ -112,17 +126,25 @@
                     reason = "Trusted internal networks";
                   };
                 }
-                {
-                  description = "Don't count cache requests as probes";
-                  name = "swarsel/attic-cache";
-                  whitelist = {
-                    expression = [
-                      "evt.Meta.http_path matches `\\.nar(info)?$`"
-                    ];
-                    reason = "Attic binary cache lookups; misses are expected 404s";
-                  };
-                }
               ]
+              ++ lib.optional (homeWanCidrs != [ ]) {
+                description = "Don't ban the home connection";
+                name = "swarsel/home-wan";
+                whitelist = {
+                  cidr = homeWanCidrs;
+                  reason = "Home WAN prefixes";
+                };
+              }
+              ++ lib.optional withNginx {
+                description = "Don't count cache requests as probes";
+                name = "swarsel/attic-cache";
+                whitelist = {
+                  expression = [
+                    "evt.Meta.http_path matches `\\.nar(info)?$`"
+                  ];
+                  reason = "Attic binary cache lookups; misses are expected 404s";
+                };
+              }
               ++ lib.optional (allowlistIps != [ ] || allowlistCidrs != [ ]) {
                 description = "Don't ban trusted addresses";
                 name = "swarsel/allowlist";
@@ -208,7 +230,7 @@
             chain crowdsec-chain {
               type filter hook input priority filter; policy accept;
               ct state established,related accept
-              ${lib.optionalString (jumphostWan4 != null) "ip saddr ${jumphostWan4} tcp dport 22 accept"}
+              ${lib.concatMapStringsSep "\n" (a: "ip saddr ${a} tcp dport 22 accept") sshSources4}
               ip saddr @crowdsec-blacklists drop
             }
           }
@@ -220,7 +242,7 @@
             chain crowdsec6-chain {
               type filter hook input priority filter; policy accept;
               ct state established,related accept
-              ${lib.optionalString (jumphostWan6 != null) "ip6 saddr ${jumphostWan6} tcp dport 22 accept"}
+              ${lib.concatMapStringsSep "\n" (a: "ip6 saddr ${a} tcp dport 22 accept") sshSources6}
               ip6 saddr @crowdsec6-blacklists drop
             }
           }
