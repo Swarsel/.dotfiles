@@ -1,6 +1,11 @@
 {
   flake.modules.homeManager.glide =
-    { config, lib, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       programs.glide-browser.config = ''
         async function advertised_repo(): Promise<{ https: string; ssh: string | null } | null> {
@@ -26,12 +31,22 @@
           return { https, ssh };
         }
 
-        async function run_clone(url: string, dest: string) {
-          flash_message("cloning " + url);
-          const proc = await glide.process.spawn("${lib.getExe config.programs.git.package}", ["clone", url, dest], { check_exit_code: false, stderr: "stdout" });
+        async function run(command: string, args: string[]): Promise<{ exit_code: number; output: string[] }> {
+          const proc = await glide.process.spawn(command, args, { check_exit_code: false, stderr: "stdout" });
           const output = await proc.stdout.lines();
           const { exit_code } = await proc.wait();
-          flash_message(exit_code === 0 ? "cloned into " + dest : "clone failed: " + (output.at(-1) ?? "exit code " + exit_code));
+          return { exit_code, output };
+        }
+
+        async function run_clone(url: string, dest: string, setup_remotes: boolean) {
+          flash_message("cloning " + url);
+          const clone = await run("${lib.getExe config.programs.git.package}", ["clone", url, dest]);
+          if (clone.exit_code !== 0) {
+            flash_message("clone failed: " + (clone.output.at(-1) ?? "exit code " + clone.exit_code));
+            return;
+          }
+          const remotes = setup_remotes ? (await run("${lib.getExe pkgs.git-setup-remotes}", [dest])).output : [];
+          flash_message(["cloned into " + dest, ...remotes.map((line) => line.replace(dest + ": ", ""))].join("; "));
         }
 
         async function clone_advertised_repo(dir: "Private" | "Work") {
@@ -55,7 +70,7 @@
               matches: () => true,
               execute: ({ input }) => {
                 if (input.trim() === "y") {
-                  void run_clone(url, dest);
+                  void run_clone(url, dest, dir === "Private");
                 }
               },
             }],

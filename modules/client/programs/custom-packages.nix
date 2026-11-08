@@ -30,6 +30,7 @@
               swarselzellij
               sshrm
               git-replace
+              git-setup-remotes
               hunkle
               swarsel-gens
               swarsel-switch
