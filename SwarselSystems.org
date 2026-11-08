@@ -11060,7 +11060,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
                     startUid = 100001;
                   }
                 ];
-                uid = 1000;
+                uid = lib.mkIf mainUserEnabled 1000;
               };
               root = {
                 hashedPassword = lib.mkIf config.swarselsystems.isPublic globals.root.hashedPassword;
@@ -14015,6 +14015,7 @@ With this, evaluation will fail if there are any users/groups that are not decla
       let
         inherit (lib)
           concatLists
+          filterAttrs
           flip
           mapAttrsToList
           mkDefault
@@ -14092,7 +14093,7 @@ With this, evaluation will fail if there are any users/groups that are not decla
           };
           assertions =
             concatLists (
-              flip mapAttrsToList config.users.users (
+              flip mapAttrsToList (filterAttrs (_: user: user.enable) config.users.users) (
                 name: user: [
                   {
                     assertion = user.uid != null;
@@ -25965,7 +25966,7 @@ Handles my main NFS share. User password setup is currently not declarative, I n
         ...
       }:
       let
-        nfsUser = globals.user.name;
+        shareUser = "eternor";
       in
       {
         config = {
@@ -25987,7 +25988,16 @@ Handles my main NFS share. User password setup is currently not declarative, I n
             ];
           };
           sops.secrets.samba-user-pw.mode = "0400";
-          users.persistentIds.avahi = confLib.mkIds 978;
+          users = {
+            users.${shareUser} = {
+              group = "users";
+              isSystemUser = true;
+            };
+            persistentIds = {
+              ${shareUser}.uid = 1000;
+              avahi = confLib.mkIds 978;
+            };
+          };
           services = {
             avahi = {
               enable = true;
@@ -26004,16 +26014,20 @@ Handles my main NFS share. User password setup is currently not declarative, I n
               enable = true;
               package = pkgs.samba4;
               openFirewall = true;
-              settings.Eternor = {
-                browseable = "yes";
-                comment = "Eternor";
-                "create mask" = "0660";
-                "directory mask" = "2770";
-                "guest ok" = "no";
-                path = "/storage";
-                "read only" = "no";
-                "valid users" = nfsUser;
-                writable = "true";
+              settings = {
+                Eternor = {
+                  browseable = "yes";
+                  comment = "Eternor";
+                  "create mask" = "0660";
+                  "directory mask" = "2770";
+                  "guest ok" = "no";
+                  path = "/storage";
+                  "read only" = "no";
+                  "valid users" = shareUser;
+                  writable = "true";
+                };
+                global."username map" =
+                  "${pkgs.writeText "samba-username-map" "${shareUser} = ${globals.user.name}\n"}";
               };
             };
             # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
@@ -26030,7 +26044,7 @@ Handles my main NFS share. User password setup is currently not declarative, I n
           };
           systemd.services.samba-ensure-user-pw = {
             after = [ "samba-smbd.service" ];
-            description = "Ensure SMB password is set for ${nfsUser}";
+            description = "Ensure SMB password is set for ${shareUser}";
             partOf = [ "samba-smbd.service" ];
             path = with pkgs; [
               samba4
@@ -26038,14 +26052,14 @@ Handles my main NFS share. User password setup is currently not declarative, I n
               gnugrep
             ];
             script = ''
-              if pdbedit -L 2>/dev/null | grep -q '^${nfsUser}:'; then
-                echo "${nfsUser} SMB account already exists"
+              if pdbedit -L 2>/dev/null | grep -q '^${shareUser}:'; then
+                echo "${shareUser} SMB account already exists"
                 exit 0
               fi
-              echo "${nfsUser} SMB account missing — creating"
+              echo "${shareUser} SMB account missing — creating"
               PW=$(cat ${config.sops.secrets.samba-user-pw.path})
-              printf '%s\n%s\n' "$PW" "$PW" | smbpasswd -a -s ${nfsUser}
-              echo "Created ${nfsUser} SMB account"
+              printf '%s\n%s\n' "$PW" "$PW" | smbpasswd -a -s ${shareUser}
+              echo "Created ${shareUser} SMB account"
             '';
             serviceConfig.Type = "oneshot";
             wantedBy = [ "samba-smbd.service" ];

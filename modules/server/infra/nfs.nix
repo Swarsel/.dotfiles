@@ -9,7 +9,7 @@
       ...
     }:
     let
-      nfsUser = globals.user.name;
+      shareUser = "eternor";
     in
     {
       config = {
@@ -31,7 +31,16 @@
           ];
         };
         sops.secrets.samba-user-pw.mode = "0400";
-        users.persistentIds.avahi = confLib.mkIds 978;
+        users = {
+          users.${shareUser} = {
+            group = "users";
+            isSystemUser = true;
+          };
+          persistentIds = {
+            ${shareUser}.uid = 1000;
+            avahi = confLib.mkIds 978;
+          };
+        };
         services = {
           avahi = {
             enable = true;
@@ -48,16 +57,20 @@
             enable = true;
             package = pkgs.samba4;
             openFirewall = true;
-            settings.Eternor = {
-              browseable = "yes";
-              comment = "Eternor";
-              "create mask" = "0660";
-              "directory mask" = "2770";
-              "guest ok" = "no";
-              path = "/storage";
-              "read only" = "no";
-              "valid users" = nfsUser;
-              writable = "true";
+            settings = {
+              Eternor = {
+                browseable = "yes";
+                comment = "Eternor";
+                "create mask" = "0660";
+                "directory mask" = "2770";
+                "guest ok" = "no";
+                path = "/storage";
+                "read only" = "no";
+                "valid users" = shareUser;
+                writable = "true";
+              };
+              global."username map" =
+                "${pkgs.writeText "samba-username-map" "${shareUser} = ${globals.user.name}\n"}";
             };
           };
           # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
@@ -74,7 +87,7 @@
         };
         systemd.services.samba-ensure-user-pw = {
           after = [ "samba-smbd.service" ];
-          description = "Ensure SMB password is set for ${nfsUser}";
+          description = "Ensure SMB password is set for ${shareUser}";
           partOf = [ "samba-smbd.service" ];
           path = with pkgs; [
             samba4
@@ -82,14 +95,14 @@
             gnugrep
           ];
           script = ''
-            if pdbedit -L 2>/dev/null | grep -q '^${nfsUser}:'; then
-              echo "${nfsUser} SMB account already exists"
+            if pdbedit -L 2>/dev/null | grep -q '^${shareUser}:'; then
+              echo "${shareUser} SMB account already exists"
               exit 0
             fi
-            echo "${nfsUser} SMB account missing — creating"
+            echo "${shareUser} SMB account missing — creating"
             PW=$(cat ${config.sops.secrets.samba-user-pw.path})
-            printf '%s\n%s\n' "$PW" "$PW" | smbpasswd -a -s ${nfsUser}
-            echo "Created ${nfsUser} SMB account"
+            printf '%s\n%s\n' "$PW" "$PW" | smbpasswd -a -s ${shareUser}
+            echo "Created ${shareUser} SMB account"
           '';
           serviceConfig.Type = "oneshot";
           wantedBy = [ "samba-smbd.service" ];

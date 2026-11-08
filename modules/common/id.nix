@@ -9,6 +9,7 @@
     let
       inherit (lib)
         concatLists
+        filterAttrs
         flip
         mapAttrsToList
         mkDefault
@@ -86,7 +87,7 @@
         };
         assertions =
           concatLists (
-            flip mapAttrsToList config.users.users (
+            flip mapAttrsToList (filterAttrs (_: user: user.enable) config.users.users) (
               name: user: [
                 {
                   assertion = user.uid != null;

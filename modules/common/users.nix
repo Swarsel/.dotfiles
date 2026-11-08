@@ -68,7 +68,7 @@
                   startUid = 100001;
                 }
               ];
-              uid = 1000;
+              uid = lib.mkIf mainUserEnabled 1000;
             };
             root = {
               hashedPassword = lib.mkIf config.swarselsystems.isPublic globals.root.hashedPassword;
