@@ -51,6 +51,7 @@
               serviceDomain
               serviceName
               ;
+            extra.extraConfig.sshUrl = "ssh://${serviceUser}@${serviceDomain}:${toString sshProxyPort}";
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
