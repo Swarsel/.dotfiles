@@ -44,7 +44,6 @@
             ];
             init = ''
               (defun swarsel/eglot-ensure-and-format ()
-                  "Ensure eglot is running and enable format-on-save for current buffer."
                   (eglot-ensure)
                   (add-hook 'before-save-hook #'eglot-format nil 'local))
 
@@ -58,6 +57,14 @@
             after = [ "eglot" ];
           };
           eldoc-box = {
+            config = ''
+              (defun swarsel/eldoc-box-escape-filter (&optional _)
+                (when (eldoc-box--frame-visible-p)
+                  #'eldoc-box-quit-frame))
+
+              (evil-define-minor-mode-key 'insert 'eldoc-box-hover-at-point-mode
+                (kbd "<escape>") '(menu-item "" nil :filter swarsel/eldoc-box-escape-filter))
+            '';
             enable = true;
             after = [ "eglot" ];
             hook = [ "(eglot-managed-mode . eldoc-box-hover-at-point-mode)" ];

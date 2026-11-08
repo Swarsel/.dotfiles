@@ -515,7 +515,10 @@
     };
     visual-fill-column = {
       enable = true;
-      hook = [ "(org-mode . swarsel/org-mode-visual-fill)" ];
+      hook = [
+        "(org-mode . swarsel/org-mode-visual-fill)"
+        "(markdown-ts-mode . swarsel/org-mode-visual-fill)"
+      ];
     };
   };
 }

@@ -29,6 +29,10 @@
               {
                 contents = {
                   commit.template = "~/.gitmessage";
+                  forge = {
+                    remote = globals.services.forgejo.subDomain;
+                    url = "${globals.services.forgejo.extraConfig.sshUrl}/${gitUser}";
+                  };
                   github.user = gitUser;
                 };
               }

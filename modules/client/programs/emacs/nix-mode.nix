@@ -7,9 +7,7 @@
           config = ''
             (add-to-list 'eglot-server-programs
                          '((nix-mode nix-ts-mode)
-                           . ("env" "NIX_CONFIG=plugin-files = ${
-                             pkgs.nix-plugins.override { nixComponents = pkgs.nixVersions.latest.libs; }
-                           }/lib/nix/plugins" "${lib.getExe pkgs.nixd}")))
+                           . ("${lib.getExe pkgs.nixd}")))
           '';
           init = ''
             (setq-default eglot-workspace-configuration
