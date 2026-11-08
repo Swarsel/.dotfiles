@@ -166,7 +166,7 @@
                   "pbcopy"
                 else
                   "";
-              copy_on_select = false;
+              copy_on_select = true;
               default_layout = "swarsel";
               default_shell = "zsh";
               keybinds.shared._children =
