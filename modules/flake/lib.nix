@@ -6,6 +6,7 @@ let
       inherit (inputs.nixpkgs) lib;
     in
     rec {
+      inherit (inputs.piix.lib.mkPii { lock = "${self}/secrets/pii.lock"; }) importEncrypted;
       cidrToSubnetMask =
         cidr:
         let

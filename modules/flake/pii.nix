@@ -1,5 +1,17 @@
 { self, lib, ... }:
 {
+  flake-file.inputs.piix = {
+    inputs = {
+      flake-parts.follows = "flake-parts";
+      git-hooks-nix.follows = "pre-commit-hooks";
+      nixpkgs.follows = "nixpkgs";
+      pedantix.follows = "pedantix";
+      systems.follows = "systems";
+      treefmt-nix.follows = "treefmt-nix";
+    };
+    url = "git+ssh://forgejo@swagit.swarsel.win:2222/swarsel/piix.git?ref=main-devel";
+  };
+
   flake.pii =
     let
       sanitize =
@@ -21,7 +33,7 @@
       load =
         path:
         let
-          v = builtins.extraBuiltins.sopsImportEncrypted path;
+          v = self.swarselsystemsLib.importEncrypted path;
         in
         sanitize (
           if builtins.isFunction v then

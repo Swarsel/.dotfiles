@@ -11,6 +11,7 @@
         self.modules.nixos.users
         self.modules.nixos.impermanence
         self.modules.nixos.sops
+        self.modules.nixos.pii-agent
         self.modules.nixos.boot
         # server modules
         self.modules.nixos.btrfs

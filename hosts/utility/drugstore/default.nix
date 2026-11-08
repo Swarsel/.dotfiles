@@ -151,12 +151,6 @@ in
     nix = {
       package = stablePkgs.nixVersions.nix_2_30;
       channel.enable = false;
-      extraOptions = ''
-        plugin-files = ${
-          stablePkgs.nix-plugins.override { nixComponents = stablePkgs.nixVersions.nixComponents_2_30; }
-        }/lib/nix/plugins
-        extra-builtins-file = ${../../../files/nix/extra-builtins.nix}
-      '';
       settings.experimental-features = [
         "nix-command"
         "flakes"

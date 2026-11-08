@@ -52,9 +52,6 @@ dd DRIVE ISO:
 sync USER HOST:
   rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
 
-sync-secrets USER HOST:
-  rsync -rltv -e "ssh -l {{USER}}" /var/tmp/nix-import-encrypted/$(id -u)/ {{USER}}@{{HOST}}:/var/tmp/nix-import-encrypted/0
-
 bootstrap DEST CONFIG ARCH="x86_64-linux" NODISKODEPS="":
   nix develop .#deploy --command zsh -c "SSH_AUTH_SOCK=\$(gpgconf --list-dirs agent-ssh-socket) swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
 
@@ -83,15 +80,6 @@ secret-set PATH:
 secret-get PATH:
   sops decrypt --extract "$(sed 's|^|["|; s|/|"]["|g; s|$|"]|' <<< '{{PATH}}')" secrets/root.yaml
 
-decrypt:
-  #!/usr/bin/env bash
-  set -euo pipefail
-  src=$(nix flake metadata --json | python3 -c 'import json, sys; print(json.load(sys.stdin)["path"])')
-  find "$src" -name '*.nix.enc' -print0 | xargs --null -I{} ./files/scripts/sops-decrypt-and-cache.sh --print-out-path {}
-
-decrypt-clean:
-  rm -rf "/var/tmp/nix-import-encrypted/$(id -u)"
-
 secret-edit FILE="":
   #!/usr/bin/env bash
   set -euo pipefail
@@ -100,6 +88,9 @@ secret-edit FILE="":
     file=$(find . -path ./files/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs -0 grep -lE 'ENC\[AES256_GCM' | sort | fzf)
   fi
   sops "$file"
+  if [[ $file == *.nix.enc ]]; then
+    nix run --inputs-from . piix#pii -- lock
+  fi
 
 free-ids COUNT="5":
   #!/usr/bin/env python3
@@ -171,5 +162,11 @@ droid HOST="magicant" BUILDER="belchsfactory":
   ssh "root@$target" nix-env --profile /nix/var/nix/profiles/droid-{{HOST}} --set "$path"
   echo "staged $path; run droid-switch on {{HOST}}"
 
-pii MODE="files":
+pii *ARGS:
+  nix run --inputs-from . piix#pii -- {{ARGS}}
+
+pii-show MODE="files":
   nix eval --json .#pii.{{MODE}}
+
+pii-test:
+  nix flake check -L --inputs-from . piix

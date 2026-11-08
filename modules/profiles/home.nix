@@ -22,6 +22,7 @@ in
       "nixgl"
       "nix-your-shell"
       "network-manager-applet"
+      "pii-agent"
       "sops"
       "stylix"
       "zellij"
@@ -41,6 +42,7 @@ in
         "git"
         "mail"
         "obsidian"
+        "pii-agent"
         "ssh"
       ];
 

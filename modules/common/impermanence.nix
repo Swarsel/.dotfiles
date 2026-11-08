@@ -87,10 +87,6 @@
           "/etc/NetworkManager/system-connections"
           "/var/lib/nixos"
           "/var/tmp"
-          {
-            directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
-            mode = "1777";
-          }
           # "/etc/secureboot"
         ];
         files = [

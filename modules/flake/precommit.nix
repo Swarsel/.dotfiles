@@ -78,6 +78,14 @@
               name = "org-in-sync";
               pass_filenames = false;
             };
+            pii-lock = {
+              enable = true;
+              always_run = true;
+              description = "Ensure secrets/pii.lock matches every pii file";
+              entry = "${lib.getExe inputs.piix.packages.${system}.pii} check";
+              name = "pii-lock";
+              pass_filenames = false;
+            };
             shellcheck = {
               enable = true;
               entry = "${pkgs.shellcheck}/bin/shellcheck --shell=bash";

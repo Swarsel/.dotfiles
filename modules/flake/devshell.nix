@@ -1,6 +1,5 @@
 {
   self,
-  root,
   inputs,
   lib,
   ...
@@ -103,21 +102,6 @@
               }
             ];
             devshell.startup.pre-commit.text = preCommitStartup;
-            env =
-              let
-                nix-plugins = pkgs.stable26_05.nix-plugins.override {
-                  nixComponents = pkgs.stable26_05.nixVersions."nixComponents_${nix-version}";
-                };
-              in
-              [
-                {
-                  name = "NIX_CONFIG";
-                  value = ''
-                    plugin-files = ${nix-plugins}/lib/nix/plugins
-                    extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
-                  '';
-                }
-              ];
             packages = [
               (builtins.trace "alarm: pinned nix_${nix-version}"
                 pkgs.stable26_05.nixVersions."nix_${nix-version}"
@@ -130,6 +114,7 @@
               config.treefmt.build.wrapper
               self.packages.${system}.swarsel-build
               self.packages.${system}.swarsel-deploy
+              inputs.piix.packages.${system}.pii
               (pkgs.symlinkJoin {
                 buildInputs = [ pkgs.makeWrapper ];
                 name = "home-manager";
@@ -146,23 +131,6 @@
             nix-version = "2_28";
           in
           {
-            env = [
-              {
-                name = "NIX_CONFIG";
-                value = ''
-                  plugin-files = ${
-                    pkgs.stable25_05.nix-plugins.overrideAttrs (o: {
-                      buildInputs = [
-                        pkgs.stable25_05.nixVersions."nix_${nix-version}"
-                        pkgs.stable25_05.boost
-                      ];
-                      patches = (o.patches or [ ]) ++ [ (root "files/patches/nix-plugins.patch") ];
-                    })
-                  }/lib/nix/plugins
-                  extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
-                '';
-              }
-            ];
             packages = [
               (builtins.trace "alarm: pinned nix_${nix-version}"
                 pkgs.stable25_05.nixVersions."nix_${nix-version}"

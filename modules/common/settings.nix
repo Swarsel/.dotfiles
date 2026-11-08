@@ -3,19 +3,11 @@ let
 
   mkExtraOptions =
     {
-      self,
       config,
       lib,
-      pkgs,
       minimal,
     }:
-    ''
-      plugin-files = ${
-        pkgs.nix-plugins.override { nixComponents = pkgs.nixVersions."nixComponents_${nix-version}"; }
-      }/lib/nix/plugins
-      extra-builtins-file = ${self + /files/nix/extra-builtins.nix}
-    ''
-    + lib.optionalString (!minimal) ''
+    lib.optionalString (!minimal) ''
       !include ${config.sops.secrets.github-api-token.path}
     '';
 
@@ -289,15 +281,7 @@ in
           };
           nix = {
             package = pkgs.nixVersions."nix_${nix-version}";
-            extraOptions = mkExtraOptions {
-              inherit
-                self
-                config
-                lib
-                pkgs
-                minimal
-                ;
-            };
+            extraOptions = mkExtraOptions { inherit config lib minimal; };
             settings = {
               experimental-features = experimentalFeatures;
               netrc-file = lib.mkIf (!minimal) config.sops.templates.netrc.path;

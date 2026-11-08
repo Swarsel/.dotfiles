@@ -31,20 +31,17 @@
               (
                 { lib, ... }:
                 let
-                  sopsImportEncrypted =
-                    assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
-                      "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./files/nix/extra-builtins.nix` ?";
-                    builtins.extraBuiltins.sopsImportEncrypted;
                   globalsFile = inputs.repoSecrets.globals;
                 in
-
                 {
                   imports = [
                     (
-                      if lib.hasSuffix ".enc" (toString globalsFile) then sopsImportEncrypted globalsFile else globalsFile
+                      if lib.hasSuffix ".enc" (toString globalsFile) then
+                        self.swarselsystemsLib.importEncrypted globalsFile
+                      else
+                        globalsFile
                     )
                   ];
-
                 }
               )
             ]

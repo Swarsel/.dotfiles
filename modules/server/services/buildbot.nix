@@ -607,29 +607,36 @@
           };
           persistentIds.${serviceName} = confLib.mkIds 1002; # must be a normal user
         };
-        services.buildbot-master = {
-          inherit masterCfg;
-          enable = true;
-          home = "/home/buildbot";
-          packages = with pkgs; [
-            config.nix.package
-            bash
-            coreutils
-            ssh-to-age
-            git
-            attic-client
-            util-linux
-            openssh
-            sops
-            curl
-            jq
-            gawk
-            gnugrep
-            gnused
-          ];
-          pythonPackages = _p: [
-            pkgs.buildbot-worker
-          ];
+        services = {
+          buildbot-master = {
+            inherit masterCfg;
+            enable = true;
+            home = "/home/buildbot";
+            packages = with pkgs; [
+              config.nix.package
+              bash
+              coreutils
+              ssh-to-age
+              git
+              attic-client
+              util-linux
+              openssh
+              sops
+              curl
+              jq
+              gawk
+              gnugrep
+              gnused
+            ];
+            pythonPackages = _p: [
+              pkgs.buildbot-worker
+            ];
+          };
+          pii-agent = {
+            ageKeyFile = config.sops.secrets.buildbot-age-key.path;
+            sshKey = null;
+            user = serviceName;
+          };
         };
         programs.ssh.extraConfig = lib.mkAfter ''
           Host github.com
@@ -659,12 +666,9 @@
         };
         systemd = {
           services = {
-            buildbot-master = {
-              environment.SOPS_AGE_KEY_FILE = config.sops.secrets.buildbot-age-key.path;
-              serviceConfig = {
-                MemoryMax = "20G";
-                Restart = "always";
-              };
+            buildbot-master.serviceConfig = {
+              MemoryMax = "20G";
+              Restart = "always";
             };
             nix-daemon.serviceConfig = {
               MemoryHigh = "14G";
