@@ -17,11 +17,12 @@
               return null;
             }
           }
-          let https: string | undefined;
+          const nwo = document.querySelector('meta[name="octolytics-dimension-repository_nwo"]')?.getAttribute("content");
+          let https = nwo != null && (location.pathname + "/").toLowerCase().startsWith("/" + nwo.toLowerCase() + "/") ? location.origin + "/" + nwo + ".git" : undefined;
           for (const credentials of ["omit", "include"] as const) {
+            if (https != null) break;
             const go_get = await fetch_document(location.origin + location.pathname + "?go-get=1", credentials);
             https = go_get?.querySelector('meta[name="go-import"]')?.getAttribute("content")?.split(/\s+/)[2];
-            if (https != null) break;
           }
           if (https == null) {
             return null;
