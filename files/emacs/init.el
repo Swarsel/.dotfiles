@@ -1132,6 +1132,34 @@ there's a region, all lines that region covers will be duplicated."
   (with-eval-after-load 'magit-diff
     (define-key magit-hunk-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file)
     (define-key magit-file-section-map [remap magit-visit-thing] #'magit-diff-visit-worktree-file))
+
+  (defun swarsel/magit-insert-remote-branch-headers ()
+    (when-let* ((branch (magit-get-current-branch)))
+      (let ((shown (list (magit-get-upstream-branch branch) (magit-get-push-branch branch))))
+        (dolist (remote (magit-list-remotes))
+          (let ((target (concat remote "/" branch)))
+            (when (and (not (member target shown)) (magit-rev-verify target))
+              (pcase-let ((`(,ahead ,behind) (magit-rev-diff-count branch target)))
+                (magit-insert-section (branch target)
+                  (insert (format "%-10s" (concat (capitalize remote) ": "))
+                    (propertize target 'font-lock-face 'magit-branch-remote)
+                    (format " ↑%d ↓%d " ahead behind)
+                    (magit-log--wash-summary (or (magit-rev-format "%s" target) "(no commit message)"))
+                    ?\n)))))))))
+
+  (magit-add-section-hook 'magit-status-headers-hook #'swarsel/magit-insert-remote-branch-headers #'magit-insert-push-branch-header t)
+
+  (transient-define-suffix swarsel/magit-push-current-to-forge (args)
+    :if (lambda () (when-let* ((remote (magit-get "forge.remote"))) (magit-remote-p remote)))
+    :description (lambda ()
+                   (let ((target (concat (magit-get "forge.remote") "/" (magit-get-current-branch))))
+                     (concat (propertize target 'face 'magit-branch-remote)
+                       (unless (magit-rev-verify target) ", creating it"))))
+    (interactive (list (magit-push-arguments)))
+    (let ((branch (magit-get-current-branch)))
+      (magit-git-push branch (concat (magit-get "forge.remote") "/" branch) args)))
+
+  (transient-insert-suffix 'magit-push "e" '("f" swarsel/magit-push-current-to-forge))
   )
 
 (use-package marginalia
