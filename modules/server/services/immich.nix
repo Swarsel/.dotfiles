@@ -151,7 +151,7 @@
               temporalAQ = false;
               threads = 0;
               tonemap = "hable";
-              transcode = "required";
+              transcode = "optimal";
               twoPass = false;
             };
             image = {
