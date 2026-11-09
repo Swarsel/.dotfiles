@@ -9967,6 +9967,11 @@ Do note that the below does not achieve anything on its own - as is, these would
                           default = { };
                           type = types.attrsOf types.anything;
                         };
+                        firezoneTcpPorts = mkOption {
+                          default = [ ];
+                          description = "TCP ports besides 80 and 443 that Firezone clients may reach on this home service's domain.";
+                          type = types.listOf types.port;
+                        };
                         homeServiceAddress = mkOption {
                           default = null;
                           type = types.nullOr types.str;
@@ -34998,7 +35003,10 @@ My self-hosted git solution.
                 serviceDomain
                 serviceName
                 ;
-              extra.extraConfig.sshUrl = "ssh://${serviceUser}@${serviceDomain}:${toString sshProxyPort}";
+              extra = {
+                extraConfig.sshUrl = "ssh://${serviceUser}@${serviceDomain}:${toString sshProxyPort}";
+                firezoneTcpPorts = [ sshProxyPort ];
+              };
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -42768,8 +42776,8 @@ Sometimes the GUI login fails:
         ];
         firezoneTargetZones = map (v: "vlan-${v}") firezoneTargetVLANs;
 
-        homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
-        homeDomains = map (name: globals.services.${name}.domain) homeServices;
+        homeServices = lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services;
+        homeDomains = lib.mapAttrsToList (_: serviceCfg: serviceCfg.domain) homeServices;
         smbDomain = "smb.${globals.domains.main}";
         vlanCidrResources = lib.listToAttrs (
           lib.concatMap (vlan: [
@@ -42979,26 +42987,30 @@ Sometimes the GUI login fails:
                     // (allow "everyone" smbDomain)
                     // (allow "anyone" smbDomain);
                   resources =
-                    lib.genAttrs homeDomains (domain: {
-                      address = domain;
-                      filters = [
-                        { protocol = "icmp"; }
-                        {
-                          ports = [
-                            443
-                            80
-                          ];
-                          protocol = "tcp";
-                        }
-                        {
-                          ports = [ 443 ];
-                          protocol = "udp";
-                        }
-                      ];
-                      gatewayGroups = [ "home" ];
-                      name = domain;
-                      type = "dns";
-                    })
+                    lib.mapAttrs' (
+                      _: serviceCfg:
+                      lib.nameValuePair serviceCfg.domain {
+                        address = serviceCfg.domain;
+                        filters = [
+                          { protocol = "icmp"; }
+                          {
+                            ports = [
+                              443
+                              80
+                            ]
+                            ++ serviceCfg.firezoneTcpPorts;
+                            protocol = "tcp";
+                          }
+                          {
+                            ports = [ 443 ];
+                            protocol = "udp";
+                          }
+                        ];
+                        gatewayGroups = [ "home" ];
+                        name = serviceCfg.domain;
+                        type = "dns";
+                      }
+                    ) homeServices
                     // vlanCidrResources
                     // {
                       ${smbDomain} = {

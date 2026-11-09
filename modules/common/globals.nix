@@ -164,6 +164,11 @@
                         default = { };
                         type = types.attrsOf types.anything;
                       };
+                      firezoneTcpPorts = mkOption {
+                        default = [ ];
+                        description = "TCP ports besides 80 and 443 that Firezone clients may reach on this home service's domain.";
+                        type = types.listOf types.port;
+                      };
                       homeServiceAddress = mkOption {
                         default = null;
                         type = types.nullOr types.str;

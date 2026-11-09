@@ -60,8 +60,8 @@
       ];
       firezoneTargetZones = map (v: "vlan-${v}") firezoneTargetVLANs;
 
-      homeServices = lib.attrNames (lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services);
-      homeDomains = map (name: globals.services.${name}.domain) homeServices;
+      homeServices = lib.filterAttrs (_: serviceCfg: serviceCfg.isHome) globals.services;
+      homeDomains = lib.mapAttrsToList (_: serviceCfg: serviceCfg.domain) homeServices;
       smbDomain = "smb.${globals.domains.main}";
       vlanCidrResources = lib.listToAttrs (
         lib.concatMap (vlan: [
@@ -271,26 +271,30 @@
                   // (allow "everyone" smbDomain)
                   // (allow "anyone" smbDomain);
                 resources =
-                  lib.genAttrs homeDomains (domain: {
-                    address = domain;
-                    filters = [
-                      { protocol = "icmp"; }
-                      {
-                        ports = [
-                          443
-                          80
-                        ];
-                        protocol = "tcp";
-                      }
-                      {
-                        ports = [ 443 ];
-                        protocol = "udp";
-                      }
-                    ];
-                    gatewayGroups = [ "home" ];
-                    name = domain;
-                    type = "dns";
-                  })
+                  lib.mapAttrs' (
+                    _: serviceCfg:
+                    lib.nameValuePair serviceCfg.domain {
+                      address = serviceCfg.domain;
+                      filters = [
+                        { protocol = "icmp"; }
+                        {
+                          ports = [
+                            443
+                            80
+                          ]
+                          ++ serviceCfg.firezoneTcpPorts;
+                          protocol = "tcp";
+                        }
+                        {
+                          ports = [ 443 ];
+                          protocol = "udp";
+                        }
+                      ];
+                      gatewayGroups = [ "home" ];
+                      name = serviceCfg.domain;
+                      type = "dns";
+                    }
+                  ) homeServices
                   // vlanCidrResources
                   // {
                     ${smbDomain} = {
