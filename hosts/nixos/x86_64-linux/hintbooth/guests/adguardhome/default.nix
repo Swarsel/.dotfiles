@@ -11,12 +11,7 @@
     self.modules.nixos.adguardhome
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-    nodeRoles = [ "homeDnsServer" ];
-    proxyHost = "twothreetunnel";
-  };
+  swarselsystems.nodeRoles = [ "homeDnsServer" ];
 
 }
 // lib.optionalAttrs (!minimal) {

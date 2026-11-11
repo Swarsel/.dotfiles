@@ -16,7 +16,7 @@
       h = "undo-tree-visualize-switch-branch-left";
       j = "undo-tree-visualize-redo";
       k = "undo-tree-visualize-undo";
-      l = "undo-tree-visualize-switch-branch-left";
+      l = "undo-tree-visualize-switch-branch-right";
     };
     custom.undo-tree-auto-save-history = false;
     init = "(global-undo-tree-mode)";

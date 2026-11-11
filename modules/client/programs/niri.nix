@@ -38,7 +38,6 @@ in
         pkgs,
         options,
         type,
-        vars,
         ...
       }:
       {
@@ -62,6 +61,52 @@ in
                 with config.lib.niri.actions;
                 let
                   sh = spawn "sh" "-c";
+                  swarselcheck = lib.getExe (
+                    pkgs.writeShellApplication {
+                      name = "swarselcheck";
+                      runtimeInputs = [
+                        pkgs.jq
+                        pkgs.socat
+                      ];
+                      text = ''
+                        case $1 in
+                        -k)
+                            cmd=(kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm)
+                            field=app_id
+                            search=kittyterm
+                            ;;
+                        -e)
+                            cmd=(element-desktop)
+                            field=title
+                            search=Element
+                            ;;
+                        -d)
+                            cmd=(vesktop)
+                            field=app_id
+                            search=vesktop
+                            ;;
+                        -s)
+                            cmd=(kitty --app-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player)
+                            field=app_id
+                            search=spotifytui
+                            ;;
+                        esac
+
+                        window=$(niri msg -j windows | jq -c --arg field "$field" --arg search "$search" 'first(.[] | select(.[$field] | test($search))) | { id, is_focused }')
+                        id=$(jq -r '.id // empty' <<<"$window")
+
+                        if [[ -z $id ]]; then
+                            niri msg action spawn -- "''${cmd[@]}"
+                        elif [[ $(jq -r .is_focused <<<"$window") == true ]]; then
+                            niri msg action move-window-to-workspace --window-id "$id" --focus false stash
+                        else
+                            workspace=$(niri msg -j workspaces | jq -r '.[] | select(.is_focused) | .id')
+                            jq -cn --argjson window "$id" --argjson workspace "$workspace" '{ Action: { MoveWindowToWorkspace: { window_id: $window, reference: { Id: $workspace }, focus: true } } }' | socat - "UNIX-CONNECT:$NIRI_SOCKET" >/dev/null
+                            niri msg action focus-window --id "$id"
+                        fi
+                      '';
+                    }
+                  );
                 in
                 {
                   "Mod+0".action = focus-workspace 0;
@@ -126,9 +171,9 @@ in
                     action.focus-workspace-up-under-mouse = [ ];
                     cooldown-ms = 150;
                   };
-                  "Mod+a".action = spawn "swarselcheck-niri" "-s";
+                  "Mod+a".action = spawn swarselcheck "-s";
                   "Mod+c".action = sh "exec emacsclient -ce '(org-capture)'";
-                  "Mod+d".action = spawn "swarselcheck-niri" "-d";
+                  "Mod+d".action = spawn swarselcheck "-d";
                   "Mod+e".action = sh "exec emacsclient -nquc -a emacs -e '(dashboard-open)'";
                   "Mod+f".action = sh "exec glide";
                   "Mod+h".action = sh "${lib.getExe pkgs.hyprpicker} | wl-copy";
@@ -139,8 +184,8 @@ in
                   "Mod+q".action = sh "niri msg action close-window";
                   "Mod+s".action.screenshot.show-pointer = false;
                   "Mod+t".action = sh "exec emacsclient -ce '(org-agenda)'";
-                  "Mod+w".action = spawn "swarselcheck-niri" "-e";
-                  "Mod+x".action = spawn "swarselcheck-niri" "-k";
+                  "Mod+w".action = spawn swarselcheck "-e";
+                  "Mod+x".action = spawn swarselcheck "-k";
                   "Mod+z".action = spawn "noctalia" "msg" "bar-toggle";
                   XF86AudioLowerVolume.action = spawn "noctalia" "msg" "volume-down";
                   XF86AudioMute.action = spawn "noctalia" "msg" "volume-mute";
@@ -157,10 +202,10 @@ in
                 hide-when-typing = true;
               };
               debug.honor-xdg-activation-with-invalid-serial = [ ];
-              environment = vars.waylandSessionVariables // {
-                DISPLAY = ":0";
-                EDITOR = "emacsclient -c";
-                QT_QPA_PLATFORM = lib.mkForce "wayland";
+              environment = {
+                inherit (config.home.sessionVariables) EDITOR;
+                NIXOS_OZONE_WL = "1";
+                _JAVA_AWT_WM_NONREPARENTING = "1";
               };
               gestures.hot-corners.enable = false;
               hotkey-overlay.skip-at-startup = true;
@@ -268,7 +313,6 @@ in
                 }
                 {
                   matches = [
-                    { app-id = "^firefox$"; }
                     { app-id = "^glide$"; }
                   ];
                   opacity = 0.95;
@@ -323,7 +367,6 @@ in
                 {
                   block-out-from = "screen-capture";
                   excludes = [
-                    { app-id = "^firefox$"; }
                     { app-id = "^glide$"; }
                     { app-id = "^emacs$"; }
                     { app-id = "^kitty$"; }
@@ -375,6 +418,32 @@ in
           home = {
             packages = [
               pkgs.nirius
+              (pkgs.writeShellApplication {
+                name = "e-niri";
+                runtimeInputs = [
+                  pkgs.emacs-pgtk
+                  pkgs.jq
+                ];
+                text = ''
+                  wait=0
+                  if [[ ''${1:-} == -w || ''${1:-} == --wait ]]; then
+                      wait=1
+                      shift
+                  fi
+
+                  id=$(niri msg -j windows | jq -r 'first(.[] | select(.app_id == "kittyterm")) | .id')
+
+                  if [[ -n $id ]]; then
+                      niri msg action close-window --id "$id"
+                      emacsclient -c -a "" "$@"
+                      niri msg action spawn -- kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm
+                  elif [[ $wait -eq 1 ]]; then
+                      emacsclient -c -a "" "$@"
+                  else
+                      emacsclient -n -c -a "" "$@"
+                  fi
+                '';
+              })
             ];
             sessionVariables.EDITOR = lib.mkDefault "e-niri -w";
           };

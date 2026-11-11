@@ -77,10 +77,10 @@
       };
       config = {
         users.persistentIds = {
-          dhcpcd = lib.mkIf config.networking.useDHCP (confLib.mkIds 952);
+          dhcpcd = confLib.mkIds 952;
           nscd = confLib.mkIds 972;
           polkituser = confLib.mkIds 973;
-          resolvconf = lib.mkIf config.networking.resolvconf.enable (confLib.mkIds 951);
+          resolvconf = confLib.mkIds 951;
           systemd-coredump = confLib.mkIds 998;
           systemd-oom = confLib.mkIds 997;
           uinput = confLib.mkIds 944;

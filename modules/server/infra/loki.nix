@@ -32,7 +32,6 @@
         webProxy
         wgProxyAccessRules
         ;
-      inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
     in
     {
       config = {
@@ -48,10 +47,6 @@
               serviceDomain
               serviceName
               ;
-            extra.extraConfig = {
-              host = config.node.name;
-              port = servicePort;
-            };
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
@@ -123,12 +118,7 @@
         };
         networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services.loki = {
-          environment = {
-            OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString otlpGrpcPort}";
-            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
-            OTEL_SERVICE_NAME = "loki-${config.node.name}";
-            OTEL_TRACES_EXPORTER = "otlp";
-          };
+          environment = confLib.mkOtelEnvironment serviceName;
           serviceConfig.RestartSec = lib.mkForce "60";
         };
         nodes = lib.mkMerge [
@@ -210,7 +200,5 @@
           }))
         ];
       };
-    }
-
-  ;
+    };
 }

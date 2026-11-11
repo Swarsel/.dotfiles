@@ -7,9 +7,6 @@
   minimal,
   ...
 }:
-let
-  inherit (confLib.static) nginxAccessRules;
-in
 {
   imports = [
     self.modules.nixos.profile-microvm
@@ -22,8 +19,6 @@ in
   ];
 
   swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
     nodeRoles = [ "homeWebProxy" ];
     proxyHost = config.node.name;
   };
@@ -40,7 +35,7 @@ in
       extraConfig = ''
         proxy_ssl_verify off;
       ''
-      + nginxAccessRules;
+      + confLib.static.nginxAccessRules;
       forceSSL = true;
       locations."/" = {
         proxyPass = "http://fritzbox";
@@ -50,7 +45,7 @@ in
     };
   };
   microvm = {
-    mem = 3072 * 1;
+    mem = 3072;
     vcpu = 1;
   };
 

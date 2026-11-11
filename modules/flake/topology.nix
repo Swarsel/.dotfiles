@@ -40,44 +40,37 @@
                 ;
             in
             {
-              networks = {
-                services = {
-                  inherit (globals.networks.home-lan.vlans.services) cidrv4 cidrv6;
-                  name = "VLAN: Services";
+              networks =
+                lib.mapAttrs
+                  (vlan: name: {
+                    inherit (globals.networks.home-lan.vlans.${vlan}) cidrv4 cidrv6;
+                    name = "VLAN: ${name}";
+                  })
+                  {
+                    services = "Services";
+                    devices = "Devices";
+                    guests = "Guests";
+                    home = "Home";
+                    iot = "IoT";
+                  }
+                // {
+                  fritz-lan = {
+                    inherit (globals.networks.home-lan) cidrv4 cidrv6;
+                    name = "Fritz!Box LAN";
+                  };
+                  fritz-wg = {
+                    inherit (globals.networks.fritz-wg) cidrv4 cidrv6;
+                    name = "WireGuard: Fritz!Box tunnel";
+                  };
+                  wgHome = {
+                    inherit (globals.networks.home-wgHome) cidrv4 cidrv6;
+                    name = "WireGuard: Home proxy tunnel";
+                  };
+                  wgProxy = {
+                    inherit (globals.networks.twothreetunnel-wgProxy) cidrv4 cidrv6;
+                    name = "WireGuard: Web proxy tunnel";
+                  };
                 };
-                devices = {
-                  inherit (globals.networks.home-lan.vlans.devices) cidrv4 cidrv6;
-                  name = "VLAN: Devices";
-                };
-                fritz-lan = {
-                  inherit (globals.networks.home-lan) cidrv4 cidrv6;
-                  name = "Fritz!Box LAN";
-                };
-                fritz-wg = {
-                  inherit (globals.networks.fritz-wg) cidrv4 cidrv6;
-                  name = "WireGuard: Fritz!Box tunnel";
-                };
-                guests = {
-                  inherit (globals.networks.home-lan.vlans.guests) cidrv4 cidrv6;
-                  name = "VLAN: Guests";
-                };
-                home = {
-                  inherit (globals.networks.home-lan.vlans.home) cidrv4 cidrv6;
-                  name = "VLAN: Home";
-                };
-                iot = {
-                  inherit (globals.networks.home-lan.vlans.iot) cidrv4 cidrv6;
-                  name = "VLAN: IoT";
-                };
-                wgHome = {
-                  inherit (globals.networks.home-wgHome) cidrv4 cidrv6;
-                  name = "WireGuard: Home proxy tunnel";
-                };
-                wgProxy = {
-                  inherit (globals.networks.twothreetunnel-wgProxy) cidrv4 cidrv6;
-                  name = "WireGuard: Web proxy tunnel";
-                };
-              };
               renderer = "elk";
               nodes = {
                 ender3 = mkDevice "Ender 3" {
@@ -145,8 +138,6 @@
                     (mkConnection "magicant" "wifi")
                     (mkConnection "liliputsteps" "lan")
                     (mkConnection "treehouse" "eth1")
-                    (mkConnection "toto" "bootstrapper")
-                    (mkConnection "hotel" "demo host")
                   ];
                 };
                 machpizza = mkDevice "machpizza" {
@@ -310,9 +301,7 @@
           )
 
         ];
-        nixosConfigurations = lib.filterAttrs (
-          name: host: name != "vacanthouse" && host.config ? topology
-        ) self.nixosConfigurations;
+        nixosConfigurations = builtins.removeAttrs self.nixosConfigurations [ "vacanthouse" ];
       };
     };
 }

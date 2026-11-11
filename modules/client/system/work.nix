@@ -36,7 +36,6 @@ in
       }:
       let
         inherit (config.swarselsystems) homeDir mainUser;
-        owner = mainUser;
       in
       {
         options.swarselsystems = {
@@ -50,48 +49,38 @@ in
           };
         };
         config = {
-
-          sops =
-            let
-              secretNames = [
-                "automationhubtoken"
-                "vcuser"
-                "vcpw"
-                "govcuser"
-                "govcpw"
-                "govcurl"
-                "govcdc"
-                "govcds"
-                "govchost"
-                "govcnetwork"
-                "govcpool"
-                "baseuser"
-                "basepw"
-                "vbc-guest-pw"
-                "vpn-cert"
-              ];
-            in
-            {
-              secrets = builtins.listToAttrs (
-                map (name: {
-                  inherit name;
-                  value = {
-                    inherit owner;
-                    rekey.keyPrefix = confLib.static.sharedSecrets.work;
-                  };
-                }) secretNames
-              );
-              templates."network-manager-work.env".content = ''
-                BASEUSER=${config.sops.placeholder.baseuser}
-                BASEPASS=${config.sops.placeholder.basepw}
-                VBC_GUEST_PW=${config.sops.placeholder.vbc-guest-pw}
-              '';
-            };
+          sops = {
+            secrets =
+              lib.genAttrs
+                [
+                  "automationhubtoken"
+                  "vcuser"
+                  "vcpw"
+                  "govcuser"
+                  "govcpw"
+                  "govcurl"
+                  "govcdc"
+                  "govcds"
+                  "govchost"
+                  "govcnetwork"
+                  "govcpool"
+                  "baseuser"
+                  "basepw"
+                  "vbc-guest-pw"
+                  "vpn-cert"
+                ]
+                (_: {
+                  owner = mainUser;
+                  rekey.keyPrefix = confLib.static.sharedSecrets.work;
+                });
+            templates."network-manager-work.env".content = ''
+              BASEUSER=${config.sops.placeholder.baseuser}
+              BASEPASS=${config.sops.placeholder.basepw}
+              VBC_GUEST_PW=${config.sops.placeholder.vbc-guest-pw}
+            '';
+          };
           services = {
-            openssh = {
-              enable = true;
-              extraConfig = "";
-            };
+            openssh.enable = true;
             syncthing.settings = {
               folders.Documents = {
                 devices = [ "moonside@oracle" ];
@@ -108,12 +97,11 @@ in
 
           };
           programs = {
-
             _1password.enable = true;
             _1password-gui = {
               enable = true;
               package = pkgs._1password-gui;
-              polkitPolicyOwners = [ "${mainUser}" ];
+              polkitPolicyOwners = [ mainUser ];
             };
             browserpass.enable = true;
           };
@@ -144,9 +132,7 @@ in
 
             networkmanager = {
               ensureProfiles = {
-                environmentFiles = [
-                  "${config.sops.templates."network-manager-work.env".path}"
-                ];
+                environmentFiles = [ config.sops.templates."network-manager-work.env".path ];
                 profiles = config.repo.secrets.work.network.profiles;
               };
               wifi.scanRandMacAddress = false;
@@ -197,14 +183,12 @@ in
           nixpkgs.overlays = [
             (
               final: prev:
-              lib.genAttrs config.repo.secrets.work.overlayPackages (
-                name: ((inputs.vbc-nix.overlays.default or (_: _: { })) final prev).${name}
-              )
+              lib.getAttrs config.repo.secrets.work.overlayPackages (inputs.vbc-nix.overlays.default final prev)
             )
           ];
           repo.secretFiles.work = ../../../secrets/work/pii.nix.enc;
           virtualisation = {
-            docker.enable = lib.mkIf (!config.virtualisation.podman.dockerCompat) true;
+            docker.enable = !config.virtualisation.podman.dockerCompat;
             libvirtd = {
               enable = true;
               qemu = {
@@ -242,8 +226,7 @@ in
           # };
         }
         // lib.optionalAttrs withHomeManager {
-
-          home-manager.users."${config.swarselsystems.mainUser}".imports = [
+          home-manager.users.${mainUser}.imports = [
             fmods.homeManager.work
           ];
         };

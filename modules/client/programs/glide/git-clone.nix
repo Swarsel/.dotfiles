@@ -20,7 +20,9 @@
           const nwo = document.querySelector('meta[name="octolytics-dimension-repository_nwo"]')?.getAttribute("content");
           let https = nwo != null && (location.pathname + "/").toLowerCase().startsWith("/" + nwo.toLowerCase() + "/") ? location.origin + "/" + nwo + ".git" : undefined;
           for (const credentials of ["omit", "include"] as const) {
-            if (https != null) break;
+            if (https != null) {
+              break;
+            }
             const go_get = await fetch_document(location.origin + location.pathname + "?go-get=1", credentials);
             https = go_get?.querySelector('meta[name="go-import"]')?.getAttribute("content")?.split(/\s+/)[2];
           }
@@ -46,7 +48,7 @@
             flash_message("clone failed: " + (clone.output.at(-1) ?? "exit code " + clone.exit_code));
             return;
           }
-          const remotes = setup_remotes ? (await run("${lib.getExe pkgs.git-setup-remotes}", [dest])).output : [];
+          const remotes = setup_remotes ? (await run("${lib.getExe pkgs.swarsel-git-remotes}", [dest])).output : [];
           flash_message(["cloned into " + dest, ...remotes.map((line) => line.replace(dest + ": ", ""))].join("; "));
         }
 

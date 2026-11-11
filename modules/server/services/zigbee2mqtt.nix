@@ -33,7 +33,6 @@
         nginxAccessRules
         webProxy
         ;
-      coordinator = globals.networks.home-lan.vlans.iot.hosts.slzb-06m;
       mqttListener = lib.head config.services.mosquitto.listeners;
     in
     {
@@ -81,7 +80,7 @@
             serial = {
               adapter = "ember";
               baudrate = 115200;
-              port = "tcp://${coordinator.ipv4}:6638";
+              port = "tcp://${globals.networks.home-lan.vlans.iot.hosts.slzb-06m.ipv4}:6638";
               rtscts = false;
             };
           };
@@ -129,7 +128,5 @@
           }
         ];
       };
-    }
-
-  ;
+    };
 }

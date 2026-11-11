@@ -18,6 +18,7 @@
         proxyAddress4
         proxyAddress6
         serviceAddress
+        serviceDomain
         serviceName
         servicePort
         ;
@@ -26,15 +27,13 @@
         isHome
         webProxy
         ;
-
-      consumer = "moonside";
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ serviceName ];
         topology.self.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
-          info = "https://${serviceAddress}";
+          info = "socks5://${serviceAddress}:${toString servicePort}";
           name = lib.swarselsystems.toCapitalized serviceName;
         };
         globals = {
@@ -45,16 +44,17 @@
               proxyAddress4
               proxyAddress6
               serviceAddress
+              serviceDomain
               serviceName
               ;
             extra.extraConfig.port = servicePort;
-            serviceDomain = "socks-proxy.${globals.domains.main}";
           };
           monitoring.tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
-          networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode.${consumer}.allowedTCPPorts =
-            [
-              servicePort
-            ];
+          networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode =
+            lib.genAttrs globals.general.socksProxyConsumers
+              (_: {
+                allowedTCPPorts = [ servicePort ];
+              });
         };
         users.persistentIds.microsocks = confLib.mkIds 988;
         services.microsocks = {

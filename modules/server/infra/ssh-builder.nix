@@ -22,7 +22,7 @@
               ;;
             *)
               echo "Access only allowed for using the nix remote builder" 1>&2
-              exit
+              exit 1
           esac
         '';
       };
@@ -47,7 +47,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

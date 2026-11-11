@@ -64,7 +64,7 @@
             inherit (self.swarselsystemsLib) root;
           };
         };
-        # nix build --print-out-paths --no-link .#pnap-kexec --system <system>
+        # nix build --print-out-paths --no-link .#swarsel-kexec --system <system>
         swarsel-kexec =
           (inputs.smallpkgs.legacyPackages.${system}.nixos [
             {

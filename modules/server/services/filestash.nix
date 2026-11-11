@@ -225,12 +225,12 @@
             };
           in
           lib.mkMerge [
-            (lib.optionalAttrs (globals.services ? collabora-online) {
+            {
               ${globals.services.collabora-online.extraConfig.node}.services.collabora-online = {
                 aliasGroups = [ { host = "http://127.0.0.1:${builtins.toString servicePort}"; } ];
                 settings.net.content_security_policy = "frame-ancestors https://${serviceDomain}";
               };
-            })
+            }
             { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
             { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
             {
@@ -239,7 +239,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

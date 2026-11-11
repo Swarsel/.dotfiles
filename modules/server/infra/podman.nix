@@ -74,7 +74,5 @@
 
       };
       key = "swarsel/server/podman";
-    }
-
-  ;
+    };
 }

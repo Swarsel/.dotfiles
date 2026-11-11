@@ -4,6 +4,7 @@
       config,
       lib,
       pkgs,
+      utils,
       ...
     }:
     let
@@ -55,193 +56,38 @@
         -----END CERTIFICATE-----
       '';
 
-      mkPiaUp =
-        name: tunnel:
-        pkgs.writeShellApplication {
-          name = "pia-netns-${name}-up";
-          runtimeInputs = with pkgs; [
-            iproute2
-            wireguard-tools
-            curl
-            jq
-            coreutils
-            gnused
-            gawk
-            systemd
+      mkForward =
+        namespace: forward:
+        let
+          socat = [
+            (lib.getExe pkgs.socat)
+          ]
+          ++ lib.optional (forward.idleTimeout != null) "-T${toString forward.idleTimeout}";
+        in
+        {
+          after = [ forward.service ];
+          bindsTo = [ forward.service ];
+          description = "Forward port ${toString forward.port} into the ${namespace} netns";
+          partOf = [ forward.service ];
+          serviceConfig = {
+            ExecStart = utils.escapeSystemdExecArgs (
+              socat
+              ++ [
+                "TCP-LISTEN:${toString forward.port},${
+                  lib.optionalString (forward.listenAddress != null) "bind=${forward.listenAddress},"
+                }reuseaddr,fork"
+                "EXEC:${lib.getExe' pkgs.iproute2 "ip"} netns exec ${namespace} ${toString socat} - TCP\\:127.0.0.1\\:${toString forward.targetPort}"
+              ]
+            );
+            Restart = "on-failure";
+            RestartSec = "5s";
+            SuccessExitStatus = "143";
+            Type = "simple";
+          };
+          wantedBy = [
+            "multi-user.target"
+            forward.service
           ];
-          text = ''
-            set -euo pipefail
-
-            NETNS="${tunnel.namespace}"
-            WG_IFACE="wg-${tunnel.namespace}"
-            STATE_DIR="/run/pia"
-            CA_CERT="${piaCaCert}"
-            REGION="${tunnel.region}"
-
-            install -d -m 0700 "$STATE_DIR"
-            ${lib.optionalString tunnel.portForwarding.enable ''
-              install -d -m 0755 "$(dirname "${tunnel.portForwarding.portFile}")"
-            ''}
-            install -d -m 0755 "/etc/netns/$NETNS"
-
-            PIA_USER="$(head -n1 "${tunnel.credentialsFile}")"
-            PIA_PASS="$(tail -n1 "${tunnel.credentialsFile}")"
-
-            echo "Authenticating with PIA..."
-            TOKEN_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
-              --location --request POST \
-              --header "Content-Type: application/json" \
-              --data "{\"username\":\"$PIA_USER\",\"password\":\"$PIA_PASS\"}" \
-              "https://www.privateinternetaccess.com/api/client/v2/token")
-            TOKEN=$(echo "$TOKEN_RESP" | jq -er '.token')
-
-            echo "Fetching region servers..."
-            REGION_DATA=$(curl -sS --connect-timeout 10 --max-time 30 \
-              "https://serverlist.piaservers.net/vpninfo/servers/v6" \
-              | head -n1 | jq -er ".regions[] | select(.id==\"$REGION\")")
-
-            SERVER_IP=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].ip')
-            SERVER_HOST=$(echo "$REGION_DATA" | jq -er '.servers.wg[0].cn')
-
-            echo "Generating WireGuard keys..."
-            WG_PRIV=$(wg genkey)
-            WG_PUB=$(echo "$WG_PRIV" | wg pubkey)
-
-            echo "Registering public key with PIA ($SERVER_HOST)..."
-            WG_RESP=$(curl -sS --connect-timeout 10 --max-time 30 \
-              --connect-to "$SERVER_HOST::$SERVER_IP:" \
-              --cacert "$CA_CERT" -G \
-              --data-urlencode "pt=$TOKEN" \
-              --data-urlencode "pubkey=$WG_PUB" \
-              "https://$SERVER_HOST:1337/addKey")
-
-            [ "$(echo "$WG_RESP" | jq -r '.status')" = "OK" ] || {
-              echo "addKey failed: $WG_RESP" >&2; exit 1;
-            }
-
-            PEER_IP=$(echo "$WG_RESP" | jq -r '.peer_ip')
-            SERVER_KEY=$(echo "$WG_RESP" | jq -r '.server_key')
-            SERVER_PORT=$(echo "$WG_RESP" | jq -r '.server_port')
-            DNS=$(echo "$WG_RESP" | jq -r '.dns_servers[0]')
-
-            ${lib.optionalString tunnel.dns ''
-              echo "nameserver $DNS" > "/etc/netns/$NETNS/resolv.conf"
-            ''}
-
-            ip netns list | awk '{print $1}' | grep -qx "$NETNS" || ip netns add "$NETNS"
-            ip -n "$NETNS" link set lo up
-
-            ip link del "$WG_IFACE" 2>/dev/null || true
-            ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
-
-            ip link add "$WG_IFACE" type wireguard
-            wg set "$WG_IFACE" private-key <(echo "$WG_PRIV")
-            wg set "$WG_IFACE" peer "$SERVER_KEY" \
-              endpoint "$SERVER_IP:$SERVER_PORT" \
-              allowed-ips 0.0.0.0/0,::/0 \
-              persistent-keepalive 25
-
-            ip link set "$WG_IFACE" netns "$NETNS"
-            ip -n "$NETNS" addr add "$PEER_IP" dev "$WG_IFACE"
-            ip -n "$NETNS" link set mtu 1420 up dev "$WG_IFACE"
-            ip -n "$NETNS" route add default dev "$WG_IFACE"
-
-            echo "WireGuard tunnel up; peer_ip=$PEER_IP dns=$DNS"
-
-            ${lib.optionalString tunnel.portForwarding.enable ''
-              echo "Requesting forwarded port..."
-              for attempt in 1 2 3 4 5; do
-                PF_RESP=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
-                  --connect-to "$SERVER_HOST::$SERVER_IP:" \
-                  --cacert "$CA_CERT" -G \
-                  --data-urlencode "token=$TOKEN" \
-                  "https://$SERVER_HOST:19999/getSignature") || PF_RESP=""
-                if [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ]; then
-                  break
-                fi
-                echo "getSignature attempt $attempt failed; retrying..." >&2
-                sleep 3
-              done
-
-              [ "$(echo "$PF_RESP" | jq -r '.status' 2>/dev/null)" = "OK" ] || {
-                echo "getSignature failed after retries: $PF_RESP" >&2; exit 1;
-              }
-
-              PAYLOAD=$(echo "$PF_RESP" | jq -r '.payload')
-              SIGNATURE=$(echo "$PF_RESP" | jq -r '.signature')
-              PORT=$(echo "$PAYLOAD" | base64 -d | jq -r '.port')
-
-              echo -n "$PORT" > "${tunnel.portForwarding.portFile}"
-              chmod 0644 "${tunnel.portForwarding.portFile}"
-              echo "Forwarded port: $PORT"
-
-              bind_port() {
-                local resp
-                resp=$(ip netns exec "$NETNS" curl -sS --connect-timeout 5 --max-time 10 \
-                  --connect-to "$SERVER_HOST::$SERVER_IP:" \
-                  --cacert "$CA_CERT" -G \
-                  --data-urlencode "payload=$PAYLOAD" \
-                  --data-urlencode "signature=$SIGNATURE" \
-                  "https://$SERVER_HOST:19999/bindPort") || return 1
-                [ "$(echo "$resp" | jq -r '.status')" = "OK" ] || return 1
-                echo "bindPort ok: $(echo "$resp" | jq -r '.message')"
-              }
-
-              bind_port
-
-              systemd-notify --ready --status="PIA tunnel up, port $PORT forwarded"
-
-              while true; do
-                sleep 880
-                if ! bind_port; then
-                  echo "bindPort failed; exiting to let systemd restart" >&2
-                  exit 1
-                fi
-              done
-            ''}
-
-            ${lib.optionalString (!tunnel.portForwarding.enable) ''
-              systemd-notify --ready --status="PIA tunnel up (no port forwarding)"
-
-              stale_handshake() {
-                local last now age
-                last=$(ip netns exec "$NETNS" wg show "$WG_IFACE" latest-handshakes 2>/dev/null | awk '{print $2}' | head -n1)
-                [ -n "$last" ] || return 0
-                [ "$last" = "0" ] && return 0
-                now=$(date +%s)
-                age=$(( now - last ))
-                [ "$age" -gt "${toString tunnel.handshakeMaxAge}" ]
-              }
-
-              while true; do
-                sleep 60
-                if stale_handshake; then
-                  echo "wireguard handshake is stale (older than ${toString tunnel.handshakeMaxAge}s); exiting so systemd rebuilds the tunnel" >&2
-                  exit 1
-                fi
-              done
-            ''}
-          '';
-        };
-
-      mkPiaDown =
-        name: tunnel:
-        pkgs.writeShellApplication {
-          name = "pia-netns-${name}-down";
-          runtimeInputs = with pkgs; [
-            iproute2
-            coreutils
-          ];
-          text = ''
-            NETNS="${tunnel.namespace}"
-            WG_IFACE="wg-${tunnel.namespace}"
-            ip -n "$NETNS" link del "$WG_IFACE" 2>/dev/null || true
-            ip link del "$WG_IFACE" 2>/dev/null || true
-            ip netns del "$NETNS" 2>/dev/null || true
-            rm -f "/etc/netns/$NETNS/resolv.conf"
-            rmdir "/etc/netns/$NETNS" 2>/dev/null || true
-            ${lib.optionalString tunnel.portForwarding.enable ''rm -f "${tunnel.portForwarding.portFile}"''}
-          '';
         };
     in
     {
@@ -250,27 +96,47 @@
         description = "PIA WireGuard tunnels, each inside its own network namespace.";
         type = lib.types.attrsOf (
           lib.types.submodule (
-            { name, config, ... }:
+            { name, ... }:
             {
               options = {
                 credentialsFile = lib.mkOption {
                   description = "File with PIA username on line 1 and password on line 2.";
                   type = lib.types.path;
                 };
-                dns = lib.mkOption {
-                  default = true;
-                  type = lib.types.bool;
-                };
-                handshakeMaxAge = lib.mkOption {
-                  default = 300;
-                  type = lib.types.int;
-                };
-                namespace = lib.mkOption {
-                  default = name;
-                  type = lib.types.str;
+                forwards = lib.mkOption {
+                  default = { };
+                  description = "TCP forwarders from the host into the namespace, keyed by unit name.";
+                  type = lib.types.attrsOf (
+                    lib.types.submodule (
+                      { config, ... }:
+                      {
+                        options = {
+                          idleTimeout = lib.mkOption {
+                            default = null;
+                            type = lib.types.nullOr lib.types.int;
+                          };
+                          listenAddress = lib.mkOption {
+                            default = null;
+                            type = lib.types.nullOr lib.types.str;
+                          };
+                          port = lib.mkOption {
+                            type = lib.types.port;
+                          };
+                          service = lib.mkOption {
+                            description = "Unit inside the namespace that the forwarder is bound to.";
+                            type = lib.types.str;
+                          };
+                          targetPort = lib.mkOption {
+                            default = config.port;
+                            type = lib.types.port;
+                          };
+                        };
+                      }
+                    )
+                  );
                 };
                 netnsPath = lib.mkOption {
-                  default = "/var/run/netns/${config.namespace}";
+                  default = "/var/run/netns/${name}";
                   readOnly = true;
                   type = lib.types.str;
                 };
@@ -299,26 +165,115 @@
       config = lib.mkIf (cfg.tunnels != { }) {
         boot.kernelModules = [ "wireguard" ];
 
-        systemd.services = lib.mapAttrs' (
-          name: tunnel:
-          lib.nameValuePair "pia-netns-${name}" {
-            after = [ "network-online.target" ];
-            description = "PIA WireGuard tunnel in network namespace ${tunnel.namespace}";
-            serviceConfig = {
-              ExecStart = lib.getExe (mkPiaUp name tunnel);
-              ExecStop = lib.getExe (mkPiaDown name tunnel);
-              NotifyAccess = "exec";
-              Restart = "on-failure";
-              RestartSec = "30s";
-              TimeoutStartSec = "120s";
-              Type = "notify";
-            };
-            wantedBy = [ "multi-user.target" ];
-            wants = [ "network-online.target" ];
-          }
-        ) cfg.tunnels;
-      };
-    }
+        systemd.services =
+          lib.mapAttrs' (
+            name: tunnel:
+            lib.nameValuePair "pia-netns-${name}" {
+              after = [ "network-online.target" ];
+              description = "PIA WireGuard tunnel in network namespace ${name}";
+              serviceConfig = {
+                ExecStart = lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "pia-netns-${name}-up";
+                    runtimeInputs = with pkgs; [
+                      coreutils
+                      curl
+                      iproute2
+                      jq
+                      systemd
+                      wireguard-tools
+                    ];
+                    text = ''
+                      ok() {
+                          jq -e '.status == "OK"' <<< "$1" > /dev/null || { echo "$1" >&2; exit 1; }
+                      }
 
-  ;
+                      user=$(head -n1 ${tunnel.credentialsFile})
+                      pass=$(tail -n1 ${tunnel.credentialsFile})
+                      token=$(curl -sS --max-time 30 --location \
+                        --header "Content-Type: application/json" \
+                        --data "{\"username\":\"$user\",\"password\":\"$pass\"}" \
+                        https://www.privateinternetaccess.com/api/client/v2/token | jq -er .token)
+
+                      server=$(curl -sS --max-time 30 https://serverlist.piaservers.net/vpninfo/servers/v6 \
+                        | head -n1 | jq -ec '.regions[] | select(.id == "${tunnel.region}") | .servers.wg[0]')
+                      ip=$(jq -r .ip <<< "$server")
+                      host=$(jq -r .cn <<< "$server")
+                      api=(curl -sS --connect-timeout 5 --max-time 30 --cacert ${piaCaCert} --connect-to "$host::$ip:" -G)
+
+                      private_key=$(wg genkey)
+                      peer=$("''${api[@]}" \
+                        --data-urlencode "pt=$token" \
+                        --data-urlencode "pubkey=$(wg pubkey <<< "$private_key")" \
+                        "https://$host:1337/addKey")
+                      ok "$peer"
+
+                      ip netns add ${name}
+                      ip -n ${name} link set lo up
+                      install -d /etc/netns/${name}
+                      jq -r '"nameserver \(.dns_servers[0])"' <<< "$peer" > /etc/netns/${name}/resolv.conf
+
+                      ip link add wg-${name} type wireguard
+                      wg set wg-${name} private-key <(echo "$private_key") \
+                        peer "$(jq -r .server_key <<< "$peer")" \
+                        endpoint "$ip:$(jq -r .server_port <<< "$peer")" \
+                        allowed-ips 0.0.0.0/0,::/0 \
+                        persistent-keepalive 25
+                      ip link set wg-${name} netns ${name}
+                      ip -n ${name} addr add "$(jq -r .peer_ip <<< "$peer")" dev wg-${name}
+                      ip -n ${name} link set wg-${name} mtu 1420 up
+                      ip -n ${name} route add default dev wg-${name}
+                    ''
+                    + (
+                      if tunnel.portForwarding.enable then
+                        ''
+                          signature=$(ip netns exec ${name} "''${api[@]}" --retry 5 --retry-all-errors \
+                            --data-urlencode "token=$token" \
+                            "https://$host:19999/getSignature")
+                          ok "$signature"
+
+                          install -d ${dirOf tunnel.portForwarding.portFile}
+                          jq -r .payload <<< "$signature" | base64 -d | jq -j .port > ${tunnel.portForwarding.portFile}
+
+                          while true; do
+                              ok "$(ip netns exec ${name} "''${api[@]}" \
+                                --data-urlencode "payload=$(jq -r .payload <<< "$signature")" \
+                                --data-urlencode "signature=$(jq -r .signature <<< "$signature")" \
+                                "https://$host:19999/bindPort")"
+                              systemd-notify --ready --status="port $(cat ${tunnel.portForwarding.portFile}) forwarded"
+                              sleep 880
+                          done
+                        ''
+                      else
+                        ''
+                          systemd-notify --ready
+                          while sleep 60; do
+                              handshake=$(ip netns exec ${name} wg show wg-${name} latest-handshakes | cut -f2)
+                              if (( handshake > 0 && $(date +%s) - handshake > 300 )); then
+                                  echo "handshake older than 300s" >&2
+                                  exit 1
+                              fi
+                          done
+                        ''
+                    );
+                  }
+                );
+                ExecStopPost = [
+                  "-${pkgs.iproute2}/bin/ip netns del ${name}"
+                  "-${pkgs.iproute2}/bin/ip link del wg-${name}"
+                  "${pkgs.coreutils}/bin/rm -rf /etc/netns/${name} ${tunnel.portForwarding.portFile}"
+                ];
+                NotifyAccess = "exec";
+                Restart = "on-failure";
+                RestartSec = "30s";
+                TimeoutStartSec = "120s";
+                Type = "notify";
+              };
+              wantedBy = [ "multi-user.target" ];
+              wants = [ "network-online.target" ];
+            }
+          ) cfg.tunnels
+          // lib.concatMapAttrs (name: tunnel: lib.mapAttrs (_: mkForward name) tunnel.forwards) cfg.tunnels;
+      };
+    };
 }

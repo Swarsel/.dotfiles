@@ -93,7 +93,10 @@
           };
           pia-netns.tunnels.${piaNamespace} = {
             credentialsFile = config.sops.secrets.pia.path;
-            dns = true;
+            forwards."${serviceName}-web-forward" = {
+              port = servicePort;
+              service = "${serviceName}.service";
+            };
             portForwarding.enable = true;
             region = "sweden";
           };
@@ -151,41 +154,6 @@
               };
               wantedBy = [ piaTunnel.unit ];
             };
-            "${serviceName}-web-forward" =
-              let
-                inner = pkgs.writeShellApplication {
-                  name = "${serviceName}-web-into-netns";
-                  text = ''
-                    exec ${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} \
-                      ${pkgs.socat}/bin/socat - TCP:127.0.0.1:${toString servicePort}
-                  '';
-                };
-              in
-              {
-                after = [ "${serviceName}.service" ];
-                bindsTo = [ "${serviceName}.service" ];
-                description = "Forward 0.0.0.0:${toString servicePort} into the ${piaNamespace} netns";
-                partOf = [ "${serviceName}.service" ];
-                serviceConfig = {
-                  ExecStart = lib.getExe (
-                    pkgs.writeShellApplication {
-                      name = "${serviceName}-web-forward";
-                      text = ''
-                        exec ${pkgs.socat}/bin/socat \
-                          TCP-LISTEN:${toString servicePort},reuseaddr,fork \
-                          EXEC:${lib.getExe inner}
-                      '';
-                    }
-                  );
-                  Restart = "on-failure";
-                  RestartSec = "5s";
-                  Type = "simple";
-                };
-                wantedBy = [
-                  "multi-user.target"
-                  "${serviceName}.service"
-                ];
-              };
           };
           tmpfiles.rules = [
             "d ${downloadDir} 0775 ${serviceUser} users -"
@@ -205,7 +173,5 @@
           };
         };
       };
-    }
-
-  ;
+    };
 }

@@ -1,12 +1,6 @@
 {
-  flake.modules.homeManager.obs-studio =
-    let
-      moduleName = "obs-studio";
-    in
-    {
-      config = {
-        swarselsystems.enabledHomeModules = [ "obs-studio" ];
-        programs.${moduleName}.enable = true;
-      };
-    };
+  flake.modules.homeManager.obs-studio.config = {
+    swarselsystems.enabledHomeModules = [ "obs-studio" ];
+    programs.obs-studio.enable = true;
+  };
 }

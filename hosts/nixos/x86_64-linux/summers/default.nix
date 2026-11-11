@@ -102,64 +102,42 @@
 }
 // lib.optionalAttrs (!minimal) {
 
-  guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-    { }
-    // confLib.mkMicrovm "ankisync" { withZfs = true; }
-    // confLib.mkMicrovm "atuin" { withZfs = true; }
-    // confLib.mkMicrovm "audio" {
-      eternorPaths = [ "Music" ];
-      withZfs = true;
-    }
-    // confLib.mkMicrovm "dawarich" { withZfs = true; }
-    // confLib.mkMicrovm "firefly" { withZfs = true; }
-    // confLib.mkMicrovm "forgejo" { withZfs = true; }
-    // confLib.mkMicrovm "freshrss" { withZfs = true; }
-    // confLib.mkMicrovm "homebox" { withZfs = true; }
-    // confLib.mkMicrovm "immich" {
-      eternorPaths = [ "Pictures" ];
-      withZfs = true;
-    }
-    // confLib.mkMicrovm "jellyfin" {
-      eternorPaths = [ "Videos" ];
-      withZfs = true;
-    }
-    // confLib.mkMicrovm "kanidm" { withZfs = true; }
-    // confLib.mkMicrovm "kavita" {
-      eternorPaths = [ "Books" ];
-      withZfs = true;
-    }
-    // confLib.mkMicrovm "koillection" { withZfs = true; }
-    // confLib.mkMicrovm "matrix" { withZfs = true; }
-    // confLib.mkMicrovm "mealie" { withZfs = true; }
-    // confLib.mkMicrovm "monitoring" { withZfs = true; }
-    // confLib.mkMicrovm "nextcloud" { withZfs = true; }
-    // confLib.mkMicrovm "paperless" {
-      eternorPaths = [ "Documents" ];
-      withZfs = true;
-    }
-    // confLib.mkMicrovm "radicale" { withZfs = true; }
-    // confLib.mkMicrovm "storage" {
-      eternorPaths = [
-        "Books"
-        "Videos"
-        "Music"
-        "Pictures"
-        "Software"
-        "Documents"
-      ];
-      withZfs = true;
-    }
-    // confLib.mkMicrovm "transmission" {
-      eternorPaths = [
-        "Books"
-        "Videos"
-        "Music"
-        "Software"
-      ];
-      withZfs = true;
-    }
-    // confLib.mkMicrovm "utility" { withZfs = true; }
-  );
+  guests = lib.concatMapAttrs (name: args: confLib.mkMicrovm name ({ withZfs = true; } // args)) {
+    ankisync = { };
+    atuin = { };
+    audio.eternorPaths = [ "Music" ];
+    dawarich = { };
+    firefly = { };
+    forgejo = { };
+    freshrss = { };
+    homebox = { };
+    immich.eternorPaths = [ "Pictures" ];
+    jellyfin.eternorPaths = [ "Videos" ];
+    kanidm = { };
+    kavita.eternorPaths = [ "Books" ];
+    koillection = { };
+    matrix = { };
+    mealie = { };
+    monitoring = { };
+    nextcloud = { };
+    paperless.eternorPaths = [ "Documents" ];
+    radicale = { };
+    storage.eternorPaths = [
+      "Books"
+      "Videos"
+      "Music"
+      "Pictures"
+      "Software"
+      "Documents"
+    ];
+    transmission.eternorPaths = [
+      "Books"
+      "Videos"
+      "Music"
+      "Software"
+    ];
+    utility = { };
+  };
 
   networking.nftables.firewall.zones.untrusted.interfaces = [
     "lan"

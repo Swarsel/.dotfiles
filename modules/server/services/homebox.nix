@@ -5,7 +5,6 @@
       root,
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       ...
@@ -34,7 +33,6 @@
         webProxy
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
     in
     {
       imports = [
@@ -94,14 +92,13 @@
         users.persistentIds.homebox = confLib.mkIds 981;
         services.${serviceName} = {
           enable = true;
-          package = pkgs.homebox;
           database.createLocally = true;
           secrets.HBOX_DATABASE_PASSWORD = config.sops.secrets."${serviceName}-db-password".path;
           settings = {
             HBOX_OIDC_BUTTON_TEXT = "Sign in with Kanidm";
             HBOX_OIDC_CLIENT_ID = serviceName;
             HBOX_OIDC_ENABLED = "true";
-            HBOX_OIDC_ISSUER_URL = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+            HBOX_OIDC_ISSUER_URL = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
             HBOX_OPTIONS_ALLOW_REGISTRATION = "false";
             HBOX_OPTIONS_TRUST_PROXY = "true";
             HBOX_STORAGE_CONN_STRING = "file:///var/lib/homebox";
@@ -120,7 +117,6 @@
         };
         systemd.services.${serviceName}.serviceConfig.EnvironmentFile =
           config.sops.templates.homebox-oidc-env.path;
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOidcSystem {
@@ -152,7 +148,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

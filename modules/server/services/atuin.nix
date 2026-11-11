@@ -2,9 +2,6 @@
   flake.modules = {
     homeManager.atuin =
       { globals, ... }:
-      let
-        atuinDomain = globals.services.atuin.domain;
-      in
       {
         config = {
           swarselsystems.enabledHomeModules = [ "atuin" ];
@@ -14,7 +11,7 @@
             enableZshIntegration = true;
             settings = {
               auto_sync = true;
-              sync_address = "https://${atuinDomain}";
+              sync_address = "https://${globals.services.atuin.domain}";
               sync_frequency = "5m";
             };
           };
@@ -96,7 +93,6 @@
             database.uri = null;
             environmentFile = config.sops.templates."${serviceName}-env".path;
             host = "0.0.0.0";
-            # openFirewall = true;
             openRegistration = false;
             port = servicePort;
           };

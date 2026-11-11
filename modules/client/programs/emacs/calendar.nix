@@ -56,9 +56,6 @@
             (setq org-icalendar-use-scheduled '(todo-start event-if-todo event-if-not-todo))
           '';
           enable = true;
-          init = ''
-            (setq swarsel-caldav-synced 0)
-          '';
         };
       };
     };

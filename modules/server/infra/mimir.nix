@@ -30,7 +30,6 @@
         webProxy
         wgProxyAccessRules
         ;
-      inherit (globals.services.alloy.extraConfig) otlpGrpcPort;
     in
     {
       config = {
@@ -47,10 +46,6 @@
               serviceDomain
               serviceName
               ;
-            extra.extraConfig = {
-              host = config.node.name;
-              port = servicePort;
-            };
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
@@ -113,12 +108,7 @@
         };
         networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services.mimir = {
-          environment = {
-            OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString otlpGrpcPort}";
-            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
-            OTEL_SERVICE_NAME = "mimir-${config.node.name}";
-            OTEL_TRACES_EXPORTER = "otlp";
-          };
+          environment = confLib.mkOtelEnvironment serviceName;
           serviceConfig.RestartSec = lib.mkForce "60";
         };
         nodes = lib.mkMerge [
@@ -155,7 +145,7 @@
                   rules = [
                     (confLib.mkGrafanaAlertRule {
                       expr = "max by (host) (up) or max by (host) (host_expected * 0)";
-                      summary = "{{ $labels.host }} stopped reporting (no `up` series and `host_expected` fallback fired)";
+                      summary = "{{ $labels.host }} stopped reporting";
                       title = "Host down";
                       uid = "host_down";
                     })
@@ -233,11 +223,7 @@
                       enable_collectors = ["systemd"]
 
                       systemd {
-                        unit_include = "${
-                          lib.replaceStrings [ "\\" ] [ "\\\\" ] (
-                            "(" + lib.concatMapStringsSep "|" lib.escapeRegex units + ")"
-                          )
-                        }"
+                        unit_include = ${builtins.toJSON "(${lib.concatMapStringsSep "|" lib.escapeRegex units})"}
                       }
                     ''
                   }${lib.optionalString isCentral ''
@@ -270,30 +256,17 @@
                   }
                 '';
                 "alloy/textfiles/host_expected.prom" = lib.mkIf isCentral {
-                  text = lib.concatStrings (
-                    map (h: ''
-                      host_expected{host="${h}"} 1
-                    '') (lib.attrNames globals.hosts)
-                  );
+                  text = lib.concatMapStrings (host: ''
+                    host_expected{host="${host}"} 1
+                  '') (lib.attrNames globals.hosts);
                 };
                 "alloy/textfiles/probe_expected.prom" = lib.mkIf isCentral {
-                  text = lib.concatStrings (
-                    map (n: ''
-                      probe_expected{name="${n}",probe="http"} 1
-                    '') (lib.attrNames globals.monitoring.http)
-                    ++ map (n: ''
-                      probe_expected{name="${n}",probe="ping"} 1
-                    '') (lib.attrNames globals.monitoring.ping)
-                    ++ map (n: ''
-                      probe_expected{name="${n}",probe="cert"} 1
-                    '') (lib.attrNames globals.monitoring.cert)
-                    ++ map (n: ''
-                      probe_expected{name="${n}",probe="tcp"} 1
-                    '') (lib.attrNames globals.monitoring.tcp)
-                    ++ map (n: ''
-                      probe_expected{name="${n}",probe="dns"} 1
-                    '') (lib.attrNames globals.monitoring.dns)
-                  );
+                  text = lib.concatMapStrings (
+                    kind:
+                    lib.concatMapStrings (name: ''
+                      probe_expected{name="${name}",probe="${kind}"} 1
+                    '') (lib.attrNames globals.monitoring.${kind})
+                  ) confLib.static.probeKinds;
                 };
                 "alloy/textfiles/unit_expected.prom" = lib.mkIf isCentral {
                   text = lib.concatStrings (
@@ -307,7 +280,5 @@
           ))
         ];
       };
-    }
-
-  ;
+    };
 }

@@ -10,12 +10,6 @@
     self.modules.nixos.radicale
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-    proxyHost = "twothreetunnel";
-  };
-
 }
 // lib.optionalAttrs (!minimal) {
 

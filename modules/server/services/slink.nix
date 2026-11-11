@@ -69,7 +69,6 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           { directory = serviceDir; }
         ];
@@ -152,7 +151,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

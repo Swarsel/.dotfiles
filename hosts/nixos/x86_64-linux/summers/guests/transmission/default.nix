@@ -1,5 +1,6 @@
 {
   self,
+  config,
   lib,
   minimal,
   ...
@@ -12,10 +13,7 @@
     self.modules.nixos.slskd
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-  };
+  swarselsystems.proxyHost = config.node.name;
 
 }
 // lib.optionalAttrs (!minimal) {

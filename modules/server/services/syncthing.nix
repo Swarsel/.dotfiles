@@ -39,11 +39,21 @@
       cfg = config.services.${serviceName};
       baseDevices = config.repo.secrets.common.syncthing.devices;
       syncDevices = builtins.attrNames baseDevices ++ (extraConfig.extraSyncDevices or [ ]);
+      syncPort = 22000;
+      proxyFirewallRule = {
+        allowedTCPPorts = [
+          servicePort
+          syncPort
+        ];
+        allowedUDPPorts = [
+          syncPort
+          21027
+        ];
+      };
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "syncthing" ];
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         globals = {
           services.${specificServiceName} = {
             inherit
@@ -68,28 +78,10 @@
           };
           networks = {
             ${homeProxyIf}.hosts = lib.mkIf isHome {
-              ${config.node.name}.firewallRuleForNode.${homeWebProxy} = {
-                allowedTCPPorts = [
-                  servicePort
-                  20000
-                ];
-                allowedUDPPorts = [
-                  20000
-                  21027
-                ];
-              };
+              ${config.node.name}.firewallRuleForNode.${homeWebProxy} = proxyFirewallRule;
             };
             ${webProxyIf}.hosts = lib.mkIf isProxied {
-              ${config.node.name}.firewallRuleForNode.${webProxy} = {
-                allowedTCPPorts = [
-                  servicePort
-                  22000
-                ];
-                allowedUDPPorts = [
-                  20000
-                  21027
-                ];
-              };
+              ${config.node.name}.firewallRuleForNode.${webProxy} = proxyFirewallRule;
             };
           };
         };
@@ -101,7 +93,7 @@
           };
           groups.${serviceGroup} = { };
         };
-        services.${serviceName} = rec {
+        services.${serviceName} = {
           enable = true;
           configDir =
             if config.swarselsystems.isMicroVM then
@@ -120,6 +112,7 @@
           openDefaultPorts = lib.mkIf (!isProxied) true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
           relay.enable = false;
           settings = {
+            options.urAccepted = -1;
             devices = baseDevices // (extraConfig.extraDevices or { });
             folders = {
               "Default Folder" = lib.mkForce {
@@ -128,39 +121,25 @@
                 path = "${cfg.dataDir}/Sync";
                 type = "receiveonly";
               };
-              Obsidian = {
-                devices = syncDevices;
-                id = "yjvni-9eaa7";
-                path = "${cfg.dataDir}/Obsidian";
-                type = "receiveonly";
-                versioning = {
-                  params.keep = "5";
-                  type = "simple";
-                };
-              };
-              Org = {
-                devices = syncDevices;
-                id = "a7xnl-zjj3d";
-                path = "${cfg.dataDir}/Org";
-                type = "receiveonly";
-                versioning = {
-                  params.keep = "5";
-                  type = "simple";
-                };
-              };
-              Vpn = {
-                devices = syncDevices;
-                id = "hgp9s-fyq3p";
-                path = "${cfg.dataDir}/Vpn";
-                type = "receiveonly";
-                versioning = {
-                  params.keep = "5";
-                  type = "simple";
-                };
-              };
             }
+            //
+              lib.mapAttrs
+                (name: id: {
+                  inherit id;
+                  devices = syncDevices;
+                  path = "${cfg.dataDir}/${name}";
+                  type = "receiveonly";
+                  versioning = {
+                    params.keep = "5";
+                    type = "simple";
+                  };
+                })
+                {
+                  Obsidian = "yjvni-9eaa7";
+                  Org = "a7xnl-zjj3d";
+                  Vpn = "hgp9s-fyq3p";
+                }
             // (extraConfig.extraFolders or { });
-            urAccepted = -1;
           };
           user = serviceUser;
         };
@@ -195,7 +174,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

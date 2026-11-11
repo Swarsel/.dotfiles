@@ -11,9 +11,6 @@ in
         nixosConfig ? null,
         ...
       }:
-      let
-        isNixos = nixosConfig != null;
-      in
       {
         config = {
           programs.lutris = {
@@ -26,7 +23,7 @@ in
             protonPackages = with pkgs; [
               proton-ge-bin
             ];
-            steamPackage = if isNixos then confLib.getConfig.programs.steam.package else pkgs.steam;
+            steamPackage = if nixosConfig != null then confLib.getConfig.programs.steam.package else pkgs.steam;
             winePackages = with pkgs; [
               wineWow64Packages.waylandFull
             ];

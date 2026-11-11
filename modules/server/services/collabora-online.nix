@@ -4,7 +4,6 @@
       root,
       config,
       lib,
-      pkgs,
       confLib,
       ...
     }:
@@ -77,7 +76,6 @@
         users.persistentIds.${serviceUser} = confLib.mkIds 1004;
         services.${serviceName} = {
           enable = true;
-          package = pkgs.collabora-online;
           port = servicePort;
           settings = {
             server_name = serviceDomain;
@@ -121,7 +119,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

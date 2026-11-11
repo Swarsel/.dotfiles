@@ -5,10 +5,7 @@
       handlers = {
         lidClosed = {
           action = ''
-            cat /sys/class/backlight/amdgpu_bl1/device/enabled
-            if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled
-            then
-              echo "Lid closed. Disabling fprintd."
+            if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled; then
               systemctl stop fprintd
               ln -s /dev/null /run/systemd/transient/fprintd.service
               systemctl daemon-reload
@@ -18,8 +15,7 @@
         };
         lidOpen = {
           action = ''
-            if ! $(systemctl is-active --quiet fprintd); then
-              echo "Lid open. Enabling fprintd."
+            if ! systemctl is-active --quiet fprintd; then
               rm -f /run/systemd/transient/fprintd.service
               systemctl daemon-reload
               systemctl start fprintd

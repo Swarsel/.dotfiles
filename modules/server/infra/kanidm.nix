@@ -37,11 +37,10 @@
       certsDir = "${certBase}/certs";
       privateDir = "${certBase}/private";
       certPathBase = "${certsDir}/${serviceName}.crt";
-      certPath =
-        if config.swarselsystems.isImpermanence then "/persist${certPathBase}" else "${certPathBase}";
+      persistPrefix = lib.optionalString config.swarselsystems.isImpermanence "/persist";
+      certPath = persistPrefix + certPathBase;
       keyPathBase = "${privateDir}/${serviceName}.key";
-      keyPath =
-        if config.swarselsystems.isImpermanence then "/persist${keyPathBase}" else "${keyPathBase}";
+      keyPath = persistPrefix + keyPathBase;
       mailSenderUnit = "${serviceName}-mail-sender";
       hasMailserver = globals.services ? mailserver;
     in
@@ -93,7 +92,6 @@
               mode = "0440";
               owner = serviceUser;
             };
-            # "kanidm-freshrss" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
             notification-mail-pw = lib.mkIf hasMailserver { rekey.keyPrefix = notificationMail.keyPrefix; };
           };
           templates."${mailSenderUnit}.toml" = lib.mkIf hasMailserver {
@@ -184,64 +182,33 @@
             wantedBy = [ "multi-user.target" ];
             wants = [ "network-online.target" ];
           };
-          "generateSSLCert-${serviceName}" =
-            let
-              daysValid = 3650;
-              renewBeforeDays = 365;
-            in
-            {
-              after = [ "local-fs.target" ];
-              before = [ "${serviceName}.service" ];
-              requiredBy = [ "${serviceName}.service" ];
-              requires = [ "local-fs.target" ];
-              script = ''
-                      set -eu
-
-                ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
-                ${
-                  if config.swarselsystems.isImpermanence then
-                    "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}"
-                  else
-                    ""
-                }
-                ${pkgs.coreutils}/bin/install -d -m 0755 ${privateDir}
-                ${
-                  if config.swarselsystems.isImpermanence then
-                    "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}"
-                  else
-                    ""
-                }
-
-                need_gen=0
-                if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
-                  need_gen=1
-                else
-                  enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
-                  end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
-                  now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
-                  seconds_left=$(( end_epoch - now_epoch ))
-                  days_left=$(( seconds_left / 86400 ))
-                  if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
-                    need_gen=1
-                  else
-                    echo 'Certificate exists and is still valid'
-                  fi
-                fi
-
-                if [ "$need_gen" -eq 1 ]; then
-                  ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
-                    -keyout "${keyPath}" \
-                    -out "${certPath}" \
-                    -subj "/CN=${serviceDomain}" \
-                    -addext "subjectAltName=DNS:${serviceDomain}"
-
-                  chmod 0644 "${certPath}"
-                  chmod 0600 "${keyPath}"
-                  chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
-                fi
-              '';
-              serviceConfig.Type = "oneshot";
-            };
+          "generateSSLCert-${serviceName}" = {
+            after = [ "local-fs.target" ];
+            before = [ "${serviceName}.service" ];
+            path = [ pkgs.openssl ];
+            requiredBy = [ "${serviceName}.service" ];
+            requires = [ "local-fs.target" ];
+            script = ''
+              install -d -m 0755 ${certsDir} ${privateDir}
+            ''
+            + lib.optionalString config.swarselsystems.isImpermanence ''
+              install -d -m 0755 /persist${certsDir}
+              install -d -m 0750 /persist${privateDir}
+            ''
+            + ''
+              if [ ! -f ${keyPath} ] || ! openssl x509 -checkend ${toString (365 * 86400)} -noout -in ${certPath}; then
+                openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -sha256 \
+                  -keyout ${keyPath} \
+                  -out ${certPath} \
+                  -subj "/CN=${serviceDomain}" \
+                  -addext "subjectAltName=DNS:${serviceDomain}"
+                chmod 0644 ${certPath}
+                chmod 0600 ${keyPath}
+                chown ${serviceUser}:${serviceGroup} ${certPath} ${keyPath}
+              fi
+            '';
+            serviceConfig.Type = "oneshot";
+          };
           kanidm = {
             environment = {
               KANIDM_TRUST_X_FORWARD_FOR = "true";
@@ -282,7 +249,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

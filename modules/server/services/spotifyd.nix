@@ -5,6 +5,7 @@
       lib,
       pkgs,
       confLib,
+      globals,
       ...
     }:
     let
@@ -47,7 +48,7 @@
             settings.global = {
               backend = "pulseaudio";
               dbus_type = "session";
-              device_name = "SwarselSpot";
+              device_name = config.repo.secrets.common.names.spotifyd;
               use_mpris = false;
               zeroconf_port = servicePort;
             };
@@ -94,14 +95,11 @@
         };
         nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
           extraLines = [
-            "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
+            "ip saddr ${globals.networks.home-lan.cidrv4} tcp dport ${toString servicePort} accept"
           ];
           from = [ "untrusted" ];
           to = [ "vlan-services" ];
         };
       };
-
-    }
-
-  ;
+    };
 }

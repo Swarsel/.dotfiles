@@ -1,14 +1,10 @@
 {
-  root,
   inputs,
   config,
   lib,
   minimal,
   ...
 }:
-let
-  primaryUser = config.swarselsystems.mainUser;
-in
 {
 
   imports = [
@@ -52,7 +48,6 @@ in
     isSecureBoot = true;
     lowResolution = "1280x800";
     sharescreen = "eDP-2";
-    wallpaper = root "files/wallpaper/landscape/lenovowp.png";
     wifiMac = config.repo.secrets.local.network.wifiMac;
   };
   topology.self.interfaces = {
@@ -60,18 +55,17 @@ in
     fritz-wg.network = "fritz-wg";
     wifi = { };
   };
-  home-manager.users."${primaryUser}".swarselsystems = {
-    SecondaryGpuCard = "pci-0000_03_00_0";
+  home-manager.users.${config.swarselsystems.mainUser}.swarselsystems = {
     isSecondaryGpu = true;
     monitors.main = {
       mode = "2560x1600";
-      # name = "BOE 0x0BC9 Unknown";
       name = "BOE 0x0BC9";
       output = "eDP-2";
       position = "2560,0";
       scale = "1";
       workspace = "15:L";
     };
+    secondaryGpuCard = "pci-0000_03_00_0";
   };
 }
 // lib.optionalAttrs (!minimal) {
@@ -81,8 +75,4 @@ in
     "enp*"
     "eth*"
   ];
-  # networking.nftables = {
-  #   enable = lib.mkForce false;
-  #   firewall.enable = lib.mkForce false;
-  # };
 }

@@ -10,12 +10,6 @@
     self.modules.nixos.immich
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-    proxyHost = "twothreetunnel";
-  };
-
 }
 // lib.optionalAttrs (!minimal) {
 

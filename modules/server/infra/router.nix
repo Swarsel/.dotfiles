@@ -12,42 +12,22 @@
         VLAN = vlan.id;
       }) globals.networks.home-lan.vlans;
       selectVLANs = vlans: map (vlan: { VLAN = globals.networks.home-lan.vlans.${vlan}.id; }) vlans;
-      lan1VLANs = selectVLANs [
-        "home"
-        "devices"
-        "guests"
-      ];
-      lan3VLANs = selectVLANs [
+      summersVLANs = selectVLANs [
         "home"
         "devices"
         "services"
-      ];
-      lan4VLANs = lan3VLANs;
-      # TODO: remove services and reset ports 5+6 on swLR to guest when kitchen construction is finished
-      lan5VLANs = selectVLANs [
-        "home"
-        "devices"
-        "services"
-        "guests"
       ];
       inherit (globals.general) homeDnsServer;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "router" ];
-        topology.self.interfaces =
-          (lib.mapAttrs' (
-            vlanName: _:
-            lib.nameValuePair "vlan-${vlanName}" {
-              network = lib.mkForce vlanName;
-            }
-          ) globals.networks.home-lan.vlans)
-          // (lib.mapAttrs' (
-            vlanName: _:
-            lib.nameValuePair "me-${vlanName}" {
-              network = lib.mkForce vlanName;
-            }
-          ) globals.networks.home-lan.vlans);
+        topology.self.interfaces = lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
+          vlanName: _:
+          lib.genAttrs [ "vlan-${vlanName}" "me-${vlanName}" ] (_: {
+            network = lib.mkForce vlanName;
+          })
+        );
         globals.monitoring.systemd = confLib.mkSystemdMonitoring {
           serviceName = "avahi-${config.node.name}";
           unit = "avahi-daemon.service";
@@ -69,7 +49,6 @@
         };
         boot.kernel.sysctl = {
           "net.ipv4.conf.all.forwarding" = true;
-          "net.ipv4.ip_forward" = 1;
           "net.ipv6.conf.all.forwarding" = true;
         };
         networking = {
@@ -134,7 +113,7 @@
                   ];
                   to = [ "local" ];
                 };
-                # Allow the services VLAN to talk to our wireguard server
+                # Allow the services VLAN to reach our wireguard server and dhcpv6
                 services-to-local = {
                   allowedUDPPorts = [
                     52829
@@ -235,56 +214,6 @@
               };
               vlan = map (name: "vlan-${name}") (builtins.attrNames globals.networks.home-lan.vlans);
             };
-            # swBedroom
-            "30-lan1" = {
-              bridgeVLANs = lan1VLANs;
-              linkConfig.RequiredForOnline = "enslaved";
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan1.mac;
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-            };
-            # swKitchen
-            "30-lan2" = {
-              inherit bridgeVLANs;
-              linkConfig.RequiredForOnline = "enslaved";
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan2.mac;
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-            };
-            # summers
-            "30-lan3" = {
-              bridgeVLANs = lan3VLANs;
-              linkConfig.RequiredForOnline = "enslaved";
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan3.mac;
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-            };
-            # summers
-            "30-lan4" = {
-              bridgeVLANs = lan4VLANs;
-              linkConfig.RequiredForOnline = "enslaved";
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan4.mac;
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-            };
-            # swLivingRoom
-            "30-lan5" = {
-              bridgeVLANs = lan5VLANs;
-              linkConfig.RequiredForOnline = "enslaved";
-              matchConfig.MACAddress = config.repo.secrets.local.networking.networks.lan5.mac;
-              networkConfig = {
-                Bridge = "br";
-                ConfigureWithoutCarrier = true;
-              };
-            };
             "40-br" = {
               bridgeConfig = { };
               linkConfig = {
@@ -298,6 +227,41 @@
               };
             };
           }
+          //
+            lib.mapAttrs'
+              (
+                lan: lanVLANs:
+                lib.nameValuePair "30-${lan}" {
+                  bridgeVLANs = lanVLANs;
+                  linkConfig.RequiredForOnline = "enslaved";
+                  matchConfig.MACAddress = config.repo.secrets.local.networking.networks.${lan}.mac;
+                  networkConfig = {
+                    Bridge = "br";
+                    ConfigureWithoutCarrier = true;
+                  };
+                }
+              )
+              {
+                # swBedroom
+                lan1 = selectVLANs [
+                  "home"
+                  "devices"
+                  "guests"
+                ];
+                # swKitchen
+                lan2 = bridgeVLANs;
+                # summers
+                lan3 = summersVLANs;
+                lan4 = summersVLANs;
+                # swLivingRoom
+                # TODO: remove services and reset ports 5+6 on swLR to guest when kitchen construction is finished
+                lan5 = selectVLANs [
+                  "home"
+                  "devices"
+                  "services"
+                  "guests"
+                ];
+              }
           // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
             vlanName: vlanCfg: {
               "40-me-${vlanName}" = lib.mkForce {
@@ -311,8 +275,8 @@
                   }
                 ];
                 ipv6SendRAConfig = {
-                  Managed = true; # set RA M flag -> DHCPv6 for addresses
-                  OtherInformation = true; # optional, for “other info” via DHCPv6
+                  Managed = true;
+                  OtherInformation = true;
                 };
                 linkConfig.RequiredForOnline = "routable";
                 matchConfig.Name = "me-${vlanName}";
@@ -330,7 +294,5 @@
         };
 
       };
-    }
-
-  ;
+    };
 }

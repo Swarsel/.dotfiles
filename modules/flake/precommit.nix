@@ -46,10 +46,12 @@
             flake-checker.enable = true;
             flake-file-in-sync = {
               enable = true;
-              description = "Ensure flake.nix matches the inputs declared with flake-file";
-              entry = lib.getExe self.packages.${system}.check-flake-file;
+              entry = "${pkgs.writeShellScript "flake-file-in-sync" ''
+                if [[ -z $NIX_BUILD_TOP ]]; then
+                    nix build --no-link --print-build-logs .#checks.${system}.check-flake-file
+                fi
+              ''}";
               files = "\\.nix$";
-              name = "flake-file-in-sync";
               pass_filenames = false;
             };
             forbid-new-submodules.enable = true;
@@ -57,33 +59,44 @@
             modules-tangled = {
               enable = true;
               always_run = true;
-              description = "Ensure every file under modules/ is tangled from SwarselSystems.org";
-              entry = lib.getExe self.packages.${system}.check-modules-tangled;
-              name = "modules-tangled";
+              entry = "${pkgs.writeShellScript "modules-tangled" ''
+                untangled=$(comm -23 <(find modules -type f | sort) <(grep -oP ':tangle\s+\Kmodules/\S+' SwarselSystems.org | sort -u))
+                if [[ -n $untangled ]]; then
+                    echo "not tangled from SwarselSystems.org:"
+                    echo "$untangled"
+                    exit 1
+                fi
+              ''}";
               pass_filenames = false;
             };
             org-custom-ids = {
               enable = true;
-              description = "Generate a :CUSTOM_ID: for every org heading that is missing one";
-              entry = lib.getExe self.packages.${system}.check-org-custom-ids;
+              entry = "${pkgs.writeScript "org-custom-ids" ''
+                #!${pkgs.emacs-nox}/bin/emacs --script
+                ;; -*- lexical-binding: t -*-
+                (require 'org-id)
+
+                (dolist (file command-line-args-left)
+                  (with-current-buffer (find-file-noselect file)
+                    (org-map-entries
+                     (lambda ()
+                       (unless (org-entry-get nil "CUSTOM_ID")
+                         (org-entry-put nil "CUSTOM_ID" (org-id-new "h")))))
+                    (save-buffer)))
+              ''}";
               files = "^SwarselSystems\\.org$";
-              name = "org-custom-ids";
               pass_filenames = true;
             };
             org-in-sync = {
               enable = true;
               always_run = true;
-              description = "Ensure SwarselSystems.org is in sync with its tangled files";
-              entry = lib.getExe self.packages.${system}.check-org-in-sync;
-              name = "org-in-sync";
+              entry = "${lib.getExe self.packages.${system}.swarsel-sync-org} --dry-run";
               pass_filenames = false;
             };
             pii-lock = {
               enable = true;
               always_run = true;
-              description = "Ensure secrets/pii.lock matches every pii file";
               entry = "${lib.getExe inputs.piix.packages.${system}.pii} check";
-              name = "pii-lock";
               pass_filenames = false;
             };
             shellcheck = {
@@ -97,11 +110,14 @@
             statix.enable = true;
             topology-in-sync = {
               enable = true;
-              description = "Ensure topology.png and topology_small.png are committed together";
-              entry = lib.getExe self.packages.${system}.check-topology-in-sync;
+              entry = "${pkgs.writeShellScript "topology-in-sync" ''
+                if [[ $# -eq 1 ]]; then
+                    echo "$1 was staged without the other topology image."
+                    exit 1
+                fi
+              ''}";
               files = "^files/topology/topology(_small)?\\.png$";
-              name = "topology-in-sync";
-              pass_filenames = false;
+              pass_filenames = true;
             };
             treefmt.enable = true;
             trim-trailing-whitespace.enable = true;

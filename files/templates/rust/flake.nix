@@ -1,73 +1,103 @@
-# heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/rust-fenix-naersk/flake.nix
 {
-  description = "Rust Flake using Fenix and Naersk";
+  description = "name";
 
   inputs = {
-    fenix = {
-      inputs.nixpkgs.follows = "nixpkgs";
-      url = "github:nix-community/fenix";
+    flake-parts = {
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+      url = "github:hercules-ci/flake-parts";
     };
 
-    naersk.url = "github:nix-community/naersk";
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    systems.url = "github:nix-systems/default";
+    git-hooks-nix = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:cachix/git-hooks.nix";
+    };
+
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    pedantix = {
+      inputs = {
+        flake-parts.follows = "flake-parts";
+        git-hooks-nix.follows = "git-hooks-nix";
+        nixpkgs.follows = "nixpkgs";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+      url = "github:Swarsel/pedantix";
+    };
+
+    treefmt-nix = {
+      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:numtide/treefmt-nix";
+    };
   };
 
   outputs =
-    {
-      self,
-      fenix,
-      naersk,
-      nixpkgs,
-      systems,
-      ...
-    }:
-    let
-      forEachSystem = nixpkgs.lib.genAttrs (import systems);
-      pkgsFor = forEachSystem (
-        system:
-
-        import nixpkgs {
-          inherit system;
-          overlays = [
-            fenix.overlays.default
-          ];
-        }
-      );
-      rust-toolchain = forEachSystem (system: pkgsFor.${system}.fenix.stable);
-    in
-    {
-      apps = forEachSystem (system: {
-        default = {
-          program = "${self.packages.${system}.default}/bin/rust";
-          type = "app";
-        };
-      });
-
-      devShells = forEachSystem (system: {
-        default = pkgsFor.${system}.mkShell {
-          RUST_SRC_PATH = "${rust-toolchain.${system}.rust-src}/lib/rustlib/src/rust/library";
-          env.RUST_BACKTRACE = "full";
-          packages = with rust-toolchain.${system}; [
-            cargo
-            rustc
-            clippy
-            rustfmt
-            rust-analyzer
-          ];
-        };
-      });
-
-      formatter = forEachSystem (system: pkgsFor.${system}.nixfmt);
-
-      packages = forEachSystem (system: {
-        default =
-          (pkgsFor.${system}.callPackage naersk {
-            inherit (rust-toolchain.${system}) cargo rustc;
-          }).buildPackage
-            {
-              src = ./.;
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        inputs.git-hooks-nix.flakeModule
+        inputs.pedantix.flakeModules.default
+        inputs.treefmt-nix.flakeModule
+      ];
+      perSystem =
+        {
+          config,
+          lib,
+          pkgs,
+          self',
+          ...
+        }:
+        {
+          devShells.default = pkgs.mkShell {
+            inputsFrom = [
+              self'.packages.default
+              config.treefmt.build.devShell
+            ];
+            packages = with pkgs; [
+              clippy
+              gdb
+              rust-analyzer
+            ];
+            shellHook = config.pre-commit.installationScript;
+          };
+          packages.default =
+            let
+              manifest = (lib.importTOML ./Cargo.toml).package;
+            in
+            pkgs.rustPlatform.buildRustPackage {
+              inherit (manifest) version;
+              cargoLock.lockFile = ./Cargo.lock;
+              pname = manifest.name;
+              src = lib.fileset.toSource {
+                fileset = lib.fileset.unions [
+                  ./Cargo.toml
+                  ./Cargo.lock
+                  ./src
+                ];
+                root = ./.;
+              };
+              meta.mainProgram = manifest.name;
             };
-      });
+          pre-commit.settings = {
+            hooks = {
+              clippy.enable = true;
+              deadnix.enable = true;
+              statix.enable = true;
+              treefmt.enable = true;
+            };
+            settings.rust = {
+              cargoManifestPath = "./Cargo.toml";
+              check.cargoDeps = pkgs.rustPlatform.importCargoLock { lockFile = ./Cargo.lock; };
+            };
+          };
+          treefmt.programs = {
+            pedantix.enable = true;
+            rustfmt.enable = true;
+            taplo.enable = true;
+          };
+        };
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
     };
 }

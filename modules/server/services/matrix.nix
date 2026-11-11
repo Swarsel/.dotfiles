@@ -37,15 +37,13 @@
         webProxyIf
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
-
       federationPort = 8448;
       whatsappPort = 29318;
       telegramPort = 29317;
       signalPort = 29328;
       ircPort = 8009;
       ircMediaPort = 11111;
-      postgresRoles = [
+      serviceUsers = [
         "matrix-synapse"
         "matrix-appservice-irc"
         "mautrix-discord"
@@ -56,8 +54,15 @@
       ];
       mkPostgresUri = role: password: "postgresql://${role}:${password}@/${role}?host=/run/postgresql";
       baseUrl = "https://${serviceDomain}";
-      clientConfig."m.homeserver".base_url = baseUrl;
-      serverConfig."m.server" = "${serviceDomain}:443";
+      homeserver = {
+        address = "http://localhost:${builtins.toString servicePort}";
+        domain = serviceDomain;
+      };
+      adminUser = "@${config.swarselsystems.mainUser}:${serviceDomain}";
+      bridgePermissions = {
+        ${adminUser} = "admin";
+        "*" = "relay";
+      };
       mkWellKnown = data: ''
         default_type application/json;
         add_header Access-Control-Allow-Origin *;
@@ -71,7 +76,7 @@
       config = {
         swarselsystems = {
           enabledServerModules = [ "matrix" ];
-          server.postgresql.rolePasswordFiles = lib.genAttrs postgresRoles (
+          server.postgresql.rolePasswordFiles = lib.genAttrs serviceUsers (
             role: config.sops.secrets."${role}-db-password".path
           );
         };
@@ -141,7 +146,7 @@
               mautrix-whatsapp-pickle-key.rekey.generator.script = "alnum";
               notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
             }
-            // lib.genAttrs (map (role: "${role}-db-password") postgresRoles) (_: {
+            // lib.genAttrs (map (role: "${role}-db-password") serviceUsers) (_: {
               owner = config.systemd.services.postgresql.serviceConfig.User;
               rekey.generator.script = "alnum";
             });
@@ -244,8 +249,6 @@
             };
           };
         };
-        # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
-        # messages out after a while.
         users.persistentIds = {
           matrix-appservice-irc = confLib.mkIds 943;
           mautrix-discord = confLib.mkIds 939;
@@ -269,8 +272,8 @@
                 engine = "postgres";
               };
               homeserver = {
-                domain = serviceDomain;
-                url = "http://localhost:${builtins.toString servicePort}";
+                inherit (homeserver) domain;
+                url = homeserver.address;
               };
               ircService = {
                 logging = {
@@ -281,7 +284,7 @@
                   bindPort = ircMediaPort;
                   publicUrl = "https://${serviceDomain}/media";
                 };
-                permissions."@swarsel:${serviceDomain}" = "admin";
+                permissions.${adminUser} = "admin";
                 servers = lib.mapAttrs' (
                   id: server:
                   lib.nameValuePair server.address (
@@ -374,10 +377,7 @@
                 ];
               listeners = [
                 {
-                  bind_addresses = [
-                    "0.0.0.0"
-                    # "::1"
-                  ];
+                  bind_addresses = [ "0.0.0.0" ];
                   port = servicePort;
                   resources = [
                     {
@@ -399,7 +399,7 @@
                   client_secret_path = config.sops.secrets.kanidm-matrix.path;
                   idp_id = "kanidm";
                   idp_name = "Kanidm SSO";
-                  issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+                  issuer = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
                   scopes = [
                     "openid"
                     "email"
@@ -414,7 +414,7 @@
                   user_profile_method = "userinfo_endpoint";
                 }
               ];
-              public_baseurl = "https://${serviceDomain}";
+              public_baseurl = baseUrl;
               server_name = serviceDomain;
             };
           };
@@ -422,6 +422,7 @@
             enable = true;
             environmentFile = config.sops.templates.mautrixdiscord.path;
             settings = {
+              inherit homeserver;
               appservice.database = {
                 type = "postgres";
                 uri = mkPostgresUri "mautrix-discord" "$MAUTRIX_DISCORD_DB_PASSWORD";
@@ -444,14 +445,7 @@
                   default = true;
                 };
                 login_shared_secret_map.${serviceDomain} = "as_token:$MAUTRIX_DISCORD_DOUBLEPUPPET";
-                permissions = {
-                  "*" = "relay";
-                  "@swarsel:${serviceDomain}" = "admin";
-                };
-              };
-              homeserver = {
-                address = "http://localhost:${builtins.toString servicePort}";
-                domain = serviceDomain;
+                permissions = bridgePermissions;
               };
             };
           };
@@ -459,25 +453,19 @@
             enable = true;
             environmentFile = config.sops.templates.mautrixmetainstagram.path;
             settings = {
+              inherit homeserver;
               appservice = {
                 as_token = "$MAUTRIX_META_INSTAGRAM_AS_TOKEN";
                 hs_token = "$MAUTRIX_META_INSTAGRAM_HS_TOKEN";
               };
               backfill.enabled = true;
-              bridge.permissions = {
-                "*" = "relay";
-                "@swarsel:${serviceDomain}" = "admin";
-              };
+              bridge.permissions = bridgePermissions;
               database = {
                 type = "postgres";
                 uri = mkPostgresUri "mautrix-meta-instagram" "$MAUTRIX_META_INSTAGRAM_DB_PASSWORD";
               };
               double_puppet.secrets.${serviceDomain} = "$MAUTRIX_META_INSTAGRAM_DOUBLEPUPPET";
               encryption.pickle_key = "$MAUTRIX_META_INSTAGRAM_PICKLE_KEY";
-              homeserver = {
-                address = "http://localhost:${builtins.toString servicePort}";
-                domain = serviceDomain;
-              };
             };
           };
           mautrix-signal = {
@@ -485,15 +473,13 @@
             environmentFile = config.sops.templates.mautrixsignal.path;
             registerToSynapse = false;
             settings = {
+              inherit homeserver;
               appservice = {
                 address = "http://localhost:${builtins.toString signalPort}";
                 hostname = "0.0.0.0";
                 port = signalPort;
               };
-              bridge.permissions = {
-                "*" = "relay";
-                "@swarsel:${serviceDomain}" = "admin";
-              };
+              bridge.permissions = bridgePermissions;
               database = {
                 type = "postgres";
                 uri = mkPostgresUri "mautrix-signal" "$MAUTRIX_SIGNAL_DB_PASSWORD";
@@ -503,10 +489,6 @@
                 default = true;
                 pickle_key = "$MAUTRIX_SIGNAL_PICKLE_KEY";
               };
-              homeserver = {
-                address = "http://localhost:${builtins.toString servicePort}";
-                domain = serviceDomain;
-              };
               network.displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
             };
           };
@@ -515,6 +497,7 @@
             environmentFile = config.sops.templates.mautrixtelegram.path;
             registerToSynapse = false;
             settings = {
+              inherit homeserver;
               appservice = {
                 address = "http://localhost:${builtins.toString telegramPort}";
                 database = mkPostgresUri "mautrix-telegram" "$MAUTRIX_TELEGRAM_DB_PASSWORD";
@@ -545,8 +528,8 @@
                   ${serviceDomain} = "as_token:$MAUTRIX_TELEGRAM_DOUBLEPUPPET";
                 };
                 permissions = {
+                  ${adminUser} = "admin";
                   "*" = "relaybot";
-                  "@swarsel:${serviceDomain}" = "admin";
                 };
                 relaybot.authless_portals = true;
                 startup_sync = true;
@@ -555,10 +538,6 @@
                 sync_direct_chats = true;
                 telegram_link_preview = true;
               };
-              homeserver = {
-                address = "http://localhost:${builtins.toString servicePort}";
-                domain = serviceDomain;
-              };
             };
           };
           mautrix-whatsapp = {
@@ -566,16 +545,14 @@
             environmentFile = config.sops.templates.mautrixwhatsapp.path;
             registerToSynapse = false;
             settings = {
+              inherit homeserver;
               appservice = {
                 address = "http://localhost:${builtins.toString whatsappPort}";
                 hostname = "0.0.0.0";
                 port = whatsappPort;
               };
               backfill.enabled = true;
-              bridge.permissions = {
-                "*" = "relay";
-                "@swarsel:${serviceDomain}" = "admin";
-              };
+              bridge.permissions = bridgePermissions;
               database = {
                 type = "postgres";
                 uri = mkPostgresUri "mautrix-whatsapp" "$MAUTRIX_WHATSAPP_DB_PASSWORD";
@@ -584,10 +561,6 @@
                 allow = true;
                 default = true;
                 pickle_key = "$MAUTRIX_WHATSAPP_PICKLE_KEY";
-              };
-              homeserver = {
-                address = "http://localhost:${builtins.toString servicePort}";
-                domain = serviceDomain;
               };
               network = {
                 displayname_template = "{{or .FullName .PushName .Phone}} (WA)";
@@ -607,11 +580,11 @@
             };
           };
           postgresql = {
-            ensureDatabases = postgresRoles;
+            ensureDatabases = serviceUsers;
             ensureUsers = map (name: {
               inherit name;
               ensureDBOwnership = true;
-            }) postgresRoles;
+            }) serviceUsers;
             initialScript = pkgs.writeText "synapse-init.sql" ''
               CREATE DATABASE "matrix-synapse"
                 TEMPLATE template0
@@ -622,51 +595,14 @@
         };
         environment = {
           persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
-            directories = [
-              {
-                directory = "/var/lib/matrix-synapse";
-                group = serviceGroup;
-                user = serviceUser;
-              }
-              {
-                directory = "/var/lib/matrix-appservice-irc";
-                group = "matrix-appservice-irc";
-                user = "matrix-appservice-irc";
-              }
-              {
-                directory = "/var/lib/mautrix-discord";
-                group = "mautrix-discord";
-                user = "mautrix-discord";
-              }
-              {
-                directory = "/var/lib/mautrix-meta-instagram";
-                group = "mautrix-meta";
-                user = "mautrix-meta-instagram";
-              }
-              {
-                directory = "/var/lib/mautrix-whatsapp";
-                group = "mautrix-whatsapp";
-                user = "mautrix-whatsapp";
-              }
-              {
-                directory = "/var/lib/mautrix-telegram";
-                group = "mautrix-telegram";
-                user = "mautrix-telegram";
-              }
-              {
-                directory = "/var/lib/mautrix-signal";
-                group = "mautrix-signal";
-                user = "mautrix-signal";
-              }
-            ];
+            directories = map (user: {
+              inherit user;
+              inherit (config.users.users.${user}) group;
+              directory = "/var/lib/${user}";
+            }) serviceUsers;
           };
-          systemPackages = with pkgs; [
-            matrix-synapse
-            lottieconverter
-            ffmpeg
-          ];
+          systemPackages = [ pkgs.matrix-synapse ];
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
         systemd = {
           services = {
             matrix-appservice-irc.serviceConfig.ExecStart = lib.mkForce (
@@ -681,18 +617,13 @@
               lottieconverter # for animated stickers conversion, unfree package
               ffmpeg # if converting animated stickers to webm (very slow!)
             ];
+            # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
+            # messages out after a while.
             restart-bridges = {
               script = ''
-                systemctl restart mautrix-whatsapp.service
-                systemctl restart mautrix-signal.service
-                systemctl restart mautrix-telegram.service
-                systemctl restart mautrix-meta-instagram.service
-                systemctl restart mautrix-discord.service
+                systemctl restart mautrix-whatsapp.service mautrix-signal.service mautrix-telegram.service mautrix-meta-instagram.service mautrix-discord.service
               '';
-              serviceConfig = {
-                Type = "oneshot";
-                User = "root";
-              };
+              serviceConfig.Type = "oneshot";
             };
           };
           timers.restart-bridges = {
@@ -726,7 +657,7 @@
                       extraParameters = [
                         "default_server"
                       ];
-                      port = 8448;
+                      port = federationPort;
                       ssl = true;
                     }
                     {
@@ -734,7 +665,7 @@
                       extraParameters = [
                         "default_server"
                       ];
-                      port = 8448;
+                      port = federationPort;
                       ssl = true;
                     }
                     {
@@ -750,8 +681,8 @@
                   ];
                   locations = {
                     "/media/".proxyPass = "http://${serviceName}-irc-media/";
-                    "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
-                    "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+                    "= /.well-known/matrix/client".extraConfig = mkWellKnown { "m.homeserver".base_url = baseUrl; };
+                    "= /.well-known/matrix/server".extraConfig = mkWellKnown { "m.server" = "${serviceDomain}:443"; };
                     "~ ^(/_matrix|/_synapse/client)" = {
                       extraConfig = ''
                         client_max_body_size 0;
@@ -772,11 +703,11 @@
               };
             }
             { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
-            { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules);
+            }
           ];
 
       };
-    }
-
-  ;
+    };
 }

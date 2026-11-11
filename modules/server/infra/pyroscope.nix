@@ -32,7 +32,6 @@
         wgProxyAccessRules
         ;
 
-      memberlistPort = 7948;
       grpcPort = 9098;
       grpcAddress = "localhost:${toString grpcPort}";
     in
@@ -55,10 +54,6 @@
               serviceDomain
               serviceName
               ;
-            extra.extraConfig = {
-              host = config.node.name;
-              port = servicePort;
-            };
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
@@ -72,7 +67,7 @@
           enable = true;
           settings = {
             analytics.reporting_enabled = false;
-            memberlist.bind_port = memberlistPort;
+            memberlist.bind_port = 7948;
             metastore.address = grpcAddress;
             multitenancy_enabled = false;
             pyroscopedb.data_path = "${serviceDir}/pyroscope";
@@ -193,7 +188,5 @@
           }))
         ];
       };
-    }
-
-  ;
+    };
 }

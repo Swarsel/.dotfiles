@@ -36,14 +36,8 @@
         webProxy
         ;
 
-      apiRev = "sha256:e0d23f380432191871025152afff74f0dd708fe6b8b79810b46a2f24893e6f79";
-      clientRev = "sha256:c1aea2ba43a07c83373f4331acdaf68ce084d5f1361bc80969ebdff86dac5ea3";
-      nginxRev = "sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949";
-      redisRev = "sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537";
-
       maxBodySize = "64M";
-      podName = serviceName;
-      podUnit = "podman-${podName}-pod.service";
+      podUnit = "podman-${serviceName}-pod.service";
       postgresSocketDir = "/run/postgresql";
       serviceUrl = "https://${serviceDomain}";
       wgProxyNet = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy";
@@ -132,8 +126,8 @@
           TRUSTED_PROXIES = "${wgProxyNet.cidrv4},${wgProxyNet.cidrv6}";
         };
         environmentFiles = [ config.sops.templates."${serviceName}-api-env".path ];
-        extraOptions = [ "--pod=${podName}" ];
-        image = "docker.io/jhumanj/opnform-api@${apiRev}";
+        extraOptions = [ "--pod=${serviceName}" ];
+        image = "docker.io/jhumanj/opnform-api@sha256:e0d23f380432191871025152afff74f0dd708fe6b8b79810b46a2f24893e6f79";
         volumes = [
           "${postgresSocketDir}:${postgresSocketDir}"
           "${serviceDir}/storage:/usr/share/nginx/html/storage"
@@ -222,8 +216,8 @@
               "${serviceName}-api"
               "${serviceName}-client"
             ];
-            extraOptions = [ "--pod=${podName}" ];
-            image = "docker.io/library/nginx@${nginxRev}";
+            extraOptions = [ "--pod=${serviceName}" ];
+            image = "docker.io/library/nginx@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949";
             volumes = [ "${ingressConfig}:/etc/nginx/conf.d/default.conf:ro" ];
           };
           "${serviceName}-api" = apiContainer;
@@ -236,12 +230,12 @@
               NUXT_PUBLIC_ENV = "production";
             };
             environmentFiles = [ config.sops.templates."${serviceName}-client-env".path ];
-            extraOptions = [ "--pod=${podName}" ];
-            image = "docker.io/jhumanj/opnform-client@${clientRev}";
+            extraOptions = [ "--pod=${serviceName}" ];
+            image = "docker.io/jhumanj/opnform-client@sha256:c1aea2ba43a07c83373f4331acdaf68ce084d5f1361bc80969ebdff86dac5ea3";
           };
           "${serviceName}-redis" = {
-            extraOptions = [ "--pod=${podName}" ];
-            image = "docker.io/library/redis@${redisRev}";
+            extraOptions = [ "--pod=${serviceName}" ];
+            image = "docker.io/library/redis@sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537";
             volumes = [ "${serviceDir}/redis:/data" ];
           };
           "${serviceName}-scheduler" = apiContainer // {
@@ -263,27 +257,27 @@
         };
         systemd.services = lib.mkMerge [
           {
-            "podman-${podName}-pod" = {
+            "podman-${serviceName}-api" = {
+              after = [ "postgresql-setup.service" ];
+              requires = [ "postgresql-setup.service" ];
+            };
+            "podman-${serviceName}-pod" = {
               path = [ config.virtualisation.podman.package ];
               postStop = ''
-                podman pod rm --force --ignore ${podName}
+                podman pod rm --force --ignore ${serviceName}
               '';
               preStart = ''
                 install -d -m 0750 ${serviceDir}/redis ${serviceDir}/storage
-                podman pod rm --force --ignore ${podName}
+                podman pod rm --force --ignore ${serviceName}
               '';
               script = ''
-                podman pod create --name ${podName} --publish ${builtins.toString servicePort}:80
+                podman pod create --name ${serviceName} --publish ${builtins.toString servicePort}:80
               '';
               serviceConfig = {
                 RemainAfterExit = true;
                 Type = "oneshot";
               };
               unitConfig.RequiresMountsFor = [ serviceDir ];
-            };
-            "podman-${serviceName}-api" = {
-              after = [ "postgresql-setup.service" ];
-              requires = [ "postgresql-setup.service" ];
             };
           }
           (lib.genAttrs
@@ -339,7 +333,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

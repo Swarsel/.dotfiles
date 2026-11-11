@@ -10,11 +10,11 @@
     }:
     {
       options.swarselsystems = {
-        SecondaryGpuCard = lib.mkOption {
+        isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
+        secondaryGpuCard = lib.mkOption {
           default = "";
           type = lib.types.str;
         };
-        isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
       };
       config = {
         swarselsystems.enabledHomeModules = [ "nixgl" ];

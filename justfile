@@ -1,14 +1,10 @@
+sops_files := "git grep -lz --untracked 'ENC\\[AES256_GCM' -- ':!secrets/rekeyed'"
+
 default:
   @just --list
 
 check:
   nix flake check --keep-going
-
-check-trace:
-  nix flake check --show-trace
-
-update:
-  nix flake update
 
 follows-check *ARGS:
   follow-nix {{ARGS}}
@@ -17,156 +13,80 @@ iso CONFIG="live-iso":
   rm -rf result
   nix build --print-out-paths .#{{CONFIG}}
 
-demo-test TEST="demo-install-test":
-  nix build -L --no-link --print-out-paths .#{{TEST}} --override-input repoSecrets path:./hosts/utility/hotel/secrets --override-input vbc-nix path:./files/stub --no-write-lock-file
-
-demo-full-test: (demo-test "demo-full-test")
-
 bootstrap-test:
   nix develop .#deploy --command nix run .#bootstrap-install-test
 
 sandbox:
-  #!/usr/bin/env bash
-  set -euo pipefail
-  key=/run/secrets/sandbox-wildcard-key
-  if ! sudo test -r "$key"; then
-    echo "sandbox TLS key not found at $key; it is provided by the sandbox-access module from secrets/general/sandbox.yaml" >&2
-    exit 1
-  fi
   sudo install -d -m 0700 -o "$USER" /run/sandbox-tls
-  sudo install -m 0400 -o "$USER" "$key" /run/sandbox-tls/wildcard.key
-  vm=$(nix build --no-link --print-out-paths .#nixosConfigurations.vacanthouse.config.system.build.vm)
+  sudo install -m 0400 -o "$USER" /run/secrets/sandbox-wildcard-key /run/sandbox-tls/wildcard.key
   sudo systemd-run --collect --pty --same-dir --wait --uid="$USER" \
     -p AmbientCapabilities=CAP_NET_BIND_SERVICE \
-    "$vm/bin/run-vacanthouse-vm"
+    "$(nix build --no-link --print-out-paths .#nixosConfigurations.vacanthouse.config.system.build.vm)/bin/run-vacanthouse-vm"
 
 sandbox-test:
   nix build -L --no-link .#sandbox-test
 
+sync:
+  nix run .#swarsel-sync-org
+
+topology:
+  nix run .#swarsel-topology
+
 iso-install DRIVE: iso
   sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
 
-dd DRIVE ISO:
-  sudo dd if=$(eza --sort changed {{ISO}} | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
-
-sync USER HOST:
-  rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
-
-bootstrap DEST CONFIG ARCH="x86_64-linux" NODISKODEPS="":
-  nix develop .#deploy --command zsh -c "SSH_AUTH_SOCK=\$(gpgconf --list-dirs agent-ssh-socket) swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
-
-updatekeys:
-  find . -path ./files/public -prune -o -path './.github' -prune -o -path ./secrets/rekeyed -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs --null -I{} sops updatekeys --yes {}
+bootstrap DEST CONFIG *ARGS:
+  nix develop .#deploy --command zsh -c "SSH_AUTH_SOCK=\$(gpgconf --list-dirs agent-ssh-socket) swarsel-bootstrap {{ARGS}} {{CONFIG}} {{DEST}}"
 
 rekey *ARGS:
+  {{sops_files}} | xargs -0 -n1 sops updatekeys --yes
   nix run --builders '' .#sops-rekey -- --add-to-git rekey {{ARGS}}
-
-rekey-check:
-  nix run --builders '' .#sops-rekey -- check
-
-secret-generate *ARGS:
-  nix run --builders '' .#sops-rekey -- --add-to-git generate {{ARGS}}
-
-secret-new FILE:
-  nix run --builders '' .#sops-rekey -- --add-to-git edit {{FILE}}
+  nix run --inputs-from . piix#pii -- lock
 
 secret-set PATH:
   #!/usr/bin/env bash
   set -euo pipefail
   value=$(cat)
-  sops set secrets/root.yaml "$(sed 's|^|["|; s|/|"]["|g; s|$|"]|' <<< '{{PATH}}')" "$(printf '%s' "$value" | jq -Rs .)"
+  sops set secrets/root.yaml '{{ '["' + replace(PATH, "/", '"]["') + '"]' }}' "$(printf '%s' "$value" | jq -Rs .)"
   git add secrets/root.yaml
 
 secret-get PATH:
-  sops decrypt --extract "$(sed 's|^|["|; s|/|"]["|g; s|$|"]|' <<< '{{PATH}}')" secrets/root.yaml
+  sops decrypt --extract '{{ '["' + replace(PATH, "/", '"]["') + '"]' }}' secrets/root.yaml
 
 secret-edit FILE="":
   #!/usr/bin/env bash
   set -euo pipefail
   file="{{FILE}}"
   if [ -z "$file" ]; then
-    file=$(find . -path ./files/public -prune -o -path './.github' -prune -o \( -name '*.yaml' -o -name '*.json' -o -name '*.nix.enc' \) -not -name '.sops.yaml' -not -name 'swarsel.yaml' -not -name '.pre-commit-config.yaml' -print0 | xargs -0 grep -lE 'ENC\[AES256_GCM' | sort | fzf)
+    file=$({{sops_files}} | tr '\0' '\n' | fzf)
   fi
   sops "$file"
   if [[ $file == *.nix.enc ]]; then
     nix run --inputs-from . piix#pii -- lock
   fi
 
-free-ids COUNT="5":
-  #!/usr/bin/env python3
-  import collections, itertools, pathlib, re
-  mkids = re.compile(r"([\w$.{}-]+)\s*=\s*(?:lib\.mkIf[^(]*\()?confLib\.mkIds (\d+)")
-  rawid = re.compile(r"\b(uid|gid) = (\d+);")
-  used = collections.defaultdict(set)
-  for root in ("modules", "hosts"):
-      for f in pathlib.Path(root).rglob("*.nix"):
-          for i, line in enumerate(f.read_text().splitlines(), 1):
-              for m in mkids.finditer(line):
-                  name = m.group(1).split(".")[-1]
-                  if "${" in name:
-                      name = f.stem
-                  used[int(m.group(2))].add((name, f"{f}:{i}"))
-              if not mkids.search(line):
-                  for m in rawid.finditer(line):
-                      used[int(m.group(2))].add((None, f"{f}:{i}"))
-  clusters = [[]]
-  for i in sorted(used):
-      if clusters[-1] and i - clusters[-1][-1] > 50:
-          clusters.append([])
-      clusters[-1].append(i)
-  main = max(clusters, key=len)
-  block = {i: used[i] for i in main}
-  outliers = {i: used[i] for i in sorted(used) if i not in block}
-  lo, hi = min(block), max(block)
-  def ranges(nums):
-      out = []
-      for _, grp in itertools.groupby(enumerate(sorted(nums)), lambda t: t[1] - t[0]):
-          grp = [g[1] for g in grp]
-          out.append(str(grp[0]) if len(grp) == 1 else f"{grp[0]}-{grp[-1]}")
-      return " ".join(out) if out else "none"
-  print(f"id block: {ranges(block)}")
-  conflicts = {i: names for i, names in block.items() if len({n for n, _ in names if n}) > 1}
-  if conflicts:
-      print("\nCONFLICTS (same id, different names):")
-      for i, names in sorted(conflicts.items()):
-          print(f"  {i}:")
-          for name, loc in sorted(names, key=str):
-              print(f"    {name} ({loc})")
-  gaps = [i for i in range(lo, hi + 1) if i not in block]
-  print(f"free inside block: {ranges(gaps) if gaps else 'none'}")
-  print(f"next free below {lo}: {' '.join(str(i) for i in range(lo - 1, lo - 1 - {{COUNT}}, -1))}")
-  print(f"next free above {hi}: {' '.join(str(i) for i in range(hi + 1, hi + 1 + {{COUNT}}))}")
-  if outliers:
-      print(f"\noutside block (dedicated service ids): {ranges(outliers)}")
+free-id:
+  nix eval .#nodes --apply ' \
+    nodes: \
+    let \
+      ids = node: \
+        map (user: user.uid) (builtins.attrValues node.config.users.users) \
+        ++ map (group: group.gid) (builtins.attrValues node.config.users.groups) \
+        ++ builtins.concatMap (persistent: [ persistent.uid persistent.gid ]) (builtins.attrValues node.config.users.persistentIds); \
+      used = builtins.concatMap ids (builtins.filter (node: node.class == "nixos") (builtins.attrValues nodes)); \
+      free = id: if builtins.elem id used then free (id - 1) else id; \
+    in \
+    free 999'
 
-fmt:
-  nix fmt
-
-build HOST:
-  nix build --no-link --print-out-paths .#nixosConfigurations.{{HOST}}.config.system.build.toplevel
-
-home HOST USER="swarsel":
-  nix build --no-link --print-out-paths .#nixosConfigurations.{{HOST}}.config.home-manager.users.{{USER}}.home.activationPackage
-
-droid HOST="magicant" BUILDER="belchsfactory":
+droid HOST="magicant":
   #!/usr/bin/env bash
   set -euo pipefail
   path=$(nix build --impure --no-link --print-out-paths \
     --option extra-substituters https://nix-on-droid.cachix.org \
     --option extra-trusted-public-keys nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU= \
     .#nixOnDroidConfigurations.{{HOST}}.activationPackage)
-  target=$(nix eval --raw .#globals --apply 'g: (builtins.head (builtins.attrValues g)).hosts.{{BUILDER}}.wanAddress4')
-  SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-  export SSH_AUTH_SOCK
-  nix copy --to "ssh://root@$target" "$path"
-  ssh "root@$target" nix-env --profile /nix/var/nix/profiles/droid-{{HOST}} --set "$path"
-  echo "staged $path; run droid-switch on {{HOST}}"
+  nix copy --to ssh://belchsfactory "$path"
+  ssh belchsfactory nix-env --profile /nix/var/nix/profiles/droid-{{HOST}} --set "$path"
 
 pii *ARGS:
   nix run --inputs-from . piix#pii -- {{ARGS}}
-
-pii-show MODE="files":
-  nix eval --json .#pii.{{MODE}}
-
-pii-test:
-  nix flake check -L --inputs-from . piix

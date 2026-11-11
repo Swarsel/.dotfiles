@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.grafana =
     {
-      self,
+      root,
       config,
       lib,
       pkgs,
@@ -62,36 +62,27 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        sops.secrets = {
-          gatus-watchdog-token = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            rekey.keyPrefix = confLib.static.sharedSecrets.gatus;
-          };
-          grafana-admin-pw = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-          };
-          grafana-gotify-token = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-          };
-          kanidm-grafana = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            rekey.keyPrefix = confLib.kanidmSecrets;
-          };
-          notification-mail-pw = {
-            group = serviceGroup;
-            mode = "0440";
-            owner = serviceUser;
-            rekey.keyPrefix = notificationMail.keyPrefix;
-          };
-        };
+        sops.secrets = lib.mkMerge [
+          (lib.genAttrs
+            [
+              "gatus-watchdog-token"
+              "grafana-admin-pw"
+              "grafana-gotify-token"
+              "kanidm-grafana"
+              "notification-mail-pw"
+            ]
+            (_: {
+              group = serviceGroup;
+              mode = "0440";
+              owner = serviceUser;
+            })
+          )
+          {
+            gatus-watchdog-token.rekey.keyPrefix = confLib.static.sharedSecrets.gatus;
+            kanidm-grafana.rekey.keyPrefix = confLib.kanidmSecrets;
+            notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
+          }
+        ];
         users = {
           users.${serviceUser}.extraGroups = [ "users" ];
           persistentIds.grafana = confLib.mkIds 974;
@@ -226,7 +217,7 @@
             };
             dashboards.settings.providers = [
               {
-                options.path = self + "/files/grafana";
+                options.path = root "files/grafana";
                 name = "default";
               }
             ];
@@ -234,7 +225,7 @@
           settings = {
             users = {
               allow_sign_up = false;
-              default_home_dashboard_path = self + "/files/grafana/service-status.json";
+              default_home_dashboard_path = root "files/grafana/service-status.json";
             };
             analytics.reporting_enabled = false;
             "auth.generic_oauth" = {
@@ -338,7 +329,5 @@
           }
         ];
       };
-    }
-
-  ;
+    };
 }

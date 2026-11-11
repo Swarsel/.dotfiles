@@ -12,12 +12,9 @@
 
       hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
       hostKeyPath =
-        if config.swarselsystems.isImpermanence then
-          "/persist/${hostKeyPathBase}"
-        else
-          "${hostKeyPathBase}";
+        if config.swarselsystems.isImpermanence then "/persist/${hostKeyPathBase}" else hostKeyPathBase;
 
-      # this key is only used only for ssh to stage 1 in initial provisioning (in nix store)
+      # this key is only used for ssh to stage 1 in initial provisioning (in nix store)
       generatedHostKey = pkgs.runCommand "initrd-hostkey" { } ''
         ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f $out
       '';
@@ -37,9 +34,6 @@
       config = lib.mkIf config.swarselsystems.isCrypted {
         swarselsystems.enabledServerModules = [ "diskEncryption" ];
         boot = lib.mkIf (!config.swarselsystems.isClient) {
-          # kernelParams = lib.mkIf (!config.swarselsystems.isCloud && ((config.swarselsystems.localVLANs == []) || isRouter)) [
-          #   "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
-          # ];
           initrd = {
             availableKernelModules = config.swarselsystems.networkKernelModules;
             kernelModules = config.swarselsystems.networkKernelModules; # at least summers needs this to actually find the interfaces

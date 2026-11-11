@@ -11,10 +11,6 @@
         };
         sshd.u2fAuth = false;
         sudo.u2fAuth = true;
-        swaylock = {
-          fprintAuth = false;
-          u2fAuth = true;
-        };
       };
       polkit.enable = lib.mkIf (!minimal) true;
 

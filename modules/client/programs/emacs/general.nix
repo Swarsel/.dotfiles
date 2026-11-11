@@ -10,7 +10,6 @@
         "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
         "m"  '(:ignore m :which-key "modes/programs")
         "l"  '(:ignore l :which-key "links")
-        "h"   '(:ignore h :which-key "help")
         "hy"  '(yas-describe-tables :which-key "yas tables")
         "hb"  '(embark-bindings :which-key "current key bindings")
         "h"   '(:ignore t :which-key "describe")
@@ -35,7 +34,6 @@
         "w <up>"  'windmove-up
         "wj"  'windmove-down
         "w <down>"  'windmove-down
-        "wr"  'winner-redo
         "wd"  'delete-window
         "w="  'balance-windows-area
         "wD"  'kill-buffer-and-window

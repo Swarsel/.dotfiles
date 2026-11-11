@@ -1,8 +1,6 @@
 {
   flake.modules.nixos.ipmi-exporter =
     {
-      config,
-      lib,
       pkgs,
       confLib,
       globals,
@@ -25,7 +23,6 @@
           icon = "services.prometheus";
           name = serviceName;
         };
-        globals.services.${serviceName}.extraConfig.port = servicePort;
         services.prometheus.exporters.ipmi = {
           enable = true;
           configFile = (pkgs.formats.yaml { }).generate "ipmi.yml" {
@@ -53,17 +50,14 @@
           "ipmi_devintf"
           "ipmi_si"
         ];
-        environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
-          lib.mkAfter ''
-            prometheus.scrape "ipmi" {
-              targets         = [{"__address__" = "127.0.0.1:${toString servicePort}"}]
-              forward_to      = [prometheus.remote_write.mimir.receiver]
-              job_name        = "ipmi"
-              scrape_interval = "60s"
-              scrape_timeout  = "30s"
-            }
-          ''
-        );
+        environment.etc."alloy/config.alloy".text = confLib.mkAlloyScrape {
+          name = "ipmi";
+          port = servicePort;
+          scrapeSettings = {
+            scrape_interval = "60s";
+            scrape_timeout = "30s";
+          };
+        };
         systemd.services.prometheus-ipmi-exporter.serviceConfig = {
           CacheDirectory = "prometheus-ipmi-exporter";
           DeviceAllow = [ "char-ipmidev rw" ];
@@ -90,7 +84,5 @@
             }
           ];
       };
-    }
-
-  ;
+    };
 }

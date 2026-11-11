@@ -12,13 +12,7 @@
   imports = [
     inputs.self.modules.homeManager.profile-base
     inputs.self.modules.homeManager.profile-dgxspark
-  ]
-  ++ lib.optionals (inputs.vbc-nix ? homeManagerModules) [
     inputs.vbc-nix.homeManagerModules.work-remote
-    {
-      services.work-remote.enable = true;
-      nixpkgs.overlays = [ inputs.vbc-nix.overlays.default ];
-    }
   ];
 
   swarselsystems = {
@@ -46,9 +40,12 @@
         rekey.enable = false;
       });
 
-  services.xcape = {
-    enable = true;
-    mapExpression.Control_L = "Escape";
+  services = {
+    work-remote.enable = true;
+    xcape = {
+      enable = true;
+      mapExpression.Control_L = "Escape";
+    };
   };
 
   programs = {
@@ -73,7 +70,6 @@
       enableDefaultConfig = false;
       settings = builtins.removeAttrs config.repo.secrets.work.sshConfig [ "*" ];
     };
-    zellij.settings.default_shell = lib.mkForce "bash";
   };
 
   home.packages = [
@@ -85,6 +81,7 @@
   ];
 
   nix.settings.max-jobs = lib.mkForce "auto";
+  nixpkgs.overlays = [ inputs.vbc-nix.overlays.default ];
   repo.secretFiles.work = ../../../../secrets/work/pii.nix.enc;
 
 }

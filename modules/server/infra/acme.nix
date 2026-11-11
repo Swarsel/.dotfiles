@@ -39,7 +39,7 @@
             rekey.file = self + "/secrets/nginx/acme.json.enc";
           };
           templates."certs.secret".content = ''
-            ACME_DNS_API_BASE = http://${acmeDns.serviceAddress}:${toString acmeDns.extraConfig.port}
+            ACME_DNS_API_BASE=http://${acmeDns.serviceAddress}:${toString acmeDns.extraConfig.port}
             ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
           '';
         };
@@ -71,14 +71,12 @@
             dnsPropagationCheck = true;
             dnsResolver = "1.1.1.1:53";
             email = dnsMail;
-            environmentFile = "${config.sops.templates."certs.secret".path}";
+            environmentFile = config.sops.templates."certs.secret".path;
             keyType = "ec384";
             reloadServices = [ "nginx" ];
           };
         };
 
       };
-    }
-
-  ;
+    };
 }

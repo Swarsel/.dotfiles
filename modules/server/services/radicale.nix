@@ -62,20 +62,14 @@
             owner = serviceUser;
           };
 
-          templates =
-            let
-              inherit (config.repo.secrets.local.radicale) user1;
-            in
-            {
-              radicale-users = {
-                content = ''
-                  ${user1}:${config.sops.placeholder.radicale-user}
-                '';
-                group = serviceGroup;
-                mode = "0440";
-                owner = serviceUser;
-              };
-            };
+          templates.radicale-users = {
+            content = ''
+              ${config.repo.secrets.local.radicale.user1}:${config.sops.placeholder.radicale-user}
+            '';
+            group = serviceGroup;
+            mode = "0440";
+            owner = serviceUser;
+          };
         };
         users.persistentIds.radicale = confLib.mkIds 982;
         services.${serviceName} = {
@@ -127,7 +121,6 @@
             user = serviceUser;
           };
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
@@ -158,7 +151,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

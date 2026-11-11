@@ -60,23 +60,18 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets = {
-            microbin-admin-password = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
-            microbin-admin-username = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
-            microbin-uploader-password = {
-              group = serviceGroup;
-              mode = "0440";
-              owner = serviceUser;
-            };
-          };
+          secrets =
+            lib.genAttrs
+              [
+                "microbin-admin-password"
+                "microbin-admin-username"
+                "microbin-uploader-password"
+              ]
+              (_: {
+                group = serviceGroup;
+                mode = "0440";
+                owner = serviceUser;
+              });
 
           templates.microbin-env = {
             content = ''
@@ -127,10 +122,9 @@
             MICROBIN_READONLY = true;
             MICROBIN_SHOW_READ_STATS = true;
             MICROBIN_THREADS = 1;
-            MICROBIN_TITLE = "~SwarselScratch~";
+            MICROBIN_TITLE = config.repo.secrets.common.names.microbin;
           };
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           {
             directory = cfg.dataDir;
@@ -173,8 +167,5 @@
         ];
 
       };
-
-    }
-
-  ;
+    };
 }

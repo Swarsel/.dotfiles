@@ -1,14 +1,18 @@
+let
+  redirectUris = [
+    "http://localhost:3000/login-callback"
+    "http://localhost:10001/login-callback"
+    "http://localhost:11110/login-callback"
+  ];
+in
 {
   flake.modules = {
     homeManager.opkssh =
       { globals, ... }:
-      let
-        moduleName = "opkssh";
-      in
       {
         config = {
           swarselsystems.enabledHomeModules = [ "opkssh" ];
-          programs.${moduleName} = {
+          programs.opkssh = {
             enable = true;
             settings = {
               default_provider = "kanidm";
@@ -18,11 +22,7 @@
                   alias = "kanidm";
                   client_id = "opkssh";
                   issuer = "https://${globals.services.kanidm.domain}/oauth2/openid/opkssh";
-                  redirect_uris = [
-                    "http://localhost:3000/login-callback"
-                    "http://localhost:10001/login-callback"
-                    "http://localhost:11110/login-callback"
-                  ];
+                  redirect_uris = redirectUris;
                   scopes = "openid email profile";
                 }
               ];
@@ -49,9 +49,6 @@
           serviceUser
           ;
         inherit (confLib.static) idmServer;
-
-        kanidmDomain = globals.services.kanidm.domain;
-        mailAddress = config.repo.secrets.common.mail.address4;
       in
       {
         config = {
@@ -62,14 +59,14 @@
             authorizations = [
               {
                 inherit (config.services.opkssh.providers.kanidm) issuer;
-                principal = mailAddress;
+                principal = config.repo.secrets.common.mail.address4;
                 user = "root";
               }
             ];
             group = serviceGroup;
             providers.kanidm = {
               clientId = serviceName;
-              issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+              issuer = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
               lifetime = "oidc";
             };
             user = serviceUser;
@@ -81,12 +78,7 @@
                 displayName = "OPKSSH";
                 enableLocalhostRedirects = true;
                 originLanding = "http://localhost:3000";
-                originUrl = [
-                  "http://localhost:3000"
-                  "http://localhost:3000/login-callback"
-                  "http://localhost:10001/login-callback"
-                  "http://localhost:11110/login-callback"
-                ];
+                originUrl = [ "http://localhost:3000" ] ++ redirectUris;
                 public = true;
                 scopeMaps."opkssh.access" = [
                   "openid"

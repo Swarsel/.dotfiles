@@ -30,17 +30,16 @@
       wgProxyHosts = globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts;
       wgHomeHosts = globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts;
 
-      mimirDomain = globals.services.mimir.domain;
-      lokiDomain = globals.services.loki.domain;
-      tempoDomain = globals.services.tempo.domain;
-      pyroscopeDomain = globals.services.pyroscope.domain;
-
-      config-alloy = ''
-        logging {
-          level  = "warn"
-          format = "logfmt"
-        }
-      '';
+      capabilities = [
+        "CAP_BPF"
+        "CAP_SYS_PTRACE"
+        "CAP_NET_RAW"
+        "CAP_CHECKPOINT_RESTORE"
+        "CAP_DAC_READ_SEARCH"
+        "CAP_PERFMON"
+        "CAP_SYS_RESOURCE"
+        "CAP_SYSLOG"
+      ];
     in
     {
       config = {
@@ -49,7 +48,6 @@
           services.${serviceName}.extraConfig = {
             inherit otlpGrpcPort otlpHttpPort;
             clients.${config.node.name} = true;
-            httpPort = servicePort;
           };
           monitoring.hostNetworks.${config.node.name} = [
             "local-${config.node.name}"
@@ -62,9 +60,7 @@
             || globals.hosts.${config.node.name}.wanAddress6 != null
           ) "internet"
           ++ lib.mapAttrsToList (vlan: _: "${vlan}-vlan") (
-            lib.filterAttrs (_: vlan: vlan ? hosts && vlan.hosts ? "${config.node.name}") (
-              globals.networks.home-lan.vlans or { }
-            )
+            lib.filterAttrs (_: vlan: vlan.hosts ? ${config.node.name}) globals.networks.home-lan.vlans
           );
         };
         services.${serviceName} = {
@@ -72,7 +68,12 @@
           extraFlags = [ "--server.http.listen-addr=127.0.0.1:${toString servicePort}" ];
         };
         environment = {
-          etc."alloy/config.alloy".text = config-alloy;
+          etc."alloy/config.alloy".text = ''
+            logging {
+              level  = "warn"
+              format = "logfmt"
+            }
+          '';
           persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
             directories = [
               {
@@ -94,38 +95,18 @@
           in
           lib.optionalAttrs (proxyIp != null) {
             ${proxyIp} = [
-              mimirDomain
-              lokiDomain
-              tempoDomain
-              pyroscopeDomain
+              globals.services.mimir.domain
+              globals.services.loki.domain
+              globals.services.tempo.domain
+              globals.services.pyroscope.domain
             ];
           };
         systemd.services.alloy.serviceConfig = {
-          AmbientCapabilities = [
-            "CAP_BPF"
-            "CAP_SYS_PTRACE"
-            "CAP_NET_RAW"
-            "CAP_CHECKPOINT_RESTORE"
-            "CAP_DAC_READ_SEARCH"
-            "CAP_PERFMON"
-            "CAP_SYS_RESOURCE"
-            "CAP_SYSLOG"
-          ];
-          CapabilityBoundingSet = [
-            "CAP_BPF"
-            "CAP_SYS_PTRACE"
-            "CAP_NET_RAW"
-            "CAP_CHECKPOINT_RESTORE"
-            "CAP_DAC_READ_SEARCH"
-            "CAP_PERFMON"
-            "CAP_SYS_RESOURCE"
-            "CAP_SYSLOG"
-          ];
+          AmbientCapabilities = capabilities;
+          CapabilityBoundingSet = capabilities;
           RestartSec = lib.mkForce "60";
         };
 
       };
-    }
-
-  ;
+    };
 }

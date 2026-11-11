@@ -16,7 +16,6 @@
       inputs,
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       ...
@@ -46,13 +45,15 @@
         webProxy
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
-
       piaNamespace = "pia";
       piaTunnel = config.services.pia-netns.tunnels.${piaNamespace};
       jpProxyPort = 1081;
-      jpProxyAddress = "127.0.0.1:${builtins.toString jpProxyPort}";
       jpNetnsPort = 1080;
+      serviceReadable = {
+        group = serviceName;
+        mode = "0440";
+        owner = serviceName;
+      };
     in
     {
       imports = [
@@ -79,6 +80,7 @@
               ;
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
+          general.socksProxyConsumers = [ config.node.name ];
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
             expectedBodyRegex = "ok";
@@ -87,37 +89,21 @@
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
         sops = {
-          secrets = {
-            kanidm-shopservatory = {
-              group = serviceName;
-              mode = "0440";
-              owner = serviceName;
-              rekey.keyPrefix = confLib.kanidmSecrets;
+          secrets =
+            lib.genAttrs [
+              "shopservatory-ebay-client-id"
+              "shopservatory-ebay-client-secret"
+              "shopservatory-telegram-token"
+              "shopservatory-user-admin-password"
+            ] (_: serviceReadable)
+            // {
+              kanidm-shopservatory = serviceReadable // {
+                rekey.keyPrefix = confLib.kanidmSecrets;
+              };
+              pia = { };
             };
-            pia = { };
-            shopservatory-ebay-client-id = {
-              group = serviceName;
-              mode = "0440";
-              owner = serviceName;
-            };
-            shopservatory-ebay-client-secret = {
-              group = serviceName;
-              mode = "0440";
-              owner = serviceName;
-            };
-            shopservatory-telegram-token = {
-              group = serviceName;
-              mode = "0440";
-              owner = serviceName;
-            };
-            shopservatory-user-admin-password = {
-              group = serviceName;
-              mode = "0440";
-              owner = serviceName;
-            };
-          };
 
-          templates.shopservatory-env = {
+          templates.shopservatory-env = serviceReadable // {
             content = ''
               SHOPSERVATORY_TELEGRAM_TOKEN=${config.sops.placeholder.shopservatory-telegram-token}
               SHOPSERVATORY_EBAY_CLIENT_ID=${config.sops.placeholder.shopservatory-ebay-client-id}
@@ -125,9 +111,6 @@
               SHOPSERVATORY_OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-shopservatory}
               SHOPSERVATORY_USER_ADMIN_PASSWORD=${config.sops.placeholder.shopservatory-user-admin-password}
             '';
-            group = serviceName;
-            mode = "0440";
-            owner = serviceName;
           };
         };
         users.persistentIds = {
@@ -142,7 +125,13 @@
           };
           pia-netns.tunnels.${piaNamespace} = {
             credentialsFile = config.sops.secrets.pia.path;
-            dns = true;
+            forwards.shopservatory-jp-proxy = {
+              idleTimeout = 120;
+              listenAddress = "127.0.0.1";
+              port = jpProxyPort;
+              service = "microsocks.service";
+              targetPort = jpNetnsPort;
+            };
             region = "japan";
           };
           shopservatory = {
@@ -161,7 +150,7 @@
               currency.target = "EUR";
               oidc = {
                 client_id = serviceName;
-                issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+                issuer = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
                 name = "kanidm";
               };
               scrape = {
@@ -169,7 +158,7 @@
                   builtins.toString globals.services."socks-proxy".extraConfig.port
                 }";
                 default_interval = "5m";
-                jp_proxy_url = "socks5://${jpProxyAddress}";
+                jp_proxy_url = "socks5://127.0.0.1:${builtins.toString jpProxyPort}";
               };
               server = {
                 base_url = "https://${serviceDomain}";
@@ -186,44 +175,19 @@
             user = serviceName;
           }
         ];
-        systemd.services = {
-          microsocks = {
-            after = [ piaTunnel.unit ];
-            bindsTo = [ piaTunnel.unit ];
-            partOf = [ piaTunnel.unit ];
-            requires = [ piaTunnel.unit ];
-            serviceConfig = {
-              BindReadOnlyPaths = [
-                "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf"
-              ];
-              NetworkNamespacePath = piaTunnel.netnsPath;
-              PrivateNetwork = lib.mkForce false;
-            };
-            wantedBy = lib.mkForce [ piaTunnel.unit ];
+        systemd.services.microsocks = {
+          after = [ piaTunnel.unit ];
+          bindsTo = [ piaTunnel.unit ];
+          partOf = [ piaTunnel.unit ];
+          requires = [ piaTunnel.unit ];
+          serviceConfig = {
+            BindReadOnlyPaths = [
+              "/etc/netns/${piaNamespace}/resolv.conf:/etc/resolv.conf"
+            ];
+            NetworkNamespacePath = piaTunnel.netnsPath;
+            PrivateNetwork = lib.mkForce false;
           };
-          shopservatory-jp-proxy = {
-            after = [ "microsocks.service" ];
-            bindsTo = [ "microsocks.service" ];
-            description = "Forward host ${jpProxyAddress} into the PIA Japan netns";
-            partOf = [ "microsocks.service" ];
-            serviceConfig = {
-              ExecStart = lib.getExe (
-                pkgs.writeShellApplication {
-                  name = "shopservatory-jp-proxy";
-                  text = ''
-                    exec ${pkgs.socat}/bin/socat -T120 \
-                      TCP-LISTEN:${builtins.toString jpProxyPort},bind=127.0.0.1,reuseaddr,fork \
-                      EXEC:'${pkgs.iproute2}/bin/ip netns exec ${piaNamespace} ${pkgs.socat}/bin/socat -T120 - TCP\:127.0.0.1\:${builtins.toString jpNetnsPort}'
-                  '';
-                }
-              );
-              Restart = "on-failure";
-              RestartSec = "10s";
-              SuccessExitStatus = "143";
-              Type = "simple";
-            };
-            wantedBy = [ "microsocks.service" ];
-          };
+          wantedBy = lib.mkForce [ piaTunnel.unit ];
         };
         nodes = lib.mkMerge [
           {

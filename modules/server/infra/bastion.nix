@@ -19,10 +19,15 @@
         lib.mapAttrsToList (
           name: host:
           let
-            port = toString (lib.head nodes.${name}.config.services.openssh.ports);
+            inherit (nodes.${name}.config) boot services;
           in
-          [ "${host.wanAddress4}:${port}" ]
-          ++ lib.optional (host.wanAddress6 != null) "[${host.wanAddress6}]:${port}"
+          lib.concatMap
+            (
+              port:
+              [ "${host.wanAddress4}:${toString port}" ]
+              ++ lib.optional (host.wanAddress6 != null) "[${host.wanAddress6}]:${toString port}"
+            )
+            (services.openssh.ports ++ lib.optional boot.initrd.network.ssh.enable boot.initrd.network.ssh.port)
         ) jumpTargets
       );
       journalSelector = unit: ''{host="${config.node.name}",unit="${unit}"}'';
@@ -86,12 +91,10 @@
           settings = {
             AllowUsers = lib.mkForce (
               [ "jump" ]
-              ++ map (cidr: "root@${cidr}") (
-                lib.filter (cidr: cidr != null) [
-                  homeWan.cidrv4
-                  homeWan.cidrv6
-                ]
-              )
+              ++ map (cidr: "root@${cidr}") [
+                homeWan.cidrv4
+                homeWan.cidrv6
+              ]
             );
             KbdInteractiveAuthentication = false;
             LogLevel = "VERBOSE";

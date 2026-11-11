@@ -1,230 +1,192 @@
 {
   flake.modules.homeManager.work-dev =
     {
-      inputs,
       config,
       lib,
       pkgs,
       confLib,
+      glideProfile,
       osConfig,
-      vars,
       ...
     }:
     let
       inherit (config.swarselsystems) homeDir;
-      workSecrets = confLib.static.sharedSecrets.work;
+      inherit (confLib.getConfig.repo.secrets.work)
+        browser
+        clouds
+        githubOrgs
+        path1
+        sshConfig
+        user1
+        user1Long
+        user2
+        user2Long
+        user3
+        user3Long
+        ;
+      containerSites = lib.zipAttrsWith (_: lib.concatLists) [
+        confLib.getConfig.repo.secrets.common.browser.containerSites
+        browser.containerSites
+      ];
     in
     {
-      imports = lib.optionals (inputs.vbc-nix ? homeManagerModules) [
-        osConfig.repo.secrets.work.default
-      ];
+      imports = [ osConfig.repo.secrets.work.default ];
       config = {
-        swarselsystems.homeSopsSecrets = {
-          harica-root-ca = {
-            path = "${homeDir}/.aws/certs/harica-root.pem";
-            rekey.keyPrefix = confLib.static.sharedSecrets.clients;
+        swarselsystems.homeSopsSecrets =
+          lib.genAttrs [ "ucKey" "yubikey-1" "yubikey-2" "yubikey-3" ] (_: {
+            rekey.keyPrefix = confLib.static.sharedSecrets.work;
+          })
+          // {
+            harica-root-ca = {
+              path = "${homeDir}/.aws/certs/harica-root.pem";
+              rekey.keyPrefix = confLib.static.sharedSecrets.clients;
+            };
           };
-          ucKey.rekey.keyPrefix = workSecrets;
-          yubikey-1.rekey.keyPrefix = workSecrets;
-          yubikey-2.rekey.keyPrefix = workSecrets;
-          yubikey-3.rekey.keyPrefix = workSecrets;
-        };
-        programs =
-          let
-            inherit (confLib.getConfig.repo.secrets.work)
-              browser
-              clouds
-              githubOrgs
-              path1
-              user1
-              user1Long
-              user2
-              user2Long
-              user3
-              user3Long
-              ;
-            containerSites = lib.zipAttrsWith (_: lib.concatLists) [
-              confLib.getConfig.repo.secrets.common.browser.containerSites
-              browser.containerSites
+        programs = {
+          awscli = {
+            enable = true;
+            package = pkgs.awscli2;
+          };
+          chromium = {
+            enable = true;
+            package = pkgs.chromium;
+            extensions = [
+              # 1password
+              "gejiddohjgogedgjnonbofjigllpkmbf"
+              # dark reader
+              "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+              # ublock origin
+              "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+              # i still dont care about cookies
+              "edibdbjcniadpccecjdfdjjppcpchdlm"
+              # browserpass
+              "naepdomgkenhinolocfifgehidddafch"
             ];
-          in
-          {
-            awscli = {
-              enable = true;
-              package = pkgs.awscli2;
-            };
-            chromium = {
-              enable = true;
-              package = pkgs.chromium;
-              extensions = [
-                # 1password
-                "gejiddohjgogedgjnonbofjigllpkmbf"
-                # dark reader
-                "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-                # ublock origin
-                "cjpalhdlnbpafiamejdnhcphjbkeiagm"
-                # i still dont care about cookies
-                "edibdbjcniadpccecjdfdjjppcpchdlm"
-                # browserpass
-                "naepdomgkenhinolocfifgehidddafch"
-              ];
-            };
-            firefox = lib.mkIf (!config.programs.glide-browser.enable) {
-              profiles =
-                let
-                  isDefault = false;
-                in
-                {
-                  "${user1}" = lib.recursiveUpdate {
-                    inherit isDefault;
-                    id = 1;
-                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user1};
-                  } vars.firefox;
-                  "${user2}" = lib.recursiveUpdate {
-                    inherit isDefault;
-                    id = 2;
-                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user2};
-                  } vars.firefox;
-                  "${user3}" = lib.recursiveUpdate {
-                    inherit isDefault;
-                    id = 3;
-                  } vars.firefox;
-                };
-            };
-            git.settings.url = lib.listToAttrs (
-              map (
-                org: lib.nameValuePair "git@github.com:${org}/" { insteadOf = "https://github.com/${org}/"; }
-              ) githubOrgs
-            );
-            glide-browser = lib.mkIf config.programs.glide-browser.enable {
-              config = lib.mkAfter ''
-                container_rules.push(
-                  ${lib.concatStringsSep "\n  " (
-                    lib.flatten (
-                      lib.mapAttrsToList (
-                        container:
-                        map (prefix: "{ prefix: ${builtins.toJSON prefix}, container: ${builtins.toJSON container} },")
-                      ) containerSites
-                    )
-                  )}
-                );
-                add_site_shortcuts(${builtins.toJSON browser.siteShortcuts});
-              '';
+          };
+          git.settings.url = lib.genAttrs' githubOrgs (
+            org: lib.nameValuePair "git@github.com:${org}/" { insteadOf = "https://github.com/${org}/"; }
+          );
+          glide-browser = lib.mkIf config.programs.glide-browser.enable {
+            config = lib.mkAfter ''
+              for (const [container, prefixes] of Object.entries(${builtins.toJSON containerSites})) {
+                container_rules.push(...prefixes.map((prefix) => ({ prefix, container })));
+              }
+              add_site_shortcuts(${builtins.toJSON browser.siteShortcuts});
+            '';
 
-              profiles =
-                let
-                  mkProfile = attrs: lib.recursiveUpdate vars.glide ({ isDefault = false; } // attrs);
-                in
-                {
-                  "${user1}" = mkProfile {
-                    id = 1;
-                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user1};
-                  };
-                  "${user2}" = mkProfile {
-                    id = 2;
-                    settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user2};
-                  };
-                  "${user3}" = mkProfile { id = 3; };
-                  default = {
-                    containers = {
-                      "${user1}" = {
-                        color = "blue";
-                        icon = "briefcase";
-                        id = 1;
-                      };
-                      "${user2}" = {
-                        color = "orange";
-                        icon = "fingerprint";
-                        id = 2;
-                      };
-                      "${user3}" = {
-                        color = "green";
-                        icon = "circle";
-                        id = 3;
-                      };
-                      work = {
-                        color = "purple";
-                        icon = "briefcase";
-                        id = 4;
-                      };
+            profiles =
+              let
+                mkProfile = attrs: lib.recursiveUpdate glideProfile ({ isDefault = false; } // attrs);
+              in
+              {
+                "${user1}" = mkProfile {
+                  id = 1;
+                  settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user1};
+                };
+                "${user2}" = mkProfile {
+                  id = 2;
+                  settings."browser.startup.homepage" = lib.concatStringsSep "|" browser.startPages.${user2};
+                };
+                "${user3}" = mkProfile { id = 3; };
+                default = {
+                  containers = {
+                    "${user1}" = {
+                      color = "blue";
+                      icon = "briefcase";
+                      id = 1;
                     };
-                    containersForce = true;
-                    settings = {
-                      "privacy.userContext.enabled" = true;
-                      "privacy.userContext.ui.enabled" = true;
+                    "${user2}" = {
+                      color = "orange";
+                      icon = "fingerprint";
+                      id = 2;
                     };
+                    "${user3}" = {
+                      color = "green";
+                      icon = "circle";
+                      id = 3;
+                    };
+                    work = {
+                      color = "purple";
+                      icon = "briefcase";
+                      id = 4;
+                    };
+                  };
+                  containersForce = true;
+                  settings = {
+                    "privacy.userContext.enabled" = true;
+                    "privacy.userContext.ui.enabled" = true;
                   };
                 };
-            };
-            openstackclient = {
-              enable = true;
-              cloudsSettings = { inherit clouds; };
-            };
-            ssh.settings = lib.recursiveUpdate confLib.getConfig.repo.secrets.work.sshConfig {
-              "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
-            };
-            zsh = {
-              cdpath = [
-                "~/Documents/Work"
-              ];
-              dirHashes = {
-                ac = path1;
-                d = "$HOME/.dotfiles";
-                pr = "$HOME/Documents/Private";
-                s = "$HOME/.dotfiles/secrets";
-                w = "$HOME/Documents/Work";
               };
-              initContent = lib.mkMerge [
-                (lib.mkIf config.programs.glide-browser.enable ''
-                  step() {
-                    if [[ "$1" == "ssh" && "$2" == "login" ]] && ! pgrep -x .glide-wrapped >/dev/null 2>&1; then
-                      niri msg action spawn -- glide >/dev/null 2>&1 || (setsid glide >/dev/null 2>&1 &)
-                      sleep 5
-                    fi
-                    command step "$@"
-                  }
-                '')
-                ''
-                  # vbc-nix ansible devshells: local checkout when present, remote otherwise
-                  _vbc_ansible_env() {
-                    local tmpl="ansible-2_$1"
-                    local local_flake="$HOME/Documents/Work/vbc-nix/templates/$tmpl"
-                    # --profile registers the dev env as a GC root so nix-collect-garbage keeps it
-                    local profile_dir="$HOME/.local/state/nix/profiles/devshells"
-                    mkdir -p "$profile_dir"
-                    if [[ -e "$local_flake/flake.nix" ]]; then
-                      nix develop --profile "$profile_dir/vbc-$tmpl" "path:$local_flake" -c zsh
-                    else
-                      nix develop --profile "$profile_dir/vbc-$tmpl" "git+ssh://git@github.com/vbc-it/vbc-nix?ref=main&dir=templates/$tmpl" -c zsh
-                    fi
-                  }
-                  a215() { _vbc_ansible_env 15; }
-                  a220() { _vbc_ansible_env 20; }
-                ''
-              ];
-              sessionVariables = {
-                ANSIBLE_GALAXY_SERVER_COMMUNITY_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
-                ANSIBLE_GALAXY_SERVER_PUBLISHED_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
-                ANSIBLE_GALAXY_SERVER_RH_CERTIFIED_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
-                ANSIBLE_GALAXY_SERVER_STAGING_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.automationhubtoken.path})";
-                GOVC_DATACENTER = "$(cat ${confLib.getConfig.sops.secrets.govcdc.path})";
-                GOVC_DATASTORE = "$(cat ${confLib.getConfig.sops.secrets.govcds.path})";
-                GOVC_HOST = "$(cat ${confLib.getConfig.sops.secrets.govchost.path})";
-                GOVC_NETWORK = "$(cat ${confLib.getConfig.sops.secrets.govcnetwork.path})";
-                GOVC_PASSWORD = "$(cat ${confLib.getConfig.sops.secrets.govcpw.path})";
-                GOVC_RESOURCE_POOL = "$(cat ${confLib.getConfig.sops.secrets.govcpool.path})";
-                GOVC_URL = "$(cat ${confLib.getConfig.sops.secrets.govcurl.path})";
-                GOVC_USERNAME = "$(cat ${confLib.getConfig.sops.secrets.govcuser.path})";
-                VSPHERE_PW = "$(cat ${confLib.getConfig.sops.secrets.vcpw.path})";
-                VSPHERE_USER = "$(cat ${confLib.getConfig.sops.secrets.vcuser.path})";
-              };
-              shellAliases = {
-                cssh = "ssh -l ${user2Long}";
-                dssh = "ssh -l ${user1Long}";
-                wssh = "ssh -l ${user3Long}";
-              };
+          };
+          openstackclient = {
+            enable = true;
+            cloudsSettings = { inherit clouds; };
+          };
+          ssh.settings = lib.recursiveUpdate sshConfig {
+            "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
+          };
+          zsh = {
+            cdpath = [
+              "~/Documents/Work"
+            ];
+            dirHashes = {
+              ac = path1;
+              d = "$HOME/.dotfiles";
+              pr = "$HOME/Documents/Private";
+              s = "$HOME/.dotfiles/secrets";
+              w = "$HOME/Documents/Work";
+            };
+            initContent = lib.mkMerge [
+              (lib.mkIf config.programs.glide-browser.enable ''
+                step() {
+                  if [[ $1 == ssh && $2 == login ]] && ! pgrep -x .glide-wrapped >/dev/null; then
+                    niri msg action spawn -- glide >/dev/null
+                    sleep 5
+                  fi
+                  command step "$@"
+                }
+              '')
+              ''
+                _vbc_ansible_env() {
+                  local tmpl=ansible-2_$1
+                  local flake="git+ssh://git@github.com/vbc-it/vbc-nix?ref=main&dir=templates/$tmpl"
+                  if [[ -e $HOME/Documents/Work/vbc-nix/templates/$tmpl/flake.nix ]]; then
+                    flake=path:$HOME/Documents/Work/vbc-nix/templates/$tmpl
+                  fi
+
+                  mkdir -p $HOME/.local/state/nix/profiles/devshells
+                  nix develop --profile $HOME/.local/state/nix/profiles/devshells/vbc-$tmpl "$flake" -c zsh
+                }
+                a215() { _vbc_ansible_env 15; }
+                a220() { _vbc_ansible_env 20; }
+              ''
+            ];
+            sessionVariables =
+              lib.mapAttrs (_: secret: "$(cat ${confLib.getConfig.sops.secrets.${secret}.path})")
+                {
+                  ANSIBLE_GALAXY_SERVER_COMMUNITY_TOKEN = "automationhubtoken";
+                  ANSIBLE_GALAXY_SERVER_PUBLISHED_TOKEN = "automationhubtoken";
+                  ANSIBLE_GALAXY_SERVER_RH_CERTIFIED_TOKEN = "automationhubtoken";
+                  ANSIBLE_GALAXY_SERVER_STAGING_TOKEN = "automationhubtoken";
+                  GOVC_DATACENTER = "govcdc";
+                  GOVC_DATASTORE = "govcds";
+                  GOVC_HOST = "govchost";
+                  GOVC_NETWORK = "govcnetwork";
+                  GOVC_PASSWORD = "govcpw";
+                  GOVC_RESOURCE_POOL = "govcpool";
+                  GOVC_URL = "govcurl";
+                  GOVC_USERNAME = "govcuser";
+                  VSPHERE_PW = "vcpw";
+                  VSPHERE_USER = "vcuser";
+                };
+            shellAliases = {
+              cssh = "ssh -l ${user2Long}";
+              dssh = "ssh -l ${user1Long}";
+              wssh = "ssh -l ${user3Long}";
             };
           };
+        };
         home = {
           file = {
             ".glide-browser/native-messaging-hosts/com.1password.1password.json" =
@@ -275,67 +237,32 @@
           ];
           sessionVariables.AWS_CA_BUNDLE = confLib.getConfig.sops.secrets.harica-root-ca.path;
         };
-        xdg =
-          let
-            inherit (confLib.getConfig.repo.secrets.work) user1 user2 user3;
-          in
-          {
-            desktopEntries =
-              let
-                browser = if config.programs.glide-browser.enable then "glide" else "firefox";
-                browserName = lib.swarselsystems.toCapitalized browser;
-                mkBrowserEntry = profile: {
-                  categories = [ "Application" ];
-                  exec = "${browser} -p ${profile}";
-                  genericName = "${browserName} ${profile}";
-                  icon = browser;
-                  name = "${browserName} (${profile})";
-                  terminal = false;
-                };
-              in
-              lib.listToAttrs (
-                map (profile: lib.nameValuePair "${browser}_${profile}" (mkBrowserEntry profile)) [
-                  user1
-                  user2
-                  user3
-                ]
-              );
-            mimeApps.defaultApplications."x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
-          };
+        xdg = {
+          desktopEntries = lib.genAttrs' [ user1 user2 user3 ] (
+            profile:
+            lib.nameValuePair "glide_${profile}" {
+              categories = [ "Application" ];
+              exec = "glide -p ${profile}";
+              genericName = "Glide ${profile}";
+              icon = "glide";
+              name = "Glide (${profile})";
+              terminal = false;
+            }
+          );
+          mimeApps.defaultApplications."x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+        };
         systemd.user = {
           services = {
-            onepassword-applet = {
-              Install.WantedBy = [ "tray.target" ];
-              Service.ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
-              Unit = {
-                After = [
-                  "graphical-session.target"
-                  "tray.target"
-                ];
-                Description = "1password applet";
-                PartOf = [
-                  "tray.target"
-                ];
-                Requires = [ "graphical-session.target" ];
-              };
+            onepassword-applet = confLib.mkTrayApplet {
+              description = "1password applet";
+              execStart = lib.getExe osConfig.programs._1password-gui.package;
             };
-            teams-applet = {
-              Install.WantedBy = [ "tray.target" ];
-              Service.ExecStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
-              Unit = {
-                After = [
-                  "graphical-session.target"
-                  "tray.target"
-                ];
-                Description = "teams applet";
-                PartOf = [
-                  "tray.target"
-                ];
-                Requires = [ "graphical-session.target" ];
-              };
+            teams-applet = confLib.mkTrayApplet {
+              description = "teams applet";
+              execStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
             };
           };
-          sessionVariables.DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+          sessionVariables.DOCUMENT_DIR_WORK = "${homeDir}/Documents/Work";
         };
       };
     };

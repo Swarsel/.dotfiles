@@ -52,7 +52,6 @@
               publish-addresses = true;
             };
           };
-          # add a user with sudo smbpasswd -a <user>
           samba = {
             enable = true;
             package = pkgs.samba4;
@@ -87,28 +86,18 @@
         };
         systemd.services.samba-ensure-user-pw = {
           after = [ "samba-smbd.service" ];
-          description = "Ensure SMB password is set for ${shareUser}";
+          description = "Create the SMB account for ${shareUser}";
           partOf = [ "samba-smbd.service" ];
-          path = with pkgs; [
-            samba4
-            coreutils
-            gnugrep
-          ];
+          path = [ pkgs.samba4 ];
           script = ''
-            if pdbedit -L 2>/dev/null | grep -q '^${shareUser}:'; then
-              echo "${shareUser} SMB account already exists"
-              exit 0
+            if ! pdbedit -L | grep -q '^${shareUser}:'; then
+              pw=$(cat ${config.sops.secrets.samba-user-pw.path})
+              printf '%s\n%s\n' "$pw" "$pw" | smbpasswd -a -s ${shareUser}
             fi
-            echo "${shareUser} SMB account missing — creating"
-            PW=$(cat ${config.sops.secrets.samba-user-pw.path})
-            printf '%s\n%s\n' "$PW" "$PW" | smbpasswd -a -s ${shareUser}
-            echo "Created ${shareUser} SMB account"
           '';
           serviceConfig.Type = "oneshot";
           wantedBy = [ "samba-smbd.service" ];
         };
       };
-    }
-
-  ;
+    };
 }

@@ -1,13 +1,10 @@
 {
   flake.modules.homeManager.vesktop =
     { pkgs, ... }:
-    let
-      moduleName = "vesktop";
-    in
     {
       config = {
         swarselsystems.enabledHomeModules = [ "vesktop" ];
-        programs.${moduleName} = {
+        programs.vesktop = {
           enable = true;
           package = pkgs.vesktop;
           settings = {

@@ -14,12 +14,6 @@
     self.modules.nixos.yubal
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-    proxyHost = "twothreetunnel";
-  };
-
 }
 // lib.optionalAttrs (!minimal) {
 

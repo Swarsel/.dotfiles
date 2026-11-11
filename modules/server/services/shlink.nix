@@ -74,7 +74,6 @@
             INITIAL_API_KEY=${config.sops.placeholder.shlink-api}
           '';
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           { directory = serviceDir; }
         ];
@@ -148,7 +147,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

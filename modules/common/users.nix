@@ -3,7 +3,6 @@
     {
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       minimal,
@@ -54,7 +53,6 @@
                 mainUserEnabled && !minimal && !config.swarselsystems.isPublic
               ) config.sops.secrets.main-user-hashed-pw.path;
               isNormalUser = true;
-              packages = with pkgs; [ ];
               password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
               subGidRanges = [
                 {
@@ -75,7 +73,6 @@
               hashedPasswordFile = lib.mkIf (
                 !minimal && !config.swarselsystems.isPublic
               ) config.sops.secrets.root-hashed-pw.path;
-              # shell = pkgs.zsh;
             };
           };
           mutableUsers = lib.mkIf (!minimal) false;

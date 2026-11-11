@@ -6,6 +6,7 @@
       lib,
       pkgs,
       confLib,
+      globals,
       ...
     }:
     let
@@ -49,7 +50,7 @@
               isSystemUser = true;
             };
           };
-          groups.mpd = { };
+          groups.${serviceGroup} = { };
         };
         services.${serviceName} = {
           enable = true;
@@ -80,16 +81,12 @@
           user = serviceUser;
         };
         environment = {
-          # topology.self.services.${serviceName} = {
-          #   info = "http://localhost:${builtins.toString servicePort}";
-          #   icon = lib.mkForce (root "files/topology-images/mpd.png");
-          # };
           persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
             directories = [
               {
                 directory = "/var/lib/${serviceName}";
-                group = "mpd";
-                user = "mpd";
+                group = serviceGroup;
+                user = serviceUser;
               }
             ];
           };
@@ -101,14 +98,11 @@
         };
         nodes.${routerServer}.networking.nftables.firewall.rules."fritzbox-to-${serviceName}" = {
           extraLines = [
-            "ip saddr 192.168.178.0/24 tcp dport ${toString servicePort} accept"
+            "ip saddr ${globals.networks.home-lan.cidrv4} tcp dport ${toString servicePort} accept"
           ];
           from = [ "untrusted" ];
           to = [ "vlan-services" ];
         };
       };
-
-    }
-
-  ;
+    };
 }

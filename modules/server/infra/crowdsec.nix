@@ -10,34 +10,14 @@
     let
       bootstrap = config.swarselsystems.crowdsecBootstrap;
       withNginx = config.services.nginx.enable;
-      jumphost = globals.general.jumphost or null;
-      homeWan = globals.networks.home-wan or { };
-      sshSources4 = lib.filter (a: a != null) [
-        (if jumphost != null then globals.hosts.${jumphost}.wanAddress4 or null else null)
-        (homeWan.cidrv4 or null)
-      ];
-      sshSources6 = lib.filter (a: a != null) [
-        (if jumphost != null then globals.hosts.${jumphost}.wanAddress6 or null else null)
-        (homeWan.cidrv6 or null)
-      ];
-      homeWanCidrs = lib.filter (a: a != null) [
-        (homeWan.cidrv4 or null)
-        (homeWan.cidrv6 or null)
-      ];
-      trustedWanAddresses = lib.filter (a: a != null) (
-        lib.concatMap (h: [
-          (h.wanAddress4 or null)
-          (h.wanAddress6 or null)
-        ]) (lib.attrValues globals.hosts)
-      );
-      allowlistIps = config.repo.secrets.local.crowdsec.allowlistIps or [ ];
-      allowlistCidrs = config.repo.secrets.local.crowdsec.allowlistCidrs or [ ];
-      allowlistAs = config.repo.secrets.local.crowdsec.allowlistAs or [ ];
-      allowlistCountries = config.repo.secrets.local.crowdsec.allowlistCountries or [ ];
-      allowlistCountryScenarios = config.repo.secrets.local.crowdsec.allowlistCountryScenarios or { };
-      lapiPort = lib.toInt (
-        lib.last (lib.splitString ":" config.services.crowdsec.settings.config.api.server.listen_uri)
-      );
+      jumphost = globals.hosts.${globals.general.jumphost};
+      homeWan = globals.networks.home-wan;
+      allowlist = config.repo.secrets.local.crowdsec;
+      allowlistIps = allowlist.allowlistIps or [ ];
+      allowlistCidrs = allowlist.allowlistCidrs or [ ];
+      allowlistCountryScenarios = allowlist.allowlistCountryScenarios or { };
+      stateDir = "/var/lib/crowdsec/state";
+      lapiPort = 8089;
     in
     {
       options.swarselsystems.crowdsecBootstrap = lib.mkEnableOption "create lapi, capi, and bouncer api key. afterwards they can be added to sops and this disabled";
@@ -49,23 +29,13 @@
           serviceName = "crowdsec-${config.node.name}";
           servicePort = lapiPort;
         };
-        sops.secrets = lib.mkIf (!bootstrap) {
-          crowdsec-bouncer-key = {
+        sops.secrets = lib.mkIf (!bootstrap) (
+          lib.genAttrs [ "crowdsec-bouncer-key" "crowdsec-capi" "crowdsec-lapi" ] (_: {
             group = "crowdsec";
             mode = "0400";
             owner = "crowdsec";
-          };
-          crowdsec-capi = {
-            group = "crowdsec";
-            mode = "0400";
-            owner = "crowdsec";
-          };
-          crowdsec-lapi = {
-            group = "crowdsec";
-            mode = "0400";
-            owner = "crowdsec";
-          };
-        };
+          })
+        );
         users = {
           users.crowdsec.extraGroups = lib.optional withNginx "nginx";
           persistentIds.crowdsec = confLib.mkIds 946;
@@ -87,14 +57,14 @@
               config = {
                 api = {
                   client.credentials_path =
-                    if bootstrap then "/var/lib/crowdsec/state/lapi.yaml" else config.sops.secrets.crowdsec-lapi.path;
+                    if bootstrap then "${stateDir}/lapi.yaml" else config.sops.secrets.crowdsec-lapi.path;
                   server = {
-                    listen_uri = "127.0.0.1:8089";
+                    listen_uri = "127.0.0.1:${toString lapiPort}";
                     online_client.credentials_path =
-                      if bootstrap then "/var/lib/crowdsec/state/capi.yaml" else config.sops.secrets.crowdsec-capi.path;
+                      if bootstrap then "${stateDir}/capi.yaml" else config.sops.secrets.crowdsec-capi.path;
                   };
                 };
-                config_paths.data_dir = "/var/lib/crowdsec/state";
+                config_paths.data_dir = stateDir;
                 prometheus.listen_port = 6060;
               };
               acquisitions = [
@@ -114,8 +84,7 @@
               };
               parsers.s02Enrich = [
                 {
-                  description = "Fallback in case base allowlist ever changes";
-                  name = "swarsel/trusted-cidrs";
+                  name = "local/private-networks";
                   whitelist = {
                     cidr = [
                       "10.0.0.0/8"
@@ -123,62 +92,62 @@
                       "192.168.0.0/16"
                       "fc00::/7"
                     ];
-                    reason = "Trusted internal networks";
+                    reason = "private networks";
+                  };
+                }
+                {
+                  name = "local/home-wan";
+                  whitelist = {
+                    cidr = [
+                      homeWan.cidrv4
+                      homeWan.cidrv6
+                    ];
+                    reason = "home wan";
                   };
                 }
               ]
-              ++ lib.optional (homeWanCidrs != [ ]) {
-                description = "Don't ban the home connection";
-                name = "swarsel/home-wan";
-                whitelist = {
-                  cidr = homeWanCidrs;
-                  reason = "Home WAN prefixes";
-                };
-              }
               ++ lib.optional withNginx {
-                description = "Don't count cache requests as probes";
-                name = "swarsel/attic-cache";
+                name = "local/attic-cache";
                 whitelist = {
-                  expression = [
-                    "evt.Meta.http_path matches `\\.nar(info)?$`"
-                  ];
-                  reason = "Attic binary cache lookups; misses are expected 404s";
+                  expression = [ "evt.Meta.http_path matches `\\.nar(info)?$`" ];
+                  reason = "attic cache lookups";
                 };
               }
               ++ lib.optional (allowlistIps != [ ] || allowlistCidrs != [ ]) {
-                description = "Don't ban trusted addresses";
-                name = "swarsel/allowlist";
+                name = "local/allowlist";
                 whitelist = {
                   cidr = allowlistCidrs;
                   ip = allowlistIps;
-                  reason = "Personal home addresses";
+                  reason = "allowlisted addresses";
                 };
               };
               postOverflows.s01Whitelist = [
                 {
-                  description = "Allow (but track) host addresses";
-                  name = "swarsel/trusted-hosts";
+                  name = "local/hosts";
                   whitelist = {
-                    ip = trustedWanAddresses;
-                    reason = "Trusted host WAN addresses";
+                    ip = lib.filter (a: a != null) (
+                      lib.concatMap (h: [
+                        h.wanAddress4
+                        h.wanAddress6
+                      ]) (lib.attrValues globals.hosts)
+                    );
+                    reason = "host wan addresses";
+                  };
+                }
+                {
+                  name = "local/allowlist-as";
+                  whitelist = {
+                    expression = map (
+                      asn: "evt.Overflow.Alert.Source.AsNumber == '${toString asn}'"
+                    ) allowlist.allowlistAs;
+                    reason = "allowlisted as";
                   };
                 }
               ]
-              ++ lib.optional (allowlistAs != [ ] || allowlistCountries != [ ]) {
-                description = "Don't ban trusted networks";
-                name = "swarsel/allowlist-as";
-                whitelist = {
-                  expression =
-                    map (asn: "evt.Overflow.Alert.Source.AsNumber == '${toString asn}'") allowlistAs
-                    ++ map (c: "evt.Overflow.Alert.Source.Cn == '${c}'") allowlistCountries;
-                  reason = "Trusted carrier, work AS, and home country";
-                };
-              }
               ++ lib.optional (allowlistCountryScenarios != { }) {
-                description = "Don't ban trusted countries for noisy scenarios";
-                name = "swarsel/allowlist-country-scenarios";
+                name = "local/allowlist-country-scenarios";
                 whitelist = {
-                  expression = lib.concatLists (
+                  expression = lib.flatten (
                     lib.mapAttrsToList (
                       country:
                       map (
@@ -187,7 +156,7 @@
                       )
                     ) allowlistCountryScenarios
                   );
-                  reason = "Noisy scenarios exempted for home country";
+                  reason = "noisy scenarios from home country";
                 };
               };
             };
@@ -230,7 +199,7 @@
             chain crowdsec-chain {
               type filter hook input priority filter; policy accept;
               ct state established,related accept
-              ${lib.concatMapStringsSep "\n" (a: "ip saddr ${a} tcp dport 22 accept") sshSources4}
+              ip saddr { ${jumphost.wanAddress4}, ${homeWan.cidrv4} } tcp dport 22 accept
               ip saddr @crowdsec-blacklists drop
             }
           }
@@ -242,7 +211,7 @@
             chain crowdsec6-chain {
               type filter hook input priority filter; policy accept;
               ct state established,related accept
-              ${lib.concatMapStringsSep "\n" (a: "ip6 saddr ${a} tcp dport 22 accept") sshSources6}
+              ip6 saddr { ${jumphost.wanAddress6}, ${homeWan.cidrv6} } tcp dport 22 accept
               ip6 saddr @crowdsec6-blacklists drop
             }
           }
@@ -259,7 +228,7 @@
             crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce "+systemctl try-restart crowdsec.service";
           };
           tmpfiles.settings."11-crowdsec-stub-capi" = lib.mkIf bootstrap {
-            "/var/lib/crowdsec/state/capi.yaml".f = {
+            "${stateDir}/capi.yaml".f = {
               group = "crowdsec";
               mode = "0600";
               user = "crowdsec";
@@ -267,7 +236,5 @@
           };
         };
       };
-    }
-
-  ;
+    };
 }

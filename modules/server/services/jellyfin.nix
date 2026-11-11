@@ -72,7 +72,6 @@
         services.${serviceName} = {
           enable = true;
           user = serviceUser;
-          # openFirewall = true; # this works only for the default ports
         };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
@@ -131,7 +130,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

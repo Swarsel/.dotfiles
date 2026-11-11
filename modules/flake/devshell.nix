@@ -31,6 +31,15 @@
         fi
         ${config.pre-commit.installationScript}
       '';
+
+      mkPackages = stable: nix-version: [
+        (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.${stable}.nixVersions."nix_${nix-version}")
+        pkgs.git
+        pkgs.just
+        pkgs.age
+        pkgs.ssh-to-age
+        pkgs.sops
+      ];
     in
     {
       devshells = {
@@ -91,28 +100,14 @@
                 name = "sw";
               }
               {
-                command = "swarsel-build \"$@\"";
-                help = "Build a number of configurations";
-                name = "bld";
-              }
-              {
                 command = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/ \"$@\"";
                 help = "Work with the flake git repository";
                 name = "c";
               }
             ];
             devshell.startup.pre-commit.text = preCommitStartup;
-            packages = [
-              (builtins.trace "alarm: pinned nix_${nix-version}"
-                pkgs.stable26_05.nixVersions."nix_${nix-version}"
-              )
-              pkgs.git
-              pkgs.just
-              pkgs.age
-              pkgs.ssh-to-age
-              pkgs.sops
+            packages = mkPackages "stable26_05" nix-version ++ [
               config.treefmt.build.wrapper
-              self.packages.${system}.swarsel-build
               self.packages.${system}.swarsel-deploy
               inputs.piix.packages.${system}.pii
               (pkgs.symlinkJoin {
@@ -131,15 +126,7 @@
             nix-version = "2_28";
           in
           {
-            packages = [
-              (builtins.trace "alarm: pinned nix_${nix-version}"
-                pkgs.stable25_05.nixVersions."nix_${nix-version}"
-              )
-              pkgs.git
-              pkgs.just
-              pkgs.age
-              pkgs.ssh-to-age
-              pkgs.sops
+            packages = mkPackages "stable25_05" nix-version ++ [
               pkgs.opentofu
               self.packages.${system}.swarsel-bootstrap
             ];

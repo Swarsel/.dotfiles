@@ -100,10 +100,8 @@
         # rollback results in sudo lectures after each reboot
         Defaults lecture = never
       '';
-      systemd.tmpfiles.settings."10-impermanence-private" =
-        lib.mkIf (config.environment.persistence != { })
-          {
-            "/var/lib/private".d.mode = "0700";
-          };
+      systemd.tmpfiles.settings."10-impermanence-private" = lib.mkIf isImpermanence {
+        "/var/lib/private".d.mode = "0700";
+      };
     };
 }

@@ -21,7 +21,6 @@
   swarselsystems = {
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 1 vCPUs, 8GB RAM";
-    isBastionTarget = true;
     isBtrfs = true;
     isCloud = true;
     isCrypted = true;

@@ -1,5 +1,4 @@
 {
-  root,
   inputs,
   config,
   lib,
@@ -7,9 +6,6 @@
   minimal,
   ...
 }:
-let
-  primaryUser = config.swarselsystems.mainUser;
-in
 {
 
   imports = [
@@ -31,6 +27,7 @@ in
       ] inputs.self.modules.nixos
     )
   );
+
   swarselsystems = {
     firewall = lib.mkForce true;
     hasBluetooth = true;
@@ -49,23 +46,21 @@ in
     rootDisk = "/dev/nvme0n1";
     sharescreen = "eDP-1";
     swapSize = "4G";
-    wallpaper = root "files/wallpaper/landscape/lenovowp.png";
   };
+
   topology.self.interfaces = {
     eth1.network = lib.mkForce "home";
     wifi = { };
   };
+
   environment.systemPackages = [ pkgs.yubikey-manager ];
-  home-manager.users."${primaryUser}" = {
-    # home.stateVersion = lib.mkForce "23.05";
-    swarselsystems.monitors.main = {
-      mode = "1920x1080"; # TEMPLATE
-      name = "LG Display 0x04EF Unknown";
-      output = "eDP-1";
-      position = "1920,0";
-      scale = "1";
-      workspace = "15:L";
-    };
+
+  home-manager.users.${config.swarselsystems.mainUser}.swarselsystems.monitors.main = {
+    mode = "1920x1080";
+    name = "LG Display 0x04EF Unknown";
+    output = "eDP-1";
+    position = "1920,0";
+    scale = "1";
+    workspace = "15:L";
   };
 }
-// lib.optionalAttrs (!minimal) { }

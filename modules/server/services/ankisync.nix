@@ -29,7 +29,6 @@
         webProxy
         ;
 
-      ankiUser = globals.user.name;
     in
     {
       config = {
@@ -58,14 +57,12 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         sops.secrets.anki-pw.owner = "root";
         services.anki-sync-server = {
-          # openFirewall = true;
           users = [
             {
               passwordFile = config.sops.secrets.anki-pw.path;
-              username = ankiUser;
+              username = globals.user.name;
             }
           ];
           enable = true;
@@ -100,7 +97,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

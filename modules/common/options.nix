@@ -10,7 +10,7 @@
       options.swarselsystems = {
         bridgedVLANs = lib.mkOption {
           default = [ ];
-          description = "Home VLANs that get a bridge `br-<name>` on this host, so that further interfaces (e.g. hostapd's per-VLAN wifi interfaces) can be attached to them.";
+          description = "Home VLANs that get a `br-<name>` bridge on this host.";
           type = lib.types.listOf lib.types.str;
         };
         enabledHomeModules = lib.mkOption {
@@ -24,7 +24,7 @@
           type = lib.types.listOf lib.types.str;
         };
         flakePath = lib.mkOption {
-          default = "/home/swarsel/.dotfiles";
+          default = "${config.swarselsystems.homeDir}/.dotfiles";
           type = lib.types.str;
         };
         highResolution = lib.mkOption {
@@ -32,18 +32,14 @@
           type = lib.types.str;
         };
         homeDir = lib.mkOption {
-          default = "/home/swarsel";
+          default = "/home/${config.swarselsystems.mainUser}";
           type = lib.types.str;
         };
-        # @ future me: dont put this under server prefix
+        # @ future me: dont put initrdVLAN or localVLANs under server prefix
         # home-manager would then try to import all swarselsystems.server.* options
         initrdVLAN = lib.mkOption {
           default = null;
           type = lib.types.nullOr lib.types.str;
-        };
-        isBastionTarget = lib.mkOption {
-          default = false;
-          type = lib.types.bool;
         };
         isBtrfs = lib.mkEnableOption "use btrfs filesystem";
         isClient = lib.mkOption {
@@ -55,14 +51,13 @@
           type = lib.types.bool;
         };
         isCrypted = lib.mkEnableOption "uses full disk encryption";
-        isDarwin = lib.mkEnableOption "darwin host";
         isFullBuild = lib.mkOption {
           default = true;
           type = lib.types.bool;
         };
         isImpermanence = lib.mkEnableOption "use impermanence on this system";
         isLaptop = lib.mkEnableOption "laptop host";
-        isLinux = lib.mkEnableOption "whether this is a linux machine";
+        isLinux = lib.mkEnableOption "linux host";
         isMicroVM = lib.mkOption {
           default = false;
           type = lib.types.bool;
@@ -77,8 +72,6 @@
           default = true;
           type = lib.types.bool;
         };
-        # @ future me: dont put this under server prefix
-        # home-manager would then try to import all swarselsystems.server.* options
         localVLANs = lib.mkOption {
           default = [ ];
           type = lib.types.listOf lib.types.str;
@@ -93,7 +86,7 @@
         };
         microVMPool = lib.mkOption {
           default = config.swarselsystems.storagePool;
-          description = "ZFS pool holding the persist and state datasets of this host's MicroVM guests.";
+          description = "ZFS pool for the persist and state datasets of the guests.";
           type = lib.types.str;
         };
         nodeRoles = lib.mkOption {
@@ -114,7 +107,7 @@
           type = lib.types.str;
         };
         storagePool = lib.mkOption {
-          description = "ZFS pool holding the storage datasets that are shared into MicroVM guests.";
+          description = "ZFS pool for the storage datasets shared into the guests.";
           type = lib.types.str;
         };
         swapSize = lib.mkOption {
@@ -133,10 +126,6 @@
         writeGlobalNetworks = lib.mkOption {
           default = true;
           type = lib.types.bool;
-        };
-        xdgDir = lib.mkOption {
-          default = "/run/user/1000";
-          type = lib.types.str;
         };
       };
     };

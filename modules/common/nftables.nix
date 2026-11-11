@@ -16,15 +16,12 @@
         ...
       }:
       let
-        jumphost = globals.general.jumphost or null;
+        inherit (globals.general) jumphost;
         restrictSsh = config.swarselsystems.isCloud && config.node.name != jumphost;
-        homeWan = globals.networks.home-wan or { };
-        sshSources =
-          family:
-          lib.filter (a: a != null) [
-            (if jumphost != null then globals.hosts.${jumphost}."wanAddress${family}" or null else null)
-            (homeWan."cidrv${family}" or null)
-          ];
+        sshSources = family: [
+          globals.hosts.${jumphost}."wanAddress${family}"
+          globals.networks.home-wan."cidrv${family}"
+        ];
       in
       {
         config = {

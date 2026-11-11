@@ -94,11 +94,6 @@
       url = "github:Swarsel/hunkle";
     };
 
-    hydra = {
-      inputs.nix-eval-jobs.follows = "nix-eval-jobs";
-      url = "github:nixos/hydra/nix-2.30";
-    };
-
     impermanence = {
       inputs = {
         home-manager.follows = "home-manager";
@@ -154,11 +149,6 @@
     nix-darwin = {
       inputs.nixpkgs.follows = "nixpkgs";
       url = "github:lnl7/nix-darwin";
-    };
-
-    nix-eval-jobs = {
-      flake = false;
-      url = "github:nix-community/nix-eval-jobs";
     };
 
     nix-index-database = {
@@ -301,8 +291,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
       url = "github:cachix/git-hooks.nix";
     };
-
-    repoSecrets.url = "./secrets/repo";
 
     seerr-oidc = {
       flake = false;

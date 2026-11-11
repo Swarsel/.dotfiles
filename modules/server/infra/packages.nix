@@ -31,7 +31,5 @@
             swarsel-switch
           ];
       };
-    }
-
-  ;
+    };
 }

@@ -1,9 +1,5 @@
 {
   flake.modules.nixOnDroid = {
-    droid-switch = { pkgs, configName, ... }: {
-      environment.packages = [ pkgs.droid-switch ];
-      home-manager.config.home.sessionVariables.DROID_PROFILE = "droid-${configName}";
-    };
     packages = { pkgs, ... }: {
       environment.packages = with pkgs; [
         age
@@ -77,5 +73,9 @@
         };
         user.shell = "${pkgs.zsh}/bin/zsh";
       };
+    swarsel-droid = { pkgs, configName, ... }: {
+      environment.packages = [ pkgs.swarsel-droid ];
+      home-manager.config.home.sessionVariables.DROID_PROFILE = "droid-${configName}";
+    };
   };
 }

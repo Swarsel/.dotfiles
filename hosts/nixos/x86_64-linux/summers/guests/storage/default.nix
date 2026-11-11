@@ -11,12 +11,7 @@
     self.modules.nixos.server-syncthing
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-    nodeRoles = [ "homeSyncthingServer" ];
-    proxyHost = "twothreetunnel";
-  };
+  swarselsystems.nodeRoles = [ "homeSyncthingServer" ];
 
 }
 // lib.optionalAttrs (!minimal) {

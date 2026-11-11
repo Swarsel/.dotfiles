@@ -1,34 +1,17 @@
 {
   flake.modules.homeManager.glide =
     { config, lib, ... }:
-    let
-      palette = lib.getAttrs [
-        "base00"
-        "base01"
-        "base02"
-        "base03"
-        "base04"
-        "base05"
-        "base06"
-        "base07"
-        "base08"
-        "base09"
-        "base0A"
-        "base0B"
-        "base0C"
-        "base0D"
-        "base0E"
-        "base0F"
-      ] config.lib.stylix.colors.withHashtag;
-      paletteCss = lib.concatStringsSep "\n" (
-        lib.mapAttrsToList (name: value: "--${name}: ${value};") palette
-      );
-    in
     {
       programs.glide-browser.config = ''
         glide.styles.add(css`
           :root {
-            ${paletteCss}
+            ${lib.concatMapStringsSep "\n" (
+              i:
+              let
+                name = "base0${lib.toHexString i}";
+              in
+              "--${name}: ${config.lib.stylix.colors.withHashtag.${name}};"
+            ) (lib.range 0 15)}
 
             --glide-bg: var(--base00);
             --glide-fg: var(--base05);

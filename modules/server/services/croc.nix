@@ -75,8 +75,5 @@
         # ports are opened on the firewall for croc, no nginx config
 
       };
-
-    }
-
-  ;
+    };
 }

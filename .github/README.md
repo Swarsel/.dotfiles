@@ -35,13 +35,11 @@
       - dns records
       - network setup (+ WireGuard mesh on systemd-networkd)
     - Remote Builders for `[x86_64,aarch64]-linux` running on Buildbot, feeding a private nix binary cache and updating the flake on a weekly basis
-    - Bootstrapping:
-      - Limited local installer (no secrets handling) with a (kinda un-)supported demo build
-      - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
+    - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
     - Improved nix tooling
   - Support for advanced features:
     - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls no pwn ❤️)
-    - Management of personally identifiable information at evaluation time through a local service
+    - Management of personally identifiable information at evaluation time through [piix](https://github.com/Swarsel/piix)
     - Full Yubikey support (with SSH support for SK keys, certs and PGP keys)
     - LUKS-encryption with support for remote disk unlock over SSH
     - Secure boot using [Lanzaboote](https://github.com/nix-community/lanzaboote)
@@ -68,28 +66,24 @@
 
 | Topic           | Program                             |
 |-----------------|-------------------------------------|
-| ⛩️ **Bar**      | [Waybar][] or [Noctalia Shell][]    |
+| ⛩️ **Bar**      | [Noctalia Shell][]                  |
 | ✒️ **Editor**   | [Emacs][]                           |
-| 🌐 **Browser**  | [Firefox][]                         |
+| 🌐 **Browser**  | [Glide][]                           |
 | 🎨 **Theme**    | [City-Lights (managed by stylix)][] |
 | 🐚 **Shell**    | [zsh][]                             |
 | 🖥️ **Terminal** | [Kitty][]                           |
-| 🚀 **Launcher** | [Fuzzel][] or [Noctalia Shell][]    |
-| 🚨 **Alerts**   | [Mako][] or [Noctalia Shell][]      |
+| 🚀 **Launcher** | [Noctalia Shell][]                  |
+| 🚨 **Alerts**   | [Noctalia Shell][]                  |
 | 🚪 **DM**       | [greetd][]                          |
-| 🪟 **WM**       | [SwayFX][] or [Niri][]              |
+| 🪟 **WM**       | [Niri][]                            |
 
-[Waybar]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/waybar.nix
 [Noctalia Shell]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix
 [Emacs]: https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el
-[Firefox]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/firefox.nix
+[Glide]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/glide.nix
 [City-Lights (managed by stylix)]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/stylix.nix
 [zsh]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/zsh.nix
 [Kitty]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/kitty.nix
-[Fuzzel]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/fuzzel.nix
-[Mako]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/system/mako.nix
 [greetd]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/system/login.nix
-[SwayFX]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/sway.nix
 [Niri]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/niri.nix
 
 
@@ -237,8 +231,6 @@
 | 💿 **brickroad**      | -                                                | Kexec tarball for low-mem hosts |
 | 💿 **drugstore**      | -                                                | Installer ISO for new hosts     |
 | 💿 **policestation**  | -                                                | Live ISO for generating keys    |
-| ❔ **hotel**          | -                                                | Demo configuration              |
-| ❔ **toto**           | -                                                | Deployment helper configuration |
 | ❔ **vacanthouse**    | -                                                | Staging environment             |
 
 
@@ -262,50 +254,15 @@
   - [early-init.el](../files/emacs/early-init.el)
   - [init.el](../files/emacs/init.el)
 
-  ### Getting started
-
-  #### Demo configuration
-
-  <details>
-    <summary>Click here for instructions on how to install the demo system</summary>
-
-  If you just want to see if this configuration is for you, run this command on any system that has `nix` installed:
-
-  ``` shell
-  nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-rebuild -- -u <YOUR_USERNAME>
-  ```
-
-  This will activate the `hotel` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
-  Since you do not have my SSH keys, the installer automatically replaces the private flake inputs (my work repository and the encrypted repository secrets) with public demo stand-ins via `--override-input` - nothing in the repository is modified for this. This should only be used to evaluate the system - if you want to use it long-term, you will need to create a fork and make some changes.
-  </details>
-
   ### Deployment
 
   <details>
     <summary>Click here for deployment instructions</summary>
 
-  The deployment process for this configuration is mostly automated, there are only a few steps that are needed to be done manually. You can choose between a remote deployment strategy that is also able to deploy new age keys for sops for you and a local installer that will only install the system without any secret handling.
-
-  #### Remote deployment (recommended if you have at least one running system)
-
-  0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_ARCHITECTURE>/<YOUR_CONFIG_NAME>/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones (otherwise I will come visit you!🔓❤️). I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
-  1) Have a system with `nix` available booted (this does not need to be installed, i.e. you can use a NixOS installer image; a custom minimal installer ISO can be built by running `just iso` in the root of this repo)
+  0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_ARCHITECTURE>/<YOUR_CONFIG_NAME>/default.nix`. At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones (otherwise I will come visit you!🔓❤️). I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
+  1) Boot into a NixOS installer
   2) Make sure that your Yubikey is plugged in or that you have your SSH key available (and configured)
-  3) Run `swarsel-bootstrap -n <CONFIGURATION_NAME> -d <TARGET_IP>` on your existing system.
-    - Alternatively (if you run this on a system that is not yet running this configuration), you can also run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n <CONFIGURATION_NAME> -d <TARGET_IP>` (this runs the same program as the command above).
-  4) Follow the installers instructions:
-    - you will have to choose a disk encryption password (if you want that feature)
-    - you will have to confirm once that the target system has rebooted
-    - you will have to enter the root password once during the final system install
-  5) That should be it! The installer will take care of setting up disks, secrets, and the rest of the hardware configuration! You will still have to sign in manually to some web services etc.
-
-  #### Local deployment (recommended for setting up the first system)
-
-  1) Boot the latest install ISO from this repository on an UEFI system.
-  2) Run `swarsel-install -n <CONFIGURATION_NAME>`
-  3) Reboot
-
-  Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-install -- -n <CONFIGURATION_NAME>` at step 2.
+  3) Run `swarsel-bootstrap <CONFIGURATION_NAME> <TARGET_IP>` and follow the prompts
   </details>
 
   <h2 id="header" align="left">
@@ -413,7 +370,6 @@ Q: <i>How do I get started with nix?</i><br>
     - Remotely deploy NixOS using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
   - And a few links that are not directly nix-related, but may still serve you well:
     - List of pre-commit-hooks: https://devenv.sh/reference/options/#pre-commithooks
-    - Waybar configuration: https://github.com/Alexays/Waybar/wiki
 
  </details>
 

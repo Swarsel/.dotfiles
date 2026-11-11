@@ -32,12 +32,10 @@
         webProxy
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "kavita" ];
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
         globals = {
           services = confLib.mkServiceGlobal {
@@ -83,7 +81,7 @@
           dataDir = "/var/lib/${serviceName}";
           settings = {
             OpenIdConnectSettings = {
-              Authority = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+              Authority = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
               ClientId = serviceName;
               CustomScopes = [ ];
               Secret = "@oidc_secret@";
@@ -132,7 +130,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

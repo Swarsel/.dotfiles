@@ -1,4 +1,4 @@
-{ self, inputs, ... }:
+{ self, ... }:
 {
   flake =
     let
@@ -28,21 +28,6 @@
     {
       inherit pkgs;
       # see https://flake.parts/module-arguments.html?highlight=modulewith#persystem-module-parameters
-      _module.args.pkgs = import inputs.nixpkgs {
-        inherit system;
-        config = {
-          allowUnfree = true;
-
-          permittedInsecurePackages = [
-            # matrix
-            "olm-3.2.16"
-          ];
-        };
-        overlays = [
-          self.overlays.default
-          self.overlays.stables
-          self.overlays.modifications
-        ];
-      };
+      _module.args.pkgs = self.swarselsystemsLib.pkgsFor.${system};
     };
 }

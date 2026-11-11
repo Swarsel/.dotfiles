@@ -52,7 +52,5 @@
         ];
       };
       key = "swarsel/server/mosquitto";
-    }
-
-  ;
+    };
 }

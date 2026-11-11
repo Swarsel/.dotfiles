@@ -9,7 +9,7 @@
       await glide.commandline.show({
         title: "Audible tabs",
         options: audible.map((tab) => ({
-          label: tab.title ?? tab.url ?? String(tab.id),
+          label: tab.title ?? "",
           description: tab.url ?? "",
           execute: async () => {
             if (tab.windowId != null) {

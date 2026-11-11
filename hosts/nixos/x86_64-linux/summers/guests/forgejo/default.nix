@@ -10,12 +10,6 @@
     self.modules.nixos.forgejo
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-    proxyHost = "twothreetunnel";
-  };
-
 }
 // lib.optionalAttrs (!minimal) {
 

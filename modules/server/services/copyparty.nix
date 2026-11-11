@@ -78,18 +78,17 @@
               };
               networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
             };
-            sops.secrets = {
-              copyparty-guest-password = {
-                group = serviceGroup;
-                mode = "0400";
-                owner = serviceUser;
-              };
-              copyparty-password = {
-                group = serviceGroup;
-                mode = "0400";
-                owner = serviceUser;
-              };
-            };
+            sops.secrets =
+              lib.genAttrs
+                [
+                  "copyparty-guest-password"
+                  "copyparty-password"
+                ]
+                (_: {
+                  group = serviceGroup;
+                  mode = "0400";
+                  owner = serviceUser;
+                });
             users.persistentIds.${serviceName} = confLib.mkIds 945;
             services.${serviceName} = {
               enable = true;

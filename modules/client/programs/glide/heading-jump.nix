@@ -27,7 +27,9 @@
               for (let el: Element | null = node; el; el = el.parentElement) {
                 let index = 0;
                 for (let sib = el.previousElementSibling; sib; sib = sib.previousElementSibling) {
-                  if (sib.tagName === el.tagName) index++;
+                  if (sib.tagName === el.tagName) {
+                    index++;
+                  }
                 }
                 path = "/" + el.tagName.toLowerCase() + "[" + (index + 1) + "]" + path;
               }
@@ -61,7 +63,9 @@
                     XPathResult.FIRST_ORDERED_NODE_TYPE,
                     null,
                   ).singleNodeValue as HTMLElement | null;
-                  if (!target) return;
+                  if (!target) {
+                    return;
+                  }
                   target.scrollIntoView({ behavior: "smooth", block: "start" });
                   const previous = target.style.outline;
                   target.style.outline = "2px solid " + color;

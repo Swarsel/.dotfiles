@@ -100,7 +100,6 @@
             LastFM = {
               inherit (config.repo.secrets.local.LastFM) ApiKey Secret;
             };
-            LogLevel = "debug";
             MPVPath = "${pkgs.mpv}/bin/mpv";
             MusicFolder = "/storage/Music";
             PlaylistsPath = "./Playlists";
@@ -118,7 +117,7 @@
               inherit (config.repo.secrets.local.Spotify) ID Secret;
             };
             UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
-            UIWelcomeMessage = "~SwarselSound~";
+            UIWelcomeMessage = config.repo.secrets.common.names.navidrome;
           };
         };
         environment = {
@@ -138,16 +137,6 @@
           ];
         };
         hardware.enableAllFirmware = lib.mkForce true;
-        # services.snapserver = {
-        #   enable = true;
-        #   settings = {
-        #     stream = {
-        #       port = 1704;
-        #       source = "pipe:///tmp/snapfifo?name=default";
-        #       bind_to_address = "0.0.0.0";
-        #     };
-        #   };
-        # };
         systemd.services = {
           ${serviceName} = {
             after = [ "pipewire.service" ];
@@ -196,25 +185,16 @@
                         proxyPass = "http://${serviceName}";
                         proxyWebsockets = true;
                       };
-                      "/rest" = {
-                        bypassAuth = true;
-                        extraConfig = extraConfig + ''
-                          proxy_set_header X-User "";
-                        '';
-                        proxyPass = "http://${serviceName}";
-                        proxyWebsockets = true;
-                        setOauth2Headers = false;
-                      };
-                      "/share" = {
-                        bypassAuth = true;
-                        extraConfig = extraConfig + ''
-                          proxy_set_header X-User "";
-                        '';
-                        proxyPass = "http://${serviceName}";
-                        proxyWebsockets = true;
-                        setOauth2Headers = false;
-                      };
-                    };
+                    }
+                    // lib.genAttrs [ "/rest" "/share" ] (_: {
+                      bypassAuth = true;
+                      extraConfig = extraConfig + ''
+                        proxy_set_header X-User "";
+                      '';
+                      proxyPass = "http://${serviceName}";
+                      proxyWebsockets = true;
+                      setOauth2Headers = false;
+                    });
                   oauth2 = {
                     enable = true;
                     allowedGroups = [ "navidrome_access" ];
@@ -231,7 +211,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

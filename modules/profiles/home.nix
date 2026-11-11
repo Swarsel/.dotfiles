@@ -11,7 +11,6 @@ in
       "blueman-applet"
       "direnv"
       "eza"
-      "firefox"
       "glide"
       "fuzzel"
       "settings"
@@ -25,8 +24,6 @@ in
       "pii-agent"
       "sops"
       "stylix"
-      "zellij"
-      "zellij-keybinds"
     ];
     profile-minimal.imports = pickH [
       "settings"
@@ -75,7 +72,6 @@ in
         "direnv"
         "element"
         "eza"
-        "firefox"
         "glide"
         "fuzzel"
         "settings"
@@ -92,8 +88,6 @@ in
         "spicetify"
         "starship"
         "stylix"
-        "symlink"
-        "yubikey-touch-detector"
         "zellij"
         "zellij-keybinds"
         "zsh"

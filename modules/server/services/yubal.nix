@@ -71,23 +71,16 @@
           groups.${serviceGroup} = { };
           persistentIds.${serviceName} = confLib.mkIds serviceId;
         };
-        environment.persistence =
-          let
-            persistedDirs = [
-              {
-                directory = serviceDir;
-                group = serviceGroup;
-                mode = "0750";
-                user = serviceUser;
-              }
-            ];
-          in
-          {
-            "/persist".directories = lib.mkIf (
-              config.swarselsystems.isImpermanence && !config.swarselsystems.isMicroVM
-            ) persistedDirs;
-            "/state".directories = lib.mkIf config.swarselsystems.isMicroVM persistedDirs;
-          };
+        environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
+          directories = [
+            {
+              directory = serviceDir;
+              group = serviceGroup;
+              mode = "0750";
+              user = serviceUser;
+            }
+          ];
+        };
         virtualisation.oci-containers.containers.${serviceName} = {
           environment = {
             PGID = builtins.toString serviceId;
@@ -147,7 +140,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

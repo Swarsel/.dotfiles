@@ -7,6 +7,7 @@
       lib,
       pkgs,
       confLib,
+      globals,
       ...
     }:
     let
@@ -32,84 +33,60 @@
         ;
       inherit (config.swarselsystems) mainUser;
 
-      nixosHostsForArch =
-        arch:
-        let
-          dir = self + "/hosts/nixos/${arch}";
-        in
-        if builtins.pathExists dir then builtins.attrNames (builtins.readDir dir) else [ ];
-
-      allNixosHosts = lib.unique (nixosHostsForArch "aarch64-linux" ++ nixosHostsForArch "x86_64-linux");
-
-      excludedHosts = [ ];
-      buildbotHosts = builtins.filter (h: !builtins.elem h excludedHosts) allNixosHosts;
+      buildbotHosts =
+        lib.concatMap (arch: lib.attrNames (builtins.readDir (self + "/hosts/nixos/${arch}")))
+          [
+            "aarch64-linux"
+            "x86_64-linux"
+          ];
 
       buildbotHome = config.services.buildbot-master.home;
       flakeDir = "${buildbotHome}/flake";
-      flakeRepo = "https://github.com/Swarsel/.dotfiles.git";
-      flakeRepoSSH = "git@github.com:Swarsel/.dotfiles.git";
-      lockFile = "${buildbotHome}/.flake-update.lock";
       updateStatusFile = "${buildbotHome}/.update-status";
       retryFile = "${buildbotHome}/.flake-update-retry";
-      githubKeyPath = config.sops.secrets.buildbot-github-key.path;
-      githubTokenPath = config.sops.secrets.buildbot-github-token.path;
+      githubOwner = "Swarsel";
+      githubRepo = "${githubOwner}/.dotfiles";
+      githubApi = "https://api.github.com/repos/${githubRepo}/pulls";
       buildCommand = ''nix build "${flakeDir}#nixosConfigurations.$HOST.config.system.build.toplevel" --no-link --keep-going --max-jobs 3 --print-out-paths --accept-flake-config'';
       nixBuilders =
         systems:
-        ''--builders "''
-        + lib.foldl (
-          acc: system: acc + "ssh://eu.nixbuild.net ${system} - 100 1 big-parallel,benchmark;"
-        ) "" systems
-        + ''"'';
+        ''--builders "${
+          lib.concatMapStrings (
+            system: "ssh://eu.nixbuild.net ${system} - 100 1 big-parallel,benchmark;"
+          ) systems
+        }"'';
 
       buildAndPushBody = ''
         HOST="$1"
-        echo "=== Building nixosConfiguration: $HOST ==="
         result=$(${buildCommand} || ${buildCommand} --max-jobs 0 ${
           nixBuilders [
             "x86_64-linux"
             "i686-linux"
           ]
         })
-        echo "Build output: $result"
-
-        attempt=1
-        max_attempts=3
-        upload_success=0
-        while [ $attempt -le $max_attempts ]; do
-          echo "=== Pushing $HOST to binary cache (attempt $attempt/$max_attempts) ==="
-          if echo "$result" | xargs attic push ${mainUser}; then
-            upload_success=1
-            break
-          fi
-          echo "Upload attempt $attempt for $HOST failed."
-          attempt=$((attempt + 1))
-          if [ $attempt -le $max_attempts ]; then
-            sleep 10
-          fi
+        for attempt in 1 2 3; do
+            if xargs attic push ${mainUser} <<< "$result"; then
+                exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+                sleep 10
+            fi
         done
-
-        if [ $upload_success -eq 1 ]; then
-          echo "=== Successfully built and pushed $HOST ==="
-        else
-          echo "=== Build of $HOST succeeded but upload failed after $max_attempts attempts (continuing) ==="
-        fi
+        echo "attic push of $HOST failed after 3 attempts" >&2
       '';
 
       syncFlake = pkgs.writeShellApplication {
         name = "buildbot-sync-flake";
         text = ''
-          echo "=== Syncing flake repository ==="
           (
-            flock -x 9
-            if [ -d "${flakeDir}/.git" ]; then
-              cd ${flakeDir}
-              git fetch origin
-              git reset --hard origin/main
-            else
-              git clone --branch main ${flakeRepo} ${flakeDir}
-            fi
-          ) 9>"${lockFile}"
+              flock -x 9
+              if [ -d ${flakeDir}/.git ]; then
+                  git -C ${flakeDir} fetch origin
+                  git -C ${flakeDir} reset --hard origin/main
+              else
+                  git clone --branch main https://github.com/${githubRepo}.git ${flakeDir}
+              fi
+          ) 9> ${buildbotHome}/.flake-update.lock
         '';
       };
 
@@ -126,28 +103,21 @@
         text = ''
           ${lib.getExe syncFlake}
           cd ${flakeDir}
-
-          git remote set-url --push origin ${flakeRepoSSH}
+          git remote set-url --push origin git@github.com:${githubRepo}.git
           git checkout --detach origin/main
-          git reset --hard origin/main
           git clean -fdx
-          if git show-ref --verify --quiet refs/heads/flake-update; then
-            git branch -D flake-update
-          fi
-          git checkout -b flake-update
+          git checkout -B flake-update
         '';
       };
 
       shouldRunFlakeUpdate = pkgs.writeShellApplication {
         name = "buildbot-should-run-flake-update";
         text = ''
-          SCHEDULER="''${BUILDBOT_SCHEDULER:-}"
-          if [ "$SCHEDULER" = "force" ] || [ "$(date +%u)" = "1" ] || [ -f ${retryFile} ]; then
-            echo "1"
+          if [ "''${BUILDBOT_SCHEDULER:-}" = force ] || [ "$(date +%u)" = 1 ] || [ -f ${retryFile} ]; then
+              echo 1
           else
-            echo "Not Monday and no retry pending, skipping flake update run." >&2
-            echo "no-changes" > ${updateStatusFile}
-            echo "0"
+              echo no-changes > ${updateStatusFile}
+              echo 0
           fi
         '';
       };
@@ -156,36 +126,33 @@
         name = "buildbot-flake-update";
         text = ''
           cd ${flakeDir}
-
           touch ${retryFile}
-
-          git config user.name "buildbot"
-          git config user.email "buildbot@swarsel.win"
+          git config user.name buildbot
+          git config user.email buildbot@${globals.domains.main}
           git config gpg.format ssh
-          git config user.signingkey "${githubKeyPath}"
+          git config user.signingkey ${config.sops.secrets.buildbot-github-key.path}
           git config commit.gpgsign true
+
           nix flake update --accept-flake-config
           if git diff --quiet flake.lock; then
-            echo "No flake.lock changes, nothing to do."
-            rm -f ${retryFile}
-            echo "no-changes" > ${updateStatusFile}
-            exit 0
+              rm ${retryFile}
+              echo no-changes > ${updateStatusFile}
+              exit 0
           fi
-          echo "=== Realizing dev environment for git hooks ==="
+
           nix develop ${flakeDir}#hooks --accept-flake-config -c true
           git add flake.lock
           git commit -m "flake: update inputs $(date +%Y-%m-%d)"
           git push -u origin flake-update --force
-          echo "has-changes" > ${updateStatusFile}
+          echo has-changes > ${updateStatusFile}
         '';
       };
 
       buildFlakeUpdate = pkgs.writeShellApplication {
         name = "buildbot-build-flake-update";
         text = ''
-          if [ "$(cat ${updateStatusFile} 2>/dev/null)" = "no-changes" ]; then
-            echo "No changes, skipping build."
-            exit 0
+          if grep -qx no-changes ${updateStatusFile}; then
+              exit 0
           fi
           ${buildAndPushBody}
         '';
@@ -194,211 +161,73 @@
       createPR = pkgs.writeShellApplication {
         name = "buildbot-create-pr";
         text = ''
-          if [ "$(cat ${updateStatusFile} 2>/dev/null)" = "no-changes" ]; then
-            echo "No changes, skipping PR creation."
-            exit 0
-          fi
-          TOKEN=$(cat ${githubTokenPath})
-
-          existing=$(curl -s \
-            -H "Authorization: token $TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/Swarsel/.dotfiles/pulls?head=Swarsel:flake-update&state=open")
-
-          if echo "$existing" | jq -e 'length > 0' > /dev/null 2>&1; then
-            echo "PR already exists, force-push updated it."
-            rm -f ${retryFile}
-            exit 0
+          if grep -qx no-changes ${updateStatusFile}; then
+              exit 0
           fi
 
-          curl -f -X POST \
-            -H "Authorization: token $TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/Swarsel/.dotfiles/pulls" \
-            -d '{"title": "flake: update inputs", "body": "Automated flake update. All NixOS configurations built successfully.", "head": "flake-update", "base": "main"}'
-
-          rm -f ${retryFile}
+          api=(curl -sf -H "Authorization: token $(cat ${config.sops.secrets.buildbot-github-token.path})" -H "Accept: application/vnd.github.v3+json")
+          existing=$("''${api[@]}" "${githubApi}?head=${githubOwner}:flake-update&state=open")
+          if jq -e 'length == 0' <<< "$existing" > /dev/null; then
+              "''${api[@]}" -X POST "${githubApi}" \
+                -d '{"title": "flake: update inputs", "body": "Automated flake update. All NixOS configurations build.", "head": "flake-update", "base": "main"}'
+          fi
+          rm ${retryFile}
         '';
       };
 
-      pinEnumApply = ''
-        attrs:
-          let
-            stableSuffixes = builtins.filter (s: builtins.substring 0 6 s == "stable");
-            forSystem = system: suffixes: builtins.concatLists (map
-              (suffix: map
-                (name: system + " " + suffix + " " + name)
-                (builtins.attrNames suffixes.''${suffix}))
-              (stableSuffixes (builtins.attrNames suffixes)));
-          in
-          builtins.concatStringsSep "\n"
-            (builtins.concatLists (builtins.attrValues (builtins.mapAttrs forSystem attrs)))
-      '';
-
       checkStablePins = pkgs.writeShellApplication {
-        bashOptions = [
-          "nounset"
-          "pipefail"
-        ];
         excludeShellChecks = [ "SC2016" ];
         name = "buildbot-check-stable-pins";
         text = ''
           ${lib.getExe syncFlake}
-          candidates=()
-          keep=()
-          check() {
-            if nix build --no-link --max-jobs 0 ${
-              nixBuilders [
-                "x86_64-linux"
-                "i686-linux"
-                "aarch64-linux"
-              ]
-            } \
-                 "${flakeDir}#stablePinsUnstable.\"$1\".\"$2\".\"$3\"" \
-                 > /dev/null 2>&1; then
-              candidates+=("$3 (nixpkgs-$2, $1)")
-            else
-              keep+=("$3 (nixpkgs-$2, $1)")
-            fi
-          }
-          pinlist=$(nix eval --raw "${flakeDir}#stablePinsUnstable" --apply ${lib.escapeShellArg pinEnumApply}) || {
-            echo "ERROR: failed to enumerate stable pins from the flake" >&2
-            exit 2
-          }
+          pins=$(nix eval --json ${flakeDir}#stablePinsUnstable --apply 'builtins.mapAttrs (_: builtins.mapAttrs (_: builtins.attrNames))' \
+            | jq -r 'to_entries[] | .key as $system | .value | to_entries[] | select(.key | startswith("stable")) | .key as $suffix | .value[] | "\($system) \($suffix) \(.)"') || exit 2
+
+          status=0
           while read -r system suffix pkg; do
-            [ -n "$system" ] && check "$system" "$suffix" "$pkg"
-          done <<< "$pinlist"
-          echo "=== Stable-pin check: tried building each pinned package from current unstable nixpkgs (per supported platform) ==="
-          echo "fork-pinned packages (nixpkgs-dev) are excluded; review those manually."
-          echo ""
-          if [ ''${#keep[@]} -eq 0 ] && [ ''${#candidates[@]} -eq 0 ]; then
-            echo "No stable pins with a checkable unstable target."
-            exit 0
-          fi
-          if [ ''${#keep[@]} -gt 0 ]; then
-            echo "Still broken on unstable, keep pinned:"
-            printf '  - %s\n' "''${keep[@]}"
-            echo ""
-          fi
-          if [ ''${#candidates[@]} -gt 0 ]; then
-            echo "Now build on unstable, can likely be un-pinned (remove from stablePins in modules/flake/overlays.nix):"
-            printf '  - %s\n' "''${candidates[@]}"
-            exit 1
-          fi
-          echo "No un-pin candidates; all checked pins are still needed."
+              if nix build --no-link --max-jobs 0 ${
+                nixBuilders [
+                  "x86_64-linux"
+                  "i686-linux"
+                  "aarch64-linux"
+                ]
+              } "${flakeDir}#stablePinsUnstable.\"$system\".\"$suffix\".\"$pkg\"" > /dev/null 2>&1; then
+                  echo "$pkg (nixpkgs-$suffix, $system) builds on unstable and can be unpinned"
+                  status=1
+              fi
+          done <<< "$pins"
+          exit $status
         '';
       };
 
       checkInsecurePermits = pkgs.writeShellApplication {
-        bashOptions = [
-          "nounset"
-          "pipefail"
-        ];
-        excludeShellChecks = [ "SC2086" ];
+        excludeShellChecks = [ "SC2016" ];
         name = "buildbot-check-insecure-permits";
         text = ''
-          export NIXPKGS_ALLOW_INSECURE=
-          ${lib.getExe syncFlake} || exit 2
-          wt=${buildbotHome}/.insecure-check
-          git -C ${flakeDir} worktree remove --force "$wt" >/dev/null 2>&1 || true
-          git -C ${flakeDir} worktree prune
-          trap 'git -C ${flakeDir} worktree remove --force "$wt" >/dev/null 2>&1; git -C ${flakeDir} worktree prune' EXIT
-          git -C ${flakeDir} worktree add --detach "$wt" HEAD || exit 2
+          ${lib.getExe syncFlake}
+          cd ${flakeDir}
+          names=$(mktemp)
+          trap 'rm -f "$names"' EXIT
 
-          files=$(cd "$wt" && grep -rl --include='*.nix' 'permittedInsecurePackages *=' modules hosts 2>/dev/null)
+          targets=$(
+              nix eval --json .#nixosConfigurations --apply builtins.attrNames --accept-flake-config \
+                | jq -r '.[] | "nixosConfigurations.\(.).config.system.build.toplevel"'
+              nix eval --json .#devShells --apply 'builtins.mapAttrs (_: builtins.attrNames)' --accept-flake-config \
+                | jq -r 'to_entries[] | select(.key | endswith("-linux")) | .key as $system | .value[] | "devShells.\($system).\(.)"'
+          ) || exit 2
+          for target in $targets; do
+              nix-store -qR "$(nix eval --raw ".#$target.drvPath" --accept-flake-config)" || exit 2
+          done | sed 's|^/nix/store/[a-z0-9]*-||; s|\.drv$||' | sort -u > "$names"
 
-          for f in $files; do
-            awk '
-              /permittedInsecurePackages/ { in_block = 1 }
-              in_block {
-                line = $0
-                sub(/#.*/, "", line)
-                while (match(line, /"[^"]+"/)) {
-                  print substr(line, RSTART + 1, RLENGTH - 2)
-                  line = substr(line, RSTART + RLENGTH)
-                }
-                if (line ~ /\];/) in_block = 0
-              }
-            ' "$wt/$f"
-          done | sort -u > "$wt/.union"
-          if [ ! -s "$wt/.union" ]; then
-            echo "No permittedInsecurePackages entries found."
-            exit 0
-          fi
-
-          rewrite_lists() {
-            for f in $files; do
-              awk -v entries="$1" '
-                !done && /permittedInsecurePackages/ {
-                  prefix = $0
-                  sub(/\[.*/, "", prefix)
-                  print prefix "[ " entries "];"
-                  if ($0 !~ /\];/) skip = 1
-                  done = 1
-                  next
-                }
-                skip { if (/\];/) skip = 0; next }
-                { print }
-              ' "$wt/$f" > "$wt/$f.tmp" && mv "$wt/$f.tmp" "$wt/$f"
-            done
-          }
-
-          nix eval --json "$wt#nixosConfigurations" --apply builtins.attrNames --accept-flake-config \
-            | jq -r '.[] | "nixosConfigurations.\(.).config.system.build.toplevel.drvPath"' > "$wt/.round" || exit 2
-          nix eval --json "$wt#devShells" --apply "builtins.mapAttrs (_: builtins.attrNames)" --accept-flake-config \
-            | jq -r 'to_entries[] | select(.key | endswith("-linux")) | .key as $s | .value[] | "devShells.\($s).\(.).drvPath"' >> "$wt/.round" || exit 2
-
-          check() {
-            out=$(nix eval --raw "$wt#$1" --accept-flake-config 2>&1 >/dev/null) && return 0
-            needs=$(grep -aoE "Refusing to evaluate package '[^']+'" <<< "$out" | tr -d "'" | sed 's/.*package //' | sort -u)
-            if [ -n "$needs" ]; then
-              while IFS= read -r n; do echo "NEED|$n|$1" >> "$wt/.need-log"; done <<< "$needs"
-              echo "$1" >> "$wt/.retry"
-            else
-              { echo "=== $1 ==="; grep -av "error (ignored)" <<< "$out" | tail -n 15; } >> "$wt/.errlog"
-            fi
-          }
-
-          : > "$wt/.allowed"
-          : > "$wt/.need-log"
-          : > "$wt/.errlog"
-          for round in $(seq 1 10); do
-            echo "=== Round $round: $(wc -l < "$wt/.round") targets, permits: [ $(paste -sd ' ' "$wt/.allowed") ] ==="
-            rewrite_lists "$(sed 's/.*/"&" /' "$wt/.allowed" | tr -d '\n')"
-            : > "$wt/.retry"
-            while IFS= read -r t; do check "$t"; done < "$wt/.round"
-            cut -d'|' -f2 "$wt/.need-log" | sort -u | comm -23 - "$wt/.allowed" > "$wt/.fresh"
-            [ -s "$wt/.fresh" ] || break
-            sort -u -o "$wt/.allowed" "$wt/.allowed" "$wt/.fresh"
-            sort -u "$wt/.retry" > "$wt/.round"
+          status=0
+          permits=(${lib.escapeShellArgs pkgs.config.permittedInsecurePackages})
+          for permit in "''${permits[@]}"; do
+              if ! grep -qxF "$permit" "$names"; then
+                  echo "$permit is no longer needed by any output and can be removed from permittedInsecurePackages"
+                  status=1
+              fi
           done
-
-          echo "=== Checked all nixosConfigurations (including their microvm guests) and Linux devShells against emptied permittedInsecurePackages lists ==="
-          if [ -s "$wt/.fresh" ]; then
-            echo "Did not converge within 10 rounds, results incomplete."
-            exit 2
-          fi
-          if [ -s "$wt/.errlog" ]; then
-            echo "Evaluation failed for unrelated reasons, results inconclusive:"
-            cat "$wt/.errlog"
-            exit 2
-          fi
-          if [ -s "$wt/.allowed" ]; then
-            echo "Still required, keep:"
-            while IFS= read -r e; do
-              echo "  - $e (needed by: $(grep -F "NEED|$e|" "$wt/.need-log" | cut -d'|' -f3 | sed 's/\.config\.system\.build\.toplevel\.drvPath$//; s/\.drvPath$//' | sort -u | paste -sd ',' - | sed 's|,|, |g'))"
-            done < "$wt/.allowed"
-          fi
-          comm -23 "$wt/.union" "$wt/.allowed" > "$wt/.droppable"
-          if [ ! -s "$wt/.droppable" ]; then
-            echo "No droppable entries; all permits are still required."
-            exit 0
-          fi
-          echo "No evaluated output needs these, remove:"
-          while IFS= read -r e; do
-            echo "  - $e (listed in: $(cd ${flakeDir} && grep -lF "\"$e\"" $files | paste -sd ',' - | sed 's|,|, |g'))"
-          done < "$wt/.droppable"
-          exit 1
+          exit $status
         '';
       };
 
@@ -432,13 +261,13 @@
 
         flake_update_factory = util.BuildFactory()
         flake_update_factory.addStep(steps.SetPropertyFromCommand(
-          name='should-run-flake-update',
-          command=['${lib.getExe shouldRunFlakeUpdate}'],
-          property='run_flake_update',
-          env={
-            'BUILDBOT_SCHEDULER': util.Interpolate('%(prop:scheduler:-)s'),
-          },
-          haltOnFailure=True,
+            name='should-run-flake-update',
+            command=['${lib.getExe shouldRunFlakeUpdate}'],
+            property='run_flake_update',
+            env={
+                'BUILDBOT_SCHEDULER': util.Interpolate('%(prop:scheduler:-)s'),
+            },
+            haltOnFailure=True,
         ))
         flake_update_factory.addStep(steps.ShellCommand(
             name='prepare-update-branch',
@@ -450,7 +279,7 @@
         flake_update_factory.addStep(steps.ShellCommand(
             name='flake-update',
             command=['${lib.getExe flakeUpdateScript}'],
-          doStepIf=lambda step: step.build.getProperty('run_flake_update') == '1',
+            doStepIf=lambda step: step.build.getProperty('run_flake_update') == '1',
             haltOnFailure=True,
             timeout=3600,
         ))
@@ -511,7 +340,7 @@
                 periodicBuildTimer=86400,
             ),
             schedulers.Nightly(
-              name='daily-flake-update',
+                name='daily-flake-update',
                 builderNames=['flake-update'],
                 hour=3,
                 minute=0,
@@ -536,7 +365,7 @@
 
         c['db'] = dict(db_url='sqlite:///state.sqlite')
 
-        c['title'] = 'SwarselSystems CI'
+        c['title'] = '${config.repo.secrets.common.names.buildbot}'
         c['titleURL'] = 'https://${serviceDomain}'
         c['buildbotURL'] = 'https://${serviceDomain}/'
         c['buildbotNetUsageData'] = None
@@ -572,23 +401,18 @@
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
         };
-        sops.secrets = {
-          buildbot-age-key = {
-            group = "buildbot";
-            mode = "0400";
-            owner = "buildbot";
-          };
-          buildbot-github-key = {
-            group = "buildbot";
-            mode = "0400";
-            owner = "buildbot";
-          };
-          buildbot-github-token = {
-            group = "buildbot";
-            mode = "0400";
-            owner = "buildbot";
-          };
-        };
+        sops.secrets =
+          lib.genAttrs
+            [
+              "buildbot-age-key"
+              "buildbot-github-key"
+              "buildbot-github-token"
+            ]
+            (_: {
+              group = "buildbot";
+              mode = "0400";
+              owner = "buildbot";
+            });
         users = {
           users.${serviceName} = {
             extraGroups = [ "builder" ];
@@ -624,7 +448,6 @@
               sops
               curl
               jq
-              gawk
               gnugrep
               gnused
             ];
@@ -646,7 +469,7 @@
         '';
         environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
           {
-            directory = "/home/buildbot";
+            directory = buildbotHome;
             group = "buildbot";
             mode = "0750";
             user = "buildbot";
@@ -675,21 +498,19 @@
               MemoryMax = "18G";
             };
           };
-          tmpfiles.settings."10-buildbot" = builtins.listToAttrs (
-            map
-              (path: {
-                name = "/home/buildbot/${path}";
-                value.d = {
+          tmpfiles.settings."10-buildbot" =
+            lib.genAttrs
+              [
+                flakeDir
+                "${buildbotHome}/master"
+              ]
+              (_: {
+                d = {
                   group = "buildbot";
                   mode = "0750";
                   user = "buildbot";
                 };
-              })
-              [
-                "/flake"
-                "/master"
-              ]
-          );
+              });
         };
         nodes = lib.mkMerge [
           {
@@ -722,7 +543,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

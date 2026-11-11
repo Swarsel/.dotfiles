@@ -36,7 +36,6 @@
         webProxy
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
     in
     {
       imports = [
@@ -98,7 +97,7 @@
           environment = {
             ALLOW_EMAIL_PASSWORD_REGISTRATION = "false";
             OIDC_CLIENT_ID = serviceName;
-            OIDC_ISSUER = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+            OIDC_ISSUER = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
             OIDC_PKCE_ENABLED = "true";
             OIDC_PROVIDER_NAME = "Kanidm";
             OIDC_REDIRECT_URI = "https://${serviceDomain}/users/auth/openid_connect/callback";
@@ -163,7 +162,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

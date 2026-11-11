@@ -8,7 +8,5 @@
           value = config.node.name;
         }) config.swarselsystems.nodeRoles
       );
-    }
-
-  ;
+    };
 }

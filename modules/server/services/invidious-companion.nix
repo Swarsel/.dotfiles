@@ -39,24 +39,9 @@
               webProxy
               ;
 
-            companion = pkgs.stdenv.mkDerivation {
-              buildInputs = [
-                pkgs.stdenv.cc.cc.lib
-                pkgs.openssl
-              ];
-              installPhase = ''
-                mkdir -p $out/bin
-                cp invidious_companion $out/bin/invidious_companion
-                chmod +x $out/bin/invidious_companion
-              '';
-              name = "invidious-companion";
-              nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-              phases = [
-                "unpackPhase"
-                "installPhase"
-              ];
-              src = inputs.invidious-companion;
-            };
+            companion = pkgs.runCommand "invidious-companion" { } ''
+              install -Dm755 ${inputs.invidious-companion}/invidious_companion $out/bin/invidious_companion
+            '';
           in
           {
             swarselsystems.enabledServerModules = [ "invidious-companion" ];

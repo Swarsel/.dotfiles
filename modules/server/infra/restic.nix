@@ -82,11 +82,11 @@
               set -euo pipefail
             ''
             + lib.optionalString (postgresDumps != [ ]) ''
-              ${pkgs.coreutils}/bin/install -d -m 0700 -o root -g root ${postgresDumpDir}
+              install -d -m 0700 ${postgresDumpDir}
             ''
             + lib.concatMapStrings (dump: ''
               ${pkgs.util-linux}/bin/runuser -u postgres -- ${config.services.postgresql.package}/bin/${dump.command} > ${postgresDumpDir}/${dump.file}
-              ${pkgs.coreutils}/bin/chmod 0600 ${postgresDumpDir}/${dump.file}
+              chmod 0600 ${postgresDumpDir}/${dump.file}
             '') postgresDumps;
             environmentFile = config.sops.templates."restic-env-${name}".path;
             extraBackupArgs = [ "--group-by host" ];
@@ -133,8 +133,8 @@
             _: target:
             lib.nameValuePair "restic-backups-${target.bucketName}" {
               postStart = ''
-                ${pkgs.coreutils}/bin/echo "restic_backup_last_success_timestamp_seconds{target=\"${target.bucketName}\"} $(${pkgs.coreutils}/bin/date +%s)" > ${metricsDir}/${target.bucketName}.prom.tmp
-                ${pkgs.coreutils}/bin/mv ${metricsDir}/${target.bucketName}.prom.tmp ${metricsDir}/${target.bucketName}.prom
+                echo "restic_backup_last_success_timestamp_seconds{target=\"${target.bucketName}\"} $(date +%s)" > ${metricsDir}/${target.bucketName}.prom.tmp
+                mv ${metricsDir}/${target.bucketName}.prom.tmp ${metricsDir}/${target.bucketName}.prom
               '';
             }
           ) targets;
@@ -155,7 +155,7 @@
                 expr = ''time() - max(restic_backup_last_success_timestamp_seconds{host="${config.node.name}",target="${target.bucketName}"}) or vector(${toString (staleAfter + 1)})'';
                 forDuration = "30m";
                 op = "gt";
-                summary = "restic backup ${target.bucketName} on ${config.node.name} has not succeeded in the last 26 hours";
+                summary = "restic backup ${target.bucketName} on ${config.node.name} has not succeeded in the last ${toString (staleAfter / 3600)} hours";
                 threshold = staleAfter;
                 title = "restic backup stale (${config.node.name}/${target.bucketName})";
                 uid = "restic_stale_${target.bucketName}";
@@ -163,7 +163,5 @@
             ) targets;
           };
       };
-    }
-
-  ;
+    };
 }

@@ -17,10 +17,7 @@ in
 
   home-manager.users.${workUser} = {
     swarselsystems = {
-      flakePath = "/home/${workUser}/.dotfiles";
-      homeDir = "/home/${workUser}";
       isBtrfs = false;
-      isDarwin = true;
       isLaptop = true;
       mainUser = workUser;
     };

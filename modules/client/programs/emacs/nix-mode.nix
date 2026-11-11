@@ -1,6 +1,15 @@
 {
   flake.modules.homeManager.emacs-init =
-    { lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      flake = ''(builtins.getFlake \"${config.swarselsystems.flakePath}\")'';
+      nixosOptions = "${flake}.nixosConfigurations.${config.node.name}.options";
+    in
     {
       config.programs.emacs.init.usePackage = {
         eglot = {
@@ -11,11 +20,11 @@
           '';
           init = ''
             (setq-default eglot-workspace-configuration
-                          '(:nixd (:nixpkgs (:expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }")
+                          '(:nixd (:nixpkgs (:expr "import ${flake}.inputs.nixpkgs { }")
                                    :formatting (:command ["pedantix"])
-                                   :options (:nixos (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options")
-                                             :home-manager (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.valueMeta.attrs.swarsel.configuration.options")
-                                             :flake-parts (:expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").debug.options")))))
+                                   :options (:nixos (:expr "${nixosOptions}")
+                                             :home-manager (:expr "${nixosOptions}.home-manager.users.valueMeta.attrs.${config.swarselsystems.mainUser}.configuration.options")
+                                             :flake-parts (:expr "${flake}.debug.options")))))
           '';
         };
 

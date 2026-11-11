@@ -4,7 +4,6 @@
       root,
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       ...
@@ -34,7 +33,6 @@
         webProxy
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
     in
     {
       config = {
@@ -77,7 +75,6 @@
         };
         services.${serviceName} = {
           enable = true;
-          package = pkgs.readeck;
           environmentFile = config.sops.templates.readeck-env.path;
           settings = {
             auth.oidc.providers = [
@@ -95,7 +92,7 @@
                 ];
                 name = "Kanidm";
                 provisioning = true;
-                url = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+                url = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
               }
             ];
             email = {
@@ -165,7 +162,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

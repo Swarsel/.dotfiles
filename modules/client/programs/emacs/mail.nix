@@ -54,22 +54,14 @@
 
             (let ((work (getenv "SWARSEL_MAIL_WORK")))
               (when (and work (not (string-empty-p work)))
-                (setq swarsel-smime-cert-path "~/.Certificates/$SWARSEL_MAIL_WORK.pem")
-                (setq swarsel-smime-cert-path (substitute-env-vars swarsel-smime-cert-path))
                 (setq mml-secure-prefer-scheme 'smime)
                 (setq mml-secure-smime-sign-with-sender t)
-                (add-hook 'mu4e-compose-mode-hook
-                          (lambda ()
-                            (when (and (boundp 'user-mail-address)
-                                       (stringp user-mail-address)
-                                       (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
-                              (mml-secure-message-sign-smime))))
+                (add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-sign-if-work)
                 (setq smime-keys
-                      `((,(getenv "SWARSEL_MAIL_WORK")
-                         ,swarsel-smime-cert-path
+                      `((,work
+                         ,(format "~/.Certificates/%s.pem" work)
                          ("~/Certificates/harica-root.pem"
-                          "~/Certificates/harica-intermediate.pem"))))
-                ))
+                          "~/Certificates/harica-intermediate.pem"))))))
 
             (setq mu4e-bookmarks
                   `((:name "Unread messages" :query "flag:unread AND NOT flag:trashed" :key 117)
@@ -87,6 +79,11 @@
             "(mu4e-compose-post . swarsel/mu4e-restore-default)"
           ];
           init = ''
+            (defun swarsel/mu4e-sign-if-work ()
+              (when (and (stringp user-mail-address)
+                         (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+                (mml-secure-message-sign-smime)))
+
             (defun swarsel/mu4e-switch-account ()
               (interactive)
               (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
@@ -109,10 +106,7 @@
                   (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
                     (cl-destructuring-bind (from-user from-addr) dest
                       (setq user-mail-address from-addr)
-                      (when (and (boundp 'user-mail-address)
-                                 (stringp user-mail-address)
-                                 (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
-                        (mml-secure-message-sign-smime))
+                      (swarsel/mu4e-sign-if-work)
                       (message-position-on-field "From")
                       (message-beginning-of-line)
                       (delete-region (point) (line-end-position))
@@ -136,8 +130,6 @@
              :category "mu4e-alert"
              :predicate (lambda (_) (string-match-p "^mu4e-" (symbol-name major-mode)))
              :continue t)
-
-            (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
           '';
           enable = true;
           custom.alert-libnotify-command = ''"${lib.getExe' pkgs.libnotify "notify-send"}"'';

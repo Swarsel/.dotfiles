@@ -36,16 +36,11 @@
     });
 
     glide.keymaps.set("normal", "<C-m>", async () => {
-      try {
-        const win = await browser.windows.getLastFocused({ populate: true });
-        const tabs = (win.tabs ?? [])
-          .filter((t) => t.id != null)
-          .sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
-        const target = tabs[1];
-        if (target?.id != null) {
-          await browser.tabs.update(target.id, { active: true });
-        }
-      } catch {}
+      const win = await browser.windows.getLastFocused({ populate: true });
+      const target = (win.tabs ?? []).sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[1];
+      if (target?.id != null) {
+        await browser.tabs.update(target.id, { active: true });
+      }
     }, { description: "Switch to the last-active tab" });
 
     glide.keymaps.set("normal", "gd", async () => {

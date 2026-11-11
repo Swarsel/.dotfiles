@@ -31,7 +31,7 @@
       _module.args.confLib = rec {
         gen =
           {
-            name ? "n/a",
+            name,
             address ? addressDefault,
             dir ? null,
             domain ? (domainDefault name),
@@ -115,48 +115,41 @@
             port,
           }:
           let
-            monitoringServer = globals.general.monitoringServer;
-            isCentral = host == monitoringServer;
-            isHomeHost = globals.hosts.${host}.isHome or false;
+            inherit (globals.general) monitoringServer;
           in
-          if isCentral then
+          if host == monitoringServer then
             "http://127.0.0.1:${toString port}${path}"
-          else if isHomeHost then
+          else if globals.hosts.${host}.isHome then
             "http://${
               globals.networks.home-lan.vlans.services.hosts.${monitoringServer}.ipv4
             }:${toString port}${path}"
           else
             "https://${domain}${path}";
+        mkAlloyScrape =
+          {
+            name,
+            port,
+            scrapeSettings ? { },
+          }:
+          lib.mkIf config.services.alloy.enable (
+            lib.mkAfter ''
+              prometheus.scrape "${name}" {
+                targets    = [{"__address__" = "127.0.0.1:${toString port}"}]
+                forward_to = [prometheus.remote_write.mimir.receiver]
+                job_name   = "${name}"
+              ${lib.concatStrings (lib.mapAttrsToList (key: value: "  ${key} = \"${value}\"\n") scrapeSettings)}}
+            ''
+          );
         mkDeviceMac =
           id:
           let
-            mod = n: d: n - (n / d) * d;
-            toHexByte =
-              n:
-              let
-                hex = "0123456789abcdef";
-                hi = n / 16;
-                lo = mod n 16;
-              in
-              builtins.substring hi 1 hex + builtins.substring lo 1 hex;
-
-            max = 16777215; # 256^3 - 1
-
-            b1 = id / (256 * 256);
-            r1 = mod id (256 * 256);
-            b2 = r1 / 256;
-            b3 = mod r1 256;
+            hex = lib.fixedWidthString 6 "0" (lib.toLower (lib.toHexString id));
           in
-          if (id <= max) then
-            (builtins.concatStringsSep ":" (
-              map toHexByte [
-                b1
-                b2
-                b3
-              ]
-            ))
-          else
-            (throw "Device MAC ID too large (max is 16777215)");
+          lib.concatMapStringsSep ":" (i: builtins.substring i 2 hex) [
+            0
+            2
+            4
+          ];
         mkDnsMonitoring =
           {
             address,
@@ -191,11 +184,13 @@
             forHomeProxy ? true,
             forWebProxy ? true,
             tcpPorts ? [ ],
+            udpPortRanges ? [ ],
             udpPorts ? [ ],
           }:
           let
             rule = {
               allowedTCPPorts = lib.mkIf (tcpPorts != [ ]) tcpPorts;
+              allowedUDPPortRanges = lib.mkIf (udpPortRanges != [ ]) udpPortRanges;
               allowedUDPPorts = lib.mkIf (udpPorts != [ ]) udpPorts;
             };
           in
@@ -341,16 +336,6 @@
               };
             };
           };
-        mkKanshiOutput =
-          monitor: overrides:
-          {
-            inherit (monitor) position;
-            criteria = monitor.output;
-            mode = monitor.mode + lib.optionalString (monitor ? refresh) "@${monitor.refresh}Hz";
-            scale = builtins.fromJSON monitor.scale * 1.0;
-          }
-          // lib.optionalAttrs (monitor ? transform) { inherit (monitor) transform; }
-          // overrides;
         mkMicrovm =
           if config.swarselsystems.withMicroVMs then
             (
@@ -358,7 +343,6 @@
               {
                 eternorPaths ? [ ],
                 withZfs ? false,
-                ...
               }:
               {
                 ${guestName} = {
@@ -435,9 +419,13 @@
               }
             )
           else
-            (_: {
-              _ = { };
-            });
+            (_: _: { });
+        mkOtelEnvironment = serviceName: {
+          OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString globals.services.alloy.extraConfig.otlpGrpcPort}";
+          OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
+          OTEL_SERVICE_NAME = "${serviceName}-${config.node.name}";
+          OTEL_TRACES_EXPORTER = "otlp";
+        };
         mkServiceGlobal =
           {
             homeServiceAddress,
@@ -582,6 +570,13 @@
             keyPrefix = sharedSecrets.mail;
             localPart = "notification";
           };
+          probeKinds = [
+            "http"
+            "ping"
+            "cert"
+            "tcp"
+            "dns"
+          ];
           scannerDropRules = ''
             location ~* "\.(php|aspx?|env|jsp|cgi|bak|sql|old)(\?|$|/)" {
               access_log off;

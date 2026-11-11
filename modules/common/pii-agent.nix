@@ -5,7 +5,6 @@
       {
         config,
         lib,
-        options,
         nixosConfig ? null,
         ...
       }:
@@ -14,9 +13,7 @@
         swarselsystems.enabledHomeModules = [ "pii-agent" ];
         services.pii-agent = {
           enable = true;
-          sshKey = lib.mkIf (nixosConfig == null && options ? sops) (
-            lib.mkDefault (lib.head config.sops.age.sshKeyPaths)
-          );
+          sshKey = lib.mkIf (nixosConfig == null) (lib.mkDefault (lib.head config.sops.age.sshKeyPaths));
         };
       };
     nixos.pii-agent =

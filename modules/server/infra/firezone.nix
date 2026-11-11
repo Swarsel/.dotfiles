@@ -31,7 +31,6 @@
         ;
       inherit (confLib.static)
         homeProxy
-        homeProxyIf
         homeServiceAddress
         homeWebProxy
         idmServer
@@ -40,15 +39,12 @@
         nginxAccessRules
         notificationMail
         webProxy
-        webProxyIf
         ;
 
       apiSubDomain = "${subDomain}-api";
       apiDomain = "${apiSubDomain}.${baseDomain}";
 
       portalPort = 8080;
-      distributionPort = 9003;
-      gatewayHealthPort = 8080;
       relayPort = 3478;
       relayHealthPort = 8082;
 
@@ -64,26 +60,26 @@
       homeDomains = lib.mapAttrsToList (_: serviceCfg: serviceCfg.domain) homeServices;
       smbDomain = "smb.${globals.domains.main}";
       vlanCidrResources = lib.listToAttrs (
-        lib.concatMap (vlan: [
-          {
-            name = "home.vlan-${vlan}.v4";
-            value = {
-              address = globals.networks.home-lan.vlans.${vlan}.cidrv4;
-              gatewayGroups = [ "home" ];
-              name = "home.vlan-${vlan}.v4";
-              type = "cidr";
-            };
-          }
-          {
-            name = "home.vlan-${vlan}.v6";
-            value = {
-              address = globals.networks.home-lan.vlans.${vlan}.cidrv6;
-              gatewayGroups = [ "home" ];
-              name = "home.vlan-${vlan}.v6";
-              type = "cidr";
-            };
-          }
-        ]) firezoneTargetVLANs
+        lib.concatMap (
+          vlan:
+          map
+            (
+              family:
+              let
+                name = "home.vlan-${vlan}.v${family}";
+              in
+              lib.nameValuePair name {
+                inherit name;
+                address = globals.networks.home-lan.vlans.${vlan}."cidrv${family}";
+                gatewayGroups = [ "home" ];
+                type = "cidr";
+              }
+            )
+            [
+              "4"
+              "6"
+            ]
+        ) firezoneTargetVLANs
       );
       allow = group: resource: {
         "${group}@${resource}" = {
@@ -163,35 +159,19 @@
             {
               firezone-gateway = {
                 network = "local-${homeProxy}";
-                url = "http://127.0.0.1:${toString gatewayHealthPort}/healthz";
+                url = "http://127.0.0.1:8080/healthz";
               };
             }
           ];
-          networks = {
-            ${homeProxyIf}.hosts = lib.mkIf isHome {
-              ${config.node.name}.firewallRuleForNode.${homeWebProxy} = {
-                allowedTCPPorts = [ portalPort ];
-                allowedUDPPortRanges = [
-                  {
-                    from = config.services.firezone.relay.lowestPort;
-                    to = config.services.firezone.relay.highestPort;
-                  }
-                ];
-                allowedUDPPorts = [ relayPort ];
-              };
-            };
-            ${webProxyIf}.hosts = lib.mkIf isProxied {
-              ${config.node.name}.firewallRuleForNode.${webProxy} = {
-                allowedTCPPorts = [ portalPort ];
-                allowedUDPPortRanges = [
-                  {
-                    from = config.services.firezone.relay.lowestPort;
-                    to = config.services.firezone.relay.highestPort;
-                  }
-                ];
-                allowedUDPPorts = [ relayPort ];
-              };
-            };
+          networks = confLib.mkDualFirewallRules {
+            tcpPorts = [ portalPort ];
+            udpPortRanges = [
+              {
+                from = config.services.firezone.relay.lowestPort;
+                to = config.services.firezone.relay.highestPort;
+              }
+            ];
+            udpPorts = [ relayPort ];
           };
         };
         sops.secrets = {
@@ -258,18 +238,12 @@
                   name = "anyone";
                 };
                 name = "Home";
-                policies =
-                  { }
-                  // lib.mergeAttrsList (
-                    lib.concatMap (resource: [
-                      (allow "everyone" resource)
-                      (allow "anyone" resource)
-                    ]) (lib.attrNames vlanCidrResources)
-                  )
-                  // lib.mergeAttrsList (map (domain: allow "everyone" domain) homeDomains)
-                  // lib.mergeAttrsList (map (domain: allow "anyone" domain) homeDomains)
-                  // (allow "everyone" smbDomain)
-                  // (allow "anyone" smbDomain);
+                policies = lib.mergeAttrsList (
+                  lib.concatMap (resource: [
+                    (allow "everyone" resource)
+                    (allow "anyone" resource)
+                  ]) (lib.attrNames vlanCidrResources ++ homeDomains ++ [ smbDomain ])
+                );
                 resources =
                   lib.mapAttrs' (
                     _: serviceCfg:
@@ -316,7 +290,7 @@
                   };
               };
             };
-            settings.ERLANG_DISTRIBUTION_PORT = distributionPort;
+            settings.ERLANG_DISTRIBUTION_PORT = 9003;
             settingsSecret.DATABASE_PASSWORD = config.sops.secrets.firezone-db-password.path;
             smtp = {
               inherit (config.repo.secrets.local.firezone.mail) from username;
@@ -397,18 +371,15 @@
                     chains.postrouting.masquerade-firezone = {
                       after = [ "hook" ];
                       late = true;
-                      rules = lib.concatMap (
-                        sourceZone:
-                        lib.forEach firezoneTargetZones (
-                          targetZone:
-                          lib.concatStringsSep " " [
-                            "meta protocol { ip, ip6 }"
-                            (lib.head nodeCfg.networking.nftables.firewall.zones.${sourceZone}.ingressExpression)
-                            (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
-                            "masquerade random"
-                          ]
-                        )
-                      ) [ "firezone" ];
+                      rules = lib.forEach firezoneTargetZones (
+                        targetZone:
+                        lib.concatStringsSep " " [
+                          "meta protocol { ip, ip6 }"
+                          (lib.head nodeCfg.networking.nftables.firewall.zones.firezone.ingressExpression)
+                          (lib.head nodeCfg.networking.nftables.firewall.zones.${targetZone}.egressExpression)
+                          "masquerade random"
+                        ]
+                      );
                     };
                     firewall = {
                       rules = {
@@ -456,7 +427,5 @@
 
       };
       disabledModules = map disabledFirezoneModule disabledFirezoneModules;
-    }
-
-  ;
+    };
 }

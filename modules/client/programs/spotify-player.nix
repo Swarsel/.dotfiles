@@ -1,12 +1,6 @@
 {
-  flake.modules.homeManager.spotify-player =
-    let
-      moduleName = "spotify-player";
-    in
-    {
-      config = {
-        swarselsystems.enabledHomeModules = [ "spotify-player" ];
-        programs.${moduleName}.enable = true;
-      };
-    };
+  flake.modules.homeManager.spotify-player.config = {
+    swarselsystems.enabledHomeModules = [ "spotify-player" ];
+    programs.spotify-player.enable = true;
+  };
 }

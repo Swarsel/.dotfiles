@@ -7,7 +7,6 @@
       (global-unset-key (kbd "C-z"))
 
       (setq
-       swarsel-emacs-directory "~/.emacs.d"
        swarsel-dotfiles-directory (getenv "FLAKE")
        swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
        swarsel-tasks-org-file "Tasks.org"
@@ -86,17 +85,9 @@
         (setq native-compile-prune-cache t))
 
       (setq garbage-collection-messages nil)
-      (defmacro k-time (&rest body)
-        "Measure and return the time it takes evaluating BODY."
-        `(let ((time (current-time)))
-           ,@body
-           (float-time (time-since time))))
 
       (unless (featurep 'mps)
-        (defvar k-gc-timer
-          (run-with-idle-timer 15 t
-                               (lambda ()
-                                 (k-time (garbage-collect)))))
+        (defvar k-gc-timer (run-with-idle-timer 15 t #'garbage-collect))
 
         (defun swarsel/minibuffer-setup-hook ()
           (setq gc-cons-threshold most-positive-fixnum))
@@ -130,15 +121,6 @@
             (advice-remove 'message #'silence))))
 
       (advice-add 'push-mark :around #'suppress-messages)
-
-      (defun who-called-me? (old-fun format &rest args)
-        (let ((trace nil) (n 1) (frame nil))
-          (while (setf frame (backtrace-frame n))
-            (setf n     (1+ n)
-                  trace (cons (cadr frame) trace)) )
-          (apply old-fun (concat "<<%S>>\n" format) (cons trace args))))
-
-      (advice-remove 'message #'who-called-me?)
     '';
     recommendedGcSettings = false;
   };

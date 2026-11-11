@@ -1,6 +1,5 @@
 {
   flake.modules.homeManager.emacs-init =
-    _:
     let
       devdocsHook = mode: docs: "(${mode} . (lambda () (setq-local devdocs-current-docs '(${docs}))))";
       pythonDocs = ''"python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"'';

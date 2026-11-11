@@ -32,10 +32,9 @@
         nginxAccessRules
         webProxy
         ;
-      serviceDB = "koillection";
 
-      postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
-      postgresPort = config.services.postgresql.settings.port; # 5432
+      postgresUser = config.systemd.services.postgresql.serviceConfig.User;
+      postgresPort = config.services.postgresql.settings.port;
       containerRev = "sha256:bb8ad2b6891441d8ec5c3169b684b71574f3bb3e9afb345bad2f91d833d60340";
 
     in
@@ -47,7 +46,8 @@
       config = {
         swarselsystems = {
           enabledServerModules = [ "koillection" ];
-          server.postgresql.rolePasswordFiles.${serviceDB} = config.sops.secrets.koillection-db-password.path;
+          server.postgresql.rolePasswordFiles.${serviceName} =
+            config.sops.secrets.koillection-db-password.path;
         };
         topology.nodes.${topologyContainerName}.services.${serviceName} = {
           icon = root "files/topology-images/${serviceName}.png";
@@ -90,14 +90,14 @@
         services.postgresql = {
           enable = true;
           authentication = ''
-            host ${serviceDB} ${serviceDB} 10.88.0.0/16 scram-sha-256
+            host ${serviceName} ${serviceName} 10.88.0.0/16 scram-sha-256
           '';
           enableTCPIP = true;
-          ensureDatabases = [ serviceDB ];
+          ensureDatabases = [ serviceName ];
           ensureUsers = [
             {
               ensureDBOwnership = true;
-              name = serviceDB;
+              name = serviceName;
             }
           ];
         };
@@ -108,10 +108,10 @@
           environment = {
             APP_DEBUG = "0";
             APP_ENV = "prod";
-            CORS_ALLOW_ORIGIN = "https?://(localhost|swag\\.swarsel\\.win)(:[0-9]+)?$";
+            CORS_ALLOW_ORIGIN = "https?://(localhost|${lib.escapeRegex serviceDomain})(:[0-9]+)?$";
             DB_DRIVER = "pdo_pgsql";
             DB_HOST = "host.docker.internal";
-            DB_NAME = serviceDB;
+            DB_NAME = serviceName;
             # DB_PASSWORD set in koillection-env-file
             DB_PORT = "${toString postgresPort}";
             DB_USER = serviceUser;
@@ -125,7 +125,7 @@
             config.sops.secrets.koillection-env-file.path
           ];
           extraOptions = [
-            "--add-host=host.docker.internal:host-gateway" # podman
+            "--add-host=host.docker.internal:host-gateway"
           ];
           image = "koillection/koillection@${containerRev}";
           ports = [
@@ -135,7 +135,6 @@
             "${serviceDir}/uploads:/uploads"
           ];
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
         nodes =
           let
             extraConfigLoc = ''
@@ -175,7 +174,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

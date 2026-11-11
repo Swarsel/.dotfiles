@@ -12,7 +12,7 @@
       {
         options.swarselsystems.sshHosts = lib.mkOption {
           default = null;
-          description = "Names of the hosts from the personal ssh host list to configure; null configures all of them.";
+          description = "Hosts to configure from the personal ssh host list; null for all.";
           type = lib.types.nullOr (lib.types.listOf lib.types.str);
         };
         config = {
@@ -69,21 +69,20 @@
         withHomeManager,
         ...
       }:
+      let
+        keyFiles = [
+          (root "files/public/ssh/yubikey.pub")
+          (root "files/public/ssh/magicant.pub")
+        ];
+      in
       {
         config = {
           swarselsystems.enabledServerModules = [ "ssh" ];
           users = {
             users = {
-              "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
-                (root "files/public/ssh/yubikey.pub")
-                (root "files/public/ssh/magicant.pub")
-                # (lib.mkIf config.swarselsystems.isBastionTarget (root "files/public/ssh/jump.pub"))
-              ];
-              root.openssh.authorizedKeys.keyFiles = [
-                (root "files/public/ssh/yubikey.pub")
-                (root "files/public/ssh/magicant.pub")
-                # (lib.mkIf config.swarselsystems.isBastionTarget (root "files/public/ssh/jump.pub"))
-              ];
+              "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles =
+                lib.mkIf withHomeManager keyFiles;
+              root.openssh.authorizedKeys.keyFiles = keyFiles;
             };
             persistentIds.sshd = confLib.mkIds 979;
           };

@@ -4,7 +4,6 @@
       self,
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       ...
@@ -34,7 +33,7 @@
         webProxy
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
+      machineLearningUrl = "http://127.0.0.1:3003";
     in
     {
       imports = [
@@ -47,7 +46,6 @@
             config.sops.secrets."${serviceName}-db-password".path;
         };
         topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
@@ -110,10 +108,8 @@
         };
         services.${serviceName} = {
           enable = true;
-          package = pkgs.immich;
-          environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
+          environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce machineLearningUrl;
           host = "0.0.0.0";
-          # openFirewall = true;
           mediaLocation = "/storage/Pictures/${serviceName}"; # dataDir
           port = servicePort;
           secretsFile = config.sops.templates."${serviceName}-db-env".path;
@@ -199,10 +195,7 @@
               };
               watch.enabled = false;
             };
-            logging = {
-              enabled = true;
-              level = "debug";
-            };
+            logging.enabled = true;
             machineLearning = {
               availabilityChecks = {
                 enabled = true;
@@ -232,7 +225,7 @@
                 minRecognitionScore = 0.8;
                 modelName = "PP-OCRv5_mobile";
               };
-              urls = [ "http://127.0.0.1:3003" ];
+              urls = [ machineLearningUrl ];
             };
             map = {
               darkStyle = "https://tiles.immich.cloud/v1/style/dark.json";
@@ -240,7 +233,6 @@
               lightStyle = "https://tiles.immich.cloud/v1/style/light.json";
             };
             metadata.faces.import = false;
-            newVersionCheck.enabled = false;
             nightlyTasks = {
               clusterNewFaces = true;
               databaseCleanup = true;
@@ -270,7 +262,7 @@
               clientSecret._secret = config.sops.secrets.kanidm-immich.path;
               defaultStorageQuota = null;
               enabled = true;
-              issuerUrl = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+              issuerUrl = "https://${globals.services.kanidm.domain}/oauth2/openid/${serviceName}";
               mobileOverrideEnabled = true;
               mobileRedirectUri = "https://${serviceDomain}/api/oauth/mobile-redirect";
               profileSigningAlgorithm = "none";
@@ -284,22 +276,6 @@
             };
             passwordLogin.enabled = true;
             reverseGeocoding.enabled = true;
-            server = {
-              externalDomain = "";
-              loginPageMessage = "";
-              publicUsers = true;
-            };
-            storageTemplate = {
-              enabled = false;
-              hashVerificationEnabled = true;
-              template = "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}";
-            };
-            templates.email = {
-              albumInviteTemplate = "";
-              albumUpdateTemplate = "";
-              welcomeTemplate = "";
-            };
-            theme.customCss = "";
             trash = {
               days = 30;
               enabled = true;
@@ -388,7 +364,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

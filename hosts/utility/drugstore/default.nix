@@ -10,23 +10,8 @@ let
   pubKeys = lib.filesystem.listFilesRecursive (root "files/public/ssh");
   stateVersion = lib.mkDefault "23.05";
   isSdImage = config.boot.loader.generic-extlinux-compatible.enable;
+  userHome = config.users.users.swarsel.home;
   stablePkgs = import self.inputs.nixpkgs-stable26_05 { inherit (pkgs.stdenv.hostPlatform) system; };
-  homeFiles = {
-    ".bash_history".text = ''
-      swarsel-install -n hotel
-    '';
-  };
-  trustedSettings = builtins.toJSON {
-    extra-substituters = {
-      "https://nix-community.cachix.org" = true;
-      "https://nix-community.cachix.org https://cache.ngi0.nixos.org/" = true;
-    };
-    extra-trusted-public-keys = {
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" = true;
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=" =
-        true;
-    };
-  };
 in
 {
 
@@ -65,7 +50,6 @@ in
     };
     programs = {
       bash.shellAliases = {
-        swarsel-install = "nix run github:Swarsel/.dotfiles#swarsel-install --";
         swarsel-kernel-module = "lspci -k -d";
         swarsel-net-manufacturer = "lspci -nn | grep -i 'network\\|ethernet'";
       };
@@ -81,12 +65,11 @@ in
     console.keyMap = "us";
     environment = {
       etc.issue.text = ''
-        [32m~SwarselSystems~[0m
+        [32m${self.pii.files.secrets.repo.pii.names.installer}[0m
         IP of primary interface: [31m\4[0m
         These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{eth4} \4{eth5} \4{wlan0}
         The Password for all users & root is '[31msetup[0m'.
-        Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
-        Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
+        Install the system remotely by running '[33mswarsel-bootstrap <CONFIGURATION_NAME> <IP_FROM_ABOVE>[0m' on a machine with deployed secrets.
       '';
       systemPackages = with pkgs; [
         curl
@@ -108,13 +91,11 @@ in
     home-manager.users = {
       root.home = {
         inherit stateVersion;
-        file = homeFiles;
       };
       swarsel.home = {
         inherit stateVersion;
-        file = homeFiles;
-        homeDirectory = lib.mkDefault "/home/swarsel";
-        sessionVariables.FLAKE = "/home/swarsel/.dotfiles";
+        homeDirectory = lib.mkDefault userHome;
+        sessionVariables.FLAKE = "${userHome}/.dotfiles";
         username = "swarsel";
       };
     };
@@ -163,18 +144,7 @@ in
         Defaults lecture = never
       '';
     };
-    system = {
-      activationScripts.cache.text = ''
-        mkdir -p -m=0777 /home/swarsel/.local/state/nix/profiles
-        mkdir -p -m=0777 /home/swarsel/.local/state/home-manager/gcroots
-        mkdir -p -m=0777 /home/swarsel/.local/share/nix/
-        mkdir -p /root/.local/share/nix/
-        src=${pkgs.writeText "trusted-settings.json" trustedSettings}
-        install -m 0644 $src /home/swarsel/.local/share/nix/trusted-settings.json
-        install -m 0644 $src /root/.local/share/nix/trusted-settings.json
-      '';
-      stateVersion = lib.mkForce "23.05";
-    };
+    system.stateVersion = lib.mkForce "23.05";
     systemd = {
       services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
       targets = {

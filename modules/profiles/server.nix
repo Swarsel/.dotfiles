@@ -30,7 +30,7 @@
       ];
     };
 
-    profile-microvm = { self, ... }: {
+    profile-microvm = { self, lib, ... }: {
       imports = [
         # common modules
         self.modules.nixos.settings
@@ -55,7 +55,12 @@
         self.modules.nixos.blackbox
       ];
 
-      config.swarselsystems.isLinux = true;
+      config.swarselsystems = {
+        isImpermanence = true;
+        isLinux = true;
+        isMicroVM = true;
+        proxyHost = lib.mkDefault "twothreetunnel";
+      };
     };
 
     profile-router = { self, ... }: {

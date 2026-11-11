@@ -55,7 +55,7 @@
           }
         ];
         networking.firewall.allowedTCPPorts = [ servicePort ];
-        systemd.services.minecraft-swarselcraft = {
+        systemd.services."minecraft-${worldName}" = {
           after = [ "network-online.target" ];
           description = "Minecraft Server";
           serviceConfig = {

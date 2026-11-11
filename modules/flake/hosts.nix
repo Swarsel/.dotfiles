@@ -35,7 +35,7 @@
     { config, ... }:
     let
       inherit (self) outputs;
-      inherit (outputs) lib homeLib;
+      inherit (outputs) lib;
 
       mkNixosHost =
         { minimal }:
@@ -75,7 +75,6 @@
               inputs
               arch
               configName
-              homeLib
               minimal
               outputs
               ;
@@ -84,6 +83,7 @@
             inherit (outputs.swarselsystemsLib) root;
             globals = config.globals.${arch};
             extraModules = [ ];
+            homeLib = outputs.lib;
             type = "nixos";
             withHomeManager = true;
           };
@@ -195,36 +195,14 @@
         else
           linuxSystems ++ darwinSystems;
 
-      readHostsOfType =
-        entryType: hostDir:
+      readHostDirs =
+        hostDir:
         if builtins.pathExists hostDir then
-          builtins.attrNames (lib.filterAttrs (_: type: type == entryType) (builtins.readDir hostDir))
+          builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir hostDir))
         else
           [ ];
 
-      readHostDirs = readHostsOfType "directory";
-
-      utilityHostArches = lib.foldl' (
-        acc: arch:
-        acc
-        // lib.genAttrs (readHostsOfType "symlink" "${self}/hosts/nixos/${arch}") (
-          host: (acc.${host} or [ ]) ++ [ arch ]
-        )
-      ) { } lib.swarselsystems.linuxSystems;
-
-      utilityHostName =
-        host: arch:
-        let
-          arches = utilityHostArches.${host};
-          primary = if builtins.elem "x86_64-linux" arches then "x86_64-linux" else builtins.head arches;
-        in
-        if arch == primary then host else "${host}-${arch}";
-
-      utilityHostNames =
-        lib.concatLists (
-          lib.mapAttrsToList (host: arches: map (utilityHostName host) arches) utilityHostArches
-        )
-        ++ readHostDirs "${self}/hosts/utility";
+      utilityHostNames = readHostDirs "${self}/hosts/utility";
 
       mkHalfHostsForArch =
         type: arch:
@@ -240,43 +218,19 @@
           hostDir = "${self}/hosts/${type}/${arch}";
           hosts = readHostDirs hostDir;
         in
-        if (type == "nixos") then
-          lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
-          // lib.listToAttrs (
-            map
-              (host: lib.nameValuePair (utilityHostName host arch) (mkNixosHost { inherit minimal; } host arch))
-              (
-                builtins.filter (host: builtins.elem arch utilityHostArches.${host}) (
-                  builtins.attrNames utilityHostArches
-                )
-              )
-          )
-        else if (type == "darwin") then
-          lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
-        else
-          { };
-
-      mkConfigurationsPerArch =
-        type: minimal:
-        let
-          arches = mkArches type;
-          toMake =
-            if (minimal == null) then
-              (arch: _: mkHalfHostsForArch type arch)
-            else
-              (arch: _: mkHostsForArch type arch minimal);
-        in
-        lib.concatMapAttrs toMake (
-          lib.listToAttrs (
-            map (a: {
-              name = a;
-              value = { };
-            }) arches
-          )
+        lib.genAttrs hosts (
+          host:
+          if (type == "nixos") then
+            mkNixosHost { inherit minimal; } host arch
+          else
+            mkDarwinHost { inherit minimal; } host arch
         );
 
-      halfConfigurationsPerArch = type: mkConfigurationsPerArch type null;
-      configurationsPerArch = type: minimal: mkConfigurationsPerArch type minimal;
+      configurationsPerArch =
+        type: minimal: lib.mergeAttrsList (map (arch: mkHostsForArch type arch minimal) (mkArches type));
+
+      halfConfigurationsPerArch =
+        type: lib.mergeAttrsList (map (mkHalfHostsForArch type) (mkArches type));
 
     in
     rec {

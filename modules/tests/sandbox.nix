@@ -30,7 +30,6 @@ let
           nodes
           ;
         inherit (self) outputs;
-        inherit (self.outputs) homeLib;
         inherit (self.outputs.swarselsystemsLib) root;
         globals =
           (lib.evalModules {
@@ -45,7 +44,7 @@ let
               inherit (inputs.topologyPrivate) topologyPrivate;
             };
           }).config.globals;
-        extraModules = [ ];
+        homeLib = self.outputs.lib;
         minimal = false;
         type = "nixos";
         withHomeManager = false;
@@ -69,12 +68,14 @@ let
         };
       };
 
+      vacanthouseArgs = mkSpecialArgs { ${configName} = vacanthouse; };
+
       vacanthouse = inputs.nixpkgs-sandbox.lib.nixosSystem {
         modules = [
           hostDir
           nodeModule
         ];
-        specialArgs = mkSpecialArgs { ${configName} = vacanthouse; };
+        specialArgs = vacanthouseArgs;
       };
 
       testCerts =
@@ -103,6 +104,7 @@ let
         testCerts
         vacanthouse
         ;
+      inherit (vacanthouseArgs.globals) services;
     };
 in
 {
@@ -121,6 +123,7 @@ in
           mkSpecialArgs
           nodeModule
           sandboxPkgs
+          services
           testCerts
           ;
       in
@@ -137,11 +140,11 @@ in
               vacanthouse.start()
               vacanthouse.wait_for_unit("multi-user.target")
               vacanthouse.wait_for_unit("kanidm.service")
-              vacanthouse.wait_until_succeeds("curl -sSf https://kanidm.swarsel.internal/status", timeout=600)
-              vacanthouse.succeed("curl -sSf https://kanidm.swarsel.internal/oauth2/openid/homebox/.well-known/openid-configuration")
+              vacanthouse.wait_until_succeeds("curl -sSf https://${services.kanidm.domain}/status", timeout=600)
+              vacanthouse.succeed("curl -sSf https://${services.kanidm.domain}/oauth2/openid/homebox/.well-known/openid-configuration")
               vacanthouse.wait_until_succeeds("curl -sSf http://127.0.0.1:3004/ready", timeout=600)
-              vacanthouse.succeed("curl -sSf -o /dev/null https://oauth.swarsel.internal/oauth2/sign_in")
-              vacanthouse.wait_until_succeeds("curl -sSf https://homebox.swarsel.internal/api/v1/status", timeout=600)
+              vacanthouse.succeed("curl -sSf -o /dev/null https://${services.oauth2-proxy.domain}/oauth2/sign_in")
+              vacanthouse.wait_until_succeeds("curl -sSf https://${services.homebox.domain}/api/v1/status", timeout=600)
             '';
             nodes.${configName} = {
               imports = [

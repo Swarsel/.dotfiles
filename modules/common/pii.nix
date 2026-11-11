@@ -19,7 +19,7 @@
       constSet = x: if builtins.isAttrs x then (_: x) else x;
 
       # This "imports" an encrypted .nix.enc file by evaluating the decrypted content.
-      # Plain .nix files (e.g. the demo secrets) are imported directly.
+      # Plain .nix files are imported directly.
       importEncrypted =
         path:
         constSet (
@@ -85,7 +85,7 @@
         in
         (lib.optionalAttrs (lib.pathExists local) { inherit local; })
         // {
-          common = inputs.repoSecrets.pii;
+          common = ../../secrets/repo/pii.nix.enc;
         };
     };
 }

@@ -77,10 +77,7 @@
             mail_smtppassword = config.sops.placeholder.notification-mail-pw;
           };
         };
-        users.persistentIds = {
-          nextcloud = confLib.mkIds 990;
-          redis-nextcloud = confLib.mkIds 976;
-        };
+        users.persistentIds.nextcloud = confLib.mkIds 990;
         services = {
           ${serviceName} = {
             config.dbtype = "sqlite";
@@ -117,7 +114,10 @@
               mail_smtpname = notificationMail.address;
               mail_smtpport = 587;
               overwriteprotocol = "https";
-              trusted_proxies = [ "0.0.0.0" ];
+              trusted_proxies = [
+                globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${webProxy}.ipv4
+                globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${homeWebProxy}.ipv4
+              ];
             };
           };
           phpfpm.pools.${serviceName}.phpEnv.SQLITE_TMPDIR = "/tmp";
@@ -163,7 +163,7 @@
                   (confLib.mkKanidmOidcSystem {
                     inherit serviceDomain serviceName;
                     extraGroups = [ "nextcloud.admins" ];
-                    originUrl = " https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
+                    originUrl = "https://${serviceDomain}/apps/sociallogin/custom_oidc/kanidm";
                   })
                   {
                     services.kanidm.provision.systems.oauth2.nextcloud = {
@@ -205,7 +205,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

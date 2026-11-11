@@ -40,12 +40,6 @@
 
       homeProxyWan4 = globals.hosts.${homeProxy}.wanAddress4 or null;
       homeProxyWan6 = globals.hosts.${homeProxy}.wanAddress6 or null;
-      trustedProxyIPs = [
-        "127.0.0.1"
-        "::1"
-      ]
-      ++ lib.optional (homeProxyWan4 != null) homeProxyWan4
-      ++ lib.optional (homeProxyWan6 != null) homeProxyWan6;
     in
     {
       options = {
@@ -243,7 +237,12 @@
             reverseProxy = true;
             scope = "openid email";
             setXauthrequest = true;
-            trustedProxyIP = trustedProxyIPs;
+            trustedProxyIP = [
+              "127.0.0.1"
+              "::1"
+            ]
+            ++ lib.optional (homeProxyWan4 != null) homeProxyWan4
+            ++ lib.optional (homeProxyWan6 != null) homeProxyWan6;
             upstream = [
               "static://202"
             ];
@@ -253,17 +252,14 @@
         # needed for homeWebProxy
         networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services = {
-          ${serviceName} = {
-            # after = [ "kanidm.service" ];
-            serviceConfig = {
-              EnvironmentFile = [
-                config.sops.templates.kanidm-oauth2-proxy-client-env.path
-              ];
-              RestartSec = "60"; # Retry every minute
-              RuntimeDirectory = serviceName;
-              RuntimeDirectoryMode = "0750";
-              UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
-            };
+          ${serviceName}.serviceConfig = {
+            EnvironmentFile = [
+              config.sops.templates.kanidm-oauth2-proxy-client-env.path
+            ];
+            RestartSec = "60";
+            RuntimeDirectory = serviceName;
+            RuntimeDirectoryMode = "0750";
+            UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
           };
         };
         nodes =
@@ -317,7 +313,5 @@
             }
           ];
       };
-    }
-
-  ;
+    };
 }

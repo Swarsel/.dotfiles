@@ -1,6 +1,5 @@
 {
   self,
-  inputs,
   lib,
   minimal,
   ...
@@ -20,7 +19,7 @@
     self.modules.nixos.attic
     self.modules.nixos.garage
     self.modules.nixos.buildbot
-    inputs.self.modules.nixos.remotebuild
+    self.modules.nixos.remotebuild
   ];
 
   swarselsystems = {

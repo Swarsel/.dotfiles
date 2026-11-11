@@ -67,9 +67,7 @@
         swarselsystems.enabledHomeModules = [ "sops" ];
         sops = lib.mkIf (nixosConfig == null) {
           age.sshKeyPaths = [
-            "${
-              if config.swarselsystems.isImpermanence then "/persist" else ""
-            }${config.swarselsystems.homeDir}/.ssh/sops"
+            "${lib.optionalString config.swarselsystems.isImpermanence "/persist"}${config.swarselsystems.homeDir}/.ssh/sops"
           ];
           secrets = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsSecrets;
           templates = lib.mkIf (!config.swarselsystems.isPublic) config.swarselsystems.homeSopsTemplates;
@@ -80,6 +78,7 @@
         self,
         inputs,
         config,
+        lib,
         ...
       }:
       {
@@ -89,7 +88,7 @@
         ];
 
         sops.age.sshKeyPaths = [
-          "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key"
+          "${lib.optionalString config.swarselsystems.isImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"
         ];
       };
   };
@@ -109,16 +108,7 @@
     };
 
   sops-rekey = {
-    masterRecipients = {
-      age =
-        let
-          dir = ../../files/public/age/users;
-        in
-        lib.optionals (builtins.pathExists dir) (
-          map (name: builtins.readFile (dir + "/${name}")) (builtins.attrNames (builtins.readDir dir))
-        );
-      pgp = [ "4BE7925262289B476DBBC17B76FD3810215AE097" ];
-    };
+    masterRecipients.pgp = [ "4BE7925262289B476DBBC17B76FD3810215AE097" ];
     nodes =
       config.flake.nixosConfigurations
       // config.flake.guestConfigurations

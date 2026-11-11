@@ -19,11 +19,6 @@ host_configs = {
     arch   = "x86_64-linux"
     guests = []
   }
-  toto = {
-    type   = "nixos"
-    arch   = "x86_64-linux"
-    guests = []
-  }
   winters = {
     type   = "nixos"
     arch   = "x86_64-linux"

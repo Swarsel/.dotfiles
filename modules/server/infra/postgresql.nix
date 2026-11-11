@@ -8,15 +8,10 @@
       ...
     }:
     let
-      inherit
-        (confLib.gen {
-          name = "postgresql";
-          port = 3254;
-        })
+      inherit (confLib.gen { name = "postgresql"; })
         serviceName
         ;
       postgresVersion = config.swarselsystems.server.postgresql.version;
-      postgresDirPrefix = "/var/lib";
     in
     {
       options.swarselsystems.server.postgresql = {
@@ -42,7 +37,7 @@
             authentication = lib.concatMapStrings (role: ''
               local all "${role}" scram-sha-256
             '') (lib.attrNames config.swarselsystems.server.postgresql.rolePasswordFiles);
-            dataDir = "${postgresDirPrefix}/${serviceName}/${builtins.toString postgresVersion}";
+            dataDir = "/var/lib/${serviceName}/${builtins.toString postgresVersion}";
             settings = {
               synchronous_commit = "off";
             }
@@ -90,7 +85,5 @@
 
       };
       key = "swarsel/server/postgresql";
-    }
-
-  ;
+    };
 }

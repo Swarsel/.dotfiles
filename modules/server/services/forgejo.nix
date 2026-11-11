@@ -33,7 +33,6 @@
         webProxy
         ;
 
-      kanidmDomain = globals.services.kanidm.domain;
       sshProxyPort = 2222;
       sshListenPort = 2222;
     in
@@ -79,22 +78,21 @@
           };
           notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
         };
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         users = {
           users.${serviceUser} = {
             group = serviceGroup;
             isSystemUser = true;
           };
+          groups.${serviceGroup} = { };
           persistentIds.forgejo = confLib.mkIds 985;
         };
-        users.groups.${serviceGroup} = { };
         services.${serviceName} = {
           enable = true;
           group = serviceGroup;
           lfs.enable = lib.mkDefault true;
           secrets.mailer.PASSWD = config.sops.secrets.notification-mail-pw.path;
           settings = {
-            DEFAULT.APP_NAME = "~SwaGit~";
+            DEFAULT.APP_NAME = config.repo.secrets.common.names.forgejo;
             federation = {
               ENABLED = true;
               SHARE_USER_STATISTICS = false;
@@ -108,15 +106,9 @@
               USER = notificationMail.address;
             };
             oauth2_client = {
-              # Never use auto account linking with this, otherwise users cannot change
-              # their new user name and they could potentially overtake other users accounts
-              # by setting their email address to an existing account.
-              # With "login" linking the user must choose a non-existing username first or login
-              # with the existing account to link.
+              # "auto" linking lets users take over accounts by setting a matching email
               ACCOUNT_LINKING = "login";
-              # This does not mean that you cannot register via oauth, but just that there should
-              # be a confirmation dialog shown to the user before the account is actually created.
-              # This dialog allows changing user name and email address before creating the account.
+              # shows a dialog to adjust name and email before the account is created
               ENABLE_AUTO_REGISTRATION = false;
               REGISTER_EMAIL_CONFIRM = false;
               UPDATE_AVATAR = true;
@@ -177,7 +169,7 @@
                   ]
                   [
                     "--auto-discover-url"
-                    "https://${kanidmDomain}/oauth2/openid/${clientId}/.well-known/openid-configuration"
+                    "https://${globals.services.kanidm.domain}/oauth2/openid/${clientId}/.well-known/openid-configuration"
                   ]
                   [
                     "--scopes"
@@ -208,7 +200,7 @@
                 ${exe} admin auth update-oauth --id "$provider_id" ${args} --secret "$SECRET"
               fi
             '';
-          serviceConfig.RestartSec = "60"; # Retry every minute
+          serviceConfig.RestartSec = "60";
         };
         nodes =
           let
@@ -244,8 +236,7 @@
                   })
                   {
                     services.kanidm.provision.systems.oauth2.forgejo = {
-                      # XXX: PKCE is currently not supported by gitea/forgejo,
-                      # see https://github.com/go-gitea/gitea/issues/21376.
+                      # required because of https://github.com/go-gitea/gitea/issues/21376
                       allowInsecureClientDisablePkce = true;
                       claimMaps.groups = {
                         joinType = "array";
@@ -291,7 +282,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

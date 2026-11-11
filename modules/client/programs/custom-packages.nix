@@ -11,43 +11,19 @@
         swarselsystems.enabledHomeModules = [ "ownpackages" ];
         home.packages =
           with pkgs;
-          lib.mkIf (!config.swarselsystems.isPublic) (
-            [
-              pass-fuzzel
-              cdw
-              cdb
-              cdr
-              bak
-              fs-diff
-              t2ts
-              ts2t
-              vershell
-              project
-              swarsel-bootstrap
-              swarsel-build
-              swarsel-deploy
-              swarsel-instantiate
-              swarselzellij
-              sshrm
-              git-replace
-              git-setup-remotes
-              hunkle
-              swarsel-gens
-              swarsel-switch
-              swarsel-sops
-              sync-org-from-files
-              follow-nix
-            ]
-            ++ lib.optionals (builtins.elem "sway" config.swarselsystems.enabledHomeModules) [
-              e
-              swarselcheck
-              swarsel-displaypower
-            ]
-            ++ lib.optionals (builtins.elem "optional-niri" config.swarselsystems.enabledHomeModules) [
-              e-niri
-              swarselcheck-niri
-            ]
-          );
+          lib.mkIf (!config.swarselsystems.isPublic) [
+            pass-fuzzel
+            swarsel-bootstrap
+            swarsel-deploy
+            swarsel-instantiate
+            swarsel-git-remotes
+            hunkle
+            swarsel-gens
+            swarsel-project
+            swarsel-switch
+            swarsel-sync-org
+            follow-nix
+          ];
       };
     };
 }

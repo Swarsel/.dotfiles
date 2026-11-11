@@ -29,34 +29,14 @@
           "nix-command"
           "flakes"
         ];
-        systemd = {
-          services.systemd-networkd.environment.SYSTEMD_LOG_LEVEL = "debug";
-          network.networks."10-vlan-services" = {
-            dhcpV6Config = {
-              # duid-en is nice in principle, but I already have MAC info anyways for reservations
-              DUIDType = "link-layer";
-              WithoutRA = "solicit";
-            };
-            # networkConfig = {
-            #   IPv6PrivacyExtensions = "no";
-            #   IPv6AcceptRA = false;
-            # };
-            ipv6AcceptRAConfig.DHCPv6Client = "always";
+        systemd.network.networks."10-vlan-services" = {
+          dhcpV6Config = {
+            # duid-en is nice in principle, but I already have MAC info anyways for reservations
+            DUIDType = "link-layer";
+            WithoutRA = "solicit";
           };
+          ipv6AcceptRAConfig.DHCPv6Client = "always";
         };
-        # microvm = {
-        #   mount the writeable overlay so that we can use nix shells inside the microvm
-        #   volumes = [
-        #     {
-        #       image = "/tmp/nix-store-overlay-${config.networking.hostName}.img";
-        #       autoCreate = true;
-        #       mountPoint = config.microvm.writableStoreOverlay;
-        #       size = 1024;
-        #     }
-        #   ];
-        # };
       };
-    }
-
-  ;
+    };
 }

@@ -29,9 +29,7 @@
         };
         loader = {
           efi.canTouchEfiVariables = true;
-          systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !isSecureBoot) (lib.mkForce true) (
-            lib.mkForce false
-          );
+          systemd-boot.enable = lib.mkForce (minimal || !isSecureBoot);
         };
       };
       environment = {

@@ -32,10 +32,6 @@
         notificationMail
         webProxy
         ;
-
-      nginxGroup = "nginx";
-
-      cfg = config.services.firefly-iii;
     in
     {
       imports = [
@@ -43,11 +39,6 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "firefly-iii" ];
-        # topology.self.services.${serviceName} = {
-        #   name = "Firefly-III";
-        #   info = "https://${serviceDomain}";
-        #   icon = (root "files/topology-images/${serviceName}.png");
-        # };
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
@@ -70,7 +61,7 @@
         };
         sops.secrets = {
           firefly-iii-app-key = {
-            group = if cfg.enableNginx then nginxGroup else serviceGroup;
+            group = config.services.nginx.group;
             mode = "0440";
             owner = serviceUser;
             rekey.generator = {
@@ -79,7 +70,7 @@
             };
           };
           notification-mail-pw = {
-            group = if cfg.enableNginx then nginxGroup else serviceGroup;
+            group = config.services.nginx.group;
             mode = "0440";
             owner = serviceUser;
             rekey.keyPrefix = notificationMail.keyPrefix;
@@ -87,7 +78,7 @@
         };
         users = {
           users.${serviceUser} = {
-            extraGroups = lib.mkIf cfg.enableNginx [ nginxGroup ];
+            extraGroups = [ config.services.nginx.group ];
             group = lib.mkForce serviceGroup;
             isSystemUser = true;
           };
@@ -99,7 +90,7 @@
             enable = true;
             dataDir = "/var/lib/${serviceName}";
             enableNginx = true;
-            group = if cfg.enableNginx then nginxGroup else serviceGroup;
+            group = config.services.nginx.group;
             settings = {
               APP_ENV = "local";
               APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
@@ -180,11 +171,9 @@
               };
             }
             { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
-            { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+            { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
           ];
 
       };
-    }
-
-  ;
+    };
 }

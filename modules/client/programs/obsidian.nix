@@ -30,7 +30,6 @@
                 spellcheck = false;
                 vimMode = false;
               };
-              # communityPlugins = with pkgs.swarsel-nix; [
               communityPlugins = with pluginSource; [
                 advanced-tables
                 calendar
@@ -81,7 +80,6 @@
               ${name} = {
                 settings = {
                   appearance.baseFontSize = lib.mkForce 19;
-                  # communityPlugins = with pkgs.swarsel-nix; [
                   communityPlugins = with pluginSource; [
                     {
                       enable = true;
@@ -142,11 +140,12 @@
               };
             };
           };
-        home.file = {
-          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/app.json".force = true;
-          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/appearance.json".force = true;
-          "${config.programs.obsidian.vaults.${name}.target}/.obsidian/core-plugins.json".force = true;
-        };
+        home.file = lib.genAttrs' [ "app" "appearance" "core-plugins" ] (
+          file:
+          lib.nameValuePair "${config.programs.obsidian.vaults.${name}.target}/.obsidian/${file}.json" {
+            force = true;
+          }
+        );
       };
     };
 }

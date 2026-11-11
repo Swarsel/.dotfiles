@@ -46,10 +46,7 @@
         webProxy
         ;
       inherit (config.repo.secrets.common) location;
-      proxyNetworks = [
-        globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome"
-        globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy"
-      ];
+      mqttListener = lib.head config.services.mosquitto.listeners;
     in
     {
       imports = [
@@ -98,10 +95,16 @@
                 "127.0.0.1"
                 "::1"
               ]
-              ++ lib.concatMap (net: [
-                net.cidrv4
-                net.cidrv6
-              ]) proxyNetworks;
+              ++
+                lib.concatMap
+                  (net: [
+                    net.cidrv4
+                    net.cidrv6
+                  ])
+                  [
+                    globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome"
+                    globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy"
+                  ];
               use_x_forwarded_for = true;
             };
           };
@@ -129,8 +132,8 @@
                 domain = "mqtt";
                 steps = [
                   {
-                    broker = "127.0.0.1";
-                    port = 1883;
+                    inherit (mqttListener) port;
+                    broker = mqttListener.address;
                   }
                 ];
               };
@@ -175,7 +178,5 @@
           }
         ];
       };
-    }
-
-  ;
+    };
 }

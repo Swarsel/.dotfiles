@@ -36,6 +36,21 @@
         };
       };
 
+      probeOptions = {
+        address = mkOption {
+          description = "host:port";
+          type = types.str;
+        };
+        alertFor = mkOption {
+          default = null;
+          description = "How long the probe must fail before alerting.";
+          type = types.nullOr types.str;
+        };
+        network = mkOption {
+          type = types.str;
+        };
+      };
+
       networkOptions = netSubmod: {
         cidrv4 = mkOption {
           default = null;
@@ -157,7 +172,7 @@
                       };
                       domain = mkOption {
                         default = "";
-                        description = "The domain under which this service can be reached (empty for internal-only services).";
+                        description = "Empty for internal-only services.";
                         type = types.str;
                       };
                       extraConfig = mkOption {
@@ -166,7 +181,7 @@
                       };
                       firezoneTcpPorts = mkOption {
                         default = [ ];
-                        description = "TCP ports besides 80 and 443 that Firezone clients may reach on this home service's domain.";
+                        description = "Ports besides 80 and 443 that Firezone clients may reach.";
                         type = types.listOf types.port;
                       };
                       homeServiceAddress = mkOption {
@@ -218,7 +233,7 @@
                   type = types.str;
                 };
                 reverse6 = mkOption {
-                  description = "ip6.arpa zone of the delegated IPv6 prefix, served by knot";
+                  description = "ip6.arpa zone of the delegated IPv6 prefix";
                   type = types.str;
                 };
               };
@@ -252,7 +267,7 @@
               };
               monitoring = mkOption {
                 default = { };
-                description = "Active probes consumed by each host's local Alloy + blackbox exporter.";
+                description = "Blackbox exporter probes.";
                 type = types.submodule {
                   options = {
                     cert = mkOption {
@@ -260,16 +275,9 @@
                       type = types.attrsOf (
                         types.submodule {
                           options = {
-                            address = mkOption {
-                              description = "host:port of a TLS endpoint whose certificate expiry is tracked.";
-                              type = types.str;
-                            };
-                            network = mkOption {
-                              description = "Logical network tag; see monitoring.http.<name>.network.";
-                              type = types.str;
-                            };
+                            inherit (probeOptions) address network;
                             serverName = mkOption {
-                              description = "SNI name sent during the handshake; selects the vhost whose certificate is inspected.";
+                              description = "SNI name";
                               type = types.str;
                             };
                           };
@@ -281,26 +289,12 @@
                       type = types.attrsOf (
                         types.submodule {
                           options = {
-                            address = mkOption {
-                              description = "host:port of the DNS server to query.";
-                              type = types.str;
-                            };
-                            alertFor = mkOption {
-                              default = null;
-                              description = "How long the probe must stay failed before the alert fires";
-                              type = types.nullOr types.str;
-                            };
-                            network = mkOption {
-                              description = "Logical network tag; see monitoring.http.<name>.network.";
-                              type = types.str;
-                            };
+                            inherit (probeOptions) address alertFor network;
                             queryName = mkOption {
-                              description = "Name to resolve.";
                               type = types.str;
                             };
                             queryType = mkOption {
                               default = "SOA";
-                              description = "Record type to query.";
                               type = types.str;
                             };
                           };
@@ -309,10 +303,7 @@
                     };
                     hostNetworks = mkOption {
                       default = { };
-                      description = ''
-                        Map from hostname to the list of logical monitoring networks that host can
-                        probe in; see monitoring.http.<name>.network.
-                      '';
+                      description = "Networks each host can probe in; a probe runs on every host whose list contains its `network`.";
                       type = types.attrsOf (types.listOf types.str);
                     };
                     http = mkOption {
@@ -320,40 +311,24 @@
                       type = types.attrsOf (
                         types.submodule {
                           options = {
-                            alertFor = mkOption {
-                              default = null;
-                              description = "How long the probe must stay failed before the alert fires";
-                              type = types.nullOr types.str;
-                            };
+                            inherit (probeOptions) alertFor network;
                             expectedBodyRegex = mkOption {
                               default = null;
-                              description = "Optional regex that must match the response body.";
                               type = types.nullOr types.str;
                             };
                             expectedStatus = mkOption {
                               default = 200;
-                              description = "Status code that signals a healthy response.";
                               type = types.int;
                             };
                             failIfBodyMatchesRegex = mkOption {
                               default = null;
-                              description = "Optional regex that marks the probe as failed.";
                               type = types.nullOr types.str;
                             };
                             hostHeader = mkOption {
                               default = null;
-                              description = "Optional Host header to send (e.g. for phpfm services).";
                               type = types.nullOr types.str;
                             };
-                            network = mkOption {
-                              description = ''
-                                Logical network tag. The probe is only executed by blackbox sources
-                                whose `monitoring.hostNetworks` contains this value.
-                              '';
-                              type = types.str;
-                            };
                             url = mkOption {
-                              description = "HTTP(S) URL to probe.";
                               type = types.str;
                             };
                           };
@@ -365,12 +340,8 @@
                       type = types.attrsOf (
                         types.submodule {
                           options = {
+                            inherit (probeOptions) network;
                             host = mkOption {
-                              description = "Hostname or IP address to ping.";
-                              type = types.str;
-                            };
-                            network = mkOption {
-                              description = "Logical network tag; see monitoring.http.<name>.network.";
                               type = types.str;
                             };
                           };
@@ -382,22 +353,10 @@
                       type = types.attrsOf (
                         types.submodule {
                           options = {
-                            address = mkOption {
-                              description = "host:port to connect to.";
-                              type = types.str;
-                            };
-                            alertFor = mkOption {
-                              default = null;
-                              description = "How long the probe must stay failed before the alert fires";
-                              type = types.nullOr types.str;
-                            };
+                            inherit (probeOptions) address alertFor network;
                             expectedRegex = mkOption {
                               default = null;
                               type = types.nullOr types.str;
-                            };
-                            network = mkOption {
-                              description = "Logical network tag; see monitoring.http.<name>.network.";
-                              type = types.str;
                             };
                             tls = mkOption {
                               default = false;
@@ -420,7 +379,6 @@
                               type = types.bool;
                             };
                             unit = mkOption {
-                              description = "Full systemd unit name.";
                               type = types.str;
                             };
                           };
@@ -444,7 +402,6 @@
                                 description = "The VLAN id";
                                 type = types.ints.between 1 4094;
                               };
-
                               name = mkOption {
                                 default = vlanNetSubmod.config._module.args.name;
                                 description = "The name of this VLAN";
@@ -478,35 +435,30 @@
               };
               wireguard = mkOption {
                 default = { };
-                description = "WireGuard network definitions. Each key is a WireGuard interface name.";
+                description = "Keyed by interface name.";
                 type = types.attrsOf (
                   types.submodule {
                     options = {
                       clients = mkOption {
                         default = [ ];
-                        description = "List of client node names participating in this WireGuard network.";
                         type = types.listOf types.str;
                       };
                       netConfigPrefix = mkOption {
-                        description = "Prefix used to look up the network in globals.networks.\"<prefix>-<ifName>\".";
+                        description = "The network is globals.networks.\"<prefix>-<ifName>\".";
                         type = types.str;
                       };
                       port = mkOption {
                         default = 52829;
-                        description = "WireGuard listen port on the server.";
                         type = types.int;
                       };
                       server = mkOption {
-                        description = "Node name of the WireGuard server for this network.";
                         type = types.str;
                       };
                     };
                   }
                 );
               };
-
             };
-
           };
         };
         _globalsDefs = mkOption {

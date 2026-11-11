@@ -35,7 +35,6 @@
         };
       };
 
-      # Derive interfaces from globals.wireguard based on this node's name
       interfaces =
         lib.mapAttrs
           (
@@ -45,18 +44,18 @@
               isClient = builtins.elem config.node.name wgCfg.clients;
               peers = if isServer then wgCfg.clients else [ wgCfg.server ];
               netCfg = globals.networks."${wgCfg.netConfigPrefix}-${ifName}";
-              ruleSources = lib.attrNames (netCfg.hosts.${config.node.name}.firewallRuleForNode or { });
+              ruleSources = lib.attrNames netCfg.hosts.${config.node.name}.firewallRuleForNode;
             in
             {
               inherit
                 ifName
                 isClient
                 isServer
+                netCfg
                 peers
                 ;
               inherit (wgCfg) port;
               serverName = wgCfg.server;
-              serverNetConfigPrefix = wgCfg.netConfigPrefix;
               # we need to add the node-port rules to "clients" without doing it generically for all nodes
               # (because that blows up memory requirements enormously)
               # e.g. summers eval needs ~80G if we do this for all hosts, but less than 20G like this
@@ -74,7 +73,6 @@
     {
       options.swarselsystems.server.wireguard.interfaces = lib.mkOption {
         default = interfaces;
-        description = "Derived from globals.wireguard. Do not set directly.";
         internal = true;
         readOnly = true;
         type = lib.types.unspecified;
@@ -83,7 +81,7 @@
         swarselsystems.enabledServerModules = [ "wireguard" ];
         topology.self.interfaces = lib.mapAttrs' (
           wgName: _:
-          lib.nameValuePair "${wgName}" {
+          lib.nameValuePair wgName {
             network = wgName;
           }
         ) config.swarselsystems.server.wireguard.interfaces;
@@ -123,18 +121,10 @@
         );
         assertions = lib.concatLists (
           lib.flip lib.mapAttrsToList interfaces (
-            ifName: ifCfg:
-            let
-              assertionPrefix = "While evaluating the wireguard network ${ifName}:";
-            in
-            [
-              {
-                assertion = ifCfg.isServer || ifCfg.isClient;
-                message = "${assertionPrefix}: This node must either be a server or a client for the wireguard network.";
-              }
+            ifName: _ifCfg: [
               {
                 assertion = lib.stringLength ifName < 16;
-                message = "${assertionPrefix}: The specified linkName '${ifName}' is too long (must be max 15 characters).";
+                message = "While evaluating the wireguard network ${ifName}: The interface name '${ifName}' is too long (must be max 15 characters).";
               }
             ]
           )
@@ -159,7 +149,7 @@
                 ifName: ifCfg:
                 let
                   inherit (config.networking.nftables.firewall) localZoneName;
-                  netCfg = globals.networks."${ifCfg.serverNetConfigPrefix}-${ifName}";
+                  inherit (ifCfg) netCfg;
                 in
                 {
                   "${ifName}-to-${localZoneName}" = {
@@ -211,7 +201,7 @@
                   map (
                     peer:
                     let
-                      peerNet = globals.networks."${ifCfg.serverNetConfigPrefix}-${ifName}".hosts.${peer};
+                      peerNet = ifCfg.netCfg.hosts.${peer};
                     in
                     lib.nameValuePair "${ifName}-node-${peer}" {
                       ipv4Addresses = lib.optional (peerNet.ipv4 != null) peerNet.ipv4;
@@ -251,11 +241,8 @@
                     lib.optionals i.isClient [
                       {
                         AllowedIPs =
-                          let
-                            wgNetwork = globals.networks."${i.serverNetConfigPrefix}-${i.ifName}";
-                          in
-                          (lib.optional (wgNetwork.cidrv4 != null) wgNetwork.cidrv4)
-                          ++ (lib.optional (wgNetwork.cidrv6 != null) wgNetwork.cidrv6);
+                          (lib.optional (i.netCfg.cidrv4 != null) i.netCfg.cidrv4)
+                          ++ (lib.optional (i.netCfg.cidrv6 != null) i.netCfg.cidrv6);
                         Endpoint = "server.${i.serverName}.${globals.domains.main}:${toString servicePort}";
                         PersistentKeepalive = 25;
                         PresharedKeyFile =
@@ -267,7 +254,7 @@
                       map (clientName: {
                         AllowedIPs =
                           let
-                            clientInWgNetwork = globals.networks."${i.serverNetConfigPrefix}-${i.ifName}".hosts.${clientName};
+                            clientInWgNetwork = i.netCfg.hosts.${clientName};
                           in
                           (lib.optional (clientInWgNetwork.ipv4 != null) (lib.net.cidr.make 32 clientInWgNetwork.ipv4))
                           ++ (lib.optional (clientInWgNetwork.ipv6 != null) (lib.net.cidr.make 128 clientInWgNetwork.ipv6));
@@ -289,8 +276,8 @@
               {
                 "50-${ifName}" = {
                   address = [
-                    globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv4
-                    globals.networks."${i.serverNetConfigPrefix}-${ifName}".hosts.${config.node.name}.cidrv6
+                    i.netCfg.hosts.${config.node.name}.cidrv4
+                    i.netCfg.hosts.${config.node.name}.cidrv6
                   ];
                   linkConfig.MTUBytes = 1500 - 4 - 8 - 40 - 8 - 32;
                   matchConfig.Name = ifName;
@@ -300,7 +287,5 @@
           );
         };
       };
-    }
-
-  ;
+    };
 }

@@ -29,7 +29,7 @@
     isLinux = true;
     isSecureBoot = false;
     isSwap = true;
-    proxyHost = "twothreetunnel"; # mail shall not be proxied through twothreetunnel
+    proxyHost = "twothreetunnel"; # proxies roundcube and mta-sts, mail records point at this host directly
     rootDisk = "/dev/sda";
     server.restic.targets.SwarselMail = {
       paths = [

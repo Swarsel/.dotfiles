@@ -5,10 +5,10 @@
   confLib,
   globals,
   minimal,
+  nodes,
   ...
 }:
 {
-
   imports = [
     ./hardware-configuration.nix
     self.modules.nixos.disk-mirrored-root
@@ -35,7 +35,7 @@
     isLinux = true;
     isSecureBoot = true;
     isSwap = false;
-    localVLANs = map (name: "${name}") (builtins.attrNames globals.networks.home-lan.vlans);
+    localVLANs = builtins.attrNames globals.networks.home-lan.vlans;
     networkKernelModules = [ "igb" ];
     nodeRoles = [
       "homeProxy"
@@ -83,40 +83,14 @@
       "hintbooth-adguardhome"
       "hintbooth-nginx"
       "summers"
-      "summers-ankisync"
-      "summers-atuin"
-      "summers-audio"
-      "summers-dawarich"
-      "summers-firefly"
-      "summers-forgejo"
-      "summers-freshrss"
-      "summers-homebox"
-      "summers-immich"
-      "summers-jellyfin"
-      "summers-kanidm"
-      "summers-kavita"
-      "summers-koillection"
-      "summers-matrix"
-      "summers-mealie"
-      "summers-monitoring"
-      "summers-nextcloud"
-      "summers-paperless"
-      "summers-radicale"
-      "summers-storage"
-      "summers-transmission"
-      "summers-utility"
-      "winters"
-    ];
+    ]
+    ++ map (guest: "summers-${guest}") (builtins.attrNames nodes.summers.config.guests)
+    ++ [ "winters" ];
     netConfigPrefix = "home";
     server = config.node.name;
   };
   zramSwap.enable = true;
-
 }
 // lib.optionalAttrs (!minimal) {
-
-  guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
-    { } // confLib.mkMicrovm "adguardhome" { } // confLib.mkMicrovm "nginx" { }
-  );
-
+  guests = confLib.mkMicrovm "adguardhome" { } // confLib.mkMicrovm "nginx" { };
 }

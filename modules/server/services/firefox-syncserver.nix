@@ -92,9 +92,9 @@
             singleNode = {
               enable = true;
               capacity = 1;
-              enableNginx = false; # we handle it ourselves
-              enableTLS = false; # we handle it ourselves
-              hostname = serviceDomain; # we handle it ourselves however
+              enableNginx = false;
+              enableTLS = false;
+              hostname = serviceDomain;
               url = "https://${serviceDomain}";
             };
           };
@@ -127,8 +127,5 @@
         ];
 
       };
-
-    }
-
-  ;
+    };
 }

@@ -31,6 +31,7 @@
         ;
       inherit (config.swarselsystems) isPublic mainUser;
       serviceDB = "atticd";
+      withGarage = builtins.elem "garage" config.swarselsystems.enabledServerModules;
     in
     {
       imports = [
@@ -117,7 +118,6 @@
           '';
         };
         services = {
-          # networking.firewall.allowedTCPPorts = [ servicePort ];
           atticd = {
             enable = true;
             environmentFile = config.sops.templates."attic.env".path;
@@ -130,8 +130,7 @@
                 avg-size = 64 * 1024;
                 max-size = 256 * 1024;
                 min-size = 16 * 1024;
-                nar-size-threshold =
-                  if builtins.elem "garage" config.swarselsystems.enabledServerModules then 0 else 64 * 1024; # garage using s3
+                nar-size-threshold = if withGarage then 0 else 64 * 1024; # garage using s3
               };
               compression = {
                 level = 3;
@@ -145,12 +144,11 @@
               listen = "[::]:${builtins.toString servicePort}";
               require-proof-of-possession = false;
               storage =
-                if builtins.elem "garage" config.swarselsystems.enabledServerModules then
+                if withGarage then
                   {
                     bucket = serviceName;
                     # attic must be patched to never serve pre-signed s3 urls directly
-                    # otherwise it will redirect clients to this localhost endpoint
-                    # endpoint = "http://127.0.0.1:3900"; # garage port
+                    # otherwise it will redirect clients to a localhost garage endpoint
                     endpoint = "https://${globals.services."garage-${config.node.name}".domain}";
                     region = mainUser;
                     type = "s3";
@@ -162,10 +160,6 @@
                   };
             };
           };
-          # we use s3 storage and hence do not need to persist this
-          # environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          #   { directory = "/var/lib/private/atticd"; }
-          # ];
           postgresql = {
             enable = true;
             enableTCPIP = true;
@@ -178,12 +172,10 @@
             ];
           };
         };
-        systemd.services.atticd =
-          lib.mkIf (builtins.elem "garage" config.swarselsystems.enabledServerModules)
-            {
-              after = [ "garage.service" ];
-              requires = [ "garage.service" ];
-            };
+        systemd.services.atticd = lib.mkIf withGarage {
+          after = [ "garage.service" ];
+          requires = [ "garage.service" ];
+        };
         nodes =
           let
             extraConfigLoc = ''
@@ -225,7 +217,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

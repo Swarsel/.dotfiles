@@ -3,6 +3,7 @@
   config,
   lib,
   minimal,
+  nodes,
   ...
 }:
 {
@@ -47,27 +48,11 @@
       "stoicclub"
       "winters"
       "summers"
-      "summers-ankisync"
-      "summers-atuin"
-      "summers-audio"
-      "summers-dawarich"
-      "summers-firefly"
-      "summers-forgejo"
-      "summers-freshrss"
-      "summers-homebox"
-      "summers-immich"
-      "summers-jellyfin"
-      "summers-kanidm"
-      "summers-kavita"
-      "summers-koillection"
-      "summers-matrix"
-      "summers-mealie"
-      "summers-monitoring"
-      "summers-nextcloud"
-      "summers-paperless"
-      "summers-radicale"
-      "summers-storage"
-      "summers-utility"
+    ]
+    ++ builtins.filter (name: nodes.${name}.config.swarselsystems.proxyHost == config.node.name) (
+      map (guest: "summers-${guest}") (builtins.attrNames nodes.summers.config.guests)
+    )
+    ++ [
       "belchsfactory"
       "eagleland"
       "hintbooth-adguardhome"

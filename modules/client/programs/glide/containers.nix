@@ -15,12 +15,10 @@
     }
 
     async function refresh_container_stores() {
-      try {
-        for (const identity of await browser.contextualIdentities.query({})) {
-          container_stores[identity.name] = identity.cookieStoreId;
-          container_names[identity.cookieStoreId] = identity.name;
-        }
-      } catch {}
+      for (const identity of await browser.contextualIdentities.query({})) {
+        container_stores[identity.name] = identity.cookieStoreId;
+        container_names[identity.cookieStoreId] = identity.name;
+      }
     }
 
     const reopening = new Set<number>();
@@ -40,10 +38,11 @@
           return;
         }
         const tab = await browser.tabs.get(tab_id).catch(() => null);
-        if (tab == null || tab.incognito || tab.cookieStoreId === target) {
-          if (tab != null) {
-            placed.set(tab_id, rule.container);
-          }
+        if (tab == null) {
+          return;
+        }
+        if (tab.incognito || tab.cookieStoreId === target) {
+          placed.set(tab_id, rule.container);
           return;
         }
         const created = await browser.tabs.create({
@@ -57,36 +56,29 @@
           placed.set(created.id, rule.container);
         }
         await browser.tabs.remove(tab_id);
-      } catch {} finally {
+      } finally {
         reopening.delete(tab_id);
       }
     }
 
-    async function container_catchup() {
-      try {
-        for (const tab of await browser.tabs.query({})) {
-          if (tab.id != null && tab.url != null) {
-            await ensure_container(tab.id, tab.url);
-          }
-        }
-      } catch {}
-    }
-
     glide.autocmds.create("ConfigLoaded", async () => {
-      try {
-        browser.webRequest.onBeforeRequest.addListener(
-          (details) => {
-            if (details.tabId >= 0 && match_rule(details.url)) {
-              void ensure_container(details.tabId, details.url);
-            }
-          },
-          { urls: ["<all_urls>"], types: ["main_frame"] },
-        );
-      } catch {}
+      browser.webRequest.onBeforeRequest.addListener(
+        (details) => {
+          if (details.tabId >= 0 && match_rule(details.url)) {
+            void ensure_container(details.tabId, details.url);
+          }
+        },
+        { urls: ["<all_urls>"], types: ["main_frame"] },
+      );
       browser.tabs.onRemoved.addListener((tab_id) => placed.delete(tab_id));
       browser.contextualIdentities.onCreated.addListener(() => void refresh_container_stores());
       await refresh_container_stores();
-      await container_catchup();
+
+      for (const tab of await browser.tabs.query({})) {
+        if (tab.id != null && tab.url != null) {
+          await ensure_container(tab.id, tab.url);
+        }
+      }
     });
 
     glide.autocmds.create("UrlEnter", /^https?:/, ({ url, tab_id }) => {
@@ -94,31 +86,28 @@
     });
 
     glide.keymaps.set("normal", "<leader>c", async () => {
-      try {
-        const identities = await browser.contextualIdentities.query({});
-        if (identities.length === 0) {
-          flash_message("no containers defined");
-          return;
-        }
-        const [current] = await browser.tabs.query({ active: true, currentWindow: true });
-        if (current?.incognito) {
-          flash_message("containers unavailable in private windows");
-          return;
-        }
-        const url = current?.url != null && current.url.startsWith("http") ? current.url : undefined;
-        await glide.commandline.show({
-          title: "Open in container",
-          options: identities.map((identity) => ({
-            label: identity.name,
-            description: (url ? "open current page as " : "open new tab as ") + identity.name,
-            execute: async () => {
-              await browser.tabs.create({ cookieStoreId: identity.cookieStoreId, url });
-            },
-          })),
-        });
-      } catch {
-        flash_message("containers unavailable");
+      const identities = await browser.contextualIdentities.query({});
+      if (identities.length === 0) {
+        flash_message("no containers defined");
+        return;
       }
+      const [current] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (current?.incognito) {
+        flash_message("containers unavailable in private windows");
+        return;
+      }
+
+      const url = current?.url?.startsWith("http") ? current.url : undefined;
+      await glide.commandline.show({
+        title: "Open in container",
+        options: identities.map((identity) => ({
+          label: identity.name,
+          description: (url ? "open current page as " : "open new tab as ") + identity.name,
+          execute: async () => {
+            await browser.tabs.create({ cookieStoreId: identity.cookieStoreId, url });
+          },
+        })),
+      });
     }, { description: "Open the current page in a container tab" });
   '';
 }

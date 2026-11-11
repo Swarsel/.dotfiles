@@ -16,12 +16,7 @@
     self.modules.nixos.parsedmarc
   ];
 
-  swarselsystems = {
-    isImpermanence = true;
-    isMicroVM = true;
-    nodeRoles = [ "monitoringServer" ];
-    proxyHost = "twothreetunnel";
-  };
+  swarselsystems.nodeRoles = [ "monitoringServer" ];
 
 }
 // lib.optionalAttrs (!minimal) {

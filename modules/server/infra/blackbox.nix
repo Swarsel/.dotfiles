@@ -18,198 +18,8 @@
         servicePort
         ;
 
-      mkHttpModule = cfg: {
-        http = {
-          follow_redirects = true;
-          method = "GET";
-          preferred_ip_protocol = "ip4";
-          tls_config.insecure_skip_verify = true;
-          valid_status_codes = [ cfg.expectedStatus ];
-        }
-        // lib.optionalAttrs (cfg.expectedBodyRegex != null) {
-          fail_if_body_not_matches_regexp = [ cfg.expectedBodyRegex ];
-        }
-        // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
-          fail_if_body_matches_regexp = [ cfg.failIfBodyMatchesRegex ];
-        }
-        // lib.optionalAttrs (cfg.hostHeader != null) {
-          headers.Host = cfg.hostHeader;
-        };
-        prober = "http";
-        timeout = "10s";
-      };
-
-      mkTcpModule = cfg: {
-        prober = "tcp";
-        tcp = {
-          inherit (cfg) tls;
-          preferred_ip_protocol = "ip4";
-          tls_config.insecure_skip_verify = true;
-        }
-        // lib.optionalAttrs (cfg.expectedRegex != null) {
-          query_response = [ { expect = cfg.expectedRegex; } ];
-        };
-        timeout = "10s";
-      };
-
-      mkDnsModule = cfg: {
-        dns = {
-          preferred_ip_protocol = "ip4";
-          query_name = cfg.queryName;
-          query_type = cfg.queryType;
-          valid_rcodes = [ "NOERROR" ];
-          validate_answer_rrs.fail_if_none_matches_regexp = [ ".+" ];
-        };
-        prober = "dns";
-        timeout = "5s";
-      };
-
-      blackboxConfig = pkgs.writeText "blackbox.yml" (
-        builtins.toJSON {
-          modules = {
-            icmp = {
-              icmp.preferred_ip_protocol = "ip4";
-              prober = "icmp";
-              timeout = "5s";
-            };
-          }
-          // lib.mapAttrs' (
-            name: cfg: lib.nameValuePair "http_${name}" (mkHttpModule cfg)
-          ) globals.monitoring.http
-          // lib.mapAttrs' (
-            name: cfg: lib.nameValuePair "tcp_${name}" (mkTcpModule cfg)
-          ) globals.monitoring.tcp
-          // lib.mapAttrs' (
-            name: cfg: lib.nameValuePair "dns_${name}" (mkDnsModule cfg)
-          ) globals.monitoring.dns
-          // lib.mapAttrs' (
-            name: cfg:
-            lib.nameValuePair "cert_${name}" {
-              prober = "tcp";
-              tcp = {
-                preferred_ip_protocol = "ip4";
-                tls = true;
-                tls_config = {
-                  insecure_skip_verify = true;
-                  server_name = cfg.serverName;
-                };
-              };
-              timeout = "10s";
-            }
-          ) globals.monitoring.cert;
-        }
-      );
-
-      targetsFor =
-        host: targets:
-        let
-          netList = globals.monitoring.hostNetworks.${host} or [ ];
-        in
-        map (t: removeAttrs t [ "network" ]) (lib.filter (t: builtins.elem t.network netList) targets);
-
-      mkBlackboxBlock =
-        let
-          mkAlloyMap =
-            attrs:
-            let
-              esc = lib.replaceStrings [ ''\'' ''"'' ] [ ''\\'' ''\"'' ];
-              pairs = lib.mapAttrsToList (k: v: ''"${k}" = "${esc v}"'') attrs;
-            in
-            "{${lib.concatStringsSep ", " pairs}}";
-
-          mkAlloyTargets =
-            items: "[\n" + lib.concatMapStrings (m: "      " + mkAlloyMap m + ",\n") items + "    ]";
-        in
-        { probeLabel, targets }:
-        ''
-
-          discovery.relabel "blackbox_${probeLabel}" {
-            targets = ${mkAlloyTargets targets}
-
-            rule {
-              source_labels = ["__address__"]
-              target_label  = "__param_target"
-            }
-            rule {
-              source_labels = ["__param_target"]
-              target_label  = "instance"
-            }
-            rule {
-              target_label = "__address__"
-              replacement  = "127.0.0.1:${toString servicePort}"
-            }
-            rule {
-              target_label = "probe_from"
-              replacement  = "${config.node.name}"
-            }
-          }
-
-          prometheus.scrape "blackbox_${probeLabel}" {
-            targets      = discovery.relabel.blackbox_${probeLabel}.output
-            metrics_path = "/probe"
-            job_name     = "blackbox_${probeLabel}"
-            forward_to   = [prometheus.remote_write.mimir.receiver]
-          }
-        '';
-
-      httpTargets = targetsFor config.node.name (
-        lib.mapAttrsToList (
-          name: cfg:
-          {
-            inherit name;
-            inherit (cfg) network;
-            __address__ = cfg.url;
-            __param_module = "http_${name}";
-            probe = "http";
-          }
-          // lib.optionalAttrs (cfg.expectedBodyRegex != null) {
-            expected_body_regex = cfg.expectedBodyRegex;
-          }
-          // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
-            fail_if_body_matches_regex = cfg.failIfBodyMatchesRegex;
-          }
-        ) globals.monitoring.http
-      );
-
-      pingTargets = targetsFor config.node.name (
-        lib.mapAttrsToList (name: cfg: {
-          inherit name;
-          inherit (cfg) network;
-          __address__ = cfg.host;
-          __param_module = "icmp";
-          probe = "ping";
-        }) globals.monitoring.ping
-      );
-
-      certTargets = targetsFor config.node.name (
-        lib.mapAttrsToList (name: cfg: {
-          inherit name;
-          inherit (cfg) network;
-          __address__ = cfg.address;
-          __param_module = "cert_${name}";
-          probe = "cert";
-        }) globals.monitoring.cert
-      );
-
-      tcpTargets = targetsFor config.node.name (
-        lib.mapAttrsToList (name: cfg: {
-          inherit name;
-          inherit (cfg) network;
-          __address__ = cfg.address;
-          __param_module = "tcp_${name}";
-          probe = "tcp";
-        }) globals.monitoring.tcp
-      );
-
-      dnsTargets = targetsFor config.node.name (
-        lib.mapAttrsToList (name: cfg: {
-          inherit name;
-          inherit (cfg) network;
-          __address__ = cfg.address;
-          __param_module = "dns_${name}";
-          probe = "dns";
-        }) globals.monitoring.dns
-      );
+      hostNetworks = globals.monitoring.hostNetworks.${config.node.name} or [ ];
+      defaultProbeFor = "3m";
     in
     {
       config = {
@@ -218,80 +28,154 @@
           icon = "services.prometheus";
           name = "blackbox-exporter";
         };
-        globals = {
-          services.${serviceName}.extraConfig.port = servicePort;
-          monitoring.tcp = lib.mkIf config.services.openssh.enable (
-            confLib.mkTcpMonitoring {
-              expectedRegex = "^SSH-2.0";
-              serviceName = "ssh-${config.node.name}";
-              servicePort = lib.head config.services.openssh.ports;
-            }
-          );
-        };
+        globals.monitoring.tcp = lib.mkIf config.services.openssh.enable (
+          confLib.mkTcpMonitoring {
+            expectedRegex = "^SSH-2.0";
+            serviceName = "ssh-${config.node.name}";
+            servicePort = lib.head config.services.openssh.ports;
+          }
+        );
         services.prometheus.exporters.blackbox = {
           enable = true;
-          configFile = blackboxConfig;
+          configFile = pkgs.writeText "blackbox.yml" (
+            builtins.toJSON {
+              modules = {
+                icmp = {
+                  icmp.preferred_ip_protocol = "ip4";
+                  prober = "icmp";
+                  timeout = "5s";
+                };
+              }
+              // lib.concatMapAttrs (name: cfg: {
+                "http_${name}" = {
+                  http = {
+                    follow_redirects = true;
+                    method = "GET";
+                    preferred_ip_protocol = "ip4";
+                    tls_config.insecure_skip_verify = true;
+                    valid_status_codes = [ cfg.expectedStatus ];
+                  }
+                  // lib.optionalAttrs (cfg.expectedBodyRegex != null) {
+                    fail_if_body_not_matches_regexp = [ cfg.expectedBodyRegex ];
+                  }
+                  // lib.optionalAttrs (cfg.failIfBodyMatchesRegex != null) {
+                    fail_if_body_matches_regexp = [ cfg.failIfBodyMatchesRegex ];
+                  }
+                  // lib.optionalAttrs (cfg.hostHeader != null) {
+                    headers.Host = cfg.hostHeader;
+                  };
+                  prober = "http";
+                  timeout = "10s";
+                };
+              }) globals.monitoring.http
+              // lib.concatMapAttrs (name: cfg: {
+                "tcp_${name}" = {
+                  prober = "tcp";
+                  tcp = {
+                    inherit (cfg) tls;
+                    preferred_ip_protocol = "ip4";
+                    tls_config.insecure_skip_verify = true;
+                  }
+                  // lib.optionalAttrs (cfg.expectedRegex != null) {
+                    query_response = [ { expect = cfg.expectedRegex; } ];
+                  };
+                  timeout = "10s";
+                };
+              }) globals.monitoring.tcp
+              // lib.concatMapAttrs (name: cfg: {
+                "dns_${name}" = {
+                  dns = {
+                    preferred_ip_protocol = "ip4";
+                    query_name = cfg.queryName;
+                    query_type = cfg.queryType;
+                    valid_rcodes = [ "NOERROR" ];
+                    validate_answer_rrs.fail_if_none_matches_regexp = [ ".+" ];
+                  };
+                  prober = "dns";
+                  timeout = "5s";
+                };
+              }) globals.monitoring.dns
+              // lib.concatMapAttrs (name: cfg: {
+                "cert_${name}" = {
+                  prober = "tcp";
+                  tcp = {
+                    preferred_ip_protocol = "ip4";
+                    tls = true;
+                    tls_config = {
+                      insecure_skip_verify = true;
+                      server_name = cfg.serverName;
+                    };
+                  };
+                  timeout = "10s";
+                };
+              }) globals.monitoring.cert;
+            }
+          );
           listenAddress = "127.0.0.1";
           port = servicePort;
         };
         environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
           lib.mkAfter (
-            lib.optionalString (httpTargets != [ ]) (mkBlackboxBlock {
-              probeLabel = "http";
-              targets = httpTargets;
-            })
-            + lib.optionalString (pingTargets != [ ]) (mkBlackboxBlock {
-              probeLabel = "ping";
-              targets = pingTargets;
-            })
-            + lib.optionalString (certTargets != [ ]) (mkBlackboxBlock {
-              probeLabel = "cert";
-              targets = certTargets;
-            })
-            + lib.optionalString (tcpTargets != [ ]) (mkBlackboxBlock {
-              probeLabel = "tcp";
-              targets = tcpTargets;
-            })
-            + lib.optionalString (dnsTargets != [ ]) (mkBlackboxBlock {
-              probeLabel = "dns";
-              targets = dnsTargets;
-            })
+            lib.concatMapStrings (
+              kind:
+              let
+                targets = lib.mapAttrsToList (name: cfg: {
+                  inherit name;
+                  __address__ =
+                    {
+                      http = cfg.url;
+                      ping = cfg.host;
+                    }
+                    .${kind} or cfg.address;
+                  __param_module = if kind == "ping" then "icmp" else "${kind}_${name}";
+                  probe = kind;
+                }) (lib.filterAttrs (_: cfg: builtins.elem cfg.network hostNetworks) globals.monitoring.${kind});
+              in
+              lib.optionalString (targets != [ ]) ''
+
+                discovery.relabel "blackbox_${kind}" {
+                  targets = [
+                    ${
+                      lib.concatMapStringsSep ",\n" (
+                        target:
+                        "{${
+                          lib.concatStringsSep ", " (
+                            lib.mapAttrsToList (key: value: "${builtins.toJSON key} = ${builtins.toJSON value}") target
+                          )
+                        }}"
+                      ) targets
+                    },
+                  ]
+
+                  rule {
+                    source_labels = ["__address__"]
+                    target_label  = "__param_target"
+                  }
+                  rule {
+                    source_labels = ["__param_target"]
+                    target_label  = "instance"
+                  }
+                  rule {
+                    target_label = "__address__"
+                    replacement  = "127.0.0.1:${toString servicePort}"
+                  }
+                  rule {
+                    target_label = "probe_from"
+                    replacement  = "${config.node.name}"
+                  }
+                }
+
+                prometheus.scrape "blackbox_${kind}" {
+                  targets      = discovery.relabel.blackbox_${kind}.output
+                  metrics_path = "/probe"
+                  job_name     = "blackbox_${kind}"
+                  forward_to   = [prometheus.remote_write.mimir.receiver]
+                }
+              ''
+            ) confLib.static.probeKinds
           )
         );
         nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
-          let
-            defaultProbeFor = "3m";
-            mkProbeRules =
-              kind: probes:
-              let
-                probesByFor = lib.foldlAttrs (
-                  acc: name: cfg:
-                  let
-                    forDuration = if cfg.alertFor != null then cfg.alertFor else defaultProbeFor;
-                  in
-                  acc // { ${forDuration} = (acc.${forDuration} or [ ]) ++ [ name ]; }
-                ) { } probes;
-                mkProbeRule =
-                  forDuration: names:
-                  let
-                    selector = ''probe="${kind}",name=~"${lib.concatStringsSep "|" names}"'';
-                  in
-                  confLib.mkGrafanaAlertRule {
-                    inherit forDuration;
-                    expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
-                    summary = "Blackbox ${lib.toUpper kind} probe for {{ $labels.name }} has been failing";
-                    title = "${lib.toUpper kind} probe failed${
-                      lib.optionalString (forDuration != defaultProbeFor) " (after ${forDuration})"
-                    }";
-                    uid =
-                      if forDuration == defaultProbeFor then
-                        "${kind}_probe_failed"
-                      else
-                        "${kind}_probe_failed_${forDuration}";
-                  };
-              in
-              lib.mapAttrsToList mkProbeRule probesByFor;
-          in
           [
             {
               folder = "Infrastructure";
@@ -299,7 +183,34 @@
               name = "blackbox";
               orgId = 1;
               rules =
-                lib.concatLists (lib.mapAttrsToList mkProbeRules { inherit (globals.monitoring) dns http tcp; })
+                lib.concatMap
+                  (
+                    kind:
+                    let
+                      probes = globals.monitoring.${kind};
+                    in
+                    lib.mapAttrsToList (
+                      forDuration: names:
+                      let
+                        selector = ''probe="${kind}",name=~"${lib.concatStringsSep "|" names}"'';
+                        isDefault = forDuration == defaultProbeFor;
+                      in
+                      confLib.mkGrafanaAlertRule {
+                        inherit forDuration;
+                        expr = "min by (name) (probe_success{${selector}}) or on(name) (probe_expected{${selector}} * 0)";
+                        summary = "Blackbox ${lib.toUpper kind} probe for {{ $labels.name }} has been failing";
+                        title = "${lib.toUpper kind} probe failed${
+                          lib.optionalString (!isDefault) " (after ${forDuration})"
+                        }";
+                        uid = "${kind}_probe_failed${lib.optionalString (!isDefault) "_${forDuration}"}";
+                      }
+                    ) (lib.groupBy (name: lib.defaultTo defaultProbeFor probes.${name}.alertFor) (lib.attrNames probes))
+                  )
+                  [
+                    "dns"
+                    "http"
+                    "tcp"
+                  ]
                 ++ [
                   (confLib.mkGrafanaAlertRule {
                     expr = ''min by (name) ((probe_ssl_earliest_cert_expiry{probe="cert"} - time()) / 86400) or on(name) (max by (name) (probe_expected{probe="cert"}) * 0)'';
@@ -313,7 +224,5 @@
             }
           ];
       };
-    }
-
-  ;
+    };
 }

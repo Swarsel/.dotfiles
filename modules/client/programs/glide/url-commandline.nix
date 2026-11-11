@@ -53,13 +53,7 @@
     async function refresh_bookmarks() {
       const items = await browser.bookmarks.search({});
       bookmark_list = items
-        .filter((item): item is typeof item & { url: string } => {
-          try {
-            return !!new URL(item.url ?? "");
-          } catch {
-            return false;
-          }
-        })
+        .filter((item): item is typeof item & { url: string } => URL.canParse(item.url ?? ""))
         .map((item) => ({
           url: item.url,
           title: item.title,
@@ -77,19 +71,10 @@
     }
 
     function debounced(ms: number, fn: () => Promise<void>): () => void {
-      let timer: ReturnType<typeof setTimeout> | null = null;
+      let timer: ReturnType<typeof setTimeout> | undefined;
       return () => {
-        try {
-          if (timer != null) {
-            clearTimeout(timer);
-          }
-          timer = setTimeout(() => {
-            timer = null;
-            void fn();
-          }, ms);
-        } catch {
-          return;
-        }
+        clearTimeout(timer);
+        timer = setTimeout(() => void fn(), ms);
       };
     }
 
@@ -137,7 +122,9 @@
     function search_history(tokens: string[]): HistoryEntry[] {
       const found: HistoryEntry[] = [];
       for (const entry of history_list) {
-        if (found.length >= HISTORY_RESULTS) break;
+        if (found.length >= HISTORY_RESULTS) {
+          break;
+        }
         if (places_match(tokens, entry)) {
           found.push(entry);
         }

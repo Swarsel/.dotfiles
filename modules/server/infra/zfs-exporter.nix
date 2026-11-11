@@ -1,8 +1,6 @@
 {
   flake.modules.nixos.zfs-exporter =
     {
-      config,
-      lib,
       confLib,
       globals,
       ...
@@ -24,23 +22,15 @@
           icon = "services.prometheus";
           name = serviceName;
         };
-        globals = {
-          services.${serviceName}.extraConfig.port = servicePort;
-        };
         services.prometheus.exporters.zfs = {
           enable = true;
           listenAddress = "127.0.0.1";
           port = servicePort;
         };
-        environment.etc."alloy/config.alloy".text = lib.mkIf config.services.alloy.enable (
-          lib.mkAfter ''
-            prometheus.scrape "zfs" {
-              targets    = [{"__address__" = "127.0.0.1:${toString servicePort}"}]
-              forward_to = [prometheus.remote_write.mimir.receiver]
-              job_name   = "zfs"
-            }
-          ''
-        );
+        environment.etc."alloy/config.alloy".text = confLib.mkAlloyScrape {
+          name = "zfs";
+          port = servicePort;
+        };
         nodes.${globals.general.monitoringServer}.services.grafana.provision.alerting.rules.settings.groups =
           [
             {
@@ -72,7 +62,5 @@
             }
           ];
       };
-    }
-
-  ;
+    };
 }

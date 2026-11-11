@@ -1,43 +1,44 @@
 {
   flake.modules.homeManager.glide =
-    { lib, vars, ... }:
+    { lib, glideProfile, ... }:
     let
-      engineAliases = lib.filterAttrs (_: aliases: aliases != [ ]) (
-        lib.mapAttrs' (
-          key: v: lib.nameValuePair (v.name or key) (v.definedAliases or [ ])
-        ) vars.glide.search.engines
-      );
-      keywordEntries = lib.concatLists (
+      aliases = lib.concatLists (
         lib.mapAttrsToList (
-          name: aliases:
-          map (alias: [
-            (lib.removePrefix "@" alias)
-            name
-          ]) aliases
-        ) engineAliases
-      );
-      searchUrls = lib.concatLists (
-        lib.mapAttrsToList (
-          _: engine:
+          key: engine:
           let
             url = lib.head engine.urls;
             query = lib.concatMapStringsSep "&" (param: "${param.name}=${param.value}") (url.params or [ ]);
           in
-          map (alias: [
-            (lib.removePrefix "@" alias)
-            (lib.replaceStrings [ "{searchTerms}" ] [ "%s" ] (
+          map (alias: {
+            keyword = lib.removePrefix "@" alias;
+            name = engine.name or key;
+            url = lib.replaceStrings [ "{searchTerms}" ] [ "%s" ] (
               url.template + lib.optionalString (query != "") "?${query}"
-            ))
-          ]) (engine.definedAliases or [ ])
-        ) vars.glide.search.engines
+            );
+          }) (engine.definedAliases or [ ])
+        ) glideProfile.search.engines
       );
     in
     {
       programs.glide-browser.config = ''
         const engine_keywords = new Map<string, string>(
-          (${builtins.toJSON keywordEntries} as [string, string][]).flatMap(([kw, name]): [string, string][] => [[kw, name], ["@" + kw, name]]),
+          (${
+            builtins.toJSON (
+              map (a: [
+                a.keyword
+                a.name
+              ]) aliases
+            )
+          } as [string, string][]).flatMap(([kw, name]): [string, string][] => [[kw, name], ["@" + kw, name]]),
         );
-        const search_urls = ${builtins.toJSON searchUrls} as [string, string][];
+        const search_urls = ${
+          builtins.toJSON (
+            map (a: [
+              a.keyword
+              a.url
+            ]) aliases
+          )
+        } as [string, string][];
 
         function parse_search(args_arr: string[]): { query: string; engine?: string } {
           const [first, ...rest] = args_arr;
@@ -48,20 +49,22 @@
         }
 
         function to_url(input: string): string | null {
-          if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) return input;
-          if (!input.includes(" ") && input.includes(".")) return `https://''${input}`;
+          if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) {
+            return input;
+          }
+          if (!input.includes(" ") && input.includes(".")) {
+            return `https://''${input}`;
+          }
           return null;
         }
 
         async function active_tab_info() {
-          const active = await glide.tabs.active();
-          const tab = await browser.tabs.get(active.id).catch(() => null);
-          const incognito = tab?.incognito === true;
+          const tab = await glide.tabs.active();
           return {
-            id: active.id,
-            incognito,
-            store: incognito ? undefined : "firefox-default",
-            contained: !incognito && tab != null && tab.cookieStoreId !== "firefox-default",
+            id: tab.id,
+            incognito: tab.incognito,
+            store: tab.incognito ? undefined : "firefox-default",
+            contained: !tab.incognito && tab.cookieStoreId !== "firefox-default",
           };
         }
 

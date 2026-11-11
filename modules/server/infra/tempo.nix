@@ -33,7 +33,6 @@
       inherit (globals.services.alloy.extraConfig) otlpGrpcPort otlpHttpPort;
 
       tempoHttpApiPort = 3200;
-      tempoOtlpGrpcPort = 14317;
     in
     {
       config = {
@@ -50,10 +49,6 @@
               serviceDomain
               serviceName
               ;
-            extra.extraConfig = {
-              host = config.node.name;
-              port = servicePort;
-            };
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
@@ -78,7 +73,7 @@
             };
             distributor.receivers.otlp.protocols = {
               grpc = {
-                endpoint = "127.0.0.1:${toString tempoOtlpGrpcPort}";
+                endpoint = "127.0.0.1:14317";
                 max_recv_msg_size_mib = 20;
               };
               http.endpoint = "0.0.0.0:${toString servicePort}";
@@ -127,11 +122,7 @@
         };
         networking.firewall.allowedTCPPorts = [ servicePort ];
         systemd.services.tempo = {
-          environment = {
-            OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:${toString otlpGrpcPort}";
-            OTEL_EXPORTER_OTLP_PROTOCOL = "grpc";
-            OTEL_SERVICE_NAME = "tempo-${config.node.name}";
-            OTEL_TRACES_EXPORTER = "otlp";
+          environment = confLib.mkOtelEnvironment serviceName // {
             OTEL_TRACES_SAMPLER = "parentbased_traceidratio";
             OTEL_TRACES_SAMPLER_ARG = "0.01";
           };
@@ -150,20 +141,18 @@
                 inherit extraConfig;
                 acmeRoot = null;
                 forceSSL = true;
-                locations = {
-                  "/" = {
-                    extraConfig = ''
-                      client_max_body_size 0;
-                    '';
-                    proxyPass = "http://${queryUpstream}";
-                  };
-                  "/v1/" = {
-                    extraConfig = ''
-                      client_max_body_size 0;
-                    '';
-                    proxyPass = "http://${ingestUpstream}";
-                  };
-                };
+                locations =
+                  lib.mapAttrs
+                    (_: upstream: {
+                      extraConfig = ''
+                        client_max_body_size 0;
+                      '';
+                      proxyPass = "http://${upstream}";
+                    })
+                    {
+                      "/" = queryUpstream;
+                      "/v1/" = ingestUpstream;
+                    };
                 useACMEHost = globals.domains.main;
               };
             };
@@ -183,38 +172,23 @@
                     jsonData = {
                       nodeGraph.enabled = true;
                       search.hide = false;
-                    }
-                    //
-                      lib.optionalAttrs
-                        ((globals.services.loki.extraConfig.host or null) == globals.general.monitoringServer)
-                        {
-                          tracesToLogsV2 = {
-                            datasourceUid = "loki";
-                            filterBySpanID = false;
-                            filterByTraceID = true;
-                          };
-                        }
-                    //
-                      lib.optionalAttrs
-                        ((globals.services.mimir.extraConfig.host or null) == globals.general.monitoringServer)
-                        {
-                          serviceMap.datasourceUid = "mimir";
-                        }
-                    //
-                      lib.optionalAttrs
-                        ((globals.services.pyroscope.extraConfig.host or null) == globals.general.monitoringServer)
-                        {
-                          tracesToProfiles = {
-                            datasourceUid = "pyroscope";
-                            profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
-                            tags = [
-                              {
-                                key = "service.name";
-                                value = "service_name";
-                              }
-                            ];
-                          };
-                        };
+                      serviceMap.datasourceUid = "mimir";
+                      tracesToLogsV2 = {
+                        datasourceUid = "loki";
+                        filterBySpanID = false;
+                        filterByTraceID = true;
+                      };
+                      tracesToProfiles = {
+                        datasourceUid = "pyroscope";
+                        profileTypeId = "process_cpu:cpu:nanoseconds:cpu:nanoseconds";
+                        tags = [
+                          {
+                            key = "service.name";
+                            value = "service_name";
+                          }
+                        ];
+                      };
+                    };
                     name = "Tempo";
                     type = "tempo";
                     uid = "tempo";
@@ -279,7 +253,5 @@
             }))
           ];
       };
-    }
-
-  ;
+    };
 }

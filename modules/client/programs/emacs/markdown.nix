@@ -8,23 +8,15 @@
         "C-c C-x C-u" = "markdown-toggle-url-hiding";
       };
       custom = {
+        markdown-command = "\"multimarkdown\"";
         markdown-ts-ellipsis = "\" ⤵\"";
         markdown-ts-hide-markup = true;
       };
       hook = [
-        "((markdown-mode markdown-ts-mode) . swarsel/markdown-mode-keys)"
         "(markdown-mode . swarsel/markdown-block-local-font-lock)"
         "(markdown-ts-mode . swarsel/markdown-ts-mode-setup)"
       ];
       init = ''
-        (defun swarsel/markdown-mode-keys ()
-          "Local markdown key customizations."
-          (local-set-key (kbd "C-c C-x C-l") #'org-latex-preview)
-          (local-set-key (kbd "C-c C-x C-u")
-                         (if (derived-mode-p 'markdown-ts-mode)
-                             #'markdown-ts-toggle-hide-markup
-                           #'markdown-toggle-url-hiding)))
-
         (defun swarsel/markdown-block-local-font-lock ()
           "Stop font-lock from widening every jit-lock chunk to its whole block."
           (remove-hook 'font-lock-extend-region-functions #'markdown-font-lock-extend-region t))
@@ -80,6 +72,9 @@
           (add-hook 'post-command-hook #'swarsel/markdown-reveal-line nil t))
 
         (with-eval-after-load 'markdown-ts-mode
+          (keymap-set markdown-ts-mode-map "C-c C-x C-l" #'org-latex-preview)
+          (keymap-set markdown-ts-mode-map "C-c C-x C-u" #'markdown-ts-toggle-hide-markup)
+
           (dotimes (level 6)
             (set-face-attribute (intern (format "markdown-ts-heading-%d" (1+ level))) nil
                                 :inherit (intern (format "org-level-%d" (1+ level)))
@@ -89,8 +84,6 @@
           (set-face-attribute 'markdown-ts-code-block-markup-hidden nil :background 'unspecified :inherit 'org-block)
           (set-face-attribute 'markdown-ts-table nil :inherit 'org-block)
           (set-face-attribute 'markdown-ts-table-header nil :inherit '(org-table markdown-ts-table) :weight 'bold))
-
-        (setq markdown-command "multimarkdown")
       '';
       mode = lib.mkForce [ ];
     };

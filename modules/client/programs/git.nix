@@ -3,6 +3,7 @@
     {
       config,
       lib,
+      pkgs,
       confLib,
       globals,
       minimal,
@@ -28,7 +29,19 @@
             includes = [
               {
                 contents = {
-                  commit.template = "~/.gitmessage";
+                  commit.template = "${pkgs.writeText "gitmessage" ''
+
+
+                    #                         max. 50 chars is here: #
+                    # <type>[optional scope]: <description>
+                    # types: feat, fix, build, chore, ci, docs, style, refactor, perf, test
+                    # ! indicates a breaking change.
+
+
+                    # Body:                                      wrap at 72 chars is here: #
+                    # Include at least one empty line before co-authored. Format:
+                    # Co-authored-by: name <user@users.noreply.github.com>
+                  ''}";
                   forge = {
                     remote = globals.services.forgejo.subDomain;
                     url = "${globals.services.forgejo.extraConfig.sshUrl}/${gitUser}";

@@ -17,7 +17,7 @@ in
       ];
     };
     profile-personal = {
-      imports = [ fmods.nixOnDroid.droid-switch ];
+      imports = [ fmods.nixOnDroid.swarsel-droid ];
       home-manager.config.imports = pickH [
         "direnv"
         "eza"

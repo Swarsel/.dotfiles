@@ -54,41 +54,45 @@
               User jump
               IdentityFile ${config.sops.secrets.builder-key.path}
           '';
-          knownHosts = {
-            builder1 = lib.mkIf isClient {
-              hostNames = [ config.repo.secrets.common.builder1-ip ];
-              publicKey = config.repo.secrets.common.builder1-pubHostKey;
-            };
-            builder2 = lib.mkIf isClient {
-              hostNames = [ globals.hosts.belchsfactory.wanAddress4 ];
-              publicKey = config.repo.secrets.common.builder2-pubHostKey;
-            };
-            jump = lib.mkIf isClient {
-              hostNames = [ globals.hosts.liliputsteps.wanAddress4 ];
-              publicKey = config.repo.secrets.common.jump-pubHostKey;
-            };
-            nixbuild = {
-              hostNames = [ "eu.nixbuild.net" ];
-              publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPIQCZc54poJ8vqawd8TraNryQeJnvH1eLpIDgbiqymM";
-            };
-          };
+          knownHosts = lib.mkMerge [
+            {
+              nixbuild = {
+                hostNames = [ "eu.nixbuild.net" ];
+                publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPIQCZc54poJ8vqawd8TraNryQeJnvH1eLpIDgbiqymM";
+              };
+            }
+            (lib.mkIf isClient {
+              builder1 = {
+                hostNames = [ config.repo.secrets.common.builder1-ip ];
+                publicKey = config.repo.secrets.common.builder1-pubHostKey;
+              };
+              builder2 = {
+                hostNames = [ globals.hosts.belchsfactory.wanAddress4 ];
+                publicKey = config.repo.secrets.common.builder2-pubHostKey;
+              };
+              jump = {
+                hostNames = [ globals.hosts.liliputsteps.wanAddress4 ];
+                publicKey = config.repo.secrets.common.jump-pubHostKey;
+              };
+            })
+          ];
         };
         nix = {
-          buildMachines = [
-            (lib.mkIf isClient {
+          buildMachines = lib.optionals isClient [
+            {
               hostName = config.repo.secrets.common.builder1-ip;
               maxJobs = 20;
               speedFactor = 10;
               system = "aarch64-linux";
-            })
-            (lib.mkIf isClient {
+            }
+            {
               hostName = globals.hosts.belchsfactory.wanAddress4;
               maxJobs = 4;
               protocol = "ssh-ng";
               speedFactor = 2;
               system = "aarch64-linux";
-            })
-            (lib.mkIf isClient {
+            }
+            {
               hostName = "eu.nixbuild.net";
               maxJobs = 100;
               speedFactor = 2;
@@ -97,7 +101,7 @@
                 "big-parallel"
               ];
               system = "x86_64-linux";
-            })
+            }
           ];
           distributedBuilds = true;
           settings.builders-use-substitutes = true;

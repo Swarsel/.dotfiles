@@ -1,5 +1,5 @@
 {
-  flake.modules.homeManager.emacs-init = { config, ... }: {
+  flake.modules.homeManager.emacs-init = { config, lib, ... }: {
     config.programs.emacs.init.usePackage = {
       general.config = ''
         (swarsel/leader-keys
@@ -12,20 +12,12 @@
         bindKeyMap."C-c p" = "projectile-command-map";
         custom.projectile-completion-system = "'auto";
         diminish = [ "projectile-mode" ];
-        init =
-          if builtins.elem "optional-work" config.swarselsystems.enabledHomeModules then
-            ''
-              (when (file-directory-p swarsel-work-projects-directory)
-                (when (file-directory-p swarsel-private-projects-directory)
-                  (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
-              (setq projectile-switch-project-action #'magit-status)
-            ''
-          else
-            ''
-              (when (file-directory-p swarsel-private-projects-directory)
-                (setq projectile-project-search-path (list swarsel-private-projects-directory)))
-              (setq projectile-switch-project-action #'magit-status)
-            '';
+        init = ''
+          (let ((dirs (list ${lib.optionalString (builtins.elem "optional-work" config.swarselsystems.enabledHomeModules) "swarsel-work-projects-directory "}swarsel-private-projects-directory)))
+            (when (seq-every-p #'file-directory-p dirs)
+              (setq projectile-project-search-path dirs)))
+          (setq projectile-switch-project-action #'magit-status)
+        '';
       };
     };
   };

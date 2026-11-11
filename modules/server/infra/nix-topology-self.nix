@@ -25,25 +25,20 @@
           wan = lib.mkIf (
             config.swarselsystems.isCloud && config.swarselsystems.server.localNetwork == "wan"
           ) { };
-          wgHome = lib.mkIf (isWgParticipant "wgHome") {
+        }
+        // lib.genAttrs [ "wgHome" "wgProxy" ] (
+          ifName:
+          lib.mkIf (isWgParticipant ifName) {
             addresses = [
-              globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome".hosts.${config.node.name}.ipv4
+              globals.networks."${
+                globals.wireguard.${ifName}.netConfigPrefix
+              }-${ifName}".hosts.${config.node.name}.ipv4
             ];
             renderer.hidePhysicalConnections = true;
             type = "wireguard";
             virtual = true;
-          };
-          wgProxy = lib.mkIf (isWgParticipant "wgProxy") {
-            addresses = [
-              globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
-            ];
-            renderer.hidePhysicalConnections = true;
-            type = "wireguard";
-            virtual = true;
-          };
-        };
+          }
+        );
       };
-    }
-
-  ;
+    };
 }

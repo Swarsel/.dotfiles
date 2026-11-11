@@ -58,7 +58,7 @@
             }) config.services.hostapd.radios;
             icon = "interfaces.wifi";
             info = "VLANs: ${lib.concatStringsSep ", " wifiVLANs}";
-            name = lib.swarselsystems.toCapitalized "hostapd";
+            name = "Hostapd";
           };
           interfaces = lib.mapAttrs (_: _: { }) config.services.hostapd.radios;
         };
@@ -67,8 +67,7 @@
           unit = "hostapd.service";
         };
         sops = {
-          secrets = lib.genAttrs (map pskSecret wifiVLANs) (_: {
-          });
+          secrets = lib.genAttrs (map pskSecret wifiVLANs) (_: { });
           templates."hostapd.psk" = {
             content = lib.concatMapStrings (
               vlanName:

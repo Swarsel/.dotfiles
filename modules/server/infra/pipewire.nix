@@ -31,11 +31,8 @@
             }
           ];
         };
-        security.rtkit.enable = true; # this is required for pipewire real-time access
+        security.rtkit.enable = true;
       };
       key = "swarsel/server/server-pipewire";
-
-    }
-
-  ;
+    };
 }

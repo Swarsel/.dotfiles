@@ -86,9 +86,7 @@
             filtering.rewrites =
               (map (domain: {
                 inherit domain;
-                # FIXME: change to homeWebProxy once that is setup
                 answer = globals.networks.home-lan.vlans.services.hosts.${homeWebProxy}.ipv4;
-                # answer = globals.hosts.${webProxy}.wanAddress4;
                 enabled = true;
               }) homeDomains)
               ++ [
@@ -160,7 +158,5 @@
           }
         ];
       };
-    }
-
-  ;
+    };
 }

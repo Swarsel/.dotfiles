@@ -4,6 +4,7 @@ let
     let
       inherit (inputs) systems;
       inherit (inputs.nixpkgs) lib;
+      domainParts = domain: builtins.filter (part: part != "") (lib.splitString "." domain);
     in
     rec {
       inherit (inputs.piix.lib.mkPii { lock = "${self}/secrets/pii.lock"; }) importEncrypted;
@@ -12,40 +13,15 @@ let
         let
           prefixLength = lib.toInt (lib.last (lib.splitString "/" cidr));
           bits = lib.genList (i: if i < prefixLength then 1 else 0) 32;
-          octets = lib.genList (
-            i:
-            let
-              octetBits = lib.sublist (i * 8) 8 bits;
-              octetValue = lib.foldl (acc: bit: acc * 2 + bit) 0 octetBits;
-            in
-            octetValue
-          ) 4;
-          subnetMask = lib.concatStringsSep "." (map toString octets);
         in
-        subnetMask;
+        lib.concatMapStringsSep "." (
+          i: toString (lib.foldl (acc: bit: acc * 2 + bit) 0 (lib.sublist (i * 8) 8 bits))
+        ) (lib.range 0 3);
       darwinSystems = builtins.filter (lib.hasSuffix "-darwin") (import systems);
       forEachLinuxSystem = f: lib.genAttrs linuxSystems (system: f pkgsFor.${system});
-      getBaseDomain =
-        domain:
-        let
-          parts = builtins.split "\\." domain;
-          domainParts = builtins.filter (x: builtins.isString x && x != "") parts;
-        in
-        if builtins.length domainParts > 0 then
-          builtins.concatStringsSep "." (builtins.tail domainParts)
-        else
-          "";
-      getSubDomain =
-        domain:
-        let
-          parts = builtins.split "\\." domain;
-          domainParts = builtins.filter (x: builtins.isString x && x != "") parts;
-        in
-        if builtins.length domainParts > 0 then builtins.head domainParts else "";
+      getBaseDomain = domain: lib.concatStringsSep "." (lib.drop 1 (domainParts domain));
+      getSubDomain = domain: lib.concatStrings (lib.take 1 (domainParts domain));
       linuxSystems = builtins.filter (lib.hasSuffix "-linux") (import systems);
-      mkIfElse =
-        p: yes: no:
-        if p then yes else no;
       mkStrong = lib.mkOverride 60;
       mkTrueOption = lib.mkOption {
         default = true;
@@ -55,7 +31,13 @@ let
         system:
         import inputs.nixpkgs {
           inherit system;
-          config.allowUnfree = true;
+          config = {
+            allowUnfree = true;
+            permittedInsecurePackages = [
+              # matrix
+              "olm-3.2.16"
+            ];
+          };
           overlays = [
             self.overlays.default
             self.overlays.stables
@@ -63,11 +45,7 @@ let
           ];
         }
       );
-      readNix =
-        type:
-        lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (
-          lib.attrNames (builtins.readDir "${self}/${type}")
-        );
+      readNix = type: lib.remove "default.nix" (lib.attrNames (builtins.readDir "${self}/${type}"));
       root =
         subpath:
         builtins.path {
@@ -76,21 +54,12 @@ let
         };
       toCapitalized =
         str:
-        if builtins.stringLength str == 0 then
-          ""
-        else
-          let
-            first = builtins.substring 0 1 str;
-            rest = builtins.substring 1 (builtins.stringLength str - 1) str;
-            upper = lib.toUpper first;
-            lower = lib.toLower rest;
-          in
-          upper + lower;
+        lib.toUpper (builtins.substring 0 1 str)
+        + lib.toLower (builtins.substring 1 (builtins.stringLength str) str);
     };
 in
 {
   flake = {
-    homeLib = self.outputs.lib;
     lib = inputs.nixpkgs.lib.extend (
       _: _: {
         inherit (inputs.home-manager.lib) hm;

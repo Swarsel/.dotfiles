@@ -17,7 +17,7 @@
         serviceDir
         serviceName
         ;
-      inherit (confLib.static) homeDnsServer ntpServer;
+      inherit (confLib.static) homeDnsServer ntpServer routerServer;
       dhcpX =
         intX:
         let
@@ -43,7 +43,7 @@
                 interface = "me-${vlanName}";
                 option-data =
                   lib.optional (intX == 4) {
-                    data = vlanCfg.hosts.hintbooth."ipv${x}";
+                    data = vlanCfg.hosts.${routerServer}."ipv${x}";
                     name = "routers";
                   }
                   # Advertise DNS server for VLANS that have internet access
@@ -51,16 +51,18 @@
                     data = globals.networks.home-lan.vlans.services.hosts.${homeDnsServer}."ipv${x}";
                     name = if (intX == 4) then "domain-name-servers" else "dns-servers";
                   }
-                  ++ lib.optional (globals.general ? ntpServer) {
-                    data = vlanCfg.hosts.${ntpServer}."ipv${x}";
-                    name = if (intX == 4) then "ntp-servers" else "sntp-servers";
-                  }
+                  ++ [
+                    {
+                      data = vlanCfg.hosts.${ntpServer}."ipv${x}";
+                      name = if (intX == 4) then "ntp-servers" else "sntp-servers";
+                    }
+                  ]
                   ++ lib.optional (lib.elem vlanName globals.general.internetVLANs) {
                     data = globals.domains.main;
                     name = "domain-search";
                   }
                   ++ lib.optional (intX == 4 && lib.elem vlanName globals.general.internetVLANs) {
-                    data = lib.concatMapStringsSep ", " (cidr: "${cidr} - ${vlanCfg.hosts.hintbooth.ipv4}") (
+                    data = lib.concatMapStringsSep ", " (cidr: "${cidr} - ${vlanCfg.hosts.${routerServer}.ipv4}") (
                       lib.mapAttrsToList (_: otherVlan: otherVlan.cidrv4) (
                         lib.filterAttrs (otherName: _: otherName != vlanName) globals.networks.home-lan.vlans
                       )
@@ -150,7 +152,5 @@
         ];
 
       };
-    }
-
-  ;
+    };
 }

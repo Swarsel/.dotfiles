@@ -10,7 +10,6 @@
     let
       applets = {
         anki = {
-          description = "Anki applet";
           execStart = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/anki";
           extraService = {
             Environment = [ "QT_QPA_PLATFORM=xcb" ];
@@ -21,25 +20,12 @@
             Type = "simple";
           };
         };
-        element = {
-          description = "Element applet";
-          execStart = "${pkgs.element-desktop}/bin/element-desktop --hidden --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-        };
-        firezone = {
-          description = "Firezone applet";
-          execStart = "${pkgs.firezone-gui-client}/bin/firezone-client-gui";
-        };
-        obsidian = {
-          description = "Obsidian applet";
-          execStart = "${lib.getExe config.programs.obsidian.package}";
-        };
-        vesktop = {
-          description = "Vesktop applet";
-          execStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
-        };
+        element.execStart = "${pkgs.element-desktop}/bin/element-desktop --hidden --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+        firezone.execStart = "${pkgs.firezone-gui-client}/bin/firezone-client-gui";
+        obsidian.execStart = "${lib.getExe config.programs.obsidian.package}";
+        vesktop.execStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
       };
-      cfg = config.swarselsystems.trayApplets;
-      enabledApplets = lib.filterAttrs (n: _: cfg.${n}.enable) applets;
+      enabledApplets = lib.filterAttrs (n: _: config.swarselsystems.trayApplets.${n}.enable) applets;
     in
     {
       options.swarselsystems.trayApplets = lib.mapAttrs (_: _: {
@@ -49,7 +35,12 @@
         swarselsystems.enabledHomeModules = lib.mapAttrsToList (n: _: "${n}-tray") enabledApplets;
 
         systemd.user.services = lib.mapAttrs' (
-          n: appletDef: lib.nameValuePair "${n}-applet" (confLib.mkTrayApplet appletDef)
+          n: appletDef:
+          lib.nameValuePair "${n}-applet" (
+            confLib.mkTrayApplet (
+              appletDef // { description = "${lib.swarselsystems.toCapitalized n} applet"; }
+            )
+          )
         ) enabledApplets;
       };
     };

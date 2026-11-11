@@ -6,10 +6,6 @@
       confLib,
       ...
     }:
-    let
-      serviceUser = "nginx";
-      serviceGroup = serviceUser;
-    in
     {
       options.services.nginx = {
         recommendedSecurityHeaders = lib.mkEnableOption "additional security headers by default in each location block.";
@@ -61,7 +57,6 @@
         swarselsystems.enabledServerModules = [ "nginx" ];
         services.nginx = {
           enable = true;
-          group = serviceGroup;
           recommendedBrotliSettings = true;
           recommendedGzipSettings = true;
           recommendedOptimisation = true;
@@ -70,7 +65,6 @@
           recommendedTlsSettings = true;
           sslCiphers = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:!aNULL";
           statusPage = true;
-          user = serviceUser;
           virtualHosts.fallback = {
             default = true;
             locations."/".extraConfig = ''
@@ -95,7 +89,5 @@
               443
             ];
       };
-    }
-
-  ;
+    };
 }

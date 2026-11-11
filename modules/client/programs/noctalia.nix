@@ -196,8 +196,6 @@ in
                   };
                 };
                 widget_order = [
-                  "lockscreen-login-box@DP-9"
-                  "lockscreen-login-box@DP-8"
                   "lockscreen-login-box@eDP-2"
                   "lockscreen-widget-0000000000000001"
                   "lockscreen-widget-0000000000000002"
@@ -469,9 +467,7 @@ in
               "${inputs.nixpkgs-dev}/nixos/modules/programs/gpu-screen-recorder.nix"
             ];
             services = {
-              gnome.evolution-data-server = {
-                enable = false; # needed for calendar integration
-              };
+              gnome.evolution-data-server.enable = false;
               noctoggle = {
                 enable = true;
                 hideCommand = "${lib.getExe pkgs.noctalia} msg bar-hide";

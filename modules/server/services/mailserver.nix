@@ -64,8 +64,8 @@
             roundcubeDB = config.services.roundcube.database;
 
             roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
-            endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
-            endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6 or null;
+            endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4;
+            endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6;
             mtaStsDomain = "mta-sts.${baseDomain}";
             mtaStsPolicy = lib.concatMapStrings (line: "${line}\\r\\n") [
               "version: STSv1"
@@ -80,18 +80,8 @@
               server.postgresql.rolePasswordFiles.${roundcubeDB.username} =
                 config.sops.secrets."${roundcubeDB.username}-db-password".path;
             };
-            topology.self.services = lib.listToAttrs (
-              map
-                (
-                  service:
-                  lib.nameValuePair "${service}" {
-                    icon = root "files/topology-images/${service}.png";
-                    info = lib.mkIf (service == "postfix" || service == "roundcube") (
-                      if service == "postfix" then "https://${serviceDomain}" else "https://${roundcubeDomain}"
-                    );
-                    name = lib.swarselsystems.toCapitalized service;
-                  }
-                )
+            topology.self.services = lib.mkMerge [
+              (lib.genAttrs
                 [
                   "postfix"
                   "dovecot"
@@ -99,7 +89,16 @@
                   "clamav"
                   "roundcube"
                 ]
-            );
+                (service: {
+                  icon = root "files/topology-images/${service}.png";
+                  name = lib.swarselsystems.toCapitalized service;
+                })
+              )
+              {
+                postfix.info = "https://${serviceDomain}";
+                roundcube.info = "https://${roundcubeDomain}";
+              }
+            ];
             globals = {
               services = {
                 ${serviceName} = {
@@ -126,7 +125,7 @@
                   "v=STSv1; id=${builtins.substring 0 32 (builtins.hashString "sha256" mtaStsPolicy)}"
                 ];
                 "_smtp._tls".TXT = [ "v=TLSRPTv1; rua=mailto:${dmarcMailAddress}" ];
-                mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6; # it MUST be this subdomain
+                mta-sts = dns.lib.combinators.host proxyAddress4 proxyAddress6; # name required by rfc 8461
               };
               monitoring = {
                 http = confLib.mkHttpMonitoring {
@@ -136,30 +135,32 @@
                   scheme = "https";
                   serviceName = "roundcube";
                 };
-                tcp = lib.mkMerge [
-                  (confLib.mkTcpMonitoring {
-                    expectedRegex = "^220 ";
-                    serviceName = "smtp";
-                    servicePort = 25;
-                  })
-                  (confLib.mkTcpMonitoring {
-                    expectedRegex = "^220 ";
-                    serviceName = "submission";
-                    servicePort = 587;
-                  })
-                  (confLib.mkTcpMonitoring {
-                    expectedRegex = "^220 ";
-                    serviceName = "submissions";
-                    servicePort = 465;
-                    tls = true;
-                  })
-                  (confLib.mkTcpMonitoring {
-                    expectedRegex = "^\\* OK";
-                    serviceName = "imaps";
-                    servicePort = 993;
-                    tls = true;
-                  })
-                ];
+                tcp = lib.mkMerge (
+                  lib.mapAttrsToList
+                    (
+                      serviceName: args:
+                      confLib.mkTcpMonitoring (
+                        {
+                          inherit serviceName;
+                          expectedRegex = "^220 ";
+                        }
+                        // args
+                      )
+                    )
+                    {
+                      imaps = {
+                        expectedRegex = "^\\* OK";
+                        servicePort = 993;
+                        tls = true;
+                      };
+                      smtp.servicePort = 25;
+                      submission.servicePort = 587;
+                      submissions = {
+                        servicePort = 465;
+                        tls = true;
+                      };
+                    }
+                );
                 systemd = lib.mkMerge (
                   map
                     (
@@ -238,7 +239,7 @@
                     "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
                     "~* \\.php(/|$)".recommendedSecurityHeaders = false;
                   };
-                  useACMEHost = globals.domains.main;
+                  useACMEHost = baseDomain;
                 };
               };
               postfix.settings.main.smtpd_client_auth_rate_limit = 10;
@@ -284,7 +285,6 @@
                 mode = "0700";
                 user = serviceUser;
               }
-              # { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
               {
                 directory = "/var/lib/rspamd";
                 group = "rspamd";
@@ -321,7 +321,6 @@
               accounts = config.repo.secrets.local.mailserver.accounts // {
                 ${dmarcMailAddress}.hashedPasswordFile = config.sops.secrets.parsedmarc-imap-hashed-password.path;
               };
-              # certificateScheme = "acme";
               dmarcReporting.enable = true;
               domains = [ baseDomain ];
               enableImapSsl = true;
@@ -331,9 +330,9 @@
               indexDir = "${serviceDir}/indices";
               openFirewall = true;
               stateVersion = 3;
-              x509.useACMEHost = globals.domains.main;
+              x509.useACMEHost = baseDomain;
             };
-            security.acme.certs.${globals.domains.main} = {
+            security.acme.certs.${baseDomain} = {
               extraLegoFlags = [
                 "--private-key"
                 config.sops.secrets.mail-tls-key.path
@@ -390,7 +389,7 @@
                       default_type text/plain;
                       return 200 "${mtaStsPolicy}";
                     '';
-                    useACMEHost = globals.domains.main;
+                    useACMEHost = baseDomain;
                   };
                 }
                 {

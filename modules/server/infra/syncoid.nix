@@ -38,7 +38,7 @@
           lib.nameValuePair "syncoid-${lib.replaceStrings [ "/" ] [ "-" ] source}" {
             details.interval.text = config.services.syncoid.interval;
             icon = root "files/topology-images/openzfs.png";
-            info = "${source} → ${target.target}";
+            info = "${source} to ${target.target}";
             name = "Syncoid replication";
           }
         ) targets;

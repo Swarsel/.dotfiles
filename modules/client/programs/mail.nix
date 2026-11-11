@@ -150,40 +150,13 @@
                   realName = address2-name;
                   userName = address2;
                 } defaultSettings;
-                swarsel = {
+                swarsel = lib.recursiveUpdate defaultSettings {
                   address = address4;
-                  imap = {
-                    host = globals.services.mailserver.domain;
-                    port = 993;
-                    tls.enable = true; # SSL/TLS
-                  };
-                  mbsync = {
-                    enable = true;
-                    create = "maildir";
-                    expunge = "both";
-                    extraConfig = {
-                      account = {
-                        AuthMechs = "LOGIN";
-                        PipelineDepth = 1;
-                        Timeout = 120;
-                      };
-                      channel.Sync = "All";
-                    };
-                    patterns = [ "*" ];
-                  };
-                  msmtp.enable = true;
-                  mu.enable = true;
+                  imap.host = globals.services.mailserver.domain;
+                  mbsync.patterns = [ "*" ];
                   passwordCommand = "cat ${confLib.getConfig.sops.secrets.address4-token.path}";
                   realName = fullName;
-                  smtp = {
-                    host = globals.services.mailserver.domain;
-                    port = 465;
-                    tls.enable = true; # SSL/TLS
-                  };
-                  thunderbird = {
-                    enable = true;
-                    profiles = [ "default" ];
-                  };
+                  smtp.host = globals.services.mailserver.domain;
                   userName = address4;
                 };
 

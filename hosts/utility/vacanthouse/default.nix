@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  confLib,
   globals,
   ...
 }:
@@ -39,7 +40,6 @@
       };
       keyFile = lib.mkOption {
         default = "/mnt/sandbox-tls/wildcard.key";
-        description = "Path inside the VM from which the private key for the wildcard certificate is read at boot; the vm variant mounts the host's /run/sandbox-tls there.";
         type = lib.types.str;
       };
     };
@@ -86,24 +86,17 @@
       };
     };
     users.motdFile = config.sops.templates.motd.path;
-    services = {
-      kanidm.provision = {
-        groups."sandbox.access".members = [ "sandbox" ];
-        systems.oauth2.oauth2-proxy = {
-          claimMaps.groups.valuesByGroup."sandbox.access" = [ "sandbox_access" ];
-          scopeMaps."sandbox.access" = [
-            "openid"
-            "email"
-            "profile"
-          ];
-        };
-      };
-      nginx.virtualHosts = lib.genAttrs config.sandbox.tlsDomains (_: {
-        sslCertificate = "${config.sandbox.tls.certificate}";
-        sslCertificateKey = "/run/sandbox-tls/nginx.key";
-        useACMEHost = lib.mkForce null;
-      });
-    };
+    services = lib.mkMerge [
+      (confLib.mkKanidmOauth2ProxyAccess { serviceName = "sandbox"; }).services
+      {
+        kanidm.provision.groups."sandbox.access".members = [ "sandbox" ];
+        nginx.virtualHosts = lib.genAttrs config.sandbox.tlsDomains (_: {
+          sslCertificate = "${config.sandbox.tls.certificate}";
+          sslCertificateKey = "/run/sandbox-tls/nginx.key";
+          useACMEHost = lib.mkForce null;
+        });
+      }
+    ];
     boot.loader.grub.enable = false;
     fileSystems."/" = {
       device = "/dev/disk/by-label/nixos";
@@ -134,23 +127,18 @@
     };
     virtualisation.vmVariant.virtualisation = {
       cores = 2;
-      forwardPorts = [
-        {
-          from = "host";
-          guest.port = 80;
-          host.port = 80;
-        }
-        {
-          from = "host";
-          guest.port = 443;
-          host.port = 443;
-        }
-        {
-          from = "host";
-          guest.port = 8300;
-          host.port = 8300;
-        }
-      ];
+      forwardPorts =
+        map
+          (port: {
+            from = "host";
+            guest.port = port;
+            host.port = port;
+          })
+          [
+            80
+            443
+            8300
+          ];
       graphics = false;
       memorySize = 4096;
       sharedDirectories.sandbox-tls = {

@@ -48,7 +48,7 @@ with dns.lib.combinators;
 
   MX = [
     {
-      exchange = "${globals.services.mailserver.subDomain}";
+      exchange = globals.services.mailserver.subDomain;
       preference = 10;
     }
   ];
@@ -71,46 +71,41 @@ with dns.lib.combinators;
       priority = 10;
       proto = "_tcp";
       service = "_matrix";
-      target = "${globals.services.matrix.subDomain}";
+      target = globals.services.matrix.subDomain;
       weight = 5;
     }
-    {
-      port = 465;
-      priority = 5;
-      proto = "_tcp";
-      service = "_submissions";
-      target = "${globals.services.mailserver.subDomain}";
-      ttl = 3600;
-      weight = 0;
-    }
-    {
-      port = 587;
-      priority = 5;
-      proto = "_tcp";
-      service = "_submission";
-      target = "${globals.services.mailserver.subDomain}";
-      ttl = 3600;
-      weight = 0;
-    }
-    {
-      port = 143;
-      priority = 5;
-      proto = "_tcp";
-      service = "_imap";
-      target = "${globals.services.mailserver.subDomain}";
-      ttl = 3600;
-      weight = 0;
-    }
-    {
-      port = 993;
-      priority = 5;
-      proto = "_tcp";
-      service = "_imaps";
-      target = "${globals.services.mailserver.subDomain}";
-      ttl = 3600;
-      weight = 0;
-    }
-  ];
+  ]
+  ++
+    map
+      (
+        record:
+        record
+        // {
+          priority = 5;
+          proto = "_tcp";
+          target = globals.services.mailserver.subDomain;
+          ttl = 3600;
+          weight = 0;
+        }
+      )
+      [
+        {
+          port = 465;
+          service = "_submissions";
+        }
+        {
+          port = 587;
+          service = "_submission";
+        }
+        {
+          port = 143;
+          service = "_imap";
+        }
+        {
+          port = 993;
+          service = "_imaps";
+        }
+      ];
 
   TXT = [
     (with spf; strict [ "a:${globals.services.mailserver.subDomain}.${globals.domains.main}" ])

@@ -2,10 +2,7 @@
 { self, inputs, ... }:
 {
 
-  flake-file.inputs = {
-    repoSecrets.url = "./secrets/repo";
-    topologyPrivate.url = "./files/topology/public";
-  };
+  flake-file.inputs.topologyPrivate.url = "./files/topology/public";
 
   imports = [
     (
@@ -28,24 +25,7 @@
           globalsSystem = lib.evalModules {
             modules = [
               self.modules.generic.globals
-              (
-                { lib, ... }:
-                let
-                  globalsFile = inputs.repoSecrets.globals;
-                in
-                {
-                  imports = [
-                    (
-                      if lib.hasSuffix ".enc" (toString globalsFile) then
-                        self.swarselsystemsLib.importEncrypted globalsFile
-                      else
-                        globalsFile
-                    )
-                  ];
-                }
-              )
-            ]
-            ++ lib.optionals (!(inputs.repoSecrets.isDemo or false)) [
+              (self.swarselsystemsLib.importEncrypted ../../secrets/repo/globals.nix.enc)
               (
                 { lib, ... }:
                 {

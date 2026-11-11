@@ -92,7 +92,7 @@
             extraSettingsFile = "/run/credentials/${serviceName}.service/${extraSettingsCredential}";
             http3-ytproxy.enable = true;
             nginx.enable = true;
-            port = 3001;
+            port = servicePort;
             settings = {
               db.user = serviceUser;
               default_user_preferences = {
@@ -114,7 +114,6 @@
               invidious_companion = [
                 {
                   private_url = "https://${serviceDomain}/companion";
-                  # private_url = "http://127.0.0.1:8282/companion";
                   public_url = "https://${serviceDomain}/companion";
                 }
               ];
@@ -139,7 +138,7 @@
             genNginx = toAddress: extraConfig: {
               upstreams = {
                 ${serviceName}.servers = {
-                  "${toAddress}:${builtins.toString 80}" = { };
+                  "${toAddress}:80" = { };
                 };
               };
               virtualHosts = {
@@ -167,8 +166,5 @@
           ];
 
       };
-
-    }
-
-  ;
+    };
 }

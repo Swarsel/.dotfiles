@@ -3,7 +3,7 @@
     { config, lib, ... }:
     let
       netConfig = config.repo.secrets.local.networking;
-      netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
+      netPrefix = if config.swarselsystems.isCloud then config.node.name else "home";
     in
     {
       options.swarselsystems.server = {
@@ -31,7 +31,7 @@
           hosts.${config.node.name} = {
             defaultGateway4 = netConfig.defaultGateway4 or null;
             defaultGateway6 = netConfig.defaultGateway6 or null;
-            isHome = if (netPrefix == "home") then true else false;
+            isHome = netPrefix == "home";
             wanAddress4 = netConfig.wanAddress4 or null;
             wanAddress6 = netConfig.wanAddress6 or null;
           };
@@ -56,7 +56,5 @@
         };
 
       };
-    }
-
-  ;
+    };
 }

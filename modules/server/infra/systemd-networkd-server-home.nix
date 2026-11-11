@@ -18,33 +18,33 @@
 
       isRouter = config.node.name == routerServer;
       localVLANsList = config.swarselsystems.localVLANs;
-      localVLANs = lib.genAttrs localVLANsList (x: globals.networks.home-lan.vlans.${x});
       attachedVLANs = lib.genAttrs (lib.unique (localVLANsList ++ bridgedVLANs)) (
         x: globals.networks.home-lan.vlans.${x}
       );
+
+      # only carries attached vlans, so no link local address and only wait for a carrier
+      lanNetwork = {
+        linkConfig.RequiredForOnline = "carrier";
+        matchConfig.Name = "lan";
+        networkConfig.LinkLocalAddressing = "no";
+      };
     in
     {
       imports = [
         self.modules.nixos.systemd-networkd-server
       ];
       config = {
-        topology.self.interfaces =
-          (lib.mapAttrs' (
-            vlanName: _:
-            lib.nameValuePair "vlan-${vlanName}" {
+        topology.self.interfaces = lib.mergeAttrsList (
+          map (
+            vlanName:
+            lib.genAttrs [ "vlan-${vlanName}" "me-${vlanName}" ] (_: {
               network = lib.mkForce vlanName;
-            }
-          ) localVLANs)
-          // (lib.mapAttrs' (
-            vlanName: _:
-            lib.nameValuePair "me-${vlanName}" {
-              network = lib.mkForce vlanName;
-            }
-          ) localVLANs);
+            })
+          ) localVLANsList
+        );
         assertions = [
           {
-            assertion =
-              ((localVLANsList != [ ]) && (initrdVLAN != null)) || (localVLANsList == [ ]) || (!isCrypted);
+            assertion = localVLANsList == [ ] || initrdVLAN != null || !isCrypted;
             message = "This host uses VLANs and disk encryption, thus a VLAN must be specified for initrd or disk encryption must be removed.";
           }
           {
@@ -65,13 +65,7 @@
               vlanConfig.Id = globals.networks.home-lan.vlans.${initrdVLAN}.id;
             };
             networks = {
-              "10-lan" = {
-                linkConfig.RequiredForOnline = "carrier";
-                matchConfig.Name = "lan";
-                # This interface should only be used from attached vlans.
-                # So don't acquire a link local address and only wait for
-                # this interface to gain a carrier.
-                networkConfig.LinkLocalAddressing = "no";
+              "10-lan" = lanNetwork // {
                 vlan = [ "vlan-${initrdVLAN}" ];
               };
               "30-vlan-${initrdVLAN}" = {
@@ -119,15 +113,12 @@
             }
           );
           networks = {
-            "10-lan" = lib.mkIf (!isRouter) {
-              linkConfig.RequiredForOnline = "carrier";
-              matchConfig.Name = "lan";
-              # This interface should only be used from attached vlans.
-              # So don't acquire a link local address and only wait for
-              # this interface to gain a carrier.
-              networkConfig.LinkLocalAddressing = "no";
-              vlan = map (name: "vlan-${name}") (builtins.attrNames attachedVLANs);
-            };
+            "10-lan" = lib.mkIf (!isRouter) (
+              lanNetwork
+              // {
+                vlan = map (name: "vlan-${name}") (builtins.attrNames attachedVLANs);
+              }
+            );
             # Remaining macvtap interfaces should not be touched.
             "90-macvtap-ignore" = lib.mkIf withMicroVMs {
               linkConfig = {
@@ -181,9 +172,6 @@
                     linkConfig.RequiredForOnline = if isRouter then "no" else "carrier";
                     matchConfig.Name = "vlan-${vlanName}";
                     networkConfig = {
-                      # This interface should only be used from attached macvlans.
-                      # So don't acquire a link local address and only wait for
-                      # this interface to gain a carrier.
                       LinkLocalAddressing = "no";
                       MACVLAN = "me-${vlanName}";
                     };
@@ -207,8 +195,5 @@
         };
 
       };
-
-    }
-
-  ;
+    };
 }

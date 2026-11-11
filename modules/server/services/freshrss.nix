@@ -39,11 +39,6 @@
       ];
       config = {
         swarselsystems.enabledServerModules = [ "freshrss" ];
-        # topology.self.services.${serviceName} = {
-        #   name = "FreshRSS";
-        #   info = "https://${serviceDomain}";
-        #   icon = (root "files/topology-images/${serviceName}.png");
-        # };
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
@@ -64,54 +59,25 @@
           };
 
         };
-        sops = {
-          secrets = {
-            freshrss-pw.owner = serviceUser;
-            # kanidm-freshrss-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-            # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          };
-
-          #   templates = {
-          #     "freshrss-env" = {
-          #       content = ''
-          #         DATA_PATH=${config.services.freshrss.dataDir}
-          #         OIDC_ENABLED=1
-          #         OIDC_PROVIDER_METADATA_URL=https://${kanidmDomain}/.well-known/openid-configuration
-          #         OIDC_CLIENT_ID=freshrss
-          #         OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-freshrss-client}
-          #         OIDC_CLIENT_CRYPTO_KEY=${config.sops.placeholder.oidc-crypto-key}
-          #         OIDC_REMOTE_USER_CLAIM=preferred_username
-          #         OIDC_SCOPES=openid groups email profile
-          #         OIDC_X_FORWARDED_HEADERS=X-Forwarded-Host X-Forwarded-Port X-Forwarded-Proto
-          #       '';
-          #       owner = "freshrss";
-          #       group = "freshrss";
-          #       mode = "0440";
-          #     };
-          #   };
-        };
+        sops.secrets.freshrss-pw.owner = serviceUser;
         users = {
           users.${serviceUser} = {
             extraGroups = [ "users" ];
             group = serviceGroup;
             isSystemUser = true;
           };
+          groups.${serviceGroup} = { };
           persistentIds.freshrss = confLib.mkIds 986;
         };
-        users.groups.${serviceGroup} = { };
-        services.${serviceName} =
-          let
-            inherit (config.repo.secrets.local.freshrss) defaultUser;
-          in
-          {
-            inherit defaultUser;
-            enable = true;
-            authType = "form";
-            baseUrl = "https://${serviceDomain}";
-            dataDir = "/var/lib/freshrss";
-            passwordFile = config.sops.secrets.freshrss-pw.path;
-            virtualHost = serviceDomain;
-          };
+        services.${serviceName} = {
+          inherit (config.repo.secrets.local.freshrss) defaultUser;
+          enable = true;
+          authType = "form";
+          baseUrl = "https://${serviceDomain}";
+          dataDir = "/var/lib/freshrss";
+          passwordFile = config.sops.secrets.freshrss-pw.path;
+          virtualHost = serviceDomain;
+        };
         environment.persistence."/state" = lib.mkIf config.swarselsystems.isMicroVM {
           directories = [
             {
@@ -121,9 +87,6 @@
             }
           ];
         };
-        # systemd.services.freshrss-config.serviceConfig.EnvironmentFile = [
-        #   config.sops.templates.freshrss-env.path
-        # ];
         nodes =
           let
             genNginx = toAddress: extraConfig: {
@@ -162,11 +125,9 @@
               };
             }
             { ${webProxy}.services.nginx = genNginx serviceAddress ""; }
-            { ${homeWebProxy}.services.nginx = genNginx homeServiceAddress nginxAccessRules; }
+            { ${homeWebProxy}.services.nginx = lib.mkIf isHome (genNginx homeServiceAddress nginxAccessRules); }
           ];
 
       };
-    }
-
-  ;
+    };
 }

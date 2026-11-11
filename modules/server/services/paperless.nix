@@ -3,7 +3,6 @@
     {
       config,
       lib,
-      pkgs,
       confLib,
       globals,
       ...
@@ -35,12 +34,10 @@
 
       tikaPort = 9998;
       gotenbergPort = 3002;
-      kanidmDomain = globals.services.kanidm.domain;
     in
     {
       config = {
         swarselsystems.enabledServerModules = [ "paperless" ];
-        # networking.firewall.allowedTCPPorts = [ servicePort ];
         globals = {
           services = confLib.mkServiceGlobal {
             inherit
@@ -84,7 +81,7 @@
                         name = "Kanidm";
                         provider_id = "kanidm";
                         secret = config.sops.placeholder.kanidm-paperless;
-                        settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                        settings.server_url = "https://${globals.services.kanidm.domain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
                       }
                     ];
                     OAUTH_PKCE_ENABLED = "True";
@@ -130,10 +127,7 @@
           };
           gotenberg = {
             enable = true;
-            package = pkgs.gotenberg;
             bindIP = "127.0.0.1";
-            chromium.package = pkgs.chromium;
-            libreoffice.package = pkgs.libreoffice;
             port = gotenbergPort;
             timeout = "600s";
           };
@@ -218,7 +212,5 @@
           ];
 
       };
-    }
-
-  ;
+    };
 }

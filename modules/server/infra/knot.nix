@@ -24,8 +24,10 @@
         serviceName
         servicePort
         ;
-      listenAddress4 = "10.1.2.157";
-      listenAddress6 = "2603:c020:801f:a0cc::9d";
+      listenHost =
+        globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name};
+      listenAddress4 = listenHost.ipv4;
+      listenAddress6 = listenHost.ipv6;
       keyName = globals.domains.main;
       keyName4 = "${keyName}.${proxyAddress4}";
       keyName6 = "${keyName}.${

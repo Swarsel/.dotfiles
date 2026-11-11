@@ -9,10 +9,7 @@ let
   inherit (outputs) lib;
 
   stablePins = {
-    dev = [
-      # "_1password-gui"
-      # "_1password-gui-beta"
-    ];
+    dev = [ ];
     firezone = [
       "firezone-gateway"
       "firezone-headless-client"
@@ -20,8 +17,6 @@ let
       "firezone-server"
     ];
     stable = [
-      # "moonlight-qt"
-      # "wf-recorder"
       "dwarfs"
       "wayprompt"
     ];
@@ -32,7 +27,6 @@ let
     stable26_05 = [
       "azure-cli"
       "libdisplay-info_0_2"
-      "hexchat"
     ];
   };
 in
@@ -94,195 +88,167 @@ in
       let
         nixpkgs-stable-versions =
           final: _:
-          let
-            nixpkgsInputs = lib.filterAttrs (name: _v: builtins.match "^nixpkgs-.*" name != null) inputs;
-
-            rename = name: builtins.replaceStrings [ "nixpkgs-" ] [ "" ] name;
-
-            mkPkgs =
-              src:
+          lib.mapAttrs' (
+            name: src:
+            lib.nameValuePair (lib.removePrefix "nixpkgs-" name) (
               import src {
                 inherit (final.stdenv.hostPlatform) system;
                 config.allowUnfree = true;
-              };
-          in
-          builtins.listToAttrs (
-            map (name: {
-              name = rename name;
-              value = mkPkgs nixpkgsInputs.${name};
-            }) (builtins.attrNames nixpkgsInputs)
-          );
-
+              }
+            )
+          ) (lib.filterAttrs (name: _: lib.hasPrefix "nixpkgs-" name) inputs);
       in
       rec {
         additions =
           final: prev:
           let
-            additions =
-              final: _:
-              import "${self}/pkgs/flake" {
-                inherit self lib;
-                pkgs = final;
-              }
-              // lib.optionalAttrs (inputs ? swarsel-nix) {
-                swarsel-nix = import inputs.swarsel-nix {
-                  pkgs = prev;
-                };
-              }
-              // lib.optionalAttrs (inputs ? zjstatus) {
-                zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
-              }
-              // lib.optionalAttrs (inputs ? hunkle) {
-                hunkle = inputs.hunkle.packages.${prev.stdenv.hostPlatform.system}.default;
-              }
-              // lib.optionalAttrs (inputs ? follow-nix) {
-                follow-nix = inputs.follow-nix.packages.${prev.stdenv.hostPlatform.system}.default;
-              }
-              // lib.optionalAttrs (inputs ? pedantix) {
-                pedantix = inputs.pedantix.packages.${prev.stdenv.hostPlatform.system}.pedantix-wrapped;
-              };
-
+            inherit (prev.stdenv.hostPlatform) system;
           in
-          (additions final prev)
-          // (nixpkgs-stable-versions final prev)
-          // ((inputs.niri-flake.overlays.niri or (_: _: { })) final prev)
-          // ((inputs.noctalia.overlays.default or (_: _: { })) final prev)
-          // ((inputs.nur.overlays.default or (_: _: { })) final prev)
-          // ((inputs.emacs-overlay.overlay or (_: _: { })) final prev)
-          // ((inputs.nix-topology.overlays.default or (_: _: { })) final prev)
-          // ((inputs.nix-index-database.overlays.nix-index or (_: _: { })) final prev)
-          // ((inputs.nixgl.overlay or (_: _: { })) final prev)
-          // ((inputs.nix-minecraft.overlay or (_: _: { })) final prev)
-          // ((inputs.nixos-extra-modules.overlays.default or (_: _: { })) final prev);
+          import "${self}/pkgs/flake" {
+            inherit self lib;
+            pkgs = final;
+          }
+          // {
+            follow-nix = inputs.follow-nix.packages.${system}.default;
+            hunkle = inputs.hunkle.packages.${system}.default;
+            pedantix = inputs.pedantix.packages.${system}.pedantix-wrapped;
+            swarsel-nix = import inputs.swarsel-nix { pkgs = prev; };
+            zjstatus = inputs.zjstatus.packages.${system}.default;
+          }
+          // nixpkgs-stable-versions final prev
+          // lib.mergeAttrsList (
+            map (overlay: overlay final prev) [
+              inputs.niri-flake.overlays.niri
+              inputs.noctalia.overlays.default
+              inputs.nur.overlays.default
+              inputs.emacs-overlay.overlay
+              inputs.nix-topology.overlays.default
+              inputs.nix-index-database.overlays.nix-index
+              inputs.nixgl.overlay
+              inputs.nix-minecraft.overlay
+              inputs.nixos-extra-modules.overlays.default
+            ]
+          );
 
         default = additions;
 
-        modifications =
-          final: prev:
-          let
-            modifications = final: prev: {
-              firefox = prev.firefox.override {
-                nativeMessagingHosts = [
-                  prev.tridactyl-native
-                  prev.browserpass
-                ];
+        modifications = _final: prev: {
+          firezone-gui-client = prev.firezone-gui-client.overrideAttrs (
+            old:
+            let
+              frontend = old.passthru.frontend.overrideAttrs {
+                patches = [ (root "files/patches/firezone-gui-client-update-state-loop.patch") ];
               };
-              firezone-gui-client = prev.firezone-gui-client.overrideAttrs (
-                old:
-                let
-                  frontend = old.passthru.frontend.overrideAttrs {
-                    patches = [ (root "files/patches/firezone-gui-client-update-state-loop.patch") ];
-                  };
-                in
-                {
-                  passthru = old.passthru // {
-                    inherit frontend;
-                  };
-                  postPatch = builtins.replaceStrings [ "${old.passthru.frontend}" ] [ "${frontend}" ] old.postPatch;
-                }
-              );
-              go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
-              grafanaPlugins = prev.grafanaPlugins // {
-                grafana-pyroscope-datasource = prev.grafanaPlugins.grafanaPlugin {
-                  packages.any = {
-                    hash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
-                    url = "https://grafana.com/api/plugins/grafana-pyroscope-datasource/versions/13.0.9/download";
-                  };
-                  pname = "grafana-pyroscope-datasource";
-                  version = "13.0.9";
-                };
+            in
+            {
+              passthru = old.passthru // {
+                inherit frontend;
               };
-              isync = prev.isync.override {
-                withCyrusSaslXoauth2 = true;
+              postPatch = builtins.replaceStrings [ "${old.passthru.frontend}" ] [ "${frontend}" ] old.postPatch;
+            }
+          );
+          go-mockery = prev.go-mockery.overrideAttrs { doCheck = false; };
+          grafanaPlugins = prev.grafanaPlugins // {
+            grafana-pyroscope-datasource = prev.grafanaPlugins.grafanaPlugin {
+              packages.any = {
+                hash = "sha256-JZHurlO+5Anr5VDcO9sXewxjLIPkz6JAchkF9qkLR4Y=";
+                url = "https://grafana.com/api/plugins/grafana-pyroscope-datasource/versions/13.0.9/download";
               };
-              lib = prev.lib // {
-                swarselsystems = self.outputs.swarselsystemsLib;
-                hm = self.outputs.homeLib;
-              };
-              matrix-appservice-irc = prev.matrix-appservice-irc.overrideAttrs {
-                patches = [
-                  (root "files/patches/matrix-appservice-irc-on-connect-commands.patch")
-                  (root "files/patches/matrix-appservice-irc-pm-room-v12.patch")
-                  (root "files/patches/matrix-appservice-irc-provisioner-silent-pm.patch")
-                ];
-              };
-              mautrix-telegram = prev.mautrix-telegram.override {
-                python3 = prev.python313;
-              };
-              mgba = final.swarsel-mgba;
-              niri-unstable = prev.niri-unstable.override {
-                patches = [
-                  (root "files/patches/niri-workspace-under-mouse-binds.patch")
-                  (root "files/patches/niri-hidden-workspaces.patch")
-                  (root "files/patches/niri-hidden-workspaces-event-stream.patch")
-                ];
-              };
-              retroarch = prev.retroarch.withCores (
-                cores: with cores; [
-                  snes9x # snes
-                  nestopia # nes
-                  dosbox # dos
-                  scummvm # scumm
-                  vba-m # gb/a
-                  mgba # gb/a
-                  melonds # ds
-                  dolphin # gc/wii
-                ]
-              );
-              sesh = prev.sesh.overrideAttrs {
-                doCheck = false;
-                preBuild = "";
-              };
-              shikane = prev.shikane.overrideAttrs (old: {
-                postPatch = (old.postPatch or "") + ''
-                  substituteInPlace src/settings.rs \
-                      --replace-fail ".create(true)" "" \
-                      --replace-fail ".append(true)" ""
-                '';
-              });
-              syncstorage-rs =
-                (prev.syncstorage-rs.override {
-                  python3 = prev.python313;
-                }).overrideAttrs
-                  (old: {
-                    env = (old.env or { }) // {
-                      RUSTFLAGS = (old.env.RUSTFLAGS or "") + " -Aambiguous_glob_imports";
-                    };
-                  });
-              vesktop = prev.vesktop.override {
-                withSystemVencord = true;
-              };
-              zellij-unwrapped = prev.zellij-unwrapped.overrideAttrs (old: {
-                patches = [ (root "files/patches/zellij-rename-session-stale-name.patch") ];
-                postPatch =
-                  (old.postPatch or "")
-                  +
-                    lib.concatMapStrings
-                      (name: ''
-                        substituteInPlace zellij-utils/src/input/layout.rs \
-                              --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
-                      '')
-                      [
-                        "default"
-                        "strider"
-                        "disable-status-bar"
-                        "compact"
-                        "classic"
-                      ];
-              });
+              pname = "grafana-pyroscope-datasource";
+              version = "13.0.9";
             };
-          in
-          modifications final prev;
+          };
+          isync = prev.isync.override {
+            withCyrusSaslXoauth2 = true;
+          };
+          lib = prev.lib // {
+            inherit (self.outputs.lib) hm;
+            swarselsystems = self.outputs.swarselsystemsLib;
+          };
+          matrix-appservice-irc = prev.matrix-appservice-irc.overrideAttrs {
+            patches = [
+              (root "files/patches/matrix-appservice-irc-on-connect-commands.patch")
+              (root "files/patches/matrix-appservice-irc-pm-room-v12.patch")
+              (root "files/patches/matrix-appservice-irc-provisioner-silent-pm.patch")
+            ];
+          };
+          mautrix-signal = prev.mautrix-signal.overrideAttrs {
+            patches = [ (root "files/patches/mautrix-signal-upload-length.patch") ];
+          };
+          mautrix-telegram = prev.mautrix-telegram.override {
+            python3 = prev.python313;
+          };
+          niri-unstable = prev.niri-unstable.override {
+            patches = [
+              (root "files/patches/niri-workspace-under-mouse-binds.patch")
+              (root "files/patches/niri-hidden-workspaces.patch")
+              (root "files/patches/niri-hidden-workspaces-event-stream.patch")
+            ];
+          };
+          retroarch = prev.retroarch.withCores (
+            cores: with cores; [
+              snes9x # snes
+              nestopia # nes
+              dosbox # dos
+              scummvm # scumm
+              vba-m # gb/a
+              mgba # gb/a
+              melonds # ds
+              dolphin # gc/wii
+            ]
+          );
+          sesh = prev.sesh.overrideAttrs {
+            doCheck = false;
+            preBuild = "";
+          };
+          shikane = prev.shikane.overrideAttrs (old: {
+            postPatch = (old.postPatch or "") + ''
+              substituteInPlace src/settings.rs \
+                  --replace-fail ".create(true)" "" \
+                  --replace-fail ".append(true)" ""
+            '';
+          });
+          syncstorage-rs =
+            (prev.syncstorage-rs.override {
+              python3 = prev.python313;
+            }).overrideAttrs
+              (old: {
+                env = old.env // {
+                  RUSTFLAGS = (old.env.RUSTFLAGS or "") + " -Aambiguous_glob_imports";
+                };
+              });
+          vesktop = prev.vesktop.override {
+            withSystemVencord = true;
+          };
+          zellij-unwrapped = prev.zellij-unwrapped.overrideAttrs (old: {
+            postPatch =
+              old.postPatch
+              +
+                lib.concatMapStrings
+                  (name: ''
+                    substituteInPlace zellij-utils/src/input/layout.rs \
+                          --replace-fail 'available_layouts.push(LayoutInfo::BuiltIn("${name}".to_owned()));' ""
+                  '')
+                  [
+                    "default"
+                    "strider"
+                    "disable-status-bar"
+                    "compact"
+                    "classic"
+                  ];
+          });
+        };
 
-        pedantix-emacs = inputs.pedantix.overlays.emacs or (_: _: { });
+        pedantix-emacs = inputs.pedantix.overlays.emacs;
 
         stables =
           final: prev:
           let
             stablePackages = nixpkgs-stable-versions final prev;
-            from = suffix: stablePackages.${suffix} or (throw "Missing nixpkgs input nixpkgs-${suffix}");
           in
-          lib.concatMapAttrs (suffix: names: lib.genAttrs names (name: (from suffix).${name})) stablePins;
+          lib.concatMapAttrs (
+            suffix: names: lib.genAttrs names (name: stablePackages.${suffix}.${name})
+          ) stablePins;
       };
     stablePinsUnstable = lib.genAttrs lib.swarselsystems.linuxSystems (
       system:

@@ -29,13 +29,12 @@
           in
           {
             "10-${ifName}" = lib.mkIf (isRouter || (localVLANs == [ ])) {
-              # address = lib.optionals (isRouter || (localVLANs == [ ])) [
               address = [
-                "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv4}"
-                "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv6}"
+                globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv4
+                globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.cidrv6
               ];
               linkConfig.RequiredForOnline = "routable";
-              matchConfig.MACAddress = netConfig.networks.${config.swarselsystems.server.localNetwork}.mac;
+              matchConfig.MACAddress = netConfig.networks.${ifName}.mac;
               networkConfig = {
                 IPv6AcceptRA = false;
                 IPv6PrivacyExtensions = true;
@@ -54,7 +53,5 @@
           };
         wait-online.enable = false;
       };
-    }
-
-  ;
+    };
 }
