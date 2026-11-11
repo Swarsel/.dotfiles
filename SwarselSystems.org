@@ -45858,6 +45858,26 @@ This file defines a few workflows that I often need to run when working on my co
            );
        }
 #+end_src
+** Mautrix Signal patch to send the upload length for attachments
+:PROPERTIES:
+:CUSTOM_ID: h:3fa140bc-1555-4300-803c-90af77cd58eb
+:END:
+
+#+begin_src diff :tangle files/patches/mautrix-signal-upload-length.patch :mkdirp yes
+  diff --git a/pkg/signalmeow/attachments.go b/pkg/signalmeow/attachments.go
+  index 9bfc1fdc..c4317ad2 100644
+  --- a/pkg/signalmeow/attachments.go
+  +++ b/pkg/signalmeow/attachments.go
+  @@ -277,7 +277,7 @@ func (cli *Client) UploadAttachment(ctx context.Context, body []byte) (*signalpb
+   	}
+
+   	// Get upload attributes from Signal server
+  -	attributesPath := "/v4/attachments/form/upload"
+  +	attributesPath := fmt.Sprintf("/v4/attachments/form/upload?uploadLength=%d", len(encryptedWithMAC))
+   	resp, err := cli.AuthedWS.SendRequest(ctx, http.MethodGet, attributesPath, nil, nil)
+   	if err != nil {
+   		log.Err(err).Msg("Failed to request upload attributes")
+#+end_src
 ** Niri patch to support hidden workspaces
 :PROPERTIES:
 :CUSTOM_ID: h:dbbac5bb-a859-48e0-937c-8040e4e9a0d4
