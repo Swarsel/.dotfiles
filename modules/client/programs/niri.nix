@@ -308,6 +308,14 @@ in
                   opacity = 1.0;
                 }
                 {
+                  border.enable = false;
+                  matches = [ { app-id = "^yubikey-touch$"; } ];
+                  opacity = 1.0;
+                  open-floating = true;
+                  open-focused = false;
+                  shadow.enable = false;
+                }
+                {
                   matches = [ { app-id = "Gimp"; } ];
                   opacity = 1.0;
                 }
