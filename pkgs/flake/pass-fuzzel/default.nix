@@ -21,10 +21,15 @@ writeShellApplication {
 
       otp=0
       typeit=0
+      entry=""
       while :; do
           case ''${1:-} in
           -t | --type)
               typeit=1
+              ;;
+          -e | --entry)
+              entry=$2
+              shift
               ;;
           -o | --otp)
               otp=1
@@ -44,7 +49,10 @@ writeShellApplication {
       password_files=("''${password_files[@]#"$prefix"/}")
       password_files=("''${password_files[@]%.gpg}")
 
-      password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+      password=$entry
+      if [[ -z $password ]]; then
+          password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+      fi
 
       [[ -n $password ]] || exit
       if [[ $otp -eq 0 ]]; then

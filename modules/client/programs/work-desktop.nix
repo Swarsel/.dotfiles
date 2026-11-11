@@ -132,6 +132,15 @@
 
             ];
           };
+        programs.niri.settings.binds =
+          let
+            inherit (confLib.getConfig.repo.secrets.work) passEntries;
+          in
+          with config.lib.niri.actions;
+          {
+            "Mod+Shift+d".action = spawn "pass-fuzzel" "--type" "--entry" passEntries.admin;
+            "Mod+Shift+i".action = spawn "pass-fuzzel" "--type" "--entry" passEntries.account;
+          };
       };
     };
 }
