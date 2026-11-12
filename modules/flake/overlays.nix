@@ -217,6 +217,20 @@ in
                   RUSTFLAGS = (old.env.RUSTFLAGS or "") + " -Aambiguous_glob_imports";
                 };
               });
+          vencord = prev.vencord.overrideAttrs (old: {
+            patches = [ ];
+            pnpmDeps = old.pnpmDeps.overrideAttrs {
+              outputHash = "sha256-/BoLLeKsftWv1bjWuND8967YGhqWEaCZZU6z/oa+0oM=";
+              patches = [ ];
+              postPatch = "";
+            };
+            postPatch = "";
+            src = old.src.override {
+              hash = "sha256-+dN4wAFNmYVDiEe0QStqrFBRFHBBRkApqbmhuvsLZZM=";
+              tag = "v1.15.17";
+            };
+            version = "1.15.17";
+          });
           vesktop = prev.vesktop.override {
             withSystemVencord = true;
           };
