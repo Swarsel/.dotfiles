@@ -55,29 +55,20 @@
           package = pkgs.emacs-igc-pgtk;
         };
         home = {
-          activation = {
-            copyEmacsGeneratedRef = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              ref=${homeDir}/.dotfiles/files/emacs
-              if [ -d "$ref" ]; then
-                install -m 0644 ${config.programs.emacs.finalPackage.deps}/share/emacs/site-lisp/hm-early-init.el "$ref/early-init.el"
-                install -m 0644 ${config.programs.emacs.finalPackage.deps}/share/emacs/site-lisp/hm-init.el "$ref/init.el"
-              fi
-            '';
-            setupEmacsOrgFiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              if [ ! -d ${homeDir}/Org ]; then
-                install -d -m 0755 -g syncthing ${homeDir}/Org
-              fi
+          activation.setupEmacsOrgFiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            if [ ! -d ${homeDir}/Org ]; then
+              install -d -m 0755 -g syncthing ${homeDir}/Org
+            fi
 
-              # the old mtime lets syncthing keep the synced copy and rename this one to a sync-conflict
-              for file in Tasks Archive Journal; do
-                if [ ! -f ${homeDir}/Org/$file.org ]; then
-                  touch -t 197001010000.00 ${homeDir}/Org/$file.org
-                  chgrp syncthing ${homeDir}/Org/$file.org
-                fi
-                find ${homeDir}/Org -maxdepth 1 -empty -name "$file.sync-conflict-*.org" -delete
-              done
-            '';
-          };
+            # the old mtime lets syncthing keep the synced copy and rename this one to a sync-conflict
+            for file in Tasks Archive Journal; do
+              if [ ! -f ${homeDir}/Org/$file.org ]; then
+                touch -t 197001010000.00 ${homeDir}/Org/$file.org
+                chgrp syncthing ${homeDir}/Org/$file.org
+              fi
+              find ${homeDir}/Org -maxdepth 1 -empty -name "$file.sync-conflict-*.org" -delete
+            done
+          '';
           file = {
             ".emacs.d/early-init.el".text = lib.mkBefore ";;; early-init.el --- -*- lexical-binding: t; -*-\n";
             ".emacs.d/init.el".text = lib.mkBefore ";;; init.el --- -*- lexical-binding: t; -*-\n";

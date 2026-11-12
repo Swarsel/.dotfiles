@@ -360,7 +360,7 @@ This is meant to give a brief overview over the main programs/components that I 
   | 🪟 **WM**       | [Niri][]                            |
 
   [Noctalia Shell]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix
-  [Emacs]: https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el
+  [Emacs]: https://swarsel.github.io/.dotfiles/emacs/init.el.html
   [Glide]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/glide.nix
   [City-Lights (managed by stylix)]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/stylix.nix
   [zsh]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/zsh.nix
@@ -13661,29 +13661,20 @@ The few packages that are not on ELPA or MELPA are built with =trivialBuild= dir
             package = pkgs.emacs-igc-pgtk;
           };
           home = {
-            activation = {
-              copyEmacsGeneratedRef = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                ref=${homeDir}/.dotfiles/files/emacs
-                if [ -d "$ref" ]; then
-                  install -m 0644 ${config.programs.emacs.finalPackage.deps}/share/emacs/site-lisp/hm-early-init.el "$ref/early-init.el"
-                  install -m 0644 ${config.programs.emacs.finalPackage.deps}/share/emacs/site-lisp/hm-init.el "$ref/init.el"
-                fi
-              '';
-              setupEmacsOrgFiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                if [ ! -d ${homeDir}/Org ]; then
-                  install -d -m 0755 -g syncthing ${homeDir}/Org
-                fi
+            activation.setupEmacsOrgFiles = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              if [ ! -d ${homeDir}/Org ]; then
+                install -d -m 0755 -g syncthing ${homeDir}/Org
+              fi
 
-                # the old mtime lets syncthing keep the synced copy and rename this one to a sync-conflict
-                for file in Tasks Archive Journal; do
-                  if [ ! -f ${homeDir}/Org/$file.org ]; then
-                    touch -t 197001010000.00 ${homeDir}/Org/$file.org
-                    chgrp syncthing ${homeDir}/Org/$file.org
-                  fi
-                  find ${homeDir}/Org -maxdepth 1 -empty -name "$file.sync-conflict-*.org" -delete
-                done
-              '';
-            };
+              # the old mtime lets syncthing keep the synced copy and rename this one to a sync-conflict
+              for file in Tasks Archive Journal; do
+                if [ ! -f ${homeDir}/Org/$file.org ]; then
+                  touch -t 197001010000.00 ${homeDir}/Org/$file.org
+                  chgrp syncthing ${homeDir}/Org/$file.org
+                fi
+                find ${homeDir}/Org -maxdepth 1 -empty -name "$file.sync-conflict-*.org" -delete
+              done
+            '';
             file = {
               ".emacs.d/early-init.el".text = lib.mkBefore ";;; early-init.el --- -*- lexical-binding: t; -*-\n";
               ".emacs.d/init.el".text = lib.mkBefore ";;; init.el --- -*- lexical-binding: t; -*-\n";
@@ -49071,8 +49062,8 @@ Here lies defined the README for GitHub and Forgejo:
 
     If you came here for my raw Emacs configuration, the relevant files live here in elisp form (these files are generated from the nix `emacs-init` module):
 
-    - [early-init.el](../files/emacs/early-init.el)
-    - [init.el](../files/emacs/init.el)
+    - [early-init.el](https://swarsel.github.io/.dotfiles/emacs/early-init.el.html)
+    - [init.el](https://swarsel.github.io/.dotfiles/emacs/init.el.html)
 
     ### Deployment
 
@@ -49237,6 +49228,14 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
           run: |
             mkdir -p site/files/topology
             cp files/topology/topology_small.png site/files/topology/topology_small.png
+        - name: Render the Emacs configuration
+          run: |
+            mkdir -p emacs site/emacs
+            cp modules/client/programs/emacs/*.nix emacs/
+            perl -0pi -e 's/(?<!\x27\x27)\$(\{(?:[^{}]++|(?1))*\})/\${"<REDACTED>"}/g' emacs/*.nix
+            for file in early-init init; do
+              nix eval --raw --impure --expr "(import ./.github/emacs-init.nix ./emacs).$file" > "site/emacs/$file.el"
+            done
         - name: Tangle files & export to HTML
           run: |
             "$EMACS" --batch \
@@ -49266,14 +49265,21 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
               --eval "(defun org-babel-execute:sh (_body _params) \"\")" \
               --eval "(defun org-babel-execute:shell (_body _params) \"\")" \
               --eval "(defun org-babel-execute:markdown (_body _params) \"\")" \
-              --eval "(setq org-confirm-babel-evaluate nil
+              --eval "(setq make-backup-files nil
+                       org-confirm-babel-evaluate nil
                        org-html-validation-link nil
                        org-export-headline-levels 6
                        org-export-with-broken-links 'mark
                        org-html-htmlize-output-type 'inline-css)" \
               --visit=SwarselSystems.org \
               --funcall org-babel-tangle \
-              --funcall org-html-export-to-html
+              --funcall org-html-export-to-html \
+              --eval "(dolist (file '(\"site/emacs/early-init.el\" \"site/emacs/init.el\"))
+                       (with-current-buffer (find-file-noselect file)
+                         (let ((indent-tabs-mode nil) (lisp-indent-offset 2))
+                           (indent-region (point-min) (point-max)))
+                         (save-buffer))
+                       (htmlize-file file))"
         - name: Setup Pages
           uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d  # v4
         - name: Upload artifact
@@ -49290,6 +49296,47 @@ This file defines the workflow that I use to build the [[#h:12880c64-229c-4063-9
         - name: Deploy to GitHub Pages
           id: deployment
           uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e  # v4
+#+end_src
+
+** GitHub Workflow: emacs-init.nix
+:PROPERTIES:
+:CUSTOM_ID: h:e7d0c2e8-3c45-466f-b99b-7be5157ee442
+:END:
+
+#+begin_src nix-ts :tangle .github/emacs-init.nix :mkdirp yes
+  modules:
+  let
+    flake = builtins.getFlake (toString ../.);
+    inherit (flake.inputs) home-manager nixpkgs nur-expressions;
+    pkgs = nixpkgs.legacyPackages.x86_64-linux;
+
+    home = home-manager.lib.homeManagerConfiguration {
+      inherit pkgs;
+      modules = [
+        "${nur-expressions}/hm-modules/emacs-init.nix"
+        {
+          programs.emacs = {
+            enable = true;
+            init.enable = true;
+          };
+          home = {
+            homeDirectory = "/home/user";
+            stateVersion = "25.05";
+            username = "user";
+          };
+        }
+      ]
+      ++ map (file: (import "${modules}/${file}").flake.modules.homeManager.emacs-init or { }) (
+        builtins.attrNames (builtins.readDir modules)
+      );
+    };
+
+    files = home.config.programs.emacs.extraPackages pkgs.emacsPackages;
+  in
+  {
+    early-init = (builtins.elemAt files 0).src.text;
+    init = (builtins.elemAt files 1).src.text;
+  }
 #+end_src
 ** Private topology flake
 :PROPERTIES:

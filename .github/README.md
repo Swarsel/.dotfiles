@@ -78,7 +78,7 @@
 | 🪟 **WM**       | [Niri][]                            |
 
 [Noctalia Shell]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/noctalia.nix
-[Emacs]: https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el
+[Emacs]: https://swarsel.github.io/.dotfiles/emacs/init.el.html
 [Glide]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/glide.nix
 [City-Lights (managed by stylix)]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/stylix.nix
 [zsh]: https://github.com/Swarsel/.dotfiles/tree/main/modules/client/programs/zsh.nix
@@ -251,8 +251,8 @@
 
   If you came here for my raw Emacs configuration, the relevant files live here in elisp form (these files are generated from the nix `emacs-init` module):
 
-  - [early-init.el](../files/emacs/early-init.el)
-  - [init.el](../files/emacs/init.el)
+  - [early-init.el](https://swarsel.github.io/.dotfiles/emacs/early-init.el.html)
+  - [init.el](https://swarsel.github.io/.dotfiles/emacs/init.el.html)
 
   ### Deployment
 

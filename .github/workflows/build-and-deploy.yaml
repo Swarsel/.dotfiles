@@ -30,6 +30,14 @@ jobs:
         run: |
           mkdir -p site/files/topology
           cp files/topology/topology_small.png site/files/topology/topology_small.png
+      - name: Render the Emacs configuration
+        run: |
+          mkdir -p emacs site/emacs
+          cp modules/client/programs/emacs/*.nix emacs/
+          perl -0pi -e 's/(?<!\x27\x27)\$(\{(?:[^{}]++|(?1))*\})/\${"<REDACTED>"}/g' emacs/*.nix
+          for file in early-init init; do
+            nix eval --raw --impure --expr "(import ./.github/emacs-init.nix ./emacs).$file" > "site/emacs/$file.el"
+          done
       - name: Tangle files & export to HTML
         run: |
           "$EMACS" --batch \
@@ -59,14 +67,21 @@ jobs:
             --eval "(defun org-babel-execute:sh (_body _params) \"\")" \
             --eval "(defun org-babel-execute:shell (_body _params) \"\")" \
             --eval "(defun org-babel-execute:markdown (_body _params) \"\")" \
-            --eval "(setq org-confirm-babel-evaluate nil
+            --eval "(setq make-backup-files nil
+                     org-confirm-babel-evaluate nil
                      org-html-validation-link nil
                      org-export-headline-levels 6
                      org-export-with-broken-links 'mark
                      org-html-htmlize-output-type 'inline-css)" \
             --visit=SwarselSystems.org \
             --funcall org-babel-tangle \
-            --funcall org-html-export-to-html
+            --funcall org-html-export-to-html \
+            --eval "(dolist (file '(\"site/emacs/early-init.el\" \"site/emacs/init.el\"))
+                     (with-current-buffer (find-file-noselect file)
+                       (let ((indent-tabs-mode nil) (lisp-indent-offset 2))
+                         (indent-region (point-min) (point-max)))
+                       (save-buffer))
+                     (htmlize-file file))"
       - name: Setup Pages
         uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d  # v4
       - name: Upload artifact
