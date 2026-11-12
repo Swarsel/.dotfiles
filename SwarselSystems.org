@@ -41014,8 +41014,6 @@ In this section I define custom aspect sets. These are mostly used to combine co
           (add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
           (add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook))
 
-        (setq ispell-alternate-dictionary (getenv "WORDLIST"))
-
         (setq-default indicate-buffer-boundaries t)
 
         (setq auth-sources '( "~/.emacs.d/.authinfo")
@@ -42890,6 +42888,10 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
                   (magit-git-push branch (concat (magit-get "forge.remote") "/" branch) args)))
 
               (transient-insert-suffix 'magit-push "e" '("f" swarsel/magit-push-current-to-forge))
+
+              (transient-suffix-put 'magit-dispatch 'magit-worktree :key "%")
+              (transient-suffix-put 'magit-dispatch 'magit-show-refs :key "yr")
+              (transient-suffix-put 'magit-dispatch 'magit-refresh :key "gr")
             '';
             enable = true;
             custom.magit-display-buffer-function = "#'magit-display-buffer-same-window-except-diff-v1";
@@ -43150,6 +43152,7 @@ I leave the commented out alist extensions here in case I want to try them out a
         "C-z t" = "complete-tag";
         "C-z w" = "cape-dict";
       };
+      custom.cape-dict-file = ''(getenv "WORDLIST")'';
     };
   }
 #+end_src

@@ -20,5 +20,6 @@
       "C-z t" = "complete-tag";
       "C-z w" = "cape-dict";
     };
+    custom.cape-dict-file = ''(getenv "WORDLIST")'';
   };
 }

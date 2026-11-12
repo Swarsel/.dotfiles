@@ -98,8 +98,6 @@
         (add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
         (add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook))
 
-      (setq ispell-alternate-dictionary (getenv "WORDLIST"))
-
       (setq-default indicate-buffer-boundaries t)
 
       (setq auth-sources '( "~/.emacs.d/.authinfo")

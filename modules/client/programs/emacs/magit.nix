@@ -51,6 +51,10 @@
                 (magit-git-push branch (concat (magit-get "forge.remote") "/" branch) args)))
 
             (transient-insert-suffix 'magit-push "e" '("f" swarsel/magit-push-current-to-forge))
+
+            (transient-suffix-put 'magit-dispatch 'magit-worktree :key "%")
+            (transient-suffix-put 'magit-dispatch 'magit-show-refs :key "yr")
+            (transient-suffix-put 'magit-dispatch 'magit-refresh :key "gr")
           '';
           enable = true;
           custom.magit-display-buffer-function = "#'magit-display-buffer-same-window-except-diff-v1";
