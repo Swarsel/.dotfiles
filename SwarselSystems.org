@@ -14560,6 +14560,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
       });
 
       glide.keymaps.set(["insert", "normal", "visual", "op-pending"], "<Esc>", async () => {
+        rapidfire = false;
         if (glide.findbar.is_open()) {
           await glide.findbar.close();
         }
@@ -14641,6 +14642,7 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
       let hint_session = false;
       let hint_filter = "";
       let hint_texts: string[] = [];
+      let hint_boxes: glide.Hint[] = [];
       let hint_active = 0;
       let hint_visible: number[] = [];
 
@@ -14717,8 +14719,13 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         for (let i = 0; i < container.children.length; i++) {
           const marker = container.children[i] as HTMLElement;
           const active = i === active_index;
+          const outline_box = hint_filter.length === 0 && (hint_texts[i] ?? "").trim() ? hint_boxes[i] : undefined;
           marker.style.display = visible.has(i) ? "" : "none";
-          marker.style.background = active ? "var(--base0B)" : "";
+          marker.classList.toggle("glide-hint-outline", outline_box != null);
+          marker.style.width = outline_box ? `''${outline_box.width}px` : "";
+          marker.style.height = outline_box ? `''${outline_box.height}px` : "";
+          marker.style.borderColor = active && outline_box ? "var(--base0B)" : "";
+          marker.style.background = active && !outline_box ? "var(--base0B)" : "";
           marker.style.color = active ? "var(--base00)" : "";
           marker.style.opacity = active ? "1" : "";
         }
@@ -14732,10 +14739,17 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
         selector,
         include,
         action,
-      }: { selector?: string; include?: string; action?: glide.HintAction } = {}) {
+        pick: filter,
+      }: {
+        selector?: string;
+        include?: string;
+        action?: glide.HintAction;
+        pick?: glide.HintPicker;
+      } = {}) {
         hint_session = true;
         hint_filter = "";
         hint_texts = [];
+        hint_boxes = [];
         hint_active = 0;
         hint_visible = [];
         update_find_display();
@@ -14743,8 +14757,11 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           selector,
           include,
           action,
-          async pick({ hints, content }) {
-            hint_texts = await content.map((target) => (target.textContent ?? "").toLowerCase());
+          async pick(props) {
+            const hints = filter ? await filter(props) : props.hints;
+            const texts = await props.content.map((target) => (target.textContent ?? "").toLowerCase());
+            hint_texts = hints.map((hint) => texts[props.hints.indexOf(hint)] ?? "");
+            hint_boxes = hints;
             setTimeout(() => apply_hint_filter(), 0);
             return hints;
           },
@@ -14807,6 +14824,54 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
           hint_session = false;
           update_find_display();
         }
+      });
+    '';
+  }
+#+end_src
+
+***** Rapidfire hints
+:PROPERTIES:
+:CUSTOM_ID: h:bd604611-9fae-4bfe-b7c1-9a81b15958ce
+:END:
+
+This adds a hint mode to glide that directly opens a new hint opener after the last one, for faster navigation
+
+#+begin_src nix-ts :tangle modules/client/programs/glide/rapidfire.nix
+  {
+    flake.modules.homeManager.glide.programs.glide-browser.config = ''
+      let rapidfire = false;
+
+      async function wait_for_page_load() {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        while (rapidfire && (await glide.tabs.active()).status === "loading") {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      glide.keymaps.set("normal", "q", () => {
+        rapidfire = true;
+        start_hints();
+      });
+
+      glide.keymaps.set("hint", "<Esc>", async () => {
+        rapidfire = false;
+        await glide.excmds.execute("hints_remove");
+      });
+
+      glide.autocmds.create("ModeChanged", "hint:*", async ({ new_mode }) => {
+        if (!rapidfire || new_mode === "hint") {
+          return;
+        }
+
+        await wait_for_page_load();
+        if (!rapidfire) {
+          return;
+        }
+        if (glide.ctx.mode !== "normal") {
+          rapidfire = false;
+          return;
+        }
+        start_hints();
       });
     '';
   }
@@ -15247,6 +15312,18 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 
         #glide-hints-container > * {
           opacity: 0.6;
+        }
+
+        #glide-hints-container > .glide-hint-outline {
+          box-sizing: border-box;
+          padding: 0;
+          background: transparent;
+          border: 2px solid var(--base0E);
+          box-shadow: none;
+        }
+
+        #glide-hints-container > .glide-hint-outline > span {
+          visibility: hidden;
         }
       `, { id: "statusline" });
 

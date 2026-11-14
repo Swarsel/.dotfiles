@@ -3,6 +3,7 @@
     let hint_session = false;
     let hint_filter = "";
     let hint_texts: string[] = [];
+    let hint_boxes: glide.Hint[] = [];
     let hint_active = 0;
     let hint_visible: number[] = [];
 
@@ -79,8 +80,13 @@
       for (let i = 0; i < container.children.length; i++) {
         const marker = container.children[i] as HTMLElement;
         const active = i === active_index;
+        const outline_box = hint_filter.length === 0 && (hint_texts[i] ?? "").trim() ? hint_boxes[i] : undefined;
         marker.style.display = visible.has(i) ? "" : "none";
-        marker.style.background = active ? "var(--base0B)" : "";
+        marker.classList.toggle("glide-hint-outline", outline_box != null);
+        marker.style.width = outline_box ? `''${outline_box.width}px` : "";
+        marker.style.height = outline_box ? `''${outline_box.height}px` : "";
+        marker.style.borderColor = active && outline_box ? "var(--base0B)" : "";
+        marker.style.background = active && !outline_box ? "var(--base0B)" : "";
         marker.style.color = active ? "var(--base00)" : "";
         marker.style.opacity = active ? "1" : "";
       }
@@ -94,10 +100,17 @@
       selector,
       include,
       action,
-    }: { selector?: string; include?: string; action?: glide.HintAction } = {}) {
+      pick: filter,
+    }: {
+      selector?: string;
+      include?: string;
+      action?: glide.HintAction;
+      pick?: glide.HintPicker;
+    } = {}) {
       hint_session = true;
       hint_filter = "";
       hint_texts = [];
+      hint_boxes = [];
       hint_active = 0;
       hint_visible = [];
       update_find_display();
@@ -105,8 +118,11 @@
         selector,
         include,
         action,
-        async pick({ hints, content }) {
-          hint_texts = await content.map((target) => (target.textContent ?? "").toLowerCase());
+        async pick(props) {
+          const hints = filter ? await filter(props) : props.hints;
+          const texts = await props.content.map((target) => (target.textContent ?? "").toLowerCase());
+          hint_texts = hints.map((hint) => texts[props.hints.indexOf(hint)] ?? "");
+          hint_boxes = hints;
           setTimeout(() => apply_hint_filter(), 0);
           return hints;
         },

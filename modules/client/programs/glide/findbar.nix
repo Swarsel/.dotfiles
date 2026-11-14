@@ -45,6 +45,7 @@
     });
 
     glide.keymaps.set(["insert", "normal", "visual", "op-pending"], "<Esc>", async () => {
+      rapidfire = false;
       if (glide.findbar.is_open()) {
         await glide.findbar.close();
       }

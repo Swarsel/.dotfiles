@@ -109,6 +109,18 @@
       #glide-hints-container > * {
         opacity: 0.6;
       }
+
+      #glide-hints-container > .glide-hint-outline {
+        box-sizing: border-box;
+        padding: 0;
+        background: transparent;
+        border: 2px solid var(--base0E);
+        box-shadow: none;
+      }
+
+      #glide-hints-container > .glide-hint-outline > span {
+        visibility: hidden;
+      }
     `, { id: "statusline" });
 
     let flash_timer: ReturnType<typeof setTimeout> | undefined;
