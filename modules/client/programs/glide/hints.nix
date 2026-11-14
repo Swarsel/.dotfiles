@@ -131,7 +131,33 @@
 
     glide.keymaps.set("normal", "c", () => start_hints());
     glide.keymaps.set("normal", "f", () => start_hints());
-    glide.keymaps.set("normal", "F", () => start_hints({ action: "newtab-click" }));
+    glide.keymaps.set("normal", "F", () =>
+      start_hints({
+        action: async ({ content }) => {
+          const href = await content.execute((target) => {
+            target.focus();
+            const link = (target as HTMLAnchorElement).href;
+            if (typeof link === "string" && link !== "") {
+              return link;
+            }
+
+            target.click();
+            return null;
+          });
+          if (href == null) {
+            return;
+          }
+
+          const current = await glide.tabs.active();
+          await browser.tabs.create({
+            url: href,
+            active: false,
+            cookieStoreId: current.cookieStoreId,
+            openerTabId: current.id,
+            windowId: current.windowId,
+          });
+        },
+      }), { description: "Open a link in a background tab using hints" });
 
     for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-:./_,;!?@#%^&*()+=[]{}~'\"$") {
       glide.keymaps.set("hint", ch, () => {

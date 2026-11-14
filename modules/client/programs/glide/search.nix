@@ -63,29 +63,30 @@
           return {
             id: tab.id,
             incognito: tab.incognito,
+            next_index: tab.index + 1,
             store: tab.incognito ? undefined : "firefox-default",
             contained: !tab.incognito && tab.cookieStoreId !== "firefox-default",
           };
         }
 
         async function do_navigate(target: "current" | "tab" | "window", url: string) {
-          const { id, incognito, store, contained } = await active_tab_info();
+          const { id, incognito, next_index, store, contained } = await active_tab_info();
           if (target === "window") {
             await browser.windows.create({ url, incognito });
           } else if (target === "tab" || contained) {
-            await browser.tabs.create({ url, cookieStoreId: store });
+            await browser.tabs.create({ url, cookieStoreId: store, index: next_index });
           } else {
             await browser.tabs.update(id, { url });
           }
         }
 
         async function do_search(target: "current" | "tab" | "window", search: { query: string; engine?: string }) {
-          const { id, incognito, store, contained } = await active_tab_info();
+          const { id, incognito, next_index, store, contained } = await active_tab_info();
           let tab_id: number | undefined = id;
           if (target === "window") {
             tab_id = (await browser.windows.create({ incognito })).tabs?.[0]?.id;
           } else if (target === "tab" || contained) {
-            tab_id = (await browser.tabs.create({ cookieStoreId: store })).id;
+            tab_id = (await browser.tabs.create({ cookieStoreId: store, index: next_index })).id;
           }
           if (tab_id != null) {
             await browser.search.search({ ...search, tabId: tab_id });

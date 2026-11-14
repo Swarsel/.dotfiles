@@ -9,13 +9,13 @@
           await browser.tabs.update(existing.id, { active: true });
           return;
         }
-        const { store } = await active_tab_info();
+        const { next_index, store } = await active_tab_info();
         const rule = store == null ? null : match_rule(url);
         if (rule != null && container_stores[rule.container] == null) {
           await refresh_container_stores();
         }
         const target = rule != null ? container_stores[rule.container] : undefined;
-        const created = await browser.tabs.create({ url, cookieStoreId: target ?? store });
+        const created = await browser.tabs.create({ url, cookieStoreId: target ?? store, index: next_index });
         if (rule != null && target != null && created.id != null) {
           placed.set(created.id, rule.container);
         }

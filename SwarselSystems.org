@@ -14770,7 +14770,33 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
 
       glide.keymaps.set("normal", "c", () => start_hints());
       glide.keymaps.set("normal", "f", () => start_hints());
-      glide.keymaps.set("normal", "F", () => start_hints({ action: "newtab-click" }));
+      glide.keymaps.set("normal", "F", () =>
+        start_hints({
+          action: async ({ content }) => {
+            const href = await content.execute((target) => {
+              target.focus();
+              const link = (target as HTMLAnchorElement).href;
+              if (typeof link === "string" && link !== "") {
+                return link;
+              }
+
+              target.click();
+              return null;
+            });
+            if (href == null) {
+              return;
+            }
+
+            const current = await glide.tabs.active();
+            await browser.tabs.create({
+              url: href,
+              active: false,
+              cookieStoreId: current.cookieStoreId,
+              openerTabId: current.id,
+              windowId: current.windowId,
+            });
+          },
+        }), { description: "Open a link in a background tab using hints" });
 
       for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-:./_,;!?@#%^&*()+=[]{}~'\"$") {
         glide.keymaps.set("hint", ch, () => {
@@ -15062,29 +15088,30 @@ This adds a hint mode to glide that directly opens a new hint opener after the l
             return {
               id: tab.id,
               incognito: tab.incognito,
+              next_index: tab.index + 1,
               store: tab.incognito ? undefined : "firefox-default",
               contained: !tab.incognito && tab.cookieStoreId !== "firefox-default",
             };
           }
 
           async function do_navigate(target: "current" | "tab" | "window", url: string) {
-            const { id, incognito, store, contained } = await active_tab_info();
+            const { id, incognito, next_index, store, contained } = await active_tab_info();
             if (target === "window") {
               await browser.windows.create({ url, incognito });
             } else if (target === "tab" || contained) {
-              await browser.tabs.create({ url, cookieStoreId: store });
+              await browser.tabs.create({ url, cookieStoreId: store, index: next_index });
             } else {
               await browser.tabs.update(id, { url });
             }
           }
 
           async function do_search(target: "current" | "tab" | "window", search: { query: string; engine?: string }) {
-            const { id, incognito, store, contained } = await active_tab_info();
+            const { id, incognito, next_index, store, contained } = await active_tab_info();
             let tab_id: number | undefined = id;
             if (target === "window") {
               tab_id = (await browser.windows.create({ incognito })).tabs?.[0]?.id;
             } else if (target === "tab" || contained) {
-              tab_id = (await browser.tabs.create({ cookieStoreId: store })).id;
+              tab_id = (await browser.tabs.create({ cookieStoreId: store, index: next_index })).id;
             }
             if (tab_id != null) {
               await browser.search.search({ ...search, tabId: tab_id });
@@ -15135,13 +15162,13 @@ This adds a hint mode to glide that directly opens a new hint opener after the l
             await browser.tabs.update(existing.id, { active: true });
             return;
           }
-          const { store } = await active_tab_info();
+          const { next_index, store } = await active_tab_info();
           const rule = store == null ? null : match_rule(url);
           if (rule != null && container_stores[rule.container] == null) {
             await refresh_container_stores();
           }
           const target = rule != null ? container_stores[rule.container] : undefined;
-          const created = await browser.tabs.create({ url, cookieStoreId: target ?? store });
+          const created = await browser.tabs.create({ url, cookieStoreId: target ?? store, index: next_index });
           if (rule != null && target != null && created.id != null) {
             placed.set(created.id, rule.container);
           }
@@ -15469,20 +15496,39 @@ This adds a hint mode to glide that directly opens a new hint opener after the l
       glide.keymaps.set("normal", "b", "commandline_show tab ");
       glide.keymaps.set("normal", "gt", "tab_next");
       glide.keymaps.set("normal", "gT", "tab_prev");
-      glide.keymaps.set("normal", "u", "tab_reopen");
-
-      glide.keymaps.set("normal", "p", async () => {
-        const text = (await navigator.clipboard.readText()).trim();
-        if (text) {
-          await do_open("current", text);
+      glide.keymaps.set("normal", "u", async () => {
+        const [session] = await browser.sessions.getRecentlyClosed();
+        const closed = session?.tab ?? session?.window;
+        if (closed?.sessionId != null) {
+          await browser.sessions.restore(closed.sessionId);
         }
-      }, { description: "Open the clipboard contents" });
+      }, { description: "Restore the most recently closed tab or window" });
+
+      glide.keymaps.set("normal", "U", async () => {
+        const session = (await browser.sessions.getRecentlyClosed()).find((s) => s.window != null);
+        if (session?.window?.sessionId != null) {
+          await browser.sessions.restore(session.window.sessionId);
+        }
+      }, { description: "Restore the most recently closed window" });
+
+      for (const [key, target] of [["p", "current"], ["P", "tab"]] as const) {
+        glide.keymaps.set("normal", key, async () => {
+          const text = (await navigator.clipboard.readText()).trim();
+          if (text) {
+            await do_open(target, text);
+          }
+        }, { description: "Open the clipboard contents" + (target === "tab" ? " in a new tab" : "") });
+      }
+
+      async function yank_url(url: string) {
+        const decoded = decode_url_for_display(url);
+        await navigator.clipboard.writeText(decoded);
+        flash_message("yanked " + decoded);
+      }
 
       glide.keymaps.set("normal", "yy", async () => {
         const tab = await glide.tabs.active();
-        const url = tab.url ?? "";
-        await navigator.clipboard.writeText(url);
-        flash_message("yanked " + url);
+        await yank_url(tab.url ?? "");
       }, { description: "Yank the URL of the current tab" });
 
       glide.keymaps.set("normal", "yf", () =>
@@ -15491,19 +15537,46 @@ This adds a hint mode to glide that directly opens a new hint opener after the l
           action: async ({ content }) => {
             const href = await content.execute((target) => (target as HTMLAnchorElement).href);
             if (href) {
-              await navigator.clipboard.writeText(href);
-              flash_message("yanked " + href);
+              await yank_url(href);
             }
           },
         }), { description: "Yank a link URL using find hints" });
+
+      async function scroll_lines(lines: number) {
+        await glide.content.execute((lines: number) => {
+          const line_height = (element: Element | null) => element == null ? NaN : parseInt(getComputedStyle(element).lineHeight, 10);
+          const distance = lines * (line_height(document.documentElement) || line_height(document.body) || 22);
+          const scrolls = (element: Element) => {
+            const before = element.scrollTop;
+            element.scrollTop = before + distance;
+            return element.scrollTop !== before;
+          };
+
+          for (let element = document.activeElement; element != null; element = element.parentElement) {
+            if (scrolls(element)) {
+              return;
+            }
+          }
+
+          const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_ELEMENT);
+          do {
+            if (scrolls(walker.currentNode as Element)) {
+              return;
+            }
+          } while (walker.nextNode());
+        }, { tab_id: await glide.tabs.active(), args: [lines] });
+      }
+
+      glide.keymaps.set("normal", "j", () => scroll_lines(4), { description: "Scroll down four lines" });
+      glide.keymaps.set("normal", "k", () => scroll_lines(-4), { description: "Scroll up four lines" });
 
       glide.keymaps.set(["normal", "insert", "visual"], "<A-d>", () => {}, {
         description: "Disabled (would focus the urlbar)",
       });
 
       glide.keymaps.set("normal", "<C-m>", async () => {
-        const win = await browser.windows.getLastFocused({ populate: true });
-        const target = (win.tabs ?? []).sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[1];
+        const tabs = await browser.tabs.query({ currentWindow: true });
+        const target = tabs.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[1];
         if (target?.id != null) {
           await browser.tabs.update(target.id, { active: true });
         }
