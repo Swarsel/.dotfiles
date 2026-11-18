@@ -53,9 +53,12 @@
               serviceDomain
               serviceName
               ;
-            extra.extraConfig = {
-              node = config.node.name;
-              port = servicePort;
+            extra = {
+              extraConfig = {
+                node = config.node.name;
+                port = servicePort;
+              };
+              hasWebInterface = false;
             };
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };

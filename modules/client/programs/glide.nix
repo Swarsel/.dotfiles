@@ -516,6 +516,17 @@
             policies = {
               AppAutoUpdate = false;
               BackgroundAppUpdate = false;
+              Bookmarks = lib.concatLists (
+                lib.mapAttrsToList (
+                  _: service:
+                  lib.mapAttrsToList (title: path: {
+                    Folder = "S";
+                    Placement = "toolbar";
+                    Title = title;
+                    URL = "https://${service.domain}${path}";
+                  }) service.webPaths
+                ) (lib.filterAttrs (_: service: service.hasWebInterface && service.domain != "") globals.services)
+              );
               Certificates = {
                 ImportEnterpriseRoots = true;
                 Install = [ (root "files/public/certs/ca.crt") ];

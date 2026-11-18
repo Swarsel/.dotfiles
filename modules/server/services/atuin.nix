@@ -69,6 +69,7 @@
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {

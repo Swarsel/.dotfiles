@@ -47,7 +47,10 @@
               serviceDomain
               serviceName
               ;
-            extra.extraConfig.port = servicePort;
+            extra = {
+              extraConfig.port = servicePort;
+              hasWebInterface = false;
+            };
           };
           monitoring.tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
           networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode =

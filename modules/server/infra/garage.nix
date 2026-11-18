@@ -98,6 +98,7 @@
               serviceAddress
               serviceDomain
               ;
+            extra.hasWebInterface = false;
             serviceName = specificServiceName;
           };
           dns.${baseDomain}.subdomainRecords = {

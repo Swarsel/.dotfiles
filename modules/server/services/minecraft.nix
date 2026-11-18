@@ -41,6 +41,7 @@
           services.${serviceName} = {
             inherit isHome proxyAddress4 proxyAddress6;
             domain = serviceDomain;
+            hasWebInterface = false;
           };
           dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
             "${globals.services.${serviceName}.subDomain}" =

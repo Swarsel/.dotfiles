@@ -69,6 +69,9 @@
           services.transmission = {
             inherit isHome;
             domain = serviceDomain;
+            webPaths = lib.mapAttrs (name: _: "/${name}") arrPorts // {
+              transmission = "/transmission/web/";
+            };
           };
           monitoring = {
             http = lib.mkMerge (

@@ -184,6 +184,10 @@
                         description = "Ports besides 80 and 443 that Firezone clients may reach.";
                         type = types.listOf types.port;
                       };
+                      hasWebInterface = mkOption {
+                        default = true;
+                        type = types.bool;
+                      };
                       homeServiceAddress = mkOption {
                         default = null;
                         type = types.nullOr types.str;
@@ -208,6 +212,11 @@
                         default = lib.swarselsystems.getSubDomain serviceSubmod.config.domain;
                         readOnly = true;
                         type = types.str;
+                      };
+                      webPaths = mkOption {
+                        default.${serviceSubmod.config._module.args.name} = "/";
+                        description = "The path that a web interfaces of a service is served on on the domain";
+                        type = types.attrsOf types.str;
                       };
                     };
                   })

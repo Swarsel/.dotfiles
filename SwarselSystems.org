@@ -8560,6 +8560,10 @@ Do note that the below does not achieve anything on its own - as is, these would
                           description = "Ports besides 80 and 443 that Firezone clients may reach.";
                           type = types.listOf types.port;
                         };
+                        hasWebInterface = mkOption {
+                          default = true;
+                          type = types.bool;
+                        };
                         homeServiceAddress = mkOption {
                           default = null;
                           type = types.nullOr types.str;
@@ -8584,6 +8588,11 @@ Do note that the below does not achieve anything on its own - as is, these would
                           default = lib.swarselsystems.getSubDomain serviceSubmod.config.domain;
                           readOnly = true;
                           type = types.str;
+                        };
+                        webPaths = mkOption {
+                          default.${serviceSubmod.config._module.args.name} = "/";
+                          description = "The path that a web interfaces of a service is served on on the domain";
+                          type = types.attrsOf types.str;
                         };
                       };
                     })
@@ -14226,6 +14235,17 @@ In of itself, Glide (for some reason) does not support many of the (in my eyes) 
               policies = {
                 AppAutoUpdate = false;
                 BackgroundAppUpdate = false;
+                Bookmarks = lib.concatLists (
+                  lib.mapAttrsToList (
+                    _: service:
+                    lib.mapAttrsToList (title: path: {
+                      Folder = "S";
+                      Placement = "toolbar";
+                      Title = title;
+                      URL = "https://${service.domain}${path}";
+                    }) service.webPaths
+                  ) (lib.filterAttrs (_: service: service.hasWebInterface && service.domain != "") globals.services)
+                );
                 Certificates = {
                   ImportEnterpriseRoots = true;
                   Install = [ (root "files/public/certs/ca.crt") ];
@@ -26007,6 +26027,9 @@ I use this configuration for sailing.
             services.transmission = {
               inherit isHome;
               domain = serviceDomain;
+              webPaths = lib.mapAttrs (name: _: "/${name}") arrPorts // {
+                transmission = "/transmission/web/";
+              };
             };
             monitoring = {
               http = lib.mkMerge (
@@ -27524,6 +27547,7 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -28140,6 +28164,7 @@ This replicates ZFS datasets into another pool. I use this to backup the data on
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -29288,6 +29313,7 @@ Reads the reports that arrive and makes them available to [[#h:a31c7192-e11d-4a2
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -30032,6 +30058,7 @@ I am an extensive user of Anki, and this allows me to sync my collection on my o
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -30541,6 +30568,7 @@ This can be used to add OIDC in a way to services that do not support it nativel
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -31143,6 +31171,7 @@ Used to sync shell history across machines and have it backed up somewhere.
                   serviceDomain
                   serviceName
                   ;
+                extra.hasWebInterface = false;
               };
               dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
               monitoring.http = confLib.mkHttpMonitoring {
@@ -32359,9 +32388,12 @@ Online office suite (WOPI server) using the native NixOS module, terminated behi
                 serviceDomain
                 serviceName
                 ;
-              extra.extraConfig = {
-                node = config.node.name;
-                port = servicePort;
+              extra = {
+                extraConfig = {
+                  node = config.node.name;
+                  port = servicePort;
+                };
+                hasWebInterface = false;
               };
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
@@ -32875,6 +32907,7 @@ To make the waters even friendlier, I run this behind its own PIA namespace, of 
             name = serviceName;
           };
           globals = {
+            services.transmission.webPaths.${serviceName} = urlBase;
             monitoring.http = confLib.mkHttpMonitoring {
               inherit serviceName servicePort;
               path = "${urlBase}/";
@@ -34366,6 +34399,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
                 serviceAddress
                 serviceDomain
                 ;
+              extra.hasWebInterface = false;
               serviceName = specificServiceName;
             };
             dns.${baseDomain}.subdomainRecords = {
@@ -35170,6 +35204,7 @@ Handles my Minecraft server. It runs forge, so the full server is not NixOS mana
             services.${serviceName} = {
               inherit isHome proxyAddress4 proxyAddress6;
               domain = serviceDomain;
+              hasWebInterface = false;
             };
             dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
               "${globals.services.${serviceName}.subDomain}" =
@@ -35321,6 +35356,7 @@ Currently, the web UI for this is a bit wonky and requires reloading the page so
                 services = {
                   ${serviceName} = {
                     domain = serviceDomain;
+                    hasWebInterface = false;
                     proxyAddress4 = endpointAddress4;
                     proxyAddress6 = endpointAddress6;
                   };
@@ -35725,6 +35761,7 @@ My instance is backed by S3 storage ([[#h:81c76be4-45f1-44e5-890d-6d082a95ab51][
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -38497,6 +38534,7 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
                     serviceDomain
                     serviceName
                     ;
+                  extra.hasWebInterface = false;
                 };
                 dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
                 monitoring.http = confLib.mkHttpMonitoring {
@@ -38655,6 +38693,7 @@ Setting it up on android:
                 serviceDomain
                 serviceName
                 ;
+              extra.hasWebInterface = false;
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
@@ -39624,7 +39663,10 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
                 serviceDomain
                 serviceName
                 ;
-              extra.extraConfig.port = servicePort;
+              extra = {
+                extraConfig.port = servicePort;
+                hasWebInterface = false;
+              };
             };
             monitoring.tcp = confLib.mkTcpMonitoring { inherit serviceName servicePort; };
             networks."${webProxy}-wgProxy".hosts.${config.node.name}.firewallRuleForNode =

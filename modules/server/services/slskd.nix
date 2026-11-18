@@ -42,6 +42,7 @@
           name = serviceName;
         };
         globals = {
+          services.transmission.webPaths.${serviceName} = urlBase;
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
             path = "${urlBase}/";

@@ -103,6 +103,7 @@
               services = {
                 ${serviceName} = {
                   domain = serviceDomain;
+                  hasWebInterface = false;
                   proxyAddress4 = endpointAddress4;
                   proxyAddress6 = endpointAddress6;
                 };
