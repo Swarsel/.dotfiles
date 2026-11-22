@@ -49,11 +49,16 @@
               serviceDomain
               serviceName
               ;
+            extra.extraConfig = {
+              node = config.node.name;
+              port = servicePort;
+            };
           };
           dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring.http = confLib.mkHttpMonitoring {
             inherit serviceName servicePort;
             expectedBodyRegex = "Paperless";
+            hostHeader = serviceDomain;
             path = "/accounts/login/";
           };
           networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };

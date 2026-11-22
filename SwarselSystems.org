@@ -5411,6 +5411,7 @@ This used to be my main server (it is now replaced by [[#h:82bf7fb1-631b-4acd-96
       self.modules.nixos.zigbee2mqtt
       self.modules.nixos.home-assistant
       self.modules.nixos.hostapd
+      self.modules.nixos.scanservjs
     ];
 
     swarselsystems = {
@@ -11820,6 +11821,30 @@ With this, evaluation will fail if there are any users/groups that are not decla
   }
 #+end_src
 
+**** Network scanner (SANE)
+:PROPERTIES:
+:CUSTOM_ID: h:4f14770c-d58e-40f3-bce0-a4efe0303e58
+:END:
+
+Used by [[#h:554cedcb-f2d8-49e5-9a3b-3a134d962b2a][scanservjs]] to make my printer available to SANE
+
+#+begin_src nix-ts :tangle modules/common/network-scanner.nix
+  {
+    flake.modules.nixos.network-scanner =
+      { pkgs, globals, ... }:
+      {
+        environment.etc."sane.d/airscan.conf".text = ''
+          [devices]
+          "Dell C2665dnf" = http://${globals.networks.home-lan.vlans.devices.hosts.dell-C2665dnf-F49D60.ipv4}/ws, wsd
+        '';
+        hardware.sane = {
+          enable = true;
+          extraBackends = [ pkgs.sane-airscan ];
+        };
+      };
+  }
+#+end_src
+
 *** Client
 :PROPERTIES:
 :CUSTOM_ID: h:c95664c5-553b-43e4-afb7-73ee7814d074
@@ -18116,6 +18141,7 @@ Avahi is the service used for the network discovery.
   {
     flake.modules.nixos.networkdevices =
       {
+        self,
         pkgs,
         confLib,
         globals,
@@ -18125,6 +18151,7 @@ Avahi is the service used for the network discovery.
         printerAddress = globals.networks.home-lan.vlans.devices.hosts.dell-C2665dnf-F49D60.ipv4;
       in
       {
+        imports = [ self.modules.nixos.network-scanner ];
         config = {
           users.persistentIds = {
             avahi = confLib.mkIds 978;
@@ -18158,28 +18185,17 @@ Avahi is the service used for the network discovery.
               ];
             };
           };
-          environment.etc."sane.d/airscan.conf".text = ''
-            [devices]
-            "Dell C2665dnf" = http://${printerAddress}/ws, wsd
-          '';
-          # enable scanners over network
-          hardware = {
-            printers.ensurePrinters = [
-              {
-                deviceUri = "ipp://${printerAddress}:631/ipp";
-                model = "foomatic-db-ppds/Generic-PostScript_Printer-Postscript.ppd.gz";
-                name = "Dell_C2665dnf";
-                ppdOptions = {
-                  Duplex = "DuplexNoTumble";
-                  PageSize = "A4";
-                };
-              }
-            ];
-            sane = {
-              enable = true;
-              extraBackends = [ pkgs.sane-airscan ];
-            };
-          };
+          hardware.printers.ensurePrinters = [
+            {
+              deviceUri = "ipp://${printerAddress}:631/ipp";
+              model = "foomatic-db-ppds/Generic-PostScript_Printer-Postscript.ppd.gz";
+              name = "Dell_C2665dnf";
+              ppdOptions = {
+                Duplex = "DuplexNoTumble";
+                PageSize = "A4";
+              };
+            }
+          ];
         };
       };
   }
@@ -23042,6 +23058,14 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                     to = [ "printer" ];
                   };
 
+                }
+                // lib.optionalAttrs (globals.services ? scanservjs) {
+                  # Allow the scan server to reach the scanner's WSD endpoint
+                  scanservjs-to-printer = {
+                    allowedTCPPorts = [ 80 ];
+                    from = [ "scanservjs" ];
+                    to = [ "printer" ];
+                  };
                 };
                 zones = {
                   adguardhome = {
@@ -23062,6 +23086,11 @@ This is the configuration to make [[#h:58c7563e-6954-42e6-a622-9d06523e8e24][Hin
                   ];
                   untrusted.interfaces = [ "lan" ];
                   wgHome.interfaces = [ "wgHome" ];
+                }
+                // lib.optionalAttrs (globals.services ? scanservjs) {
+                  scanservjs.ipv4Addresses = [
+                    globals.networks.home-lan.vlans.services.hosts.${globals.services.scanservjs.extraConfig.node}.ipv4
+                  ];
                 }
                 // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
                   vlanName: _: {
@@ -25781,11 +25810,16 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 serviceDomain
                 serviceName
                 ;
+              extra.extraConfig = {
+                node = config.node.name;
+                port = servicePort;
+              };
             };
             dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring.http = confLib.mkHttpMonitoring {
               inherit serviceName servicePort;
               expectedBodyRegex = "Paperless";
+              hostHeader = serviceDomain;
               path = "/accounts/login/";
             };
             networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
@@ -36676,6 +36710,164 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
                   inherit serviceDomain serviceName servicePort;
                   extraConfig = nginxAccessRules;
                   proxyWebsockets = true;
+                  serviceAddress = homeServiceAddress;
+                }
+              );
+            }
+          ];
+        };
+      };
+  }
+#+end_src
+
+**** scanservjs
+:PROPERTIES:
+:CUSTOM_ID: h:554cedcb-f2d8-49e5-9a3b-3a134d962b2a
+:END:
+
+I use this to send scanned documents directly to [[#h:89638fb5-0593-4420-9567-f85f0223e341][paperless]]
+
+#+begin_src nix-ts :tangle modules/server/services/scanservjs.nix
+  {
+    flake.modules.nixos.scanservjs =
+      {
+        self,
+        config,
+        lib,
+        pkgs,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit
+          (confLib.gen {
+            name = "scanservjs";
+            port = 8090;
+          })
+          proxyAddress4
+          proxyAddress6
+          serviceAddress
+          serviceDomain
+          serviceName
+          servicePort
+          ;
+        inherit (confLib.static)
+          homeProxyIf
+          homeServiceAddress
+          homeWebProxy
+          idmServer
+          isHome
+          nginxAccessRules
+          ;
+        paperless = globals.services.paperless;
+        uploadAction = "Send to Paperless";
+      in
+      {
+        imports = [ self.modules.nixos.network-scanner ];
+        config = {
+          swarselsystems.enabledServerModules = [ serviceName ];
+          topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+          globals = {
+            services = confLib.mkServiceGlobal {
+              inherit
+                homeServiceAddress
+                isHome
+                proxyAddress4
+                proxyAddress6
+                serviceAddress
+                serviceDomain
+                serviceName
+                ;
+              extra.extraConfig.node = config.node.name;
+            };
+            monitoring = {
+              http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
+              systemd = confLib.mkSystemdMonitoring {
+                inherit serviceName;
+                unit = "${serviceName}.service";
+              };
+            };
+            networks = lib.mkMerge [
+              (confLib.mkDualFirewallRules {
+                forWebProxy = false;
+                tcpPorts = [ servicePort ];
+              })
+              {
+                ${homeProxyIf}.hosts.${paperless.extraConfig.node}.firewallRuleForNode.${config.node.name}.allowedTCPPorts =
+                  [
+                    paperless.extraConfig.port
+                  ];
+              }
+            ];
+          };
+          sops = {
+            secrets.scanservjs-paperless-token = { };
+            templates.scanservjs-paperless-header.content = ''
+              Authorization: Token ${config.sops.placeholder.scanservjs-paperless-token}
+            '';
+          };
+          users.persistentIds.${serviceName} = confLib.mkIds 930;
+          services.${serviceName} = {
+            enable = true;
+            # pipeline afterActions are not awaited, so a thrown error would crash the server
+            extraActions = [
+              ''
+                {
+                  name: '${uploadAction}',
+                  async execute(fileInfo) {
+                    const { execFile } = require('node:child_process');
+                    const { promisify } = require('node:util');
+                    try {
+                      await promisify(execFile)('${lib.getExe pkgs.curl}', [
+                        '--fail-with-body',
+                        '--silent',
+                        '--show-error',
+                        '--header', 'Host: ${paperless.domain}',
+                        '--header', `@''${process.env.CREDENTIALS_DIRECTORY}/paperless-header`,
+                        '--form', `document=@''${fileInfo.fullname}`,
+                        'http://${paperless.homeServiceAddress}:${toString paperless.extraConfig.port}/api/documents/post_document/'
+                      ]);
+                      fileInfo.delete();
+                    } catch (error) {
+                      console.error(`upload of ''${fileInfo.fullname} to paperless failed: ''${error.stderr || error.message}`);
+                    }
+                  }
+                }
+              ''
+            ];
+            extraConfig = ''
+              config.pipelines.unshift({
+                extension: 'pdf',
+                description: 'Paperless | PDF (JPG | @:pipeline.high-quality)',
+                afterAction: '${uploadAction}',
+                commands: [
+                  'while read filename ; do convert -quality 92 $filename converted-$(date +%s.%N).jpg ; done && ls converted-*.jpg',
+                  'convert @- scan-0000.pdf',
+                  'ls scan-*.*'
+                ]
+              });
+            '';
+            settings = {
+              host = "0.0.0.0";
+              port = servicePort;
+            };
+          };
+          systemd.services.${serviceName}.serviceConfig.LoadCredential = [
+            "paperless-header:${config.sops.templates.scanservjs-paperless-header.path}"
+          ];
+          nodes = lib.mkMerge [
+            {
+              ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
+            }
+            {
+              ${homeWebProxy}.services.nginx = lib.mkIf isHome (
+                confLib.genNginx {
+                  inherit serviceDomain serviceName servicePort;
+                  extraConfig = nginxAccessRules;
+                  maxBody = 0;
+                  oauth2 = true;
+                  oauth2Groups = [ "${serviceName}_access" ];
                   serviceAddress = homeServiceAddress;
                 }
               );

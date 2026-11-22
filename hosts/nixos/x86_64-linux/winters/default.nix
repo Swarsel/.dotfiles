@@ -25,6 +25,7 @@
     self.modules.nixos.zigbee2mqtt
     self.modules.nixos.home-assistant
     self.modules.nixos.hostapd
+    self.modules.nixos.scanservjs
   ];
 
   swarselsystems = {

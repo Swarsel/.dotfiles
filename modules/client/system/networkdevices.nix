@@ -1,6 +1,7 @@
 {
   flake.modules.nixos.networkdevices =
     {
+      self,
       pkgs,
       confLib,
       globals,
@@ -10,6 +11,7 @@
       printerAddress = globals.networks.home-lan.vlans.devices.hosts.dell-C2665dnf-F49D60.ipv4;
     in
     {
+      imports = [ self.modules.nixos.network-scanner ];
       config = {
         users.persistentIds = {
           avahi = confLib.mkIds 978;
@@ -43,28 +45,17 @@
             ];
           };
         };
-        environment.etc."sane.d/airscan.conf".text = ''
-          [devices]
-          "Dell C2665dnf" = http://${printerAddress}/ws, wsd
-        '';
-        # enable scanners over network
-        hardware = {
-          printers.ensurePrinters = [
-            {
-              deviceUri = "ipp://${printerAddress}:631/ipp";
-              model = "foomatic-db-ppds/Generic-PostScript_Printer-Postscript.ppd.gz";
-              name = "Dell_C2665dnf";
-              ppdOptions = {
-                Duplex = "DuplexNoTumble";
-                PageSize = "A4";
-              };
-            }
-          ];
-          sane = {
-            enable = true;
-            extraBackends = [ pkgs.sane-airscan ];
-          };
-        };
+        hardware.printers.ensurePrinters = [
+          {
+            deviceUri = "ipp://${printerAddress}:631/ipp";
+            model = "foomatic-db-ppds/Generic-PostScript_Printer-Postscript.ppd.gz";
+            name = "Dell_C2665dnf";
+            ppdOptions = {
+              Duplex = "DuplexNoTumble";
+              PageSize = "A4";
+            };
+          }
+        ];
       };
     };
 }

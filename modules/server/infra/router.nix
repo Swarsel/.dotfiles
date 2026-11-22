@@ -149,6 +149,14 @@
                   to = [ "printer" ];
                 };
 
+              }
+              // lib.optionalAttrs (globals.services ? scanservjs) {
+                # Allow the scan server to reach the scanner's WSD endpoint
+                scanservjs-to-printer = {
+                  allowedTCPPorts = [ 80 ];
+                  from = [ "scanservjs" ];
+                  to = [ "printer" ];
+                };
               };
               zones = {
                 adguardhome = {
@@ -169,6 +177,11 @@
                 ];
                 untrusted.interfaces = [ "lan" ];
                 wgHome.interfaces = [ "wgHome" ];
+              }
+              // lib.optionalAttrs (globals.services ? scanservjs) {
+                scanservjs.ipv4Addresses = [
+                  globals.networks.home-lan.vlans.services.hosts.${globals.services.scanservjs.extraConfig.node}.ipv4
+                ];
               }
               // lib.flip lib.concatMapAttrs globals.networks.home-lan.vlans (
                 vlanName: _: {
