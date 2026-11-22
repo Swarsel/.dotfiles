@@ -68,8 +68,17 @@
                 "valid users" = shareUser;
                 writable = "true";
               };
-              global."username map" =
-                "${pkgs.writeText "samba-username-map" "${shareUser} = ${globals.user.name}\n"}";
+              global = {
+                # share root is on the guest tmpfs, report the free space of the dataset mounts below it
+                "dfree command" = lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "samba-dfree";
+                    runtimeInputs = [ pkgs.coreutils ];
+                    text = "df -k --output=size,avail /storage/*/ | tail -n 1";
+                  }
+                );
+                "username map" = "${pkgs.writeText "samba-username-map" "${shareUser} = ${globals.user.name}\n"}";
+              };
             };
           };
           # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued

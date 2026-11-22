@@ -123,6 +123,7 @@
     paperless.eternorPaths = [ "Documents" ];
     radicale = { };
     storage.eternorPaths = [
+      "Backup"
       "Books"
       "Videos"
       "Music"
