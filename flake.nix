@@ -377,6 +377,16 @@
       url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
     };
 
+    yubikey-touch-alarm = {
+      inputs = {
+        flake-parts.follows = "flake-parts";
+        git-hooks-nix.follows = "pre-commit-hooks";
+        nixpkgs.follows = "nixpkgs";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+      url = "git+ssh://forgejo@swagit.swarsel.win:2222/swarsel/yubikey-touch-alarm";
+    };
+
     zjstatus = {
       inputs = {
         flake-utils.follows = "flake-utils";
