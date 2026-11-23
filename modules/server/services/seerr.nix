@@ -71,7 +71,7 @@
               enable = true;
               package = pkgs.seerr.overrideAttrs (old: {
                 pnpmDeps = old.pnpmDeps.overrideAttrs {
-                  outputHash = "sha256-bfdmNLBypcoJ79/lMRSgRKSIddQJJohcn3/dL21edog=";
+                  outputHash = "sha256-gqjz0DM0VYdFKTkoKPG9fjAwZlKeQZS1GB4wwUcwZ9M=";
                 };
                 src = inputs.seerr-oidc;
                 version = "oidc-${inputs.seerr-oidc.shortRev}";

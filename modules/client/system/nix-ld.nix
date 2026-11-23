@@ -34,7 +34,6 @@
           glew_1_10
           glib
           pango
-          gtk2
           gtk3
           icu
           libGL

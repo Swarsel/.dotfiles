@@ -259,7 +259,7 @@
             };
             teams-applet = confLib.mkTrayApplet {
               description = "teams applet";
-              execStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+              execStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --performance.disableGpu=true --window.minimized=true --tray.enabled=true";
             };
           };
           sessionVariables.DOCUMENT_DIR_WORK = "${homeDir}/Documents/Work";

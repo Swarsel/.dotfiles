@@ -100,6 +100,7 @@ in
                     emacs.enable = false;
                     rofi.enable = false;
                     spicetify.enable = arch != "aarch64-linux";
+                    wayprompt.enable = false; # removed by home-manager
                   };
                 }
                 // lib.optionalAttrs (nixosConfig == null) (

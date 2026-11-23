@@ -91,7 +91,7 @@
       };
       teamsNoGpu = {
         categories = [ "Application" ];
-        exec = "teams-for-linux --disableGpu=true --trayIconEnabled=true";
+        exec = "teams-for-linux --performance.disableGpu=true --tray.enabled=true";
         genericName = "Teams (no GPU)";
         name = "Microsoft Teams (no GPU)";
         terminal = false;

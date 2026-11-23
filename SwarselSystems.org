@@ -3850,9 +3850,6 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 (root "files/patches/matrix-appservice-irc-provisioner-silent-pm.patch")
               ];
             };
-            mautrix-signal = prev.mautrix-signal.overrideAttrs {
-              patches = [ (root "files/patches/mautrix-signal-upload-length.patch") ];
-            };
             mautrix-telegram = prev.mautrix-telegram.override {
               python3 = prev.python313;
             };
@@ -11928,18 +11925,11 @@ It can be set to either:
                 "mesa"
                 "mesaPrime"
               ];
-              packages =
-                (import "${inputs.nixgl}/default.nix" {
-                  inherit pkgs;
-                  enable32bits = pkgs.stdenv.hostPlatform.isx86_64;
-                  enableIntelX86Extensions = pkgs.stdenv.hostPlatform.isx86_64;
-                }).override
-                  {
-                    pcre = pkgs.writeShellApplication {
-                      name = "pcregrep";
-                      text = ''exec ${lib.getExe' pkgs.pcre2 "pcre2grep"} "$@"'';
-                    };
-                  };
+              packages = import "${inputs.nixgl}/default.nix" {
+                inherit pkgs;
+                enable32bits = pkgs.stdenv.hostPlatform.isx86_64;
+                enableIntelX86Extensions = pkgs.stdenv.hostPlatform.isx86_64;
+              };
               vulkan.enable = false;
             }
             // lib.optionalAttrs config.swarselsystems.isSecondaryGpu {
@@ -12108,6 +12098,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
                       emacs.enable = false;
                       rofi.enable = false;
                       spicetify.enable = arch != "aarch64-linux";
+                      wayprompt.enable = false; # removed by home-manager
                     };
                   }
                   // lib.optionalAttrs (nixosConfig == null) (
@@ -12245,7 +12236,7 @@ Some programs lack a dmenu launcher - I define them myself here.
         };
         teamsNoGpu = {
           categories = [ "Application" ];
-          exec = "teams-for-linux --disableGpu=true --trayIconEnabled=true";
+          exec = "teams-for-linux --performance.disableGpu=true --tray.enabled=true";
           genericName = "Teams (no GPU)";
           name = "Microsoft Teams (no GPU)";
           terminal = false;
@@ -18156,6 +18147,7 @@ Avahi is the service used for the network discovery.
         config = {
           users.persistentIds = {
             avahi = confLib.mkIds 978;
+            colord = confLib.mkIds 976;
             lpadmin = confLib.mkIds 954;
           };
           services = {
@@ -18552,7 +18544,6 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
             glew_1_10
             glib
             pango
-            gtk2
             gtk3
             icu
             libGL
@@ -19114,7 +19105,7 @@ Auto login for the initial session.
                     "Mod+7".action = focus-workspace 7;
                     "Mod+8".action = focus-workspace 8;
                     "Mod+9".action = focus-workspace 9;
-                    "Mod+Ctrl+p".action = spawn "1password" "--quick-access";
+                    "Mod+Ctrl+p".action = spawn "1password";
                     "Mod+Down".action = focus-window-or-workspace-down;
                     "Mod+Equal".action = set-column-width "+10%";
                     "Mod+Escape".action = spawn "noctalia" "msg" "panel-toggle" "session";
@@ -20650,7 +20641,7 @@ When setting up a new machine:
               };
               teams-applet = confLib.mkTrayApplet {
                 description = "teams applet";
-                execStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+                execStart = "${pkgs.teams-for-linux}/bin/teams-for-linux --performance.disableGpu=true --window.minimized=true --tray.enabled=true";
               };
             };
             sessionVariables.DOCUMENT_DIR_WORK = "${homeDir}/Documents/Work";
@@ -21942,7 +21933,6 @@ This sets up acme which I use to generate certificates. Nowadays I no longer use
             certs."${globals.domains.main}".domain = "*.${globals.domains.main}";
             defaults = {
               inherit dnsProvider;
-              dnsPropagationCheck = true;
               dnsResolver = "1.1.1.1:53";
               email = dnsMail;
               environmentFile = config.sops.templates."certs.secret".path;
@@ -23661,7 +23651,7 @@ The first setup must be done manually:
                 enable = true;
                 package = pkgs.seerr.overrideAttrs (old: {
                   pnpmDeps = old.pnpmDeps.overrideAttrs {
-                    outputHash = "sha256-bfdmNLBypcoJ79/lMRSgRKSIddQJJohcn3/dL21edog=";
+                    outputHash = "sha256-gqjz0DM0VYdFKTkoKPG9fjAwZlKeQZS1GB4wwUcwZ9M=";
                   };
                   src = inputs.seerr-oidc;
                   version = "oidc-${inputs.seerr-oidc.shortRev}";
@@ -25893,6 +25883,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                   optimize = 1;
                   pdfa_image_compression = "lossless";
                 };
+                PAPERLESS_TASK_WORKERS = 2;
                 PAPERLESS_TIKA_ENABLED = "true";
                 PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
                 PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
@@ -32992,7 +32983,7 @@ To make the waters even friendlier, I run this behind its own PIA namespace, of 
                   download.speed_limit = 6000;
                   upload = {
                     slots = 5;
-                    speed_limit = 1000;
+                    speed_limit = 100;
                   };
                 };
                 web = {
@@ -36439,7 +36430,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
           idmServer
           isHome
           nginxAccessRules
-          webProxy
           ;
         mqttListener = lib.head config.services.mosquitto.listeners;
       in
@@ -36460,7 +36450,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
                 serviceName
                 ;
             };
-            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring = {
               http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
               systemd = confLib.mkSystemdMonitoring {
@@ -36468,7 +36457,10 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
                 unit = "${serviceName}.service";
               };
             };
-            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+            networks = confLib.mkDualFirewallRules {
+              forWebProxy = false;
+              tcpPorts = [ servicePort ];
+            };
           };
           sops.secrets.zigbee2mqtt-env = {
             group = serviceGroup;
@@ -36508,19 +36500,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
           nodes = lib.mkMerge [
             {
               ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-            }
-            {
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  serviceDomain
-                  serviceName
-                  servicePort
-                  ;
-                oauth2 = true;
-                oauth2Groups = [ "${serviceName}_access" ];
-                proxyWebsockets = true;
-              };
             }
             {
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
@@ -36591,7 +36570,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
           homeWebProxy
           isHome
           nginxAccessRules
-          webProxy
           ;
         inherit (config.repo.secrets.common) location;
         mqttListener = lib.head config.services.mosquitto.listeners;
@@ -36616,7 +36594,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
                 serviceName
                 ;
             };
-            dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
             monitoring = {
               http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
               systemd = confLib.mkSystemdMonitoring {
@@ -36624,7 +36601,10 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
                 unit = "${serviceName}.service";
               };
             };
-            networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+            networks = confLib.mkDualFirewallRules {
+              forWebProxy = false;
+              tcpPorts = [ servicePort ];
+            };
           };
           sops.secrets.home-assistant-admin-pw = { };
           services.${serviceName} = {
@@ -36639,20 +36619,16 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
               };
               http = {
                 server_port = servicePort;
-                trusted_proxies = [
-                  "127.0.0.1"
-                  "::1"
-                ]
-                ++
-                  lib.concatMap
-                    (net: [
-                      net.cidrv4
-                      net.cidrv6
-                    ])
-                    [
-                      globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome"
-                      globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy"
-                    ];
+                trusted_proxies =
+                  let
+                    wgHomeNet = globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome";
+                  in
+                  [
+                    "127.0.0.1"
+                    "::1"
+                    wgHomeNet.cidrv4
+                    wgHomeNet.cidrv6
+                  ];
                 use_x_forwarded_for = true;
               };
             };
@@ -36703,17 +36679,6 @@ This talks to my SMLIGHT SLZB-06M coordinator and publishes to [[#h:e8758794-90a
             }
           ];
           nodes = lib.mkMerge [
-            {
-              ${webProxy}.services.nginx = confLib.genNginx {
-                inherit
-                  serviceAddress
-                  serviceDomain
-                  serviceName
-                  servicePort
-                  ;
-                proxyWebsockets = true;
-              };
-            }
             {
               ${homeWebProxy}.services.nginx = lib.mkIf isHome (
                 confLib.genNginx {
@@ -38770,6 +38735,12 @@ YouTube in theory has the IP where the PO token was derived from; however, when 
               systemd.services.invidious-companion = {
                 after = [ "network.target" ];
                 description = "Invidious companion service";
+                # https://github.com/iv-org/invidious-companion/issues/397
+                environment = {
+                  NETWORKING_FETCH_RETRY_DEBOUNCE_MULTIPLIER = "1";
+                  NETWORKING_FETCH_RETRY_ENABLED = "true";
+                  NETWORKING_FETCH_RETRY_TIMES = "3";
+                };
                 serviceConfig = {
                   DynamicUser = true;
                   EnvironmentFile = config.sops.templates."invidious-companion.env".path;
@@ -46099,6 +46070,9 @@ This file defines a few workflows that I often need to run when working on my co
   topology:
     nix run .#swarsel-topology
 
+  flake:
+    nix run .#write-flake
+
   iso-install DRIVE: iso
     sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
 
@@ -46296,26 +46270,6 @@ This file defines a few workflows that I often need to run when working on my co
   +            'Thanks for your response, bridge request authorised.'
            );
        }
-#+end_src
-** Mautrix Signal patch to send the upload length for attachments
-:PROPERTIES:
-:CUSTOM_ID: h:3fa140bc-1555-4300-803c-90af77cd58eb
-:END:
-
-#+begin_src diff :tangle files/patches/mautrix-signal-upload-length.patch :mkdirp yes
-  diff --git a/pkg/signalmeow/attachments.go b/pkg/signalmeow/attachments.go
-  index 9bfc1fdc..c4317ad2 100644
-  --- a/pkg/signalmeow/attachments.go
-  +++ b/pkg/signalmeow/attachments.go
-  @@ -277,7 +277,7 @@ func (cli *Client) UploadAttachment(ctx context.Context, body []byte) (*signalpb
-   	}
-
-   	// Get upload attributes from Signal server
-  -	attributesPath := "/v4/attachments/form/upload"
-  +	attributesPath := fmt.Sprintf("/v4/attachments/form/upload?uploadLength=%d", len(encryptedWithMAC))
-   	resp, err := cli.AuthedWS.SendRequest(ctx, http.MethodGet, attributesPath, nil, nil)
-   	if err != nil {
-   		log.Err(err).Msg("Failed to request upload attributes")
 #+end_src
 ** Niri patch to support hidden workspaces
 :PROPERTIES:

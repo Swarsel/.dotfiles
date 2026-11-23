@@ -95,6 +95,12 @@
             systemd.services.invidious-companion = {
               after = [ "network.target" ];
               description = "Invidious companion service";
+              # https://github.com/iv-org/invidious-companion/issues/397
+              environment = {
+                NETWORKING_FETCH_RETRY_DEBOUNCE_MULTIPLIER = "1";
+                NETWORKING_FETCH_RETRY_ENABLED = "true";
+                NETWORKING_FETCH_RETRY_TIMES = "3";
+              };
               serviceConfig = {
                 DynamicUser = true;
                 EnvironmentFile = config.sops.templates."invidious-companion.env".path;

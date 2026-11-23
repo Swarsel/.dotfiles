@@ -31,7 +31,6 @@
         idmServer
         isHome
         nginxAccessRules
-        webProxy
         ;
       mqttListener = lib.head config.services.mosquitto.listeners;
     in
@@ -52,7 +51,6 @@
               serviceName
               ;
           };
-          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring = {
             http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
             systemd = confLib.mkSystemdMonitoring {
@@ -60,7 +58,10 @@
               unit = "${serviceName}.service";
             };
           };
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          networks = confLib.mkDualFirewallRules {
+            forWebProxy = false;
+            tcpPorts = [ servicePort ];
+          };
         };
         sops.secrets.zigbee2mqtt-env = {
           group = serviceGroup;
@@ -100,19 +101,6 @@
         nodes = lib.mkMerge [
           {
             ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; };
-          }
-          {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                serviceDomain
-                serviceName
-                servicePort
-                ;
-              oauth2 = true;
-              oauth2Groups = [ "${serviceName}_access" ];
-              proxyWebsockets = true;
-            };
           }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (

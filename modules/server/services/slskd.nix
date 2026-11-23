@@ -83,7 +83,7 @@
                 download.speed_limit = 6000;
                 upload = {
                   slots = 5;
-                  speed_limit = 1000;
+                  speed_limit = 100;
                 };
               };
               web = {

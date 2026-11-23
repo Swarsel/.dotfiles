@@ -172,9 +172,6 @@ in
               (root "files/patches/matrix-appservice-irc-provisioner-silent-pm.patch")
             ];
           };
-          mautrix-signal = prev.mautrix-signal.overrideAttrs {
-            patches = [ (root "files/patches/mautrix-signal-upload-length.patch") ];
-          };
           mautrix-telegram = prev.mautrix-telegram.override {
             python3 = prev.python313;
           };

@@ -25,18 +25,11 @@
               "mesa"
               "mesaPrime"
             ];
-            packages =
-              (import "${inputs.nixgl}/default.nix" {
-                inherit pkgs;
-                enable32bits = pkgs.stdenv.hostPlatform.isx86_64;
-                enableIntelX86Extensions = pkgs.stdenv.hostPlatform.isx86_64;
-              }).override
-                {
-                  pcre = pkgs.writeShellApplication {
-                    name = "pcregrep";
-                    text = ''exec ${lib.getExe' pkgs.pcre2 "pcre2grep"} "$@"'';
-                  };
-                };
+            packages = import "${inputs.nixgl}/default.nix" {
+              inherit pkgs;
+              enable32bits = pkgs.stdenv.hostPlatform.isx86_64;
+              enableIntelX86Extensions = pkgs.stdenv.hostPlatform.isx86_64;
+            };
             vulkan.enable = false;
           }
           // lib.optionalAttrs config.swarselsystems.isSecondaryGpu {

@@ -32,6 +32,9 @@ sync:
 topology:
   nix run .#swarsel-topology
 
+flake:
+  nix run .#write-flake
+
 iso-install DRIVE: iso
   sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
 

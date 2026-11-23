@@ -122,6 +122,7 @@
                 optimize = 1;
                 pdfa_image_compression = "lossless";
               };
+              PAPERLESS_TASK_WORKERS = 2;
               PAPERLESS_TIKA_ENABLED = "true";
               PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
               PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";

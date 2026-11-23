@@ -43,7 +43,6 @@
         homeWebProxy
         isHome
         nginxAccessRules
-        webProxy
         ;
       inherit (config.repo.secrets.common) location;
       mqttListener = lib.head config.services.mosquitto.listeners;
@@ -68,7 +67,6 @@
               serviceName
               ;
           };
-          dns = confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; };
           monitoring = {
             http = confLib.mkHttpMonitoring { inherit serviceName servicePort; };
             systemd = confLib.mkSystemdMonitoring {
@@ -76,7 +74,10 @@
               unit = "${serviceName}.service";
             };
           };
-          networks = confLib.mkDualFirewallRules { tcpPorts = [ servicePort ]; };
+          networks = confLib.mkDualFirewallRules {
+            forWebProxy = false;
+            tcpPorts = [ servicePort ];
+          };
         };
         sops.secrets.home-assistant-admin-pw = { };
         services.${serviceName} = {
@@ -91,20 +92,16 @@
             };
             http = {
               server_port = servicePort;
-              trusted_proxies = [
-                "127.0.0.1"
-                "::1"
-              ]
-              ++
-                lib.concatMap
-                  (net: [
-                    net.cidrv4
-                    net.cidrv6
-                  ])
-                  [
-                    globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome"
-                    globals.networks."${globals.wireguard.wgProxy.netConfigPrefix}-wgProxy"
-                  ];
+              trusted_proxies =
+                let
+                  wgHomeNet = globals.networks."${globals.wireguard.wgHome.netConfigPrefix}-wgHome";
+                in
+                [
+                  "127.0.0.1"
+                  "::1"
+                  wgHomeNet.cidrv4
+                  wgHomeNet.cidrv6
+                ];
               use_x_forwarded_for = true;
             };
           };
@@ -155,17 +152,6 @@
           }
         ];
         nodes = lib.mkMerge [
-          {
-            ${webProxy}.services.nginx = confLib.genNginx {
-              inherit
-                serviceAddress
-                serviceDomain
-                serviceName
-                servicePort
-                ;
-              proxyWebsockets = true;
-            };
-          }
           {
             ${homeWebProxy}.services.nginx = lib.mkIf isHome (
               confLib.genNginx {

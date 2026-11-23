@@ -15,6 +15,7 @@
       config = {
         users.persistentIds = {
           avahi = confLib.mkIds 978;
+          colord = confLib.mkIds 976;
           lpadmin = confLib.mkIds 954;
         };
         services = {
