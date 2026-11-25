@@ -1,0 +1,145 @@
+diff --git a/src/layout/monitor.rs b/src/layout/monitor.rs
+index 30bb888..352f006 100644
+--- a/src/layout/monitor.rs
++++ b/src/layout/monitor.rs
+@@ -444,6 +444,13 @@ impl<W: LayoutElement> Monitor<W> {
+         self.add_workspace_at(0);
+     }
+
++    fn visible_workspace_count(&self) -> usize {
++        self.workspaces
++            .iter()
++            .position(|ws| ws.hidden)
++            .unwrap_or(self.workspaces.len())
++    }
++
+     pub fn add_workspace_bottom(&mut self) {
+         // The bottom of the visible region; hidden workspaces stay past it.
+         let visible_end = self
+@@ -1255,7 +1262,7 @@ impl<W: LayoutElement> Monitor<W> {
+             Some(WorkspaceSwitch::Gesture(gesture)) if gesture.dnd_last_event_time.is_some() => {
+                 let current = gesture.current_idx;
+                 let new = current.ceil() - 1.;
+-                new.clamp(0., (self.workspaces.len() - 1) as f64) as usize
++                new.clamp(0., (self.visible_workspace_count() - 1) as f64) as usize
+             }
+             // If the workspace is hidden, we shouldn't switch to it.
+             _ => {
+@@ -1290,7 +1297,7 @@ impl<W: LayoutElement> Monitor<W> {
+             Some(WorkspaceSwitch::Gesture(gesture)) if gesture.dnd_last_event_time.is_some() => {
+                 let current = gesture.current_idx;
+                 let new = current.floor() + 1.;
+-                new.clamp(0., (self.workspaces.len() - 1) as f64) as usize
++                new.clamp(0., (self.visible_workspace_count() - 1) as f64) as usize
+             }
+             // If the workspace is hidden, we shouldn't switch to it.
+             // Instead we need to bump the workspace down
+@@ -2184,6 +2191,8 @@ impl<W: LayoutElement> Monitor<W> {
+         timestamp: Duration,
+         is_touchpad: bool,
+     ) -> Option<bool> {
++        let visible_count = self.visible_workspace_count();
++
+         let Some(WorkspaceSwitch::Gesture(gesture)) = &self.workspace_switch else {
+             return None;
+         };
+@@ -2218,7 +2227,7 @@ impl<W: LayoutElement> Monitor<W> {
+
+         let pos = gesture.tracker.pos() / total_height;
+
+-        let (min, max) = gesture.min_max(self.workspaces.len());
++        let (min, max) = gesture.min_max(visible_count);
+         let new_idx = gesture.start_idx + pos;
+         let new_idx = rubber_band.clamp(min, max, new_idx);
+
+@@ -2232,6 +2241,7 @@ impl<W: LayoutElement> Monitor<W> {
+
+     pub fn dnd_scroll_gesture_scroll(&mut self, pos: Point<f64, Logical>, speed: f64) -> bool {
+         let zoom = self.overview_zoom();
++        let visible_count = self.visible_workspace_count();
+
+         let Some(WorkspaceSwitch::Gesture(gesture)) = &mut self.workspace_switch else {
+             return false;
+@@ -2305,7 +2315,7 @@ impl<W: LayoutElement> Monitor<W> {
+         let pos = gesture.tracker.pos() / total_height;
+         let unclamped = gesture.start_idx + pos;
+
+-        let (min, max) = gesture.min_max(self.workspaces.len());
++        let (min, max) = gesture.min_max(visible_count);
+         let clamped = unclamped.clamp(min, max);
+
+         // Make sure that DnD scrolling too much outside the min/max does not "build up".
+@@ -2316,6 +2326,8 @@ impl<W: LayoutElement> Monitor<W> {
+     }
+
+     pub fn workspace_switch_gesture_end(&mut self, is_touchpad: Option<bool>) -> bool {
++        let visible_count = self.visible_workspace_count();
++
+         let Some(WorkspaceSwitch::Gesture(gesture)) = &self.workspace_switch else {
+             return false;
+         };
+@@ -2348,7 +2360,7 @@ impl<W: LayoutElement> Monitor<W> {
+         let current_pos = gesture.tracker.pos() / total_height;
+         let pos = gesture.tracker.projected_end_pos() / total_height;
+
+-        let (min, max) = gesture.min_max(self.workspaces.len());
++        let (min, max) = gesture.min_max(visible_count);
+         let new_idx = gesture.start_idx + pos;
+
+         let new_idx = new_idx.clamp(min, max);
+diff --git a/src/layout/tests.rs b/src/layout/tests.rs
+index 9450f1a..6bc7cd5 100644
+--- a/src/layout/tests.rs
++++ b/src/layout/tests.rs
+@@ -2842,6 +2842,51 @@ fn hidden_workspaces_are_not_rendered() {
+         .all(|(ws, _)| !ws.hidden));
+ }
+
++#[test]
++fn workspace_switch_gesture_stops_at_hidden_block() {
++    let ops = [
++        Op::AddOutput(1),
++        Op::AddWindow {
++            params: TestWindowParams::new(1),
++        },
++        Op::SetWorkspaceName {
++            new_ws_name: 1,
++            ws_name: None,
++        },
++        Op::FocusWorkspaceDown,
++        Op::AddWindow {
++            params: TestWindowParams::new(2),
++        },
++        Op::ToggleWorkspaceVisibility(1),
++        Op::FocusWorkspaceDown,
++        Op::WorkspaceSwitchGestureBegin {
++            output_idx: 1,
++            is_touchpad: true,
++        },
++        Op::WorkspaceSwitchGestureUpdate {
++            delta: 400.,
++            timestamp: Duration::from_millis(10),
++            is_touchpad: true,
++        },
++        Op::WorkspaceSwitchGestureUpdate {
++            delta: 400.,
++            timestamp: Duration::from_millis(20),
++            is_touchpad: true,
++        },
++        Op::WorkspaceSwitchGestureEnd {
++            is_touchpad: Some(true),
++        },
++    ];
++    let mut layout = check_ops(ops);
++
++    let monitor = match &mut layout.monitor_set {
++        MonitorSet::Normal { monitors, .. } => &mut monitors[0],
++        MonitorSet::NoOutputs { .. } => unreachable!(),
++    };
++    assert_eq!(monitor.active_workspace_idx, 1);
++    assert!(!monitor.workspaces[monitor.active_workspace_idx].hidden);
++}
++
+ #[test]
+ fn large_negative_height_change() {
+     let ops = [

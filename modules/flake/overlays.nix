@@ -180,6 +180,7 @@ in
               (root "files/patches/niri-workspace-under-mouse-binds.patch")
               (root "files/patches/niri-hidden-workspaces.patch")
               (root "files/patches/niri-hidden-workspaces-event-stream.patch")
+              (root "files/patches/niri-hidden-workspaces-gesture-bounds.patch")
             ];
           };
           retroarch = prev.retroarch.withCores (
