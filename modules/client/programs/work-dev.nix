@@ -16,7 +16,9 @@
         clouds
         githubOrgs
         path1
+        sshCertificateLogin
         sshConfig
+        sshKnownHosts
         user1
         user1Long
         user2
@@ -28,6 +30,19 @@
         confLib.getConfig.repo.secrets.common.browser.containerSites
         browser.containerSites
       ];
+      step = pkgs.writeShellApplication {
+        name = "step";
+        runtimeInputs = [ pkgs.procps ];
+        text = ''
+          ${lib.optionalString config.programs.glide-browser.enable ''
+            if [[ ''${1-} == ssh && ''${2-} == login ]] && ! pgrep -x .glide-wrapped >/dev/null; then
+              niri msg action spawn -- glide >/dev/null
+              sleep 5
+            fi
+          ''}
+          exec ${pkgs.step-cli}/bin/step "$@"
+        '';
+      };
     in
     {
       imports = [ osConfig.repo.secrets.work.default ];
@@ -123,8 +138,11 @@
             enable = true;
             cloudsSettings = { inherit clouds; };
           };
-          ssh.settings = lib.recursiveUpdate sshConfig {
-            "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
+          ssh = {
+            extraConfig = lib.mkAfter (sshCertificateLogin pkgs step);
+            settings = lib.recursiveUpdate sshConfig {
+              "*".userKnownHostsFile = lib.mkForce "~/.ssh/known_hosts ~/.ssh/known_hosts_work";
+            };
           };
           zsh = {
             cdpath = [
@@ -137,31 +155,20 @@
               s = "$HOME/.dotfiles/secrets";
               w = "$HOME/Documents/Work";
             };
-            initContent = lib.mkMerge [
-              (lib.mkIf config.programs.glide-browser.enable ''
-                step() {
-                  if [[ $1 == ssh && $2 == login ]] && ! pgrep -x .glide-wrapped >/dev/null; then
-                    niri msg action spawn -- glide >/dev/null
-                    sleep 5
-                  fi
-                  command step "$@"
-                }
-              '')
-              ''
-                _vbc_ansible_env() {
-                  local tmpl=ansible-2_$1
-                  local flake="git+ssh://git@github.com/vbc-it/vbc-nix?ref=main&dir=templates/$tmpl"
-                  if [[ -e $HOME/Documents/Work/vbc-nix/templates/$tmpl/flake.nix ]]; then
-                    flake=path:$HOME/Documents/Work/vbc-nix/templates/$tmpl
-                  fi
+            initContent = ''
+              _vbc_ansible_env() {
+                local tmpl=ansible-2_$1
+                local flake="git+ssh://git@github.com/vbc-it/vbc-nix?ref=main&dir=templates/$tmpl"
+                if [[ -e $HOME/Documents/Work/vbc-nix/templates/$tmpl/flake.nix ]]; then
+                  flake=path:$HOME/Documents/Work/vbc-nix/templates/$tmpl
+                fi
 
-                  mkdir -p $HOME/.local/state/nix/profiles/devshells
-                  nix develop --profile $HOME/.local/state/nix/profiles/devshells/vbc-$tmpl "$flake" -c zsh
-                }
-                a215() { _vbc_ansible_env 15; }
-                a220() { _vbc_ansible_env 20; }
-              ''
-            ];
+                mkdir -p $HOME/.local/state/nix/profiles/devshells
+                nix develop --profile $HOME/.local/state/nix/profiles/devshells/vbc-$tmpl "$flake" -c zsh
+              }
+              a215() { _vbc_ansible_env 15; }
+              a220() { _vbc_ansible_env 20; }
+            '';
             sessionVariables =
               lib.mapAttrs (_: secret: "$(cat ${confLib.getConfig.sops.secrets.${secret}.path})")
                 {
@@ -183,6 +190,7 @@
             shellAliases = {
               cssh = "ssh -l ${user2Long}";
               dssh = "ssh -l ${user1Long}";
+              step = lib.getExe step;
               wssh = "ssh -l ${user3Long}";
             };
           };
@@ -204,9 +212,7 @@
                     type = "stdio";
                   };
                 };
-            ".ssh/known_hosts_work".text = ''
-              @cert-authority *.vbc.ac.at ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBIIQtwt8vkYw9jc4cF9F2TxdpEv8Wc68ofDjUp8AOf3/bKfTcN1yaTpPlTEtwNo/1EnR2lOlrukYrKtw8jKW0nA=
-            '';
+            ".ssh/known_hosts_work".text = sshKnownHosts;
           };
           packages = with pkgs; [
             teams-for-linux
