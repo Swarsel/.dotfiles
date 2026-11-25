@@ -57,6 +57,7 @@
             hosts
             monitoring
             networks
+            roaming
             root
             services
             user

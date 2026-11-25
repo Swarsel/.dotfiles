@@ -137,8 +137,8 @@
                     (mkConnection "fritzbox" "dsl")
                     (mkConnection "magicant" "wifi")
                     (mkConnection "liliputsteps" "lan")
-                    (mkConnection "treehouse" "eth1")
-                  ];
+                  ]
+                  ++ lib.optional (globals.roaming.treehouse.location == "work") (mkConnection "treehouse" "eth1");
                 };
                 machpizza = mkDevice "machpizza" {
                   deviceIcon = root "files/topology-images/mac.png";
@@ -214,12 +214,16 @@
                   connections = {
                     eth2 = mkConnection "zigbee-coordinator" "eth1";
                     eth8 = mkConnection "winters" "lan";
+                  }
+                  // lib.optionalAttrs (globals.roaming.treehouse.location == "home") {
+                    eth3 = mkConnection "treehouse" "eth1";
                   };
                   image = root "files/topology-images/TL-SG108E.png";
                   info = "TL-SG108E";
                   interfaceGroups = [
                     [
                       "eth1"
+                      "eth3"
                       "eth8"
                     ]
                     [ "eth2" ]

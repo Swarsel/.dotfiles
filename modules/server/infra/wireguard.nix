@@ -7,7 +7,6 @@
       pkgs,
       confLib,
       globals,
-      nodes,
       ...
     }:
     let
@@ -23,8 +22,7 @@
         serviceUser
         ;
 
-      peerPublicKey =
-        peer: builtins.readFile nodes.${peer}.config.sops.secrets.wireguard-private-key.rekey.pubFile;
+      peerPublicKey = peer: builtins.readFile (self + "/files/public/wg/${peer}.pub");
       presharedKeySecret = server: client: {
         group = serviceGroup;
         mode = "0600";

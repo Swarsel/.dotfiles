@@ -85,7 +85,10 @@
       "summers"
     ]
     ++ map (guest: "summers-${guest}") (builtins.attrNames nodes.summers.config.guests)
-    ++ [ "winters" ];
+    ++ [
+      "treehouse"
+      "winters"
+    ];
     netConfigPrefix = "home";
     server = config.node.name;
   };

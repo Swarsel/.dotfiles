@@ -408,17 +408,39 @@
                           types.submodule (vlanNetSubmod: {
                             options = networkOptions vlanNetSubmod // {
                               id = mkOption {
-                                description = "The VLAN id";
                                 type = types.ints.between 1 4094;
                               };
                               name = mkOption {
                                 default = vlanNetSubmod.config._module.args.name;
-                                description = "The name of this VLAN";
                                 type = types.str;
                               };
                             };
                           })
                         );
+                      };
+                    };
+                  })
+                );
+              };
+              roaming = mkOption {
+                default = { };
+                description = "Hosts that have multiple possible locations";
+                type = types.attrsOf (
+                  types.submodule (roamingSubmod: {
+                    options = {
+                      address = mkOption {
+                        default = roamingSubmod.config.addresses.${roamingSubmod.config.location};
+                        description = "The address of this host at its current location";
+                        readOnly = true;
+                        type = types.net.ipv4;
+                      };
+                      addresses = mkOption {
+                        description = "Addresses per location";
+                        type = types.attrsOf types.net.ipv4;
+                      };
+                      location = mkOption {
+                        description = "The hosts current location";
+                        type = types.str;
                       };
                     };
                   })

@@ -38,7 +38,7 @@
               IdentityFile ${config.sops.secrets.nixbuild-net-key.path}
           ''
           + lib.optionalString isClient ''
-            Host ${config.repo.secrets.common.builder1-ip}
+            Host ${globals.roaming.treehouse.address}
               ConnectTimeout 2
               User ${mainUser}
               IdentityFile ${config.sops.secrets.builder-key.path}
@@ -63,7 +63,7 @@
             }
             (lib.mkIf isClient {
               builder1 = {
-                hostNames = [ config.repo.secrets.common.builder1-ip ];
+                hostNames = [ globals.roaming.treehouse.address ];
                 publicKey = config.repo.secrets.common.builder1-pubHostKey;
               };
               builder2 = {
@@ -80,7 +80,7 @@
         nix = {
           buildMachines = lib.optionals isClient [
             {
-              hostName = config.repo.secrets.common.builder1-ip;
+              hostName = globals.roaming.treehouse.address;
               maxJobs = 20;
               speedFactor = 10;
               system = "aarch64-linux";

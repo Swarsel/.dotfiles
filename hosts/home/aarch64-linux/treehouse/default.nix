@@ -1,12 +1,21 @@
 {
+  self,
   root,
   inputs,
   config,
   lib,
   pkgs,
   confLib,
+  globals,
   ...
 }:
+let
+  wireguardInterfaces = lib.filterAttrs (
+    _: wgCfg: builtins.elem config.node.name wgCfg.clients
+  ) globals.wireguard;
+  presharedKeyName =
+    ifName: wgCfg: "wireguard-${wgCfg.server}-${config.node.name}-${ifName}-presharedKey";
+in
 {
 
   imports = [
@@ -32,13 +41,27 @@
     lib.genAttrs
       [
         "claude-mcp-env"
-        "ontap-mcp-config"
         "openshift-kubeconfig"
         "vcenter-config"
       ]
       (_: {
         rekey.enable = false;
-      });
+      })
+    // {
+      wireguard-private-key.rekey = {
+        generator.script = "wireguard";
+        pubFile = self + "/files/public/wg/${config.node.name}.pub";
+      };
+    }
+    // lib.mapAttrs' (
+      ifName: wgCfg:
+      lib.nameValuePair (presharedKeyName ifName wgCfg) {
+        rekey = {
+          generator.script = "wireguard-psk";
+          keyPrefix = "wireguard/${wgCfg.server}-${config.node.name}/";
+        };
+      }
+    ) wireguardInterfaces;
 
   services = {
     work-remote.enable = true;

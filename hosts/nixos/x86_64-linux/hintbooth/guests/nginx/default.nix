@@ -16,6 +16,7 @@
     self.modules.nixos.nginx-exporter
     self.modules.nixos.acme
     self.modules.nixos.nginx-otel
+    self.modules.nixos.treehouse-services
   ];
 
   swarselsystems = {

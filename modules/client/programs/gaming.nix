@@ -42,7 +42,15 @@ in
             patchelf
             gamescope
             vulkan-tools
-            moonlight-qt
+            (symlinkJoin {
+              buildInputs = [ makeWrapper ];
+              name = "moonlight-qt";
+              paths = [ moonlight-qt ];
+              postBuild = ''
+                wrapProgram $out/bin/moonlight \
+                  --set-default SDL_MOUSE_RELATIVE_SYSTEM_SCALE 1
+              '';
+            })
             ns-usbloader
 
             quark-goldleaf

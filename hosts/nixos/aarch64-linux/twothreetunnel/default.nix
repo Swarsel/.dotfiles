@@ -57,6 +57,7 @@
       "eagleland"
       "hintbooth-adguardhome"
       "hintbooth-nginx"
+      "treehouse"
     ];
     netConfigPrefix = config.node.name;
     server = config.node.name;

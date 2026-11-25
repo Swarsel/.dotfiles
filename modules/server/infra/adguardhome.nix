@@ -89,6 +89,11 @@
                 answer = globals.networks.home-lan.vlans.services.hosts.${homeWebProxy}.ipv4;
                 enabled = true;
               }) homeDomains)
+              ++ lib.mapAttrsToList (hostName: hostCfg: {
+                answer = hostCfg.ipv4;
+                domain = "server.${hostName}.${globals.domains.main}";
+                enabled = true;
+              }) globals.networks.home-lan.vlans.services.hosts
               ++ [
                 {
                   answer = globals.networks.home-lan.vlans.services.hosts.summers-storage.ipv4;

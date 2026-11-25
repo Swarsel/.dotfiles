@@ -2460,6 +2460,7 @@ Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we agai
               hosts
               monitoring
               networks
+              roaming
               root
               services
               user
@@ -3003,8 +3004,8 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                       (mkConnection "fritzbox" "dsl")
                       (mkConnection "magicant" "wifi")
                       (mkConnection "liliputsteps" "lan")
-                      (mkConnection "treehouse" "eth1")
-                    ];
+                    ]
+                    ++ lib.optional (globals.roaming.treehouse.location == "work") (mkConnection "treehouse" "eth1");
                   };
                   machpizza = mkDevice "machpizza" {
                     deviceIcon = root "files/topology-images/mac.png";
@@ -3080,12 +3081,16 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                     connections = {
                       eth2 = mkConnection "zigbee-coordinator" "eth1";
                       eth8 = mkConnection "winters" "lan";
+                    }
+                    // lib.optionalAttrs (globals.roaming.treehouse.location == "home") {
+                      eth3 = mkConnection "treehouse" "eth1";
                     };
                     image = root "files/topology-images/TL-SG108E.png";
                     info = "TL-SG108E";
                     interfaceGroups = [
                       [
                         "eth1"
+                        "eth3"
                         "eth8"
                       ]
                       [ "eth2" ]
@@ -6501,7 +6506,10 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
         "summers"
       ]
       ++ map (guest: "summers-${guest}") (builtins.attrNames nodes.summers.config.guests)
-      ++ [ "winters" ];
+      ++ [
+        "treehouse"
+        "winters"
+      ];
       netConfigPrefix = "home";
       server = config.node.name;
     };
@@ -6623,6 +6631,7 @@ This machine serves as my home router (see [[#h:b54f2bbb-0088-46b2-957d-fd8234b7
       self.modules.nixos.nginx-exporter
       self.modules.nixos.acme
       self.modules.nixos.nginx-otel
+      self.modules.nixos.treehouse-services
     ];
 
     swarselsystems = {
@@ -6739,14 +6748,23 @@ This is my workstation located at my workplace - I use it as a remote builder an
 
 #+begin_src nix-ts :tangle hosts/home/aarch64-linux/treehouse/default.nix
   {
+    self,
     root,
     inputs,
     config,
     lib,
     pkgs,
     confLib,
+    globals,
     ...
   }:
+  let
+    wireguardInterfaces = lib.filterAttrs (
+      _: wgCfg: builtins.elem config.node.name wgCfg.clients
+    ) globals.wireguard;
+    presharedKeyName =
+      ifName: wgCfg: "wireguard-${wgCfg.server}-${config.node.name}-${ifName}-presharedKey";
+  in
   {
 
     imports = [
@@ -6772,13 +6790,27 @@ This is my workstation located at my workplace - I use it as a remote builder an
       lib.genAttrs
         [
           "claude-mcp-env"
-          "ontap-mcp-config"
           "openshift-kubeconfig"
           "vcenter-config"
         ]
         (_: {
           rekey.enable = false;
-        });
+        })
+      // {
+        wireguard-private-key.rekey = {
+          generator.script = "wireguard";
+          pubFile = self + "/files/public/wg/${config.node.name}.pub";
+        };
+      }
+      // lib.mapAttrs' (
+        ifName: wgCfg:
+        lib.nameValuePair (presharedKeyName ifName wgCfg) {
+          rekey = {
+            generator.script = "wireguard-psk";
+            keyPrefix = "wireguard/${wgCfg.server}-${config.node.name}/";
+          };
+        }
+      ) wireguardInterfaces;
 
     services = {
       work-remote.enable = true;
@@ -7383,6 +7415,7 @@ This host acts as my main HTTP proxy for external access.
         "eagleland"
         "hintbooth-adguardhome"
         "hintbooth-nginx"
+        "treehouse"
       ];
       netConfigPrefix = config.node.name;
       server = config.node.name;
@@ -8794,17 +8827,39 @@ Do note that the below does not achieve anything on its own - as is, these would
                             types.submodule (vlanNetSubmod: {
                               options = networkOptions vlanNetSubmod // {
                                 id = mkOption {
-                                  description = "The VLAN id";
                                   type = types.ints.between 1 4094;
                                 };
                                 name = mkOption {
                                   default = vlanNetSubmod.config._module.args.name;
-                                  description = "The name of this VLAN";
                                   type = types.str;
                                 };
                               };
                             })
                           );
+                        };
+                      };
+                    })
+                  );
+                };
+                roaming = mkOption {
+                  default = { };
+                  description = "Hosts that have multiple possible locations";
+                  type = types.attrsOf (
+                    types.submodule (roamingSubmod: {
+                      options = {
+                        address = mkOption {
+                          default = roamingSubmod.config.addresses.${roamingSubmod.config.location};
+                          description = "The address of this host at its current location";
+                          readOnly = true;
+                          type = types.net.ipv4;
+                        };
+                        addresses = mkOption {
+                          description = "Addresses per location";
+                          type = types.attrsOf types.net.ipv4;
+                        };
+                        location = mkOption {
+                          description = "The hosts current location";
+                          type = types.str;
                         };
                       };
                     })
@@ -9878,7 +9933,7 @@ This defines all remote builds that I want to use on client machines. This inclu
                 IdentityFile ${config.sops.secrets.nixbuild-net-key.path}
             ''
             + lib.optionalString isClient ''
-              Host ${config.repo.secrets.common.builder1-ip}
+              Host ${globals.roaming.treehouse.address}
                 ConnectTimeout 2
                 User ${mainUser}
                 IdentityFile ${config.sops.secrets.builder-key.path}
@@ -9903,7 +9958,7 @@ This defines all remote builds that I want to use on client machines. This inclu
               }
               (lib.mkIf isClient {
                 builder1 = {
-                  hostNames = [ config.repo.secrets.common.builder1-ip ];
+                  hostNames = [ globals.roaming.treehouse.address ];
                   publicKey = config.repo.secrets.common.builder1-pubHostKey;
                 };
                 builder2 = {
@@ -9920,7 +9975,7 @@ This defines all remote builds that I want to use on client machines. This inclu
           nix = {
             buildMachines = lib.optionals isClient [
               {
-                hostName = config.repo.secrets.common.builder1-ip;
+                hostName = globals.roaming.treehouse.address;
                 maxJobs = 20;
                 speedFactor = 10;
                 system = "aarch64-linux";
@@ -17816,6 +17871,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 enable = true;
                 settings = {
                   IPv6.Enabled = true;
+                  Rank.BandModifier5GHz = 1.5;
                   Settings.AutoConnect = true;
                   # DriverQuirks = {
                   #   UseDefaultInterface = true;
@@ -20007,7 +20063,15 @@ This opens a few gaming ports and installs the steam configuration suite for gam
               patchelf
               gamescope
               vulkan-tools
-              moonlight-qt
+              (symlinkJoin {
+                buildInputs = [ makeWrapper ];
+                name = "moonlight-qt";
+                paths = [ moonlight-qt ];
+                postBuild = ''
+                  wrapProgram $out/bin/moonlight \
+                    --set-default SDL_MOUSE_RELATIVE_SYSTEM_SCALE 1
+                '';
+              })
               ns-usbloader
 
               quark-goldleaf
@@ -22532,7 +22596,6 @@ In order to define a new Wireguard interface, I have to:
         pkgs,
         confLib,
         globals,
-        nodes,
         ...
       }:
       let
@@ -22548,8 +22611,7 @@ In order to define a new Wireguard interface, I have to:
           serviceUser
           ;
 
-        peerPublicKey =
-          peer: builtins.readFile nodes.${peer}.config.sops.secrets.wireguard-private-key.rekey.pubFile;
+        peerPublicKey = peer: builtins.readFile (self + "/files/public/wg/${peer}.pub");
         presharedKeySecret = server: client: {
           group = serviceGroup;
           mode = "0600";
@@ -25737,6 +25799,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
         tikaPort = 9998;
         gotenbergPort = 3002;
+        treehouseLocation = globals.roaming.treehouse.location;
       in
       {
         config = {
@@ -25771,11 +25834,15 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               kanidm-paperless.rekey.keyPrefix = confLib.kanidmSecrets;
               notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
               paperless-admin-pw.owner = serviceUser;
+              paperless-ai-api-key = { };
             };
             templates = {
               "paperless-mail.env" = {
                 content = ''
                   PAPERLESS_EMAIL_HOST_PASSWORD=${config.sops.placeholder.notification-mail-pw}
+                ''
+                + lib.optionalString (treehouseLocation == "work") ''
+                  PAPERLESS_AI_LLM_API_KEY=${config.sops.placeholder.paperless-ai-api-key}
                 '';
                 owner = serviceUser;
               };
@@ -25831,7 +25898,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
                 PAPERLESS_URL = "https://${serviceDomain}";
                 domain = serviceDomain;
-              };
+              }
+              // config.repo.secrets.local.paperless.ai.${treehouseLocation};
               user = serviceUser;
             };
             gotenberg = {
@@ -37415,6 +37483,11 @@ Handles my home DNS server. It also provides some nice block-lists, but the main
                   answer = globals.networks.home-lan.vlans.services.hosts.${homeWebProxy}.ipv4;
                   enabled = true;
                 }) homeDomains)
+                ++ lib.mapAttrsToList (hostName: hostCfg: {
+                  answer = hostCfg.ipv4;
+                  domain = "server.${hostName}.${globals.domains.main}";
+                  enabled = true;
+                }) globals.networks.home-lan.vlans.services.hosts
                 ++ [
                   {
                     answer = globals.networks.home-lan.vlans.services.hosts.summers-storage.ipv4;
@@ -39796,6 +39869,112 @@ The firewall bouncer module seems a bit broken in regards to deploying a new ins
             ip = "0.0.0.0";
             port = servicePort;
           };
+        };
+      };
+  }
+#+end_src
+
+**** Treehouse services
+:PROPERTIES:
+:CUSTOM_ID: h:0d465e66-5475-4e7e-827d-02a012d91c8c
+:END:
+
+#+begin_src nix-ts :tangle modules/server/services/treehouse-services.nix
+  {
+    flake.modules.nixos.treehouse-services =
+      {
+        inputs,
+        config,
+        lib,
+        confLib,
+        globals,
+        ...
+      }:
+      let
+        inherit (confLib.static)
+          homeWebProxy
+          idmServer
+          nginxAccessRules
+          webProxy
+          ;
+
+        host = "treehouse";
+        hostIn = network: globals.networks.${network}.hosts.${host};
+        wgNetwork = ifName: "${globals.wireguard.${ifName}.netConfigPrefix}-${ifName}";
+
+        proxyAddress4 = globals.hosts.${webProxy}.wanAddress4;
+        proxyAddress6 = globals.hosts.${webProxy}.wanAddress6;
+        serviceAddress = (hostIn (wgNetwork "wgProxy")).ipv4;
+        homeServiceAddress = (hostIn (wgNetwork "wgHome")).ipv4;
+
+        webServicePorts = {
+          comfyui = 8188;
+          open-webui = 8080;
+        };
+        domainOf = serviceName: config.repo.secrets.common.services.domains.${serviceName};
+
+        wolfDomain = domainOf "wolf";
+        homeVlanHost = globals.networks.home-lan.vlans.home.hosts.${host};
+      in
+      {
+        config = {
+          swarselsystems.enabledServerModules = [ "treehouse-services" ];
+          globals = {
+            services = lib.mkMerge (
+              lib.forEach (lib.attrNames webServicePorts) (
+                serviceName:
+                confLib.mkServiceGlobal {
+                  inherit
+                    homeServiceAddress
+                    proxyAddress4
+                    proxyAddress6
+                    serviceAddress
+                    serviceName
+                    ;
+                  isHome = true;
+                  serviceDomain = domainOf serviceName;
+                }
+              )
+            );
+            dns = lib.mkMerge (
+              lib.forEach (lib.attrNames webServicePorts) (
+                serviceName: confLib.mkDnsRecord { inherit proxyAddress4 proxyAddress6 serviceName; }
+              )
+              ++ lib.optional (globals.roaming.${host}.location == "home") {
+                ${lib.swarselsystems.getBaseDomain wolfDomain}.subdomainRecords.${lib.swarselsystems.getSubDomain wolfDomain} =
+                  inputs.dns.lib.combinators.host homeVlanHost.ipv4 null;
+              }
+            );
+          };
+          nodes = lib.mkMerge (
+            lib.concatLists (
+              lib.mapAttrsToList (serviceName: servicePort: [
+                { ${idmServer} = confLib.mkKanidmOauth2ProxyAccess { inherit serviceName; }; }
+                {
+                  ${webProxy}.services.nginx = confLib.genNginx {
+                    inherit serviceAddress serviceName servicePort;
+                    maxBody = 0;
+                    oauth2 = true;
+                    oauth2Groups = [ "${serviceName}_access" ];
+                    proxyWebsockets = true;
+                    serviceDomain = domainOf serviceName;
+                  };
+                }
+                {
+                  ${homeWebProxy}.services.nginx = confLib.genNginx {
+                    inherit serviceName servicePort;
+                    extraConfig = nginxAccessRules;
+                    maxBody = 0;
+                    oauth2 = true;
+                    oauth2Groups = [ "${serviceName}_access" ];
+                    proxyWebsockets = true;
+                    serviceAddress = homeServiceAddress;
+                    serviceDomain = domainOf serviceName;
+                  };
+                }
+              ]) webServicePorts
+            )
+          );
         };
       };
   }

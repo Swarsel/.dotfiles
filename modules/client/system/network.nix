@@ -109,6 +109,7 @@
               enable = true;
               settings = {
                 IPv6.Enabled = true;
+                Rank.BandModifier5GHz = 1.5;
                 Settings.AutoConnect = true;
                 # DriverQuirks = {
                 #   UseDefaultInterface = true;

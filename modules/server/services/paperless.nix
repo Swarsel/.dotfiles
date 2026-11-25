@@ -34,6 +34,7 @@
 
       tikaPort = 9998;
       gotenbergPort = 3002;
+      treehouseLocation = globals.roaming.treehouse.location;
     in
     {
       config = {
@@ -68,11 +69,15 @@
             kanidm-paperless.rekey.keyPrefix = confLib.kanidmSecrets;
             notification-mail-pw.rekey.keyPrefix = notificationMail.keyPrefix;
             paperless-admin-pw.owner = serviceUser;
+            paperless-ai-api-key = { };
           };
           templates = {
             "paperless-mail.env" = {
               content = ''
                 PAPERLESS_EMAIL_HOST_PASSWORD=${config.sops.placeholder.notification-mail-pw}
+              ''
+              + lib.optionalString (treehouseLocation == "work") ''
+                PAPERLESS_AI_LLM_API_KEY=${config.sops.placeholder.paperless-ai-api-key}
               '';
               owner = serviceUser;
             };
@@ -128,7 +133,8 @@
               PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
               PAPERLESS_URL = "https://${serviceDomain}";
               domain = serviceDomain;
-            };
+            }
+            // config.repo.secrets.local.paperless.ai.${treehouseLocation};
             user = serviceUser;
           };
           gotenberg = {
